@@ -72,7 +72,9 @@
     {
       "id": "M5-1",
       "title": "electron-builder 打包、性能打磨、导入导出",
-      "status": "pending"
+      "status": "in_progress",
+      "evidence": [".opencode/handover/evidence/M5-build.md"],
+      "note": "免安装绿色版与 zip 已完成；NSIS 安装包因 electron-builder EXDEV 未生成"
     }
   ],
   "gates": [],

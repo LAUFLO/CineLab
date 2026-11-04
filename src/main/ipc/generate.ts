@@ -5,6 +5,7 @@ import { ingestAsset } from '../assets/ingest'
 import { generationQueue, type QueueJob } from '../engine/queue'
 import { getCurrentProjectRoot } from '../project/manager'
 import { generateImage } from '../providers/openai-compat'
+import { generateVideoArk } from '../providers/volcengine'
 import { withRetry } from '../providers/retry'
 import { resolveProvider } from '../settings/store'
 
@@ -52,44 +53,54 @@ export function registerGenerateIpc(): void {
     const model = provider.models.find((item) => item.id === modelId)
     if (!model) throw new Error('找不到该模型')
 
-    if (model.capability !== 'image.t2i' && model.capability !== 'image.i2i') {
-      throw new Error('当前只支持图片生成模型')
+    const isImage = model.capability === 'image.t2i' || model.capability === 'image.i2i'
+    const isVideo = model.capability === 'video.t2v'
+
+    if (!isImage && !isVideo) {
+      throw new Error('当前只支持图片和视频生成模型')
     }
     if (!request.prompt.trim()) throw new Error('提示词不能为空')
 
     const runId = randomUUID()
+    const kind = isVideo ? 'video' : 'image'
 
     const job: QueueJob = {
       id: runId,
       nodeId: request.nodeId,
       run: async (signal, onProgress) => {
-        const images = await withRetry(
-          () =>
-            generateImage(
-              model,
-              { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
-              request.prompt,
-              request.params,
-              { signal, onProgress }
-            ),
-          signal,
-          (attempt, delay, error) => {
-            const reason = error instanceof Error ? error.message : String(error)
-            onProgress(
-              0,
-              `第 ${attempt} 次重试（${Math.round(delay / 1000)}s 后）：${reason}`
-            )
-          }
-        )
+        const generate = (): Promise<Array<{ data: Buffer; mime: string }>> =>
+          isVideo
+            ? generateVideoArk(
+                model,
+                { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+                request.prompt,
+                request.params,
+                { signal, onProgress }
+              )
+            : generateImage(
+                model,
+                { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+                request.prompt,
+                request.params,
+                { signal, onProgress }
+              )
+
+        const outputs = await withRetry(generate, signal, (attempt, delay, error) => {
+          const reason = error instanceof Error ? error.message : String(error)
+          onProgress(
+            0,
+            `第 ${attempt} 次重试（${Math.round(delay / 1000)}s 后）：${reason}`
+          )
+        })
 
         const assets: GeneratedAsset[] = []
-        for (const image of images) {
+        for (const output of outputs) {
           assets.push(
             await ingestAsset({
               projectPath: projectRoot,
-              data: image.data,
-              kind: 'image',
-              mime: image.mime,
+              data: output.data,
+              kind,
+              mime: output.mime,
               model: model.name
             })
           )

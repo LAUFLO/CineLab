@@ -55,12 +55,38 @@ export function registerAssetProtocol(): void {
     }
 
     try {
-      const data = await fs.readFile(target)
+      const stat = await fs.stat(target)
       const mime = MIME[extname(target).toLowerCase()] ?? 'application/octet-stream'
+      const range = request.headers.get('Range')
+
+      if (range) {
+        const match = /bytes=(\d+)-(\d*)/.exec(range)
+        if (match) {
+          const start = Number(match[1])
+          const end = match[2] ? Number(match[2]) : stat.size - 1
+          const data = await fs.readFile(target)
+          const chunk = data.subarray(start, end + 1)
+
+          return new Response(new Uint8Array(chunk), {
+            status: 206,
+            headers: {
+              'Content-Type': mime,
+              'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+              'Accept-Ranges': 'bytes',
+              'Content-Length': String(chunk.length),
+              'Cache-Control': 'no-cache'
+            }
+          })
+        }
+      }
+
+      const data = await fs.readFile(target)
 
       return new Response(new Uint8Array(data), {
         headers: {
           'Content-Type': mime,
+          'Content-Length': String(stat.size),
+          'Accept-Ranges': 'bytes',
           'Cache-Control': 'no-cache'
         }
       })

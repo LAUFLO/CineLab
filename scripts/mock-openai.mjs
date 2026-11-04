@@ -71,6 +71,8 @@ function makePng(width, height) {
 const png = makePng(640, 640)
 const base64 = png.toString('base64')
 
+let videoTask = null
+
 const server = createServer((request, response) => {
   const url = request.url ?? ''
 
@@ -105,6 +107,49 @@ const server = createServer((request, response) => {
         )
       }, 1400)
     })
+    return
+  }
+
+  if (request.method === 'POST' && url === '/api/v3/contents/generations/tasks') {
+    let body = ''
+    request.on('data', (chunk) => {
+      body += chunk
+    })
+    request.on('end', () => {
+      videoTask = {
+        id: `task_${Date.now()}`,
+        model: 'mock-video',
+        polls: 0,
+        prompt: body.slice(0, 200)
+      }
+      response.writeHead(200, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ id: videoTask.id }))
+    })
+    return
+  }
+
+  if (request.method === 'GET' && url.startsWith('/api/v3/contents/generations/tasks/')) {
+    if (!videoTask) {
+      response.writeHead(404, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ error: { message: 'task not found' } }))
+      return
+    }
+
+    videoTask.polls += 1
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+
+    if (videoTask.polls < 2) {
+      response.end(JSON.stringify({ id: videoTask.id, status: 'running' }))
+      return
+    }
+
+    response.end(
+      JSON.stringify({
+        id: videoTask.id,
+        status: 'succeeded',
+        content: { video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' }
+      })
+    )
     return
   }
 

@@ -133,5 +133,45 @@ export const MODEL_PRESETS: ModelDef[] = [
       { key: 'temperature', label: '温度', type: 'number', defaultValue: 0.7, min: 0, max: 2 },
       { key: 'max_tokens', label: '最大输出', type: 'number', defaultValue: 2048, min: 64, max: 32768 }
     ]
+  },
+  {
+    id: 'doubao-seedance',
+    name: 'Seedance 2.5 视频',
+    capability: 'video.t2v',
+    remoteModel: 'doubao-seedance-2-5-260628',
+    params: [
+      {
+        key: 'resolution',
+        label: '分辨率',
+        type: 'select',
+        options: [
+          { value: '480p', label: '480P' },
+          { value: '720p', label: '720P' },
+          { value: '1080p', label: '1080P' }
+        ],
+        defaultValue: '720p'
+      },
+      {
+        key: 'ratio',
+        label: '比例',
+        type: 'select',
+        options: [
+          { value: '16:9', label: '16:9' },
+          { value: '9:16', label: '9:16' },
+          { value: '1:1', label: '1:1' }
+        ],
+        defaultValue: '16:9'
+      },
+      {
+        key: 'duration',
+        label: '时长',
+        type: 'select',
+        options: [
+          { value: '5', label: '5s' },
+          { value: '10', label: '10s' }
+        ],
+        defaultValue: '5'
+      }
+    ]
   }
 ]

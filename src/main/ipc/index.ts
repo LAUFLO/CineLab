@@ -1,11 +1,14 @@
 import { app, BrowserWindow, ipcMain, nativeTheme } from 'electron'
 import type { ThemeMode } from '../../shared/ipc-contract'
+import { registerProjectIpc } from './project'
 
 function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
   return BrowserWindow.fromWebContents(sender)
 }
 
 export function registerIpc(): void {
+  registerProjectIpc()
+
   ipcMain.handle('app:get-info', () => ({
     version: app.getVersion(),
     platform: process.platform,

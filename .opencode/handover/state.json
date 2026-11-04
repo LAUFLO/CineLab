@@ -12,7 +12,8 @@
     {
       "id": "M2-1",
       "title": "项目文件夹：.cinelab 创建 / 打开 / 自动保存 / 崩溃恢复",
-      "status": "pending"
+      "status": "done",
+      "evidence": [".opencode/handover/evidence/M2-1-project-folder.md"]
     },
     {
       "id": "M2-2",

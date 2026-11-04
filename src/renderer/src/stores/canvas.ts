@@ -7,10 +7,10 @@ import {
   type EdgeChange,
   type Node,
   type NodeChange,
+  type Viewport,
   type XYPosition
 } from '@xyflow/react'
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import {
   NODE_META,
   TITLE_HEIGHT,
@@ -21,17 +21,17 @@ import {
 export type CineNode = Node<CineNodeData, 'cine'>
 export type CineEdge = Edge
 
-export interface CineConnection {
-  source: string
-  target: string
-}
-
 interface CanvasStore {
   nodes: CineNode[]
   edges: CineEdge[]
+  viewport: Viewport
+  hydrated: boolean
+
+  loadCanvas: (nodes: CineNode[], edges: CineEdge[], viewport: Viewport) => void
+  setViewport: (viewport: Viewport) => void
   onNodesChange: (changes: NodeChange<CineNode>[]) => void
   onEdgesChange: (changes: EdgeChange<CineEdge>[]) => void
-  onConnect: (connection: CineConnection) => void
+  onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string
   removeNode: (id: string) => void
   clearSelection: () => void
@@ -44,27 +44,35 @@ function nextId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${seq}`
 }
 
-export const useCanvasStore = create<CanvasStore>()(
-  persist(
-    (set, get) => ({
-      nodes: [],
-      edges: [],
+export const useCanvasStore = create<CanvasStore>((set, get) => ({
+  nodes: [],
+  edges: [],
+  viewport: { x: 0, y: 0, zoom: 1 },
+  hydrated: false,
 
-      onNodesChange: (changes) => {
-        const nodes = applyNodeChanges(changes, get().nodes)
-        const removed = changes
-          .filter((change) => change.type === 'remove')
-          .map((change) => change.id)
+  loadCanvas: (nodes, edges, viewport) => {
+    set({ nodes, edges, viewport, hydrated: true })
+  },
 
-        let edges = get().edges
-        if (removed.length > 0) {
-          edges = edges.filter(
-            (edge) => !removed.includes(edge.source) && !removed.includes(edge.target)
-          )
-        }
+  setViewport: (viewport) => {
+    set({ viewport })
+  },
 
-        set({ nodes, edges })
-      },
+  onNodesChange: (changes) => {
+    const nodes = applyNodeChanges(changes, get().nodes)
+    const removed = changes
+      .filter((change) => change.type === 'remove')
+      .map((change) => change.id)
+
+    let edges = get().edges
+    if (removed.length > 0) {
+      edges = edges.filter(
+        (edge) => !removed.includes(edge.source) && !removed.includes(edge.target)
+      )
+    }
+
+    set({ nodes, edges })
+  },
 
   onEdgesChange: (changes) => {
     set({ edges: applyEdgeChanges(changes, get().edges) })
@@ -129,10 +137,4 @@ export const useCanvasStore = create<CanvasStore>()(
   clearSelection: () => {
     set({ nodes: get().nodes.map((node) => ({ ...node, selected: false })) })
   }
-    }),
-    {
-      name: 'cinelab.canvas.v1',
-      partialize: (state) => ({ nodes: state.nodes, edges: state.edges })
-    }
-  )
-)
+}))

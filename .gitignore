@@ -2,6 +2,7 @@ node_modules/
 out/
 release/
 dist/
+.tmp/
 *.log
 *.err
 .DS_Store

@@ -2,11 +2,12 @@ import { create } from 'zustand'
 import type {
   PersistedEdge,
   PersistedNode,
+  ProjectMeta,
   ProjectSnapshot
 } from '@shared/project-schema'
 import { useCanvasStore, type CineEdge, type CineNode } from './canvas'
 
-type Phase = 'loading' | 'ready' | 'error'
+type Phase = 'loading' | 'ready' | 'welcome' | 'error'
 
 interface ProjectState {
   phase: Phase
@@ -14,6 +15,7 @@ interface ProjectState {
   name: string
   canvasId: string | null
   canvasName: string
+  canvases: ProjectMeta['canvases']
   error: string | null
   saving: boolean
   lastSavedAt: string | null
@@ -26,6 +28,12 @@ interface ProjectState {
   scheduleSave: () => void
   saveNow: () => Promise<void>
   revealInFolder: () => Promise<void>
+  renameProject: (name: string) => Promise<void>
+  createCanvas: (name?: string) => Promise<void>
+  switchCanvas: (canvasId: string) => Promise<void>
+  renameCanvas: (canvasId: string, name: string) => Promise<void>
+  deleteCanvas: (canvasId: string) => Promise<void>
+  deleteProject: () => Promise<void>
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
@@ -36,6 +44,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   name: '未命名项目',
   canvasId: null,
   canvasName: '画布 1',
+  canvases: [],
   error: null,
   saving: false,
   lastSavedAt: null,
@@ -43,9 +52,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   bootstrap: async () => {
     try {
       const snapshot = await window.api.project.bootstrap()
+
+      if (!snapshot) {
+        useCanvasStore.getState().loadCanvas([], [], { x: 0, y: 0, zoom: 1 })
+        set({
+          phase: 'welcome',
+          path: null,
+          name: 'CineLab',
+          canvasId: null,
+          canvasName: '',
+          canvases: [],
+          error: null
+        })
+        return
+      }
+
       get().applySnapshot(snapshot)
     } catch (error) {
-      set({ phase: 'error', error: String(error) })
+      set({ phase: 'welcome', error: String(error) })
     }
   },
 
@@ -64,6 +88,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       name: snapshot.meta.name,
       canvasId: snapshot.canvas.id,
       canvasName: snapshot.canvas.name,
+      canvases: snapshot.meta.canvases,
       error: null,
       saving: false,
       lastSavedAt: null
@@ -131,5 +156,83 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   revealInFolder: async () => {
     const { path } = get()
     if (path) await window.api.project.reveal(path)
+  },
+
+  renameProject: async (name) => {
+    const { path } = get()
+    if (!path) return
+
+    try {
+      const meta = await window.api.project.rename(path, name)
+      set({ name: meta.name, canvases: meta.canvases, error: null })
+    } catch (error) {
+      set({ error: String(error) })
+    }
+  },
+
+  createCanvas: async (name) => {
+    const { path } = get()
+    if (!path) return
+
+    try {
+      await get().saveNow()
+      const snapshot = await window.api.project.createCanvas(path, name)
+      get().applySnapshot(snapshot)
+    } catch (error) {
+      set({ error: String(error) })
+    }
+  },
+
+  switchCanvas: async (canvasId) => {
+    const { path, canvasId: current } = get()
+    if (!path || canvasId === current) return
+
+    try {
+      await get().saveNow()
+      const snapshot = await window.api.project.switchCanvas(path, canvasId)
+      get().applySnapshot(snapshot)
+    } catch (error) {
+      set({ error: String(error) })
+    }
+  },
+
+  renameCanvas: async (canvasId, name) => {
+    const { path } = get()
+    if (!path) return
+
+    try {
+      const meta = await window.api.project.renameCanvas(path, canvasId, name)
+      set({
+        canvases: meta.canvases,
+        canvasName:
+          meta.canvases.find((item) => item.id === get().canvasId)?.name ??
+          get().canvasName,
+        error: null
+      })
+    } catch (error) {
+      set({ error: String(error) })
+    }
+  },
+
+  deleteCanvas: async (canvasId) => {
+    const { path, canvases } = get()
+    if (!path || canvases.length <= 1) return
+
+    try {
+      await get().saveNow()
+      const snapshot = await window.api.project.deleteCanvas(path, canvasId)
+      get().applySnapshot(snapshot)
+    } catch (error) {
+      set({ error: String(error) })
+    }
+  },
+
+  deleteProject: async () => {
+    try {
+      const deleted = await window.api.project.delete()
+      if (deleted) await get().bootstrap()
+    } catch (error) {
+      set({ error: String(error) })
+    }
   }
 }))

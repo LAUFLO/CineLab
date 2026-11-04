@@ -53,12 +53,17 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
 
           const outputs = [...incoming, ...(node?.data.outputs ?? [])].slice(0, 20)
 
+          const text = event.assets.find(
+            (asset) => asset.kind === 'text' && asset.text
+          )?.text
+
           patchNode(event.nodeId, {
             status: 'done',
             progress: 100,
             error: undefined,
             outputs,
-            selectedOutputId: outputs[0]?.id
+            selectedOutputId: outputs[0]?.id,
+            ...(text ? { text } : {})
           })
 
           const running = { ...get().running }

@@ -36,6 +36,7 @@ interface CanvasStore {
   patchNodeData: (nodeId: string, patch: Partial<CineNodeData>) => void
   removeNode: (id: string) => void
   clearSelection: () => void
+  arrangeNodes: () => void
 }
 
 let seq = 0
@@ -147,5 +148,32 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
   clearSelection: () => {
     set({ nodes: get().nodes.map((node) => ({ ...node, selected: false })) })
+  },
+
+  arrangeNodes: () => {
+    const gap = 48
+    const maxWidth = 1400
+    let x = 0
+    let y = 0
+    let rowHeight = 0
+
+    const nodes = get().nodes.map((node) => {
+      const width = node.measured?.width ?? NODE_META[node.data.kind].width
+      const height =
+        node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
+
+      if (x > 0 && x + width > maxWidth) {
+        x = 0
+        y += rowHeight + gap
+        rowHeight = 0
+      }
+
+      const position = { x, y }
+      x += width + gap
+      rowHeight = Math.max(rowHeight, height)
+      return { ...node, position }
+    })
+
+    set({ nodes })
   }
 }))

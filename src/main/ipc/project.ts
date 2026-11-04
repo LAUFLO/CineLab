@@ -11,11 +11,18 @@ import type { CanvasData } from '@shared/project-schema'
 import {
   bootstrap,
   bootstrapOnce,
+  createCanvas,
   createProject,
   defaultProjectsDir,
+  deleteCanvas,
+  deleteProject,
+  getCurrentProjectRoot,
   openProject,
   readRecent,
-  saveCanvas
+  renameCanvas,
+  renameProject,
+  saveCanvas,
+  switchCanvas
 } from '../project/manager'
 
 export function registerProjectIpc(): void {
@@ -70,5 +77,36 @@ export function registerProjectIpc(): void {
 
   ipcMain.handle('project:reveal', async (_event, path: string) => {
     await shell.openPath(path)
+  })
+
+  ipcMain.handle('project:rename', (_event, path: string, name: string) =>
+    renameProject(path, name)
+  )
+
+  ipcMain.handle('project:create-canvas', (_event, path: string, name?: string) =>
+    createCanvas(path, name)
+  )
+
+  ipcMain.handle(
+    'project:switch-canvas',
+    (_event, path: string, canvasId: string) => switchCanvas(path, canvasId)
+  )
+
+  ipcMain.handle(
+    'project:rename-canvas',
+    (_event, path: string, canvasId: string, name: string) =>
+      renameCanvas(path, canvasId, name)
+  )
+
+  ipcMain.handle(
+    'project:delete-canvas',
+    (_event, path: string, canvasId: string) => deleteCanvas(path, canvasId)
+  )
+
+  ipcMain.handle('project:delete', async () => {
+    const root = getCurrentProjectRoot()
+    if (!root) throw new Error('没有打开的项目')
+    await deleteProject(root)
+    return true
   })
 }

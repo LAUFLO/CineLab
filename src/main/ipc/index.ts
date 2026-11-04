@@ -3,6 +3,7 @@ import type { ThemeMode } from '../../shared/ipc-contract'
 import { registerProjectIpc } from './project'
 import { registerSettingsIpc } from './settings'
 import { registerGenerateIpc } from './generate'
+import { registerLibraryIpc } from './library'
 
 function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
   return BrowserWindow.fromWebContents(sender)
@@ -12,6 +13,7 @@ export function registerIpc(): void {
   registerProjectIpc()
   registerSettingsIpc()
   registerGenerateIpc()
+  registerLibraryIpc()
 
   ipcMain.handle('app:get-info', () => ({
     version: app.getVersion(),

@@ -15,6 +15,7 @@ export interface GeneratedAsset {
   model: string
   width?: number
   height?: number
+  text?: string
 }
 
 export interface GenerateRequest {

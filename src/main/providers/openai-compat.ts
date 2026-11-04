@@ -10,43 +10,50 @@ export interface AdapterContext {
   onProgress: (percent: number, message?: string) => void
 }
 
-export interface ImageOutput {
+export interface ProviderOutput {
   data: Buffer
   mime: string
+  text?: string
 }
+
+export type ImageOutput = ProviderOutput
 
 function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.trim().replace(/\/+$/, '')
 }
 
-export async function generateImage(
-  model: ModelDef,
-  provider: ProviderRuntime,
-  prompt: string,
-  params: Record<string, unknown>,
+export interface ReferenceImage {
+  dataUrl: string
+  role: string
+}
+
+function parseDataUrl(
+  dataUrl: string,
+  index: number
+): { blob: Blob; filename: string } | null {
+  const match = /^data:([^;]+);base64,(.+)$/s.exec(dataUrl)
+  if (!match) return null
+
+  const mime = match[1]
+  const ext =
+    mime === 'image/jpeg'
+      ? 'jpg'
+      : mime === 'image/webp'
+        ? 'webp'
+        : mime === 'image/gif'
+          ? 'gif'
+          : 'png'
+
+  return {
+    blob: new Blob([Buffer.from(match[2], 'base64')], { type: mime }),
+    filename: `reference-${index}.${ext}`
+  }
+}
+
+async function parseImageResponse(
+  response: Response,
   ctx: AdapterContext
 ): Promise<ImageOutput[]> {
-  const body: Record<string, unknown> = {
-    model: model.remoteModel,
-    prompt,
-    n: Number(params.n ?? 1)
-  }
-
-  if (params.size) body.size = params.size
-  if (params.quality) body.quality = params.quality
-
-  ctx.onProgress(5, '提交请求')
-
-  const response = await fetch(`${normalizeBaseUrl(provider.baseUrl)}/images/generations`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${provider.apiKey}`
-    },
-    body: JSON.stringify(body),
-    signal: ctx.signal
-  })
-
   if (!response.ok) {
     const text = await response.text().catch(() => '')
     throw new Error(`HTTP ${response.status}: ${text.slice(0, 400)}`)
@@ -78,14 +85,78 @@ export async function generateImage(
       outputs.push({ data: Buffer.from(await download.arrayBuffer()), mime })
     }
 
-    ctx.onProgress(
-      60 + Math.round(((index + 1) / items.length) * 25),
-      '下载结果'
-    )
+    ctx.onProgress(60 + Math.round(((index + 1) / items.length) * 25), '下载结果')
   }
 
   ctx.onProgress(90, '写入项目')
   return outputs
+}
+
+export async function generateImage(
+  model: ModelDef,
+  provider: ProviderRuntime,
+  prompt: string,
+  params: Record<string, unknown>,
+  refs: ReferenceImage[],
+  ctx: AdapterContext
+): Promise<ImageOutput[]> {
+  const baseUrl = normalizeBaseUrl(provider.baseUrl)
+  const headers = { Authorization: `Bearer ${provider.apiKey}` }
+
+  if (refs.length > 0) {
+    ctx.onProgress(5, '提交图生图请求')
+    const form = new FormData()
+    form.append('model', model.remoteModel)
+    form.append('prompt', prompt)
+    form.append('n', String(Number(params.n ?? 1)))
+    if (params.size) form.append('size', String(params.size))
+    if (params.quality) form.append('quality', String(params.quality))
+
+    let accepted = 0
+    for (let index = 0; index < refs.length; index += 1) {
+      const parsed = parseDataUrl(refs[index].dataUrl, index)
+      if (!parsed) continue
+      const field = refs.length === 1 ? 'image' : 'image[]'
+      form.append(field, parsed.blob, parsed.filename)
+      accepted += 1
+    }
+
+    if (accepted === 0) {
+      throw new Error('参考图解析失败，无法发起图生图请求')
+    }
+
+    const editResponse = await fetch(`${baseUrl}/images/edits`, {
+      method: 'POST',
+      headers,
+      body: form,
+      signal: ctx.signal
+    })
+
+    return parseImageResponse(editResponse, ctx)
+  }
+
+  const body: Record<string, unknown> = {
+    model: model.remoteModel,
+    prompt,
+    n: Number(params.n ?? 1)
+  }
+
+  if (params.size) body.size = params.size
+  if (params.quality) body.quality = params.quality
+
+  ctx.onProgress(5, '提交请求')
+
+  const response = await fetch(`${baseUrl}/images/generations`, {
+    method: 'POST',
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body),
+    signal: ctx.signal
+  })
+
+  return parseImageResponse(response, ctx)
 }
 
 export async function generateSpeech(
@@ -124,4 +195,53 @@ export async function generateSpeech(
   ctx.onProgress(80, '写入音频')
 
   return [{ data: Buffer.from(await response.arrayBuffer()), mime }]
+}
+
+export async function generateText(
+  model: ModelDef,
+  provider: ProviderRuntime,
+  prompt: string,
+  params: Record<string, unknown>,
+  ctx: AdapterContext
+): Promise<ProviderOutput[]> {
+  const body: Record<string, unknown> = {
+    model: model.remoteModel,
+    messages: [{ role: 'user', content: prompt }]
+  }
+
+  if (params.temperature !== undefined) {
+    body.temperature = Number(params.temperature)
+  }
+  if (params.max_tokens !== undefined) {
+    body.max_tokens = Number(params.max_tokens)
+  }
+
+  ctx.onProgress(10, '生成文本')
+
+  const response = await fetch(`${normalizeBaseUrl(provider.baseUrl)}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${provider.apiKey}`
+    },
+    body: JSON.stringify(body),
+    signal: ctx.signal
+  })
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '')
+    throw new Error(`HTTP ${response.status}: ${text.slice(0, 400)}`)
+  }
+
+  const json = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string } }>
+  }
+  const content = json.choices?.[0]?.message?.content?.trim()
+
+  if (!content) {
+    throw new Error('接口没有返回文本内容')
+  }
+
+  ctx.onProgress(85, '写入文本')
+  return [{ data: Buffer.from(content, 'utf8'), mime: 'text/plain', text: content }]
 }

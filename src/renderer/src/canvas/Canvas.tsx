@@ -1,18 +1,18 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import {
   Background,
   BackgroundVariant,
   ConnectionMode,
+  MiniMap,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
-  useViewport,
   type FinalConnectionState
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon } from '../components/Icon'
-import { useCanvasStore } from '../stores/canvas'
+import { useCanvasStore, type CineNode } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 import { AddNodeMenu } from './AddNodeMenu'
 import { FlowEdge } from './edges/FlowEdge'
@@ -23,27 +23,6 @@ type Theme = 'light' | 'dark'
 
 const nodeTypes = { cine: CineNodeView }
 const edgeTypes = { flow: FlowEdge }
-
-function Watermark({ theme }: { theme: Theme }) {
-  const { x, y, zoom } = useViewport()
-  const color = theme === 'light' ? 'rgba(0,0,0,0.028)' : 'rgba(255,255,255,0.035)'
-
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="320">` +
-    `<text x="20" y="180" font-family="Inter, 'PingFang SC', sans-serif" font-size="48" font-weight="800" fill="${color}" transform="rotate(-18 20 180)">CineLab 2026-11-04</text>` +
-    `</svg>`
-
-  return (
-    <div
-      className="watermark"
-      style={{
-        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
-        backgroundSize: `${560 * zoom}px ${320 * zoom}px`,
-        backgroundPosition: `${x}px ${y}px`
-      }}
-    />
-  )
-}
 
 function EmptyState({ onCreate }: { onCreate: (kind: NodeKind) => void }) {
   return (
@@ -83,11 +62,40 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const addNode = useCanvasStore((state) => state.addNode)
   const viewport = useCanvasStore((state) => state.viewport)
   const setViewport = useCanvasStore((state) => state.setViewport)
+  const arrangeNodes = useCanvasStore((state) => state.arrangeNodes)
   const closeMenu = useUIStore((state) => state.closeMenu)
   const openMenu = useUIStore((state) => state.openMenu)
-  const { screenToFlowPosition } = useReactFlow()
+  const snapToGrid = useUIStore((state) => state.snapToGrid)
+  const edgesVisible = useUIStore((state) => state.edgesVisible)
+  const minimapVisible = useUIStore((state) => state.minimapVisible)
+  const fitViewToken = useUIStore((state) => state.fitViewToken)
+  const arrangeToken = useUIStore((state) => state.arrangeToken)
+  const { screenToFlowPosition, fitView } = useReactFlow()
 
   const connectStart = useRef<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    if (fitViewToken === 0) return
+    void fitView({ padding: 0.2, duration: 300 })
+  }, [fitViewToken, fitView])
+
+  useEffect(() => {
+    if (arrangeToken === 0) return
+    arrangeNodes()
+    window.setTimeout(() => void fitView({ padding: 0.2, duration: 300 }), 50)
+  }, [arrangeToken, arrangeNodes, fitView])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.altKey && event.shiftKey && event.key.toLowerCase() === 'f') {
+        event.preventDefault()
+        useUIStore.getState().requestArrange()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const handleConnectStart = useCallback((event: MouseEvent | TouchEvent) => {
     const point = 'changedTouches' in event ? event.changedTouches[0] : event
@@ -121,6 +129,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
     (event: React.MouseEvent) => {
       const target = event.target as HTMLElement
       if (!target.closest('.react-flow__pane')) return
+      if (target.closest('.react-flow__node')) return
 
       openMenu({
         screen: { x: event.clientX, y: event.clientY },
@@ -128,6 +137,18 @@ function CanvasInner({ theme }: { theme: Theme }) {
       })
     },
     [screenToFlowPosition, openMenu]
+  )
+
+  const handleNodeDoubleClick = useCallback(
+    (_event: React.MouseEvent, targetNode: CineNode) => {
+      void fitView({
+        nodes: [targetNode],
+        padding: 0.6,
+        duration: 300,
+        maxZoom: 2
+      })
+    },
+    [fitView]
   )
 
   const createAtCenter = useCallback(
@@ -146,13 +167,13 @@ function CanvasInner({ theme }: { theme: Theme }) {
     [screenToFlowPosition, addNode]
   )
 
-  const dotColor = theme === 'light' ? 'rgba(0,0,0,0.055)' : 'rgba(255,255,255,0.055)'
+  const dotColor = theme === 'light' ? 'rgba(0,0,0,0.13)' : 'rgba(255,255,255,0.13)'
 
   return (
     <>
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={edgesVisible ? edges : []}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
@@ -162,19 +183,41 @@ function CanvasInner({ theme }: { theme: Theme }) {
         onConnectEnd={handleConnectEnd}
         onPaneClick={closeMenu}
         onDoubleClick={handleDoubleClick}
+        onNodeDoubleClick={handleNodeDoubleClick}
         minZoom={0.1}
         maxZoom={4}
         defaultViewport={viewport}
         onMove={(_event, next) => setViewport(next)}
         panOnScroll
+        snapToGrid={snapToGrid}
+        snapGrid={[16, 16] as [number, number]}
         connectionMode={ConnectionMode.Loose}
         connectionRadius={60}
         selectionOnDrag={false}
         zoomOnDoubleClick={false}
         deleteKeyCode={['Backspace', 'Delete']}
       >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} color={dotColor} />
-        <Watermark theme={theme} />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color={dotColor} />
+        {minimapVisible ? (
+          <MiniMap
+            position="bottom-left"
+            pannable
+            zoomable
+            nodeColor={() =>
+              theme === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'
+            }
+            maskColor={theme === 'dark' ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.08)'}
+            style={{
+              left: 16,
+              bottom: 72,
+              width: 200,
+              height: 120,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 10
+            }}
+          />
+        ) : null}
       </ReactFlow>
 
       {nodes.length === 0 ? <EmptyState onCreate={createAtCenter} /> : null}

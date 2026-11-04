@@ -33,6 +33,7 @@ interface CanvasStore {
   onEdgesChange: (changes: EdgeChange<CineEdge>[]) => void
   onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string
+  patchNodeData: (nodeId: string, patch: Partial<CineNodeData>) => void
   removeNode: (id: string) => void
   clearSelection: () => void
 }
@@ -125,6 +126,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
 
     return id
+  },
+
+  patchNodeData: (nodeId, patch) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId
+          ? { ...node, data: { ...node.data, ...patch } }
+          : node
+      )
+    })
   },
 
   removeNode: (id) => {

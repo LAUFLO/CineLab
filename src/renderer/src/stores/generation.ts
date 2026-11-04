@@ -11,11 +11,7 @@ interface GenerationState {
 }
 
 function patchNode(nodeId: string, patch: Partial<CineNodeData>): void {
-  useCanvasStore.setState((state) => ({
-    nodes: state.nodes.map((node) =>
-      node.id === nodeId ? { ...node, data: { ...node.data, ...patch } } : node
-    )
-  }))
+  useCanvasStore.getState().patchNodeData(nodeId, patch)
 }
 
 export const useGenerationStore = create<GenerationState>((set, get) => ({
@@ -61,7 +57,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             status: 'done',
             progress: 100,
             error: undefined,
-            outputs
+            outputs,
+            selectedOutputId: outputs[0]?.id
           })
 
           const running = { ...get().running }

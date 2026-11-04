@@ -25,6 +25,7 @@ export const cineNodeSchema = z.object({
       )
       .max(100)
       .optional(),
+    selectedOutputId: z.string().max(120).optional(),
     progress: z.number().min(0).max(100).optional(),
     error: z.string().max(2000).optional(),
     templates: z.array(z.string().max(100)).max(20)

@@ -17,6 +17,7 @@ export interface CineNodeData extends Record<string, unknown> {
   text?: string
   outputUrl?: string
   outputs?: OutputRef[]
+  selectedOutputId?: string
   progress?: number
   error?: string
   templates: string[]

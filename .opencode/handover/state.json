@@ -3,11 +3,11 @@
   "project": "CineLab",
   "root": "D:\\CineLab",
   "updatedAt": "2026-11-04",
-  "phase": "M1",
+  "phase": "M2",
   "phaseStatus": "done",
-  "phaseGoal": "画布核心交互：节点、连线、菜单、prompt bar",
-  "nextPhase": "M2",
-  "next_focus": "M2 第一阶段：项目文件夹 + Provider 配置 + OpenAI 兼容文生图闭环",
+  "phaseGoal": "项目文件夹、模型配置、真实出图、任务队列、版本栈",
+  "nextPhase": "M3",
+  "next_focus": "M3 第一阶段：可灵 / 火山方舟视频生成适配器 + 首尾帧连线语义",
   "frontier": [
     {
       "id": "M2-1",
@@ -36,8 +36,8 @@
     {
       "id": "M2-5",
       "title": "资产落盘：内容 hash 去重、缩略图、版本栈",
-      "status": "in_progress",
-      "note": "落盘、hash 去重、缩略图已完成；版本栈 UI 待补"
+      "status": "done",
+      "evidence": [".opencode/handover/evidence/M2-5-version-stack.md"]
     },
     {
       "id": "M2-6",

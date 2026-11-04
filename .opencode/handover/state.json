@@ -1,13 +1,13 @@
 {
-  "version": 1,
+  "version": 2,
   "project": "CineLab",
-  "root": "D:\\CineLab",
-  "updatedAt": "2026-11-04",
+  "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
+  "updatedAt": "2026-11-05",
   "phase": "M4",
-  "phaseStatus": "partial",
-  "phaseGoal": "音频节点 TTS 已完成；资产库（角色/素材）延后",
+  "phaseStatus": "done",
+  "phaseGoal": "M4 已完成：TTS、图生图、文本生成、资产库（角色/素材/模板/一致性）、LibTV 风格 UI、项目中心/多画布已接通；M3-1 可灵、音乐生成、打包待做",
   "nextPhase": "M5",
-  "next_focus": "M5：electron-builder 打包 Windows 安装包，双击即用",
+  "next_focus": "暂定：下一会话再确定优先级（M5 打包 / 可灵 / 音乐生成 / 先提交改动）",
   "frontier": [
     {
       "id": "M2-1",
@@ -25,13 +25,17 @@
       "id": "M2-3",
       "title": "OpenAI 兼容适配器：文生图 / 图生图",
       "status": "done",
-      "evidence": [".opencode/handover/evidence/M2-3-generation.md"]
+      "evidence": [
+        ".opencode/handover/evidence/M2-3-generation.md",
+        ".opencode/handover/evidence/M2-3-image-edit.md"
+      ],
+      "note": "文生图/图生图均已验证；图生图走标准 /images/edits，中转站兼容与多图 image[] 待验证"
     },
     {
       "id": "M2-4",
       "title": "任务队列：并发限制、进度事件、取消、失败重试",
       "status": "done",
-      "note": "队列、并发 2、取消、进度事件已完成；自动重试待补"
+      "note": "队列、并发 2、取消、进度事件、自动重试均已完成（retry.ts，3s/9s，最多 2 次）"
     },
     {
       "id": "M2-5",
@@ -47,27 +51,34 @@
     {
       "id": "M3-1",
       "title": "视频生成适配器：可灵 / 火山方舟",
-      "status": "done",
+      "status": "partial",
       "evidence": [".opencode/handover/evidence/M3-1-video-generation.md"],
-      "note": "火山方舟已完成；可灵 JWT 鉴权待接入"
+      "note": "火山方舟已完成；可灵 JWT 鉴权待接入，未端到端验证"
     },
     {
       "id": "M3-2",
       "title": "首尾帧连线语义与素材角色覆盖",
       "status": "done",
-      "evidence": [".opencode/handover/evidence/M3-2-reference-injection.md"]
+      "evidence": [".opencode/handover/evidence/M3-2-reference-injection.md"],
+      "note": "PromptBar 引用已优先取 selectedOutputId；尾帧/多参考未端到端验证"
     },
     {
       "id": "M4-1",
       "title": "音频节点：TTS 语音合成",
       "status": "done",
-      "evidence": [".opencode/handover/evidence/M4-1-audio-tts.md"]
+      "evidence": [".opencode/handover/evidence/M4-1-audio-tts.md"],
+      "note": "仅 OpenAI 兼容 TTS；audio.music 未接入"
     },
     {
       "id": "M4-2",
       "title": "资产库：角色卡 / 素材管理 / 模板",
-      "status": "pending",
-      "note": "按用户决定，角色库并入资产库统一实现"
+      "status": "done",
+      "evidence": [
+        ".opencode/handover/evidence/M4-2-library.md",
+        ".opencode/handover/evidence/M4-2-character-consistency.md",
+        ".opencode/handover/evidence/M4-2-templates.md"
+      ],
+      "note": "角色卡、素材、模板、角色一致性均已实现；素材导入对话框待人工验证"
     },
     {
       "id": "M5-1",
@@ -75,6 +86,53 @@
       "status": "in_progress",
       "evidence": [".opencode/handover/evidence/M5-build.md"],
       "note": "免安装绿色版与 zip 已完成；NSIS 安装包因 electron-builder EXDEV 未生成"
+    }
+  ],
+  "knownIssues": [
+    {
+      "id": "K1",
+      "area": "generation",
+      "content": "图生图已接通标准 /images/edits；中转站兼容与多图 image[] 未验证。"
+    },
+    {
+      "id": "K2",
+      "area": "generation",
+      "content": "文本生成已接通标准 /chat/completions；流式输出、多轮上下文未实现。"
+    },
+    {
+      "id": "K3",
+      "area": "generation",
+      "content": "audio.music 未接入执行器，PromptBar 会列出但无法生成。"
+    },
+    {
+      "id": "K4",
+      "area": "provider",
+      "content": "可灵 JWT 鉴权未接入；目前视频仅火山方舟。"
+    },
+    {
+      "id": "K5",
+      "area": "ui",
+      "content": "导出、AI 助手、prompt bar 画布参考/标记仍为占位；水印已删除，网格/连线/吸附/画布切换已实现。"
+    },
+    {
+      "id": "K6",
+      "area": "env",
+      "content": "pnpm 需通过 corepack pnpm 调用；Electron 二进制已用镜像安装。"
+    },
+    {
+      "id": "K7",
+      "area": "library",
+      "content": "素材导入与角色参考图选择依赖系统文件对话框，自动化只验证了空状态和按钮，待人工点一次。"
+    },
+    {
+      "id": "K8",
+      "area": "project",
+      "content": "删除最后一个项目后停在欢迎页未端到端验证，需要真实删除唯一项目。"
+    },
+    {
+      "id": "K9",
+      "area": "build",
+      "content": "Windows 安装包未执行 dist:win 验证；当前只验证了 build。"
     }
   ],
   "gates": [],
@@ -114,6 +172,46 @@
       "id": "T6",
       "title": "开源发布：GitHub public 仓库、MIT 协议、README",
       "evidence": ["https://github.com/LAUFLO/CineLab", "README.md", "LICENSE"]
+    },
+    {
+      "id": "T7",
+      "title": "P2 文本生成：chat.completions + 文本落盘 + 节点渲染",
+      "evidence": [".opencode/handover/evidence/P2-text-generation.md"]
+    },
+    {
+      "id": "T8",
+      "title": "M4-2 资产库 MVP：角色卡 / 素材管理 / 添加到画布",
+      "evidence": [".opencode/handover/evidence/M4-2-library.md"]
+    },
+    {
+      "id": "T9",
+      "title": "M4-2 角色一致性：参考图注入生成请求",
+      "evidence": [".opencode/handover/evidence/M4-2-character-consistency.md"]
+    },
+    {
+      "id": "T10",
+      "title": "M4-2 模板系统：模板 CRUD 与 PromptBar 填充",
+      "evidence": [".opencode/handover/evidence/M4-2-templates.md"]
+    },
+    {
+      "id": "T11",
+      "title": "UI 对齐 LibTV：左下悬浮工具条、去水印、左侧资产栏、手柄贴边",
+      "evidence": [".opencode/handover/evidence/ui-libtv-alignment.md"]
+    },
+    {
+      "id": "T12",
+      "title": "项目与多画布管理：重命名、新建、切换、删除、左上角菜单",
+      "evidence": [".opencode/handover/evidence/project-canvas-management.md"]
+    },
+    {
+      "id": "T13",
+      "title": "项目中心：无项目启动页、最近项目、删除后回到欢迎页",
+      "evidence": [".opencode/handover/evidence/project-center-welcome.md"]
+    },
+    {
+      "id": "T14",
+      "title": "应用内确认弹窗、全部项目卡片浮窗、工具栏高度统一",
+      "evidence": [".opencode/handover/evidence/project-center-welcome.md"]
     }
   ],
   "lessons": [
@@ -140,17 +238,45 @@
     {
       "category": "procedure",
       "content": "TypeScript 7 已移除 baseUrl，tsconfig 的 paths 必须写 ./ 开头的相对路径；开发期可用 9222 调试端口 + scripts/cdp-*.mjs 做自动化验证。"
+    },
+    {
+      "category": "engineering",
+      "content": "React Flow 12 左右 handle 的锚点用外边缘（Left 取左边缘、Right 取右边缘）；要让连线贴节点边线，handle 布局盒放在节点边界内（left/right: 0），视觉圆用伪元素外移到节点外侧。"
+    },
+    {
+      "category": "procedure",
+      "content": "HMR 在 Canvas/TopBar 这类大改中会产生中间态 parse error 或旧模块缓存；主进程改动必须重启 corepack pnpm dev 后再验证，不能只看 HMR。"
+    },
+    {
+      "category": "engineering",
+      "content": "JSON 原子写的临时文件名必须加随机后缀（pid + uuid），否则并发保存会互相覆盖，出现 ENOENT 或文件损坏。"
+    },
+    {
+      "category": "engineering",
+      "content": "bootstrap() 无最近项目时应返回 null，renderer 进入 welcome 显示项目中心；不要自动创建项目，删除最后一个项目才能停在欢迎页。"
+    },
+    {
+      "category": "procedure",
+      "content": "仓库路径 Documents/CineLab 与默认项目目录同名时，测试 .cinelab 会落在仓库根；.gitignore 必须忽略 *.cinelab/。"
+    },
+    {
+      "category": "preference",
+      "content": "删除项目等高风险操作改用应用内 ConfirmDialog，保持全局 UI 一致，不使用原生 dialog.showMessageBox。"
     }
   ],
   "designConventions": [
     "目录：src/main（主进程）、src/preload、src/renderer/src、src/shared",
     "主题只通过 CSS 变量，组件禁止硬编码色值",
     "节点数据 model 在 src/shared/canvas-schema.ts，前后端共用",
-    "项目数据格式定义在 docs/architecture.md 第 5 章"
+    "项目数据格式定义在 docs/architecture.md 第 5 章",
+    "左下悬浮工具条 + 左上整体胶囊；资产库为左侧浮层，无全屏遮罩",
+    "有最近项目启动直接进画布；无项目进入项目中心欢迎页，不自动创建项目",
+    "确认弹窗、全部项目浮窗使用应用内组件，与主题变量一致"
   ],
   "stats": {
-    "sessions": 1,
-    "completedMilestones": ["M0", "M1"],
-    "nextMilestone": "M2"
+    "sessions": 3,
+    "completedMilestones": ["M0", "M1", "M2", "M4"],
+    "partialMilestones": ["M3"],
+    "nextMilestone": "M5"
   }
 }

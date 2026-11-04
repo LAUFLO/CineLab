@@ -1,46 +1,48 @@
 # CineLab · Boot Packet
 
-> **下一会话优先**：M2 第一阶段 —— `.cinelab` 项目文件夹 + Provider 配置 + OpenAI 兼容文生图闭环。
+> **下一会话优先**：先确定优先级——M5 打包 / 可灵 JWT / 音乐生成 / 先提交本轮改动（`next_focus` 暂定）。
+> 唯一真相源是 `.opencode/handover/state.json`，本文件只是只读投影。
 
 ## 当前状态
 
-- Phase：M1 已完成，进入 M2
-- 已完成：M0 脚手架、M1 画布核心（四类节点 / 连线 / 添加菜单 / prompt bar / localStorage 持久化）
-- 已开源：https://github.com/LAUFLO/CineLab（MIT）
+- Phase：M4 done，下一步 M5
+- 已完成：M0–M2、M3 火山方舟/首尾帧、M4 TTS/资产库/模板/角色一致性、文本生成、图生图、LibTV 风格 UI、项目/多画布、项目中心
+- 未完成：M3-1 可灵 JWT、音乐生成、M5 打包
 - 阻塞：无
+- 环境：依赖已装，pnpm 走 `corepack pnpm`
 
-## Frontier（按顺序）
+## Frontier
 
-1. **M2-1** `.cinelab` 项目文件夹：创建 / 打开 / 自动保存 / 崩溃恢复
-2. **M2-2** 模型配置：Provider、Base URL、Key 加密存储、模型列表
-3. **M2-3** OpenAI 兼容适配器：文生图 / 图生图
-4. **M2-4** 任务队列：并发限制、进度事件、取消、失败重试
-5. **M2-5** 资产落盘：内容 hash 去重、缩略图、版本栈
-6. **M2-6** prompt bar 接入真实参数与生成按钮
-7. M3 视频 → M4 音频/角色 → M5 打包
+1. **M5-1** electron-builder 打包、性能打磨、导入导出
+2. **M3-1** 可灵 JWT 鉴权（可选）
+3. **收尾** 素材导入人工验证、删除最后项目欢迎页验证
 
-## 必读文档
+## 已知缺口（详见 state.json.knownIssues，9 条）
 
-- `docs/ui-spec.md`：界面规格（区域尺寸、深浅色板、节点结构、prompt bar、菜单、交互）
-- `docs/architecture.md`：进程架构、`.cinelab` 格式、Provider 接口、执行引擎、IPC 协议
+- 图生图仅标准 `/images/edits`；多图中转站未验证
+- 文本生成无流式/多轮；音乐生成未接
+- 素材导入/参考图选择待人工验证
+- 删除最后一个项目欢迎页未端到端验证
+- `dist:win` 未执行；导出/AI 助手/画布参考/标记仍是占位
+
+## 核心证据
+
+`M2-3-image-edit`、`P2-text-generation`、`M4-2-library`、`M4-2-character-consistency`、`M4-2-templates`、`ui-libtv-alignment`、`project-canvas-management`、`project-center-welcome`
 
 ## 关键约定
 
-- 技术栈：Electron 45 + React 19 + React Flow 12 + Zustand + Tailwind 4 + TS 7
-- 主进程即后端，无独立服务；存储用 JSON/JSONL，不引入 SQLite
-- 完全复刻 LibTV：纯自由画布、参数只在 prompt bar、节点不显示「尝试」列表
-- 左侧 `+` 仅接收（target），右侧 `+` 才生成下游（source）
-- 主题只走 CSS 变量，禁止组件硬编码色值
+- Electron 45 + React 19 + React Flow 12 + Zustand + Tailwind 4 + TS 7
+- 主进程即后端；JSON/JSONL；不引入 SQLite
+- 纯自由画布，参数只在 prompt bar，节点不显示「尝试」
+- 左侧 `+` 只接收，右侧 `+` 才生成下游
+- 主题只走 CSS 变量
 
-## 踩坑记录
+## 踩坑
 
-- prompt bar 定位必须乘 `viewport.zoom`，否则缩放后间距失真
-- React Flow handle 用负 margin 居中，不能用 `transform`，否则连线锚点偏移
-- pnpm 12 的构建白名单在 `pnpm-workspace.yaml` 的 `allowBuilds`
-- TypeScript 7 移除了 `baseUrl`，`paths` 必须用 `./` 相对路径
+- 主进程改动必须重启 `corepack pnpm dev`，HMR 会报中间态 parse error
+- React Flow handle 锚点用外边缘；视觉圆用伪元素外移，连线才贴边
+- JSON 原子写临时文件加 pid+uuid；并发保存否则互相覆盖
 
-## 验证方式
+## 验证
 
-- `pnpm typecheck`
-- `pnpm dev`
-- 开发期开 9222 调试端口，用 `scripts/cdp-*.mjs` 做自动化验证
+`corepack pnpm typecheck` → `corepack pnpm build` → `corepack pnpm dev`（9222 + `scripts/cdp-*.mjs`）

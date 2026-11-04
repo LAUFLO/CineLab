@@ -27,11 +27,13 @@
 ## 开发命令
 
 ```bash
-pnpm dev          # 启动 Electron + Vite
-pnpm typecheck    # 主进程 + 渲染进程类型检查
-pnpm build        # 构建
-pnpm dist:win     # 打包 Windows 安装包
+corepack pnpm dev          # 启动 Electron + Vite
+corepack pnpm typecheck    # 主进程 + 渲染进程类型检查
+corepack pnpm build        # 构建
+corepack pnpm dist:win     # 打包 Windows 安装包
 ```
+
+> `pnpm` 不在 PATH 时统一用 `corepack pnpm`。
 
 ## 硬性约定
 

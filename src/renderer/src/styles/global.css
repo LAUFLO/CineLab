@@ -424,6 +424,12 @@ textarea {
   object-fit: cover;
 }
 
+.cnode__audio {
+  width: 82%;
+  max-width: 280px;
+  height: 36px;
+}
+
 .cnode__text {
   position: absolute;
   inset: 0;

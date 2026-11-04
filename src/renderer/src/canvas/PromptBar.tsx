@@ -71,6 +71,7 @@ export function PromptBar() {
       if (kind === 'video') return capability === 'video.t2v'
       if (kind === 'image') return capability === 'image.t2i' || capability === 'image.i2i'
       if (kind === 'text') return capability === 'text.chat'
+      if (kind === 'audio') return capability === 'audio.tts' || capability === 'audio.music'
       return true
     }
 

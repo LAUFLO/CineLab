@@ -492,6 +492,46 @@ textarea {
   text-overflow: ellipsis;
 }
 
+.cnode__versions {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.46);
+  color: #fff;
+  font-size: 11px;
+  z-index: 4;
+  backdrop-filter: blur(4px);
+}
+
+.cnode__version-label {
+  font-variant-numeric: tabular-nums;
+  padding: 0 2px;
+}
+
+.cnode__version-btn {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.cnode__version-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.cnode__version-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .cnode__templates {
   flex-shrink: 0;
   display: flex;

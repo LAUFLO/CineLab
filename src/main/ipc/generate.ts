@@ -5,6 +5,7 @@ import { ingestAsset } from '../assets/ingest'
 import { generationQueue, type QueueJob } from '../engine/queue'
 import { getCurrentProjectRoot } from '../project/manager'
 import { generateImage } from '../providers/openai-compat'
+import { withRetry } from '../providers/retry'
 import { resolveProvider } from '../settings/store'
 
 function broadcast(event: GenerationEvent): void {
@@ -62,12 +63,23 @@ export function registerGenerateIpc(): void {
       id: runId,
       nodeId: request.nodeId,
       run: async (signal, onProgress) => {
-        const images = await generateImage(
-          model,
-          { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
-          request.prompt,
-          request.params,
-          { signal, onProgress }
+        const images = await withRetry(
+          () =>
+            generateImage(
+              model,
+              { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+              request.prompt,
+              request.params,
+              { signal, onProgress }
+            ),
+          signal,
+          (attempt, delay, error) => {
+            const reason = error instanceof Error ? error.message : String(error)
+            onProgress(
+              0,
+              `第 ${attempt} 次重试（${Math.round(delay / 1000)}s 后）：${reason}`
+            )
+          }
         )
 
         const assets: GeneratedAsset[] = []

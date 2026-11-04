@@ -1,7 +1,7 @@
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
 import { NODE_META, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
-import type { CineNode } from '../../stores/canvas'
+import { useCanvasStore, type CineNode } from '../../stores/canvas'
 import { useUIStore } from '../../stores/ui'
 
 const ASSET_BASE = 'cinelab-asset://local'
@@ -17,19 +17,24 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const meta = NODE_META[data.kind]
   const { screenToFlowPosition } = useReactFlow()
   const openMenu = useUIStore((state) => state.openMenu)
+  const patchNodeData = useCanvasStore((state) => state.patchNodeData)
 
-  const latest =
-    data.outputs && data.outputs.length > 0
-      ? data.outputs[data.outputs.length - 1]
-      : null
+  const outputs = data.outputs ?? []
+  const selectedIndex = outputs.findIndex((item) => item.id === data.selectedOutputId)
+  const currentIndex = selectedIndex >= 0 ? selectedIndex : 0
+  const current = outputs[currentIndex] ?? null
 
-  const assetSrc = latest ? `${ASSET_BASE}/${latest.path}` : data.outputUrl
+  const assetSrc = current ? `${ASSET_BASE}/${current.path}` : data.outputUrl
   const isBusy = data.status === 'queued' || data.status === 'running'
 
-  const openFromHandle = (
-    event: React.MouseEvent,
-    handle: 'source' | 'target'
-  ): void => {
+  const shiftVersion = (delta: number): void => {
+    const next = outputs[currentIndex + delta]
+    if (next) {
+      patchNodeData(id, { selectedOutputId: next.id })
+    }
+  }
+
+  const openFromHandle = (event: React.MouseEvent): void => {
     event.stopPropagation()
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
     const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
@@ -37,7 +42,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     openMenu({
       screen: { x: rect.right + 10, y: rect.top - 6 },
       flow: screenToFlowPosition(center),
-      source: { nodeId: id, handle }
+      source: { nodeId: id, handle: 'source' }
     })
   }
 
@@ -87,6 +92,32 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               {data.error}
             </div>
           ) : null}
+
+          {outputs.length > 1 ? (
+            <div className="cnode__versions nodrag nopan">
+              <button
+                type="button"
+                className="cnode__version-btn"
+                title="更早的版本"
+                disabled={currentIndex >= outputs.length - 1}
+                onClick={() => shiftVersion(1)}
+              >
+                <Icon name="chevron-left" size={11} />
+              </button>
+              <span className="cnode__version-label">
+                {outputs.length - currentIndex}/{outputs.length}
+              </span>
+              <button
+                type="button"
+                className="cnode__version-btn"
+                title="更新的版本"
+                disabled={currentIndex <= 0}
+                onClick={() => shiftVersion(-1)}
+              >
+                <Icon name="chevron-right" size={11} />
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -104,7 +135,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         position={Position.Right}
         className="cnode__handle cnode__handle--right"
         title="生成下游节点"
-        onClick={(event) => openFromHandle(event, 'source')}
+        onClick={openFromHandle}
       >
         <Icon name="plus" size={12} />
       </Handle>

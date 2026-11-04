@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useReactFlow, useViewport } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
-import type { ModelDef, ParamDef } from '@shared/provider-schema'
+import type { Capability, ModelDef, ParamDef } from '@shared/provider-schema'
 import { Icon } from '../components/Icon'
 import { useCanvasStore } from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'
@@ -55,6 +55,7 @@ export function PromptBar() {
   const [promptText, setPromptText] = useState('')
 
   const node = nodes.find((item) => item.selected)
+  const kind: NodeKind = node?.data.kind ?? 'image'
   const runningMap = useGenerationStore((state) => state.running)
   const runningRunId = node ? runningMap[node.id] : undefined
 
@@ -63,17 +64,24 @@ export function PromptBar() {
     setMenuOpen(false)
   }, [node?.id])
 
-  const models = useMemo<ModelOption[]>(
-    () =>
-      providers.flatMap((provider) =>
+  const models = useMemo<ModelOption[]>(() => {
+    const matches = (capability: Capability): boolean => {
+      if (kind === 'video') return capability === 'video.t2v'
+      if (kind === 'image') return capability === 'image.t2i' || capability === 'image.i2i'
+      if (kind === 'text') return capability === 'text.chat'
+      return true
+    }
+
+    return providers
+      .flatMap((provider) =>
         provider.models.map((model) => ({
           key: `${provider.id}/${model.id}`,
           providerName: provider.name,
           model
         }))
-      ),
-    [providers]
-  )
+      )
+      .filter((item) => matches(item.model.capability))
+  }, [providers, kind])
 
   const active = models.find((item) => item.key === modelKey) ?? models[0] ?? null
   const values = active ? { ...defaultParams(active.model), ...paramValues } : {}
@@ -100,7 +108,6 @@ export function PromptBar() {
 
   if (!node || !layout) return null
 
-  const kind = node.data.kind
   const isRunning = Boolean(runningRunId)
   const canSend = Boolean(active) && promptText.trim().length > 0 && !isRunning
 

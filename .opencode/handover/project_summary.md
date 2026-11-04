@@ -41,6 +41,8 @@ D:\CineLab
 
 ## 当前进度
 
+仓库：https://github.com/LAUFLO/CineLab（MIT，public）
+
 | 阶段 | 状态 | 说明 |
 |---|---|---|
 | M0 | ✅ 完成 | 脚手架、三进程、主题、空画布 |

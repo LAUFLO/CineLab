@@ -92,6 +92,11 @@
       "id": "T5",
       "title": "M1 交互修正：+ 压边线、左侧仅接收、去掉尝试列表、prompt bar 缩放跟随、loose 连接",
       "evidence": ["src/renderer/src/styles/global.css", "src/renderer/src/canvas/Canvas.tsx"]
+    },
+    {
+      "id": "T6",
+      "title": "开源发布：GitHub public 仓库、MIT 协议、README",
+      "evidence": ["https://github.com/LAUFLO/CineLab", "README.md", "LICENSE"]
     }
   ],
   "lessons": [

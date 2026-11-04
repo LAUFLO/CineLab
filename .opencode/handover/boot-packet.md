@@ -6,6 +6,7 @@
 
 - Phase：M1 已完成，进入 M2
 - 已完成：M0 脚手架、M1 画布核心（四类节点 / 连线 / 添加菜单 / prompt bar / localStorage 持久化）
+- 已开源：https://github.com/LAUFLO/CineLab（MIT）
 - 阻塞：无
 
 ## Frontier（按顺序）

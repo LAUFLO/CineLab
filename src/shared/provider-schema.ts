@@ -1,0 +1,137 @@
+export type Capability = 'image.t2i' | 'image.i2i' | 'text.chat' | 'video.t2v'
+
+export type ProviderType = 'openai-compat'
+
+export interface ParamOption {
+  value: string
+  label: string
+}
+
+export interface ParamDef {
+  key: string
+  label: string
+  type: 'select' | 'number' | 'text' | 'boolean'
+  options?: ParamOption[]
+  defaultValue?: string | number | boolean
+  min?: number
+  max?: number
+}
+
+export interface ModelDef {
+  id: string
+  name: string
+  capability: Capability
+  remoteModel: string
+  params: ParamDef[]
+}
+
+export interface ProviderConfig {
+  id: string
+  name: string
+  type: ProviderType
+  baseUrl: string
+  models: ModelDef[]
+  hasKey: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ProviderInput {
+  id?: string
+  name: string
+  baseUrl: string
+  apiKey?: string
+  models: ModelDef[]
+}
+
+export interface ConnectionTestInput {
+  id?: string
+  baseUrl: string
+  apiKey?: string
+}
+
+export interface ConnectionTestResult {
+  ok: boolean
+  message: string
+}
+
+export const CAPABILITY_LABEL: Record<Capability, string> = {
+  'image.t2i': '文生图',
+  'image.i2i': '图生图',
+  'text.chat': '文本对话',
+  'video.t2v': '文生视频'
+}
+
+export const MODEL_PRESETS: ModelDef[] = [
+  {
+    id: 'gpt-image-1',
+    name: 'GPT Image 1',
+    capability: 'image.t2i',
+    remoteModel: 'gpt-image-1',
+    params: [
+      {
+        key: 'size',
+        label: '尺寸',
+        type: 'select',
+        options: [
+          { value: '1024x1024', label: '1:1' },
+          { value: '1536x1024', label: '3:2' },
+          { value: '1024x1536', label: '2:3' }
+        ],
+        defaultValue: '1024x1024'
+      },
+      {
+        key: 'quality',
+        label: '画质',
+        type: 'select',
+        options: [
+          { value: 'auto', label: '自动' },
+          { value: 'low', label: '低' },
+          { value: 'medium', label: '中' },
+          { value: 'high', label: '高' }
+        ],
+        defaultValue: 'auto'
+      },
+      { key: 'n', label: '数量', type: 'number', defaultValue: 1, min: 1, max: 4 }
+    ]
+  },
+  {
+    id: 'dall-e-3',
+    name: 'DALL·E 3',
+    capability: 'image.t2i',
+    remoteModel: 'dall-e-3',
+    params: [
+      {
+        key: 'size',
+        label: '尺寸',
+        type: 'select',
+        options: [
+          { value: '1024x1024', label: '1:1' },
+          { value: '1792x1024', label: '16:9' },
+          { value: '1024x1792', label: '9:16' }
+        ],
+        defaultValue: '1024x1024'
+      },
+      {
+        key: 'quality',
+        label: '画质',
+        type: 'select',
+        options: [
+          { value: 'standard', label: '标准' },
+          { value: 'hd', label: '高清' }
+        ],
+        defaultValue: 'standard'
+      }
+    ]
+  },
+  {
+    id: 'gpt-4o-mini',
+    name: 'GPT-4o mini',
+    capability: 'text.chat',
+    remoteModel: 'gpt-4o-mini',
+    params: [
+      { key: 'temperature', label: '温度', type: 'number', defaultValue: 0.7, min: 0, max: 2 },
+      { key: 'max_tokens', label: '最大输出', type: 'number', defaultValue: 2048, min: 64, max: 32768 }
+    ]
+  }
+]

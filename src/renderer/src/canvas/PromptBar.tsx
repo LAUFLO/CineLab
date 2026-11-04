@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useReactFlow, useViewport } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import type { Capability, ModelDef, ParamDef } from '@shared/provider-schema'
+import type { ReferenceInput, ReferenceRole } from '@shared/generation'
 import { Icon } from '../components/Icon'
 import { useCanvasStore } from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'
@@ -40,6 +41,7 @@ function paramLabel(param: ParamDef, value: unknown): string {
 
 export function PromptBar() {
   const nodes = useCanvasStore((state) => state.nodes)
+  const edges = useCanvasStore((state) => state.edges)
   const { flowToScreenPosition } = useReactFlow()
   const viewport = useViewport()
 
@@ -108,6 +110,26 @@ export function PromptBar() {
 
   if (!node || !layout) return null
 
+  const refs = (() => {
+    const incoming = edges.filter((edge) => edge.target === node.id)
+    const result: ReferenceInput[] = []
+    let imageIndex = 0
+
+    for (const edge of incoming) {
+      const source = nodes.find((item) => item.id === edge.source)
+      const output = source?.data.outputs?.[0]
+      if (!output || output.kind !== 'image') continue
+
+      const role: ReferenceRole =
+        imageIndex === 0 ? 'firstFrame' : imageIndex === 1 ? 'lastFrame' : 'reference'
+      result.push({ path: output.path, role })
+      imageIndex += 1
+      if (imageIndex >= 3) break
+    }
+
+    return result
+  })()
+
   const isRunning = Boolean(runningRunId)
   const canSend = Boolean(active) && promptText.trim().length > 0 && !isRunning
 
@@ -125,7 +147,8 @@ export function PromptBar() {
       nodeId: node.id,
       modelKey: active.key,
       prompt: promptText.trim(),
-      params: values
+      params: values,
+      refs: refs.length > 0 ? refs : undefined
     })
   }
 
@@ -161,6 +184,11 @@ export function PromptBar() {
           更多
         </button>
         <div className="promptbar__spacer" />
+        {refs.length > 0 ? (
+          <span className="promptbar__refs" title="来自上游连线">
+            素材 {refs.length}
+          </span>
+        ) : null}
         <button type="button" className="promptbar__icon" title="展开">
           <Icon name="maximize" size={12} />
         </button>

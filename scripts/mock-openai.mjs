@@ -120,11 +120,38 @@ const server = createServer((request, response) => {
         id: `task_${Date.now()}`,
         model: 'mock-video',
         polls: 0,
-        prompt: body.slice(0, 200)
+        body: (() => {
+          try {
+            return JSON.parse(body)
+          } catch {
+            return null
+          }
+        })()
       }
       response.writeHead(200, { 'Content-Type': 'application/json' })
       response.end(JSON.stringify({ id: videoTask.id }))
     })
+    return
+  }
+
+  if (request.method === 'GET' && url === '/debug/last-task') {
+    const body = videoTask?.body ?? null
+    const summary = body
+      ? {
+          model: body.model,
+          content: (body.content ?? []).map((item) => ({
+            type: item.type,
+            role: item.role ?? null,
+            urlPrefix: item.image_url?.url?.slice(0, 34) ?? null
+          })),
+          resolution: body.resolution,
+          ratio: body.ratio,
+          duration: body.duration
+        }
+      : null
+
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+    response.end(JSON.stringify(summary))
     return
   }
 

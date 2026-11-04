@@ -9,6 +9,17 @@ interface TaskResponse {
   error?: { message?: string }
 }
 
+export interface ImageRef {
+  dataUrl: string
+  role: string
+}
+
+function roleName(role: string): string {
+  if (role === 'firstFrame') return 'first_frame'
+  if (role === 'lastFrame') return 'last_frame'
+  return 'reference'
+}
+
 function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.trim().replace(/\/+$/, '')
 }
@@ -18,6 +29,7 @@ export async function generateVideoArk(
   provider: ProviderRuntime,
   prompt: string,
   params: Record<string, unknown>,
+  refs: ImageRef[],
   ctx: AdapterContext
 ): Promise<ImageOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
@@ -26,9 +38,19 @@ export async function generateVideoArk(
     'Content-Type': 'application/json'
   }
 
+  const content: unknown[] = [{ type: 'text', text: prompt }]
+
+  for (const ref of refs) {
+    content.push({
+      type: 'image_url',
+      image_url: { url: ref.dataUrl },
+      role: roleName(ref.role)
+    })
+  }
+
   const body: Record<string, unknown> = {
     model: model.remoteModel,
-    content: [{ type: 'text', text: prompt }],
+    content,
     resolution: params.resolution ?? '720p',
     ratio: params.ratio ?? '16:9',
     duration: Number(params.duration ?? 5),

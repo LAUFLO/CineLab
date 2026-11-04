@@ -1,6 +1,13 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
-import type { GenerateRequest, GeneratedAsset, GenerationEvent } from '@shared/generation'
+import { promises as fs } from 'node:fs'
+import { extname, resolve } from 'node:path'
+import type {
+  GenerateRequest,
+  GeneratedAsset,
+  GenerationEvent,
+  ReferenceInput
+} from '@shared/generation'
 import { ingestAsset } from '../assets/ingest'
 import { generationQueue, type QueueJob } from '../engine/queue'
 import { getCurrentProjectRoot } from '../project/manager'
@@ -13,6 +20,45 @@ function broadcast(event: GenerationEvent): void {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send('generation:event', event)
   }
+}
+
+const REF_MIME: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp'
+}
+
+async function loadRefs(
+  projectRoot: string,
+  refs: ReferenceInput[] | undefined
+): Promise<Array<{ dataUrl: string; role: string }>> {
+  if (!refs || refs.length === 0) return []
+
+  const root = resolve(projectRoot)
+  const loaded: Array<{ dataUrl: string; role: string }> = []
+
+  for (const ref of refs.slice(0, 4)) {
+    const absolute = resolve(root, ref.path)
+
+    if (!absolute.startsWith(`${root}\\`) && !absolute.startsWith(`${root}/`)) {
+      continue
+    }
+
+    try {
+      const data = await fs.readFile(absolute)
+      const mime = REF_MIME[extname(absolute).toLowerCase()] ?? 'image/png'
+
+      loaded.push({
+        dataUrl: `data:${mime};base64,${data.toString('base64')}`,
+        role: ref.role
+      })
+    } catch {
+      // 素材缺失时跳过
+    }
+  }
+
+  return loaded
 }
 
 export function registerGenerateIpc(): void {
@@ -68,6 +114,8 @@ export function registerGenerateIpc(): void {
       id: runId,
       nodeId: request.nodeId,
       run: async (signal, onProgress) => {
+        const refs = await loadRefs(projectRoot, request.refs)
+
         const generate = (): Promise<Array<{ data: Buffer; mime: string }>> =>
           isVideo
             ? generateVideoArk(
@@ -75,6 +123,7 @@ export function registerGenerateIpc(): void {
                 { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
                 request.prompt,
                 request.params,
+                refs,
                 { signal, onProgress }
               )
             : generateImage(

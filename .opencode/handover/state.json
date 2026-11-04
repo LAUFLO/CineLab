@@ -3,11 +3,11 @@
   "project": "CineLab",
   "root": "D:\\CineLab",
   "updatedAt": "2026-11-04",
-  "phase": "M2",
+  "phase": "M3",
   "phaseStatus": "done",
-  "phaseGoal": "项目文件夹、模型配置、真实出图、任务队列、版本栈",
-  "nextPhase": "M3",
-  "next_focus": "M3 第一阶段：可灵 / 火山方舟视频生成适配器 + 首尾帧连线语义",
+  "phaseGoal": "视频生成与首尾帧素材注入",
+  "nextPhase": "M4",
+  "next_focus": "M4 第一阶段：音频节点 + 角色库 + 模板系统",
   "frontier": [
     {
       "id": "M2-1",
@@ -54,7 +54,8 @@
     {
       "id": "M3-2",
       "title": "首尾帧连线语义与素材角色覆盖",
-      "status": "pending"
+      "status": "done",
+      "evidence": [".opencode/handover/evidence/M3-2-reference-injection.md"]
     },
     {
       "id": "M4-1",

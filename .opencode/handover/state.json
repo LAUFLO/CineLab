@@ -3,9 +3,9 @@
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-05",
-  "phase": "M4",
-  "phaseStatus": "done",
-  "phaseGoal": "M4 已完成：TTS、图生图、文本生成、资产库（角色/素材/模板/一致性）、LibTV 风格 UI、项目中心/多画布已接通；M3-1 可灵、音乐生成、打包待做",
+  "phase": "M5",
+  "phaseStatus": "in_progress",
+  "phaseGoal": "M5 打包进行中：免安装绿色版与 zip 已完成；NSIS 因 electron-builder EXDEV 未生成；M4 功能与 UI 已完成",
   "nextPhase": "M5",
   "next_focus": "暂定：下一会话再确定优先级（M5 打包 / 可灵 / 音乐生成 / 先提交改动）",
   "frontier": [
@@ -276,7 +276,7 @@
   "stats": {
     "sessions": 3,
     "completedMilestones": ["M0", "M1", "M2", "M4"],
-    "partialMilestones": ["M3"],
+    "partialMilestones": ["M3", "M5"],
     "nextMilestone": "M5"
   }
 }

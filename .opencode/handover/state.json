@@ -24,22 +24,25 @@
     {
       "id": "M2-3",
       "title": "OpenAI 兼容适配器：文生图 / 图生图",
-      "status": "pending"
+      "status": "done",
+      "evidence": [".opencode/handover/evidence/M2-3-generation.md"]
     },
     {
       "id": "M2-4",
       "title": "任务队列：并发限制、进度事件、取消、失败重试",
-      "status": "pending"
+      "status": "done",
+      "note": "队列、并发 2、取消、进度事件已完成；自动重试待补"
     },
     {
       "id": "M2-5",
       "title": "资产落盘：内容 hash 去重、缩略图、版本栈",
-      "status": "pending"
+      "status": "in_progress",
+      "note": "落盘、hash 去重、缩略图已完成；版本栈 UI 待补"
     },
     {
       "id": "M2-6",
       "title": "prompt bar 接入真实模型参数与生成按钮",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "M3-1",

@@ -5,6 +5,7 @@ import { StatusBar } from './canvas/StatusBar'
 import { TopBar } from './canvas/TopBar'
 import { SettingsPanel } from './panels/SettingsPanel'
 import { useCanvasStore } from './stores/canvas'
+import { useGenerationStore } from './stores/generation'
 import { useProjectStore } from './stores/project'
 import { useSettingsStore } from './stores/settings'
 import { useTheme } from './theme/useTheme'
@@ -23,6 +24,7 @@ export default function App() {
   const hydrated = useCanvasStore((state) => state.hydrated)
 
   const loadProviders = useSettingsStore((state) => state.load)
+  const subscribeGeneration = useGenerationStore((state) => state.subscribe)
 
   useEffect(() => {
     void bootstrap()
@@ -31,6 +33,11 @@ export default function App() {
   useEffect(() => {
     void loadProviders()
   }, [loadProviders])
+
+  useEffect(() => {
+    const unsubscribe = subscribeGeneration()
+    return unsubscribe
+  }, [subscribeGeneration])
 
   useEffect(() => {
     if (!hydrated || phase !== 'ready') return

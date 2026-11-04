@@ -5,6 +5,11 @@ import type {
   ProviderConfig,
   ProviderInput
 } from './provider-schema'
+import type {
+  GenerateHandle,
+  GenerateRequest,
+  GenerationEvent
+} from './generation'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -32,6 +37,13 @@ export interface SettingsApi {
   testConnection(input: ConnectionTestInput): Promise<ConnectionTestResult>
 }
 
+export interface GenerateApi {
+  run(request: GenerateRequest): Promise<GenerateHandle>
+  cancel(runId: string): Promise<void>
+  cancelAll(): Promise<void>
+  onEvent(callback: (event: GenerationEvent) => void): () => void
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -42,4 +54,5 @@ export interface CineApi {
   }
   project: ProjectApi
   settings: SettingsApi
+  generate: GenerateApi
 }

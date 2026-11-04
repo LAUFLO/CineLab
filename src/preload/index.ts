@@ -5,6 +5,7 @@ import type {
   ConnectionTestInput,
   ProviderInput
 } from '../shared/provider-schema'
+import type { GenerateRequest, GenerationEvent } from '../shared/generation'
 
 const api: CineApi = {
   app: {
@@ -34,6 +35,22 @@ const api: CineApi = {
       ipcRenderer.invoke('settings:delete-provider', id),
     testConnection: (input: ConnectionTestInput) =>
       ipcRenderer.invoke('settings:test-connection', input)
+  },
+  generate: {
+    run: (request: GenerateRequest) => ipcRenderer.invoke('generate:run', request),
+    cancel: (runId: string) => ipcRenderer.invoke('generate:cancel', runId),
+    cancelAll: () => ipcRenderer.invoke('generate:cancel-all'),
+    onEvent: (callback: (event: GenerationEvent) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: GenerationEvent
+      ): void => callback(payload)
+
+      ipcRenderer.on('generation:event', listener)
+      return () => {
+        ipcRenderer.removeListener('generation:event', listener)
+      }
+    }
   }
 }
 

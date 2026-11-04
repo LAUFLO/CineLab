@@ -4,6 +4,8 @@ import { Icon, type IconName } from '../../components/Icon'
 import type { CineNode } from '../../stores/canvas'
 import { useUIStore } from '../../stores/ui'
 
+const ASSET_BASE = 'cinelab-asset://local'
+
 const NODE_ICON: Record<NodeKind, IconName> = {
   text: 'text',
   image: 'image',
@@ -15,6 +17,14 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const meta = NODE_META[data.kind]
   const { screenToFlowPosition } = useReactFlow()
   const openMenu = useUIStore((state) => state.openMenu)
+
+  const latest =
+    data.outputs && data.outputs.length > 0
+      ? data.outputs[data.outputs.length - 1]
+      : null
+
+  const assetSrc = latest ? `${ASSET_BASE}/${latest.path}` : data.outputUrl
+  const isBusy = data.status === 'queued' || data.status === 'running'
 
   const openFromHandle = (
     event: React.MouseEvent,
@@ -36,28 +46,47 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
       <div className="cnode__title">
         <Icon name={NODE_ICON[data.kind]} size={12} />
         <span>{data.title}</span>
+        {data.status === 'done' ? <span className="cnode__badge">已完成</span> : null}
+        {data.status === 'error' ? <span className="cnode__badge is-error">失败</span> : null}
       </div>
 
       <div className="cnode__card" style={{ minHeight: meta.height }}>
         <div className={`cnode__preview cnode__preview--${data.kind}`}>
-          {data.outputUrl ? (
-            data.kind === 'video' ? (
-              <video src={data.outputUrl} className="cnode__media" muted playsInline />
-            ) : (
-              <img src={data.outputUrl} alt="" className="cnode__media" />
-            )
+          {assetSrc && data.kind === 'image' ? (
+            <img src={assetSrc} alt="" className="cnode__media" loading="lazy" />
+          ) : assetSrc && data.kind === 'video' ? (
+            <video src={assetSrc} className="cnode__media" muted playsInline />
           ) : (
-            <>
-              <Icon
-                name={NODE_ICON[data.kind]}
-                size={data.kind === 'text' ? 44 : 40}
-                className="cnode__placeholder"
-              />
-              {data.kind === 'text' && data.text ? (
-                <p className="cnode__text">{data.text}</p>
-              ) : null}
-            </>
+            <Icon
+              name={NODE_ICON[data.kind]}
+              size={data.kind === 'text' ? 44 : 40}
+              className="cnode__placeholder"
+            />
           )}
+
+          {data.kind === 'text' && data.text ? (
+            <p className="cnode__text">{data.text}</p>
+          ) : null}
+
+          {isBusy ? (
+            <div className="cnode__progress">
+              <div
+                className="cnode__progress-bar"
+                style={{ width: `${data.progress ?? 0}%` }}
+              />
+              <span className="cnode__progress-text">
+                {data.status === 'queued'
+                  ? '排队中'
+                  : `${Math.round(data.progress ?? 0)}%`}
+              </span>
+            </div>
+          ) : null}
+
+          {data.status === 'error' && data.error ? (
+            <div className="cnode__error" title={data.error}>
+              {data.error}
+            </div>
+          ) : null}
         </div>
       </div>
 

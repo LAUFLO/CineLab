@@ -25,6 +25,7 @@ export type IconName =
   | 'chevron-down'
   | 'search'
   | 'arrow-up'
+  | 'stop'
 
 const paths: Record<IconName, ReactNode> = {
   logo: (
@@ -95,6 +96,9 @@ const paths: Record<IconName, ReactNode> = {
   text: <path d="M5 6.5h14M5 12h14M5 17.5h9" />,
   'chevron-down': <path d="m6 9 6 6 6-6" />,
   'arrow-up': <path d="M12 19V5M6 11l6-6 6 6" />,
+  stop: (
+    <rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none" />
+  ),
   search: (
     <>
       <circle cx="11" cy="11" r="6.5" />

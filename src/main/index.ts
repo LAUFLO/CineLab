@@ -1,10 +1,13 @@
 import { app, BrowserWindow } from 'electron'
 import { registerIpc } from './ipc'
+import { registerAssetProtocol, registerAssetScheme } from './protocol'
 import { createMainWindow } from './window'
 
 if (!app.isPackaged) {
   app.commandLine.appendSwitch('remote-debugging-port', '9222')
 }
+
+registerAssetScheme()
 
 const hasLock = app.requestSingleInstanceLock()
 
@@ -19,6 +22,7 @@ if (!hasLock) {
   })
 
   app.whenReady().then(() => {
+    registerAssetProtocol()
     registerIpc()
     createMainWindow()
 

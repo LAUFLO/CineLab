@@ -438,6 +438,60 @@ textarea {
   -webkit-box-orient: vertical;
 }
 
+.cnode__badge {
+  margin-left: 6px;
+  font-size: 10px;
+  color: var(--success);
+}
+
+.cnode__badge.is-error {
+  color: var(--danger);
+}
+
+.cnode__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(2px);
+}
+
+.cnode__progress-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  transition: width 200ms linear;
+}
+
+.cnode__progress-text {
+  font-size: 11px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.cnode__error {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.14);
+  color: var(--danger);
+  font-size: 11px;
+  line-height: 1.5;
+  max-height: 46px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .cnode__templates {
   flex-shrink: 0;
   display: flex;
@@ -750,6 +804,11 @@ textarea {
 
 .promptbar__send:disabled {
   cursor: default;
+}
+
+.promptbar__send.is-stop {
+  background: var(--danger);
+  color: #fff;
 }
 
 .promptbar__param-group {

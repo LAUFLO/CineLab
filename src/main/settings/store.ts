@@ -86,6 +86,24 @@ export async function listProviders(): Promise<ProviderConfig[]> {
   return data.providers.map(toPublic)
 }
 
+export interface ResolvedProvider {
+  baseUrl: string
+  apiKey: string
+  models: ModelDef[]
+}
+
+export async function resolveProvider(id: string): Promise<ResolvedProvider | null> {
+  const data = await readSettings()
+  const provider = data.providers.find((item) => item.id === id)
+  if (!provider) return null
+
+  return {
+    baseUrl: provider.baseUrl,
+    apiKey: provider.encryptedKey ? decryptKey(provider.encryptedKey) : '',
+    models: provider.models
+  }
+}
+
 export async function saveProvider(input: ProviderInput): Promise<ProviderConfig> {
   const data = await readSettings()
   const now = new Date().toISOString()

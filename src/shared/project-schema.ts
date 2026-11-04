@@ -13,6 +13,20 @@ export const cineNodeSchema = z.object({
     status: nodeStatusSchema,
     text: z.string().max(20000).optional(),
     outputUrl: z.string().max(2000).optional(),
+    outputs: z
+      .array(
+        z.object({
+          id: z.string(),
+          path: z.string().max(500),
+          kind: z.enum(['image', 'video', 'audio', 'text']),
+          createdAt: z.string(),
+          model: z.string().max(200)
+        })
+      )
+      .max(100)
+      .optional(),
+    progress: z.number().min(0).max(100).optional(),
+    error: z.string().max(2000).optional(),
     templates: z.array(z.string().max(100)).max(20)
   }),
   style: z

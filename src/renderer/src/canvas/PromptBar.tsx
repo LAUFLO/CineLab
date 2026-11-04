@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useReactFlow, useViewport } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import type { ModelDef, ParamDef } from '@shared/provider-schema'
 import { Icon } from '../components/Icon'
 import { useCanvasStore } from '../stores/canvas'
+import { useGenerationStore } from '../stores/generation'
 import { useSettingsStore } from '../stores/settings'
 
 const WIDTH = 760
@@ -45,9 +46,22 @@ export function PromptBar() {
   const providers = useSettingsStore((state) => state.providers)
   const openSettings = useSettingsStore((state) => state.openPanel)
 
+  const runGeneration = useGenerationStore((state) => state.run)
+  const cancelGeneration = useGenerationStore((state) => state.cancel)
+
   const [modelKey, setModelKey] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [paramValues, setParamValues] = useState<Record<string, unknown>>({})
+  const [promptText, setPromptText] = useState('')
+
+  const node = nodes.find((item) => item.selected)
+  const runningMap = useGenerationStore((state) => state.running)
+  const runningRunId = node ? runningMap[node.id] : undefined
+
+  useEffect(() => {
+    setPromptText('')
+    setMenuOpen(false)
+  }, [node?.id])
 
   const models = useMemo<ModelOption[]>(
     () =>
@@ -63,8 +77,6 @@ export function PromptBar() {
 
   const active = models.find((item) => item.key === modelKey) ?? models[0] ?? null
   const values = active ? { ...defaultParams(active.model), ...paramValues } : {}
-
-  const node = nodes.find((item) => item.selected)
 
   const layout = useMemo(() => {
     if (!node) return null
@@ -89,6 +101,8 @@ export function PromptBar() {
   if (!node || !layout) return null
 
   const kind = node.data.kind
+  const isRunning = Boolean(runningRunId)
+  const canSend = Boolean(active) && promptText.trim().length > 0 && !isRunning
 
   const cycleParam = (param: ParamDef): void => {
     if (param.type !== 'select' || !param.options || param.options.length === 0) return
@@ -96,6 +110,16 @@ export function PromptBar() {
     const index = param.options.findIndex((option) => option.value === current)
     const next = param.options[(index + 1) % param.options.length]
     setParamValues((prev) => ({ ...prev, [param.key]: next.value }))
+  }
+
+  const handleSend = (): void => {
+    if (!active || !canSend) return
+    void runGeneration({
+      nodeId: node.id,
+      modelKey: active.key,
+      prompt: promptText.trim(),
+      params: values
+    })
   }
 
   return (
@@ -139,6 +163,14 @@ export function PromptBar() {
         className="promptbar__input"
         placeholder={PLACEHOLDER[kind]}
         rows={2}
+        value={promptText}
+        onChange={(event) => setPromptText(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault()
+            handleSend()
+          }
+        }}
       />
 
       <div className="promptbar__footer">
@@ -206,9 +238,27 @@ export function PromptBar() {
 
         <div className="promptbar__spacer" />
         <span className="promptbar__cost">—</span>
-        <button type="button" className="promptbar__send" disabled title="M2-3 接入生成">
-          <Icon name="arrow-up" size={15} />
-        </button>
+
+        {isRunning ? (
+          <button
+            type="button"
+            className="promptbar__send is-stop"
+            title="停止生成"
+            onClick={() => void cancelGeneration(node.id)}
+          >
+            <Icon name="stop" size={14} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="promptbar__send"
+            disabled={!canSend}
+            title="生成"
+            onClick={handleSend}
+          >
+            <Icon name="arrow-up" size={15} />
+          </button>
+        )}
       </div>
     </div>
   )

@@ -2,12 +2,23 @@ export type NodeKind = 'text' | 'image' | 'video' | 'audio'
 
 export type NodeStatus = 'idle' | 'queued' | 'running' | 'done' | 'error'
 
+export interface OutputRef {
+  id: string
+  path: string
+  kind: 'image' | 'video' | 'audio' | 'text'
+  createdAt: string
+  model: string
+}
+
 export interface CineNodeData extends Record<string, unknown> {
   kind: NodeKind
   title: string
   status: NodeStatus
   text?: string
   outputUrl?: string
+  outputs?: OutputRef[]
+  progress?: number
+  error?: string
   templates: string[]
 }
 

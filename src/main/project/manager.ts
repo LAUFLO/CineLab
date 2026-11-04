@@ -13,6 +13,16 @@ import {
 
 const PROJECT_EXT = '.cinelab'
 
+let currentProjectRoot: string | null = null
+
+export function setCurrentProjectRoot(path: string | null): void {
+  currentProjectRoot = path
+}
+
+export function getCurrentProjectRoot(): string | null {
+  return currentProjectRoot
+}
+
 export function defaultProjectsDir(): string {
   return join(app.getPath('documents'), 'CineLab')
 }
@@ -131,6 +141,7 @@ export async function createProject(
   await writeJsonAtomic(join(path, 'project.json'), meta)
   await writeJsonAtomic(join(path, meta.canvases[0].file), canvas)
   await addRecent(path, meta.name)
+  setCurrentProjectRoot(path)
 
   return { path, meta, canvas }
 }
@@ -144,6 +155,7 @@ export async function openProject(path: string): Promise<ProjectSnapshot> {
 
   const canvas = canvasDataSchema.parse(await readJson(join(projectPath, active.file)))
   await addRecent(projectPath, meta.name)
+  setCurrentProjectRoot(projectPath)
 
   return { path: projectPath, meta, canvas }
 }

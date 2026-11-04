@@ -58,7 +58,10 @@ if (ACTION) {
   await sleep(900)
 }
 
-const shot = await send('Page.captureScreenshot', { format: 'png' })
+const shot = await send('Page.captureScreenshot', {
+  format: 'png',
+  fromSurface: false
+})
 writeFileSync(OUT, Buffer.from(shot.result.data, 'base64'))
 console.log('saved', OUT)
 

@@ -11,7 +11,12 @@ import type {
 import { ingestAsset } from '../assets/ingest'
 import { generationQueue, type QueueJob } from '../engine/queue'
 import { getCurrentProjectRoot } from '../project/manager'
-import { generateImage, generateSpeech } from '../providers/openai-compat'
+import {
+  generateImage,
+  generateSpeech,
+  generateText,
+  type ProviderOutput
+} from '../providers/openai-compat'
 import { generateVideoArk } from '../providers/volcengine'
 import { withRetry } from '../providers/retry'
 import { resolveProvider } from '../settings/store'
@@ -102,14 +107,15 @@ export function registerGenerateIpc(): void {
     const isImage = model.capability === 'image.t2i' || model.capability === 'image.i2i'
     const isVideo = model.capability === 'video.t2v'
     const isAudio = model.capability === 'audio.tts'
+    const isText = model.capability === 'text.chat'
 
-    if (!isImage && !isVideo && !isAudio) {
-      throw new Error('当前只支持图片、视频和语音模型')
+    if (!isImage && !isVideo && !isAudio && !isText) {
+      throw new Error('当前只支持图片、视频、文本和语音模型')
     }
     if (!request.prompt.trim()) throw new Error('提示词不能为空')
 
     const runId = randomUUID()
-    const kind = isAudio ? 'audio' : isVideo ? 'video' : 'image'
+    const kind = isAudio ? 'audio' : isVideo ? 'video' : isText ? 'text' : 'image'
 
     const job: QueueJob = {
       id: runId,
@@ -117,7 +123,7 @@ export function registerGenerateIpc(): void {
       run: async (signal, onProgress) => {
         const refs = await loadRefs(projectRoot, request.refs)
 
-        const generate = (): Promise<Array<{ data: Buffer; mime: string }>> =>
+        const generate = (): Promise<ProviderOutput[]> =>
           isVideo
             ? generateVideoArk(
                 model,
@@ -135,11 +141,20 @@ export function registerGenerateIpc(): void {
                   request.params,
                   { signal, onProgress }
                 )
-              : generateImage(
+              : isText
+                ? generateText(
+                    model,
+                    { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+                    request.prompt,
+                    request.params,
+                    { signal, onProgress }
+                  )
+                : generateImage(
                   model,
                   { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
                   request.prompt,
                   request.params,
+                  refs,
                   { signal, onProgress }
                 )
 
@@ -159,7 +174,8 @@ export function registerGenerateIpc(): void {
               data: output.data,
               kind,
               mime: output.mime,
-              model: model.name
+              model: model.name,
+              text: output.text
             })
           )
         }

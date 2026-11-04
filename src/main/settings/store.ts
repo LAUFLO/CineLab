@@ -46,7 +46,7 @@ async function writeSettings(data: SettingsFile): Promise<void> {
   const file = settingsFile()
   await fs.mkdir(dirname(file), { recursive: true })
 
-  const tmp = `${file}.${process.pid}.tmp`
+  const tmp = `${file}.${process.pid}.${randomUUID().slice(0, 8)}.tmp`
   await fs.writeFile(tmp, JSON.stringify(data, null, 2), 'utf8')
 
   try {

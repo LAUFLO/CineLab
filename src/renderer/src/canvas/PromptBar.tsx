@@ -6,7 +6,9 @@ import type { ReferenceInput, ReferenceRole } from '@shared/generation'
 import { Icon } from '../components/Icon'
 import { useCanvasStore } from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'
+import { useLibraryStore } from '../stores/library'
 import { useSettingsStore } from '../stores/settings'
+import { useUIStore } from '../stores/ui'
 
 const WIDTH = 760
 const HEIGHT = 132
@@ -47,12 +49,19 @@ export function PromptBar() {
 
   const providers = useSettingsStore((state) => state.providers)
   const openSettings = useSettingsStore((state) => state.openPanel)
+  const openLibrary = useLibraryStore((state) => state.openPanel)
+  const characters = useLibraryStore((state) => state.characters)
+  const loadLibrary = useLibraryStore((state) => state.load)
+  const pendingPrompt = useUIStore((state) => state.pendingPrompt)
+  const clearPendingPrompt = useUIStore((state) => state.clearPendingPrompt)
 
   const runGeneration = useGenerationStore((state) => state.run)
   const cancelGeneration = useGenerationStore((state) => state.cancel)
 
   const [modelKey, setModelKey] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [characterMenuOpen, setCharacterMenuOpen] = useState(false)
+  const [characterIds, setCharacterIds] = useState<string[]>([])
   const [paramValues, setParamValues] = useState<Record<string, unknown>>({})
   const [promptText, setPromptText] = useState('')
 
@@ -64,7 +73,15 @@ export function PromptBar() {
   useEffect(() => {
     setPromptText('')
     setMenuOpen(false)
+    setCharacterMenuOpen(false)
+    setCharacterIds([])
   }, [node?.id])
+
+  useEffect(() => {
+    if (!pendingPrompt) return
+    setPromptText(pendingPrompt)
+    clearPendingPrompt()
+  }, [pendingPrompt, clearPendingPrompt])
 
   const models = useMemo<ModelOption[]>(() => {
     const matches = (capability: Capability): boolean => {
@@ -118,7 +135,9 @@ export function PromptBar() {
 
     for (const edge of incoming) {
       const source = nodes.find((item) => item.id === edge.source)
-      const output = source?.data.outputs?.[0]
+      const outputs = source?.data.outputs ?? []
+      const output =
+        outputs.find((item) => item.id === source?.data.selectedOutputId) ?? outputs[0]
       if (!output || output.kind !== 'image') continue
 
       const role: ReferenceRole =
@@ -130,6 +149,16 @@ export function PromptBar() {
 
     return result
   })()
+
+  const characterRefs: ReferenceInput[] = characterIds.flatMap((id) => {
+    const card = characters.find((item) => item.id === id)
+    if (!card) return []
+    return card.referencePaths.map((path) => ({
+      path,
+      role: 'reference' as const
+    }))
+  })
+  const mergedRefs = [...refs, ...characterRefs].slice(0, 4)
 
   const isRunning = Boolean(runningRunId)
   const canSend = Boolean(active) && promptText.trim().length > 0 && !isRunning
@@ -149,7 +178,7 @@ export function PromptBar() {
       modelKey: active.key,
       prompt: promptText.trim(),
       params: values,
-      refs: refs.length > 0 ? refs : undefined
+      refs: mergedRefs.length > 0 ? mergedRefs : undefined
     })
   }
 
@@ -160,7 +189,11 @@ export function PromptBar() {
       onPointerDown={(event) => event.stopPropagation()}
     >
       <div className="promptbar__tools">
-        <button type="button" className="promptbar__tool">
+        <button
+          type="button"
+          className="promptbar__tool"
+          onClick={() => openLibrary('materials')}
+        >
           <Icon name="plus" size={13} />
           上传
         </button>
@@ -175,7 +208,11 @@ export function PromptBar() {
           </button>
         ) : null}
         {kind === 'image' || kind === 'video' ? (
-          <button type="button" className="promptbar__tool">
+          <button
+            type="button"
+            className="promptbar__tool"
+            onClick={() => openLibrary('characters')}
+          >
             <Icon name="text" size={13} />
             角色库
           </button>
@@ -185,9 +222,9 @@ export function PromptBar() {
           更多
         </button>
         <div className="promptbar__spacer" />
-        {refs.length > 0 ? (
-          <span className="promptbar__refs" title="来自上游连线">
-            素材 {refs.length}
+        {mergedRefs.length > 0 ? (
+          <span className="promptbar__refs" title="来自上游连线与角色卡">
+            素材 {mergedRefs.length}
           </span>
         ) : null}
         <button type="button" className="promptbar__icon" title="展开">
@@ -249,6 +286,67 @@ export function PromptBar() {
             ) : null}
           </div>
         )}
+
+        {kind === 'image' || kind === 'video' ? (
+          <div className="model-picker">
+            <button
+              type="button"
+              className="promptbar__chip"
+              onClick={() => {
+                setCharacterMenuOpen((open) => !open)
+                void loadLibrary()
+              }}
+            >
+              角色{characterIds.length > 0 ? ` ${characterIds.length}` : ''}
+              <Icon name="chevron-down" size={11} />
+            </button>
+
+            {characterMenuOpen ? (
+              <div className="model-menu character-menu">
+                {characters.length === 0 ? (
+                  <div className="model-menu__empty">还没有角色卡</div>
+                ) : (
+                  characters.map((card) => {
+                    const selected = characterIds.includes(card.id)
+
+                    return (
+                      <button
+                        key={card.id}
+                        type="button"
+                        className={`model-menu__item ${
+                          selected ? 'is-active' : ''
+                        }`}
+                        onClick={() =>
+                          setCharacterIds((prev) =>
+                            selected
+                              ? prev.filter((id) => id !== card.id)
+                              : [...prev, card.id]
+                          )
+                        }
+                      >
+                        <span>{card.name}</span>
+                        <span className="model-menu__provider">
+                          {card.referencePaths.length} 张参考图
+                        </span>
+                      </button>
+                    )
+                  })
+                )}
+
+                <button
+                  type="button"
+                  className="model-menu__item"
+                  onClick={() => {
+                    setCharacterMenuOpen(false)
+                    openLibrary('characters')
+                  }}
+                >
+                  管理角色库…
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         {active ? (
           <div className="promptbar__param-group">

@@ -37,7 +37,7 @@ async function readJson(file: string): Promise<unknown> {
 }
 
 async function writeJsonAtomic(file: string, data: unknown): Promise<void> {
-  const tmp = `${file}.${process.pid}.tmp`
+  const tmp = `${file}.${process.pid}.${randomUUID().slice(0, 8)}.tmp`
   await fs.writeFile(tmp, JSON.stringify(data, null, 2), 'utf8')
 
   try {
@@ -176,7 +176,7 @@ export async function saveCanvas(projectPath: string, canvas: CanvasData): Promi
   await writeJsonAtomic(join(path, 'project.json'), meta)
 }
 
-export async function bootstrap(): Promise<ProjectSnapshot> {
+export async function bootstrap(): Promise<ProjectSnapshot | null> {
   const recents = await readRecent()
 
   for (const recent of recents) {
@@ -187,17 +187,12 @@ export async function bootstrap(): Promise<ProjectSnapshot> {
     }
   }
 
-  const fallback = join(defaultProjectsDir(), '未命名项目.cinelab')
-  try {
-    return await openProject(fallback)
-  } catch {
-    return createProject('未命名项目')
-  }
+  return null
 }
 
-let bootstrapPromise: Promise<ProjectSnapshot> | null = null
+let bootstrapPromise: Promise<ProjectSnapshot | null> | null = null
 
-export function bootstrapOnce(): Promise<ProjectSnapshot> {
+export function bootstrapOnce(): Promise<ProjectSnapshot | null> {
   if (!bootstrapPromise) {
     bootstrapPromise = bootstrap().finally(() => {
       bootstrapPromise = null
@@ -208,4 +203,124 @@ export function bootstrapOnce(): Promise<ProjectSnapshot> {
 
 export function projectNameFromPath(path: string): string {
   return basename(path).replace(PROJECT_EXT, '')
+}
+
+export async function renameProject(
+  projectPath: string,
+  name: string
+): Promise<ProjectMeta> {
+  const path = assertProjectPath(projectPath)
+  const meta = projectMetaSchema.parse(await readJson(join(path, 'project.json')))
+
+  meta.name = sanitizeName(name)
+  meta.updatedAt = new Date().toISOString()
+  await writeJsonAtomic(join(path, 'project.json'), meta)
+  await addRecent(path, meta.name)
+  return meta
+}
+
+export async function createCanvas(
+  projectPath: string,
+  name?: string
+): Promise<ProjectSnapshot> {
+  const path = assertProjectPath(projectPath)
+  const meta = projectMetaSchema.parse(await readJson(join(path, 'project.json')))
+  const canvasId = randomUUID().slice(0, 8)
+  const canvasName = name?.trim() || `画布 ${meta.canvases.length + 1}`
+  const file = `canvas-${canvasId}.json`
+
+  const canvas: CanvasData = {
+    schemaVersion: 1,
+    id: canvasId,
+    name: canvasName,
+    viewport: { x: 0, y: 0, zoom: 1 },
+    nodes: [],
+    edges: []
+  }
+
+  meta.canvases.push({ id: canvasId, name: canvasName, file })
+  meta.activeCanvasId = canvasId
+  meta.updatedAt = new Date().toISOString()
+
+  await writeJsonAtomic(join(path, file), canvas)
+  await writeJsonAtomic(join(path, 'project.json'), meta)
+  return { path, meta, canvas }
+}
+
+export async function switchCanvas(
+  projectPath: string,
+  canvasId: string
+): Promise<ProjectSnapshot> {
+  const path = assertProjectPath(projectPath)
+  const meta = projectMetaSchema.parse(await readJson(join(path, 'project.json')))
+  const entry = meta.canvases.find((item) => item.id === canvasId)
+
+  if (!entry) throw new Error('找不到该画布')
+  const canvas = canvasDataSchema.parse(await readJson(join(path, entry.file)))
+
+  meta.activeCanvasId = canvasId
+  meta.updatedAt = new Date().toISOString()
+  await writeJsonAtomic(join(path, 'project.json'), meta)
+  return { path, meta, canvas }
+}
+
+export async function renameCanvas(
+  projectPath: string,
+  canvasId: string,
+  name: string
+): Promise<ProjectMeta> {
+  const path = assertProjectPath(projectPath)
+  const meta = projectMetaSchema.parse(await readJson(join(path, 'project.json')))
+  const entry = meta.canvases.find((item) => item.id === canvasId)
+
+  if (!entry) throw new Error('找不到该画布')
+  entry.name = name.trim() || entry.name
+  meta.updatedAt = new Date().toISOString()
+
+  const canvas = canvasDataSchema.parse(await readJson(join(path, entry.file)))
+  canvas.name = entry.name
+
+  await writeJsonAtomic(join(path, entry.file), canvas)
+  await writeJsonAtomic(join(path, 'project.json'), meta)
+  return meta
+}
+
+export async function deleteCanvas(
+  projectPath: string,
+  canvasId: string
+): Promise<ProjectSnapshot> {
+  const path = assertProjectPath(projectPath)
+  const meta = projectMetaSchema.parse(await readJson(join(path, 'project.json')))
+
+  if (meta.canvases.length <= 1) throw new Error('至少保留一个画布')
+
+  const entry = meta.canvases.find((item) => item.id === canvasId)
+  if (!entry) throw new Error('找不到该画布')
+
+  meta.canvases = meta.canvases.filter((item) => item.id !== canvasId)
+
+  if (meta.activeCanvasId === canvasId) {
+    meta.activeCanvasId = meta.canvases[0].id
+  }
+
+  meta.updatedAt = new Date().toISOString()
+  await fs.rm(join(path, entry.file), { force: true })
+  await writeJsonAtomic(join(path, 'project.json'), meta)
+
+  const active =
+    meta.canvases.find((item) => item.id === meta.activeCanvasId) ?? meta.canvases[0]
+  const canvas = canvasDataSchema.parse(await readJson(join(path, active.file)))
+  return { path, meta, canvas }
+}
+
+export async function deleteProject(projectPath: string): Promise<void> {
+  const path = assertProjectPath(projectPath)
+  await fs.rm(path, { recursive: true, force: true })
+
+  setCurrentProjectRoot(null)
+  const recent = await readRecent()
+  await writeJsonAtomic(
+    recentFile(),
+    recent.filter((item) => item.path !== path)
+  )
 }

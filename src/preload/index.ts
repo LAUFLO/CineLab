@@ -6,6 +6,7 @@ import type {
   ProviderInput
 } from '../shared/provider-schema'
 import type { GenerateRequest, GenerationEvent } from '../shared/generation'
+import type { CharacterInput, TemplateInput } from '../shared/library-schema'
 
 const api: CineApi = {
   app: {
@@ -25,7 +26,18 @@ const api: CineApi = {
     recent: () => ipcRenderer.invoke('project:recent'),
     pickCreate: () => ipcRenderer.invoke('project:pick-create'),
     pickOpen: () => ipcRenderer.invoke('project:pick-open'),
-    reveal: (path: string) => ipcRenderer.invoke('project:reveal', path)
+    reveal: (path: string) => ipcRenderer.invoke('project:reveal', path),
+    rename: (path: string, name: string) =>
+      ipcRenderer.invoke('project:rename', path, name),
+    createCanvas: (path: string, name?: string) =>
+      ipcRenderer.invoke('project:create-canvas', path, name),
+    switchCanvas: (path: string, canvasId: string) =>
+      ipcRenderer.invoke('project:switch-canvas', path, canvasId),
+    renameCanvas: (path: string, canvasId: string, name: string) =>
+      ipcRenderer.invoke('project:rename-canvas', path, canvasId, name),
+    deleteCanvas: (path: string, canvasId: string) =>
+      ipcRenderer.invoke('project:delete-canvas', path, canvasId),
+    delete: () => ipcRenderer.invoke('project:delete')
   },
   settings: {
     listProviders: () => ipcRenderer.invoke('settings:list-providers'),
@@ -51,6 +63,23 @@ const api: CineApi = {
         ipcRenderer.removeListener('generation:event', listener)
       }
     }
+  },
+  library: {
+    listCharacters: () => ipcRenderer.invoke('library:list-characters'),
+    saveCharacter: (input: CharacterInput) =>
+      ipcRenderer.invoke('library:save-character', input),
+    deleteCharacter: (id: string) =>
+      ipcRenderer.invoke('library:delete-character', id),
+    pickCharacterImages: () => ipcRenderer.invoke('library:pick-character-images'),
+    listMaterials: () => ipcRenderer.invoke('library:list-materials'),
+    importMaterials: () => ipcRenderer.invoke('library:import-materials'),
+    deleteMaterial: (id: string) =>
+      ipcRenderer.invoke('library:delete-material', id),
+    listTemplates: () => ipcRenderer.invoke('library:list-templates'),
+    saveTemplate: (input: TemplateInput) =>
+      ipcRenderer.invoke('library:save-template', input),
+    deleteTemplate: (id: string) =>
+      ipcRenderer.invoke('library:delete-template', id)
   }
 }
 

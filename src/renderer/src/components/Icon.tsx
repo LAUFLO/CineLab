@@ -28,12 +28,17 @@ export type IconName =
   | 'search'
   | 'arrow-up'
   | 'stop'
+  | 'target'
+  | 'link'
+  | 'magnet'
+  | 'minimap'
 
 const paths: Record<IconName, ReactNode> = {
   logo: (
     <>
-      <rect x="3" y="3" width="18" height="18" rx="5" />
-      <path d="M9.5 8.2v7.6l6-3.8z" fill="currentColor" stroke="none" />
+      <path d="M4 7.5 12 3l8 4.5-8 4.5z" fill="currentColor" stroke="none" />
+      <path d="m4 12.5 8 4.5 8-4.5" />
+      <path d="m4 16.5 8 4.5 8-4.5" />
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
@@ -107,6 +112,32 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <circle cx="11" cy="11" r="6.5" />
       <path d="m16 16 4 4" />
+    </>
+  ),
+  target: (
+    <>
+      <circle cx="12" cy="12" r="7" />
+      <circle cx="12" cy="12" r="2.5" />
+    </>
+  ),
+  link: (
+    <>
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="12" r="2.5" />
+      <path d="M8.5 12h7" />
+    </>
+  ),
+  magnet: (
+    <>
+      <path d="M6 4v8a6 6 0 0 0 12 0V4" />
+      <path d="M6 9h4M14 9h4" />
+    </>
+  ),
+  minimap: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <rect x="6" y="8" width="5" height="4" rx="1" fill="currentColor" stroke="none" />
+      <rect x="13" y="12" width="5" height="4" rx="1" fill="currentColor" stroke="none" />
     </>
   )
 }

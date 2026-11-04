@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
 import { NODE_META, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
@@ -18,6 +19,14 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const { screenToFlowPosition } = useReactFlow()
   const openMenu = useUIStore((state) => state.openMenu)
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(data.title)
+
+  const submitTitle = (): void => {
+    const next = titleDraft.trim()
+    setEditingTitle(false)
+    if (next && next !== data.title) patchNodeData(id, { title: next })
+  }
 
   const outputs = data.outputs ?? []
   const selectedIndex = outputs.findIndex((item) => item.id === data.selectedOutputId)
@@ -48,16 +57,40 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
   return (
     <div className={`cnode ${selected ? 'is-selected' : ''}`}>
-      <div className="cnode__title">
+      <div
+        className="cnode__title"
+        onDoubleClick={(event) => {
+          event.stopPropagation()
+          setTitleDraft(data.title)
+          setEditingTitle(true)
+        }}
+      >
         <Icon name={NODE_ICON[data.kind]} size={12} />
-        <span>{data.title}</span>
+        {editingTitle ? (
+          <input
+            className="cnode__title-input nodrag nopan"
+            value={titleDraft}
+            autoFocus
+            onChange={(event) => setTitleDraft(event.target.value)}
+            onBlur={submitTitle}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') submitTitle()
+              if (event.key === 'Escape') setEditingTitle(false)
+            }}
+            onClick={(event) => event.stopPropagation()}
+          />
+        ) : (
+          <span>{data.title}</span>
+        )}
         {data.status === 'done' ? <span className="cnode__badge">已完成</span> : null}
         {data.status === 'error' ? <span className="cnode__badge is-error">失败</span> : null}
       </div>
 
       <div className="cnode__card" style={{ minHeight: meta.height }}>
         <div className={`cnode__preview cnode__preview--${data.kind}`}>
-          {assetSrc && current?.kind === 'audio' ? (
+          {assetSrc && current?.kind === 'text' ? (
+            <p className="cnode__text">{data.text ?? '文本已生成'}</p>
+          ) : assetSrc && current?.kind === 'audio' ? (
             <audio src={assetSrc} controls className="cnode__audio" />
           ) : assetSrc && (current?.kind === 'video' || data.kind === 'video') ? (
             <video src={assetSrc} className="cnode__media" muted playsInline controls />
@@ -71,7 +104,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             />
           )}
 
-          {data.kind === 'text' && data.text ? (
+          {!assetSrc && data.kind === 'text' && data.text ? (
             <p className="cnode__text">{data.text}</p>
           ) : null}
 
@@ -129,7 +162,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         className="cnode__handle cnode__handle--left"
         title="接收上游连线"
       >
-        <Icon name="plus" size={12} />
+        <Icon name="plus" size={12} className="cnode__handle-icon" />
       </Handle>
 
       <Handle
@@ -139,7 +172,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         title="生成下游节点"
         onClick={openFromHandle}
       >
-        <Icon name="plus" size={12} />
+        <Icon name="plus" size={12} className="cnode__handle-icon" />
       </Handle>
     </div>
   )

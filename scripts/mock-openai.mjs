@@ -102,6 +102,7 @@ function makeWav(seconds = 1.5, frequency = 440, sampleRate = 22050) {
 const wav = makeWav()
 
 let videoTask = null
+let lastEdit = null
 
 const server = createServer((request, response) => {
   const url = request.url ?? ''
@@ -151,6 +152,80 @@ const server = createServer((request, response) => {
         )
       }, 1400)
     })
+    return
+  }
+
+  if (request.method === 'POST' && url === '/v1/chat/completions') {
+    let body = ''
+    request.on('data', (chunk) => {
+      body += chunk
+    })
+    request.on('end', () => {
+      let parsed = {}
+      try {
+        parsed = JSON.parse(body)
+      } catch {
+        parsed = {}
+      }
+
+      const prompt = parsed.messages?.[0]?.content ?? ''
+
+      setTimeout(() => {
+        response.writeHead(200, { 'Content-Type': 'application/json' })
+        response.end(
+          JSON.stringify({
+            id: 'chatcmpl-mock',
+            object: 'chat.completion',
+            created: Math.floor(Date.now() / 1000),
+            model: parsed.model ?? 'mock-chat',
+            choices: [
+              {
+                index: 0,
+                message: {
+                  role: 'assistant',
+                  content: `收到提示词：${prompt}\n\n这是 mock 文本结果。`
+                },
+                finish_reason: 'stop'
+              }
+            ]
+          })
+        )
+      }, 600)
+    })
+    return
+  }
+
+  if (request.method === 'POST' && url === '/v1/images/edits') {
+    const chunks = []
+    request.on('data', (chunk) => chunks.push(chunk))
+    request.on('end', () => {
+      const body = Buffer.concat(chunks).toString('latin1')
+      const fields = [...body.matchAll(/\bname="([^"]+)"/g)].map((match) => match[1])
+      const filenames = [...body.matchAll(/\bfilename="([^"]+)"/g)].map((match) => match[1])
+
+      lastEdit = {
+        fields,
+        filenames,
+        bytes: Buffer.byteLength(body, 'latin1'),
+        contentType: request.headers['content-type'] ?? ''
+      }
+
+      setTimeout(() => {
+        response.writeHead(200, { 'Content-Type': 'application/json' })
+        response.end(
+          JSON.stringify({
+            created: Math.floor(Date.now() / 1000),
+            data: [{ b64_json: base64 }]
+          })
+        )
+      }, 900)
+    })
+    return
+  }
+
+  if (request.method === 'GET' && url === '/debug/last-edit') {
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+    response.end(JSON.stringify(lastEdit))
     return
   }
 

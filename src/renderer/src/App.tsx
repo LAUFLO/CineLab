@@ -3,6 +3,9 @@ import { BottomBar } from './canvas/BottomBar'
 import { Canvas } from './canvas/Canvas'
 import { StatusBar } from './canvas/StatusBar'
 import { TopBar } from './canvas/TopBar'
+import { ConfirmDialog } from './panels/ConfirmDialog'
+import { LibraryPanel } from './panels/LibraryPanel'
+import { ProjectCenter } from './panels/ProjectCenter'
 import { SettingsPanel } from './panels/SettingsPanel'
 import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
@@ -53,6 +56,10 @@ export default function App() {
     )
   }
 
+  if (phase === 'welcome') {
+    return <ProjectCenter />
+  }
+
   if (phase === 'error') {
     return (
       <div className="boot-screen">
@@ -73,6 +80,8 @@ export default function App() {
       <BottomBar />
       <StatusBar />
       <SettingsPanel />
+      <LibraryPanel />
+      <ConfirmDialog />
       {error ? <div className="toast">{error}</div> : null}
     </div>
   )

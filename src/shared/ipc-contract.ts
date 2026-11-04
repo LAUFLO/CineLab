@@ -1,4 +1,9 @@
-import type { CanvasData, ProjectSnapshot, RecentProject } from './project-schema'
+import type {
+  CanvasData,
+  ProjectMeta,
+  ProjectSnapshot,
+  RecentProject
+} from './project-schema'
 import type {
   ConnectionTestInput,
   ConnectionTestResult,
@@ -10,6 +15,13 @@ import type {
   GenerateRequest,
   GenerationEvent
 } from './generation'
+import type {
+  CharacterCard,
+  CharacterInput,
+  LibraryMaterial,
+  PromptTemplate,
+  TemplateInput
+} from './library-schema'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -20,7 +32,7 @@ export interface AppInfo {
 }
 
 export interface ProjectApi {
-  bootstrap(): Promise<ProjectSnapshot>
+  bootstrap(): Promise<ProjectSnapshot | null>
   create(name: string, parentDir?: string): Promise<ProjectSnapshot>
   open(path: string): Promise<ProjectSnapshot>
   saveCanvas(path: string, canvas: CanvasData): Promise<void>
@@ -28,6 +40,12 @@ export interface ProjectApi {
   pickCreate(): Promise<ProjectSnapshot | null>
   pickOpen(): Promise<ProjectSnapshot | null>
   reveal(path: string): Promise<void>
+  rename(path: string, name: string): Promise<ProjectMeta>
+  createCanvas(path: string, name?: string): Promise<ProjectSnapshot>
+  switchCanvas(path: string, canvasId: string): Promise<ProjectSnapshot>
+  renameCanvas(path: string, canvasId: string, name: string): Promise<ProjectMeta>
+  deleteCanvas(path: string, canvasId: string): Promise<ProjectSnapshot>
+  delete(): Promise<boolean>
 }
 
 export interface SettingsApi {
@@ -44,6 +62,19 @@ export interface GenerateApi {
   onEvent(callback: (event: GenerationEvent) => void): () => void
 }
 
+export interface LibraryApi {
+  listCharacters(): Promise<CharacterCard[]>
+  saveCharacter(input: CharacterInput): Promise<CharacterCard>
+  deleteCharacter(id: string): Promise<void>
+  pickCharacterImages(): Promise<string[]>
+  listMaterials(): Promise<LibraryMaterial[]>
+  importMaterials(): Promise<LibraryMaterial[]>
+  deleteMaterial(id: string): Promise<void>
+  listTemplates(): Promise<PromptTemplate[]>
+  saveTemplate(input: TemplateInput): Promise<PromptTemplate>
+  deleteTemplate(id: string): Promise<void>
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -55,4 +86,5 @@ export interface CineApi {
   project: ProjectApi
   settings: SettingsApi
   generate: GenerateApi
+  library: LibraryApi
 }

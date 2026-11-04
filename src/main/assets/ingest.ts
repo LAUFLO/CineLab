@@ -35,6 +35,7 @@ export interface IngestInput {
   kind: OutputKind
   mime: string
   model: string
+  text?: string
 }
 
 export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
@@ -66,7 +67,8 @@ export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
     path: relativePath,
     kind: input.kind,
     createdAt: new Date().toISOString(),
-    model: input.model
+    model: input.model,
+    text: input.text
   }
 }
 

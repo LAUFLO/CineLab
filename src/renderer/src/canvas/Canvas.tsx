@@ -81,6 +81,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const onEdgesChange = useCanvasStore((state) => state.onEdgesChange)
   const onConnect = useCanvasStore((state) => state.onConnect)
   const addNode = useCanvasStore((state) => state.addNode)
+  const viewport = useCanvasStore((state) => state.viewport)
+  const setViewport = useCanvasStore((state) => state.setViewport)
   const closeMenu = useUIStore((state) => state.closeMenu)
   const openMenu = useUIStore((state) => state.openMenu)
   const { screenToFlowPosition } = useReactFlow()
@@ -162,6 +164,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
         onDoubleClick={handleDoubleClick}
         minZoom={0.1}
         maxZoom={4}
+        defaultViewport={viewport}
+        onMove={(_event, next) => setViewport(next)}
         panOnScroll
         connectionMode={ConnectionMode.Loose}
         connectionRadius={60}

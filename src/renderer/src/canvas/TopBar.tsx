@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { useProjectStore } from '../stores/project'
 
 interface TopBarProps {
   theme: 'light' | 'dark'
@@ -6,14 +8,93 @@ interface TopBarProps {
 }
 
 export function TopBar({ theme, onToggleTheme }: TopBarProps) {
+  const name = useProjectStore((state) => state.name)
+  const saving = useProjectStore((state) => state.saving)
+  const lastSavedAt = useProjectStore((state) => state.lastSavedAt)
+  const startNew = useProjectStore((state) => state.startNew)
+  const openExisting = useProjectStore((state) => state.openExisting)
+  const revealInFolder = useProjectStore((state) => state.revealInFolder)
+
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+
+    const onPointerDown = (event: PointerEvent): void => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+
+    window.addEventListener('pointerdown', onPointerDown)
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown)
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [menuOpen])
+
+  const saveLabel = saving ? '保存中…' : lastSavedAt ? '已自动保存' : '就绪'
+
   return (
     <header className="topbar">
       <div className="topbar__group">
-        <button className="topbar__brand">
-          <Icon name="logo" size={18} />
-          <span>未命名工作区</span>
-          <Icon name="chevron-down" size={12} />
-        </button>
+        <div className="topbar__project" ref={menuRef}>
+          <button
+            type="button"
+            className="topbar__brand"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <Icon name="logo" size={18} />
+            <span className="topbar__project-name">{name}</span>
+            <Icon name="chevron-down" size={12} />
+          </button>
+
+          {menuOpen ? (
+            <div className="project-menu">
+              <button
+                type="button"
+                className="add-menu__item"
+                onClick={() => {
+                  setMenuOpen(false)
+                  void startNew()
+                }}
+              >
+                <Icon name="plus" size={16} />
+                <span>新建项目</span>
+              </button>
+              <button
+                type="button"
+                className="add-menu__item"
+                onClick={() => {
+                  setMenuOpen(false)
+                  void openExisting()
+                }}
+              >
+                <Icon name="folder" size={16} />
+                <span>打开项目…</span>
+              </button>
+              <div className="add-menu__divider" />
+              <button
+                type="button"
+                className="add-menu__item"
+                onClick={() => {
+                  setMenuOpen(false)
+                  void revealInFolder()
+                }}
+              >
+                <Icon name="grid" size={16} />
+                <span>在文件夹中显示</span>
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        <span className="topbar__save">{saveLabel}</span>
 
         <button className="topbar__item">
           画布 1
@@ -22,9 +103,6 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
 
         <button className="icon-btn" title="框选工具">
           <Icon name="frame" />
-        </button>
-        <button className="icon-btn" title="分屏（即将支持）">
-          <Icon name="split" />
         </button>
       </div>
 

@@ -1,5 +1,12 @@
 export type OutputKind = 'image' | 'video' | 'audio' | 'text'
 
+export type ReferenceRole = 'firstFrame' | 'lastFrame' | 'reference'
+
+export interface ReferenceInput {
+  path: string
+  role: ReferenceRole
+}
+
 export interface GeneratedAsset {
   id: string
   path: string
@@ -16,6 +23,7 @@ export interface GenerateRequest {
   prompt: string
   params: Record<string, unknown>
   negativePrompt?: string
+  refs?: ReferenceInput[]
 }
 
 export type GenerationEvent =

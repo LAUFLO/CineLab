@@ -44,9 +44,11 @@ async function evaluate(expression) {
 }
 
 const selector = process.argv[2] ?? '.react-flow__node'
+const index = Number(process.argv[3] ?? 0)
 
 const pos = await evaluate(`(() => {
-  const el = document.querySelector('${selector}')
+  const els = document.querySelectorAll('${selector}')
+  const el = els[${index}]
   if (!el) return null
   const rect = el.getBoundingClientRect()
   return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }

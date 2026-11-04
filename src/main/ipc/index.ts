@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, nativeTheme } from 'electron'
 import type { ThemeMode } from '../../shared/ipc-contract'
 import { registerProjectIpc } from './project'
+import { registerSettingsIpc } from './settings'
 
 function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
   return BrowserWindow.fromWebContents(sender)
@@ -8,6 +9,7 @@ function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
 
 export function registerIpc(): void {
   registerProjectIpc()
+  registerSettingsIpc()
 
   ipcMain.handle('app:get-info', () => ({
     version: app.getVersion(),

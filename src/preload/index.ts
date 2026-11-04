@@ -1,6 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { CineApi, ThemeMode } from '../shared/ipc-contract'
 import type { CanvasData } from '../shared/project-schema'
+import type {
+  ConnectionTestInput,
+  ProviderInput
+} from '../shared/provider-schema'
 
 const api: CineApi = {
   app: {
@@ -21,6 +25,15 @@ const api: CineApi = {
     pickCreate: () => ipcRenderer.invoke('project:pick-create'),
     pickOpen: () => ipcRenderer.invoke('project:pick-open'),
     reveal: (path: string) => ipcRenderer.invoke('project:reveal', path)
+  },
+  settings: {
+    listProviders: () => ipcRenderer.invoke('settings:list-providers'),
+    saveProvider: (input: ProviderInput) =>
+      ipcRenderer.invoke('settings:save-provider', input),
+    deleteProvider: (id: string) =>
+      ipcRenderer.invoke('settings:delete-provider', id),
+    testConnection: (input: ConnectionTestInput) =>
+      ipcRenderer.invoke('settings:test-connection', input)
   }
 }
 

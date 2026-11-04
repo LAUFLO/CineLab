@@ -3,8 +3,10 @@ import { BottomBar } from './canvas/BottomBar'
 import { Canvas } from './canvas/Canvas'
 import { StatusBar } from './canvas/StatusBar'
 import { TopBar } from './canvas/TopBar'
+import { SettingsPanel } from './panels/SettingsPanel'
 import { useCanvasStore } from './stores/canvas'
 import { useProjectStore } from './stores/project'
+import { useSettingsStore } from './stores/settings'
 import { useTheme } from './theme/useTheme'
 
 export default function App() {
@@ -20,9 +22,15 @@ export default function App() {
   const edges = useCanvasStore((state) => state.edges)
   const hydrated = useCanvasStore((state) => state.hydrated)
 
+  const loadProviders = useSettingsStore((state) => state.load)
+
   useEffect(() => {
     void bootstrap()
   }, [bootstrap])
+
+  useEffect(() => {
+    void loadProviders()
+  }, [loadProviders])
 
   useEffect(() => {
     if (!hydrated || phase !== 'ready') return
@@ -57,6 +65,7 @@ export default function App() {
       <TopBar theme={resolved} onToggleTheme={toggle} />
       <BottomBar />
       <StatusBar />
+      <SettingsPanel />
       {error ? <div className="toast">{error}</div> : null}
     </div>
   )

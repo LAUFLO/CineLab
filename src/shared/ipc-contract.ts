@@ -1,4 +1,10 @@
 import type { CanvasData, ProjectSnapshot, RecentProject } from './project-schema'
+import type {
+  ConnectionTestInput,
+  ConnectionTestResult,
+  ProviderConfig,
+  ProviderInput
+} from './provider-schema'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -19,6 +25,13 @@ export interface ProjectApi {
   reveal(path: string): Promise<void>
 }
 
+export interface SettingsApi {
+  listProviders(): Promise<ProviderConfig[]>
+  saveProvider(input: ProviderInput): Promise<ProviderConfig>
+  deleteProvider(id: string): Promise<void>
+  testConnection(input: ConnectionTestInput): Promise<ConnectionTestResult>
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -28,4 +41,5 @@ export interface CineApi {
     close(): void
   }
   project: ProjectApi
+  settings: SettingsApi
 }

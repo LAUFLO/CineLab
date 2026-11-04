@@ -18,7 +18,8 @@
     {
       "id": "M2-2",
       "title": "模型配置界面：Provider、Base URL、Key 加密存储、模型列表",
-      "status": "pending"
+      "status": "done",
+      "evidence": [".opencode/handover/evidence/M2-2-model-config.md"]
     },
     {
       "id": "M2-3",

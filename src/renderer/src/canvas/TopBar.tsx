@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { useProjectStore } from '../stores/project'
+import { useSettingsStore } from '../stores/settings'
 
 interface TopBarProps {
   theme: 'light' | 'dark'
@@ -14,6 +15,7 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
   const startNew = useProjectStore((state) => state.startNew)
   const openExisting = useProjectStore((state) => state.openExisting)
   const revealInFolder = useProjectStore((state) => state.revealInFolder)
+  const openSettings = useSettingsStore((state) => state.openPanel)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -116,7 +118,7 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
         <button className="icon-btn" title="切换主题" onClick={onToggleTheme}>
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
         </button>
-        <button className="icon-btn" title="设置">
+        <button className="icon-btn" title="设置" onClick={openSettings}>
           <Icon name="settings" />
         </button>
 

@@ -11,7 +11,7 @@ import type {
 import { ingestAsset } from '../assets/ingest'
 import { generationQueue, type QueueJob } from '../engine/queue'
 import { getCurrentProjectRoot } from '../project/manager'
-import { generateImage } from '../providers/openai-compat'
+import { generateImage, generateSpeech } from '../providers/openai-compat'
 import { generateVideoArk } from '../providers/volcengine'
 import { withRetry } from '../providers/retry'
 import { resolveProvider } from '../settings/store'
@@ -101,14 +101,15 @@ export function registerGenerateIpc(): void {
 
     const isImage = model.capability === 'image.t2i' || model.capability === 'image.i2i'
     const isVideo = model.capability === 'video.t2v'
+    const isAudio = model.capability === 'audio.tts'
 
-    if (!isImage && !isVideo) {
-      throw new Error('当前只支持图片和视频生成模型')
+    if (!isImage && !isVideo && !isAudio) {
+      throw new Error('当前只支持图片、视频和语音模型')
     }
     if (!request.prompt.trim()) throw new Error('提示词不能为空')
 
     const runId = randomUUID()
-    const kind = isVideo ? 'video' : 'image'
+    const kind = isAudio ? 'audio' : isVideo ? 'video' : 'image'
 
     const job: QueueJob = {
       id: runId,
@@ -126,13 +127,21 @@ export function registerGenerateIpc(): void {
                 refs,
                 { signal, onProgress }
               )
-            : generateImage(
-                model,
-                { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
-                request.prompt,
-                request.params,
-                { signal, onProgress }
-              )
+            : isAudio
+              ? generateSpeech(
+                  model,
+                  { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+                  request.prompt,
+                  request.params,
+                  { signal, onProgress }
+                )
+              : generateImage(
+                  model,
+                  { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+                  request.prompt,
+                  request.params,
+                  { signal, onProgress }
+                )
 
         const outputs = await withRetry(generate, signal, (attempt, delay, error) => {
           const reason = error instanceof Error ? error.message : String(error)

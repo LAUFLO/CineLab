@@ -71,6 +71,36 @@ function makePng(width, height) {
 const png = makePng(640, 640)
 const base64 = png.toString('base64')
 
+function makeWav(seconds = 1.5, frequency = 440, sampleRate = 22050) {
+  const samples = Math.floor(seconds * sampleRate)
+  const dataSize = samples * 2
+  const buffer = Buffer.alloc(44 + dataSize)
+
+  buffer.write('RIFF', 0)
+  buffer.writeUInt32LE(36 + dataSize, 4)
+  buffer.write('WAVE', 8)
+  buffer.write('fmt ', 12)
+  buffer.writeUInt32LE(16, 16)
+  buffer.writeUInt16LE(1, 20)
+  buffer.writeUInt16LE(1, 22)
+  buffer.writeUInt32LE(sampleRate, 24)
+  buffer.writeUInt32LE(sampleRate * 2, 28)
+  buffer.writeUInt16LE(2, 32)
+  buffer.writeUInt16LE(16, 34)
+  buffer.write('data', 36)
+  buffer.writeUInt32LE(dataSize, 40)
+
+  for (let i = 0; i < samples; i += 1) {
+    const envelope = Math.min(1, i / 2000) * Math.min(1, (samples - i) / 2000)
+    const value = Math.sin((2 * Math.PI * frequency * i) / sampleRate) * 0.28 * envelope
+    buffer.writeInt16LE(Math.round(value * 32767), 44 + i * 2)
+  }
+
+  return buffer
+}
+
+const wav = makeWav()
+
 let videoTask = null
 
 const server = createServer((request, response) => {
@@ -79,6 +109,20 @@ const server = createServer((request, response) => {
   if (request.method === 'GET' && url === '/v1/models') {
     response.writeHead(200, { 'Content-Type': 'application/json' })
     response.end(JSON.stringify({ data: [{ id: 'mock-image-1', object: 'model' }] }))
+    return
+  }
+
+  if (request.method === 'POST' && url === '/v1/audio/speech') {
+    let body = ''
+    request.on('data', (chunk) => {
+      body += chunk
+    })
+    request.on('end', () => {
+      setTimeout(() => {
+        response.writeHead(200, { 'Content-Type': 'audio/wav' })
+        response.end(wav)
+      }, 700)
+    })
     return
   }
 

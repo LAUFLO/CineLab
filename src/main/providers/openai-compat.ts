@@ -87,3 +87,41 @@ export async function generateImage(
   ctx.onProgress(90, '写入项目')
   return outputs
 }
+
+export async function generateSpeech(
+  model: ModelDef,
+  provider: ProviderRuntime,
+  input: string,
+  params: Record<string, unknown>,
+  ctx: AdapterContext
+): Promise<ImageOutput[]> {
+  const body = {
+    model: model.remoteModel,
+    input,
+    voice: params.voice ?? 'alloy',
+    speed: Number(params.speed ?? 1),
+    response_format: params.format ?? 'mp3'
+  }
+
+  ctx.onProgress(10, '合成语音')
+
+  const response = await fetch(`${normalizeBaseUrl(provider.baseUrl)}/audio/speech`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${provider.apiKey}`
+    },
+    body: JSON.stringify(body),
+    signal: ctx.signal
+  })
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => '')
+    throw new Error(`HTTP ${response.status}: ${message.slice(0, 400)}`)
+  }
+
+  const mime = response.headers.get('content-type')?.split(';')[0] ?? 'audio/mpeg'
+  ctx.onProgress(80, '写入音频')
+
+  return [{ data: Buffer.from(await response.arrayBuffer()), mime }]
+}

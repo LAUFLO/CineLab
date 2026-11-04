@@ -57,7 +57,9 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
       <div className="cnode__card" style={{ minHeight: meta.height }}>
         <div className={`cnode__preview cnode__preview--${data.kind}`}>
-          {assetSrc && (current?.kind === 'video' || data.kind === 'video') ? (
+          {assetSrc && current?.kind === 'audio' ? (
+            <audio src={assetSrc} controls className="cnode__audio" />
+          ) : assetSrc && (current?.kind === 'video' || data.kind === 'video') ? (
             <video src={assetSrc} className="cnode__media" muted playsInline controls />
           ) : assetSrc ? (
             <img src={assetSrc} alt="" className="cnode__media" loading="lazy" />

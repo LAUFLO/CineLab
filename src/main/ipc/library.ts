@@ -1,5 +1,8 @@
 import { BrowserWindow, dialog, ipcMain, type OpenDialogOptions } from 'electron'
+import { stat } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import type { CharacterInput, TemplateInput } from '@shared/library-schema'
+import { getCurrentProjectRoot } from '../project/manager'
 import {
   deleteCharacter,
   deleteMaterial,
@@ -83,6 +86,33 @@ export function registerLibraryIpc(): void {
       properties: ['openFile', 'multiSelections'],
       filters: MATERIAL_FILTERS
     })
+
+    return importMaterials(files)
+  })
+
+  ipcMain.handle('library:save-assets', async (_event, relPaths: string[]) => {
+    const root = getCurrentProjectRoot()
+    if (!root) throw new Error('没有打开的项目')
+
+    const rootPath = resolve(root)
+    const files: string[] = []
+
+    for (const relPath of relPaths) {
+      const absolute = resolve(rootPath, relPath)
+      if (
+        !absolute.startsWith(`${rootPath}\\`) &&
+        !absolute.startsWith(`${rootPath}/`)
+      ) {
+        continue
+      }
+
+      try {
+        const info = await stat(absolute)
+        if (info.isFile()) files.push(absolute)
+      } catch {
+        // 素材缺失时跳过
+      }
+    }
 
     return importMaterials(files)
   })

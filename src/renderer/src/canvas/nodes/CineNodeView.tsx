@@ -23,6 +23,9 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const showToast = useUIStore((state) => state.showToast)
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
   const resizeNode = useCanvasStore((state) => state.resizeNode)
+  const multiSelected = useCanvasStore(
+    (state) => state.nodes.filter((node) => node.selected).length > 1
+  )
   const cancelGeneration = useGenerationStore((state) => state.cancel)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
@@ -86,7 +89,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   return (
     <>
     <div className={`cnode ${selected ? 'is-selected' : ''}`}>
-      {selected && current && !isBusy ? (
+      {selected && !multiSelected && current && !isBusy ? (
         <div className="cnode__toolbar nodrag nopan">
           {current.width && current.height ? (
             <span className="cnode__toolbar-size">

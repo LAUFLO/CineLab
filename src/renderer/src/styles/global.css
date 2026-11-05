@@ -687,6 +687,46 @@ body.is-exporting .react-flow__minimap {
   color: var(--text-1);
 }
 
+.multi-bar {
+  position: fixed;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 42px;
+  padding: 0 6px;
+  transform: translateX(-50%);
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-float);
+  animation: menu-in 120ms ease-out;
+  white-space: nowrap;
+}
+
+.multi-bar__btn {
+  height: 32px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.multi-bar__btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
+.multi-bar__divider {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--divider);
+}
+
 .image-preview {
   position: fixed;
   inset: 0;

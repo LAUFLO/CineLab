@@ -75,6 +75,8 @@ const api: CineApi = {
     pickCharacterImages: () => ipcRenderer.invoke('library:pick-character-images'),
     listMaterials: () => ipcRenderer.invoke('library:list-materials'),
     importMaterials: () => ipcRenderer.invoke('library:import-materials'),
+    saveAssets: (relPaths: string[]) =>
+      ipcRenderer.invoke('library:save-assets', relPaths),
     deleteMaterial: (id: string) =>
       ipcRenderer.invoke('library:delete-material', id),
     listTemplates: () => ipcRenderer.invoke('library:list-templates'),
@@ -89,7 +91,9 @@ const api: CineApi = {
     canvasPng: (projectName: string, canvasName: string) =>
       ipcRenderer.invoke('export:canvas-png', projectName, canvasName),
     asset: (relPath: string, fileName: string) =>
-      ipcRenderer.invoke('export:asset', relPath, fileName)
+      ipcRenderer.invoke('export:asset', relPath, fileName),
+    assets: (relPaths: string[], fileName: string) =>
+      ipcRenderer.invoke('export:assets', relPaths, fileName)
   },
   clipboard: {
     read: () => ipcRenderer.invoke('clipboard:read')

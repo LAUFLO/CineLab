@@ -62,6 +62,8 @@ interface CanvasStore {
   redo: () => void
   copySelection: () => number
   pasteNodes: (position?: XYPosition) => number
+  duplicateSelection: () => number
+  removeSelection: () => number
 }
 
 let seq = 0
@@ -339,5 +341,71 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
 
     return pastedNodes.length
+  },
+
+  duplicateSelection: () => {
+    const selected = get().nodes.filter((node) => node.selected)
+    if (selected.length === 0) return 0
+
+    const ids = new Set(selected.map((node) => node.id))
+    const internalEdges = get().edges.filter(
+      (edge) => ids.has(edge.source) && ids.has(edge.target)
+    )
+
+    get().pushHistory()
+
+    const stamp = Date.now().toString(36)
+    const idMap = new Map<string, string>()
+
+    const clones = selected.map((node, index) => {
+      const id = `${node.data.kind}_${stamp}_${index + 1}`
+      idMap.set(node.id, id)
+
+      return {
+        ...structuredClone(node),
+        id,
+        position: {
+          x: node.position.x + 24,
+          y: node.position.y + 24
+        },
+        selected: true,
+        dragging: false
+      }
+    })
+
+    const clonedEdges = internalEdges.map((edge, index) => ({
+      ...structuredClone(edge),
+      id: `edge_${stamp}_${index + 1}`,
+      source: idMap.get(edge.source) ?? edge.source,
+      target: idMap.get(edge.target) ?? edge.target,
+      selected: false
+    }))
+
+    set({
+      nodes: [
+        ...get().nodes.map((node) => ({ ...node, selected: false })),
+        ...clones
+      ],
+      edges: [...get().edges, ...clonedEdges]
+    })
+
+    return clones.length
+  },
+
+  removeSelection: () => {
+    const selected = get().nodes.filter((node) => node.selected)
+    if (selected.length === 0) return 0
+
+    const ids = new Set(selected.map((node) => node.id))
+    get().pushHistory()
+
+    set({
+      nodes: get().nodes.filter((node) => !ids.has(node.id)),
+      edges: get().edges.filter(
+        (edge) => !ids.has(edge.source) && !ids.has(edge.target)
+      )
+    })
+
+    return ids.size
   }
 }))

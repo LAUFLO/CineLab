@@ -11,6 +11,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "node scripts/typecheck.mjs",
+    "check:encryption": "node scripts/check-encryption.mjs",
     "models:check": "node scripts/models-check.mjs",
     "dist": "electron-vite build && electron-builder",
     "dist:win": "electron-vite build && electron-builder --win"

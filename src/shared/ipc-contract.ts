@@ -28,6 +28,24 @@ import type {
   TemplateInput
 } from './library-schema'
 import type { ModelsConfigStatus } from './models-file'
+import type {
+  CropImageRectRequest,
+  CropImageRequest,
+  CropImageResult,
+  CropVideoRequest,
+  CropVideoResult,
+  ExtractFrameRequest,
+  ExtractFrameResult,
+  GridSplitRequest,
+  GridSplitResult,
+  RemoveSubtitlesRequest,
+  RemoveSubtitlesResult,
+  MediaProbe,
+  SplitAvRequest,
+  SplitAvResult,
+  TrimVideoRequest,
+  TrimVideoResult
+} from './media'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -120,6 +138,18 @@ export interface ExportApi {
   asset(relPath: string, fileName: string, scope?: AssetScope): Promise<ExportResult>
   assets(inputs: AssetRef[], fileName: string): Promise<ExportResult>}
 
+export interface MediaApi {
+  splitGrid(input: GridSplitRequest): Promise<GridSplitResult>
+  extractFrame(input: ExtractFrameRequest): Promise<ExtractFrameResult>
+  splitAv(input: SplitAvRequest): Promise<SplitAvResult>
+  cropVideo(input: CropVideoRequest): Promise<CropVideoResult>
+  probe(path: string): Promise<MediaProbe>
+  cropImage(input: CropImageRequest): Promise<CropImageResult>
+  cropImageRect(input: CropImageRectRequest): Promise<CropImageResult>
+  trimVideo(input: TrimVideoRequest): Promise<TrimVideoResult>
+  removeSubtitles(input: RemoveSubtitlesRequest): Promise<RemoveSubtitlesResult>
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -133,5 +163,6 @@ export interface CineApi {
   generate: GenerateApi
   library: LibraryApi
   clipboard: ClipboardApi
+  media: MediaApi
   export: ExportApi
 }

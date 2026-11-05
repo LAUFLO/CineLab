@@ -1,4 +1,5 @@
 import { nativeImage } from 'electron'
+import { probeMedia } from '../media/ffmpeg'
 import { createHash, randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -11,6 +12,8 @@ const EXT_BY_MIME: Record<string, string> = {
   'image/gif': 'gif',
   'video/mp4': 'mp4',
   'audio/mpeg': 'mp3',
+  'audio/mp4': 'm4a',
+  'audio/x-m4a': 'm4a',
   'audio/wav': 'wav'
 }
 
@@ -62,6 +65,9 @@ export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
 
   let width = input.width
   let height = input.height
+  let duration: number | undefined
+  let fps: number | undefined
+  let hasAudio: boolean | undefined
 
   if (input.kind === 'image') {
     try {
@@ -77,6 +83,20 @@ export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
     await writeThumbnail(input.projectPath, hash, input.data)
   }
 
+  if (input.kind === 'video' || input.kind === 'audio') {
+    try {
+      const probe = await probeMedia(absolutePath)
+      if (input.kind === 'video') {
+        width = probe.width ?? width
+        height = probe.height ?? height
+      }
+      duration = probe.duration
+      fps = probe.fps
+      hasAudio = probe.hasAudio
+    } catch (error) {
+      console.warn('[assets] video probe failed', error)
+    }
+  }
   return {
     id: randomUUID(),
     path: relativePath,
@@ -85,7 +105,10 @@ export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
     model: input.model,
     text: input.text,
     width,
-    height
+    height,
+    duration,
+    fps,
+    hasAudio
   }
 }
 

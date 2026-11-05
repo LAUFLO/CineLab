@@ -15,8 +15,10 @@ import {
   NODE_META,
   TITLE_HEIGHT,
   type CineNodeData,
-  type NodeKind
+  type NodeKind,
+  type OutputRef
 } from '@shared/canvas-schema'
+import type { GeneratedAsset } from '@shared/generation'
 
 export type CineNode = Node<CineNodeData, 'cine'>
 export type CineEdge = Edge
@@ -52,6 +54,14 @@ interface CanvasStore {
   onEdgesChange: (changes: EdgeChange<CineEdge>[]) => void
   onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string
+  addAssetNodes: (
+    kind: NodeKind,
+    origin: XYPosition,
+    assets: GeneratedAsset[],
+    titlePrefix: string,
+    sourceNodeId?: string
+  ) => string[]
+  applyOutput: (nodeId: string, asset: GeneratedAsset, op?: string) => void
   patchNodeData: (nodeId: string, patch: Partial<CineNodeData>) => void
   resizeNode: (nodeId: string, height: number) => void
   removeNode: (id: string) => void
@@ -72,6 +82,59 @@ function nextId(prefix: string): string {
   seq += 1
   return `${prefix}_${Date.now().toString(36)}_${seq}`
 }
+interface NodeRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+function overlaps(a: NodeRect, b: NodeRect, gap: number): boolean {
+  return !(
+    a.x + a.width + gap <= b.x ||
+    b.x + b.width + gap <= a.x ||
+    a.y + a.height + gap <= b.y ||
+    b.y + b.height + gap <= a.y
+  )
+}
+
+function findFreeOrigin(
+  nodes: CineNode[],
+  origin: XYPosition,
+  width: number,
+  height: number,
+  gap: number
+): XYPosition {
+  let y = origin.y
+
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const candidate: NodeRect = { x: origin.x, y, width, height }
+    const hit = nodes.find((node) => {
+      const nodeWidth = node.measured?.width ?? NODE_META[node.data.kind].width
+      const nodeHeight =
+        node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
+      return overlaps(
+        candidate,
+        {
+          x: node.position.x,
+          y: node.position.y,
+          width: nodeWidth,
+          height: nodeHeight
+        },
+        gap
+      )
+    })
+
+    if (!hit) return { x: origin.x, y }
+
+    const hitHeight =
+      hit.measured?.height ?? NODE_META[hit.data.kind].height + TITLE_HEIGHT
+    y = hit.position.y + hitHeight + gap
+  }
+
+  return { x: origin.x, y }
+}
+
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
   nodes: [],
@@ -175,6 +238,128 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return id
   },
 
+  addAssetNodes: (kind, origin, assets, titlePrefix, sourceNodeId) => {
+    if (assets.length === 0) return []
+
+    get().pushHistory()
+
+    const meta = NODE_META[kind]
+    const gap = 24
+    const columns = 3
+    const first = assets[0]
+    const ratio =
+      first?.width && first?.height
+        ? first.height / first.width
+        : meta.height / meta.width
+    const nodeHeight = Math.round(meta.width * ratio) + TITLE_HEIGHT
+    const colStep = meta.width + gap
+    const rowStep = nodeHeight + gap
+    const rows = Math.ceil(assets.length / columns)
+    const groupWidth = columns * meta.width + (columns - 1) * gap
+    const groupHeight = rows * nodeHeight + (rows - 1) * gap
+    const start = findFreeOrigin(get().nodes, origin, groupWidth, groupHeight, gap)
+    const ids: string[] = []
+
+    const created: CineNode[] = assets.map((asset, index) => {
+      const id = nextId(kind)
+      ids.push(id)
+
+      const output: OutputRef = {
+        id: asset.id,
+        path: asset.path,
+        kind: asset.kind,
+        createdAt: asset.createdAt,
+        model: asset.model,
+        width: asset.width,
+        height: asset.height,
+        duration: asset.duration,
+        fps: asset.fps,
+        hasAudio: asset.hasAudio
+      }
+
+      return {
+        id,
+        type: 'cine',
+        position: {
+          x: start.x + (index % columns) * colStep,
+          y: start.y + Math.floor(index / columns) * rowStep
+        },
+        selected: false,
+        data: {
+          kind,
+          title: `${titlePrefix} ${index + 1}`,
+          status: 'done',
+          outputs: [output],
+          selectedOutputId: output.id,
+          templates: meta.templates
+        },
+        style: { width: meta.width, height: nodeHeight }
+      }
+    })
+
+    const createdEdges: CineEdge[] = sourceNodeId
+      ? created.map((node) => ({
+          id: nextId('edge'),
+          source: sourceNodeId,
+          target: node.id,
+          type: 'flow',
+          data: { role: 'auto' }
+        }))
+      : []
+
+    set({
+      nodes: [...get().nodes, ...created],
+      edges: [...get().edges, ...createdEdges]
+    })
+    return ids
+  },
+  applyOutput: (nodeId, asset, op) => {
+    const node = get().nodes.find((entry) => entry.id === nodeId)
+    if (!node) return
+
+    get().pushHistory()
+
+    const output: OutputRef = {
+      id: asset.id,
+      path: asset.path,
+      kind: asset.kind,
+      createdAt: asset.createdAt,
+      model: asset.model,
+      width: asset.width,
+      height: asset.height,
+      duration: asset.duration,
+      fps: asset.fps,
+      hasAudio: asset.hasAudio,
+      op
+    }
+
+    const outputs = [output, ...(node.data.outputs ?? [])].slice(0, 20)
+    const kind = node.data.kind
+    const baseWidth = node.measured?.width ?? NODE_META[kind].width
+    const nextHeight =
+      asset.width && asset.height
+        ? Math.round((baseWidth * asset.height) / asset.width) + TITLE_HEIGHT
+        : node.measured?.height ?? NODE_META[kind].height + TITLE_HEIGHT
+
+    set({
+      nodes: get().nodes.map((entry) =>
+        entry.id === nodeId
+          ? {
+              ...entry,
+              data: {
+                ...entry.data,
+                status: 'done',
+                progress: 100,
+                error: undefined,
+                outputs,
+                selectedOutputId: output.id
+              },
+              style: { ...entry.style, height: nextHeight }
+            }
+          : entry
+      )
+    })
+  },
   patchNodeData: (nodeId, patch) => {
     set({
       nodes: get().nodes.map((node) =>
@@ -409,3 +594,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return ids.size
   }
 }))
+// 开发期调试：供 scripts/cdp-*.mjs 访问画布状态
+if (import.meta.env.DEV) {
+  ;(window as unknown as { __canvasStore?: typeof useCanvasStore }).__canvasStore =
+    useCanvasStore
+}

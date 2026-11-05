@@ -13,6 +13,11 @@ export interface OutputRef {
   model: string
   width?: number
   height?: number
+  duration?: number
+  fps?: number
+  hasAudio?: boolean
+  op?: string
+  parentOutputId?: string
 }
 
 export interface CineNodeData extends Record<string, unknown> {

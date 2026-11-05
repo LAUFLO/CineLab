@@ -12,6 +12,9 @@ import { ingestAsset } from '../assets/ingest'
 import { generationQueue, type QueueJob } from '../engine/queue'
 import { getCurrentProjectRoot } from '../project/manager'
 import { generateVideoAgnes } from '../providers/agnes'
+import { generateVideoHttpTemplate } from '../providers/http-template'
+import { generateVideoKling } from '../providers/kling'
+import { generateVideoMinimax } from '../providers/minimax'
 import {
   generateImage,
   generateMusic,
@@ -141,58 +144,103 @@ export function registerGenerateIpc(): void {
       nodeId: request.nodeId,
       run: async (signal, onProgress) => {
         const refs = await loadRefs(projectRoot, request.refs)
+        const runtime = {
+          baseUrl: provider.baseUrl,
+          apiKey: provider.apiKey,
+          secretKey: provider.secretKey
+        }
+        const context = { signal, onProgress }
 
-        const generate = (): Promise<ProviderOutput[]> =>
-          isVideo
-            ? adapter === 'agnes-video'
-              ? generateVideoAgnes(
+        const generate = (): Promise<ProviderOutput[]> => {
+          if (isVideo) {
+            if (adapter === 'agnes-video') {
+              return generateVideoAgnes(
+                model,
+                runtime,
+                request.prompt,
+                request.params,
+                refs,
+                context
+              )
+            }
+            if (adapter === 'http-template') {
+              return generateVideoHttpTemplate(
+                model,
+                runtime,
+                request.prompt,
+                request.params,
+                refs,
+                context
+              )
+            }
+            if (adapter === 'minimax-video' || adapter === 'minimax-legacy') {
+              return generateVideoMinimax(
+                model,
+                runtime,
+                request.prompt,
+                request.params,
+                refs,
+                context,
+                adapter === 'minimax-legacy'
+              )
+            }
+            if (adapter === 'kling-video') {
+              return generateVideoKling(
+                model,
+                runtime,
+                request.prompt,
+                request.params,
+                refs,
+                context
+              )
+            }
+            return generateVideoArk(
+              model,
+              runtime,
+              request.prompt,
+              request.params,
+              refs,
+              context
+            )
+          }
+
+          if (isAudio) {
+            return isMusic
+              ? generateMusic(
                   model,
-                  { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+                  runtime,
                   request.prompt,
                   request.params,
-                  refs,
-                  { signal, onProgress }
+                  context
                 )
-              : generateVideoArk(
+              : generateSpeech(
                   model,
-                  { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+                  runtime,
                   request.prompt,
                   request.params,
-                  refs,
-                  { signal, onProgress }
+                  context
                 )
-            : isAudio
-              ? isMusic
-                ? generateMusic(
-                    model,
-                    { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
-                    request.prompt,
-                    request.params,
-                    { signal, onProgress }
-                  )
-                : generateSpeech(
-                    model,
-                    { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
-                    request.prompt,
-                    request.params,
-                    { signal, onProgress }
-                  )
-              : isText
-                ? generateText(
-                    model,
-                    { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
-                    request.prompt,
-                    request.params,
-                    { signal, onProgress }
-                  )
-                : generateImage(
-                  model,
-                  { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
-                  request.prompt,
-                  request.params,
-                  refs,
-                  { signal, onProgress }
-                )
+          }
+
+          if (isText) {
+            return generateText(
+              model,
+              runtime,
+              request.prompt,
+              request.params,
+              context
+            )
+          }
+
+          return generateImage(
+            model,
+            runtime,
+            request.prompt,
+            request.params,
+            refs,
+            context
+          )
+        }
 
         const outputs = await withRetry(generate, signal, (attempt, delay, error) => {
           const reason = error instanceof Error ? error.message : String(error)

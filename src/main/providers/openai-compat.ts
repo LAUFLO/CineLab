@@ -4,6 +4,7 @@ import { sleep } from './retry'
 export interface ProviderRuntime {
   baseUrl: string
   apiKey: string
+  secretKey?: string
 }
 
 export interface AdapterContext {

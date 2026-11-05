@@ -44,6 +44,32 @@
       ]
     },
     {
+      "id": "zhipu",
+      "name": "智谱",
+      "type": "openai-compat",
+      "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+      "apiKeyEnv": "ZHIPU_API_KEY",
+      "models": [
+        {
+          "id": "cogvideox-flash",
+          "preset": "zhipu-cogvideox-flash"
+        }
+      ]
+    },
+    {
+      "id": "vidu",
+      "name": "Vidu",
+      "type": "openai-compat",
+      "baseUrl": "https://api.vidu.cn",
+      "apiKeyEnv": "VIDU_API_KEY",
+      "models": [
+        {
+          "id": "viduq2",
+          "preset": "vidu-q2"
+        }
+      ]
+    },
+    {
       "id": "custom-image",
       "name": "自定义图片服务",
       "type": "openai-compat",

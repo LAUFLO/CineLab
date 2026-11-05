@@ -41,6 +41,11 @@ function paramLabel(param: ParamDef, value: unknown): string {
   return String(value ?? '')
 }
 
+function ratioOf(label: string): string | null {
+  const match = /^(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)$/.exec(label.trim())
+  return match ? `${match[1]} / ${match[2]}` : null
+}
+
 export function PromptBar() {
   const nodes = useCanvasStore((state) => state.nodes)
   const edges = useCanvasStore((state) => state.edges)
@@ -53,6 +58,7 @@ export function PromptBar() {
   const openSettings = useSettingsStore((state) => state.openPanel)
   const openLibrary = useLibraryStore((state) => state.openPanel)
   const characters = useLibraryStore((state) => state.characters)
+  const materials = useLibraryStore((state) => state.materials)
   const loadLibrary = useLibraryStore((state) => state.load)
   const pendingPrompt = useUIStore((state) => state.pendingPrompt)
   const clearPendingPrompt = useUIStore((state) => state.clearPendingPrompt)
@@ -70,6 +76,7 @@ export function PromptBar() {
   const [pickedRefs, setPickedRefs] = useState<ReferenceInput[]>([])
   const [picking, setPicking] = useState(false)
   const [pickHint, setPickHint] = useState<string | null>(null)
+  const [autoLink, setAutoLink] = useState(false)
   const suppressClickRef = useRef(false)
 
   const node = nodes.find((item) => item.selected)
@@ -93,6 +100,10 @@ export function PromptBar() {
     setPromptText(pendingPrompt)
     clearPendingPrompt()
   }, [pendingPrompt, clearPendingPrompt])
+
+  useEffect(() => {
+    void loadLibrary()
+  }, [loadLibrary])
 
   useEffect(() => {
     if (!pickHint) return
@@ -260,10 +271,44 @@ export function PromptBar() {
       role: 'reference' as const
     }))
   })
+  const autoRefs = (() => {
+    if (!autoLink) return []
+    const text = promptText.trim()
+    if (!text) return []
+
+    const result: ReferenceInput[] = []
+
+    for (const item of nodes) {
+      if (item.id === node.id) continue
+      if (!text.includes(item.data.title)) continue
+      const outputs = item.data.outputs ?? []
+      const output =
+        outputs.find((entry) => entry.id === item.data.selectedOutputId) ?? outputs[0]
+      if (output?.kind === 'image') {
+        result.push({ path: output.path, role: 'reference' })
+      }
+    }
+
+    for (const material of materials) {
+      if (material.kind !== 'image') continue
+      if (!text.includes(material.name)) continue
+      result.push({ path: material.path, role: 'reference' })
+    }
+
+    for (const card of characters) {
+      if (!text.includes(card.name)) continue
+      for (const path of card.referencePaths) {
+        result.push({ path, role: 'reference' })
+      }
+    }
+
+    return result
+  })()
+
   const mergedRefs = (() => {
     const seen = new Set<string>()
     const result: ReferenceInput[] = []
-    for (const ref of [...pickedRefs, ...refs, ...characterRefs]) {
+    for (const ref of [...pickedRefs, ...autoRefs, ...refs, ...characterRefs]) {
       if (seen.has(ref.path)) continue
       seen.add(ref.path)
       result.push(ref)
@@ -512,6 +557,16 @@ export function PromptBar() {
           </div>
         ) : null}
 
+        <button
+          type="button"
+          className={`promptbar__chip promptbar__autolink ${autoLink ? 'is-on' : ''}`}
+          title="自动匹配提示词中的节点、素材和角色名称"
+          onClick={() => setAutoLink((open) => !open)}
+        >
+          智能引用
+          <span className="promptbar__switch" />
+        </button>
+
         {active ? (
           <div className="promptbar__param-group">
             {active.model.params.map((param) => (
@@ -533,27 +588,45 @@ export function PromptBar() {
                 </button>
 
                 {paramMenuKey === param.key && param.options ? (
-                  <div className="param-menu">
-                    {param.options.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        className={`param-menu__item ${
-                          String(option.value) === String(values[param.key])
-                            ? 'is-active'
-                            : ''
-                        }`}
-                        onClick={() => {
-                          setParamValues((prev) => ({
-                            ...prev,
-                            [param.key]: option.value
-                          }))
-                          setParamMenuKey(null)
-                        }}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
+                  <div
+                    className={`param-menu ${
+                      param.options.every((option) => ratioOf(option.label))
+                        ? 'is-grid'
+                        : ''
+                    }`}
+                  >
+                    {param.options.map((option) => {
+                      const ratio = ratioOf(option.label)
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`param-menu__item ${
+                            ratio ? 'param-menu__item--grid' : ''
+                          } ${
+                            String(option.value) === String(values[param.key])
+                              ? 'is-active'
+                              : ''
+                          }`}
+                          onClick={() => {
+                            setParamValues((prev) => ({
+                              ...prev,
+                              [param.key]: option.value
+                            }))
+                            setParamMenuKey(null)
+                          }}
+                        >
+                          {ratio ? (
+                            <span
+                              className="param-menu__ratio"
+                              style={{ aspectRatio: ratio }}
+                            />
+                          ) : null}
+                          {option.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 ) : null}
               </div>

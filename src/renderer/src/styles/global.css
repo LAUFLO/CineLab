@@ -647,25 +647,44 @@ body.is-exporting .react-flow__minimap {
   overflow: hidden;
 }
 
-.cnode__export {
+.cnode__toolbar {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 26px;
-  height: 26px;
-  display: inline-flex;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 10;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 7px;
-  background: rgba(0, 0, 0, 0.46);
+  gap: 2px;
+  height: 34px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: rgba(20, 20, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-float);
   color: #fff;
-  opacity: 0;
-  transition: opacity 0.15s;
+  white-space: nowrap;
 }
 
-.cnode:hover .cnode__export,
-.cnode__export:focus-visible {
-  opacity: 1;
+.cnode__toolbar-size {
+  padding: 0 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.cnode__toolbar-btn {
+  height: 26px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.cnode__toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 
 .cnode__placeholder {
@@ -1296,6 +1315,63 @@ body.is-picking .react-flow__node:hover .cnode__card {
 .param-menu__item.is-active {
   background: var(--surface-hover);
   color: var(--text-1);
+}
+
+.param-menu.is-grid {
+  width: 216px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.param-menu__item--grid {
+  height: auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 4px 6px;
+  font-size: 11px;
+}
+
+.param-menu__ratio {
+  height: 16px;
+  width: auto;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  opacity: 0.72;
+}
+
+.promptbar__autolink {
+  gap: 6px;
+}
+
+.promptbar__switch {
+  position: relative;
+  width: 22px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition: background 0.15s;
+}
+
+.promptbar__switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface);
+  transition: transform 0.15s;
+}
+
+.promptbar__autolink.is-on .promptbar__switch {
+  background: var(--accent);
+}
+
+.promptbar__autolink.is-on .promptbar__switch::after {
+  transform: translateX(10px);
 }
 
 .promptbar__param-label {

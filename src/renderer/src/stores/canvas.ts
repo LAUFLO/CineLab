@@ -34,6 +34,7 @@ interface CanvasStore {
   onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string
   patchNodeData: (nodeId: string, patch: Partial<CineNodeData>) => void
+  resizeNode: (nodeId: string, height: number) => void
   removeNode: (id: string) => void
   clearSelection: () => void
   arrangeNodes: () => void
@@ -134,6 +135,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       nodes: get().nodes.map((node) =>
         node.id === nodeId
           ? { ...node, data: { ...node.data, ...patch } }
+          : node
+      )
+    })
+  },
+
+  resizeNode: (nodeId, height) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId
+          ? { ...node, style: { ...node.style, height } }
           : node
       )
     })

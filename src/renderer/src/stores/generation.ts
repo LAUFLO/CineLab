@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { CineNodeData, OutputRef } from '@shared/canvas-schema'
+import { NODE_META, TITLE_HEIGHT, type CineNodeData, type OutputRef } from '@shared/canvas-schema'
 import type { GenerateRequest } from '@shared/generation'
 import { useCanvasStore } from './canvas'
 
@@ -48,7 +48,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             path: asset.path,
             kind: asset.kind,
             createdAt: asset.createdAt,
-            model: asset.model
+            model: asset.model,
+            width: asset.width,
+            height: asset.height
           }))
 
           const outputs = [...incoming, ...(node?.data.outputs ?? [])].slice(0, 20)
@@ -65,6 +67,16 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             selectedOutputId: outputs[0]?.id,
             ...(text ? { text } : {})
           })
+
+          const sized = event.assets.find(
+            (asset) => asset.width && asset.height && asset.width > 0
+          )
+          if (sized?.width && sized.height) {
+            const kind = node?.data.kind ?? 'image'
+            const baseWidth = node?.measured?.width ?? NODE_META[kind].width
+            const nextHeight = Math.round((baseWidth * sized.height) / sized.width)
+            useCanvasStore.getState().resizeNode(event.nodeId, nextHeight + TITLE_HEIGHT)
+          }
 
           const running = { ...get().running }
           delete running[event.nodeId]

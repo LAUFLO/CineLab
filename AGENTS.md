@@ -46,8 +46,9 @@ corepack pnpm dist:win     # 打包 Windows 安装包
 - 使用 `corepack pnpm dev:isolated` 启动独立实例：自动分配空闲 CDP 端口（9222 被占时从 9223 起）并创建临时 userData。
 - 脚本会打印 `CINELAB_DEBUG_PORT`，`scripts/cdp-*.mjs` 会自动读取该环境变量。
 - 独立实例有独立的最近项目、设置和 `models.json`，首次进入欢迎页；测试项目在实例内创建或打开。
+- 隔离实例可以在整个会话期间保持运行，测试结束不必关闭；重复执行 `dev:isolated` 会复用已运行实例，`--new` 才会强制新开。
 - 不要用 `SetForegroundWindow` 或 `Stop-Process` 操作其他会话的 Electron 窗口。
-- 测试结束只关闭自己启动的 dev 进程。
+- 收工时只关闭自己启动的隔离实例，不关闭其他会话的窗口。
 
 ## 硬性约定
 

@@ -61,6 +61,8 @@ const api: CineApi = {
       ipcRenderer.invoke('settings:delete-provider', id),
     testConnection: (input: ConnectionTestInput) =>
       ipcRenderer.invoke('settings:test-connection', input),
+    fetchModels: (input: ConnectionTestInput) =>
+      ipcRenderer.invoke('settings:fetch-models', input),
     modelsConfig: () => ipcRenderer.invoke('settings:models-config'),
     openModelsFile: () => ipcRenderer.invoke('settings:open-models-file')
   },

@@ -5,6 +5,7 @@ import type {
 } from '@shared/provider-schema'
 import {
   deleteProvider,
+  fetchModels,
   listProviders,
   saveProvider,
   testConnection
@@ -24,6 +25,9 @@ export function registerSettingsIpc(): void {
   )
   ipcMain.handle('settings:test-connection', (_event, input: ConnectionTestInput) =>
     testConnection(input)
+  )
+  ipcMain.handle('settings:fetch-models', (_event, input: ConnectionTestInput) =>
+    fetchModels(input)
   )
   ipcMain.handle('settings:models-config', () => modelsConfigStatus())
   ipcMain.handle('settings:open-models-file', async () => {

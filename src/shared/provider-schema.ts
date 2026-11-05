@@ -76,6 +76,12 @@ export interface ConnectionTestResult {
   message: string
 }
 
+export interface FetchModelsResult {
+  ok: boolean
+  message: string
+  models: string[]
+}
+
 export const CAPABILITY_LABEL: Record<Capability, string> = {
   'image.t2i': '文生图',
   'image.i2i': '图生图',

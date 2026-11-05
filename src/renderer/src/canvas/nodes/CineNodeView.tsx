@@ -3,6 +3,7 @@ import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
 import { useCanvasStore, type CineNode } from '../../stores/canvas'
+import { useGenerationStore } from '../../stores/generation'
 import { useUIStore } from '../../stores/ui'
 
 const ASSET_BASE = 'cinelab-asset://local'
@@ -21,6 +22,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const showToast = useUIStore((state) => state.showToast)
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
   const resizeNode = useCanvasStore((state) => state.resizeNode)
+  const cancelGeneration = useGenerationStore((state) => state.cancel)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [toolbarOpen, setToolbarOpen] = useState(false)
@@ -85,7 +87,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
   return (
     <div className={`cnode ${selected ? 'is-selected' : ''}`}>
-      {toolbarOpen && current ? (
+      {toolbarOpen && current && !isBusy ? (
         <div className="cnode__toolbar nodrag nopan">
           {current.width && current.height ? (
             <span className="cnode__toolbar-size">
@@ -174,16 +176,20 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           ) : null}
 
           {isBusy ? (
-            <div className="cnode__progress">
-              <div
-                className="cnode__progress-bar"
-                style={{ width: `${data.progress ?? 0}%` }}
-              />
-              <span className="cnode__progress-text">
-                {data.status === 'queued'
-                  ? '排队中'
-                  : `${Math.round(data.progress ?? 0)}%`}
-              </span>
+            <div className="cnode__generating">
+              <div className="cnode__generating-pill">
+                {data.status === 'queued' ? '排队中…' : '生成中…'}
+              </div>
+              <button
+                type="button"
+                className="cnode__cancel nodrag nopan"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  void cancelGeneration(id)
+                }}
+              >
+                取消任务
+              </button>
             </div>
           ) : null}
 
@@ -193,7 +199,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             </div>
           ) : null}
 
-          {outputs.length > 1 ? (
+          {outputs.length > 1 && !isBusy ? (
             <div className="cnode__versions nodrag nopan">
               <button
                 type="button"

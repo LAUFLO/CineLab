@@ -132,11 +132,13 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               }
               onClick={(event) => {
                 event.stopPropagation()
-                openLibraryPicker({
-                  sourcePath: current.path,
-                  scope: current.scope ?? 'project',
-                  name: data.title
-                })
+                openLibraryPicker([
+                  {
+                    sourcePath: current.path,
+                    scope: current.scope ?? 'project',
+                    name: data.title
+                  }
+                ])
               }}
             >
               <Icon name="folder" size={14} />

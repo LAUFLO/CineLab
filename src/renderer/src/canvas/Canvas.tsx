@@ -15,6 +15,8 @@ import { Icon } from '../components/Icon'
 import { useCanvasStore, type CineNode } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 import { AddNodeMenu } from './AddNodeMenu'
+import { CanvasContextMenu } from './CanvasContextMenu'
+import { copySelection, pasteAt } from './context-actions'
 import { FlowEdge } from './edges/FlowEdge'
 import { CineNodeView } from './nodes/CineNodeView'
 import { PromptBar } from './PromptBar'
@@ -65,6 +67,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const arrangeNodes = useCanvasStore((state) => state.arrangeNodes)
   const closeMenu = useUIStore((state) => state.closeMenu)
   const openMenu = useUIStore((state) => state.openMenu)
+  const openContextMenu = useUIStore((state) => state.openContextMenu)
   const snapToGrid = useUIStore((state) => state.snapToGrid)
   const edgesVisible = useUIStore((state) => state.edgesVisible)
   const minimapVisible = useUIStore((state) => state.minimapVisible)
@@ -90,6 +93,38 @@ function CanvasInner({ theme }: { theme: Theme }) {
       if (event.altKey && event.shiftKey && event.key.toLowerCase() === 'f') {
         event.preventDefault()
         useUIStore.getState().requestArrange()
+        return
+      }
+
+      const target = event.target
+      if (
+        target instanceof Element &&
+        target.closest('input, textarea, [contenteditable="true"]')
+      ) {
+        return
+      }
+
+      if (!event.ctrlKey && !event.metaKey) return
+
+      const key = event.key.toLowerCase()
+
+      if (key === 'z') {
+        event.preventDefault()
+        if (event.shiftKey) useCanvasStore.getState().redo()
+        else useCanvasStore.getState().undo()
+        return
+      }
+
+      if (key === 'c' && !event.shiftKey) {
+        if (!useCanvasStore.getState().nodes.some((node) => node.selected)) return
+        event.preventDefault()
+        copySelection()
+        return
+      }
+
+      if (key === 'v' && !event.shiftKey) {
+        event.preventDefault()
+        void pasteAt()
       }
     }
 
@@ -139,6 +174,22 @@ function CanvasInner({ theme }: { theme: Theme }) {
     [screenToFlowPosition, openMenu]
   )
 
+  const handlePaneContextMenu = useCallback(
+    (event: MouseEvent | React.MouseEvent) => {
+      event.preventDefault()
+      closeMenu()
+      openContextMenu({
+        screen: { x: event.clientX, y: event.clientY },
+        flow: screenToFlowPosition({ x: event.clientX, y: event.clientY })
+      })
+    },
+    [closeMenu, openContextMenu, screenToFlowPosition]
+  )
+
+  const handleNodeDragStart = useCallback(() => {
+    useCanvasStore.getState().pushHistory()
+  }, [])
+
   const handleNodeDoubleClick = useCallback(
     (_event: React.MouseEvent, targetNode: CineNode) => {
       void fitView({
@@ -182,6 +233,9 @@ function CanvasInner({ theme }: { theme: Theme }) {
         onConnectStart={handleConnectStart}
         onConnectEnd={handleConnectEnd}
         onPaneClick={closeMenu}
+        onPaneContextMenu={handlePaneContextMenu}
+        onNodeContextMenu={(event) => event.preventDefault()}
+        onNodeDragStart={handleNodeDragStart}
         onDoubleClick={handleDoubleClick}
         onNodeDoubleClick={handleNodeDoubleClick}
         minZoom={0.1}
@@ -189,11 +243,12 @@ function CanvasInner({ theme }: { theme: Theme }) {
         defaultViewport={viewport}
         onMove={(_event, next) => setViewport(next)}
         panOnScroll
+        panOnDrag={[1]}
         snapToGrid={snapToGrid}
         snapGrid={[16, 16] as [number, number]}
         connectionMode={ConnectionMode.Loose}
         connectionRadius={60}
-        selectionOnDrag={false}
+        selectionOnDrag
         zoomOnDoubleClick={false}
         deleteKeyCode={['Backspace', 'Delete']}
       >
@@ -224,6 +279,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
 
       <PromptBar />
       <AddNodeMenu />
+      <CanvasContextMenu />
     </>
   )
 }

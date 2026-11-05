@@ -5,6 +5,7 @@ import { registerSettingsIpc } from './settings'
 import { registerGenerateIpc } from './generate'
 import { registerLibraryIpc } from './library'
 import { registerExportIpc } from './export'
+import { registerClipboardIpc } from './clipboard'
 
 function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
   return BrowserWindow.fromWebContents(sender)
@@ -16,6 +17,7 @@ export function registerIpc(): void {
   registerGenerateIpc()
   registerLibraryIpc()
   registerExportIpc()
+  registerClipboardIpc()
 
   ipcMain.handle('app:get-info', () => ({
     version: app.getVersion(),

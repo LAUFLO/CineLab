@@ -12,6 +12,11 @@ export interface MenuState {
   source?: MenuSource
 }
 
+export interface ContextMenuState {
+  screen: XYPosition
+  flow: XYPosition
+}
+
 export interface ConfirmState {
   title: string
   message: string
@@ -27,6 +32,7 @@ export interface ToastState {
 
 interface UIStore {
   menu: MenuState | null
+  contextMenu: ContextMenuState | null
   pendingPrompt: string | null
   confirm: ConfirmState | null
   toast: ToastState | null
@@ -37,6 +43,8 @@ interface UIStore {
   arrangeToken: number
   openMenu: (menu: MenuState) => void
   closeMenu: () => void
+  openContextMenu: (menu: ContextMenuState) => void
+  closeContextMenu: () => void
   applyPrompt: (prompt: string) => void
   clearPendingPrompt: () => void
   requestConfirm: (confirm: ConfirmState) => void
@@ -52,6 +60,7 @@ interface UIStore {
 
 export const useUIStore = create<UIStore>((set) => ({
   menu: null,
+  contextMenu: null,
   pendingPrompt: null,
   confirm: null,
   toast: null,
@@ -60,8 +69,10 @@ export const useUIStore = create<UIStore>((set) => ({
   minimapVisible: false,
   fitViewToken: 0,
   arrangeToken: 0,
-  openMenu: (menu) => set({ menu }),
+  openMenu: (menu) => set({ menu, contextMenu: null }),
   closeMenu: () => set({ menu: null }),
+  openContextMenu: (contextMenu) => set({ contextMenu, menu: null }),
+  closeContextMenu: () => set({ contextMenu: null }),
   applyPrompt: (prompt) => set({ pendingPrompt: prompt }),
   clearPendingPrompt: () => set({ pendingPrompt: null }),
   requestConfirm: (confirm) => set({ confirm }),

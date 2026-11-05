@@ -151,7 +151,7 @@ export function LibraryPanel() {
       className="library-panel"
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <header className="settings-panel__head">
+      <header className="library-panel__head">
         <span>资产库</span>
         <button type="button" className="icon-btn" onClick={close}>
           <Icon name="close" size={14} />
@@ -182,7 +182,7 @@ export function LibraryPanel() {
           </button>
         </div>
 
-        <div className="settings-panel__body">
+        <div className="library-panel__body">
           {error ? <div className="form-message is-error">{error}</div> : null}
           {loading ? <div className="provider-list__empty">加载中…</div> : null}
 
@@ -335,21 +335,24 @@ export function LibraryPanel() {
                 ))}
 
                 {characters.length === 0 ? (
-                  <div className="provider-list__empty">
-                    还没有角色卡。
-                    <br />
-                    创建一个角色，保存参考图，之后可直接添加到画布使用。
+                  <div className="library-empty">
+                    <Icon name="text" size={26} />
+                    <div className="library-empty__title">还没有角色卡</div>
+                    <div className="library-empty__desc">
+                      创建一个角色，保存参考图，之后可直接添加到画布使用。
+                    </div>
                   </div>
                 ) : null}
 
                 <button
                   type="button"
-                  className="btn-primary btn-block"
+                  className="library-add-btn"
                   onClick={() =>
                     setDraft({ name: '', description: '', referencePaths: [] })
                   }
                 >
-                  + 新建角色
+                  <Icon name="plus" size={14} />
+                  新建角色
                 </button>
               </div>
             )
@@ -395,19 +398,22 @@ export function LibraryPanel() {
               ))}
 
               {materials.length === 0 ? (
-                <div className="provider-list__empty">
-                  还没有素材。
-                  <br />
-                  导入图片、视频或音频后会显示在这里。
+                <div className="library-empty">
+                  <Icon name="image" size={26} />
+                  <div className="library-empty__title">还没有素材</div>
+                  <div className="library-empty__desc">
+                    导入图片、视频或音频后会显示在这里。
+                  </div>
                 </div>
               ) : null}
 
               <button
                 type="button"
-                className="btn-primary btn-block"
+                className="library-add-btn"
                 onClick={() => void importMaterials()}
               >
-                + 导入素材
+                <Icon name="plus" size={14} />
+                导入素材
               </button>
             </div>
           ) : (
@@ -547,22 +553,25 @@ export function LibraryPanel() {
                   ))}
 
                   {templates.length === 0 ? (
-                    <div className="provider-list__empty">
-                      还没有模板。
-                      <br />
-                      把常用提示词存成模板，选中节点后一键填入。
+                    <div className="library-empty">
+                      <Icon name="text" size={26} />
+                      <div className="library-empty__title">还没有模板</div>
+                      <div className="library-empty__desc">
+                        把常用提示词存成模板，选中节点后一键填入。
+                      </div>
                     </div>
                   ) : null}
 
                   <button
                     type="button"
-                    className="btn-primary btn-block"
+                    className="library-add-btn"
                     onClick={() => {
                       setTemplateMessage(null)
                       setTemplateDraft({ name: '', kind: 'image', prompt: '' })
                     }}
                   >
-                    + 新建模板
+                    <Icon name="plus" size={14} />
+                    新建模板
                   </button>
                 </div>
               )}

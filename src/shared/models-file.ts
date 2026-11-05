@@ -1,4 +1,5 @@
 import type { Capability, ParamDef, ProviderType } from './provider-schema'
+import type { HttpTemplate } from './http-template'
 
 export interface ModelsFileModel {
   id: string
@@ -7,6 +8,7 @@ export interface ModelsFileModel {
   capability?: Capability
   remoteModel?: string
   adapter?: string
+  template?: HttpTemplate
   params?: ParamDef[]
 }
 

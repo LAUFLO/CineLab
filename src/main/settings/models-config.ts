@@ -15,6 +15,7 @@ import type {
   ModelsFileModel,
   ModelsFileProvider
 } from '@shared/models-file'
+import type { HttpTemplate } from '@shared/http-template'
 
 const CAPABILITIES: Capability[] = [
   'image.t2i',
@@ -27,7 +28,15 @@ const CAPABILITIES: Capability[] = [
 
 const PROVIDER_TYPES: ProviderType[] = ['openai-compat', 'kling']
 
-const ADAPTERS = ['openai-compat', 'agnes-video', 'volcengine-video']
+const ADAPTERS = [
+  'openai-compat',
+  'agnes-video',
+  'volcengine-video',
+  'http-template',
+  'minimax-video',
+  'minimax-legacy',
+  'kling-video'
+]
 
 const PARAM_TYPES = ['select', 'number', 'text', 'boolean']
 
@@ -157,6 +166,27 @@ function validateModel(
     errors.push(`${path}.adapter 不支持：${adapter}，可用值 ${ADAPTERS.join(' / ')}`)
   }
 
+  const template = item.template
+  if (template !== undefined) {
+    if (!isRecord(template)) {
+      errors.push(`${path}.template 必须是对象`)
+    } else {
+      if (!isRecord(template.submit)) {
+        errors.push(`${path}.template.submit 必须是对象`)
+      }
+      if (!isRecord(template.poll)) {
+        errors.push(`${path}.template.poll 必须是对象`)
+      } else {
+        if (!readString(template.poll.taskIdPath)) {
+          errors.push(`${path}.template.poll.taskIdPath 不能为空`)
+        }
+        if (!readString(template.poll.resultPath)) {
+          errors.push(`${path}.template.poll.resultPath 不能为空`)
+        }
+      }
+    }
+  }
+
   const params = validateParams(item.params, path, errors)
 
   return {
@@ -170,6 +200,7 @@ function validateModel(
       ? { remoteModel: readString(item.remoteModel) }
       : {}),
     ...(adapter ? { adapter } : {}),
+    ...(isRecord(template) ? { template: template as unknown as HttpTemplate } : {}),
     ...(params ? { params } : {})
   }
 }
@@ -320,6 +351,8 @@ export async function loadModelsConfig(): Promise<LoadedModelsConfig> {
 function inferAdapter(remoteModel: string): string {
   if (/^agnes-video/i.test(remoteModel)) return 'agnes-video'
   if (/^kling-/i.test(remoteModel)) return 'kling-video'
+  if (/^minimax-h3/i.test(remoteModel)) return 'minimax-video'
+  if (/^minimax-hailuo/i.test(remoteModel)) return 'minimax-legacy'
   if (/seedance/i.test(remoteModel)) return 'volcengine-video'
   return 'openai-compat'
 }
@@ -342,7 +375,10 @@ export function resolveModels(provider: ModelsFileProvider): ModelDef[] {
         item.adapter ??
         provider.adapter ??
         preset?.adapter ??
-        inferAdapter(remoteModel)
+        inferAdapter(remoteModel),
+      ...(item.template ?? preset?.template
+        ? { template: item.template ?? preset?.template }
+        : {})
     }
   })
 }

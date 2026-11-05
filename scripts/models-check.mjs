@@ -17,7 +17,15 @@ const CAPABILITIES = [
   'audio.music'
 ]
 const PROVIDER_TYPES = ['openai-compat', 'kling']
-const ADAPTERS = ['openai-compat', 'agnes-video', 'volcengine-video']
+const ADAPTERS = [
+  'openai-compat',
+  'agnes-video',
+  'volcengine-video',
+  'http-template',
+  'minimax-video',
+  'minimax-legacy',
+  'kling-video'
+]
 const PARAM_TYPES = ['select', 'number', 'text', 'boolean']
 
 const errors = []

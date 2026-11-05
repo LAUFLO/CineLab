@@ -43,7 +43,7 @@ CineLab 的模型供应商支持通过 `models.json` 配置，适合脚本或 Ag
 | `id` | 是 | 唯一标识，生成请求里的 `modelKey` 用它作为前缀 |
 | `name` | 是 | 显示名称 |
 | `type` | 否 | `openai-compat` 或 `kling`，默认 `openai-compat` |
-| `adapter` | 否 | 默认执行器，`openai-compat` / `agnes-video` / `volcengine-video` |
+| `adapter` | 否 | 默认执行器：`openai-compat`、`agnes-video`、`volcengine-video`、`http-template`、`minimax-video`、`minimax-legacy`、`kling-video` |
 | `baseUrl` | 是 | 接口根地址，例如 `https://api.example.com/v1` |
 | `apiKeyEnv` | 否 | 从该环境变量读取 API Key |
 | `apiKey` | 否 | 明文 Key，不推荐 |
@@ -80,6 +80,40 @@ CineLab 的模型供应商支持通过 `models.json` 配置，适合脚本或 Ag
 - `select` 必须有 `options`
 - 参数的 `key` 会被生成执行器读取，例如图片读取 `size` / `ratio`，视频读取 `ratio` / `duration`，音乐读取 `mode` / `instrumental`
 - 比例选项的 `label` 写成 `16:9` 这类格式时，PromptBar 会自动显示比例网格
+
+## 视频适配器
+
+| adapter | 适用 |
+|---|---|
+| `openai-compat` | 图片、文本、TTS、音乐，以及 OpenAI 风格视频 |
+| `agnes-video` | Agnes Video 2.5 Flash |
+| `volcengine-video` | 火山方舟 Seedance |
+| `http-template` | 单步提交 + 单步轮询的 HTTP 视频服务，例如智谱、Vidu |
+| `minimax-video` | MiniMax H3 |
+| `minimax-legacy` | MiniMax Hailuo 旧版（file_id 两步下载） |
+| `kling-video` | 可灵（API Key 或 AccessKey/SecretKey JWT） |
+
+### http-template 模板
+
+`http-template` 适合协议简单、但字段和端点不是 OpenAI 格式的服务。模板支持：
+
+- `auth.header` / `auth.prefix`：默认 `Authorization` + `Bearer `
+- `submit.path`：字符串，或按 `text` / `image` / `keyframe` / `reference` 分别配置
+- `submit.bodyByMode`：不同模式使用不同请求体
+- `submit.omitEmpty`：删除模板里的空字段
+- `poll.path` / `taskIdPath` / `statusPath` / `resultPath`
+- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`、`{{refs.lastFrame}}`、`{{refs.frames}}`、`{{refs.images}}`、`{{taskId}}`
+
+智谱示例：
+
+```json
+{
+  "id": "zhipu-cogvideox-flash",
+  "preset": "zhipu-cogvideox-flash"
+}
+```
+
+智谱、Vidu、MiniMax、可灵的完整模型定义已经内置在 `MODEL_PRESETS` 里，设置面板的“快速添加”可以直接选。
 
 ## Key 优先级
 

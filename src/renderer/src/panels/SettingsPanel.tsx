@@ -29,6 +29,7 @@ const SECTIONS: SectionDef[] = [
 function emptyDraft(): ProviderInput {
   return {
     name: '',
+    type: 'openai-compat',
     baseUrl: 'https://api.openai.com/v1',
     apiKey: '',
     models: []
@@ -38,6 +39,7 @@ function emptyDraft(): ProviderInput {
 function toDraft(provider: ProviderConfig): ProviderInput {
   return {
     id: provider.id,
+    type: provider.type,
     name: provider.name,
     baseUrl: provider.baseUrl,
     apiKey: '',
@@ -127,8 +129,10 @@ function ModelsSection() {
     try {
       const result = await test({
         id: draft.id,
+        type: draft.type,
         baseUrl: draft.baseUrl,
-        apiKey: draft.apiKey
+        apiKey: draft.apiKey,
+        secretKey: draft.secretKey
       })
       setMessage({ ok: result.ok, text: result.message })
     } catch (error) {
@@ -199,6 +203,24 @@ function ModelsSection() {
         </label>
 
         <label className="field">
+          <span>类型</span>
+          <select
+            className="library-select"
+            value={draft.type ?? 'openai-compat'}
+            onChange={(event) => {
+              const next = event.target.value as ProviderInput['type']
+              setDraft((current) =>
+                current ? { ...current, type: next } : current
+              )
+            }}
+            disabled={Boolean(draft.id)}
+          >
+            <option value="openai-compat">OpenAI 兼容</option>
+            <option value="kling">可灵</option>
+          </select>
+        </label>
+
+        <label className="field">
           <span>Base URL</span>
           <input
             value={draft.baseUrl}
@@ -208,14 +230,32 @@ function ModelsSection() {
         </label>
 
         <label className="field">
-          <span>API Key{draft.id ? '（留空则不修改）' : ''}</span>
+          <span>
+            {draft.type === 'kling' ? 'Access Key / API Key' : 'API Key'}
+            {draft.id ? '（留空则不修改）' : ''}
+          </span>
           <input
             type="password"
             value={draft.apiKey ?? ''}
             onChange={(event) => updateField('apiKey', event.target.value)}
-            placeholder="sk-..."
+            placeholder={draft.type === 'kling' ? 'Access Key 或 API Key' : 'sk-...'}
           />
         </label>
+
+        {draft.type === 'kling' ? (
+          <label className="field">
+            <span>
+              Secret Key（填了则生成 JWT，留空使用 API Key）
+              {draft.id ? '（留空则不修改）' : ''}
+            </span>
+            <input
+              type="password"
+              value={draft.secretKey ?? ''}
+              onChange={(event) => updateField('secretKey', event.target.value)}
+              placeholder="可灵 Secret Key"
+            />
+          </label>
+        ) : null}
 
         <div className="field">
           <span>模型</span>
@@ -246,7 +286,11 @@ function ModelsSection() {
         <div className="field">
           <span>快速添加</span>
           <div className="preset-list">
-            {MODEL_PRESETS.map((preset) => (
+            {MODEL_PRESETS.filter(
+              (preset) =>
+                (preset.providerType ?? 'openai-compat') ===
+                (draft.type ?? 'openai-compat')
+            ).map((preset) => (
               <button
                 key={preset.id}
                 type="button"
@@ -346,7 +390,9 @@ function ModelsSection() {
               <div className="provider-card__meta">
                 {provider.models.length} 个模型 ·{' '}
                 {provider.hasKey ? 'Key 已保存' : '未设置 Key'}
+                {provider.hasSecret ? ' · Secret 已保存' : ''}
                 {provider.source === 'models' ? ' · 只读' : ''}
+                {provider.type === 'kling' ? ' · 可灵' : ''}
               </div>
             </div>
             {provider.source !== 'models' ? (

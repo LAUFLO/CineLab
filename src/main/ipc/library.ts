@@ -1,26 +1,36 @@
-import { BrowserWindow, dialog, ipcMain, type OpenDialogOptions } from 'electron'
-import { stat } from 'node:fs/promises'
-import { resolve } from 'node:path'
-import type { CharacterInput, TemplateInput } from '@shared/library-schema'
-import { getCurrentProjectRoot } from '../project/manager'
+import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import type {
+  AddToLibraryInput,
+  SaveAssetInput,
+  TemplateInput
+} from '@shared/library-schema'
 import {
-  deleteCharacter,
-  deleteMaterial,
-  deleteTemplate,
-  importMaterials,
-  ingestLibraryFile,
+  defaultLibraryRoot,
+  getLibraryRoot,
+  resetLibraryRoot,
+  setLibraryRoot
+} from '../library/config'
+import {
+  addAsset,
+  createFolder,
+  deleteAsset,
+  deleteFolder,
+  importFiles,
+  listAllAssets,
+  listAssets,
   listCharacters,
-  listMaterials,
-  listTemplates,
-  saveCharacter,
-  saveTemplate
+  listTree,
+  renameAsset,
+  renameFolder,
+  revealPath
 } from '../library/store'
+import {
+  deleteTemplate,
+  listTemplates,
+  saveTemplate
+} from '../library/templates'
 
-const IMAGE_FILTERS = [
-  { name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }
-]
-
-const MATERIAL_FILTERS = [
+const ASSET_FILTERS = [
   {
     name: '素材',
     extensions: [
@@ -29,98 +39,131 @@ const MATERIAL_FILTERS = [
       'jpeg',
       'webp',
       'gif',
+      'bmp',
       'mp4',
       'webm',
       'mov',
+      'mkv',
       'mp3',
       'wav',
       'm4a',
-      'ogg'
+      'ogg',
+      'flac'
     ]
   }
 ]
 
-async function pickFiles(
-  event: Electron.IpcMainInvokeEvent,
-  options: OpenDialogOptions
-): Promise<string[]> {
-  const win = BrowserWindow.fromWebContents(event.sender)
-  const result = win
-    ? await dialog.showOpenDialog(win, options)
-    : await dialog.showOpenDialog(options)
+async function rootInfo(): Promise<{ root: string; isDefault: boolean }> {
+  const root = await getLibraryRoot()
+  return { root, isDefault: root === defaultLibraryRoot() }
+}
 
-  return result.canceled ? [] : result.filePaths
+function windowFromEvent(event: Electron.IpcMainInvokeEvent): BrowserWindow | null {
+  return BrowserWindow.fromWebContents(event.sender)
 }
 
 export function registerLibraryIpc(): void {
+  ipcMain.handle('library:root', () => rootInfo())
+
+  ipcMain.handle('library:choose-root', async (event) => {
+    const current = await getLibraryRoot()
+    const win = windowFromEvent(event)
+    const options: Electron.OpenDialogOptions = {
+      title: '选择全局资产库文件夹',
+      defaultPath: current,
+      properties: ['openDirectory', 'createDirectory']
+    }
+
+    const result = win
+      ? await dialog.showOpenDialog(win, options)
+      : await dialog.showOpenDialog(options)
+
+    if (result.canceled || result.filePaths.length === 0) return null
+
+    const next = await setLibraryRoot(result.filePaths[0])
+    return { root: next, isDefault: next === defaultLibraryRoot() }
+  })
+
+  ipcMain.handle('library:reset-root', async () => {
+    const next = await resetLibraryRoot()
+    return { root: next, isDefault: next === defaultLibraryRoot() }
+  })
+
+  ipcMain.handle('library:reveal-root', async () => {
+    const root = await getLibraryRoot()
+    await shell.openPath(root)
+  })
+
+  ipcMain.handle('library:tree', () => listTree())
+  ipcMain.handle('library:list-assets', (_event, folder: string) =>
+    listAssets(folder)  )
+
+  ipcMain.handle('library:list-all-assets', () => listAllAssets())
+
+  ipcMain.handle(
+    'library:save-assets',
+    async (_event, inputs: SaveAssetInput[], folder?: string) => {
+      const target = folder ?? '场景'
+      const saved = []
+
+      for (const input of inputs) {
+        saved.push(
+          await addAsset({
+            sourcePath: input.path,
+            scope: input.scope ?? 'project',
+            folder: target,
+            name: input.name ?? '素材'
+          })
+        )
+      }
+
+      return saved
+    }
+  )
+
+  ipcMain.handle('library:create-folder', (_event, parent: string, name: string) =>
+    createFolder(parent, name)
+  )
+
+  ipcMain.handle('library:rename-folder', (_event, path: string, name: string) =>
+    renameFolder(path, name)
+  )
+
+  ipcMain.handle('library:delete-folder', (_event, path: string) =>
+    deleteFolder(path)
+  )
+
+  ipcMain.handle('library:import-assets', async (event, folder: string) => {
+    const win = windowFromEvent(event)
+    const options: Electron.OpenDialogOptions = {
+      title: '导入素材到资产库',
+      properties: ['openFile', 'multiSelections'],
+      filters: ASSET_FILTERS
+    }
+
+    const result = win
+      ? await dialog.showOpenDialog(win, options)
+      : await dialog.showOpenDialog(options)
+
+    if (result.canceled || result.filePaths.length === 0) return []
+    return importFiles(folder, result.filePaths)
+  })
+
+  ipcMain.handle('library:add-asset', (_event, input: AddToLibraryInput) =>
+    addAsset(input)
+  )
+
+  ipcMain.handle('library:rename-asset', (_event, path: string, name: string) =>
+    renameAsset(path, name)
+  )
+
+  ipcMain.handle('library:delete-asset', (_event, path: string) =>
+    deleteAsset(path)
+  )
+
+  ipcMain.handle('library:reveal', (_event, path: string) => revealPath(path))
+
   ipcMain.handle('library:list-characters', () => listCharacters())
-
-  ipcMain.handle('library:save-character', (_event, input: CharacterInput) =>
-    saveCharacter(input)
-  )
-
-  ipcMain.handle('library:delete-character', (_event, id: string) =>
-    deleteCharacter(id)
-  )
-
-  ipcMain.handle('library:pick-character-images', async (event) => {
-    const files = await pickFiles(event, {
-      title: '选择角色参考图',
-      properties: ['openFile', 'multiSelections'],
-      filters: IMAGE_FILTERS
-    })
-
-    const paths: string[] = []
-    for (const file of files) {
-      paths.push(await ingestLibraryFile(file, 'characters'))
-    }
-
-    return paths
-  })
-
-  ipcMain.handle('library:list-materials', () => listMaterials())
-
-  ipcMain.handle('library:import-materials', async (event) => {
-    const files = await pickFiles(event, {
-      title: '导入素材',
-      properties: ['openFile', 'multiSelections'],
-      filters: MATERIAL_FILTERS
-    })
-
-    return importMaterials(files)
-  })
-
-  ipcMain.handle('library:save-assets', async (_event, relPaths: string[]) => {
-    const root = getCurrentProjectRoot()
-    if (!root) throw new Error('没有打开的项目')
-
-    const rootPath = resolve(root)
-    const files: string[] = []
-
-    for (const relPath of relPaths) {
-      const absolute = resolve(rootPath, relPath)
-      if (
-        !absolute.startsWith(`${rootPath}\\`) &&
-        !absolute.startsWith(`${rootPath}/`)
-      ) {
-        continue
-      }
-
-      try {
-        const info = await stat(absolute)
-        if (info.isFile()) files.push(absolute)
-      } catch {
-        // 素材缺失时跳过
-      }
-    }
-
-    return importMaterials(files)
-  })
-
-  ipcMain.handle('library:delete-material', (_event, id: string) =>
-    deleteMaterial(id)
-  )
-
   ipcMain.handle('library:list-templates', () => listTemplates())
 
   ipcMain.handle('library:save-template', (_event, input: TemplateInput) =>

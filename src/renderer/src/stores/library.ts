@@ -1,142 +1,328 @@
 import { create } from 'zustand'
+import type { AssetScope } from '@shared/asset-schema'
 import type {
   CharacterCard,
-  CharacterInput,
-  LibraryMaterial,
+  LibraryAsset,
+  LibraryFolderNode,
   PromptTemplate,
   TemplateInput
 } from '@shared/library-schema'
+import { PROMPT_FOLDER } from '@shared/library-schema'
 
-type LibraryTab = 'characters' | 'materials' | 'templates'
+export interface PendingAdd {
+  sourcePath: string
+  scope: AssetScope
+  name: string
+}
 
 interface LibraryState {
   panelOpen: boolean
-  tab: LibraryTab
+  mode: 'browse' | 'pick'
+  root: string
+  isDefault: boolean
+  tree: LibraryFolderNode[]
+  folder: string
+  assets: LibraryAsset[]
+  allAssets: LibraryAsset[]
   characters: CharacterCard[]
-  materials: LibraryMaterial[]
   templates: PromptTemplate[]
   loading: boolean
   error: string | null
+  pendingAdd: PendingAdd | null
 
-  openPanel: (tab?: LibraryTab) => void
+  openPanel: (folder?: string) => void
+  openPicker: (pending: PendingAdd) => void
   closePanel: () => void
-  setTab: (tab: LibraryTab) => void
-  load: () => Promise<void>
-  saveCharacter: (input: CharacterInput) => Promise<void>
-  deleteCharacter: (id: string) => Promise<void>
-  pickCharacterImages: () => Promise<string[]>
-  importMaterials: () => Promise<void>
-  deleteMaterial: (id: string) => Promise<void>
-  saveTemplate: (input: TemplateInput) => Promise<void>
+  setFolder: (folder: string) => Promise<void>
+  refresh: () => Promise<void>
+  loadCharacters: () => Promise<void>
+  loadTemplates: () => Promise<void>
+  createFolder: (parent: string, name: string) => Promise<LibraryFolderNode | null>
+  renameFolder: (path: string, name: string) => Promise<void>
+  deleteFolder: (path: string) => Promise<void>
+  importAssets: () => Promise<LibraryAsset[]>
+  confirmAdd: (folder: string) => Promise<LibraryAsset | null>
+  renameAsset: (path: string, name: string) => Promise<void>
+  deleteAsset: (path: string) => Promise<void>
+  reveal: (path: string) => Promise<void>
+  saveTemplate: (input: TemplateInput) => Promise<boolean>
   deleteTemplate: (id: string) => Promise<void>
+  chooseRoot: () => Promise<void>
+  resetRoot: () => Promise<void>
+  revealRoot: () => Promise<void>
 }
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-export const useLibraryStore = create<LibraryState>((set, get) => ({
-  panelOpen: false,
-  tab: 'characters',
-  characters: [],
-  materials: [],
-  templates: [],
-  loading: false,
-  error: null,
-
-  openPanel: (tab) => {
-    set({ panelOpen: true, tab: tab ?? get().tab, error: null })
-    void get().load()
-  },
-
-  closePanel: () => set({ panelOpen: false }),
-  setTab: (tab) => set({ tab }),
-
-  load: async () => {
-    set({ loading: true })
-    try {
-      const [characters, materials, templates] = await Promise.all([
-        window.api.library.listCharacters(),
-        window.api.library.listMaterials(),
-        window.api.library.listTemplates()
-      ])
-      set({ characters, materials, templates, loading: false, error: null })
-    } catch (error) {
-      set({ loading: false, error: messageOf(error) })
-    }
-  },
-
-  saveCharacter: async (input) => {
-    try {
-      const card = await window.api.library.saveCharacter(input)
-      const list = get().characters
-      const exists = list.some((item) => item.id === card.id)
-      set({
-        characters: exists
-          ? list.map((item) => (item.id === card.id ? card : item))
-          : [...list, card],
-        error: null
-      })
-    } catch (error) {
-      set({ error: messageOf(error) })
-    }
-  },
-
-  deleteCharacter: async (id) => {
-    await window.api.library.deleteCharacter(id)
-    set({ characters: get().characters.filter((item) => item.id !== id) })
-  },
-
-  pickCharacterImages: async () => {
-    try {
-      return await window.api.library.pickCharacterImages()
-    } catch (error) {
-      set({ error: messageOf(error) })
-      return []
-    }
-  },
-
-  importMaterials: async () => {
-    try {
-      const imported = await window.api.library.importMaterials()
-      if (imported.length === 0) return
-
-      const merged = [...get().materials]
-      for (const material of imported) {
-        if (!merged.some((item) => item.id === material.id)) {
-          merged.push(material)
-        }
-      }
-
-      set({ materials: merged, error: null })
-    } catch (error) {
-      set({ error: messageOf(error) })
-    }
-  },
-
-  deleteMaterial: async (id) => {
-    await window.api.library.deleteMaterial(id)
-    set({ materials: get().materials.filter((item) => item.id !== id) })
-  },
-
-  saveTemplate: async (input) => {
-    try {
-      const template = await window.api.library.saveTemplate(input)
-      const list = get().templates
-      const exists = list.some((item) => item.id === template.id)
-      set({
-        templates: exists
-          ? list.map((item) => (item.id === template.id ? template : item))
-          : [...list, template],
-        error: null
-      })
-    } catch (error) {
-      set({ error: messageOf(error) })
-    }
-  },
-
-  deleteTemplate: async (id) => {
-    await window.api.library.deleteTemplate(id)
-    set({ templates: get().templates.filter((item) => item.id !== id) })
+export const useLibraryStore = create<LibraryState>((set, get) => {
+  const loadRoot = async (): Promise<void> => {
+    const info = await window.api.library.root()
+    set({ root: info.root, isDefault: info.isDefault })
   }
-}))
+
+  const loadTree = async (): Promise<void> => {
+    const tree = await window.api.library.tree()
+    set({ tree })
+  }
+
+  const loadFolder = async (folder: string): Promise<void> => {
+    const assets = await window.api.library.listAssets(folder)
+    set({ folder, assets })
+  }
+
+  const loadCharacters = async (): Promise<void> => {
+    const characters = await window.api.library.listCharacters()
+    set({ characters })
+  }
+
+  const loadTemplates = async (): Promise<void> => {
+    const templates = await window.api.library.listTemplates()
+    set({ templates })
+  }
+
+  return {
+    panelOpen: false,
+    mode: 'browse',
+    root: '',
+    isDefault: true,
+    tree: [],
+    folder: '',
+    assets: [],
+    allAssets: [],
+    characters: [],
+    templates: [],
+    loading: false,
+    error: null,
+    pendingAdd: null,
+
+    openPanel: (folder) => {
+      const target = folder ?? get().folder
+      set({ panelOpen: true, mode: 'browse', pendingAdd: null, error: null })
+      void get()
+        .refresh()
+        .then(() => get().setFolder(target))
+    },
+
+    openPicker: (pending) => {
+      set({
+        panelOpen: true,
+        mode: 'pick',
+        pendingAdd: pending,
+        folder: '',
+        error: null
+      })
+      void get().refresh()
+    },
+
+    closePanel: () => set({ panelOpen: false, pendingAdd: null, error: null }),
+
+    setFolder: async (folder) => {
+      set({ loading: true })
+      try {
+        await loadFolder(folder)
+        set({ loading: false, error: null })
+      } catch (error) {
+        set({ loading: false, error: messageOf(error) })
+      }
+    },
+
+    refresh: async () => {
+      set({ loading: true })
+      try {
+        const [rootInfo, tree, assets, allAssets, characters, templates] =
+          await Promise.all([
+            window.api.library.root(),
+            window.api.library.tree(),
+            window.api.library.listAssets(get().folder),
+            window.api.library.listAllAssets(),
+            window.api.library.listCharacters(),
+            window.api.library.listTemplates()
+          ])
+
+        set({
+          root: rootInfo.root,
+          isDefault: rootInfo.isDefault,
+          tree,
+          assets,
+          allAssets,
+          characters,
+          templates,
+          loading: false,
+          error: null
+        })
+      } catch (error) {
+        set({ loading: false, error: messageOf(error) })
+      }
+    },
+
+    loadCharacters,
+    loadTemplates,
+
+    createFolder: async (parent, name) => {
+      try {
+        const node = await window.api.library.createFolder(parent, name)
+        await loadTree()
+        set({ error: null })
+        return node
+      } catch (error) {
+        set({ error: messageOf(error) })
+        return null
+      }
+    },
+
+    renameFolder: async (path, name) => {
+      try {
+        const next = await window.api.library.renameFolder(path, name)
+        const current = get().folder
+        const folder =
+          current === path
+            ? next
+            : current.startsWith(`${path}/`)
+              ? `${next}${current.slice(path.length)}`
+              : current
+
+        await loadTree()
+        if (folder !== current) await loadFolder(folder)
+        set({ error: null })
+      } catch (error) {
+        set({ error: messageOf(error) })
+      }
+    },
+
+    deleteFolder: async (path) => {
+      try {
+        await window.api.library.deleteFolder(path)
+        const current = get().folder
+        const parent = path.split('/').slice(0, -1).join('/')
+        const folder =
+          current === path || current.startsWith(`${path}/`) ? parent : current
+
+        await loadTree()
+        if (folder !== current) await loadFolder(folder)
+        set({ error: null })
+      } catch (error) {
+        set({ error: messageOf(error) })
+      }
+    },
+
+    importAssets: async () => {
+      try {
+        const imported = await window.api.library.importAssets(get().folder)
+        if (imported.length > 0) {
+          await Promise.all([loadFolder(get().folder), loadTree()])
+        }
+        set({ error: null })
+        return imported
+      } catch (error) {
+        set({ error: messageOf(error) })
+        return []
+      }
+    },
+
+    confirmAdd: async (folder) => {
+      const pending = get().pendingAdd
+      if (!pending) return null
+
+      try {
+        const asset = await window.api.library.addAsset({ ...pending, folder })
+        await Promise.all([loadTree(), loadCharacters()])
+        if (get().folder === folder) await loadFolder(folder)
+        set({ error: null, pendingAdd: null, panelOpen: false })
+        return asset
+      } catch (error) {
+        set({ error: messageOf(error) })
+        return null
+      }
+    },
+
+    renameAsset: async (path, name) => {
+      try {
+        await window.api.library.renameAsset(path, name)
+        await loadFolder(get().folder)
+        set({ error: null })
+      } catch (error) {
+        set({ error: messageOf(error) })
+      }
+    },
+
+    deleteAsset: async (path) => {
+      try {
+        await window.api.library.deleteAsset(path)
+        await Promise.all([
+          loadFolder(get().folder),
+          loadTree(),
+          loadCharacters()
+        ])
+        set({ error: null })
+      } catch (error) {
+        set({ error: messageOf(error) })
+      }
+    },
+
+    reveal: async (path) => {
+      try {
+        await window.api.library.reveal(path)
+      } catch (error) {
+        set({ error: messageOf(error) })
+      }
+    },
+
+    saveTemplate: async (input) => {
+      try {
+        await window.api.library.saveTemplate(input)
+        await loadTemplates()
+        set({ error: null })
+        return true
+      } catch (error) {
+        set({ error: messageOf(error) })
+        return false
+      }
+    },
+
+    deleteTemplate: async (id) => {
+      try {
+        await window.api.library.deleteTemplate(id)
+        await loadTemplates()
+        set({ error: null })
+      } catch (error) {
+        set({ error: messageOf(error) })
+      }
+    },
+
+    chooseRoot: async () => {
+      try {
+        const info = await window.api.library.chooseRoot()
+        if (!info) return
+
+        set({ root: info.root, isDefault: info.isDefault })
+        await get().refresh()
+        await get().setFolder('')
+      } catch (error) {
+        set({ error: messageOf(error) })
+      }
+    },
+
+    resetRoot: async () => {
+      try {
+        const info = await window.api.library.resetRoot()
+        set({ root: info.root, isDefault: info.isDefault })
+        await get().refresh()
+        await get().setFolder('')
+      } catch (error) {
+        set({ error: messageOf(error) })
+      }
+    },
+
+    revealRoot: async () => {
+      try {
+        await window.api.library.revealRoot()
+      } catch (error) {
+        set({ error: messageOf(error) })
+      }
+    }
+  }
+})
+
+export const PROMPT_FOLDER_PATH = PROMPT_FOLDER

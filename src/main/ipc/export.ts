@@ -5,6 +5,8 @@ import { basename, extname, join, resolve } from 'node:path'
 import type { ExportResult } from '../../shared/ipc-contract'
 import { getCurrentProjectRoot } from '../project/manager'
 import { zipDirectory } from '../export/zip'
+import { getLibraryRoot } from '../library/config'
+import type { AssetRef, AssetScope } from '../../shared/asset-schema'
 
 function stamp(): string {
   const now = new Date()
@@ -89,8 +91,8 @@ export function registerExportIpc(): void {
 
   ipcMain.handle(
     'export:asset',
-    async (event, relPath: string, fileName: string): Promise<ExportResult> => {
-      const root = getCurrentProjectRoot()
+    async (event, relPath: string, fileName: string, scope?: AssetScope): Promise<ExportResult> => {
+      const root = scope === 'global' ? await getLibraryRoot() : getCurrentProjectRoot()
       if (!root) return { ok: false, error: '没有打开的项目' }
 
       const rootPath = resolve(root)
@@ -132,20 +134,22 @@ export function registerExportIpc(): void {
     'export:assets',
     async (
       event,
-      relPaths: string[],
+      assets: AssetRef[],
       fileName: string
     ): Promise<ExportResult> => {
       const root = getCurrentProjectRoot()
       if (!root) return { ok: false, error: '没有打开的项目' }
 
-      const rootPath = resolve(root)
+      const projectBase = resolve(root)
+      const libraryBase = resolve(await getLibraryRoot())
       const files: string[] = []
 
-      for (const relPath of relPaths) {
-        const absolute = resolve(rootPath, relPath)
+      for (const asset of assets) {
+        const base = asset.scope === 'global' ? libraryBase : projectBase
+        const absolute = resolve(base, asset.path)
         if (
-          !absolute.startsWith(`${rootPath}\\`) &&
-          !absolute.startsWith(`${rootPath}/`)
+          !absolute.startsWith(`${base}\\`) &&
+          !absolute.startsWith(`${base}/`)
         ) {
           continue
         }

@@ -1,6 +1,11 @@
 import type { XYPosition } from '@xyflow/react'
-import { NODE_META, TITLE_HEIGHT, type OutputRef } from '@shared/canvas-schema'
-import type { LibraryMaterial } from '@shared/library-schema'
+import {
+  NODE_META,
+  TITLE_HEIGHT,
+  type NodeKind,
+  type OutputRef
+} from '@shared/canvas-schema'
+import type { LibraryAsset } from '@shared/library-schema'
 import { useCanvasStore } from '../stores/canvas'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
@@ -17,28 +22,35 @@ function viewportCenter(): XYPosition {
   }
 }
 
-function materialOutput(material: LibraryMaterial): OutputRef {
+function materialOutput(material: LibraryAsset): OutputRef {
   return {
-    id: material.id,
+    id: material.path,
     path: material.path,
-    kind: material.kind,
-    createdAt: material.createdAt,
-    model: '上传'
+    scope: 'global',
+    kind: material.kind === 'template' ? 'image' : material.kind,
+    createdAt: material.modifiedAt,
+    model: '资产库'
   }
 }
 
 export async function uploadMaterialsAt(flow: XYPosition): Promise<number> {
-  const materials = await window.api.library.importMaterials()
+  const materials = await window.api.library.importAssets('场景')
   if (materials.length === 0) return 0
 
-  void useLibraryStore.getState().load()
+  void useLibraryStore.getState().refresh()
 
   const store = useCanvasStore.getState()
   let offsetY = 0
 
   for (const material of materials) {
-    const meta = NODE_META[material.kind]
-    const id = store.addNode(material.kind, {
+    const kind: NodeKind =
+      material.kind === 'video'
+        ? 'video'
+        : material.kind === 'audio'
+          ? 'audio'
+          : 'image'
+    const meta = NODE_META[kind]
+    const id = store.addNode(kind, {
       x: flow.x,
       y: flow.y + offsetY
     })
@@ -47,7 +59,7 @@ export async function uploadMaterialsAt(flow: XYPosition): Promise<number> {
       title: material.name,
       status: 'done',
       outputs: [materialOutput(material)],
-      selectedOutputId: material.id
+      selectedOutputId: material.path
     })
 
     offsetY += meta.height + TITLE_HEIGHT + 24

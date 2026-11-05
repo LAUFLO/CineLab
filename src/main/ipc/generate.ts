@@ -25,6 +25,7 @@ import {
 import { generateVideoArk } from '../providers/volcengine'
 import { withRetry } from '../providers/retry'
 import { resolveProvider } from '../settings/store'
+import { getLibraryRoot } from '../library/config'
 
 function broadcast(event: GenerationEvent): void {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -54,10 +55,15 @@ async function loadRefs(
 ): Promise<Array<{ dataUrl: string; role: string }>> {
   if (!refs || refs.length === 0) return []
 
-  const root = resolve(projectRoot)
+  const projectBase = resolve(projectRoot)
+  const libraryBase =
+    refs.some((ref) => ref.scope === 'global')
+      ? resolve(await getLibraryRoot())
+      : null
   const loaded: Array<{ dataUrl: string; role: string }> = []
 
   for (const ref of refs.slice(0, 4)) {
+    const root = ref.scope === 'global' && libraryBase ? libraryBase : projectBase
     const absolute = resolve(root, ref.path)
 
     if (!absolute.startsWith(`${root}\\`) && !absolute.startsWith(`${root}/`)) {

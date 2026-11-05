@@ -1,7 +1,8 @@
 import { protocol } from 'electron'
 import { promises as fs } from 'node:fs'
-import { extname, resolve } from 'node:path'
+import { extname, resolve, sep } from 'node:path'
 import { getCurrentProjectRoot } from './project/manager'
+import { getLibraryRoot } from './library/config'
 
 export const ASSET_SCHEME = 'cinelab-asset'
 
@@ -11,11 +12,17 @@ const MIME: Record<string, string> = {
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
   '.gif': 'image/gif',
+  '.bmp': 'image/bmp',
   '.svg': 'image/svg+xml',
   '.mp4': 'video/mp4',
   '.webm': 'video/webm',
+  '.mov': 'video/quicktime',
+  '.mkv': 'video/x-matroska',
   '.mp3': 'audio/mpeg',
   '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
+  '.ogg': 'audio/ogg',
+  '.flac': 'audio/flac',
   '.json': 'application/json',
   '.txt': 'text/plain'
 }
@@ -35,19 +42,22 @@ export function registerAssetScheme(): void {
 
 export function registerAssetProtocol(): void {
   protocol.handle(ASSET_SCHEME, async (request) => {
-    const root = getCurrentProjectRoot()
+    const url = new URL(request.url)
+    const host = url.hostname || 'local'
+    const root =
+      host === 'global' ? await getLibraryRoot() : getCurrentProjectRoot()
+
     if (!root) {
       return new Response('No project', { status: 404 })
     }
 
-    const url = new URL(request.url)
     const relative = decodeURIComponent(url.pathname).replace(/^\/+/, '')
     const target = resolve(root, relative)
     const rootResolved = resolve(root)
 
     const inside =
       target === rootResolved ||
-      target.startsWith(`${rootResolved}\\`) ||
+      target.startsWith(`${rootResolved}${sep}`) ||
       target.startsWith(`${rootResolved}/`)
 
     if (!inside) {
@@ -90,7 +100,8 @@ export function registerAssetProtocol(): void {
           'Cache-Control': 'no-cache'
         }
       })
-    } catch {
+    } catch (error) {
+      console.error('[asset] failed', target, error)
       return new Response('Not found', { status: 404 })
     }
   })

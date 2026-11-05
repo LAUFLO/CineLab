@@ -1,3 +1,4 @@
+import type { AssetRef, AssetScope } from './asset-schema'
 import type {
   CanvasData,
   ProjectMeta,
@@ -17,9 +18,12 @@ import type {
   GenerationEvent
 } from './generation'
 import type {
+  AddToLibraryInput,
+  SaveAssetInput,
   CharacterCard,
-  CharacterInput,
-  LibraryMaterial,
+  LibraryAsset,
+  LibraryFolderNode,
+  LibraryRootInfo,
   PromptTemplate,
   TemplateInput
 } from './library-schema'
@@ -67,14 +71,27 @@ export interface GenerateApi {
 }
 
 export interface LibraryApi {
+  root(): Promise<LibraryRootInfo>
+  chooseRoot(): Promise<LibraryRootInfo | null>
+  resetRoot(): Promise<LibraryRootInfo>
+  revealRoot(): Promise<void>
+
+  tree(): Promise<LibraryFolderNode[]>
+  listAssets(folder: string): Promise<LibraryAsset[]>
+  listAllAssets(): Promise<LibraryAsset[]>
+  createFolder(parent: string, name: string): Promise<LibraryFolderNode>
+  renameFolder(path: string, name: string): Promise<string>
+  deleteFolder(path: string): Promise<void>
+
+  importAssets(folder: string): Promise<LibraryAsset[]>
+  addAsset(input: AddToLibraryInput): Promise<LibraryAsset>
+  renameAsset(path: string, name: string): Promise<string>
+  deleteAsset(path: string): Promise<void>
+  reveal(path: string): Promise<void>
+
   listCharacters(): Promise<CharacterCard[]>
-  saveCharacter(input: CharacterInput): Promise<CharacterCard>
-  deleteCharacter(id: string): Promise<void>
-  pickCharacterImages(): Promise<string[]>
-  listMaterials(): Promise<LibraryMaterial[]>
-  importMaterials(): Promise<LibraryMaterial[]>
-  saveAssets(relPaths: string[]): Promise<LibraryMaterial[]>
-  deleteMaterial(id: string): Promise<void>
+  saveAssets(inputs: SaveAssetInput[], folder?: string): Promise<LibraryAsset[]>
+
   listTemplates(): Promise<PromptTemplate[]>
   saveTemplate(input: TemplateInput): Promise<PromptTemplate>
   deleteTemplate(id: string): Promise<void>
@@ -99,9 +116,8 @@ export interface ClipboardApi {
 export interface ExportApi {
   project(projectName: string): Promise<ExportResult>
   canvasPng(projectName: string, canvasName: string): Promise<ExportResult>
-  asset(relPath: string, fileName: string): Promise<ExportResult>
-  assets(relPaths: string[], fileName: string): Promise<ExportResult>
-}
+  asset(relPath: string, fileName: string, scope?: AssetScope): Promise<ExportResult>
+  assets(inputs: AssetRef[], fileName: string): Promise<ExportResult>}
 
 export interface CineApi {
   app: {

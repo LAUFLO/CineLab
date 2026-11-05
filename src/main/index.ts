@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import { registerIpc } from './ipc'
 import { registerAssetProtocol, registerAssetScheme } from './protocol'
 import { createMainWindow } from './window'
+import { ensureLibrary } from './library/config'
 
 if (!app.isPackaged) {
   app.commandLine.appendSwitch('remote-debugging-port', '9222')
@@ -21,7 +22,13 @@ if (!hasLock) {
     win.focus()
   })
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
+    try {
+      await ensureLibrary()
+    } catch (error) {
+      console.warn('[library] failed to initialize global library', error)
+    }
+
     registerAssetProtocol()
     registerIpc()
     createMainWindow()

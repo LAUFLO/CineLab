@@ -79,11 +79,25 @@ function ModelsSection() {
   }
 
   const removeModel = (id: string): void => {
-    setDraft((current) =>
-      current
-        ? { ...current, models: current.models.filter((model) => model.id !== id) }
-        : current
-    )
+    const model = draft?.models.find((item) => item.id === id)
+    if (!model) return
+
+    requestConfirm({
+      title: '删除模型',
+      message: `确定从「${draft?.name || '当前供应商'}」移除「${model.name}」吗？保存后生效。`,
+      confirmLabel: '删除',
+      danger: true,
+      onConfirm: () => {
+        setDraft((current) =>
+          current
+            ? {
+                ...current,
+                models: current.models.filter((item) => item.id !== id)
+              }
+            : current
+        )
+      }
+    })
   }
 
   const handleSave = async (): Promise<void> => {

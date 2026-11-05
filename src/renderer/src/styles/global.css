@@ -76,6 +76,7 @@ textarea {
 
 .topbar__group:last-child {
   padding-top: 6px;
+  padding-right: 112px;
 }
 
 .topbar__brand {
@@ -331,6 +332,80 @@ textarea {
 .icon-btn--close:hover {
   background: var(--danger);
   color: #fff;
+}
+
+/* 窗口控制：所有页面常驻右上角 */
+.window-controls {
+  position: fixed;
+  top: 6px;
+  right: 12px;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.window-drag-strip {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 40px;
+  z-index: 15;
+  -webkit-app-region: drag;
+}
+
+/* 导出菜单 */
+.export-wrap {
+  position: relative;
+}
+
+.export-menu {
+  position: absolute;
+  top: 34px;
+  right: 0;
+  width: 216px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-menu);
+  z-index: 90;
+}
+
+.export-menu .add-menu__item {
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.export-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 72px;
+  transform: translateX(-50%);
+  max-width: 560px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  font-size: 12px;
+  z-index: 320;
+  box-shadow: var(--shadow-float);
+}
+
+/* 导出画布时隐藏所有浮层 UI */
+body.is-exporting .topbar,
+body.is-exporting .bottombar,
+body.is-exporting .statusbar,
+body.is-exporting .promptbar,
+body.is-exporting .window-controls,
+body.is-exporting .library-panel,
+body.is-exporting .settings-overlay,
+body.is-exporting .export-menu,
+body.is-exporting .react-flow__minimap {
+  display: none !important;
 }
 
 /* 底部工具条 */
@@ -1886,8 +1961,9 @@ textarea {
 }
 
 .projects-dialog {
-  width: min(1360px, 100%);
-  max-height: 90vh;
+  width: min(1600px, 100%);
+  height: min(800px, 100%);
+  max-height: none;
   display: flex;
   flex-direction: column;
   border-radius: 18px;

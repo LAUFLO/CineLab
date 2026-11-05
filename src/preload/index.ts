@@ -80,6 +80,12 @@ const api: CineApi = {
       ipcRenderer.invoke('library:save-template', input),
     deleteTemplate: (id: string) =>
       ipcRenderer.invoke('library:delete-template', id)
+  },
+  export: {
+    project: (projectName: string) =>
+      ipcRenderer.invoke('export:project', projectName),
+    canvasPng: (projectName: string, canvasName: string) =>
+      ipcRenderer.invoke('export:canvas-png', projectName, canvasName)
   }
 }
 

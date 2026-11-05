@@ -82,6 +82,8 @@ D:\CineLab
 - `docs/models.md`：models.json 字段、适配器、Key 优先级与 http-template 说明
 - `docs/group-nodes.md`：分组节点设计（10 色、三种排列、拖出脱离、删除语义）
 - `src/main/library/store.ts`：角色卡、素材、模板存储与去重
+- `src/main/library/config.ts`：全局资产库根目录与路径配置
+- `src/renderer/src/panels/library/LibraryWindow.tsx`：全局资产库浮窗、文件夹树与资产网格
 - `src/renderer/src/panels/LibraryPanel.tsx`：资产库面板（角色 / 素材 / 模板）
 - `src/renderer/src/panels/ProjectCenter.tsx`：无项目启动页、最近项目
 - `src/main/export/zip.ts`：store 模式 zip 打包（跳过 `.lock` / `.trash`）

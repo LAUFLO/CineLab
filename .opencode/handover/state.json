@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "project": "CineLab",
   "root": "D:\\CineLab",
   "updatedAt": "2026-11-05",
@@ -558,6 +558,13 @@
       "title": "分组节点设计方案：10 色、横竖网格排列、拖出脱离、删除语义",
       "evidence": [
         "docs/group-nodes.md"
+      ]
+    },
+    {
+      "id": "T47",
+      "title": "全局资产库批量保存统一文件夹选择器",
+      "evidence": [
+        ".opencode/handover/evidence/global-library.md"
       ]
     }
   ],

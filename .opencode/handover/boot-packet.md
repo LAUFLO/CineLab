@@ -7,6 +7,7 @@
 
 - Phase：M6 completed；M3 已完成（火山、可灵、MiniMax、智谱、Vidu）
 - 已完成：models.json、Agnes 图片/图生图/视频、audio.music、多选工具栏、画布右键/框选/中键平移
+- 全局资产库已完成（T39/T40/T47）；K9–K11 为后续优化
 - 分组节点：设计完成，代码未开始
 - 阻塞：无
 

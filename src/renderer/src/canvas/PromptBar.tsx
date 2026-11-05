@@ -355,12 +355,6 @@ export function PromptBar() {
           <Icon name="frame" size={13} />
           画布参考
         </button>
-        {kind === 'image' ? (
-          <button type="button" className="promptbar__tool">
-            <Icon name="cursor" size={13} />
-            标记
-          </button>
-        ) : null}
         {kind === 'image' || kind === 'video' ? (
           <button
             type="button"

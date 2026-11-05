@@ -17,6 +17,7 @@ export type IconName =
   | 'moon'
   | 'minimize'
   | 'maximize'
+  | 'expand'
   | 'close'
   | 'image'
   | 'video'
@@ -85,6 +86,14 @@ const paths: Record<IconName, ReactNode> = {
   moon: <path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.8 6.8 0 0 0 9.7 9.7z" />,
   minimize: <path d="M5 12h14" />,
   maximize: <rect x="5.5" y="5.5" width="13" height="13" rx="1.5" />,
+  expand: (
+    <>
+      <path d="M9 4H4v5" />
+      <path d="M15 4h5v5" />
+      <path d="M9 20H4v-5" />
+      <path d="M15 20h5v-5" />
+    </>
+  ),
   close: <path d="M6 6l12 12M18 6 6 18" />,
   image: (
     <>

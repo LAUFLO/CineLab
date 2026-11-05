@@ -114,7 +114,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               setPreviewOpen(true)
             }}
           >
-            <Icon name="maximize" size={14} />
+            <Icon name="expand" size={14} />
             <span>展开</span>
           </button>
         </div>

@@ -43,9 +43,11 @@ corepack pnpm dist:win     # 打包 Windows 安装包
 - 左侧 `+` 只作为 target 接收连线，右侧 `+` 才发起下游生成。
 - 节点卡片不带「尝试」列表，参数全部收进 prompt bar。
 - 存储用 JSON / JSONL，不引入 SQLite 或原生模块。
+- 弹窗必须与 topbar 平级，禁止渲染在 topbar 内部（会被层叠上下文压住，且顶部 40px 是窗口拖拽区）。
 
 ## 已知环境注意事项
 
 - pnpm 12 的构建白名单写在 `pnpm-workspace.yaml` 的 `allowBuilds`。
 - Electron 二进制缺失时，用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 执行 `node node_modules/electron/install.js`。
 - TypeScript 7 的 `tsconfig` 不支持 `baseUrl`，`paths` 必须写 `./` 相对路径。
+- 公司电脑的企业加密软件会加密 `.ts` 源文件，TS 7 原生 `tsc` 会报 `Invalid character`；`pnpm typecheck` 已改为 `npx typescript@5.9.3`。

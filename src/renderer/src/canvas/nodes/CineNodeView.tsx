@@ -6,6 +6,7 @@ import { Icon, type IconName } from '../../components/Icon'
 import { useCanvasStore, type CineNode } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useUIStore } from '../../stores/ui'
+import { NodeToolbar } from './NodeToolbar'
 
 const ASSET_BASE = 'cinelab-asset://local'
 
@@ -87,37 +88,13 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     <>
     <div className={`cnode ${selected ? 'is-selected' : ''}`}>
       {selected && current && !isBusy ? (
-        <div className="cnode__toolbar nodrag nopan">
-          {current.width && current.height ? (
-            <span className="cnode__toolbar-size">
-              {current.width} × {current.height}
-            </span>
-          ) : null}
-          <button
-            type="button"
-            className="cnode__toolbar-btn"
-            title="下载素材"
-            onClick={(event) => {
-              event.stopPropagation()
-              void exportCurrent()
-            }}
-          >
-            <Icon name="download" size={15} />
-            <span>下载</span>
-          </button>
-          <button
-            type="button"
-            className="cnode__toolbar-btn"
-            title="查看大图"
-            onClick={(event) => {
-              event.stopPropagation()
-              setPreviewOpen(true)
-            }}
-          >
-            <Icon name="expand" size={14} />
-            <span>展开</span>
-          </button>
-        </div>
+        <NodeToolbar
+          nodeId={id}
+          kind={data.kind}
+          current={current}
+          onDownload={() => void exportCurrent()}
+          onExpand={() => setPreviewOpen(true)}
+        />
       ) : null}
 
       <div

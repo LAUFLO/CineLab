@@ -33,7 +33,7 @@ D:\CineLab
 │     ├─ canvas/            Canvas、TopBar、BottomBar、StatusBar、PromptBar、AddNodeMenu、nodes、edges
 │     ├─ stores/            canvas、project、settings、generation、library、ui
 │     ├─ panels/            SettingsPanel、LibraryPanel、ProjectCenter、ConfirmDialog
-│     ├─ components/        Icon
+│     ├─ components/        Icon、WindowControls、Toast
 │     ├─ theme/             useTheme
 │     └─ styles/            tokens.css、global.css
 ├─ .opencode/handover/      交接状态与文档
@@ -52,7 +52,7 @@ D:\CineLab
 | M3 | ⚠️ 部分完成 | 火山方舟视频、首尾帧已通；可灵 JWT 待接 |
 | M4 | ✅ 完成 | TTS、资产库（角色/素材/模板/一致性） |
 | M5 | ✅ 已完成免安装版 | 绿色版与 zip 可用；安装包已从计划移除 |
-| M6 | 🚧 进行中 | 导出、prompt bar 画布参考、图片标记 |
+| M6 | ✅ 完成 | 导出（项目 zip / 画布 PNG / 选中素材）、画布参考；图片标记取消 |
 
 ## 已完成的关键工件
 
@@ -76,6 +76,11 @@ D:\CineLab
 - `src/main/library/store.ts`：角色卡、素材、模板存储与去重
 - `src/renderer/src/panels/LibraryPanel.tsx`：资产库面板（角色 / 素材 / 模板）
 - `src/renderer/src/panels/ProjectCenter.tsx`：无项目启动页、最近项目
+- `src/main/export/zip.ts`：store 模式 zip 打包（跳过 `.lock` / `.trash`）
+- `src/main/ipc/export.ts`：项目 zip、画布 PNG、选中素材导出
+- `src/renderer/src/components/WindowControls.tsx`：全局窗口三键
+- `src/renderer/src/components/Toast.tsx`：全局导出结果提示
+- `src/renderer/src/canvas/PromptBar.tsx`：画布参考拾取、自动连线、引用缩略图
 
 ## 设计约定
 

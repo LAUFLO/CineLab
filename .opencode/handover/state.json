@@ -4,10 +4,10 @@
   "root": "D:\\CineLab",
   "updatedAt": "2026-11-05",
   "phase": "M6",
-  "phaseStatus": "in_progress",
-  "phaseGoal": "收尾：导出、prompt bar 画布参考、图片标记；AI 助手延后单独做",
-  "nextPhase": "M6",
-  "next_focus": "K5 收尾：导出（项目/画布/素材）、prompt bar 画布参考、标记；AI 助手不做，等后续单独做 agent 与画布协作",
+  "phaseStatus": "completed",
+  "phaseGoal": "收尾完成：导出、画布参考已落地；图片标记按用户要求取消；AI 助手延后单独做",
+  "nextPhase": "待定",
+  "next_focus": null,
   "frontier": [
     {
       "id": "M2-1",
@@ -95,17 +95,24 @@
     {
       "id": "P6-1",
       "title": "导出：项目打包、当前画布 PNG、选中素材",
-      "status": "pending"
+      "status": "done",
+      "evidence": [
+        ".opencode/handover/evidence/P6-1-export.md"
+      ]
     },
     {
       "id": "P6-2",
       "title": "prompt bar 画布参考：点选画布节点引用其输出",
-      "status": "pending"
+      "status": "done",
+      "evidence": [
+        ".opencode/handover/evidence/P6-2-canvas-reference.md"
+      ]
     },
     {
       "id": "P6-3",
       "title": "标记：图片局部涂抹 / 蒙版",
-      "status": "pending"
+      "status": "dropped",
+      "note": "用户明确取消标记功能，prompt bar 按钮已删除"
     },
     {
       "id": "AGENT-1",
@@ -118,7 +125,7 @@
     {
       "id": "K1",
       "area": "generation",
-      "content": "图生图已接通标准 /images/edits；中转站兼容与多图 image[] 未验证。"
+      "content": "图生图支持多图 image[]；字段被中转站拒绝时自动回退单图 image。仍待真实 i2i provider 端到端验证。"
     },
     {
       "id": "K2",
@@ -138,7 +145,7 @@
     {
       "id": "K5",
       "area": "ui",
-      "content": "导出、画布参考、标记列为下一阶段；AI 助手延后单独做 agent 与画布协作。"
+      "content": "导出（项目 zip / 画布 PNG / 选中素材）与画布参考已完成；标记取消；AI 助手延后单独做 agent 与画布协作。"
     },
     {
       "id": "K6",
@@ -301,6 +308,78 @@
       "evidence": [
         "https://github.com/LAUFLO/CineLab/commit/3fd8675"
       ]
+    },
+    {
+      "id": "T20",
+      "title": "全部项目弹窗 1600×800、卡片紧凑、路径三行显示",
+      "evidence": [
+        "src/renderer/src/canvas/TopBar.tsx",
+        "src/renderer/src/styles/global.css"
+      ]
+    },
+    {
+      "id": "T21",
+      "title": "窗口三键全局常驻，欢迎页/加载页可点并可拖动窗口",
+      "evidence": [
+        "src/renderer/src/components/WindowControls.tsx",
+        "src/renderer/src/App.tsx"
+      ]
+    },
+    {
+      "id": "T22",
+      "title": "导出项目 zip 与当前画布 PNG，文件名带时分秒",
+      "evidence": [
+        "src/main/export/zip.ts",
+        "src/main/ipc/export.ts",
+        ".opencode/handover/evidence/P6-1-export.md"
+      ]
+    },
+    {
+      "id": "T23",
+      "title": "导出选中素材：节点 hover 按钮 + 资产库 + 全局 toast",
+      "evidence": [
+        "src/renderer/src/canvas/nodes/CineNodeView.tsx",
+        "src/renderer/src/panels/LibraryPanel.tsx",
+        "src/renderer/src/components/Toast.tsx"
+      ]
+    },
+    {
+      "id": "T24",
+      "title": "画布参考拾取：自动连线、缩略图、删除引用同步删连线",
+      "evidence": [
+        "src/renderer/src/canvas/PromptBar.tsx",
+        ".opencode/handover/evidence/P6-2-canvas-reference.md"
+      ]
+    },
+    {
+      "id": "T25",
+      "title": "资产库 UI 修复：缺失样式、侧边栏高度、空状态与操作按钮",
+      "evidence": [
+        "src/renderer/src/panels/LibraryPanel.tsx",
+        "src/renderer/src/styles/global.css"
+      ]
+    },
+    {
+      "id": "T26",
+      "title": "参数选择改为下拉框；画布参考顶部深绿提示条",
+      "evidence": [
+        "src/renderer/src/canvas/PromptBar.tsx",
+        "src/renderer/src/styles/tokens.css"
+      ]
+    },
+    {
+      "id": "T27",
+      "title": "图生图字段兼容：多图 image[]，被拒自动回退单图 image",
+      "evidence": [
+        "src/main/providers/openai-compat.ts"
+      ]
+    },
+    {
+      "id": "T28",
+      "title": "MOSS provider 配置与端到端生图验证（key 加密存储，不落明文）",
+      "evidence": [
+        "src/main/settings/store.ts"
+      ]
     }
   ],
   "lessons": [
@@ -367,6 +446,30 @@
     {
       "category": "procedure",
       "content": "从 ZIP 解压的项目没有 .git，需要 git init + fetch + update-ref refs/heads/main origin/main + reset --mixed，再提交差异。"
+    },
+    {
+      "category": "preference",
+      "content": "参数选择用点击展开的下拉框，不要用循环切换；画布参考等模式提示放窗口顶部，不要只放 prompt bar 上方。"
+    },
+    {
+      "category": "engineering",
+      "content": "画布参考拾取节点时，必须同时拦截 pointerdown 和 click：只拦 pointerdown 时 React Flow 仍会在 click 阶段切换选中，导致 prompt bar 重挂载、引用缩略图丢失。"
+    },
+    {
+      "category": "engineering",
+      "content": "删除引用缩略图必须同步删除对应 edge，否则上游 refs 会立刻把引用重新注入，看起来像没删掉。"
+    },
+    {
+      "category": "procedure",
+      "content": "Vite HMR 在多次快速编辑后可能缓存混合版本模块，表现为代码已改但页面仍渲染旧结构；强制刷新无效时直接重启 dev。"
+    },
+    {
+      "category": "procedure",
+      "content": "MOSS 使用 baseUrl https://api.mosi.cn/v1、模型 moss-image-sft-1.0，只支持文生图，不支持图生图；Key 通过设置面板加密存储，不要写入 state/evidence/代码。"
+    },
+    {
+      "category": "engineering",
+      "content": "导出素材前必须把相对路径 resolve 后校验仍在项目根目录内，并先 stat 确认文件存在，再弹保存框。"
     }
   ],
   "designConventions": [
@@ -379,16 +482,17 @@
     "确认弹窗、全部项目浮窗使用应用内组件，与主题变量一致"
   ],
   "stats": {
-    "sessions": 4,
+    "sessions": 5,
     "completedMilestones": [
       "M0",
       "M1",
       "M2",
-      "M4"
+      "M4",
+      "M6"
     ],
     "partialMilestones": [
       "M3"
     ],
-    "nextMilestone": "M6"
+    "nextMilestone": "待定"
   }
 }

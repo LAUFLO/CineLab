@@ -34,6 +34,7 @@
 corepack pnpm dev          # 启动 Electron + Vite
 corepack pnpm dev:isolated # 独立测试实例：自动分配 CDP 端口和临时 userData
 corepack pnpm typecheck    # 主进程 + 渲染进程类型检查
+corepack pnpm check:encryption # 检查透明加密文件与 Git blob 是否为明文
 corepack pnpm build        # 构建
 corepack pnpm dist:win     # 打包 Windows 安装包
 ```
@@ -66,3 +67,4 @@ corepack pnpm dist:win     # 打包 Windows 安装包
 - Electron 二进制缺失时，用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 执行 `node node_modules/electron/install.js`。
 - TypeScript 7 的 `tsconfig` 不支持 `baseUrl`，`paths` 必须写 `./` 相对路径。
 - `pnpm typecheck` 自动探测：本地 TypeScript 7 可用时直接使用，检测到加密导致的 `Invalid character` 时自动回退 `typescript@5.9.3`。
+- 企业加密软件会对部分 `.ts` 透明加密：Node、Git、Vite 读明文，TS7 原生 `tsgo` 读密文并报 `Invalid character`。`pnpm check:encryption` 会列出受影响文件并检查 Git blob；推送前确认 Git 为明文。

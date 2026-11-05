@@ -106,6 +106,7 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
   }
 
   return (
+    <>
     <header className="topbar">
       <div className="topbar__group" ref={menuRef}>
         <div className="topbar__workspace">
@@ -322,11 +323,13 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
         </button>
       </div>
 
-      {projectsOpen ? (
-        <div
-          className="projects-overlay"
-          onPointerDown={() => setProjectsOpen(false)}
-        >
+    </header>
+
+    {projectsOpen ? (
+      <div
+        className="projects-overlay"
+        onPointerDown={() => setProjectsOpen(false)}
+      >
           <div
             className="projects-dialog"
             onPointerDown={(event) => event.stopPropagation()}
@@ -398,6 +401,6 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
           </div>
         </div>
       ) : null}
-    </header>
-  )
+  </>
+)
 }

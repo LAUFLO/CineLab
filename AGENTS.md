@@ -25,6 +25,7 @@
 | 技术架构 | `docs/architecture.md` |
 | 模型配置 | `models.json`（仓库根或用户数据目录） |
 | 模型配置说明 | `docs/models.md` |
+| 分组设计 | `docs/group-nodes.md` |
 
 ## 开发命令
 

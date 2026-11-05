@@ -117,7 +117,8 @@ export function PromptBar() {
     if (!paramMenuKey && !advancedOpen) return
 
     const onPointerDown = (event: PointerEvent): void => {
-      const target = event.target as HTMLElement
+      const target = event.target
+      if (!(target instanceof Element)) return
       if (paramMenuKey && !target.closest('.param-picker')) setParamMenuKey(null)
       if (
         advancedOpen &&
@@ -152,7 +153,8 @@ export function PromptBar() {
     document.body.classList.add('is-picking')
 
     const onPointerDown = (event: PointerEvent): void => {
-      const target = event.target as HTMLElement
+      const target = event.target
+      if (!(target instanceof Element)) return
       if (target.closest('.promptbar')) return
 
       event.preventDefault()

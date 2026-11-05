@@ -26,7 +26,6 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const cancelGeneration = useGenerationStore((state) => state.cancel)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
-  const [toolbarOpen, setToolbarOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
 
   const submitTitle = (): void => {
@@ -75,11 +74,6 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     })
   }
 
-  const openToolbar = (): void => {
-    if (current?.kind !== 'image') return
-    setToolbarOpen((open) => !open)
-  }
-
   useEffect(() => {
     if (!previewOpen) return
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -92,7 +86,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   return (
     <>
     <div className={`cnode ${selected ? 'is-selected' : ''}`}>
-      {toolbarOpen && current && !isBusy ? (
+      {selected && current && !isBusy ? (
         <div className="cnode__toolbar nodrag nopan">
           {current.width && current.height ? (
             <span className="cnode__toolbar-size">
@@ -108,7 +102,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               void exportCurrent()
             }}
           >
-            <Icon name="download" size={13} />
+            <Icon name="download" size={15} />
             <span>下载</span>
           </button>
           <button
@@ -120,7 +114,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               setPreviewOpen(true)
             }}
           >
-            <Icon name="maximize" size={12} />
+            <Icon name="maximize" size={14} />
             <span>展开</span>
           </button>
         </div>
@@ -156,10 +150,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
       </div>
 
       <div className="cnode__card" style={{ minHeight: meta.height }}>
-        <div
-          className={`cnode__preview cnode__preview--${data.kind}`}
-          onClick={openToolbar}
-        >
+        <div className={`cnode__preview cnode__preview--${data.kind}`}>
           {assetSrc && current?.kind === 'text' ? (
             <p className="cnode__text">{data.text ?? '文本已生成'}</p>
           ) : assetSrc && current?.kind === 'audio' ? (

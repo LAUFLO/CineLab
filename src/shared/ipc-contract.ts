@@ -75,6 +75,18 @@ export interface LibraryApi {
   deleteTemplate(id: string): Promise<void>
 }
 
+export interface ExportResult {
+  ok: boolean
+  path?: string
+  canceled?: boolean
+  error?: string
+}
+
+export interface ExportApi {
+  project(projectName: string): Promise<ExportResult>
+  canvasPng(projectName: string, canvasName: string): Promise<ExportResult>
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -87,4 +99,5 @@ export interface CineApi {
   settings: SettingsApi
   generate: GenerateApi
   library: LibraryApi
+  export: ExportApi
 }

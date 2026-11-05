@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { BottomBar } from './canvas/BottomBar'
 import { Canvas } from './canvas/Canvas'
 import { StatusBar } from './canvas/StatusBar'
 import { TopBar } from './canvas/TopBar'
+import { WindowControls } from './components/WindowControls'
 import { ConfirmDialog } from './panels/ConfirmDialog'
 import { LibraryPanel } from './panels/LibraryPanel'
 import { ProjectCenter } from './panels/ProjectCenter'
@@ -47,21 +48,19 @@ export default function App() {
     scheduleSave()
   }, [nodes, edges, hydrated, phase, scheduleSave])
 
+  let content: ReactNode
+
   if (phase === 'loading') {
-    return (
+    content = (
       <div className="boot-screen">
         <div className="boot-screen__logo">CineLab</div>
         <div className="boot-screen__hint">正在打开项目…</div>
       </div>
     )
-  }
-
-  if (phase === 'welcome') {
-    return <ProjectCenter />
-  }
-
-  if (phase === 'error') {
-    return (
+  } else if (phase === 'welcome') {
+    content = <ProjectCenter />
+  } else if (phase === 'error') {
+    content = (
       <div className="boot-screen">
         <div className="boot-screen__logo">CineLab</div>
         <div className="boot-screen__hint">项目打开失败</div>
@@ -71,18 +70,26 @@ export default function App() {
         </button>
       </div>
     )
+  } else {
+    content = (
+      <div className="app-shell">
+        <Canvas key={canvasId ?? 'canvas'} theme={resolved} />
+        <TopBar theme={resolved} onToggleTheme={toggle} />
+        <BottomBar />
+        <StatusBar />
+        <SettingsPanel />
+        <LibraryPanel />
+        <ConfirmDialog />
+        {error ? <div className="toast">{error}</div> : null}
+      </div>
+    )
   }
 
   return (
-    <div className="app-shell">
-      <Canvas key={canvasId ?? 'canvas'} theme={resolved} />
-      <TopBar theme={resolved} onToggleTheme={toggle} />
-      <BottomBar />
-      <StatusBar />
-      <SettingsPanel />
-      <LibraryPanel />
-      <ConfirmDialog />
-      {error ? <div className="toast">{error}</div> : null}
-    </div>
+    <>
+      {content}
+      {phase === 'ready' ? null : <div className="window-drag-strip" />}
+      <WindowControls />
+    </>
   )
 }

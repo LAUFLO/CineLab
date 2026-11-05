@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ExportResult } from '@shared/ipc-contract'
 import type { RecentProject } from '@shared/project-schema'
 import { Icon } from '../components/Icon'
 import { useProjectStore } from '../stores/project'
@@ -32,26 +33,33 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
   const [canvasMenuOpen, setCanvasMenuOpen] = useState(false)
   const [projectsOpen, setProjectsOpen] = useState(false)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [exportNotice, setExportNotice] = useState<string | null>(null)
   const [recent, setRecent] = useState<RecentProject[]>([])
   const [editingProject, setEditingProject] = useState(false)
   const [projectDraft, setProjectDraft] = useState(name)
   const [editingCanvasId, setEditingCanvasId] = useState<string | null>(null)
   const [canvasDraft, setCanvasDraft] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
+  const exportRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!projectMenuOpen && !canvasMenuOpen) return
+    if (!projectMenuOpen && !canvasMenuOpen && !exportMenuOpen) return
 
     const onPointerDown = (event: PointerEvent): void => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setProjectMenuOpen(false)
         setCanvasMenuOpen(false)
       }
+      if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
+        setExportMenuOpen(false)
+      }
     }
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         setProjectMenuOpen(false)
         setCanvasMenuOpen(false)
+        setExportMenuOpen(false)
         setProjectsOpen(false)
       }
     }
@@ -62,7 +70,7 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
       window.removeEventListener('pointerdown', onPointerDown)
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [projectMenuOpen, canvasMenuOpen])
+  }, [projectMenuOpen, canvasMenuOpen, exportMenuOpen])
 
   const saveLabel = saving ? '保存中…' : lastSavedAt ? '已自动保存' : '就绪'
 
@@ -103,6 +111,35 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
         await deleteProject()
       }
     })
+  }
+
+  const showExportResult = (result: ExportResult, successText: string): void => {
+    if (result.ok) {
+      setExportNotice(`${successText}：${result.path ?? ''}`)
+    } else if (!result.canceled) {
+      setExportNotice(result.error ?? '导出失败')
+    } else {
+      return
+    }
+    window.setTimeout(() => setExportNotice(null), 3600)
+  }
+
+  const exportProject = async (): Promise<void> => {
+    setExportMenuOpen(false)
+    showExportResult(await window.api.export.project(name), '项目已导出')
+  }
+
+  const exportCanvas = async (): Promise<void> => {
+    setExportMenuOpen(false)
+    document.body.classList.add('is-exporting')
+    try {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+      showExportResult(await window.api.export.canvasPng(name, canvasName), '画布已导出')
+    } finally {
+      document.body.classList.remove('is-exporting')
+    }
   }
 
   return (
@@ -288,38 +325,40 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
 
       <div className="topbar__group">
         <span className="topbar__save">{saveLabel}</span>
-        <button className="icon-btn" title="导出">
-          <Icon name="download" />
-        </button>
+        <div className="export-wrap" ref={exportRef}>
+          <button
+            className="icon-btn"
+            title="导出"
+            onClick={() => setExportMenuOpen((open) => !open)}
+          >
+            <Icon name="download" />
+          </button>
+          {exportMenuOpen ? (
+            <div className="export-menu">
+              <button
+                type="button"
+                className="add-menu__item"
+                onClick={() => void exportProject()}
+              >
+                <Icon name="folder" size={16} />
+                <span>导出项目（.zip）</span>
+              </button>
+              <button
+                type="button"
+                className="add-menu__item"
+                onClick={() => void exportCanvas()}
+              >
+                <Icon name="image" size={16} />
+                <span>导出当前画布 PNG</span>
+              </button>
+            </div>
+          ) : null}
+        </div>
         <button className="icon-btn" title="切换主题" onClick={onToggleTheme}>
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
         </button>
         <button className="icon-btn" title="设置" onClick={openSettings}>
           <Icon name="settings" />
-        </button>
-
-        <div className="bottombar__divider" />
-
-        <button
-          className="icon-btn icon-btn--window"
-          title="最小化"
-          onClick={() => window.api.app.minimize()}
-        >
-          <Icon name="minimize" size={14} />
-        </button>
-        <button
-          className="icon-btn icon-btn--window"
-          title="最大化"
-          onClick={() => window.api.app.maximize()}
-        >
-          <Icon name="maximize" size={12} />
-        </button>
-        <button
-          className="icon-btn icon-btn--window icon-btn--close"
-          title="关闭"
-          onClick={() => window.api.app.close()}
-        >
-          <Icon name="close" size={14} />
         </button>
       </div>
 
@@ -401,6 +440,8 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
           </div>
         </div>
       ) : null}
+
+      {exportNotice ? <div className="export-toast">{exportNotice}</div> : null}
   </>
 )
 }

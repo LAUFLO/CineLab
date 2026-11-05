@@ -49,7 +49,7 @@ D:\CineLab
 | M0 | ✅ 完成 | 脚手架、三进程、主题、空画布 |
 | M1 | ✅ 完成 | 四类节点、拖拽、连线、菜单、prompt bar、持久化 |
 | M2 | ✅ 完成 | 项目文件夹、模型配置、文生图/图生图、文本生成、队列、版本栈 |
-| M3 | ⚠️ 部分完成 | 火山方舟视频、首尾帧已通；可灵 JWT 待接 |
+| M3 | ✅ 完成 | 火山方舟、可灵、MiniMax、智谱、Vidu 视频适配器；可灵支持 API Key 与 JWT |
 | M4 | ✅ 完成 | TTS、资产库（角色/素材/模板/一致性） |
 | M5 | ✅ 已完成免安装版 | 绿色版与 zip 可用；安装包已从计划移除 |
 | M6 | ✅ 完成 | 导出、画布参考、节点比例与工具栏、智能引用、AI 水印开关；图片标记取消 |
@@ -64,7 +64,12 @@ D:\CineLab
 - `src/renderer/src/canvas/StatusBar.tsx`：左下悬浮工具条（资产/整理/视图/连线/吸附/缩放）
 - `src/renderer/src/panels/SettingsPanel.tsx`：居中设置浮窗，左侧导航（模型服务/外观/快捷键/关于）
 - `src/main/settings/store.ts`：Provider 配置与 safeStorage 加密 Key
-- `src/main/providers/openai-compat.ts`：文生图/图生图、TTS、文本生成
+- `src/main/settings/models-config.ts`：`models.json` 读取、合并、预设解析与校验
+- `src/main/providers/openai-compat.ts`：文生图/图生图、TTS、文本生成、音乐生成
+- `src/main/providers/http-template.ts`：通用 HTTP 视频模板执行器
+- `src/main/providers/agnes.ts`：Agnes 视频适配器
+- `src/main/providers/kling.ts`：可灵视频适配器（API Key / JWT）
+- `src/main/providers/minimax.ts`：MiniMax H3 与旧版 Hailuo 适配器
 - `src/main/providers/volcengine.ts`：火山方舟视频异步轮询
 - `src/main/engine/queue.ts`：并发 2 任务队列、取消、进度事件
 - `src/main/assets/ingest.ts`：SHA-256 去重、缩略图、资产落盘、输出宽高记录
@@ -73,6 +78,9 @@ D:\CineLab
 - `src/renderer/src/canvas/nodes/CineNodeView.tsx`：节点统一外壳、版本栈、选中工具栏、图片浮窗
 - `src/renderer/src/canvas/AddNodeMenu.tsx`：「引用该节点生成」菜单
 - `src/renderer/src/canvas/PromptBar.tsx`：三行 prompt bar、画布参考、智能引用、比例网格、展开编辑
+- `src/renderer/src/canvas/MultiSelectBar.tsx`：多选工具栏（保存到资产 / 创建副本 / 导出 zip / 删除）
+- `docs/models.md`：models.json 字段、适配器、Key 优先级与 http-template 说明
+- `docs/group-nodes.md`：分组节点设计（10 色、三种排列、拖出脱离、删除语义）
 - `src/main/library/store.ts`：角色卡、素材、模板存储与去重
 - `src/renderer/src/panels/LibraryPanel.tsx`：资产库面板（角色 / 素材 / 模板）
 - `src/renderer/src/panels/ProjectCenter.tsx`：无项目启动页、最近项目
@@ -92,6 +100,9 @@ D:\CineLab
 6. 有最近项目直接进画布；无项目进入项目中心，不自动创建
 7. 节点按输出实际比例显示，工具栏随节点选中出现
 8. prompt bar 参数选择用下拉/网格，可展开为居中编辑浮窗
+9. 单选节点显示 prompt bar 与节点工具栏；多选隐藏单节点 UI，显示顶部多选工具栏
+10. 模型配置走 models.json；非 OpenAI 协议优先 http-template，特殊鉴权才写专用适配器
+11. 分组是持久父子节点关系，不是临时多选；设计见 docs/group-nodes.md
 
 ## 环境注意
 

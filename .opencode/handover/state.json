@@ -1,13 +1,13 @@
 {
-  "version": 4,
+  "version": 5,
   "project": "CineLab",
   "root": "D:\\CineLab",
   "updatedAt": "2026-11-05",
   "phase": "M6",
   "phaseStatus": "completed",
-  "phaseGoal": "收尾完成：导出、画布参考、节点比例与交互打磨已落地；图片标记取消；AI 助手延后",
-  "nextPhase": "待定",
-  "next_focus": "K3 音频音乐生成：接入 audio.music 执行器",
+  "phaseGoal": "M6 完成后的模型接入与画布增强：models.json、Agnes、音乐、视频适配器、多选工具栏；分组方案已确认",
+  "nextPhase": "M7 分组节点（feat/group-nodes）",
+  "next_focus": "实现分组节点：按 docs/group-nodes.md 开 feat/group-nodes 分支",
   "frontier": [
     {
       "id": "M2-1",
@@ -57,11 +57,11 @@
     {
       "id": "M3-1",
       "title": "视频生成适配器：可灵 / 火山方舟",
-      "status": "partial",
+      "status": "done",
       "evidence": [
         ".opencode/handover/evidence/M3-1-video-generation.md"
       ],
-      "note": "火山方舟已完成；可灵 JWT 鉴权待接入，未端到端验证"
+      "note": "火山方舟 + 可灵、MiniMax、智谱、Vidu 均已接入；本地 mock 验证通过，真实 Key 待端到端验证"
     },
     {
       "id": "M3-2",
@@ -123,8 +123,14 @@
     {
       "id": "K3-1",
       "title": "音频音乐生成：接入 audio.music 执行器",
+      "status": "done",
+      "note": "已接入 OpenAI 兼容 /audio/generations；mock 端到端验证通过"
+    },
+    {
+      "id": "GROUP-1",
+      "title": "分组节点：打组 / 合并分组 / 重命名 / 10 色 / 横竖网格排列 / 拖出脱离",
       "status": "pending",
-      "note": "下一会话焦点"
+      "note": "设计文档 docs/group-nodes.md 已完成，下一会话按该文档实现"
     }
   ],
   "knownIssues": [
@@ -137,16 +143,6 @@
       "id": "K2",
       "area": "generation",
       "content": "文本生成已接通标准 /chat/completions；流式输出、多轮上下文未实现。"
-    },
-    {
-      "id": "K3",
-      "area": "generation",
-      "content": "audio.music 未接入执行器，PromptBar 会列出但无法生成；已列为 K3-1，下一会话焦点。"
-    },
-    {
-      "id": "K4",
-      "area": "provider",
-      "content": "可灵 JWT 鉴权未接入；目前视频仅火山方舟。"
     },
     {
       "id": "K5",
@@ -182,6 +178,26 @@
       "id": "K11",
       "area": "library",
       "content": "资产网格直接加载原图，未生成缩略图缓存；大库滚动可能卡顿。"
+    },
+    {
+      "id": "K12",
+      "area": "provider",
+      "content": "智谱、Vidu、MiniMax、可灵适配器只经过本地 mock 验证，真实 API Key 端到端尚未验证。"
+    },
+    {
+      "id": "K13",
+      "area": "provider",
+      "content": "Agnes 视频免费队列持续返回 503 video_queue_full，文生视频/图生视频尚未真实跑通。"
+    },
+    {
+      "id": "K14",
+      "area": "export",
+      "content": "多选导出 zip 依赖原生保存对话框，自动化未确认最终 zip 落盘。"
+    },
+    {
+      "id": "K15",
+      "area": "assets",
+      "content": "测试在项目 assets 目录留下若干孤儿图片/视频素材，未清理，不影响画布引用。"
     }
   ],
   "gates": [],
@@ -496,6 +512,53 @@
       "evidence": [
         ".opencode/handover/evidence/global-library.md"
       ]
+    },
+    {
+      "id": "T41",
+      "title": "画布右键菜单、左键框选、中键平移、撤销/重做、节点与系统剪贴板粘贴",
+      "evidence": [
+        ".opencode/handover/evidence/ui-polish-2026-11-05.md"
+      ]
+    },
+    {
+      "id": "T42",
+      "title": "models.json 外部模型配置、只读 JSON provider、删除二次确认",
+      "evidence": [
+        "docs/models.md",
+        "models.example.json"
+      ]
+    },
+    {
+      "id": "T43",
+      "title": "Agnes 图片/图生图/视频接入，audio.music 执行器与音乐 mock 验证",
+      "evidence": [
+        "src/main/providers/agnes.ts",
+        "src/main/providers/openai-compat.ts"
+      ]
+    },
+    {
+      "id": "T44",
+      "title": "视频适配器：可灵、MiniMax H3/旧版、智谱、Vidu、通用 http-template",
+      "evidence": [
+        "src/main/providers/http-template.ts",
+        "src/main/providers/kling.ts",
+        "src/main/providers/minimax.ts",
+        "scripts/mock-video.mjs"
+      ]
+    },
+    {
+      "id": "T45",
+      "title": "多选工具栏：保存到资产、创建副本、导出 zip、删除；多选时隐藏单节点 UI",
+      "evidence": [
+        "src/renderer/src/canvas/MultiSelectBar.tsx"
+      ]
+    },
+    {
+      "id": "T46",
+      "title": "分组节点设计方案：10 色、横竖网格排列、拖出脱离、删除语义",
+      "evidence": [
+        "docs/group-nodes.md"
+      ]
     }
   ],
   "lessons": [
@@ -606,6 +669,26 @@
     {
       "category": "preference",
       "content": "节点悬浮工具栏随节点选中显示/隐藏，与 prompt bar 同步；按钮尺寸参考系统设置（28×28、齿轮图标）。"
+    },
+    {
+      "category": "engineering",
+      "content": "models.json 读取顺序：内置预设 → 用户数据目录 → 开发仓库根，后者覆盖同名 provider；Key 加密在 settings.json，JSON 只写 apiKeyEnv 或明文占位。"
+    },
+    {
+      "category": "engineering",
+      "content": "非 OpenAI 协议优先用 http-template：按 text/image/keyframe/reference 切换 path 与 body，轮询用 taskIdPath/statusPath/resultPath；JWT 和多步文件下载才写专用适配器。"
+    },
+    {
+      "category": "preference",
+      "content": "选中两个及以上节点时，必须隐藏 prompt bar 和所有节点工具栏，只显示顶部多选工具栏；只有一个节点时才显示单节点 UI。"
+    },
+    {
+      "category": "engineering",
+      "content": "分组节点用 React Flow parentId；子节点坐标相对组。若要“拖出即脱离”，不能设置 extent: parent，应在 onNodeDragStop 按节点中心点是否在组内判断。"
+    },
+    {
+      "category": "procedure",
+      "content": "新增非 OpenAI 厂商时先写本地 mock server，验证提交路径、鉴权头、请求体、轮询状态和下载，再接真实 Key；真实厂商验证受 Key 与免费队列限制。"
     }
   ],
   "designConventions": [
@@ -615,20 +698,20 @@
     "项目数据格式定义在 docs/architecture.md 第 5 章",
     "左下悬浮工具条 + 左上整体胶囊；资产库为左侧浮层，无全屏遮罩",
     "有最近项目启动直接进画布；无项目进入项目中心欢迎页，不自动创建项目",
-    "确认弹窗、全部项目浮窗使用应用内组件，与主题变量一致"
+    "确认弹窗、全部项目浮窗使用应用内组件，与主题变量一致",
+    "分组节点方案见 docs/group-nodes.md"
   ],
   "stats": {
-    "sessions": 7,
+    "sessions": 8,
     "completedMilestones": [
       "M0",
       "M1",
       "M2",
+      "M3",
       "M4",
       "M6"
     ],
-    "partialMilestones": [
-      "M3"
-    ],
-    "nextMilestone": "待定"
+    "partialMilestones": [],
+    "nextMilestone": "M7 分组节点（feat/group-nodes）"
   }
 }

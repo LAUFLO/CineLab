@@ -37,7 +37,7 @@
 ## 踩坑
 
 - 弹窗在 topbar 内会被层叠上下文压住；顶部 40px 是窗口拖拽区，按钮会点不动
-- 公司电脑加密 `.ts` 文件，typecheck 走 `npx typescript@5.9.3`
+- typecheck 自动探测：TS 7 可用即用，加密导致 `Invalid character` 时才回退 5.9
 - 主进程改动必须重启 dev，HMR 会报中间态错误
 
 ## 验证

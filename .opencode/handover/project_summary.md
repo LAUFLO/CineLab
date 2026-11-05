@@ -88,7 +88,7 @@ D:\CineLab
 
 ## 环境注意
 
-- 公司电脑的企业加密软件会加密 `.ts` 源文件，TypeScript 7 的原生 `tsc.exe` 读到密文会报 `Invalid character`；`typecheck` 改用 `npx typescript@5.9.3`
+- `typecheck` 自动探测：本地 TS 7 可用时直接使用，检测到加密导致的 `Invalid character` 时回退 `typescript@5.9.3`
 - `pnpm` 不在 PATH 时用 `corepack pnpm`
 - Electron 二进制缺失时用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 执行 `node node_modules/electron/install.js`
 - 从 ZIP 解压的目录没有 `.git`，需要重新 init 并关联远程

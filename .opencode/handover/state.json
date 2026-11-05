@@ -143,7 +143,7 @@
     {
       "id": "K6",
       "area": "env",
-      "content": "公司电脑加密软件会加密 .ts 源文件，TS 7 原生 tsc 报 Invalid character；typecheck 改用 npx typescript@5.9.3。pnpm 需 corepack pnpm。"
+      "content": "typecheck 自动探测：本地 TS 7 可用即用，检测到加密导致的 Invalid character 时回退 typescript@5.9.3。pnpm 需 corepack pnpm。"
     },
     {
       "id": "K7",
@@ -354,7 +354,7 @@
     },
     {
       "category": "engineering",
-      "content": "企业加密软件会加密 .ts 源文件，TS 7 原生 tsc 读密文报 Invalid character；Node 在白名单，typecheck 改用 npx typescript@5.9.3 可绕过。"
+      "content": "企业加密软件会加密 .ts 源文件，TS 7 原生 tsc 读密文报 Invalid character；Node 在白名单。typecheck 脚本先试本地 TS 7，检测到 Invalid character 时自动回退 typescript@5.9.3。"
     },
     {
       "category": "engineering",

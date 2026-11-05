@@ -50,4 +50,4 @@ corepack pnpm dist:win     # 打包 Windows 安装包
 - pnpm 12 的构建白名单写在 `pnpm-workspace.yaml` 的 `allowBuilds`。
 - Electron 二进制缺失时，用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 执行 `node node_modules/electron/install.js`。
 - TypeScript 7 的 `tsconfig` 不支持 `baseUrl`，`paths` 必须写 `./` 相对路径。
-- 公司电脑的企业加密软件会加密 `.ts` 源文件，TS 7 原生 `tsc` 会报 `Invalid character`；`pnpm typecheck` 已改为 `npx typescript@5.9.3`。
+- `pnpm typecheck` 自动探测：本地 TypeScript 7 可用时直接使用，检测到加密导致的 `Invalid character` 时自动回退 `typescript@5.9.3`。

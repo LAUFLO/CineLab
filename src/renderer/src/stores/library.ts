@@ -43,6 +43,7 @@ interface LibraryState {
   importAssets: () => Promise<LibraryAsset[]>
   confirmAdd: (folder: string) => Promise<LibraryAsset[]>
   renameAsset: (path: string, name: string) => Promise<void>
+  moveAsset: (path: string, folder: string) => Promise<string | null>
   deleteAsset: (path: string) => Promise<void>
   reveal: (path: string) => Promise<void>
   saveTemplate: (input: TemplateInput) => Promise<boolean>
@@ -253,6 +254,18 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
         set({ error: null })
       } catch (error) {
         set({ error: messageOf(error) })
+      }
+    },
+
+    moveAsset: async (path, folder) => {
+      try {
+        const next = await window.api.library.moveAsset(path, folder)
+        await Promise.all([loadFolder(get().folder), loadTree()])
+        set({ error: null })
+        return next
+      } catch (error) {
+        set({ error: messageOf(error) })
+        return null
       }
     },
 

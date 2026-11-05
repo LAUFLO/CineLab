@@ -620,7 +620,7 @@ export function PromptBar() {
                   className="model-menu__item"
                   onClick={() => {
                     setCharacterMenuOpen(false)
-                    openLibrary('characters')
+                    openLibrary('角色')
                   }}
                 >
                   管理角色库…

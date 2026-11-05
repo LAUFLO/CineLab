@@ -94,6 +94,8 @@ const api: CineApi = {
       ipcRenderer.invoke('library:add-asset', input),
     renameAsset: (path: string, name: string) =>
       ipcRenderer.invoke('library:rename-asset', path, name),
+    moveAsset: (path: string, folder: string) =>
+      ipcRenderer.invoke('library:move-asset', path, folder),
     deleteAsset: (path: string) =>
       ipcRenderer.invoke('library:delete-asset', path),
     reveal: (path: string) => ipcRenderer.invoke('library:reveal', path),

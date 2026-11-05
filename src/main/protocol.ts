@@ -47,6 +47,7 @@ export function registerAssetProtocol(): void {
     const root =
       host === 'global' ? await getLibraryRoot() : getCurrentProjectRoot()
 
+
     if (!root) {
       return new Response('No project', { status: 404 })
     }

@@ -37,6 +37,7 @@ export type IconName =
   | 'edit'
   | 'trash'
   | 'library'
+  | 'move'
 
 const paths: Record<IconName, ReactNode> = {
   logo: (
@@ -162,6 +163,12 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13" />
       <path d="M10 11v5M14 11v5" />
+    </>
+  ),
+  move: (
+    <>
+      <path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4l2 2h8A1.5 1.5 0 0 1 20.5 9v8A1.5 1.5 0 0 1 19 18.5H5A1.5 1.5 0 0 1 3.5 17z" />
+      <path d="M8.5 12.5h6M12 10l2.5 2.5L12 15" />
     </>
   ),
   library: (

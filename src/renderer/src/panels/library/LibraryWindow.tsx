@@ -65,6 +65,28 @@ function addAssetToCanvas(asset: LibraryAsset): void {
   })
 }
 
+/**
+ * 移动资产后同步当前画布中的全局引用，避免节点断图。
+ * 其他项目里的旧引用无法自动跟随。
+ */
+function syncCanvasAssetPath(oldPath: string, nextPath: string): void {
+  const store = useCanvasStore.getState()
+
+  for (const node of store.nodes) {
+    const outputs = node.data.outputs
+    if (!outputs) continue
+
+    let changed = false
+    const nextOutputs = outputs.map((output) => {
+      if (output.scope !== 'global' || output.path !== oldPath) return output
+      changed = true
+      return { ...output, path: nextPath }
+    })
+
+    if (changed) store.patchNodeData(node.id, { outputs: nextOutputs })
+  }
+}
+
 export function LibraryWindow() {
   const open = useLibraryStore((state) => state.panelOpen)
   const mode = useLibraryStore((state) => state.mode)
@@ -84,6 +106,7 @@ export function LibraryWindow() {
   const importAssets = useLibraryStore((state) => state.importAssets)
   const confirmAdd = useLibraryStore((state) => state.confirmAdd)
   const renameAsset = useLibraryStore((state) => state.renameAsset)
+  const moveAsset = useLibraryStore((state) => state.moveAsset)
   const deleteAsset = useLibraryStore((state) => state.deleteAsset)
   const reveal = useLibraryStore((state) => state.reveal)
   const revealRoot = useLibraryStore((state) => state.revealRoot)
@@ -97,6 +120,8 @@ export function LibraryWindow() {
   const [query, setQuery] = useState('')
   const [nameDialog, setNameDialog] = useState<NameDialogState>(null)
   const [templateDialog, setTemplateDialog] = useState<TemplateInput | null>(null)
+  const [moveTarget, setMoveTarget] = useState<LibraryAsset | null>(null)
+  const [moveFolder, setMoveFolder] = useState('')
 
   if (!open) return null
 
@@ -138,6 +163,25 @@ export function LibraryWindow() {
       confirmLabel: '删除',
       danger: true,
       onConfirm: () => void deleteAsset(asset.path)
+    })
+  }
+
+  const handleMove = (asset: LibraryAsset): void => {
+    setMoveTarget(asset)
+    setMoveFolder('')
+  }
+
+  const handleConfirmMove = (): void => {
+    if (!moveTarget || !moveFolder) return
+
+    const oldPath = moveTarget.path
+    void moveAsset(oldPath, moveFolder).then((next) => {
+      if (!next) return
+
+      syncCanvasAssetPath(oldPath, next)
+      setMoveTarget(null)
+      setMoveFolder('')
+      showToast(`已移动到 ${moveFolder}`)
     })
   }
 
@@ -304,6 +348,7 @@ export function LibraryWindow() {
                 query={query}
                 onAddToCanvas={handleAddToCanvas}
                 onExport={handleExport}
+                onMove={handleMove}
                 onRename={(asset) =>
                   setNameDialog({ kind: 'rename-asset', asset })
                 }
@@ -358,6 +403,49 @@ export function LibraryWindow() {
           </div>
         </footer>
       </div>
+
+      {moveTarget ? (
+        <div className="library-modal" onPointerDown={() => setMoveTarget(null)}>
+          <div
+            className="library-modal__panel library-modal__panel--wide"
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <div className="library-modal__title">
+              移动「{moveTarget.name}」到
+            </div>
+
+            <div className="library-move-tree">
+              <FolderTree
+                tree={tree}
+                current={moveFolder}
+                onSelect={(path) => setMoveFolder(path)}
+                onCreate={() => {}}
+                onRename={() => {}}
+                onDelete={() => {}}
+                readOnly
+              />
+            </div>
+
+            <div className="library-modal__actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setMoveTarget(null)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleConfirmMove}
+                disabled={!moveFolder}
+              >
+                移动到此处
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {nameDialog ? (
         <NameDialog

@@ -10,6 +10,7 @@ interface FolderTreeProps {
   onCreate: (parent: string) => void
   onRename: (node: LibraryFolderNode) => void
   onDelete: (node: LibraryFolderNode) => void
+  readOnly?: boolean
 }
 
 function isDefaultFolder(node: LibraryFolderNode): boolean {
@@ -35,7 +36,8 @@ function TreeRow({
   onSelect,
   onCreate,
   onRename,
-  onDelete
+  onDelete,
+  readOnly
 }: TreeRowProps) {
   const open = expanded.has(node.path)
   const hasChildren = node.children.length > 0
@@ -73,33 +75,35 @@ function TreeRow({
           ) : null}
         </button>
 
-        <div className="library-tree__actions">
-          <button
-            type="button"
-            title="新建子文件夹"
-            onClick={() => onCreate(node.path)}
-          >
-            <Icon name="folder-plus" size={13} />
-          </button>
-          {fixed ? null : (
-            <>
-              <button
-                type="button"
-                title="重命名"
-                onClick={() => onRename(node)}
-              >
-                <Icon name="edit" size={13} />
-              </button>
-              <button
-                type="button"
-                title="删除空文件夹"
-                onClick={() => onDelete(node)}
-              >
-                <Icon name="trash" size={13} />
-              </button>
-            </>
-          )}
-        </div>
+        {readOnly ? null : (
+          <div className="library-tree__actions">
+            <button
+              type="button"
+              title="新建子文件夹"
+              onClick={() => onCreate(node.path)}
+            >
+              <Icon name="folder-plus" size={13} />
+            </button>
+            {fixed ? null : (
+              <>
+                <button
+                  type="button"
+                  title="重命名"
+                  onClick={() => onRename(node)}
+                >
+                  <Icon name="edit" size={13} />
+                </button>
+                <button
+                  type="button"
+                  title="删除空文件夹"
+                  onClick={() => onDelete(node)}
+                >
+                  <Icon name="trash" size={13} />
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {open
@@ -115,6 +119,7 @@ function TreeRow({
               onCreate={onCreate}
               onRename={onRename}
               onDelete={onDelete}
+              readOnly={readOnly}
               tree={[]}
             />
           ))
@@ -161,11 +166,13 @@ export function FolderTree(props: FolderTreeProps) {
           <Icon name="grid" size={13} />
           <span className="library-tree__name">全部素材</span>
         </button>
-        <div className="library-tree__actions">
-          <button type="button" title="新建文件夹" onClick={() => onCreate('')}>
-            <Icon name="folder-plus" size={13} />
-          </button>
-        </div>
+        {props.readOnly ? null : (
+          <div className="library-tree__actions">
+            <button type="button" title="新建文件夹" onClick={() => onCreate('')}>
+              <Icon name="folder-plus" size={13} />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="library-tree__children">
@@ -182,6 +189,7 @@ export function FolderTree(props: FolderTreeProps) {
             onCreate={onCreate}
             onRename={props.onRename}
             onDelete={props.onDelete}
+            readOnly={props.readOnly}
           />
         ))}
       </div>

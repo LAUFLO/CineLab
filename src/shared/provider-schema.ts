@@ -6,7 +6,7 @@ export type Capability =
   | 'audio.tts'
   | 'audio.music'
 
-export type ProviderType = 'openai-compat'
+export type ProviderType = 'openai-compat' | 'kling'
 
 export interface ParamOption {
   value: string
@@ -29,6 +29,8 @@ export interface ModelDef {
   capability: Capability
   remoteModel: string
   params: ParamDef[]
+  /** 该模型只出现在指定类型的供应商下；缺省为 openai-compat */
+  providerType?: ProviderType
 }
 
 export interface ProviderConfig {
@@ -38,22 +40,27 @@ export interface ProviderConfig {
   baseUrl: string
   models: ModelDef[]
   hasKey: boolean
+  hasSecret: boolean
   createdAt: string
   updatedAt: string
 }
 
 export interface ProviderInput {
   id?: string
+  type?: ProviderType
   name: string
   baseUrl: string
   apiKey?: string
+  secretKey?: string
   models: ModelDef[]
 }
 
 export interface ConnectionTestInput {
   id?: string
+  type?: ProviderType
   baseUrl: string
   apiKey?: string
+  secretKey?: string
 }
 
 export interface ConnectionTestResult {
@@ -225,6 +232,107 @@ export const MODEL_PRESETS: ModelDef[] = [
           { value: 'wav', label: 'WAV' }
         ],
         defaultValue: 'mp3'
+      }
+    ]
+  },
+  {
+    id: 'suno-music',
+    name: 'Suno Music',
+    capability: 'audio.music',
+    remoteModel: 'suno-music',
+    params: [
+      {
+        key: 'mode',
+        label: '版本',
+        type: 'select',
+        options: [
+          { value: 'v5_5', label: 'v5.5' },
+          { value: 'v4_5', label: 'v4.5' },
+          { value: 'v4', label: 'v4' }
+        ],
+        defaultValue: 'v5_5'
+      },
+      {
+        key: 'instrumental',
+        label: '类型',
+        type: 'select',
+        options: [
+          { value: 'false', label: '歌曲' },
+          { value: 'true', label: '纯音乐' }
+        ],
+        defaultValue: 'false'
+      }
+    ]
+  },
+  {
+    id: 'agnes-image-2.5-flash',
+    name: 'Agnes 2.5 Flash 图像',
+    capability: 'image.t2i',
+    remoteModel: 'agnes-image-2.5-flash',
+    params: [
+      {
+        key: 'size',
+        label: '尺寸',
+        type: 'select',
+        options: [
+          { value: '1K', label: '1K' },
+          { value: '2K', label: '2K' },
+          { value: '3K', label: '3K' },
+          { value: '4K', label: '4K' }
+        ],
+        defaultValue: '1K'
+      },
+      {
+        key: 'ratio',
+        label: '比例',
+        type: 'select',
+        options: [
+          { value: '1:1', label: '1:1' },
+          { value: '16:9', label: '16:9' },
+          { value: '9:16', label: '9:16' },
+          { value: '4:3', label: '4:3' },
+          { value: '3:4', label: '3:4' },
+          { value: '2:3', label: '2:3' },
+          { value: '3:2', label: '3:2' },
+          { value: '21:9', label: '21:9' }
+        ],
+        defaultValue: '1:1'
+      }
+    ]
+  },
+  {
+    id: 'agnes-video-2.5-flash',
+    name: 'Agnes 2.5 Flash 视频',
+    capability: 'video.t2v',
+    remoteModel: 'agnes-video-2.5-flash',
+    params: [
+      {
+        key: 'duration',
+        label: '时长',
+        type: 'select',
+        options: [
+          { value: '4', label: '4s' },
+          { value: '5', label: '5s' },
+          { value: '6', label: '6s' },
+          { value: '8', label: '8s' },
+          { value: '10', label: '10s' },
+          { value: '12', label: '12s' }
+        ],
+        defaultValue: '5'
+      },
+      {
+        key: 'ratio',
+        label: '比例',
+        type: 'select',
+        options: [
+          { value: '16:9', label: '16:9' },
+          { value: '9:16', label: '9:16' },
+          { value: '1:1', label: '1:1' },
+          { value: '4:3', label: '4:3' },
+          { value: '3:4', label: '3:4' },
+          { value: '21:9', label: '21:9' }
+        ],
+        defaultValue: '16:9'
       }
     ]
   }

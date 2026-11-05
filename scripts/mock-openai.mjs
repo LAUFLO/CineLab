@@ -102,6 +102,7 @@ function makeWav(seconds = 1.5, frequency = 440, sampleRate = 22050) {
 const wav = makeWav()
 
 let videoTask = null
+let musicTask = null
 let lastEdit = null
 
 const server = createServer((request, response) => {
@@ -124,6 +125,83 @@ const server = createServer((request, response) => {
         response.end(wav)
       }, 700)
     })
+    return
+  }
+
+  if (request.method === 'GET' && url === '/mock/audio.wav') {
+    response.writeHead(200, { 'Content-Type': 'audio/wav' })
+    response.end(wav)
+    return
+  }
+
+  if (request.method === 'POST' && url === '/v1/audio/generations') {
+    let body = ''
+    request.on('data', (chunk) => {
+      body += chunk
+    })
+    request.on('end', () => {
+      musicTask = {
+        id: `music_${Date.now()}`,
+        polls: 0,
+        body: (() => {
+          try {
+            return JSON.parse(body)
+          } catch {
+            return null
+          }
+        })()
+      }
+      setTimeout(() => {
+        response.writeHead(200, { 'Content-Type': 'application/json' })
+        response.end(
+          JSON.stringify({
+            code: 0,
+            message: 'success',
+            data: { id: musicTask.id, status: 'submitted' }
+          })
+        )
+      }, 600)
+    })
+    return
+  }
+
+  if (request.method === 'GET' && url === '/debug/last-music') {
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+    response.end(JSON.stringify(musicTask?.body ?? null))
+    return
+  }
+
+  if (
+    request.method === 'GET' &&
+    url.startsWith('/v1/audio/generations/')
+  ) {
+    if (!musicTask) {
+      response.writeHead(404, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ error: { message: 'task not found' } }))
+      return
+    }
+
+    musicTask.polls += 1
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+
+    if (musicTask.polls < 2) {
+      response.end(
+        JSON.stringify({
+          data: { id: musicTask.id, status: 'processing' }
+        })
+      )
+      return
+    }
+
+    response.end(
+      JSON.stringify({
+        data: {
+          id: musicTask.id,
+          status: 'completed',
+          result: { outputs: ['http://127.0.0.1:8787/mock/audio.wav'] }
+        }
+      })
+    )
     return
   }
 

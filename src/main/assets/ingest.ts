@@ -36,6 +36,8 @@ export interface IngestInput {
   mime: string
   model: string
   text?: string
+  width?: number
+  height?: number
 }
 
 export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
@@ -58,7 +60,20 @@ export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
     await fs.writeFile(absolutePath, input.data)
   }
 
+  let width = input.width
+  let height = input.height
+
   if (input.kind === 'image') {
+    try {
+      const size = nativeImage.createFromBuffer(input.data).getSize()
+      if (size.width > 0 && size.height > 0) {
+        width = size.width
+        height = size.height
+      }
+    } catch {
+      // 尺寸读取失败时保留调用方传入值
+    }
+
     await writeThumbnail(input.projectPath, hash, input.data)
   }
 
@@ -68,7 +83,9 @@ export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
     kind: input.kind,
     createdAt: new Date().toISOString(),
     model: input.model,
-    text: input.text
+    text: input.text,
+    width,
+    height
   }
 }
 

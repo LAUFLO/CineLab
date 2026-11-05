@@ -34,6 +34,14 @@ const REF_MIME: Record<string, string> = {
   '.webp': 'image/webp'
 }
 
+const VIDEO_SIZE: Record<string, [number, number]> = {
+  '16:9': [1280, 720],
+  '9:16': [720, 1280],
+  '1:1': [720, 720],
+  '4:3': [960, 720],
+  '3:4': [720, 960]
+}
+
 async function loadRefs(
   projectRoot: string,
   refs: ReferenceInput[] | undefined
@@ -167,6 +175,10 @@ export function registerGenerateIpc(): void {
         })
 
         const assets: GeneratedAsset[] = []
+        const videoSize = isVideo
+          ? VIDEO_SIZE[String(request.params.ratio ?? '16:9')]
+          : undefined
+
         for (const output of outputs) {
           assets.push(
             await ingestAsset({
@@ -175,7 +187,9 @@ export function registerGenerateIpc(): void {
               kind,
               mime: output.mime,
               model: model.name,
-              text: output.text
+              text: output.text,
+              width: videoSize?.[0],
+              height: videoSize?.[1]
             })
           )
         }

@@ -8,6 +8,8 @@ export interface OutputRef {
   kind: 'image' | 'video' | 'audio' | 'text'
   createdAt: string
   model: string
+  width?: number
+  height?: number
 }
 
 export interface CineNodeData extends Record<string, unknown> {

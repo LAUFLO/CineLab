@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
-import { NODE_META, type NodeKind } from '@shared/canvas-schema'
+import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
 import { useCanvasStore, type CineNode } from '../../stores/canvas'
 import { useUIStore } from '../../stores/ui'
@@ -16,12 +16,14 @@ const NODE_ICON: Record<NodeKind, IconName> = {
 
 export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const meta = NODE_META[data.kind]
-  const { screenToFlowPosition } = useReactFlow()
+  const { screenToFlowPosition, getNode, fitView } = useReactFlow()
   const openMenu = useUIStore((state) => state.openMenu)
   const showToast = useUIStore((state) => state.showToast)
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
+  const resizeNode = useCanvasStore((state) => state.resizeNode)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
+  const [toolbarOpen, setToolbarOpen] = useState(false)
 
   const submitTitle = (): void => {
     const next = titleDraft.trim()
@@ -41,6 +43,9 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     const next = outputs[currentIndex + delta]
     if (next) {
       patchNodeData(id, { selectedOutputId: next.id })
+      if (next.width && next.height) {
+        resizeNode(id, Math.round((meta.width * next.height) / next.width) + TITLE_HEIGHT)
+      }
     }
   }
 
@@ -66,8 +71,54 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     })
   }
 
+  const openToolbar = (): void => {
+    if (current?.kind !== 'image') return
+    setToolbarOpen((open) => !open)
+  }
+
+  const fitNode = (): void => {
+    const target = getNode(id)
+    if (target) {
+      void fitView({ nodes: [target], padding: 0.4, duration: 300, maxZoom: 1.5 })
+    }
+  }
+
   return (
     <div className={`cnode ${selected ? 'is-selected' : ''}`}>
+      {toolbarOpen && current ? (
+        <div className="cnode__toolbar nodrag nopan">
+          {current.width && current.height ? (
+            <span className="cnode__toolbar-size">
+              {current.width} × {current.height}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="cnode__toolbar-btn"
+            title="下载素材"
+            onClick={(event) => {
+              event.stopPropagation()
+              void exportCurrent()
+            }}
+          >
+            <Icon name="download" size={13} />
+            <span>下载</span>
+          </button>
+          <button
+            type="button"
+            className="cnode__toolbar-btn"
+            title="展开到视野"
+            onClick={(event) => {
+              event.stopPropagation()
+              fitNode()
+            }}
+          >
+            <Icon name="maximize" size={12} />
+            <span>展开</span>
+          </button>
+        </div>
+      ) : null}
+
       <div
         className="cnode__title"
         onDoubleClick={(event) => {
@@ -98,7 +149,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
       </div>
 
       <div className="cnode__card" style={{ minHeight: meta.height }}>
-        <div className={`cnode__preview cnode__preview--${data.kind}`}>
+        <div
+          className={`cnode__preview cnode__preview--${data.kind}`}
+          onClick={openToolbar}
+        >
           {assetSrc && current?.kind === 'text' ? (
             <p className="cnode__text">{data.text ?? '文本已生成'}</p>
           ) : assetSrc && current?.kind === 'audio' ? (
@@ -137,20 +191,6 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             <div className="cnode__error" title={data.error}>
               {data.error}
             </div>
-          ) : null}
-
-          {current ? (
-            <button
-              type="button"
-              className="cnode__export nodrag nopan"
-              title="导出素材"
-              onClick={(event) => {
-                event.stopPropagation()
-                void exportCurrent()
-              }}
-            >
-              <Icon name="download" size={13} />
-            </button>
           ) : null}
 
           {outputs.length > 1 ? (

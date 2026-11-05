@@ -1973,7 +1973,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .library-add-btn {
-  align-self: flex-end;
+  align-self: center;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1997,7 +1997,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .material-grid .library-add-btn {
-  justify-self: end;
+  justify-self: center;
 }
 
 .library-tabs {
@@ -2006,7 +2006,6 @@ body.is-picking .react-flow__node:hover .cnode__card {
   display: flex;
   gap: 4px;
   padding: 0 16px;
-  border-bottom: 1px solid var(--divider);
 }
 
 .library-tab {

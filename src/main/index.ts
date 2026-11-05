@@ -4,13 +4,23 @@ import { registerAssetProtocol, registerAssetScheme } from './protocol'
 import { createMainWindow } from './window'
 import { ensureLibrary } from './library/config'
 
+const isolatedUserData = process.env.CINELAB_USER_DATA
+if (isolatedUserData) {
+  app.setPath('userData', isolatedUserData)
+}
+
 if (!app.isPackaged) {
-  app.commandLine.appendSwitch('remote-debugging-port', '9222')
+  app.commandLine.appendSwitch(
+    'remote-debugging-port',
+    process.env.CINELAB_DEBUG_PORT ?? '9222'
+  )
 }
 
 registerAssetScheme()
 
-const hasLock = app.requestSingleInstanceLock()
+const hasLock = process.env.CINELAB_ISOLATED === '1'
+  ? true
+  : app.requestSingleInstanceLock()
 
 if (!hasLock) {
   app.quit()

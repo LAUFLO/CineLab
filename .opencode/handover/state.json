@@ -3,11 +3,11 @@
   "project": "CineLab",
   "root": "D:\\CineLab",
   "updatedAt": "2026-11-05",
-  "phase": "M6",
+  "phase": "M7",
   "phaseStatus": "completed",
-  "phaseGoal": "M6 完成后的模型接入与画布增强：models.json、Agnes、音乐、视频适配器、多选工具栏；分组方案已确认",
-  "nextPhase": "M7 分组节点（feat/group-nodes）",
-  "next_focus": "实现分组节点：按 docs/group-nodes.md 开 feat/group-nodes 分支",
+  "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
+  "nextPhase": "UI-1 底部工具栏 P0+P1",
+  "next_focus": "UI-1 底部工具栏 P0+P1：添加入口、移动/抓手、快捷键面板、节点搜索、生成历史",
   "frontier": [
     {
       "id": "M2-1",
@@ -129,8 +129,11 @@
     {
       "id": "GROUP-1",
       "title": "分组节点：打组 / 合并分组 / 重命名 / 10 色 / 横竖网格排列 / 拖出脱离",
-      "status": "pending",
-      "note": "设计文档 docs/group-nodes.md 已完成，下一会话按该文档实现"
+      "status": "done",
+      "note": "2026-11-05 实现完成：组框、组工具栏、打组/合并/解组、10 色、横竖网格排列、拖出脱离与组框收缩、复制、删除级联、撤销重做、框选过滤、持久化均已验证；真实鼠标拖动整组与鼠标框选待人工确认。",
+      "evidence": [
+        ".opencode/handover/evidence/GROUP-1-groups.md"
+      ]
     },
     {
       "id": "UI-1",
@@ -770,6 +773,6 @@
       "M6"
     ],
     "partialMilestones": [],
-    "nextMilestone": "M7 分组节点（feat/group-nodes）"
+    "nextMilestone": "UI-1 底部工具栏 P0+P1"
   }
 }

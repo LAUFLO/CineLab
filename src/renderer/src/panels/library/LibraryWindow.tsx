@@ -14,7 +14,7 @@ import type {
 } from '@shared/library-schema'
 import { PROMPT_FOLDER } from '@shared/library-schema'
 import { Icon } from '../../components/Icon'
-import { useCanvasStore } from '../../stores/canvas'
+import { isGroupNode, useCanvasStore } from '../../stores/canvas'
 import { useLibraryStore } from '../../stores/library'
 import { useUIStore } from '../../stores/ui'
 import { AssetGrid } from './AssetGrid'
@@ -73,6 +73,7 @@ function syncCanvasAssetPath(oldPath: string, nextPath: string): void {
   const store = useCanvasStore.getState()
 
   for (const node of store.nodes) {
+    if (isGroupNode(node)) continue
     const outputs = node.data.outputs
     if (!outputs) continue
 

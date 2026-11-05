@@ -41,6 +41,9 @@ interface UIStore {
   minimapVisible: boolean
   fitViewToken: number
   arrangeToken: number
+  groupRenameId: string | null
+  startGroupRename: (id: string) => void
+  clearGroupRename: () => void
   openMenu: (menu: MenuState) => void
   closeMenu: () => void
   openContextMenu: (menu: ContextMenuState) => void
@@ -69,6 +72,9 @@ export const useUIStore = create<UIStore>((set) => ({
   minimapVisible: false,
   fitViewToken: 0,
   arrangeToken: 0,
+  groupRenameId: null,
+  startGroupRename: (id) => set({ groupRenameId: id }),
+  clearGroupRename: () => set({ groupRenameId: null }),
   openMenu: (menu) => set({ menu, contextMenu: null }),
   closeMenu: () => set({ menu: null }),
   openContextMenu: (contextMenu) => set({ contextMenu, menu: null }),

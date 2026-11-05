@@ -3,15 +3,9 @@ import type { ExportResult } from '@shared/ipc-contract'
 import type { RecentProject } from '@shared/project-schema'
 import { Icon } from '../components/Icon'
 import { useProjectStore } from '../stores/project'
-import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 
-interface TopBarProps {
-  theme: 'light' | 'dark'
-  onToggleTheme: () => void
-}
-
-export function TopBar({ theme, onToggleTheme }: TopBarProps) {
+export function TopBar() {
   const name = useProjectStore((state) => state.name)
   const saving = useProjectStore((state) => state.saving)
   const lastSavedAt = useProjectStore((state) => state.lastSavedAt)
@@ -27,7 +21,6 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
   const renameCanvas = useProjectStore((state) => state.renameCanvas)
   const deleteCanvas = useProjectStore((state) => state.deleteCanvas)
   const deleteProject = useProjectStore((state) => state.deleteProject)
-  const openSettings = useSettingsStore((state) => state.openPanel)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
 
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
@@ -354,12 +347,6 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
             </div>
           ) : null}
         </div>
-        <button className="icon-btn" title="切换主题" onClick={onToggleTheme}>
-          <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
-        </button>
-        <button className="icon-btn" title="设置" onClick={openSettings}>
-          <Icon name="settings" />
-        </button>
       </div>
 
     </header>

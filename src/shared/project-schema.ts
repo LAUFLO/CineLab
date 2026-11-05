@@ -2,10 +2,23 @@ import { z } from 'zod'
 
 export const nodeKindSchema = z.enum(['text', 'image', 'video', 'audio'])
 export const nodeStatusSchema = z.enum(['idle', 'queued', 'running', 'done', 'error'])
+export const groupColorSchema = z.enum([
+  'blue',
+  'cyan',
+  'teal',
+  'green',
+  'lime',
+  'amber',
+  'orange',
+  'rose',
+  'violet',
+  'slate'
+])
 
 export const cineNodeSchema = z.object({
   id: z.string().min(1).max(120),
   type: z.literal('cine'),
+  parentId: z.string().min(1).max(120).optional(),
   position: z.object({ x: z.number(), y: z.number() }),
   data: z.object({
     kind: nodeKindSchema,
@@ -48,6 +61,29 @@ export const cineNodeSchema = z.object({
     .optional()
 })
 
+export const groupNodeSchema = z.object({
+  id: z.string().min(1).max(120),
+  type: z.literal('group'),
+  position: z.object({ x: z.number(), y: z.number() }),
+  data: z.object({
+    title: z.string().max(200),
+    color: groupColorSchema
+  }),
+  style: z.object({
+    width: z.number().positive(),
+    height: z.number().positive()
+  }),
+  selected: z.boolean().optional(),
+  measured: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional()
+    })
+    .optional()
+})
+
+export const canvasNodeSchema = z.union([cineNodeSchema, groupNodeSchema])
+
 export const cineEdgeSchema = z.object({
   id: z.string().min(1).max(120),
   source: z.string().min(1).max(120),
@@ -65,7 +101,7 @@ export const canvasDataSchema = z.object({
     y: z.number(),
     zoom: z.number().min(0.01).max(10)
   }),
-  nodes: z.array(cineNodeSchema).max(5000),
+  nodes: z.array(canvasNodeSchema).max(5000),
   edges: z.array(cineEdgeSchema).max(10000)
 })
 

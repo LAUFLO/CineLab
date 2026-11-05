@@ -4,7 +4,7 @@ import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import type { Capability, ModelDef, ParamDef } from '@shared/provider-schema'
 import type { ReferenceInput, ReferenceRole } from '@shared/generation'
 import { Icon } from '../components/Icon'
-import { useCanvasStore } from '../stores/canvas'
+import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'
 import { useLibraryStore } from '../stores/library'
 import { useSettingsStore } from '../stores/settings'
@@ -84,7 +84,8 @@ export function PromptBar() {
   const suppressClickRef = useRef(false)
 
   const selectedNodes = nodes.filter((item) => item.selected)
-  const node = selectedNodes.length === 1 ? selectedNodes[0] : undefined
+  const single = selectedNodes.length === 1 ? selectedNodes[0] : undefined
+  const node = single && !isGroupNode(single) ? single : undefined
   const kind: NodeKind = node?.data.kind ?? 'image'
   const runningMap = useGenerationStore((state) => state.running)
   const runningRunId = node ? runningMap[node.id] : undefined
@@ -197,7 +198,11 @@ export function PromptBar() {
       }
 
       const source = nodes.find((item) => item.id === sourceId)
-      const outputs = source?.data.outputs ?? []
+      if (!source || isGroupNode(source)) {
+        setPicking(false)
+        return
+      }
+      const outputs = source.data.outputs ?? []
       const output =
         outputs.find((item) => item.id === source?.data.selectedOutputId) ?? outputs[0]
 
@@ -294,7 +299,8 @@ export function PromptBar() {
 
     for (const edge of incoming) {
       const source = nodes.find((item) => item.id === edge.source)
-      const outputs = source?.data.outputs ?? []
+      if (!source || isGroupNode(source)) continue
+      const outputs = source.data.outputs ?? []
       const output =
         outputs.find((item) => item.id === source?.data.selectedOutputId) ?? outputs[0]
       if (!output || output.kind !== 'image') continue
@@ -326,7 +332,7 @@ export function PromptBar() {
     const result: ReferenceInput[] = []
 
     for (const item of nodes) {
-      if (item.id === node.id) continue
+      if (item.id === node.id || isGroupNode(item)) continue
       if (!text.includes(item.data.title)) continue
       const outputs = item.data.outputs ?? []
       const output =
@@ -386,9 +392,10 @@ export function PromptBar() {
     const linked = edges.filter((edge) => {
       if (edge.target !== node.id) return false
       const source = nodes.find((item) => item.id === edge.source)
-      const outputs = source?.data.outputs ?? []
+      if (!source || isGroupNode(source)) return false
+      const outputs = source.data.outputs ?? []
       const output =
-        outputs.find((item) => item.id === source?.data.selectedOutputId) ?? outputs[0]
+        outputs.find((item) => item.id === source.data.selectedOutputId) ?? outputs[0]
       return (
         output?.path === ref.path &&
         (output?.scope ?? 'project') === (ref.scope ?? 'project')

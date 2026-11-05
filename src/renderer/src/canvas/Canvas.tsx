@@ -12,7 +12,11 @@ import {
 import '@xyflow/react/dist/style.css'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon } from '../components/Icon'
-import { useCanvasStore, type CineNode } from '../stores/canvas'
+import {
+  isGroupNode,
+  useCanvasStore,
+  type CanvasNode
+} from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 import { AddNodeMenu } from './AddNodeMenu'
 import { AlignmentGuides, type AlignmentGuide } from './AlignmentGuides'
@@ -20,13 +24,15 @@ import { computeAlignment } from './alignment'
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { copySelection, pasteAt } from './context-actions'
 import { FlowEdge } from './edges/FlowEdge'
+import { GroupToolbar } from './GroupToolbar'
 import { MultiSelectBar } from './MultiSelectBar'
 import { CineNodeView } from './nodes/CineNodeView'
+import { GroupNodeView } from './nodes/GroupNodeView'
 import { PromptBar } from './PromptBar'
 
 type Theme = 'light' | 'dark'
 
-const nodeTypes = { cine: CineNodeView }
+const nodeTypes = { cine: CineNodeView, group: GroupNodeView }
 const edgeTypes = { flow: FlowEdge }
 
 function EmptyState({ onCreate }: { onCreate: (kind: NodeKind) => void }) {
@@ -68,6 +74,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const viewport = useCanvasStore((state) => state.viewport)
   const setViewport = useCanvasStore((state) => state.setViewport)
   const arrangeNodes = useCanvasStore((state) => state.arrangeNodes)
+  const setBoxSelecting = useCanvasStore((state) => state.setBoxSelecting)
   const closeMenu = useUIStore((state) => state.closeMenu)
   const openMenu = useUIStore((state) => state.openMenu)
   const openContextMenu = useUIStore((state) => state.openContextMenu)
@@ -106,6 +113,39 @@ function CanvasInner({ theme }: { theme: Theme }) {
         target instanceof Element &&
         target.closest('input, textarea, [contenteditable="true"]')
       ) {
+        return
+      }
+
+      if (
+        !event.ctrlKey &&
+        !event.metaKey &&
+        (event.key === 'Delete' || event.key === 'Backspace')
+      ) {
+        const state = useCanvasStore.getState()
+        const selected = state.nodes.filter((node) => node.selected)
+        if (selected.length === 0) return
+
+        event.preventDefault()
+
+        if (selected.some(isGroupNode)) {
+          const groupIds = selected
+            .filter(isGroupNode)
+            .map((node) => node.id)
+          const childCount = state.nodes.filter(
+            (node) => node.parentId && groupIds.includes(node.parentId)
+          ).length
+          useUIStore.getState().requestConfirm({
+            title: '删除组及组内节点',
+            message: `确定删除选中的 ${selected.length} 个分组及其 ${childCount} 个子节点吗？此操作不可撤销。`,
+            confirmLabel: '删除',
+            danger: true,
+            onConfirm: () => {
+              state.removeSelection()
+            }
+          })
+        } else {
+          state.removeSelection()
+        }
         return
       }
 
@@ -197,10 +237,13 @@ function CanvasInner({ theme }: { theme: Theme }) {
   }, [])
 
   const alignmentContext = useCallback(
-    (draggedNodes: CineNode[]) => {
+    (draggedNodes: CanvasNode[]) => {
       const draggedIds = new Set(draggedNodes.map((node) => node.id))
-      const others = (getNodes() as CineNode[]).filter(
-        (node) => !draggedIds.has(node.id) && !node.hidden
+      const others = (getNodes() as CanvasNode[]).filter(
+        (node) =>
+          !draggedIds.has(node.id) &&
+          !node.hidden &&
+          !isGroupNode(node)
       )
 
       return { draggedIds, others }
@@ -211,11 +254,15 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const handleNodeDrag = useCallback(
     (
       event: MouseEvent | TouchEvent,
-      _node: CineNode,
-      draggedNodes: CineNode[]
+      _node: CanvasNode,
+      draggedNodes: CanvasNode[]
     ): void => {
       const altKey = 'altKey' in event ? event.altKey : false
-      if (altKey || draggedNodes.length === 0) {
+      if (
+        altKey ||
+        draggedNodes.length === 0 ||
+        draggedNodes.some(isGroupNode)
+      ) {
         setGuides([])
         return
       }
@@ -251,15 +298,28 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const handleNodeDragStop = useCallback(
     (
       event: MouseEvent | TouchEvent,
-      _node: CineNode,
-      draggedNodes: CineNode[]
+      _node: CanvasNode,
+      draggedNodes: CanvasNode[]
     ): void => {
       setGuides([])
 
-      const altKey = 'altKey' in event ? event.altKey : false
-      if (altKey || draggedNodes.length === 0) return
+      const draggedIds = new Set(draggedNodes.map((node) => node.id))
+      for (const node of draggedNodes) {
+        if (!node.parentId || draggedIds.has(node.parentId)) continue
+        useCanvasStore.getState().detachNode(node.id)
+      }
 
-      const { draggedIds, others } = alignmentContext(draggedNodes)
+      const altKey = 'altKey' in event ? event.altKey : false
+      if (
+        altKey ||
+        draggedNodes.length === 0 ||
+        draggedNodes.some(isGroupNode)
+      ) {
+        return
+      }
+
+      const context = alignmentContext(draggedNodes)
+      const others = context.others
       if (others.length === 0) return
 
       const { dx, dy } = computeAlignment(draggedNodes, others, getZoom())
@@ -285,7 +345,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
   )
 
   const handleNodeDoubleClick = useCallback(
-    (_event: React.MouseEvent, targetNode: CineNode) => {
+    (_event: React.MouseEvent, targetNode: CanvasNode) => {
+      if (isGroupNode(targetNode)) return
       void fitView({
         nodes: [targetNode],
         padding: 0.6,
@@ -345,8 +406,10 @@ function CanvasInner({ theme }: { theme: Theme }) {
         connectionMode={ConnectionMode.Loose}
         connectionRadius={60}
         selectionOnDrag
+        onSelectionStart={() => setBoxSelecting(true)}
+        onSelectionEnd={() => setBoxSelecting(false)}
         zoomOnDoubleClick={false}
-        deleteKeyCode={['Backspace', 'Delete']}
+        deleteKeyCode={null}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color={dotColor} />
         {minimapVisible ? (
@@ -376,6 +439,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
       <AlignmentGuides guides={guides} />
       <PromptBar />
       <MultiSelectBar />
+      <GroupToolbar />
       <AddNodeMenu />
       <CanvasContextMenu />
     </>

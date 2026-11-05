@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useState } from 'react'
 import type { SaveAssetInput } from '@shared/library-schema'
 import { Icon } from '../components/Icon'
-import { useCanvasStore } from '../stores/canvas'
+import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
 
@@ -9,6 +9,8 @@ export function MultiSelectBar() {
   const nodes = useCanvasStore((state) => state.nodes)
   const duplicateSelection = useCanvasStore((state) => state.duplicateSelection)
   const removeSelection = useCanvasStore((state) => state.removeSelection)
+  const groupSelection = useCanvasStore((state) => state.groupSelection)
+  const mergeSelection = useCanvasStore((state) => state.mergeSelection)
   const showToast = useUIStore((state) => state.showToast)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
 
@@ -59,6 +61,7 @@ export function MultiSelectBar() {
     const unique = new Map<string, SaveAssetInput>()
 
     for (const node of selected) {
+      if (isGroupNode(node)) continue
       const outputs = node.data.outputs ?? []
       const current =
         outputs.find((item) => item.id === node.data.selectedOutputId) ??
@@ -114,10 +117,34 @@ export function MultiSelectBar() {
     }
   }
 
+  const looseCount = selected.filter(
+    (node) => !isGroupNode(node) && !node.parentId
+  ).length
+  const groupCount = selected.filter(isGroupNode).length
+  const canGroup = looseCount >= 2
+  const canMerge = groupCount >= 2 || (groupCount >= 1 && looseCount >= 1)
+
+  const group = (): void => {
+    const id = groupSelection()
+    if (id) showToast('已创建分组')
+  }
+
+  const merge = (): void => {
+    const id = mergeSelection()
+    if (id) showToast('已合并分组')
+  }
+
   const remove = (): void => {
+    const hasGroup = groupCount > 0
+    const groupIds = selected.filter(isGroupNode).map((node) => node.id)
+    const childCount = nodes.filter(
+      (node) => node.parentId && groupIds.includes(node.parentId)
+    ).length
     requestConfirm({
-      title: '删除节点',
-      message: `确定删除选中的 ${selected.length} 个节点吗？此操作不可撤销。`,
+      title: hasGroup ? '删除组及组内节点' : '删除节点',
+      message: hasGroup
+        ? `确定删除选中的 ${groupCount} 个分组及其 ${childCount} 个子节点吗？此操作不可撤销。`
+        : `确定删除选中的 ${selected.length} 个节点吗？此操作不可撤销。`,
       confirmLabel: '删除',
       danger: true,
       onConfirm: () => {
@@ -133,6 +160,22 @@ export function MultiSelectBar() {
       style={{ left: position.left, top: position.top }}
       onPointerDown={(event) => event.stopPropagation()}
     >
+      {canGroup ? (
+        <button type="button" className="multi-bar__btn" onClick={group}>
+          <Icon name="layers" size={14} />
+          <span>打组</span>
+        </button>
+      ) : null}
+
+      {canMerge ? (
+        <button type="button" className="multi-bar__btn" onClick={merge}>
+          <Icon name="layers" size={14} />
+          <span>合并分组</span>
+        </button>
+      ) : null}
+
+      {canGroup || canMerge ? <div className="multi-bar__divider" /> : null}
+
       <button
         type="button"
         className="multi-bar__btn"

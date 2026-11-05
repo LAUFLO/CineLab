@@ -2736,7 +2736,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 .library-layer {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 250;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3230,7 +3230,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 .library-modal {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 260;
   display: flex;
   align-items: center;
   justify-content: center;

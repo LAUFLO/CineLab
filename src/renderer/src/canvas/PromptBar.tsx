@@ -76,7 +76,9 @@ export function PromptBar() {
   const [pickedRefs, setPickedRefs] = useState<ReferenceInput[]>([])
   const [picking, setPicking] = useState(false)
   const [pickHint, setPickHint] = useState<string | null>(null)
-  const [autoLink, setAutoLink] = useState(false)
+  const [autoLink, setAutoLink] = useState(true)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [watermark, setWatermark] = useState(false)
   const suppressClickRef = useRef(false)
 
   const node = nodes.find((item) => item.selected)
@@ -112,16 +114,23 @@ export function PromptBar() {
   }, [pickHint])
 
   useEffect(() => {
-    if (!paramMenuKey) return
+    if (!paramMenuKey && !advancedOpen) return
 
     const onPointerDown = (event: PointerEvent): void => {
       const target = event.target as HTMLElement
-      if (!target.closest('.param-picker')) setParamMenuKey(null)
+      if (paramMenuKey && !target.closest('.param-picker')) setParamMenuKey(null)
+      if (
+        advancedOpen &&
+        !target.closest('.promptbar__advanced') &&
+        !target.closest('.promptbar__advanced-trigger')
+      ) {
+        setAdvancedOpen(false)
+      }
     }
 
     document.addEventListener('pointerdown', onPointerDown)
     return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [paramMenuKey])
+  }, [paramMenuKey, advancedOpen])
 
   useEffect(() => {
     const onClick = (event: MouseEvent): void => {
@@ -349,7 +358,7 @@ export function PromptBar() {
       nodeId: node.id,
       modelKey: active.key,
       prompt: promptText.trim(),
-      params: values,
+      params: { ...values, watermark },
       refs: mergedRefs.length > 0 ? mergedRefs : undefined
     })
   }
@@ -557,16 +566,6 @@ export function PromptBar() {
           </div>
         ) : null}
 
-        <button
-          type="button"
-          className={`promptbar__chip promptbar__autolink ${autoLink ? 'is-on' : ''}`}
-          title="自动匹配提示词中的节点、素材和角色名称"
-          onClick={() => setAutoLink((open) => !open)}
-        >
-          智能引用
-          <span className="promptbar__switch" />
-        </button>
-
         {active ? (
           <div className="promptbar__param-group">
             {active.model.params.map((param) => (
@@ -627,6 +626,18 @@ export function PromptBar() {
                         </button>
                       )
                     })}
+                    {param.options.every((option) => ratioOf(option.label)) ? (
+                      <div className="param-menu__watermark">
+                        <span>AI 水印</span>
+                        <button
+                          type="button"
+                          className={`promptbar__switch ${watermark ? 'is-on' : ''}`}
+                          onClick={() => setWatermark((open) => !open)}
+                        >
+                          <span />
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -637,7 +648,14 @@ export function PromptBar() {
         )}
 
         <div className="promptbar__spacer" />
-        <span className="promptbar__cost">—</span>
+        <button
+          type="button"
+          className={`promptbar__advanced-trigger ${advancedOpen ? 'is-active' : ''}`}
+          title="高级设置"
+          onClick={() => setAdvancedOpen((open) => !open)}
+        >
+          <Icon name="minimize" size={13} />
+        </button>
 
         {isRunning ? (
           <button
@@ -660,6 +678,27 @@ export function PromptBar() {
           </button>
         )}
       </div>
+
+      {advancedOpen ? (
+        <div className="promptbar__advanced">
+          <div className="promptbar__advanced-title">高级设置</div>
+          <div className="promptbar__advanced-row">
+            <div>
+              <div className="promptbar__advanced-label">智能引用 AutoLink</div>
+              <div className="promptbar__advanced-desc">
+                自动匹配提示词中的节点、素材和角色名称
+              </div>
+            </div>
+            <button
+              type="button"
+              className={`promptbar__switch ${autoLink ? 'is-on' : ''}`}
+              onClick={() => setAutoLink((open) => !open)}
+            >
+              <span />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
     </>
   )

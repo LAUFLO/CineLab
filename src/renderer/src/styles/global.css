@@ -658,17 +658,17 @@ body.is-exporting .react-flow__minimap {
   height: 34px;
   padding: 0 6px;
   border-radius: 10px;
-  background: rgba(20, 20, 22, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow-float);
-  color: #fff;
+  color: var(--text-1);
   white-space: nowrap;
 }
 
 .cnode__toolbar-size {
   padding: 0 8px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-3);
 }
 
 .cnode__toolbar-btn {
@@ -679,12 +679,31 @@ body.is-exporting .react-flow__minimap {
   gap: 5px;
   border-radius: 7px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--text-2);
 }
 
 .cnode__toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
+.image-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: var(--shadow-float);
 }
 
 .cnode__placeholder {
@@ -1346,14 +1365,13 @@ body.is-picking .react-flow__node:hover .cnode__card {
   opacity: 0.72;
 }
 
-.promptbar__autolink {
-  gap: 6px;
-}
-
 .promptbar__switch {
   position: relative;
   width: 22px;
   height: 12px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
   border-radius: 999px;
   background: var(--border-strong);
   transition: background 0.15s;
@@ -1371,12 +1389,78 @@ body.is-picking .react-flow__node:hover .cnode__card {
   transition: transform 0.15s;
 }
 
-.promptbar__autolink.is-on .promptbar__switch {
+.promptbar__switch.is-on {
   background: var(--pick-bar);
 }
 
-.promptbar__autolink.is-on .promptbar__switch::after {
+.promptbar__switch.is-on::after {
   transform: translateX(10px);
+}
+
+.promptbar__advanced {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: 268px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-menu);
+  z-index: 70;
+}
+
+.promptbar__advanced-title {
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.promptbar__advanced-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.promptbar__advanced-label {
+  font-size: 13px;
+  color: var(--text-1);
+}
+
+.promptbar__advanced-desc {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.promptbar__advanced-trigger {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--text-3);
+}
+
+.promptbar__advanced-trigger:hover,
+.promptbar__advanced-trigger.is-active {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
+.param-menu__watermark {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding: 8px 6px 4px;
+  border-top: 1px solid var(--divider);
+  font-size: 12px;
+  color: var(--text-2);
 }
 
 .promptbar__param-label {

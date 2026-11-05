@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
@@ -17,7 +18,7 @@ const NODE_ICON: Record<NodeKind, IconName> = {
 
 export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const meta = NODE_META[data.kind]
-  const { screenToFlowPosition, getNode, fitView } = useReactFlow()
+  const { screenToFlowPosition } = useReactFlow()
   const openMenu = useUIStore((state) => state.openMenu)
   const showToast = useUIStore((state) => state.showToast)
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
@@ -26,6 +27,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [toolbarOpen, setToolbarOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const submitTitle = (): void => {
     const next = titleDraft.trim()
@@ -78,14 +80,17 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     setToolbarOpen((open) => !open)
   }
 
-  const fitNode = (): void => {
-    const target = getNode(id)
-    if (target) {
-      void fitView({ nodes: [target], padding: 0.4, duration: 300, maxZoom: 1.5 })
+  useEffect(() => {
+    if (!previewOpen) return
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setPreviewOpen(false)
     }
-  }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [previewOpen])
 
   return (
+    <>
     <div className={`cnode ${selected ? 'is-selected' : ''}`}>
       {toolbarOpen && current && !isBusy ? (
         <div className="cnode__toolbar nodrag nopan">
@@ -109,10 +114,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           <button
             type="button"
             className="cnode__toolbar-btn"
-            title="展开到视野"
+            title="查看大图"
             onClick={(event) => {
               event.stopPropagation()
-              fitNode()
+              setPreviewOpen(true)
             }}
           >
             <Icon name="maximize" size={12} />
@@ -246,5 +251,21 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         <Icon name="plus" size={12} className="cnode__handle-icon" />
       </Handle>
     </div>
+    {previewOpen && current?.kind === 'image'
+      ? createPortal(
+          <div
+            className="image-preview"
+            onPointerDown={() => setPreviewOpen(false)}
+          >
+            <img
+              src={`cinelab-asset://local/${current.path}`}
+              alt=""
+              onPointerDown={(event) => event.stopPropagation()}
+            />
+          </div>,
+          document.body
+        )
+      : null}
+    </>
   )
 }

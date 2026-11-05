@@ -19,6 +19,9 @@ export interface GeneratedAsset {
   model: string
   width?: number
   height?: number
+  duration?: number
+  fps?: number
+  hasAudio?: boolean
   text?: string
 }
 

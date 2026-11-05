@@ -16,6 +16,7 @@
 | 状态 | Zustand 5 |
 | 样式 | Tailwind 4 + CSS 变量（深浅双主题） |
 | 校验 | Zod 4 |
+| 媒体 | ffmpeg-static 5.3 + ffprobe-static 3.1 |
 | 存储 | 项目文件夹 + JSON / JSONL（不引入 SQLite） |
 | 打包 | 免安装绿色版 + zip（安装包已从计划移除） |
 
@@ -23,15 +24,16 @@
 
 ```
 D:\CineLab
-├─ docs/                    ui-spec.md、architecture.md
+├─ docs/                    ui-spec.md、architecture.md、node-toolbar-plan.md、group-nodes.md
 ├─ scripts/                 cdp-shot / cdp-eval / cdp-drag / cdp-connect、mock-openai
 ├─ src/
-│  ├─ main/                 窗口、IPC、项目/多画布、Provider、队列、资产落盘、资产库、自定义协议
+│  ├─ main/                 窗口、IPC、项目/多画布、Provider、队列、资产落盘、media、资产库、自定义协议
 │  ├─ preload/              contextBridge 白名单
-│  ├─ shared/               canvas、project、provider、generation、library、ipc-contract
+│  ├─ shared/               canvas、project、provider、generation、media、library、ipc-contract
 │  └─ renderer/src/
 │     ├─ canvas/            Canvas、TopBar、BottomBar、StatusBar、PromptBar、AddNodeMenu、nodes、edges
-│     ├─ stores/            canvas、project、settings、generation、library、ui
+│     ├─ canvas/nodes/      CineNodeView、NodeToolbar、node-operations、各类操作 Dialog
+│     ├─ stores/            canvas、project、settings、generation、library、toolbar、ui
 │     ├─ panels/            SettingsPanel、LibraryPanel、ProjectCenter、ConfirmDialog
 │     ├─ components/        Icon、WindowControls、Toast
 │     ├─ theme/             useTheme
@@ -53,6 +55,9 @@ D:\CineLab
 | M4 | ✅ 完成 | TTS、资产库（角色/素材/模板/一致性） |
 | M5 | ✅ 已完成免安装版 | 绿色版与 zip 可用；安装包已从计划移除 |
 | M6 | ✅ 完成 | 导出、画布参考、节点比例与工具栏、智能引用、AI 水印开关；图片标记取消 |
+| NODE-TOOLBAR P0 | ✅ 完成 | 工具栏框架、ffmpeg、宫格切分、裁剪、截取、拆轨、画面裁切、首/尾/当前帧抽帧 |
+| NODE-TOOLBAR P1 | ✅ 完成 | 九宫格、三视图、画面推演、光影校正、预设打光/多角度、人像、抠图 |
+| NODE-TOOLBAR P2 | ✅ 完成 | 自由裁剪、框选去字幕、3D 光位/机位球 |
 
 ## 已完成的关键工件
 
@@ -74,6 +79,12 @@ D:\CineLab
 - `src/main/engine/queue.ts`：并发 2 任务队列、取消、进度事件
 - `src/main/assets/ingest.ts`：SHA-256 去重、缩略图、资产落盘、输出宽高记录
 - `src/main/protocol.ts`：`cinelab-asset://` 本地资产协议（支持 Range）
+- `docs/node-toolbar-plan.md`：节点工具栏范围、决策与 P0/P1/P2 技术要点
+- `src/main/media/`：ffmpeg/ffprobe、宫格切分、裁剪、抽帧、拆轨、delogo
+- `src/main/ipc/media.ts`：媒体 IPC
+- `src/renderer/src/canvas/nodes/NodeToolbar.tsx`：节点工具栏、更多菜单、禁用态
+- `src/renderer/src/canvas/nodes/node-operations.ts`：操作注册表与提示词模板
+- `src/renderer/src/canvas/nodes/`：AiOperationDialog、CropDialog、SubtitleDialog、SphereDialog、TrimDialog、useBoxEditor
 - `src/renderer/src/stores/project.ts`：项目状态与 600ms 防抖自动保存
 - `src/renderer/src/canvas/nodes/CineNodeView.tsx`：节点统一外壳、版本栈、选中工具栏、图片浮窗
 - `src/renderer/src/canvas/AddNodeMenu.tsx`：「引用该节点生成」菜单
@@ -105,12 +116,18 @@ D:\CineLab
 9. 单选节点显示 prompt bar 与节点工具栏；多选隐藏单节点 UI，显示顶部多选工具栏
 10. 模型配置走 models.json；非 OpenAI 协议优先 http-template，特殊鉴权才写专用适配器
 11. 分组是持久父子节点关系，不是临时多选；设计见 docs/group-nodes.md
+12. 新建派生节点必须自动连源节点；版本回写不新建节点
+13. P1 AI 操作统一走 `image.i2i` + 提示词模板 + 当前节点新版本
+14. 自由裁剪/字幕框选共用 `useBoxEditor`；打光/机位用 2D 投影球体
 
 ## 环境注意
 
 - `typecheck` 自动探测：本地 TS 7 可用时直接使用，检测到加密导致的 `Invalid character` 时回退 `typescript@5.9.3`
 - `pnpm` 不在 PATH 时用 `corepack pnpm`
 - Electron 二进制缺失时用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 执行 `node node_modules/electron/install.js`
+- `ffmpeg-static` 需加入 `pnpm-workspace.yaml` 的 `allowBuilds`，否则二进制不下载
+- worktree 与主仓库同时运行会抢单实例锁；worktree 用 `CINELAB_USER_DATA` 独立目录，调试端口用 `CINELAB_DEBUG_PORT`
+- electron-builder `--dir` 在当前环境报 `EXDEV`，打包验证需在正常目录
 - 从 ZIP 解压的目录没有 `.git`，需要重新 init 并关联远程
 
 ## 运行

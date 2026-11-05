@@ -8,6 +8,7 @@
 - Phase：M6 completed；M3 已完成（火山、可灵、MiniMax、智谱、Vidu）
 - 已完成：models.json、Agnes 图片/图生图/视频、audio.music、多选工具栏、画布右键/框选/中键平移
 - 全局资产库已完成（T39/T40/T47）；K9–K11 为后续优化
+- 节点工具栏 P0/P1/P2 已完成：ffmpeg 媒体、切分/裁剪/截取/拆轨/抽帧、AI 图像操作、自由裁剪/框选去字幕/3D 光位机位球
 - 分组节点：设计完成，代码未开始
 - 阻塞：无
 
@@ -16,6 +17,7 @@
 1. **GROUP-1** 分组节点：打组 / 合并分组 / 重命名 / 10 色 / 横竖网格 / 拖出脱离（下一焦点）
 2. **UI-1** 底部工具栏 P0+P1：添加入口、移动/抓手、快捷键面板、节点搜索、生成历史（分组之后；资产库保留左下 StatusBar）
 3. **AGENT-1** Agent 与画布协作（pending，延后）
+4. **NODE-TOOLBAR 收尾**（建议）：真实 i2i 验证、Windows 打包验证、智能去字幕
 
 ## 已知缺口
 
@@ -30,6 +32,8 @@
 - K13：Agnes 免费视频队列持续 503
 - K14：多选导出 zip 未人工确认落盘
 - K15：项目 assets 有测试孤儿素材
+- K16：ffmpeg 打包后的 asarUnpack 路径未在正常环境验证
+- K17：智能去字幕需视频修复模型，暂未接入
 
 ## 关键约定
 
@@ -40,6 +44,9 @@
 - 分组用 `parentId`，子节点坐标相对组；拖出脱离按中心点判断
 - `models.json` 优先级：内置预设 → 用户数据 → 开发仓库根
 - 非 OpenAI 协议优先 `http-template`
+- 派生新节点自动连源节点；版本回写不新建节点
+- P1 AI 操作统一 `image.i2i` + 提示词模板 + 当前节点新版本
+- 自由裁剪/字幕框选共用 `useBoxEditor`；打光/机位用 2D 投影球体
 
 ## 踩坑
 
@@ -48,8 +55,12 @@
 - `models.json` 修改后点设置里的“重新加载”才生效，暂无 fs.watch
 - 真实厂商适配器先用 `scripts/mock-video.mjs` 验证，再接 Key
 - typecheck 前先停 dev，TS 7 可能内存不足
+- worktree 与主仓库同时运行会抢单实例锁；worktree 用 `CINELAB_USER_DATA` + `CINELAB_DEBUG_PORT`
+- `ffmpeg-static` 需加入 `pnpm-workspace.yaml` 的 `allowBuilds`
+- electron-builder `--dir` 在当前环境报 `EXDEV`
 
 ## 验证
 
-`corepack pnpm typecheck` → `corepack pnpm dev`（9222 + `scripts/cdp-*.mjs`）
+`corepack pnpm typecheck` → `corepack pnpm build`
+`corepack pnpm dev`（9222 + `scripts/cdp-*.mjs`；worktree 用 9223 + `CDP_PORT`）
 模型配置校验：`corepack pnpm models:check`

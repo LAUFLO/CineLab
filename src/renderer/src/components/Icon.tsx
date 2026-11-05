@@ -38,7 +38,13 @@ export type IconName =
   | 'trash'
   | 'library'
   | 'move'
-
+  | 'more'
+  | 'scissors'
+  | 'crop'
+  | 'film'
+  | 'layers'
+  | 'sparkles'
+  | 'pin'
 const paths: Record<IconName, ReactNode> = {
   logo: (
     <>
@@ -182,6 +188,50 @@ const paths: Record<IconName, ReactNode> = {
       <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
       <rect x="6" y="8" width="5" height="4" rx="1" fill="currentColor" stroke="none" />
       <rect x="13" y="12" width="5" height="4" rx="1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    </>
+  ),
+  scissors: (
+    <>
+      <circle cx="6" cy="7" r="2.5" />
+      <circle cx="6" cy="17" r="2.5" />
+      <path d="M8.2 8.6 20 18M8.2 15.4 20 6" />
+    </>
+  ),
+  crop: (
+    <>
+      <path d="M6 2v14a2 2 0 0 0 2 2h14" />
+      <path d="M2 6h14a2 2 0 0 1 2 2v14" />
+    </>
+  ),
+  film: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4" />
+    </>
+  ),
+  layers: (
+    <>
+      <path d="m12 3 9 5-9 5-9-5z" />
+      <path d="m3 13 9 5 9-5" />
+      <path d="m3 17 9 5 9-5" />
+    </>
+  ),
+  sparkles: (
+    <>
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
+      <path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z" />
+    </>
+  ),
+  pin: (
+    <>
+      <path d="M9 3h6l-1 6 3 3v2h-5v6l-1 1-1-1v-6H5v-2l3-3z" />
     </>
   )
 }

@@ -1,0 +1,165 @@
+import { app } from 'electron'
+import ffmpegPath from 'ffmpeg-static'
+import ffprobeStatic from 'ffprobe-static'
+import { spawn } from 'node:child_process'
+import type { MediaProbe } from '@shared/media'
+
+function unpacked(path: string): string {
+  if (!app.isPackaged) return path
+  return path.replace('app.asar', 'app.asar.unpacked')
+}
+
+export function ffmpegBinary(): string {
+  if (!ffmpegPath) throw new Error('当前平台没有可用的 ffmpeg 二进制')
+  return unpacked(ffmpegPath)
+}
+
+export function ffprobeBinary(): string {
+  return unpacked(ffprobeStatic.path)
+}
+
+export interface RunFfmpegOptions {
+  onProgress?: (seconds: number) => void
+  signal?: AbortSignal
+}
+
+export function runFfmpeg(
+  args: string[],
+  options: RunFfmpegOptions = {}
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(ffmpegBinary(), args, {
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+
+    let stderr = ''
+    let settled = false
+
+    const cleanup = (): void => {
+      options.signal?.removeEventListener('abort', onAbort)
+    }
+
+    const finish = (error?: Error): void => {
+      if (settled) return
+      settled = true
+      cleanup()
+      if (error) reject(error)
+      else resolve()
+    }
+
+    const onAbort = (): void => {
+      child.kill('SIGKILL')
+      finish(new Error('已取消'))
+    }
+
+    if (options.signal?.aborted) {
+      onAbort()
+      return
+    }
+    options.signal?.addEventListener('abort', onAbort)
+
+    child.stdout?.setEncoding('utf8')
+    child.stdout?.on('data', (chunk: string) => {
+      if (!options.onProgress) return
+      const match = /out_time_(?:ms|us)=(\d+)/.exec(chunk)
+      if (match) options.onProgress(Number(match[1]) / 1_000_000)
+    })
+
+    child.stderr?.setEncoding('utf8')
+    child.stderr?.on('data', (chunk: string) => {
+      stderr += chunk
+      if (stderr.length > 20000) stderr = stderr.slice(-20000)
+    })
+
+    child.on('error', (error) => finish(error))
+    child.on('close', (code) => {
+      if (code === 0) {
+        finish()
+        return
+      }
+      finish(new Error(`ffmpeg 失败（退出码 ${code}）：${stderr.slice(-800)}`))
+    })
+  })
+}
+
+interface FfprobeStream {
+  codec_type?: string
+  width?: number
+  height?: number
+  avg_frame_rate?: string
+  duration?: string
+}
+
+interface FfprobeFormat {
+  duration?: string
+}
+
+interface FfprobeOutput {
+  streams?: FfprobeStream[]
+  format?: FfprobeFormat
+}
+
+export function probeMedia(path: string): Promise<MediaProbe> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      ffprobeBinary(),
+      [
+        '-v',
+        'error',
+        '-print_format',
+        'json',
+        '-show_format',
+        '-show_streams',
+        path
+      ],
+      { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }
+    )
+
+    let stdout = ''
+    let stderr = ''
+
+    child.stdout?.setEncoding('utf8')
+    child.stdout?.on('data', (chunk: string) => {
+      stdout += chunk
+    })
+
+    child.stderr?.setEncoding('utf8')
+    child.stderr?.on('data', (chunk: string) => {
+      stderr += chunk
+      if (stderr.length > 8000) stderr = stderr.slice(-8000)
+    })
+
+    child.on('error', reject)
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`ffprobe 失败（退出码 ${code}）：${stderr.slice(-400)}`))
+        return
+      }
+
+      try {
+        const data = JSON.parse(stdout) as FfprobeOutput
+        const streams = data.streams ?? []
+        const video = streams.find((stream) => stream.codec_type === 'video')
+        const audio = streams.find((stream) => stream.codec_type === 'audio')
+
+        const duration = Number(data.format?.duration ?? video?.duration ?? 0)
+        let fps: number | undefined
+        if (video?.avg_frame_rate) {
+          const [num, den] = video.avg_frame_rate.split('/').map(Number)
+          if (num > 0 && den > 0) fps = num / den
+        }
+
+        resolve({
+          width: video?.width,
+          height: video?.height,
+          duration: Number.isFinite(duration) && duration > 0 ? duration : undefined,
+          fps,
+          hasAudio: Boolean(audio)
+        })
+      } catch (error) {
+        reject(error)
+      }
+    })
+  })
+}

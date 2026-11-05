@@ -12,7 +12,16 @@ import type {
   SaveAssetInput,
   TemplateInput
 } from '../shared/library-schema'
-
+import type {
+  CropImageRectRequest,
+  CropImageRequest,
+  CropVideoRequest,
+  ExtractFrameRequest,
+  GridSplitRequest,
+  RemoveSubtitlesRequest,
+  SplitAvRequest,
+  TrimVideoRequest
+} from '../shared/media'
 const api: CineApi = {
   app: {
     getInfo: () => ipcRenderer.invoke('app:get-info'),
@@ -107,6 +116,23 @@ const api: CineApi = {
       ipcRenderer.invoke('library:save-template', input),
     deleteTemplate: (id: string) =>
       ipcRenderer.invoke('library:delete-template', id)
+  },
+  media: {
+    splitGrid: (input: GridSplitRequest) =>
+      ipcRenderer.invoke('media:split-grid', input),
+    extractFrame: (input: ExtractFrameRequest) =>
+      ipcRenderer.invoke('media:extract-frame', input),
+    probe: (path: string) => ipcRenderer.invoke('media:probe', path),
+    splitAv: (input: SplitAvRequest) => ipcRenderer.invoke('media:split-av', input),
+    cropVideo: (input: CropVideoRequest) => ipcRenderer.invoke('media:crop-video', input),
+    cropImage: (input: CropImageRequest) =>
+      ipcRenderer.invoke('media:crop-image', input),
+    trimVideo: (input: TrimVideoRequest) =>
+      ipcRenderer.invoke('media:trim-video', input),
+    cropImageRect: (input: CropImageRectRequest) =>
+      ipcRenderer.invoke('media:crop-image-rect', input),
+    removeSubtitles: (input: RemoveSubtitlesRequest) =>
+      ipcRenderer.invoke('media:remove-subtitles', input)
   },
   export: {
     project: (projectName: string) =>

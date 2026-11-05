@@ -8,6 +8,7 @@ import { useGenerationStore } from '../../stores/generation'
 import { useUIStore } from '../../stores/ui'
 import { useLibraryStore } from '../../stores/library'
 import { assetUrl } from '../../lib/asset-url'
+import { NodeToolbar } from './NodeToolbar'
 
 const NODE_ICON: Record<NodeKind, IconName> = {
   text: 'text',
@@ -91,62 +92,32 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     <>
     <div className={`cnode ${selected ? 'is-selected' : ''}`}>
       {selected && !multiSelected && current && !isBusy ? (
-        <div className="cnode__toolbar nodrag nopan">
-          {current.width && current.height ? (
-            <span className="cnode__toolbar-size">
-              {current.width} × {current.height}
-            </span>
-          ) : null}
-          <button
-            type="button"
-            className="cnode__toolbar-btn"
-            title="下载素材"
-            onClick={(event) => {
-              event.stopPropagation()
-              void exportCurrent()
-            }}
-          >
-            <Icon name="download" size={15} />
-            <span>下载</span>
-          </button>
-          <button
-            type="button"
-            className="cnode__toolbar-btn"
-            title="查看大图"
-            onClick={(event) => {
-              event.stopPropagation()
-              setPreviewOpen(true)
-            }}
-          >
-            <Icon name="expand" size={14} />
-            <span>展开</span>
-          </button>
-          {current.kind !== 'text' ? (
-            <button
-              type="button"
-              className="cnode__toolbar-btn"
-              title={
-                current.scope === 'global'
-                  ? '已在资产库，可另存一份'
-                  : '加入资产库'
-              }
-              onClick={(event) => {
-                event.stopPropagation()
-                openLibraryPicker([
-                  {
-                    sourcePath: current.path,
-                    scope: current.scope ?? 'project',
-                    name: data.title
-                  }
-                ])
-              }}
-            >
-              <Icon name="folder" size={14} />
-              <span>{current.scope === 'global' ? '已入库' : '入库'}</span>
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+        <NodeToolbar
+          nodeId={id}
+          kind={data.kind}
+          current={current}
+          onDownload={() => void exportCurrent()}
+          onExpand={() => setPreviewOpen(true)}
+          libraryAction={
+            current.kind !== 'text'
+              ? {
+                  label: current.scope === 'global' ? '已入库' : '入库',
+                  title:
+                    current.scope === 'global'
+                      ? '已在资产库，点击再存一份'
+                      : '添加到资产库',
+                  onClick: () =>
+                    openLibraryPicker([
+                      {
+                        sourcePath: current.path,
+                        scope: current.scope ?? 'project',
+                        name: data.title
+                      }
+                    ])
+                }
+              : undefined
+          }
+        />      ) : null}
 
       <div
         className="cnode__title"

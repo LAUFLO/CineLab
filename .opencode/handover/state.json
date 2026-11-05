@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "project": "CineLab",
   "root": "D:\\CineLab",
   "updatedAt": "2026-11-05",
@@ -137,6 +137,35 @@
       "title": "底部工具栏 P0+P1：添加入口、移动/抓手、快捷键面板、节点搜索、生成历史",
       "status": "pending",
       "note": "排在 GROUP-1 之后；资产库入口保留左下 StatusBar，不迁入底部中间工具栏"
+    },
+    {
+      "id": "NODE-TOOLBAR-P0",
+      "title": "节点工具栏框架：操作注册表、一级/更多、自定义工具栏、禁用态",
+      "status": "done",
+      "note": "P0 本地媒体工具全部完成（2026-11-05）：工具栏框架、ffmpeg、宫格切分、裁剪、片段截取、分离音视频、画面裁切、抽帧首/尾/当前帧、派生节点自动连线。",
+      "evidence": [
+        "docs/node-toolbar-plan.md",
+        ".opencode/handover/evidence/NODE-TOOLBAR-framework.md",
+        ".opencode/handover/evidence/NODE-TOOLBAR-media.md"
+      ]
+    },
+    {
+      "id": "NODE-TOOLBAR-P1",
+      "title": "AI 图像操作：九宫格/多角度/打光/人像/抠图",
+      "status": "done",
+      "note": "已完成（2026-11-05）：九宫格/剧情推演、角色三视图、画面推演、光影校正、预设打光、预设多角度、人像三档、抠图；统一走 image.i2i + 版本回写。",
+      "evidence": [
+        ".opencode/handover/evidence/NODE-TOOLBAR-p1.md"
+      ]
+    },
+    {
+      "id": "NODE-TOOLBAR-P2",
+      "title": "交互增强：3D 光位/方位球、自由裁剪、框选去字幕",
+      "status": "done",
+      "note": "已完成（2026-11-05）：自由裁剪、框选去字幕、2D 投影光位/机位球。",
+      "evidence": [
+        ".opencode/handover/evidence/NODE-TOOLBAR-p2.md"
+      ]
     }
   ],
   "knownIssues": [
@@ -702,6 +731,22 @@
     {
       "category": "procedure",
       "content": "新增非 OpenAI 厂商时先写本地 mock server，验证提交路径、鉴权头、请求体、轮询状态和下载，再接真实 Key；真实厂商验证受 Key 与免费队列限制。"
+    },
+    {
+      "category": "preference",
+      "content": "节点工具栏范围已确认（2026-11-05）：不恢复画笔蒙版，擦除/重绘/扩图不做；接受 ffmpeg 打包体积；图片高清/视频超分/插帧不做，后续单独立项。完整清单见 docs/node-toolbar-plan.md。"
+    },
+    {
+      "category": "preference",
+      "content": "节点派生规则：所有从节点分出的新节点必须自动建立 source → 新节点连线，包括宫格切分、抽帧、分离音视频等；版本回写不新建节点。"
+    },
+    {
+      "category": "preference",
+      "content": "P1 AI 图像操作统一走 image.i2i + 提示词模板 + 当前节点新版本；点击操作弹出通用面板选模型、改提示词，不直接在工具栏静默生成。"
+    },
+    {
+      "category": "engineering",
+      "content": "P2 交互：自由裁剪 / 字幕框选共用 useBoxEditor（拖拽 + 四角缩放）；打光 / 机位使用 2D 投影球体，拖拽映射为方位角与俯仰角，不引入 3D 引擎。"
     }
   ],
   "designConventions": [

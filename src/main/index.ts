@@ -9,6 +9,10 @@ if (isolatedUserData) {
   app.setPath('userData', isolatedUserData)
 }
 
+if (process.env.CINELAB_USER_DATA) {
+  app.setPath('userData', process.env.CINELAB_USER_DATA)
+}
+
 if (!app.isPackaged) {
   app.commandLine.appendSwitch(
     'remote-debugging-port',

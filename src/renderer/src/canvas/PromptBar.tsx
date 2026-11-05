@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useReactFlow, useViewport } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import type { Capability, ModelDef, ParamDef } from '@shared/provider-schema'
@@ -44,6 +44,8 @@ function paramLabel(param: ParamDef, value: unknown): string {
 export function PromptBar() {
   const nodes = useCanvasStore((state) => state.nodes)
   const edges = useCanvasStore((state) => state.edges)
+  const onConnect = useCanvasStore((state) => state.onConnect)
+  const onEdgesChange = useCanvasStore((state) => state.onEdgesChange)
   const { flowToScreenPosition } = useReactFlow()
   const viewport = useViewport()
 
@@ -64,6 +66,11 @@ export function PromptBar() {
   const [characterIds, setCharacterIds] = useState<string[]>([])
   const [paramValues, setParamValues] = useState<Record<string, unknown>>({})
   const [promptText, setPromptText] = useState('')
+  const [paramMenuKey, setParamMenuKey] = useState<string | null>(null)
+  const [pickedRefs, setPickedRefs] = useState<ReferenceInput[]>([])
+  const [picking, setPicking] = useState(false)
+  const [pickHint, setPickHint] = useState<string | null>(null)
+  const suppressClickRef = useRef(false)
 
   const node = nodes.find((item) => item.selected)
   const kind: NodeKind = node?.data.kind ?? 'image'
@@ -75,6 +82,10 @@ export function PromptBar() {
     setMenuOpen(false)
     setCharacterMenuOpen(false)
     setCharacterIds([])
+    setPickedRefs([])
+    setPicking(false)
+    setPickHint(null)
+    setParamMenuKey(null)
   }, [node?.id])
 
   useEffect(() => {
@@ -82,6 +93,97 @@ export function PromptBar() {
     setPromptText(pendingPrompt)
     clearPendingPrompt()
   }, [pendingPrompt, clearPendingPrompt])
+
+  useEffect(() => {
+    if (!pickHint) return
+    const timer = window.setTimeout(() => setPickHint(null), 2600)
+    return () => window.clearTimeout(timer)
+  }, [pickHint])
+
+  useEffect(() => {
+    if (!paramMenuKey) return
+
+    const onPointerDown = (event: PointerEvent): void => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.param-picker')) setParamMenuKey(null)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [paramMenuKey])
+
+  useEffect(() => {
+    const onClick = (event: MouseEvent): void => {
+      if (!suppressClickRef.current) return
+      const target = event.target as HTMLElement
+      if (target.closest('.promptbar')) return
+      suppressClickRef.current = false
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
+    document.addEventListener('click', onClick, true)
+    return () => document.removeEventListener('click', onClick, true)
+  }, [])
+
+  useEffect(() => {
+    if (!picking || !node) return
+
+    document.body.classList.add('is-picking')
+
+    const onPointerDown = (event: PointerEvent): void => {
+      const target = event.target as HTMLElement
+      if (target.closest('.promptbar')) return
+
+      event.preventDefault()
+      event.stopPropagation()
+      suppressClickRef.current = true
+      window.setTimeout(() => {
+        suppressClickRef.current = false
+      }, 900)
+
+      const nodeEl = target.closest('.react-flow__node') as HTMLElement | null
+      const sourceId = nodeEl?.dataset.id
+      if (!sourceId) {
+        setPicking(false)
+        return
+      }
+
+      const source = nodes.find((item) => item.id === sourceId)
+      const outputs = source?.data.outputs ?? []
+      const output =
+        outputs.find((item) => item.id === source?.data.selectedOutputId) ?? outputs[0]
+
+      setPicking(false)
+      if (!output) {
+        setPickHint('该节点还没有输出')
+        return
+      }
+      if (output.kind !== 'image') {
+        setPickHint('只能引用图片输出')
+        return
+      }
+
+      onConnect({ source: sourceId, target: node.id })
+      setPickedRefs((prev) =>
+        prev.some((ref) => ref.path === output.path)
+          ? prev
+          : [...prev, { path: output.path, role: 'reference' }]
+      )
+    }
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setPicking(false)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown, true)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.classList.remove('is-picking')
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [picking, nodes, node?.id, onConnect])
 
   const models = useMemo<ModelOption[]>(() => {
     const matches = (capability: Capability): boolean => {
@@ -158,17 +260,42 @@ export function PromptBar() {
       role: 'reference' as const
     }))
   })
-  const mergedRefs = [...refs, ...characterRefs].slice(0, 4)
+  const mergedRefs = (() => {
+    const seen = new Set<string>()
+    const result: ReferenceInput[] = []
+    for (const ref of [...pickedRefs, ...refs, ...characterRefs]) {
+      if (seen.has(ref.path)) continue
+      seen.add(ref.path)
+      result.push(ref)
+      if (result.length >= 4) break
+    }
+    return result
+  })()
 
   const isRunning = Boolean(runningRunId)
   const canSend = Boolean(active) && promptText.trim().length > 0 && !isRunning
 
-  const cycleParam = (param: ParamDef): void => {
-    if (param.type !== 'select' || !param.options || param.options.length === 0) return
-    const current = values[param.key]
-    const index = param.options.findIndex((option) => option.value === current)
-    const next = param.options[(index + 1) % param.options.length]
-    setParamValues((prev) => ({ ...prev, [param.key]: next.value }))
+  const removeRef = (path: string): void => {
+    setPickedRefs((prev) => prev.filter((item) => item.path !== path))
+
+    const linked = edges.filter((edge) => {
+      if (edge.target !== node.id) return false
+      const source = nodes.find((item) => item.id === edge.source)
+      const outputs = source?.data.outputs ?? []
+      const output =
+        outputs.find((item) => item.id === source?.data.selectedOutputId) ?? outputs[0]
+      return output?.path === path
+    })
+    if (linked.length > 0) {
+      onEdgesChange(linked.map((edge) => ({ type: 'remove' as const, id: edge.id })))
+    }
+
+    const character = characters.find(
+      (card) => characterIds.includes(card.id) && card.referencePaths.includes(path)
+    )
+    if (character) {
+      setCharacterIds((prev) => prev.filter((id) => id !== character.id))
+    }
   }
 
   const handleSend = (): void => {
@@ -183,11 +310,31 @@ export function PromptBar() {
   }
 
   return (
-    <div
-      className="promptbar"
+    <>
+      {picking ? (
+        <div className="canvas-pick-bar">
+          <Icon name="frame" size={14} />
+          <span>从画布选择节点作为参考</span>
+          <span className="canvas-pick-bar__hint">Esc 退出</span>
+          <button
+            type="button"
+            className="canvas-pick-bar__cancel"
+            onClick={() => setPicking(false)}
+          >
+            取消
+          </button>
+        </div>
+      ) : null}
+
+      <div
+        className="promptbar"
       style={{ left: layout.left, top: layout.top, width: WIDTH }}
       onPointerDown={(event) => event.stopPropagation()}
     >
+      {pickHint ? (
+        <div className="promptbar__pick-hint is-warn">{pickHint}</div>
+      ) : null}
+
       <div className="promptbar__tools">
         <button
           type="button"
@@ -197,7 +344,14 @@ export function PromptBar() {
           <Icon name="plus" size={13} />
           上传
         </button>
-        <button type="button" className="promptbar__tool">
+        <button
+          type="button"
+          className={`promptbar__tool ${picking ? 'is-active' : ''}`}
+          onClick={() => {
+            setPickHint(null)
+            setPicking((open) => !open)
+          }}
+        >
           <Icon name="frame" size={13} />
           画布参考
         </button>
@@ -223,7 +377,23 @@ export function PromptBar() {
         </button>
         <div className="promptbar__spacer" />
         {mergedRefs.length > 0 ? (
-          <span className="promptbar__refs" title="来自上游连线与角色卡">
+          <div className="promptbar__picked">
+            {mergedRefs.map((ref) => (
+              <button
+                key={ref.path}
+                type="button"
+                className="promptbar__picked-item"
+                title={`${ref.path}（点击移除）`}
+                onClick={() => removeRef(ref.path)}
+              >
+                <img src={`cinelab-asset://local/${ref.path}`} alt="" />
+                <Icon name="close" size={10} />
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {mergedRefs.length > 0 ? (
+          <span className="promptbar__refs" title="来自画布参考、上游连线与角色卡">
             素材 {mergedRefs.length}
           </span>
         ) : null}
@@ -351,19 +521,48 @@ export function PromptBar() {
         {active ? (
           <div className="promptbar__param-group">
             {active.model.params.map((param) => (
-              <button
-                key={param.key}
-                type="button"
-                className="promptbar__chip"
-                onClick={() => cycleParam(param)}
-                title={param.label}
-              >
-                <span className="promptbar__param-label">{param.label}</span>
-                {paramLabel(param, values[param.key])}
-                {param.type === 'select' ? (
-                  <Icon name="chevron-down" size={10} />
+              <div key={param.key} className="param-picker">
+                <button
+                  type="button"
+                  className="promptbar__chip"
+                  onClick={() => {
+                    if (param.type !== 'select' || !param.options) return
+                    setParamMenuKey((open) => (open === param.key ? null : param.key))
+                  }}
+                  title={param.label}
+                >
+                  <span className="promptbar__param-label">{param.label}</span>
+                  {paramLabel(param, values[param.key])}
+                  {param.type === 'select' ? (
+                    <Icon name="chevron-down" size={10} />
+                  ) : null}
+                </button>
+
+                {paramMenuKey === param.key && param.options ? (
+                  <div className="param-menu">
+                    {param.options.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`param-menu__item ${
+                          String(option.value) === String(values[param.key])
+                            ? 'is-active'
+                            : ''
+                        }`}
+                        onClick={() => {
+                          setParamValues((prev) => ({
+                            ...prev,
+                            [param.key]: option.value
+                          }))
+                          setParamMenuKey(null)
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 ) : null}
-              </button>
+              </div>
             ))}
           </div>
         ) : (
@@ -395,5 +594,6 @@ export function PromptBar() {
         )}
       </div>
     </div>
+    </>
   )
 }

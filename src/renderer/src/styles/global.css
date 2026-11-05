@@ -728,32 +728,37 @@ body.is-exporting .react-flow__minimap {
   color: var(--danger);
 }
 
-.cnode__progress {
+.cnode__generating {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 28px;
+  inset: 0;
+  z-index: 2;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 0 12px;
-  background: rgba(0, 0, 0, 0.38);
-  backdrop-filter: blur(2px);
+  justify-content: center;
+  background: var(--surface-raised);
 }
 
-.cnode__progress-bar {
+.cnode__generating-pill {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--canvas-bg);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  font-size: 12px;
+}
+
+.cnode__cancel {
   position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--accent);
-  transition: width 200ms linear;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--text-3);
 }
 
-.cnode__progress-text {
-  font-size: 11px;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
+.cnode__cancel:hover {
+  color: var(--text-1);
 }
 
 .cnode__error {
@@ -1367,7 +1372,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .promptbar__autolink.is-on .promptbar__switch {
-  background: var(--accent);
+  background: var(--pick-bar);
 }
 
 .promptbar__autolink.is-on .promptbar__switch::after {

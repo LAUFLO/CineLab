@@ -13,6 +13,7 @@ import type {
 import type {
   GenerateHandle,
   GenerateRequest,
+  GeneratedAsset,
   GenerationEvent
 } from './generation'
 import type {
@@ -82,6 +83,15 @@ export interface ExportResult {
   error?: string
 }
 
+export type ClipboardContent =
+  | { kind: 'image'; asset: GeneratedAsset }
+  | { kind: 'text'; text: string }
+  | null
+
+export interface ClipboardApi {
+  read(): Promise<ClipboardContent>
+}
+
 export interface ExportApi {
   project(projectName: string): Promise<ExportResult>
   canvasPng(projectName: string, canvasName: string): Promise<ExportResult>
@@ -100,5 +110,6 @@ export interface CineApi {
   settings: SettingsApi
   generate: GenerateApi
   library: LibraryApi
+  clipboard: ClipboardApi
   export: ExportApi
 }

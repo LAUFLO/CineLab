@@ -21,11 +21,30 @@ import {
 export type CineNode = Node<CineNodeData, 'cine'>
 export type CineEdge = Edge
 
+interface Snapshot {
+  nodes: CineNode[]
+  edges: CineEdge[]
+}
+
+interface NodeClipboard {
+  nodes: CineNode[]
+  edges: CineEdge[]
+}
+
+const HISTORY_LIMIT = 60
+
+function cloneSnapshot(nodes: CineNode[], edges: CineEdge[]): Snapshot {
+  return structuredClone({ nodes, edges })
+}
+
 interface CanvasStore {
   nodes: CineNode[]
   edges: CineEdge[]
   viewport: Viewport
   hydrated: boolean
+  past: Snapshot[]
+  future: Snapshot[]
+  clipboard: NodeClipboard | null
 
   loadCanvas: (nodes: CineNode[], edges: CineEdge[], viewport: Viewport) => void
   setViewport: (viewport: Viewport) => void
@@ -38,6 +57,11 @@ interface CanvasStore {
   removeNode: (id: string) => void
   clearSelection: () => void
   arrangeNodes: () => void
+  pushHistory: () => void
+  undo: () => void
+  redo: () => void
+  copySelection: () => number
+  pasteNodes: (position?: XYPosition) => number
 }
 
 let seq = 0
@@ -52,9 +76,20 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   edges: [],
   viewport: { x: 0, y: 0, zoom: 1 },
   hydrated: false,
+  past: [],
+  future: [],
+  clipboard: null,
 
   loadCanvas: (nodes, edges, viewport) => {
-    set({ nodes, edges, viewport, hydrated: true })
+    set({
+      nodes,
+      edges,
+      viewport,
+      hydrated: true,
+      past: [],
+      future: [],
+      clipboard: null
+    })
   },
 
   setViewport: (viewport) => {
@@ -62,6 +97,10 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   onNodesChange: (changes) => {
+    if (changes.some((change) => change.type === 'remove')) {
+      get().pushHistory()
+    }
+
     const nodes = applyNodeChanges(changes, get().nodes)
     const removed = changes
       .filter((change) => change.type === 'remove')
@@ -90,6 +129,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     )
     if (exists) return
 
+    get().pushHistory()
+
     set({
       edges: addEdge(
         {
@@ -105,6 +146,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   addNode: (kind, position) => {
+    get().pushHistory()
+
     const meta = NODE_META[kind]
     const sameKind = get().nodes.filter((node) => node.data.kind === kind).length
     const id = nextId(kind)
@@ -151,6 +194,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   removeNode: (id) => {
+    get().pushHistory()
     set({
       nodes: get().nodes.filter((node) => node.id !== id),
       edges: get().edges.filter((edge) => edge.source !== id && edge.target !== id)
@@ -162,6 +206,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   arrangeNodes: () => {
+    get().pushHistory()
+
     const gap = 48
     const maxWidth = 1400
     let x = 0
@@ -186,5 +232,112 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
 
     set({ nodes })
+  },
+
+  pushHistory: () => {
+    const { nodes, edges, past } = get()
+    const next = [...past, cloneSnapshot(nodes, edges)]
+    if (next.length > HISTORY_LIMIT) next.shift()
+    set({ past: next, future: [] })
+  },
+
+  undo: () => {
+    const { past, future, nodes, edges } = get()
+    const previous = past[past.length - 1]
+    if (!previous) return
+
+    set({
+      nodes: previous.nodes,
+      edges: previous.edges,
+      past: past.slice(0, -1),
+      future: [...future, cloneSnapshot(nodes, edges)]
+    })
+  },
+
+  redo: () => {
+    const { past, future, nodes, edges } = get()
+    const next = future[future.length - 1]
+    if (!next) return
+
+    set({
+      nodes: next.nodes,
+      edges: next.edges,
+      future: future.slice(0, -1),
+      past: [...past, cloneSnapshot(nodes, edges)]
+    })
+  },
+
+  copySelection: () => {
+    const selected = get().nodes.filter((node) => node.selected)
+    if (selected.length === 0) return 0
+
+    const ids = new Set(selected.map((node) => node.id))
+    const edges = get().edges.filter(
+      (edge) => ids.has(edge.source) && ids.has(edge.target)
+    )
+
+    set({ clipboard: structuredClone({ nodes: selected, edges }) })
+    return selected.length
+  },
+
+  pasteNodes: (position) => {
+    const clipboard = get().clipboard
+    if (!clipboard || clipboard.nodes.length === 0) return 0
+
+    get().pushHistory()
+
+    const stamp = Date.now().toString(36)
+    const idMap = new Map<string, string>()
+    const bounds = clipboard.nodes.map((node) => ({
+      x: node.position.x,
+      y: node.position.y,
+      width: node.measured?.width ?? NODE_META[node.data.kind].width,
+      height:
+        node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
+    }))
+    const minX = Math.min(...bounds.map((item) => item.x))
+    const minY = Math.min(...bounds.map((item) => item.y))
+    const maxX = Math.max(...bounds.map((item) => item.x + item.width))
+    const maxY = Math.max(...bounds.map((item) => item.y + item.height))
+    const offset = position
+      ? {
+          x: position.x - (minX + maxX) / 2,
+          y: position.y - (minY + maxY) / 2
+        }
+      : { x: 24, y: 24 }
+
+    const pastedNodes = clipboard.nodes.map((node, index) => {
+      const id = `${node.data.kind}_${stamp}_${index + 1}`
+      idMap.set(node.id, id)
+
+      return {
+        ...structuredClone(node),
+        id,
+        position: {
+          x: node.position.x + offset.x,
+          y: node.position.y + offset.y
+        },
+        selected: true,
+        dragging: false
+      }
+    })
+
+    const pastedEdges = clipboard.edges.map((edge, index) => ({
+      ...structuredClone(edge),
+      id: `edge_${stamp}_${index + 1}`,
+      source: idMap.get(edge.source) ?? edge.source,
+      target: idMap.get(edge.target) ?? edge.target,
+      selected: false
+    }))
+
+    set({
+      nodes: [
+        ...get().nodes.map((node) => ({ ...node, selected: false })),
+        ...pastedNodes
+      ],
+      edges: [...get().edges, ...pastedEdges]
+    })
+
+    return pastedNodes.length
   }
 }))

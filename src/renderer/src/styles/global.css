@@ -1793,6 +1793,70 @@ body.is-picking .react-flow__node:hover .cnode__card {
   flex-shrink: 0;
 }
 
+.provider-card__badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  height: 16px;
+  line-height: 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 10px;
+  color: var(--text-3);
+  vertical-align: 1px;
+}
+
+.models-config {
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+
+.models-config__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.models-config__title {
+  font-size: 13px;
+  color: var(--text-1);
+  margin-bottom: 3px;
+}
+
+.models-config__path {
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.models-config__actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.models-config__meta {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.models-config__errors {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger);
+  font-size: 11px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
 .provider-list__empty {
   padding: 24px 8px;
   font-size: 12px;
@@ -1948,6 +2012,12 @@ body.is-picking .react-flow__node:hover .cnode__card {
 .btn-block {
   width: 100%;
   margin-top: 8px;
+}
+
+.btn-sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
 }
 
 .btn-primary:disabled,

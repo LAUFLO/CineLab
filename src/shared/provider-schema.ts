@@ -31,6 +31,8 @@ export interface ModelDef {
   params: ParamDef[]
   /** 该模型只出现在指定类型的供应商下；缺省为 openai-compat */
   providerType?: ProviderType
+  /** 生成执行器，缺省按 remoteModel 推断 */
+  adapter?: string
 }
 
 export interface ProviderConfig {
@@ -41,6 +43,8 @@ export interface ProviderConfig {
   models: ModelDef[]
   hasKey: boolean
   hasSecret: boolean
+  /** settings = 应用内配置，models = models.json */
+  source?: 'settings' | 'models'
   createdAt: string
   updatedAt: string
 }

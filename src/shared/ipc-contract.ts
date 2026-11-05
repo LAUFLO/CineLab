@@ -23,6 +23,7 @@ import type {
   PromptTemplate,
   TemplateInput
 } from './library-schema'
+import type { ModelsConfigStatus } from './models-file'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -54,6 +55,8 @@ export interface SettingsApi {
   saveProvider(input: ProviderInput): Promise<ProviderConfig>
   deleteProvider(id: string): Promise<void>
   testConnection(input: ConnectionTestInput): Promise<ConnectionTestResult>
+  modelsConfig(): Promise<ModelsConfigStatus>
+  openModelsFile(): Promise<string>
 }
 
 export interface GenerateApi {

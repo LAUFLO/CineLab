@@ -11,6 +11,11 @@ import type {
   ProviderType
 } from '@shared/provider-schema'
 import { klingAuthorization } from '../providers/kling-auth'
+import {
+  loadModelsConfig,
+  resolveModels,
+  toModelsProvider
+} from './models-config'
 
 interface StoredProvider {
   id: string
@@ -87,7 +92,19 @@ function toPublic(provider: StoredProvider): ProviderConfig {
 
 export async function listProviders(): Promise<ProviderConfig[]> {
   const data = await readSettings()
-  return data.providers.map(toPublic)
+  const external = await loadModelsConfig()
+  const byId = new Map<string, ProviderConfig>()
+
+  for (const provider of data.providers) {
+    byId.set(provider.id, { ...toPublic(provider), source: 'settings' })
+  }
+
+  for (const provider of external.providers) {
+    const stored = data.providers.find((item) => item.id === provider.id)
+    byId.set(provider.id, toModelsProvider(provider, stored))
+  }
+
+  return [...byId.values()]
 }
 
 export interface ResolvedProvider {
@@ -100,21 +117,48 @@ export interface ResolvedProvider {
 
 export async function resolveProvider(id: string): Promise<ResolvedProvider | null> {
   const data = await readSettings()
-  const provider = data.providers.find((item) => item.id === id)
-  if (!provider) return null
+  const stored = data.providers.find((item) => item.id === id)
+  const external = (await loadModelsConfig()).providers.find(
+    (item) => item.id === id
+  )
+
+  if (external) {
+    const envKey = external.apiKeyEnv
+      ? process.env[external.apiKeyEnv]
+      : undefined
+
+    return {
+      type: external.type ?? stored?.type ?? 'openai-compat',
+      baseUrl: external.baseUrl,
+      apiKey: stored?.encryptedKey
+        ? decryptKey(stored.encryptedKey)
+        : envKey || external.apiKey || '',
+      secretKey: stored?.encryptedSecret
+        ? decryptKey(stored.encryptedSecret)
+        : '',
+      models: resolveModels(external)
+    }
+  }
+
+  if (!stored) return null
 
   return {
-    type: provider.type ?? 'openai-compat',
-    baseUrl: provider.baseUrl,
-    apiKey: provider.encryptedKey ? decryptKey(provider.encryptedKey) : '',
-    secretKey: provider.encryptedSecret
-      ? decryptKey(provider.encryptedSecret)
+    type: stored.type ?? 'openai-compat',
+    baseUrl: stored.baseUrl,
+    apiKey: stored.encryptedKey ? decryptKey(stored.encryptedKey) : '',
+    secretKey: stored.encryptedSecret
+      ? decryptKey(stored.encryptedSecret)
       : '',
-    models: provider.models
+    models: stored.models
   }
 }
 
 export async function saveProvider(input: ProviderInput): Promise<ProviderConfig> {
+  const external = await loadModelsConfig()
+  if (input.id && external.providers.some((provider) => provider.id === input.id)) {
+    throw new Error('该供应商来自 models.json，请直接编辑配置文件')
+  }
+
   const data = await readSettings()
   const now = new Date().toISOString()
   const existing = input.id
@@ -152,6 +196,11 @@ export async function saveProvider(input: ProviderInput): Promise<ProviderConfig
 }
 
 export async function deleteProvider(id: string): Promise<void> {
+  const external = await loadModelsConfig()
+  if (external.providers.some((provider) => provider.id === id)) {
+    throw new Error('该供应商来自 models.json，请直接编辑配置文件')
+  }
+
   const data = await readSettings()
   data.providers = data.providers.filter((provider) => provider.id !== id)
   await writeSettings(data)
@@ -165,15 +214,28 @@ export async function testConnection(
     const stored = input.id
       ? data.providers.find((provider) => provider.id === input.id)
       : undefined
+    const external = input.id
+      ? (await loadModelsConfig()).providers.find(
+          (provider) => provider.id === input.id
+        )
+      : undefined
 
-    const type = input.type ?? stored?.type ?? 'openai-compat'
+    const type = input.type ?? external?.type ?? stored?.type ?? 'openai-compat'
+    const envKey = external?.apiKeyEnv
+      ? process.env[external.apiKeyEnv]
+      : undefined
     const apiKey =
       input.apiKey?.trim() ||
-      (stored?.encryptedKey ? decryptKey(stored.encryptedKey) : '')
+      (stored?.encryptedKey ? decryptKey(stored.encryptedKey) : '') ||
+      envKey ||
+      external?.apiKey ||
+      ''
     const secretKey =
       input.secretKey?.trim() ||
       (stored?.encryptedSecret ? decryptKey(stored.encryptedSecret) : '')
-    const baseUrl = input.baseUrl.trim().replace(/\/+$/, '')
+    const baseUrl = (input.baseUrl || external?.baseUrl || '')
+      .trim()
+      .replace(/\/+$/, '')
 
     if (!baseUrl) return { ok: false, message: 'Base URL 不能为空' }
     if (!apiKey) return { ok: false, message: 'API Key 不能为空' }

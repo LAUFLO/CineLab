@@ -32,12 +32,22 @@
 
 ```bash
 corepack pnpm dev          # 启动 Electron + Vite
+corepack pnpm dev:isolated # 独立测试实例：自动分配 CDP 端口和临时 userData
 corepack pnpm typecheck    # 主进程 + 渲染进程类型检查
 corepack pnpm build        # 构建
 corepack pnpm dist:win     # 打包 Windows 安装包
 ```
 
 > `pnpm` 不在 PATH 时统一用 `corepack pnpm`。
+
+## UI 测试与多会话隔离
+
+- 测试前先检查 `http://127.0.0.1:9222/json/version`。如果已有窗口响应，说明其他会话正在使用，禁止复用、关闭或 attach 这个实例。
+- 使用 `corepack pnpm dev:isolated` 启动独立实例：自动分配空闲 CDP 端口（9222 被占时从 9223 起）并创建临时 userData。
+- 脚本会打印 `CINELAB_DEBUG_PORT`，`scripts/cdp-*.mjs` 会自动读取该环境变量。
+- 独立实例有独立的最近项目、设置和 `models.json`，首次进入欢迎页；测试项目在实例内创建或打开。
+- 不要用 `SetForegroundWindow` 或 `Stop-Process` 操作其他会话的 Electron 窗口。
+- 测试结束只关闭自己启动的 dev 进程。
 
 ## 硬性约定
 

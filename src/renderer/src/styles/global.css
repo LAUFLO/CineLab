@@ -1928,7 +1928,7 @@ textarea {
 }
 
 .projects-dialog__grid .project-center__cover {
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 1;
   margin-bottom: 8px;
   border-radius: 6px;
 }
@@ -1946,7 +1946,7 @@ textarea {
   white-space: normal;
   word-break: break-all;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 

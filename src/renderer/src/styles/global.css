@@ -1928,7 +1928,7 @@ textarea {
 }
 
 .projects-dialog__grid .project-center__cover {
-  aspect-ratio: 1;
+  aspect-ratio: 16 / 10;
   margin-bottom: 8px;
   border-radius: 6px;
 }

@@ -100,11 +100,18 @@ function buildEditForm(
   singleField: boolean
 ): FormData | null {
   const form = new FormData()
+  const isMoss = /moss/i.test(model.remoteModel)
   form.append('model', model.remoteModel)
   form.append('prompt', prompt)
   form.append('n', String(Number(params.n ?? 1)))
   if (params.size) form.append('size', String(params.size))
   if (params.quality) form.append('quality', String(params.quality))
+  if (isMoss && params.watermark !== undefined) {
+    form.append(
+      'output_watermark',
+      JSON.stringify({ enabled: Boolean(params.watermark) })
+    )
+  }
 
   let accepted = 0
   for (let index = 0; index < refs.length; index += 1) {
@@ -129,6 +136,7 @@ export async function generateImage(
 ): Promise<ImageOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
   const headers = { Authorization: `Bearer ${provider.apiKey}` }
+  const isMoss = /moss/i.test(model.remoteModel)
 
   if (refs.length > 0) {
     ctx.onProgress(5, '提交图生图请求')
@@ -179,6 +187,9 @@ export async function generateImage(
 
   if (params.size) body.size = params.size
   if (params.quality) body.quality = params.quality
+  if (isMoss && params.watermark !== undefined) {
+    body.output_watermark = { enabled: Boolean(params.watermark) }
+  }
 
   ctx.onProgress(5, '提交请求')
 

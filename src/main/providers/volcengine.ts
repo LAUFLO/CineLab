@@ -54,7 +54,7 @@ export async function generateVideoArk(
     resolution: params.resolution ?? '720p',
     ratio: params.ratio ?? '16:9',
     duration: Number(params.duration ?? 5),
-    watermark: false
+    watermark: Boolean(params.watermark ?? false)
   }
 
   if (params.generate_audio !== undefined) {

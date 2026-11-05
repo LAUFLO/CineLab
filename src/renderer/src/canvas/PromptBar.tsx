@@ -79,6 +79,7 @@ export function PromptBar() {
   const [autoLink, setAutoLink] = useState(true)
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [watermark, setWatermark] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const suppressClickRef = useRef(false)
 
   const node = nodes.find((item) => item.selected)
@@ -95,6 +96,7 @@ export function PromptBar() {
     setPicking(false)
     setPickHint(null)
     setParamMenuKey(null)
+    setExpanded(false)
   }, [node?.id])
 
   useEffect(() => {
@@ -106,6 +108,27 @@ export function PromptBar() {
   useEffect(() => {
     void loadLibrary()
   }, [loadLibrary])
+
+  useEffect(() => {
+    if (!expanded) return
+
+    const onPointerDown = (event: PointerEvent): void => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      if (target.closest('.promptbar')) return
+      setExpanded(false)
+    }
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setExpanded(false)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [expanded])
 
   useEffect(() => {
     if (!pickHint) return
@@ -383,10 +406,14 @@ export function PromptBar() {
       ) : null}
 
       <div
-        className="promptbar"
-      style={{ left: layout.left, top: layout.top, width: WIDTH }}
-      onPointerDown={(event) => event.stopPropagation()}
-    >
+        className={`promptbar ${expanded ? 'is-expanded' : ''}`}
+        style={
+          expanded
+            ? undefined
+            : { left: layout.left, top: layout.top, width: WIDTH }
+        }
+        onPointerDown={(event) => event.stopPropagation()}
+      >
       {pickHint ? (
         <div className="promptbar__pick-hint is-warn">{pickHint}</div>
       ) : null}
@@ -447,8 +474,13 @@ export function PromptBar() {
             素材 {mergedRefs.length}
           </span>
         ) : null}
-        <button type="button" className="promptbar__icon" title="展开">
-          <Icon name="maximize" size={12} />
+        <button
+          type="button"
+          className="promptbar__icon"
+          title={expanded ? '收起输入框' : '展开输入框'}
+          onClick={() => setExpanded((open) => !open)}
+        >
+          <Icon name="expand" size={13} />
         </button>
       </div>
 
@@ -656,7 +688,7 @@ export function PromptBar() {
           title="高级设置"
           onClick={() => setAdvancedOpen((open) => !open)}
         >
-          <Icon name="minimize" size={13} />
+          <Icon name="settings" size={16} />
         </button>
 
         {isRunning ? (

@@ -167,7 +167,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
     [screenToFlowPosition, addNode]
   )
 
-  const dotColor = theme === 'light' ? 'rgba(0,0,0,0.13)' : 'rgba(255,255,255,0.13)'
+  const dotColor = theme === 'light' ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.24)'
 
   return (
     <>

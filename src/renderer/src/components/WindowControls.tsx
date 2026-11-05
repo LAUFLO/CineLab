@@ -1,8 +1,28 @@
 import { Icon } from './Icon'
+import { useSettingsStore } from '../stores/settings'
 
-export function WindowControls() {
+interface WindowControlsProps {
+  theme: 'light' | 'dark'
+  onToggleTheme: () => void
+}
+
+export function WindowControls({ theme, onToggleTheme }: WindowControlsProps) {
+  const openSettings = useSettingsStore((state) => state.openPanel)
+
   return (
     <div className="window-controls">
+      <button
+        type="button"
+        className="icon-btn"
+        title="切换主题"
+        onClick={onToggleTheme}
+      >
+        <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+      </button>
+      <button type="button" className="icon-btn" title="设置" onClick={openSettings}>
+        <Icon name="settings" />
+      </button>
+      <span className="window-controls__divider" />
       <button
         type="button"
         className="icon-btn icon-btn--window"

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NODE_META, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
-import { useCanvasStore } from '../../stores/canvas'
+import { isGroupNode, useCanvasStore } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useToolbarStore } from '../../stores/toolbar'
 import { useUIStore } from '../../stores/ui'
@@ -141,9 +141,10 @@ export function NodeToolbar({
     const [rows, cols] = item.id.split('x').map(Number)
     if (!rows || !cols) return
 
-    const node = useCanvasStore
+    const found = useCanvasStore
       .getState()
       .nodes.find((entry) => entry.id === nodeId)
+    const node = found && !isGroupNode(found) ? found : undefined
     if (!node) return
 
     setRunning(true)
@@ -173,9 +174,10 @@ export function NodeToolbar({
   }
 
   const executeFrame = async (item: OperationMenuItem): Promise<void> => {
-    const node = useCanvasStore
+    const found = useCanvasStore
       .getState()
       .nodes.find((entry) => entry.id === nodeId)
+    const node = found && !isGroupNode(found) ? found : undefined
     if (!node) return
 
     let time: number | undefined
@@ -213,9 +215,10 @@ export function NodeToolbar({
   }
 
   const executeSplitAv = async (): Promise<void> => {
-    const node = useCanvasStore
+    const found = useCanvasStore
       .getState()
       .nodes.find((entry) => entry.id === nodeId)
+    const node = found && !isGroupNode(found) ? found : undefined
     if (!node) return
 
     setRunning(true)

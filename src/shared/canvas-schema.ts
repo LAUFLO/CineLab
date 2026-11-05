@@ -33,6 +33,53 @@ export interface CineNodeData extends Record<string, unknown> {
   templates: string[]
 }
 
+export type GroupColor =
+  | 'blue'
+  | 'cyan'
+  | 'teal'
+  | 'green'
+  | 'lime'
+  | 'amber'
+  | 'orange'
+  | 'rose'
+  | 'violet'
+  | 'slate'
+
+export const GROUP_COLORS: GroupColor[] = [
+  'blue',
+  'cyan',
+  'teal',
+  'green',
+  'lime',
+  'amber',
+  'orange',
+  'rose',
+  'violet',
+  'slate'
+]
+
+export const GROUP_LABELS: Record<GroupColor, string> = {
+  blue: '蓝',
+  cyan: '青',
+  teal: '蓝绿',
+  green: '绿',
+  lime: '黄绿',
+  amber: '琥珀',
+  orange: '橙',
+  rose: '玫红',
+  violet: '紫',
+  slate: '灰'
+}
+
+export interface GroupNodeData extends Record<string, unknown> {
+  title: string
+  color: GroupColor
+}
+
+export const GROUP_HEADER_HEIGHT = 36
+export const GROUP_PADDING = 24
+export const GROUP_GAP = 24
+
 export interface NodeMeta {
   label: string
   width: number

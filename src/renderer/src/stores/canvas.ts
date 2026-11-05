@@ -12,45 +12,75 @@ import {
 } from '@xyflow/react'
 import { create } from 'zustand'
 import {
+  GROUP_GAP,
+  GROUP_HEADER_HEIGHT,
+  GROUP_PADDING,
   NODE_META,
   TITLE_HEIGHT,
   type CineNodeData,
+  type GroupColor,
+  type GroupNodeData,
   type NodeKind,
   type OutputRef
 } from '@shared/canvas-schema'
 import type { GeneratedAsset } from '@shared/generation'
 
 export type CineNode = Node<CineNodeData, 'cine'>
+export type GroupNode = Node<GroupNodeData, 'group'>
+export type CanvasNode = CineNode | GroupNode
 export type CineEdge = Edge
 
+export function isGroupNode(node: CanvasNode): node is GroupNode {
+  return node.type === 'group'
+}
+
+export function nodeSize(node: CanvasNode): { width: number; height: number } {
+  if (isGroupNode(node)) {
+    return {
+      width: node.measured?.width ?? Number(node.style?.width ?? 320),
+      height: node.measured?.height ?? Number(node.style?.height ?? 200)
+    }
+  }
+
+  const meta = NODE_META[node.data.kind]
+  return {
+    width: node.measured?.width ?? meta.width,
+    height: node.measured?.height ?? meta.height + TITLE_HEIGHT
+  }
+}
+
 interface Snapshot {
-  nodes: CineNode[]
+  nodes: CanvasNode[]
   edges: CineEdge[]
 }
 
 interface NodeClipboard {
-  nodes: CineNode[]
+  nodes: CanvasNode[]
   edges: CineEdge[]
 }
 
 const HISTORY_LIMIT = 60
 
-function cloneSnapshot(nodes: CineNode[], edges: CineEdge[]): Snapshot {
+function cloneSnapshot(nodes: CanvasNode[], edges: CineEdge[]): Snapshot {
   return structuredClone({ nodes, edges })
 }
 
+export type GroupArrangeMode = 'row' | 'column' | 'grid'
+
 interface CanvasStore {
-  nodes: CineNode[]
+  nodes: CanvasNode[]
   edges: CineEdge[]
   viewport: Viewport
   hydrated: boolean
   past: Snapshot[]
   future: Snapshot[]
   clipboard: NodeClipboard | null
+  boxSelecting: boolean
 
-  loadCanvas: (nodes: CineNode[], edges: CineEdge[], viewport: Viewport) => void
+  loadCanvas: (nodes: CanvasNode[], edges: CineEdge[], viewport: Viewport) => void
+  setBoxSelecting: (value: boolean) => void
   setViewport: (viewport: Viewport) => void
-  onNodesChange: (changes: NodeChange<CineNode>[]) => void
+  onNodesChange: (changes: NodeChange<CanvasNode>[]) => void
   onEdgesChange: (changes: EdgeChange<CineEdge>[]) => void
   onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string
@@ -74,6 +104,15 @@ interface CanvasStore {
   pasteNodes: (position?: XYPosition) => number
   duplicateSelection: () => number
   removeSelection: () => number
+  groupSelection: () => string | null
+  mergeSelection: () => string | null
+  ungroup: (groupId: string) => void
+  deleteGroupWithChildren: (groupId: string) => number
+  renameGroup: (groupId: string, title: string) => void
+  setGroupColor: (groupId: string, color: GroupColor) => void
+  arrangeGroup: (groupId: string, mode: GroupArrangeMode) => void
+  detachNode: (nodeId: string) => void
+  syncGroupBounds: (groupId: string) => void
 }
 
 let seq = 0
@@ -99,27 +138,26 @@ function overlaps(a: NodeRect, b: NodeRect, gap: number): boolean {
 }
 
 function findFreeOrigin(
-  nodes: CineNode[],
+  nodes: CanvasNode[],
   origin: XYPosition,
   width: number,
   height: number,
   gap: number
 ): XYPosition {
   let y = origin.y
+  const candidates = nodes.filter((node) => !isGroupNode(node))
 
   for (let attempt = 0; attempt < 50; attempt += 1) {
     const candidate: NodeRect = { x: origin.x, y, width, height }
-    const hit = nodes.find((node) => {
-      const nodeWidth = node.measured?.width ?? NODE_META[node.data.kind].width
-      const nodeHeight =
-        node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
+    const hit = candidates.find((node) => {
+      const size = nodeSize(node)
       return overlaps(
         candidate,
         {
           x: node.position.x,
           y: node.position.y,
-          width: nodeWidth,
-          height: nodeHeight
+          width: size.width,
+          height: size.height
         },
         gap
       )
@@ -127,14 +165,63 @@ function findFreeOrigin(
 
     if (!hit) return { x: origin.x, y }
 
-    const hitHeight =
-      hit.measured?.height ?? NODE_META[hit.data.kind].height + TITLE_HEIGHT
-    y = hit.position.y + hitHeight + gap
+    y = hit.position.y + nodeSize(hit).height + gap
   }
 
   return { x: origin.x, y }
 }
 
+
+interface GroupBounds {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+function childrenOf(nodes: CanvasNode[], groupId: string): CanvasNode[] {
+  return nodes.filter((node) => node.parentId === groupId)
+}
+
+function absolutePosition(node: CanvasNode, nodes: CanvasNode[]): XYPosition {
+  let x = node.position.x
+  let y = node.position.y
+  let parentId = node.parentId
+
+  for (let depth = 0; depth < 8 && parentId; depth += 1) {
+    const parent = nodes.find((entry) => entry.id === parentId)
+    if (!parent) break
+    x += parent.position.x
+    y += parent.position.y
+    parentId = parent.parentId
+  }
+
+  return { x, y }
+}
+
+function contentBounds(children: CanvasNode[], nodes: CanvasNode[]): GroupBounds {
+  const rects = children.map((child) => {
+    const size = nodeSize(child)
+    const absolute = absolutePosition(child, nodes)
+    return { x: absolute.x, y: absolute.y, ...size }
+  })
+
+  const minX = Math.min(...rects.map((rect) => rect.x))
+  const minY = Math.min(...rects.map((rect) => rect.y))
+  const maxX = Math.max(...rects.map((rect) => rect.x + rect.width))
+  const maxY = Math.max(...rects.map((rect) => rect.y + rect.height))
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY
+  }
+}
+
+function defaultGroupSize(index: number): GroupBounds {
+  return { x: 0, y: 0, width: 320 + index * 24, height: 200 + index * 24 }
+}
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
   nodes: [],
@@ -144,6 +231,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   past: [],
   future: [],
   clipboard: null,
+  boxSelecting: false,
+
+  setBoxSelecting: (value) => {
+    set({ boxSelecting: value })
+  },
 
   loadCanvas: (nodes, edges, viewport) => {
     set({
@@ -166,7 +258,23 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       get().pushHistory()
     }
 
-    const nodes = applyNodeChanges(changes, get().nodes)
+    const boxSelecting = get().boxSelecting
+    const effective = boxSelecting
+      ? changes.map((change) => {
+          if (
+            change.type === 'select' &&
+            change.selected &&
+            get().nodes.some(
+              (node) => node.id === change.id && isGroupNode(node)
+            )
+          ) {
+            return { ...change, selected: false }
+          }
+          return change
+        })
+      : changes
+
+    const nodes = applyNodeChanges(effective, get().nodes)
     const removed = changes
       .filter((change) => change.type === 'remove')
       .map((change) => change.id)
@@ -315,7 +423,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
   applyOutput: (nodeId, asset, op) => {
     const node = get().nodes.find((entry) => entry.id === nodeId)
-    if (!node) return
+    if (!node || isGroupNode(node)) return
 
     get().pushHistory()
 
@@ -342,31 +450,29 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         : node.measured?.height ?? NODE_META[kind].height + TITLE_HEIGHT
 
     set({
-      nodes: get().nodes.map((entry) =>
-        entry.id === nodeId
-          ? {
-              ...entry,
-              data: {
-                ...entry.data,
-                status: 'done',
-                progress: 100,
-                error: undefined,
-                outputs,
-                selectedOutputId: output.id
-              },
-              style: { ...entry.style, height: nextHeight }
-            }
-          : entry
-      )
+      nodes: get().nodes.map((entry) => {
+        if (entry.id !== nodeId || isGroupNode(entry)) return entry
+        return {
+          ...entry,
+          data: {
+            ...entry.data,
+            status: 'done',
+            progress: 100,
+            error: undefined,
+            outputs,
+            selectedOutputId: output.id
+          },
+          style: { ...entry.style, height: nextHeight }
+        }
+      })
     })
   },
   patchNodeData: (nodeId, patch) => {
     set({
-      nodes: get().nodes.map((node) =>
-        node.id === nodeId
-          ? { ...node, data: { ...node.data, ...patch } }
-          : node
-      )
+      nodes: get().nodes.map((node) => {
+        if (node.id !== nodeId || isGroupNode(node)) return node
+        return { ...node, data: { ...node.data, ...patch } }
+      })
     })
   },
 
@@ -402,9 +508,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     let rowHeight = 0
 
     const nodes = get().nodes.map((node) => {
-      const width = node.measured?.width ?? NODE_META[node.data.kind].width
-      const height =
-        node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
+      if (isGroupNode(node) || node.parentId) return node
+
+      const { width, height } = nodeSize(node)
 
       if (x > 0 && x + width > maxWidth) {
         x = 0
@@ -475,13 +581,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
     const stamp = Date.now().toString(36)
     const idMap = new Map<string, string>()
-    const bounds = clipboard.nodes.map((node) => ({
-      x: node.position.x,
-      y: node.position.y,
-      width: node.measured?.width ?? NODE_META[node.data.kind].width,
-      height:
-        node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
-    }))
+    const bounds = clipboard.nodes.map((node) => {
+      const size = nodeSize(node)
+      return {
+        x: node.position.x,
+        y: node.position.y,
+        width: size.width,
+        height: size.height
+      }
+    })
     const minX = Math.min(...bounds.map((item) => item.x))
     const minY = Math.min(...bounds.map((item) => item.y))
     const maxX = Math.max(...bounds.map((item) => item.x + item.width))
@@ -493,17 +601,25 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         }
       : { x: 24, y: 24 }
 
-    const pastedNodes = clipboard.nodes.map((node, index) => {
-      const id = `${node.data.kind}_${stamp}_${index + 1}`
-      idMap.set(node.id, id)
+    clipboard.nodes.forEach((node, index) => {
+      const prefix = isGroupNode(node) ? 'group' : node.data.kind
+      idMap.set(node.id, `${prefix}_${stamp}_${index + 1}`)
+    })
+
+    const pastedNodes = clipboard.nodes.map((node) => {
+      const id = idMap.get(node.id) as string
+      const copiedParent = node.parentId ? idMap.has(node.parentId) : false
 
       return {
         ...structuredClone(node),
         id,
-        position: {
-          x: node.position.x + offset.x,
-          y: node.position.y + offset.y
-        },
+        parentId: node.parentId ? idMap.get(node.parentId) : undefined,
+        position: copiedParent
+          ? { ...node.position }
+          : {
+              x: node.position.x + offset.x,
+              y: node.position.y + offset.y
+            },
         selected: true,
         dragging: false
       }
@@ -529,10 +645,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   duplicateSelection: () => {
-    const selected = get().nodes.filter((node) => node.selected)
+    const allNodes = get().nodes
+    const selected = allNodes.filter((node) => node.selected)
     if (selected.length === 0) return 0
 
     const ids = new Set(selected.map((node) => node.id))
+    for (const node of selected) {
+      if (!isGroupNode(node)) continue
+      for (const child of childrenOf(allNodes, node.id)) ids.add(child.id)
+    }
+
+    const expanded = allNodes.filter((node) => ids.has(node.id))
     const internalEdges = get().edges.filter(
       (edge) => ids.has(edge.source) && ids.has(edge.target)
     )
@@ -542,18 +665,29 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const stamp = Date.now().toString(36)
     const idMap = new Map<string, string>()
 
-    const clones = selected.map((node, index) => {
-      const id = `${node.data.kind}_${stamp}_${index + 1}`
-      idMap.set(node.id, id)
+    expanded.forEach((node, index) => {
+      const prefix = isGroupNode(node) ? 'group' : node.data.kind
+      idMap.set(node.id, `${prefix}_${stamp}_${index + 1}`)
+    })
+
+    const clones = expanded.map((node) => {
+      const id = idMap.get(node.id) as string
+      const copiedParent = node.parentId ? idMap.has(node.parentId) : false
+      const parentId = node.parentId
+        ? idMap.get(node.parentId) ?? node.parentId
+        : undefined
 
       return {
         ...structuredClone(node),
         id,
-        position: {
-          x: node.position.x + 24,
-          y: node.position.y + 24
-        },
-        selected: true,
+        parentId,
+        position: copiedParent
+          ? { ...node.position }
+          : {
+              x: node.position.x + 24,
+              y: node.position.y + 24
+            },
+        selected: node.selected ?? false,
         dragging: false
       }
     })
@@ -574,6 +708,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       edges: [...get().edges, ...clonedEdges]
     })
 
+    const parentIds = new Set(
+      clones
+        .map((node) => node.parentId)
+        .filter((id): id is string => Boolean(id))
+    )
+    for (const parentId of parentIds) {
+      get().syncGroupBounds(parentId)
+    }
+
     return clones.length
   },
 
@@ -582,6 +725,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     if (selected.length === 0) return 0
 
     const ids = new Set(selected.map((node) => node.id))
+    for (const node of selected) {
+      if (!isGroupNode(node)) continue
+      for (const child of childrenOf(get().nodes, node.id)) ids.add(child.id)
+    }
+
     get().pushHistory()
 
     set({
@@ -592,6 +740,417 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
 
     return ids.size
+  },
+
+  groupSelection: () => {
+    const all = get().nodes
+    const selected = all.filter(
+      (node) => node.selected && !isGroupNode(node) && !node.parentId
+    )
+    if (selected.length < 2) return null
+
+    get().pushHistory()
+
+    const absolute = selected.map((node) => {
+      const size = nodeSize(node)
+      const position = absolutePosition(node, all)
+      return { node, position, size }
+    })
+
+    const minX = Math.min(...absolute.map((item) => item.position.x))
+    const minY = Math.min(...absolute.map((item) => item.position.y))
+    const maxX = Math.max(
+      ...absolute.map((item) => item.position.x + item.size.width)
+    )
+    const maxY = Math.max(
+      ...absolute.map((item) => item.position.y + item.size.height)
+    )
+
+    const groupX = minX - GROUP_PADDING
+    const groupY = minY - GROUP_HEADER_HEIGHT
+    const groupWidth = maxX - minX + GROUP_PADDING * 2
+    const groupHeight = maxY - minY + GROUP_HEADER_HEIGHT + GROUP_PADDING
+
+    const groupCount = all.filter(isGroupNode).length
+    const groupId = nextId('group')
+
+    const group: GroupNode = {
+      id: groupId,
+      type: 'group',
+      position: { x: groupX, y: groupY },
+      data: { title: `分组 ${groupCount + 1}`, color: 'blue' },
+      style: { width: groupWidth, height: groupHeight },
+      selected: true,
+      zIndex: 0
+    }
+
+    const ids = new Set(selected.map((node) => node.id))
+
+    const nodes: CanvasNode[] = [
+      group,
+      ...all.map((node) => {
+        if (ids.has(node.id)) {
+          const absolute = absolutePosition(node, all)
+          return {
+            ...node,
+            parentId: groupId,
+            position: {
+              x: absolute.x - groupX,
+              y: absolute.y - groupY
+            },
+            zIndex: 1,
+            selected: false
+          }
+        }
+        return { ...node, selected: false }
+      })
+    ]
+
+    set({ nodes })
+    return groupId
+  },
+
+  mergeSelection: () => {
+    const all = get().nodes
+    const selected = all.filter((node) => node.selected)
+    const selectedGroups = selected.filter(isGroupNode)
+    const looseNodes = selected.filter(
+      (node) => !isGroupNode(node) && !node.parentId
+    )
+    if (selectedGroups.length + looseNodes.length < 2) return null
+
+    get().pushHistory()
+
+    const selectedGroupIds = new Set(selectedGroups.map((group) => group.id))
+    const moving = all.filter(
+      (node) =>
+        (!isGroupNode(node) &&
+          (selectedGroupIds.has(node.parentId ?? '') ||
+            looseNodes.some((loose) => loose.id === node.id))) ||
+        selectedGroupIds.has(node.id)
+    )
+    const contentNodes = moving.filter((node) => !isGroupNode(node))
+
+    const absolute = contentNodes.map((node) => {
+      const size = nodeSize(node)
+      const position = absolutePosition(node, all)
+      return { node, position, size }
+    })
+
+    if (absolute.length === 0) {
+      const groupCount =
+        all.filter(isGroupNode).length - selectedGroups.length
+      const size = defaultGroupSize(groupCount)
+      const groupId = nextId('group')
+      const group: GroupNode = {
+        id: groupId,
+        type: 'group',
+        position: { x: size.x, y: size.y },
+        data: { title: `分组 ${groupCount + 1}`, color: 'blue' },
+        style: { width: 320, height: 200 },
+        selected: true,
+        zIndex: 0
+      }
+      set({
+        nodes: [
+          group,
+          ...all
+            .filter((node) => !selectedGroupIds.has(node.id))
+            .map((node) => ({ ...node, selected: false }))
+        ]
+      })
+      return groupId
+    }
+
+    const minX = Math.min(...absolute.map((item) => item.position.x))
+    const minY = Math.min(...absolute.map((item) => item.position.y))
+    const maxX = Math.max(
+      ...absolute.map((item) => item.position.x + item.size.width)
+    )
+    const maxY = Math.max(
+      ...absolute.map((item) => item.position.y + item.size.height)
+    )
+
+    const groupCount =
+      all.filter(isGroupNode).length - selectedGroups.length
+    const groupId = nextId('group')
+    const group: GroupNode = {
+      id: groupId,
+      type: 'group',
+      position: {
+        x: minX - GROUP_PADDING,
+        y: minY - GROUP_HEADER_HEIGHT
+      },
+      data: { title: `分组 ${groupCount + 1}`, color: 'blue' },
+      style: {
+        width: maxX - minX + GROUP_PADDING * 2,
+        height: maxY - minY + GROUP_HEADER_HEIGHT + GROUP_PADDING
+      },
+      selected: true,
+      zIndex: 0
+    }
+
+    const movingIds = new Set(contentNodes.map((node) => node.id))
+
+    const nodes: CanvasNode[] = [
+      group,
+      ...all
+        .filter(
+          (node) => !selectedGroupIds.has(node.id) && !isGroupNode(node)
+        )
+        .map((node) => {
+          if (!movingIds.has(node.id)) return { ...node, selected: false }
+          const absolute = absolutePosition(node, all)
+          return {
+            ...node,
+            parentId: groupId,
+            position: {
+              x: absolute.x - group.position.x,
+              y: absolute.y - group.position.y
+            },
+            zIndex: 1,
+            selected: false
+          }
+        })
+    ]
+
+    set({ nodes })
+    return groupId
+  },
+
+  ungroup: (groupId) => {
+    const all = get().nodes
+    const group = all.find((node) => node.id === groupId)
+    if (!group || !isGroupNode(group)) return
+
+    get().pushHistory()
+
+    const nodes: CanvasNode[] = all
+      .filter((node) => node.id !== groupId)
+      .map((node) => {
+        if (node.parentId !== groupId) return node
+        const { parentId: _removed, zIndex: _z, ...rest } = node
+        return {
+          ...rest,
+          position: absolutePosition(node, all),
+          selected: false
+        }
+      })
+
+    set({ nodes })
+  },
+
+  deleteGroupWithChildren: (groupId) => {
+    const all = get().nodes
+    const group = all.find((node) => node.id === groupId)
+    if (!group || !isGroupNode(group)) return 0
+
+    const removed = new Set<string>([groupId])
+    for (const child of childrenOf(all, groupId)) removed.add(child.id)
+
+    get().pushHistory()
+
+    set({
+      nodes: all.filter((node) => !removed.has(node.id)),
+      edges: get().edges.filter(
+        (edge) => !removed.has(edge.source) && !removed.has(edge.target)
+      )
+    })
+
+    return removed.size
+  },
+
+  renameGroup: (groupId, title) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === groupId && isGroupNode(node)
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                title: title.trim() || node.data.title
+              }
+            }
+          : node
+      )
+    })
+  },
+
+  setGroupColor: (groupId, color) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === groupId && isGroupNode(node)
+          ? { ...node, data: { ...node.data, color } }
+          : node
+      )
+    })
+  },
+
+  arrangeGroup: (groupId, mode) => {
+    const all = get().nodes
+    const group = all.find((node) => node.id === groupId)
+    if (!group || !isGroupNode(group)) return
+
+    const children = childrenOf(all, groupId)
+    if (children.length === 0) return
+
+    get().pushHistory()
+
+    const sizes = new Map(
+      children.map((child) => [child.id, nodeSize(child)])
+    )
+
+    const sorted = [...children].sort((a, b) => {
+      if (mode === 'row') {
+        if (a.position.y !== b.position.y) return a.position.y - b.position.y
+        return a.position.x - b.position.x
+      }
+      if (a.position.x !== b.position.x) return a.position.x - b.position.x
+      return a.position.y - b.position.y
+    })
+
+    const columns =
+      mode === 'grid' ? Math.ceil(Math.sqrt(sorted.length)) : 1
+    const rowHeights: number[] = []
+
+    sorted.forEach((child, index) => {
+      const row = Math.floor(index / columns)
+      const size = sizes.get(child.id) as { width: number; height: number }
+      rowHeights[row] = Math.max(rowHeights[row] ?? 0, size.height)
+    })
+
+    const positions = new Map<string, XYPosition>()
+    if (mode === 'row') {
+      let x = GROUP_PADDING
+      const rowHeight = Math.max(
+        ...sorted.map((child) => (sizes.get(child.id) as { height: number }).height)
+      )
+      for (const child of sorted) {
+        const size = sizes.get(child.id) as { width: number; height: number }
+        positions.set(child.id, { x, y: GROUP_HEADER_HEIGHT + (rowHeight - size.height) / 2 })
+        x += size.width + GROUP_GAP
+      }
+    } else if (mode === 'column') {
+      let y = GROUP_HEADER_HEIGHT
+      for (const child of sorted) {
+        const size = sizes.get(child.id) as { width: number; height: number }
+        positions.set(child.id, { x: GROUP_PADDING, y })
+        y += size.height + GROUP_GAP
+      }
+    } else {
+      const columnWidths: number[] = []
+      sorted.forEach((child, index) => {
+        const column = index % columns
+        const size = sizes.get(child.id) as { width: number; height: number }
+        columnWidths[column] = Math.max(columnWidths[column] ?? 0, size.width)
+      })
+
+      let y = GROUP_HEADER_HEIGHT
+      for (let row = 0; row < Math.ceil(sorted.length / columns); row += 1) {
+        let x = GROUP_PADDING
+        for (let column = 0; column < columns; column += 1) {
+          const child = sorted[row * columns + column]
+          if (!child) break
+          const size = sizes.get(child.id) as { width: number; height: number }
+          positions.set(child.id, {
+            x,
+            y: y + (rowHeights[row] - size.height) / 2
+          })
+          x += (columnWidths[column] ?? 0) + GROUP_GAP
+        }
+        y += (rowHeights[row] ?? 0) + GROUP_GAP
+      }
+    }
+
+    const nodes = all.map((node) => {
+      const position = positions.get(node.id)
+      return position ? { ...node, position } : node
+    })
+
+    set({ nodes })
+    get().syncGroupBounds(groupId)
+  },
+
+  detachNode: (nodeId) => {
+    const all = get().nodes
+    const node = all.find((entry) => entry.id === nodeId)
+    if (!node || !node.parentId) return
+
+    const group = all.find((entry) => entry.id === node.parentId)
+    if (!group || !isGroupNode(group)) return
+
+    const size = nodeSize(node)
+    const center = {
+      x: node.position.x + size.width / 2,
+      y: node.position.y + size.height / 2
+    }
+    const groupSize = nodeSize(group)
+    const inside =
+      center.x >= 0 &&
+      center.y >= 0 &&
+      center.x <= groupSize.width &&
+      center.y <= groupSize.height
+
+    if (inside) {
+      get().syncGroupBounds(group.id)
+      return
+    }
+
+    const absolute = absolutePosition(node, all)
+    const { parentId: _removed, zIndex: _z, ...rest } = node
+
+    set({
+      nodes: all.map((entry) =>
+        entry.id === nodeId
+          ? { ...rest, position: absolute }
+          : entry
+      )
+    })
+
+    get().syncGroupBounds(group.id)
+  },
+
+  syncGroupBounds: (groupId) => {
+    const all = get().nodes
+    const group = all.find((node) => node.id === groupId)
+    if (!group || !isGroupNode(group)) return
+
+    const children = childrenOf(all, groupId)
+    if (children.length === 0) return
+
+    const bounds = contentBounds(children, all)
+    const nextX = bounds.x - GROUP_PADDING
+    const nextY = bounds.y - GROUP_HEADER_HEIGHT
+    const nextWidth = Math.max(bounds.width + GROUP_PADDING * 2, 120)
+    const nextHeight = Math.max(
+      bounds.height + GROUP_HEADER_HEIGHT + GROUP_PADDING,
+      120
+    )
+
+    const moved = {
+      ...group,
+      position: { x: nextX, y: nextY },
+      style: { ...group.style, width: nextWidth, height: nextHeight }
+    }
+
+    const delta = {
+      x: group.position.x - nextX,
+      y: group.position.y - nextY
+    }
+
+    const nodes = all.map((node) => {
+      if (node.id === groupId) return moved
+      if (node.parentId !== groupId) return node
+      return {
+        ...node,
+        position: {
+          x: node.position.x + delta.x,
+          y: node.position.y + delta.y
+        }
+      }
+    })
+
+    set({ nodes })
   }
 }))
 // 开发期调试：供 scripts/cdp-*.mjs 访问画布状态

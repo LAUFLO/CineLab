@@ -1,5 +1,4 @@
-import { NODE_META, TITLE_HEIGHT } from '@shared/canvas-schema'
-import type { CineNode } from '../stores/canvas'
+import { nodeSize, type CanvasNode } from '../stores/canvas'
 
 export interface NodeBounds {
   left: number
@@ -20,13 +19,10 @@ export interface AlignmentResult {
   horizontal: AlignmentMatch | null
 }
 
-export function boundsOfNode(node: CineNode): NodeBounds {
-  const width =
-    node.measured?.width ?? node.width ?? NODE_META[node.data.kind].width
-  const height =
-    node.measured?.height ??
-    node.height ??
-    NODE_META[node.data.kind].height + TITLE_HEIGHT
+export function boundsOfNode(node: CanvasNode): NodeBounds {
+  const size = nodeSize(node)
+  const width = node.measured?.width ?? node.width ?? size.width
+  const height = node.measured?.height ?? node.height ?? size.height
 
   return {
     left: node.position.x,
@@ -36,7 +32,7 @@ export function boundsOfNode(node: CineNode): NodeBounds {
   }
 }
 
-export function boundsOfNodes(nodes: CineNode[]): NodeBounds {
+export function boundsOfNodes(nodes: CanvasNode[]): NodeBounds {
   const boxes = nodes.map(boundsOfNode)
 
   return {
@@ -48,8 +44,8 @@ export function boundsOfNodes(nodes: CineNode[]): NodeBounds {
 }
 
 export function computeAlignment(
-  draggedNodes: CineNode[],
-  otherNodes: CineNode[],
+  draggedNodes: CanvasNode[],
+  otherNodes: CanvasNode[],
   zoom: number
 ): AlignmentResult {
   if (draggedNodes.length === 0 || otherNodes.length === 0) {

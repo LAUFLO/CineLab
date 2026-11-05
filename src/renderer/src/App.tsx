@@ -76,10 +76,9 @@ export default function App() {
     content = (
       <div className="app-shell">
         <Canvas key={canvasId ?? 'canvas'} theme={resolved} />
-        <TopBar theme={resolved} onToggleTheme={toggle} />
+        <TopBar />
         <BottomBar />
         <StatusBar />
-        <SettingsPanel />
         <LibraryPanel />
         <ToolbarSettings />
         <ConfirmDialog />
@@ -92,7 +91,8 @@ export default function App() {
     <>
       {content}
       {phase === 'ready' ? null : <div className="window-drag-strip" />}
-      <WindowControls />
+      <SettingsPanel />
+      <WindowControls theme={resolved} onToggleTheme={toggle} />
       <Toast />
     </>
   )

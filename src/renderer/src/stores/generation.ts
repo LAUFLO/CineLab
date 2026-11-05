@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { NODE_META, TITLE_HEIGHT, type CineNodeData, type OutputRef } from '@shared/canvas-schema'
 import type { GenerateRequest } from '@shared/generation'
-import { useCanvasStore } from './canvas'
+import { isGroupNode, useCanvasStore } from './canvas'
 
 interface GenerationState {
   running: Record<string, string>
@@ -39,9 +39,10 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         }
 
         case 'done': {
-          const node = useCanvasStore
+          const found = useCanvasStore
             .getState()
             .nodes.find((item) => item.id === event.nodeId)
+          const node = found && !isGroupNode(found) ? found : undefined
 
           const incoming: OutputRef[] = event.assets.map((asset) => ({
             id: asset.id,

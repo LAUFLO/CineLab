@@ -85,7 +85,9 @@ const api: CineApi = {
     project: (projectName: string) =>
       ipcRenderer.invoke('export:project', projectName),
     canvasPng: (projectName: string, canvasName: string) =>
-      ipcRenderer.invoke('export:canvas-png', projectName, canvasName)
+      ipcRenderer.invoke('export:canvas-png', projectName, canvasName),
+    asset: (relPath: string, fileName: string) =>
+      ipcRenderer.invoke('export:asset', relPath, fileName)
   }
 }
 

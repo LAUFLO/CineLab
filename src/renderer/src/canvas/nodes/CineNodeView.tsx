@@ -18,6 +18,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const meta = NODE_META[data.kind]
   const { screenToFlowPosition } = useReactFlow()
   const openMenu = useUIStore((state) => state.openMenu)
+  const showToast = useUIStore((state) => state.showToast)
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
@@ -40,6 +41,16 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     const next = outputs[currentIndex + delta]
     if (next) {
       patchNodeData(id, { selectedOutputId: next.id })
+    }
+  }
+
+  const exportCurrent = async (): Promise<void> => {
+    if (!current) return
+    const result = await window.api.export.asset(current.path, data.title)
+    if (result.ok) {
+      showToast(`已导出：${result.path ?? ''}`)
+    } else if (!result.canceled) {
+      showToast(result.error ?? '导出失败', 'error')
     }
   }
 
@@ -126,6 +137,20 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             <div className="cnode__error" title={data.error}>
               {data.error}
             </div>
+          ) : null}
+
+          {current ? (
+            <button
+              type="button"
+              className="cnode__export nodrag nopan"
+              title="导出素材"
+              onClick={(event) => {
+                event.stopPropagation()
+                void exportCurrent()
+              }}
+            >
+              <Icon name="download" size={13} />
+            </button>
           ) : null}
 
           {outputs.length > 1 ? (

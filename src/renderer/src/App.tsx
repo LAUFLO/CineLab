@@ -3,6 +3,7 @@ import { BottomBar } from './canvas/BottomBar'
 import { Canvas } from './canvas/Canvas'
 import { StatusBar } from './canvas/StatusBar'
 import { TopBar } from './canvas/TopBar'
+import { Toast } from './components/Toast'
 import { WindowControls } from './components/WindowControls'
 import { ConfirmDialog } from './panels/ConfirmDialog'
 import { LibraryPanel } from './panels/LibraryPanel'
@@ -90,6 +91,7 @@ export default function App() {
       {content}
       {phase === 'ready' ? null : <div className="window-drag-strip" />}
       <WindowControls />
+      <Toast />
     </>
   )
 }

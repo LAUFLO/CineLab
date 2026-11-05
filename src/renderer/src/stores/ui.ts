@@ -20,10 +20,16 @@ export interface ConfirmState {
   onConfirm: () => void | Promise<void>
 }
 
+export interface ToastState {
+  message: string
+  tone: 'info' | 'error'
+}
+
 interface UIStore {
   menu: MenuState | null
   pendingPrompt: string | null
   confirm: ConfirmState | null
+  toast: ToastState | null
   snapToGrid: boolean
   edgesVisible: boolean
   minimapVisible: boolean
@@ -35,6 +41,8 @@ interface UIStore {
   clearPendingPrompt: () => void
   requestConfirm: (confirm: ConfirmState) => void
   closeConfirm: () => void
+  showToast: (message: string, tone?: ToastState['tone']) => void
+  clearToast: () => void
   toggleSnap: () => void
   toggleEdges: () => void
   toggleMinimap: () => void
@@ -46,6 +54,7 @@ export const useUIStore = create<UIStore>((set) => ({
   menu: null,
   pendingPrompt: null,
   confirm: null,
+  toast: null,
   snapToGrid: false,
   edgesVisible: true,
   minimapVisible: false,
@@ -57,6 +66,8 @@ export const useUIStore = create<UIStore>((set) => ({
   clearPendingPrompt: () => set({ pendingPrompt: null }),
   requestConfirm: (confirm) => set({ confirm }),
   closeConfirm: () => set({ confirm: null }),
+  showToast: (message, tone = 'info') => set({ toast: { message, tone } }),
+  clearToast: () => set({ toast: null }),
   toggleSnap: () => set((state) => ({ snapToGrid: !state.snapToGrid })),
   toggleEdges: () => set((state) => ({ edgesVisible: !state.edgesVisible })),
   toggleMinimap: () => set((state) => ({ minimapVisible: !state.minimapVisible })),

@@ -395,6 +395,11 @@ textarea {
   box-shadow: var(--shadow-float);
 }
 
+.export-toast.is-error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 /* 导出画布时隐藏所有浮层 UI */
 body.is-exporting .topbar,
 body.is-exporting .bottombar,
@@ -640,6 +645,27 @@ body.is-exporting .react-flow__minimap {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+
+.cnode__export {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.46);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.cnode:hover .cnode__export,
+.cnode__export:focus-visible {
+  opacity: 1;
 }
 
 .cnode__placeholder {

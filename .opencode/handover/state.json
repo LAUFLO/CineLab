@@ -1,25 +1,29 @@
 {
-  "version": 2,
+  "version": 3,
   "project": "CineLab",
-  "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
+  "root": "D:\\CineLab",
   "updatedAt": "2026-11-05",
-  "phase": "M5",
+  "phase": "M6",
   "phaseStatus": "in_progress",
-  "phaseGoal": "M5 打包进行中：免安装绿色版与 zip 已完成；NSIS 因 electron-builder EXDEV 未生成；M4 功能与 UI 已完成",
-  "nextPhase": "M5",
-  "next_focus": "暂定：下一会话再确定优先级（M5 打包 / 可灵 / 音乐生成 / 先提交改动）",
+  "phaseGoal": "收尾：导出、prompt bar 画布参考、图片标记；AI 助手延后单独做",
+  "nextPhase": "M6",
+  "next_focus": "K5 收尾：导出（项目/画布/素材）、prompt bar 画布参考、标记；AI 助手不做，等后续单独做 agent 与画布协作",
   "frontier": [
     {
       "id": "M2-1",
       "title": "项目文件夹：.cinelab 创建 / 打开 / 自动保存 / 崩溃恢复",
       "status": "done",
-      "evidence": [".opencode/handover/evidence/M2-1-project-folder.md"]
+      "evidence": [
+        ".opencode/handover/evidence/M2-1-project-folder.md"
+      ]
     },
     {
       "id": "M2-2",
       "title": "模型配置界面：Provider、Base URL、Key 加密存储、模型列表",
       "status": "done",
-      "evidence": [".opencode/handover/evidence/M2-2-model-config.md"]
+      "evidence": [
+        ".opencode/handover/evidence/M2-2-model-config.md"
+      ]
     },
     {
       "id": "M2-3",
@@ -41,7 +45,9 @@
       "id": "M2-5",
       "title": "资产落盘：内容 hash 去重、缩略图、版本栈",
       "status": "done",
-      "evidence": [".opencode/handover/evidence/M2-5-version-stack.md"]
+      "evidence": [
+        ".opencode/handover/evidence/M2-5-version-stack.md"
+      ]
     },
     {
       "id": "M2-6",
@@ -52,21 +58,27 @@
       "id": "M3-1",
       "title": "视频生成适配器：可灵 / 火山方舟",
       "status": "partial",
-      "evidence": [".opencode/handover/evidence/M3-1-video-generation.md"],
+      "evidence": [
+        ".opencode/handover/evidence/M3-1-video-generation.md"
+      ],
       "note": "火山方舟已完成；可灵 JWT 鉴权待接入，未端到端验证"
     },
     {
       "id": "M3-2",
       "title": "首尾帧连线语义与素材角色覆盖",
       "status": "done",
-      "evidence": [".opencode/handover/evidence/M3-2-reference-injection.md"],
+      "evidence": [
+        ".opencode/handover/evidence/M3-2-reference-injection.md"
+      ],
       "note": "PromptBar 引用已优先取 selectedOutputId；尾帧/多参考未端到端验证"
     },
     {
       "id": "M4-1",
       "title": "音频节点：TTS 语音合成",
       "status": "done",
-      "evidence": [".opencode/handover/evidence/M4-1-audio-tts.md"],
+      "evidence": [
+        ".opencode/handover/evidence/M4-1-audio-tts.md"
+      ],
       "note": "仅 OpenAI 兼容 TTS；audio.music 未接入"
     },
     {
@@ -81,11 +93,25 @@
       "note": "角色卡、素材、模板、角色一致性均已实现；素材导入对话框待人工验证"
     },
     {
-      "id": "M5-1",
-      "title": "electron-builder 打包、性能打磨、导入导出",
-      "status": "in_progress",
-      "evidence": [".opencode/handover/evidence/M5-build.md"],
-      "note": "免安装绿色版与 zip 已完成；NSIS 安装包因 electron-builder EXDEV 未生成"
+      "id": "P6-1",
+      "title": "导出：项目打包、当前画布 PNG、选中素材",
+      "status": "pending"
+    },
+    {
+      "id": "P6-2",
+      "title": "prompt bar 画布参考：点选画布节点引用其输出",
+      "status": "pending"
+    },
+    {
+      "id": "P6-3",
+      "title": "标记：图片局部涂抹 / 蒙版",
+      "status": "pending"
+    },
+    {
+      "id": "AGENT-1",
+      "title": "Agent 与画布协作",
+      "status": "pending",
+      "note": "用户明确延后，等 K5 完成后再单独设计"
     }
   ],
   "knownIssues": [
@@ -112,12 +138,12 @@
     {
       "id": "K5",
       "area": "ui",
-      "content": "导出、AI 助手、prompt bar 画布参考/标记仍为占位；水印已删除，网格/连线/吸附/画布切换已实现。"
+      "content": "导出、画布参考、标记列为下一阶段；AI 助手延后单独做 agent 与画布协作。"
     },
     {
       "id": "K6",
       "area": "env",
-      "content": "pnpm 需通过 corepack pnpm 调用；Electron 二进制已用镜像安装。"
+      "content": "公司电脑加密软件会加密 .ts 源文件，TS 7 原生 tsc 报 Invalid character；typecheck 改用 npx typescript@5.9.3。pnpm 需 corepack pnpm。"
     },
     {
       "id": "K7",
@@ -128,11 +154,6 @@
       "id": "K8",
       "area": "project",
       "content": "删除最后一个项目后停在欢迎页未端到端验证，需要真实删除唯一项目。"
-    },
-    {
-      "id": "K9",
-      "area": "build",
-      "content": "Windows 安装包未执行 dist:win 验证；当前只验证了 build。"
     }
   ],
   "gates": [],
@@ -140,17 +161,26 @@
     {
       "id": "T1",
       "title": "需求收敛与技术选型",
-      "evidence": ["docs/architecture.md"]
+      "evidence": [
+        "docs/architecture.md"
+      ]
     },
     {
       "id": "T2",
       "title": "UI 规格与架构文档",
-      "evidence": ["docs/ui-spec.md", "docs/architecture.md"]
+      "evidence": [
+        "docs/ui-spec.md",
+        "docs/architecture.md"
+      ]
     },
     {
       "id": "T3",
       "title": "M0 脚手架：Electron 三进程、主题、空画布",
-      "evidence": ["src/main", "src/preload", "src/renderer/src/App.tsx"]
+      "evidence": [
+        "src/main",
+        "src/preload",
+        "src/renderer/src/App.tsx"
+      ]
     },
     {
       "id": "T4",
@@ -166,52 +196,111 @@
     {
       "id": "T5",
       "title": "M1 交互修正：+ 压边线、左侧仅接收、去掉尝试列表、prompt bar 缩放跟随、loose 连接",
-      "evidence": ["src/renderer/src/styles/global.css", "src/renderer/src/canvas/Canvas.tsx"]
+      "evidence": [
+        "src/renderer/src/styles/global.css",
+        "src/renderer/src/canvas/Canvas.tsx"
+      ]
     },
     {
       "id": "T6",
       "title": "开源发布：GitHub public 仓库、MIT 协议、README",
-      "evidence": ["https://github.com/LAUFLO/CineLab", "README.md", "LICENSE"]
+      "evidence": [
+        "https://github.com/LAUFLO/CineLab",
+        "README.md",
+        "LICENSE"
+      ]
     },
     {
       "id": "T7",
       "title": "P2 文本生成：chat.completions + 文本落盘 + 节点渲染",
-      "evidence": [".opencode/handover/evidence/P2-text-generation.md"]
+      "evidence": [
+        ".opencode/handover/evidence/P2-text-generation.md"
+      ]
     },
     {
       "id": "T8",
       "title": "M4-2 资产库 MVP：角色卡 / 素材管理 / 添加到画布",
-      "evidence": [".opencode/handover/evidence/M4-2-library.md"]
+      "evidence": [
+        ".opencode/handover/evidence/M4-2-library.md"
+      ]
     },
     {
       "id": "T9",
       "title": "M4-2 角色一致性：参考图注入生成请求",
-      "evidence": [".opencode/handover/evidence/M4-2-character-consistency.md"]
+      "evidence": [
+        ".opencode/handover/evidence/M4-2-character-consistency.md"
+      ]
     },
     {
       "id": "T10",
       "title": "M4-2 模板系统：模板 CRUD 与 PromptBar 填充",
-      "evidence": [".opencode/handover/evidence/M4-2-templates.md"]
+      "evidence": [
+        ".opencode/handover/evidence/M4-2-templates.md"
+      ]
     },
     {
       "id": "T11",
       "title": "UI 对齐 LibTV：左下悬浮工具条、去水印、左侧资产栏、手柄贴边",
-      "evidence": [".opencode/handover/evidence/ui-libtv-alignment.md"]
+      "evidence": [
+        ".opencode/handover/evidence/ui-libtv-alignment.md"
+      ]
     },
     {
       "id": "T12",
       "title": "项目与多画布管理：重命名、新建、切换、删除、左上角菜单",
-      "evidence": [".opencode/handover/evidence/project-canvas-management.md"]
+      "evidence": [
+        ".opencode/handover/evidence/project-canvas-management.md"
+      ]
     },
     {
       "id": "T13",
       "title": "项目中心：无项目启动页、最近项目、删除后回到欢迎页",
-      "evidence": [".opencode/handover/evidence/project-center-welcome.md"]
+      "evidence": [
+        ".opencode/handover/evidence/project-center-welcome.md"
+      ]
     },
     {
       "id": "T14",
       "title": "应用内确认弹窗、全部项目卡片浮窗、工具栏高度统一",
-      "evidence": [".opencode/handover/evidence/project-center-welcome.md"]
+      "evidence": [
+        ".opencode/handover/evidence/project-center-welcome.md"
+      ]
+    },
+    {
+      "id": "T15",
+      "title": "设置面板改为居中浮窗：左侧导航 + 右侧内容，移除水印项",
+      "evidence": [
+        "src/renderer/src/panels/SettingsPanel.tsx"
+      ]
+    },
+    {
+      "id": "T16",
+      "title": "全部项目弹窗：移出 topbar、1080px、卡片 1:1、网格 4 列",
+      "evidence": [
+        "src/renderer/src/canvas/TopBar.tsx",
+        "src/renderer/src/styles/global.css"
+      ]
+    },
+    {
+      "id": "T17",
+      "title": "关闭按钮失效修复：顶部 40px 拖拽区拦截点击",
+      "evidence": [
+        "src/renderer/src/panels/SettingsPanel.tsx"
+      ]
+    },
+    {
+      "id": "T18",
+      "title": "公司电脑环境恢复与 TypeScript 加密绕过",
+      "evidence": [
+        "package.json"
+      ]
+    },
+    {
+      "id": "T19",
+      "title": "提交并推送 3fd8675",
+      "evidence": [
+        "https://github.com/LAUFLO/CineLab/commit/3fd8675"
+      ]
     }
   ],
   "lessons": [
@@ -262,6 +351,22 @@
     {
       "category": "preference",
       "content": "删除项目等高风险操作改用应用内 ConfirmDialog，保持全局 UI 一致，不使用原生 dialog.showMessageBox。"
+    },
+    {
+      "category": "engineering",
+      "content": "企业加密软件会加密 .ts 源文件，TS 7 原生 tsc 读密文报 Invalid character；Node 在白名单，typecheck 改用 npx typescript@5.9.3 可绕过。"
+    },
+    {
+      "category": "engineering",
+      "content": "弹窗不能渲染在 topbar 内：topbar 的 z-index 20 会创建层叠上下文，子元素 z-index 再高也压不过画布上的 prompt bar；弹窗要与 topbar 平级。"
+    },
+    {
+      "category": "engineering",
+      "content": "frameless 窗口顶部 40px 是 -webkit-app-region: drag 拖拽区，落在该区域的按钮点击会变成拖窗口；弹窗和按钮要避开或加 no-drag。"
+    },
+    {
+      "category": "procedure",
+      "content": "从 ZIP 解压的项目没有 .git，需要 git init + fetch + update-ref refs/heads/main origin/main + reset --mixed，再提交差异。"
     }
   ],
   "designConventions": [
@@ -274,9 +379,16 @@
     "确认弹窗、全部项目浮窗使用应用内组件，与主题变量一致"
   ],
   "stats": {
-    "sessions": 3,
-    "completedMilestones": ["M0", "M1", "M2", "M4"],
-    "partialMilestones": ["M3", "M5"],
-    "nextMilestone": "M5"
+    "sessions": 4,
+    "completedMilestones": [
+      "M0",
+      "M1",
+      "M2",
+      "M4"
+    ],
+    "partialMilestones": [
+      "M3"
+    ],
+    "nextMilestone": "M6"
   }
 }

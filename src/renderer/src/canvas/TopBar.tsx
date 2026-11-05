@@ -359,7 +359,7 @@ export function TopBar({ theme, onToggleTheme }: TopBarProps) {
                       }}
                     >
                       <div className="project-center__cover">
-                        <Icon name="folder" size={22} />
+                        <Icon name="folder" size={16} />
                       </div>
                       <div className="project-center__card-name">{item.name}</div>
                       <div className="project-center__card-path" title={item.path}>

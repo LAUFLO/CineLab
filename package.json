@@ -9,7 +9,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "typecheck": "npx -y -p typescript@5.9.3 tsc --noEmit -p tsconfig.node.json && npx -y -p typescript@5.9.3 tsc --noEmit -p tsconfig.web.json",
+    "typecheck": "node scripts/typecheck.mjs",
     "dist": "electron-vite build && electron-builder",
     "dist:win": "electron-vite build && electron-builder --win"
   },

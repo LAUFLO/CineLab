@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Background,
   BackgroundVariant,
@@ -15,6 +15,8 @@ import { Icon } from '../components/Icon'
 import { useCanvasStore, type CineNode } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 import { AddNodeMenu } from './AddNodeMenu'
+import { AlignmentGuides, type AlignmentGuide } from './AlignmentGuides'
+import { computeAlignment } from './alignment'
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { copySelection, pasteAt } from './context-actions'
 import { FlowEdge } from './edges/FlowEdge'
@@ -74,9 +76,11 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const minimapVisible = useUIStore((state) => state.minimapVisible)
   const fitViewToken = useUIStore((state) => state.fitViewToken)
   const arrangeToken = useUIStore((state) => state.arrangeToken)
-  const { screenToFlowPosition, fitView } = useReactFlow()
+  const { screenToFlowPosition, fitView, getNodes, setNodes, flowToScreenPosition, getZoom } =
+    useReactFlow()
 
   const connectStart = useRef<{ x: number; y: number } | null>(null)
+  const [guides, setGuides] = useState<AlignmentGuide[]>([])
 
   useEffect(() => {
     if (fitViewToken === 0) return
@@ -189,7 +193,96 @@ function CanvasInner({ theme }: { theme: Theme }) {
 
   const handleNodeDragStart = useCallback(() => {
     useCanvasStore.getState().pushHistory()
+    setGuides([])
   }, [])
+
+  const alignmentContext = useCallback(
+    (draggedNodes: CineNode[]) => {
+      const draggedIds = new Set(draggedNodes.map((node) => node.id))
+      const others = (getNodes() as CineNode[]).filter(
+        (node) => !draggedIds.has(node.id) && !node.hidden
+      )
+
+      return { draggedIds, others }
+    },
+    [getNodes]
+  )
+
+  const handleNodeDrag = useCallback(
+    (
+      event: MouseEvent | TouchEvent,
+      _node: CineNode,
+      draggedNodes: CineNode[]
+    ): void => {
+      const altKey = 'altKey' in event ? event.altKey : false
+      if (altKey || draggedNodes.length === 0) {
+        setGuides([])
+        return
+      }
+
+      const { others } = alignmentContext(draggedNodes)
+      if (others.length === 0) {
+        setGuides([])
+        return
+      }
+
+      const result = computeAlignment(draggedNodes, others, getZoom())
+      const nextGuides: AlignmentGuide[] = []
+
+      if (result.vertical) {
+        nextGuides.push({
+          orientation: 'vertical',
+          position: flowToScreenPosition({ x: result.vertical.value, y: 0 }).x
+        })
+      }
+
+      if (result.horizontal) {
+        nextGuides.push({
+          orientation: 'horizontal',
+          position: flowToScreenPosition({ x: 0, y: result.horizontal.value }).y
+        })
+      }
+
+      setGuides(nextGuides)
+    },
+    [alignmentContext, flowToScreenPosition, getZoom]
+  )
+
+  const handleNodeDragStop = useCallback(
+    (
+      event: MouseEvent | TouchEvent,
+      _node: CineNode,
+      draggedNodes: CineNode[]
+    ): void => {
+      setGuides([])
+
+      const altKey = 'altKey' in event ? event.altKey : false
+      if (altKey || draggedNodes.length === 0) return
+
+      const { draggedIds, others } = alignmentContext(draggedNodes)
+      if (others.length === 0) return
+
+      const { dx, dy } = computeAlignment(draggedNodes, others, getZoom())
+      if (dx === 0 && dy === 0) return
+
+      setNodes(
+        getNodes().map((node) => {
+          if (!draggedIds.has(node.id)) return node
+          const current = draggedNodes.find((item) => item.id === node.id)
+          if (!current) return node
+
+          return {
+            ...node,
+            position: {
+              x: current.position.x + dx,
+              y: current.position.y + dy
+            }
+          }
+        })
+      )
+    },
+    [alignmentContext, getNodes, setNodes, getZoom]
+  )
 
   const handleNodeDoubleClick = useCallback(
     (_event: React.MouseEvent, targetNode: CineNode) => {
@@ -237,6 +330,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
         onPaneContextMenu={handlePaneContextMenu}
         onNodeContextMenu={(event) => event.preventDefault()}
         onNodeDragStart={handleNodeDragStart}
+        onNodeDrag={handleNodeDrag}
+        onNodeDragStop={handleNodeDragStop}
         onDoubleClick={handleDoubleClick}
         onNodeDoubleClick={handleNodeDoubleClick}
         minZoom={0.1}
@@ -278,6 +373,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
 
       {nodes.length === 0 ? <EmptyState onCreate={createAtCenter} /> : null}
 
+      <AlignmentGuides guides={guides} />
       <PromptBar />
       <MultiSelectBar />
       <AddNodeMenu />

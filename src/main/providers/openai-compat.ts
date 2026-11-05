@@ -1,4 +1,5 @@
 import type { ModelDef } from '@shared/provider-schema'
+import { sleep } from './retry'
 
 export interface ProviderRuntime {
   baseUrl: string
@@ -137,6 +138,36 @@ export async function generateImage(
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
   const headers = { Authorization: `Bearer ${provider.apiKey}` }
   const isMoss = /moss/i.test(model.remoteModel)
+  const isAgnes = /^agnes-image/i.test(model.remoteModel)
+
+  if (isAgnes) {
+    const body: Record<string, unknown> = {
+      model: model.remoteModel,
+      prompt,
+      size: params.size ?? '1K',
+      ratio: params.ratio ?? '1:1',
+      extra_body: {
+        response_format: 'url',
+        ...(refs.length > 0
+          ? { image: refs.map((ref) => ref.dataUrl) }
+          : {})
+      }
+    }
+
+    ctx.onProgress(5, refs.length > 0 ? '提交图生图请求' : '提交请求')
+
+    const response = await fetch(`${baseUrl}/images/generations`, {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body),
+      signal: ctx.signal
+    })
+
+    return parseImageResponse(response, ctx)
+  }
 
   if (refs.length > 0) {
     ctx.onProgress(5, '提交图生图请求')
@@ -291,4 +322,186 @@ export async function generateText(
 
   ctx.onProgress(85, '写入文本')
   return [{ data: Buffer.from(content, 'utf8'), mime: 'text/plain', text: content }]
+}
+
+interface MusicTask {
+  id?: string
+  task_id?: string
+  status?: string
+  error?: { message?: string } | string | null
+  message?: string
+  url?: string
+  audio_url?: string
+  outputs?: string[]
+  result?: { outputs?: string[]; url?: string; audio_url?: string }
+  data?: {
+    id?: string
+    task_id?: string
+    status?: string
+    url?: string
+    audio_url?: string
+    outputs?: string[]
+    result?: { outputs?: string[]; url?: string; audio_url?: string }
+  }
+}
+
+function musicTaskId(task: MusicTask): string | undefined {
+  return task.data?.id ?? task.data?.task_id ?? task.id ?? task.task_id
+}
+
+function musicStatus(task: MusicTask): string | undefined {
+  return task.data?.status ?? task.status
+}
+
+function musicUrl(task: MusicTask): string | undefined {
+  const candidates = [
+    task.result?.outputs?.[0],
+    task.result?.url,
+    task.result?.audio_url,
+    task.outputs?.[0],
+    task.url,
+    task.audio_url,
+    task.data?.result?.outputs?.[0],
+    task.data?.result?.url,
+    task.data?.result?.audio_url,
+    task.data?.outputs?.[0],
+    task.data?.url,
+    task.data?.audio_url
+  ]
+
+  return candidates.find(
+    (value): value is string => typeof value === 'string' && value.length > 0
+  )
+}
+
+async function downloadAudio(
+  url: string,
+  ctx: AdapterContext
+): Promise<ImageOutput[]> {
+  const response = await fetch(url, { signal: ctx.signal })
+
+  if (!response.ok) {
+    throw new Error(`下载音频失败：HTTP ${response.status}`)
+  }
+
+  const mime = response.headers.get('content-type')?.split(';')[0] ?? 'audio/mpeg'
+  return [{ data: Buffer.from(await response.arrayBuffer()), mime }]
+}
+
+export async function generateMusic(
+  model: ModelDef,
+  provider: ProviderRuntime,
+  prompt: string,
+  params: Record<string, unknown>,
+  ctx: AdapterContext
+): Promise<ImageOutput[]> {
+  const baseUrl = normalizeBaseUrl(provider.baseUrl)
+  const headers = {
+    Authorization: `Bearer ${provider.apiKey}`,
+    'Content-Type': 'application/json'
+  }
+
+  const body: Record<string, unknown> = {
+    model: model.remoteModel,
+    mode: params.mode ?? 'v5_5',
+    generation_type: 'music_generation',
+    custom_mode: false,
+    instrumental:
+      params.instrumental === true || params.instrumental === 'true',
+    prompt
+  }
+
+  ctx.onProgress(5, '提交音乐任务')
+
+  const response = await fetch(`${baseUrl}/audio/generations`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+    signal: ctx.signal
+  })
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '')
+    throw new Error(`HTTP ${response.status}: ${text.slice(0, 400)}`)
+  }
+
+  const contentType = response.headers.get('content-type') ?? ''
+  if (contentType.startsWith('audio/')) {
+    ctx.onProgress(80, '写入音频')
+    return [
+      {
+        data: Buffer.from(await response.arrayBuffer()),
+        mime: contentType.split(';')[0] || 'audio/mpeg'
+      }
+    ]
+  }
+
+  let task = (await response.json()) as MusicTask
+  const directUrl = musicUrl(task)
+  if (directUrl) {
+    ctx.onProgress(80, '下载音频')
+    return downloadAudio(directUrl, ctx)
+  }
+
+  const taskId = musicTaskId(task)
+  if (!taskId) {
+    throw new Error('接口没有返回音乐任务 ID')
+  }
+
+  ctx.onProgress(10, '任务已创建，等待生成')
+
+  const maxAttempts = 120
+  let consecutiveErrors = 0
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    await sleep(2000, ctx.signal)
+
+    try {
+      const poll = await fetch(
+        `${baseUrl}/audio/generations/${encodeURIComponent(taskId)}`,
+        { headers, signal: ctx.signal }
+      )
+
+      if (!poll.ok) {
+        const text = await poll.text().catch(() => '')
+        throw new Error(`查询任务失败 HTTP ${poll.status}: ${text.slice(0, 200)}`)
+      }
+
+      task = (await poll.json()) as MusicTask
+      consecutiveErrors = 0
+    } catch (error) {
+      consecutiveErrors += 1
+      if (consecutiveErrors >= 5) throw error
+      ctx.onProgress(10, `查询失败，重试中（${consecutiveErrors}/5）`)
+      continue
+    }
+
+    const status = musicStatus(task)
+
+    if (status === 'failed' || status === 'error') {
+      const message =
+        typeof task.error === 'string'
+          ? task.error
+          : task.error?.message ?? task.message ?? '音乐任务失败'
+      throw new Error(message)
+    }
+
+    const url = musicUrl(task)
+    if (
+      url &&
+      (!status ||
+        status === 'completed' ||
+        status === 'succeed' ||
+        status === 'success' ||
+        status === 'succeeded')
+    ) {
+      ctx.onProgress(80, '下载音频')
+      return downloadAudio(url, ctx)
+    }
+
+    const percent = Math.min(10 + Math.round((attempt / 60) * 70), 80)
+    ctx.onProgress(percent, `生成中（${status ?? 'processing'}）`)
+  }
+
+  throw new Error('音乐任务超时')
 }

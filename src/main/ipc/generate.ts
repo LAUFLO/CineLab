@@ -11,8 +11,10 @@ import type {
 import { ingestAsset } from '../assets/ingest'
 import { generationQueue, type QueueJob } from '../engine/queue'
 import { getCurrentProjectRoot } from '../project/manager'
+import { generateVideoAgnes } from '../providers/agnes'
 import {
   generateImage,
+  generateMusic,
   generateSpeech,
   generateText,
   type ProviderOutput
@@ -39,7 +41,8 @@ const VIDEO_SIZE: Record<string, [number, number]> = {
   '9:16': [720, 1280],
   '1:1': [720, 720],
   '4:3': [960, 720],
-  '3:4': [720, 960]
+  '3:4': [720, 960],
+  '21:9': [1680, 720]
 }
 
 async function loadRefs(
@@ -114,8 +117,10 @@ export function registerGenerateIpc(): void {
 
     const isImage = model.capability === 'image.t2i' || model.capability === 'image.i2i'
     const isVideo = model.capability === 'video.t2v'
-    const isAudio = model.capability === 'audio.tts'
+    const isAudio = model.capability === 'audio.tts' || model.capability === 'audio.music'
+    const isMusic = model.capability === 'audio.music'
     const isText = model.capability === 'text.chat'
+    const isAgnesVideo = /^agnes-video/i.test(model.remoteModel)
 
     if (!isImage && !isVideo && !isAudio && !isText) {
       throw new Error('当前只支持图片、视频、文本和语音模型')
@@ -133,22 +138,39 @@ export function registerGenerateIpc(): void {
 
         const generate = (): Promise<ProviderOutput[]> =>
           isVideo
-            ? generateVideoArk(
-                model,
-                { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
-                request.prompt,
-                request.params,
-                refs,
-                { signal, onProgress }
-              )
-            : isAudio
-              ? generateSpeech(
+            ? isAgnesVideo
+              ? generateVideoAgnes(
                   model,
                   { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
                   request.prompt,
                   request.params,
+                  refs,
                   { signal, onProgress }
                 )
+              : generateVideoArk(
+                  model,
+                  { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+                  request.prompt,
+                  request.params,
+                  refs,
+                  { signal, onProgress }
+                )
+            : isAudio
+              ? isMusic
+                ? generateMusic(
+                    model,
+                    { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+                    request.prompt,
+                    request.params,
+                    { signal, onProgress }
+                  )
+                : generateSpeech(
+                    model,
+                    { baseUrl: provider.baseUrl, apiKey: provider.apiKey },
+                    request.prompt,
+                    request.params,
+                    { signal, onProgress }
+                  )
               : isText
                 ? generateText(
                     model,

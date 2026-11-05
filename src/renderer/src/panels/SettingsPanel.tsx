@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
   CAPABILITY_LABEL,
-  MODEL_PRESETS,
   type ModelDef,
   type ProviderConfig,
   type ProviderInput
@@ -49,6 +48,32 @@ function toDraft(provider: ProviderConfig): ProviderInput {
   }
 }
 
+function inferCapability(remoteModel: string): ModelDef['capability'] {
+  const value = remoteModel.toLowerCase()
+  if (/(tts|audio|music|speech|voice)/.test(value)) return 'audio.tts'
+  if (
+    /(video|veo|kling|seedance|sora|hailuo|vidu|cogvideo|wan2|runway)/.test(value)
+  ) {
+    return 'video.t2v'
+  }
+  if (
+    /(image|dall-e|dalle|flux|stable-diffusion|midjourney|imagen|seedream|gpt-image|moss)/.test(
+      value
+    )
+  ) {
+    return 'image.t2i'
+  }
+  return 'text.chat'
+}
+
+function remoteModelId(remoteModel: string): string {
+  const slug = remoteModel
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return `remote_${slug || 'model'}`
+}
+
 function ModelsSection() {
   const providers = useSettingsStore((state) => state.providers)
   const load = useSettingsStore((state) => state.load)
@@ -61,11 +86,17 @@ function ModelsSection() {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
   const [config, setConfig] = useState<ModelsConfigStatus | null>(null)
+  const [remoteModels, setRemoteModels] = useState<string[]>([])
+  const [fetching, setFetching] = useState(false)
 
   useEffect(() => {
     void load()
     void window.api.settings.modelsConfig().then(setConfig)
   }, [load])
+
+  useEffect(() => {
+    setRemoteModels([])
+  }, [draft?.id])
 
   const updateField = <K extends keyof ProviderInput>(
     key: K,
@@ -102,6 +133,47 @@ function ModelsSection() {
         )
       }
     })
+  }
+
+  const addRemoteModel = (remoteModel: string): void => {
+    const model: ModelDef = {
+      id: remoteModelId(remoteModel),
+      name: remoteModel,
+      remoteModel,
+      capability: inferCapability(remoteModel),
+      params: []
+    }
+    addModel(model)
+  }
+
+  const handleFetchModels = async (): Promise<void> => {
+    if (!draft) return
+    if (!draft.baseUrl.trim()) {
+      setMessage({ ok: false, text: '请先填写 Base URL' })
+      return
+    }
+    if (!draft.apiKey?.trim() && !draft.id) {
+      setMessage({ ok: false, text: '请先填写 API Key' })
+      return
+    }
+
+    setFetching(true)
+    setMessage(null)
+    try {
+      const result = await window.api.settings.fetchModels({
+        id: draft.id,
+        type: draft.type,
+        baseUrl: draft.baseUrl,
+        apiKey: draft.apiKey,
+        secretKey: draft.secretKey
+      })
+      setRemoteModels(result.models)
+      setMessage({ ok: result.ok, text: result.message })
+    } catch (error) {
+      setMessage({ ok: false, text: String(error) })
+    } finally {
+      setFetching(false)
+    }
   }
 
   const handleSave = async (): Promise<void> => {
@@ -260,7 +332,17 @@ function ModelsSection() {
         ) : null}
 
         <div className="field">
-          <span>模型</span>
+          <div className="field__head">
+            <span>模型</span>
+            <button
+              type="button"
+              className="btn-secondary btn-small"
+              onClick={() => void handleFetchModels()}
+              disabled={fetching || busy}
+            >
+              {fetching ? '获取中…' : '获取模型列表'}
+            </button>
+          </div>
           <div className="model-list">
             {draft.models.map((model) => (
               <div key={model.id} className="model-item">
@@ -283,27 +365,28 @@ function ModelsSection() {
               <div className="model-list__empty">还没有添加模型</div>
             ) : null}
           </div>
-        </div>
 
-        <div className="field">
-          <span>快速添加</span>
-          <div className="preset-list">
-            {MODEL_PRESETS.filter(
-              (preset) =>
-                (preset.providerType ?? 'openai-compat') ===
-                (draft.type ?? 'openai-compat')
-            ).map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                className="preset-chip"
-                onClick={() => addModel(preset)}
-                disabled={draft.models.some((model) => model.id === preset.id)}
-              >
-                {preset.name}
-              </button>
-            ))}
-          </div>
+          {remoteModels.length > 0 ? (
+            <div className="remote-models">
+              {remoteModels.map((remote) => {
+                const added = draft.models.some(
+                  (model) => model.remoteModel === remote
+                )
+                return (
+                  <button
+                    key={remote}
+                    type="button"
+                    className={`remote-model-chip ${added ? 'is-added' : ''}`}
+                    disabled={added}
+                    title={added ? '已添加' : `添加 ${remote}`}
+                    onClick={() => addRemoteModel(remote)}
+                  >
+                    {remote}
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
         </div>
 
         {message ? (

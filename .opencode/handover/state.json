@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "UI-1 底部工具栏 P0+P1",
-  "next_focus": "UI-1 底部工具栏 P0+P1：添加入口、移动/抓手、快捷键面板、节点搜索、生成历史",
+  "next_focus": "K 项收尾：真实 i2i 验证、Windows 打包验证、真实厂商 Key 端到端；P2 命令面板可另行排期",
   "frontier": [
     {
       "id": "M2-1",
@@ -138,8 +138,11 @@
     {
       "id": "UI-1",
       "title": "底部工具栏 P0+P1：添加入口、移动/抓手、快捷键面板、节点搜索、生成历史",
-      "status": "pending",
-      "note": "排在 GROUP-1 之后；资产库入口保留左下 StatusBar，不迁入底部中间工具栏"
+      "status": "done",
+      "note": "2026-11-05 实现完成：加号使用 --pick-bar 主题绿底并在按钮上方居中展开菜单（含上传/历史）、选择与抓手合并为一个浮窗按钮、V/H/Space 工具切换、快捷键面板、Ctrl+F 搜索、生成历史（定位/添加/保存/导出）；底部不再放设置入口。上传与导出因系统对话框未自动化验证。资产库入口仍在左下 StatusBar。",
+      "evidence": [
+        ".opencode/handover/evidence/UI-1-bottom-toolbar.md"
+      ]
     },
     {
       "id": "NODE-TOOLBAR-P0",
@@ -773,6 +776,6 @@
       "M6"
     ],
     "partialMilestones": [],
-    "nextMilestone": "UI-1 底部工具栏 P0+P1"
+    "nextMilestone": "K 项收尾与真实环境验证"
   }
 }

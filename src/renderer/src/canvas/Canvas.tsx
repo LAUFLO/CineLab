@@ -29,6 +29,9 @@ import { MultiSelectBar } from './MultiSelectBar'
 import { CineNodeView } from './nodes/CineNodeView'
 import { GroupNodeView } from './nodes/GroupNodeView'
 import { PromptBar } from './PromptBar'
+import { HistoryPanel } from '../panels/HistoryPanel'
+import { NodeSearch } from '../panels/NodeSearch'
+import { ShortcutPanel } from '../panels/ShortcutPanel'
 
 type Theme = 'light' | 'dark'
 
@@ -75,6 +78,11 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const setViewport = useCanvasStore((state) => state.setViewport)
   const arrangeNodes = useCanvasStore((state) => state.arrangeNodes)
   const setBoxSelecting = useCanvasStore((state) => state.setBoxSelecting)
+  const tool = useUIStore((state) => state.tool)
+  const setTool = useUIStore((state) => state.setTool)
+  const addMenuToken = useUIStore((state) => state.addMenuToken)
+  const addMenuAnchor = useUIStore((state) => state.addMenuAnchor)
+  const openSearch = useUIStore((state) => state.openSearch)
   const closeMenu = useUIStore((state) => state.closeMenu)
   const openMenu = useUIStore((state) => state.openMenu)
   const openContextMenu = useUIStore((state) => state.openContextMenu)
@@ -87,7 +95,51 @@ function CanvasInner({ theme }: { theme: Theme }) {
     useReactFlow()
 
   const connectStart = useRef<{ x: number; y: number } | null>(null)
+  const addMenuHandled = useRef(0)
   const [guides, setGuides] = useState<AlignmentGuide[]>([])
+  const [spaceHeld, setSpaceHeld] = useState(false)
+
+  const handMode = tool === 'hand' || spaceHeld
+  const selectedNodes = nodes.filter((node) => node.selected)
+  const singleGroupSelected =
+    selectedNodes.length === 1 && isGroupNode(selectedNodes[0])
+
+  useEffect(() => {
+    if (addMenuToken === 0 || addMenuToken === addMenuHandled.current) return
+    addMenuHandled.current = addMenuToken
+
+    const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+    openMenu({
+      screen: addMenuAnchor ?? center,
+      flow: screenToFlowPosition(center),
+      placement: addMenuAnchor ? 'above' : 'cursor'
+    })
+  }, [addMenuAnchor, addMenuToken, openMenu, screenToFlowPosition])
+
+  useEffect(() => {
+    const editable = (target: EventTarget | null): boolean =>
+      target instanceof Element &&
+      Boolean(target.closest('input, textarea, [contenteditable="true"]'))
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.code !== 'Space' || editable(event.target)) return
+      event.preventDefault()
+      setSpaceHeld(true)
+    }
+    const onKeyUp = (event: KeyboardEvent): void => {
+      if (event.code === 'Space') setSpaceHeld(false)
+    }
+    const onBlur = (): void => setSpaceHeld(false)
+
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
+    }
+  }, [])
 
   useEffect(() => {
     if (fitViewToken === 0) return
@@ -149,9 +201,29 @@ function CanvasInner({ theme }: { theme: Theme }) {
         return
       }
 
+      if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+        const plainKey = event.key.toLowerCase()
+        if (plainKey === 'v') {
+          event.preventDefault()
+          setTool('select')
+          return
+        }
+        if (plainKey === 'h') {
+          event.preventDefault()
+          setTool('hand')
+          return
+        }
+      }
+
       if (!event.ctrlKey && !event.metaKey) return
 
       const key = event.key.toLowerCase()
+
+      if (key === 'f') {
+        event.preventDefault()
+        openSearch()
+        return
+      }
 
       if (key === 'z') {
         event.preventDefault()
@@ -175,7 +247,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [openSearch, setTool])
 
   const handleConnectStart = useCallback((event: MouseEvent | TouchEvent) => {
     const point = 'changedTouches' in event ? event.changedTouches[0] : event
@@ -399,13 +471,20 @@ function CanvasInner({ theme }: { theme: Theme }) {
         maxZoom={4}
         defaultViewport={viewport}
         onMove={(_event, next) => setViewport(next)}
+        className={[
+          handMode ? 'is-hand-tool' : '',
+          singleGroupSelected ? 'is-single-group' : ''
+        ]
+          .filter(Boolean)
+          .join(' ') || undefined}
         panOnScroll
-        panOnDrag={[1]}
+        panOnDrag={handMode ? true : [1]}
+        nodesDraggable={!handMode}
         snapToGrid={snapToGrid}
         snapGrid={[16, 16] as [number, number]}
         connectionMode={ConnectionMode.Loose}
         connectionRadius={60}
-        selectionOnDrag
+        selectionOnDrag={!handMode}
         onSelectionStart={() => setBoxSelecting(true)}
         onSelectionEnd={() => setBoxSelecting(false)}
         zoomOnDoubleClick={false}
@@ -442,6 +521,9 @@ function CanvasInner({ theme }: { theme: Theme }) {
       <GroupToolbar />
       <AddNodeMenu />
       <CanvasContextMenu />
+      <ShortcutPanel />
+      <HistoryPanel />
+      <NodeSearch />
     </>
   )
 }

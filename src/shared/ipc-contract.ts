@@ -8,6 +8,7 @@ import type {
 import type {
   ConnectionTestInput,
   ConnectionTestResult,
+  FetchModelsResult,
   ProviderConfig,
   ProviderInput
 } from './provider-schema'
@@ -77,6 +78,7 @@ export interface SettingsApi {
   saveProvider(input: ProviderInput): Promise<ProviderConfig>
   deleteProvider(id: string): Promise<void>
   testConnection(input: ConnectionTestInput): Promise<ConnectionTestResult>
+  fetchModels(input: ConnectionTestInput): Promise<FetchModelsResult>
   modelsConfig(): Promise<ModelsConfigStatus>
   openModelsFile(): Promise<string>
 }

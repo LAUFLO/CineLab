@@ -13,6 +13,7 @@ export function MultiSelectBar() {
   const mergeSelection = useCanvasStore((state) => state.mergeSelection)
   const showToast = useUIStore((state) => state.showToast)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
+  const viewport = useCanvasStore((state) => state.viewport)
 
   const selected = useMemo(
     () => nodes.filter((node) => node.selected),
@@ -44,16 +45,17 @@ export function MultiSelectBar() {
       const right = Math.max(...rects.map((rect) => rect.right))
       const top = Math.min(...rects.map((rect) => rect.top))
 
+      // 多选包围框在节点外扩 10px，工具栏与框留 14px，再减去工具栏高度。
       setPosition({
         left: (left + right) / 2,
-        top: Math.max(52, top - 56)
+        top: Math.max(56, top - 66)
       })
     }
 
     update()
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
-  }, [selectionKey, nodes])
+  }, [selectionKey, nodes, viewport])
 
   if (selected.length < 2 || !position) return null
 

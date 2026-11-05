@@ -45,6 +45,8 @@ export type IconName =
   | 'layers'
   | 'sparkles'
   | 'pin'
+  | 'keyboard'
+  | 'robot'
 const paths: Record<IconName, ReactNode> = {
   logo: (
     <>
@@ -232,6 +234,23 @@ const paths: Record<IconName, ReactNode> = {
   pin: (
     <>
       <path d="M9 3h6l-1 6 3 3v2h-5v6l-1 1-1-1v-6H5v-2l3-3z" />
+    </>
+  ),
+  keyboard: (
+    <>
+      <rect x="2.5" y="6.5" width="19" height="11" rx="2" />
+      <path d="M6 10.2h1.2M9.4 10.2h1.2M12.8 10.2h1.2M16.2 10.2h1.2" />
+      <path d="M7.4 13.4h9.2" />
+    </>
+  ),
+  robot: (
+    <>
+      <rect x="4.5" y="8" width="15" height="11" rx="3" />
+      <path d="M12 8V5.5" />
+      <path d="M12 4h.01" />
+      <path d="M4.5 12H2.5M21.5 12h-2" />
+      <path d="M9 12.5h.01M15 12.5h.01" />
+      <path d="M9 15.5h6" />
     </>
   )
 }

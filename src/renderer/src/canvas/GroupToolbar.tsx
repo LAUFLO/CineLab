@@ -44,9 +44,16 @@ export function GroupToolbar() {
     }
 
     const rect = element.getBoundingClientRect()
+    const halfWidth = 220
     setPosition({
-      left: rect.left + Math.min(rect.width / 2, 240),
-      top: Math.max(52, rect.top - 46)
+      left: Math.max(
+        halfWidth,
+        Math.min(
+          rect.left + rect.width / 2,
+          window.innerWidth - halfWidth
+        )
+      ),
+      top: Math.max(56, rect.top - 56)
     })
   }, [groupId, nodes, viewport])
 

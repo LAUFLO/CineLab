@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto'
 import type {
   ConnectionTestInput,
   ConnectionTestResult,
+  FetchModelsResult,
   ModelDef,
   ProviderConfig,
   ProviderInput,
@@ -281,5 +282,89 @@ export async function testConnection(
     }
   } catch (error) {
     return { ok: false, message: String(error) }
+  }
+}
+
+export async function fetchModels(
+  input: ConnectionTestInput
+): Promise<FetchModelsResult> {
+  try {
+    const data = await readSettings()
+    const stored = input.id
+      ? data.providers.find((provider) => provider.id === input.id)
+      : undefined
+    const external = input.id
+      ? (await loadModelsConfig()).providers.find(
+          (provider) => provider.id === input.id
+        )
+      : undefined
+
+    const type = input.type ?? external?.type ?? stored?.type ?? 'openai-compat'
+    if (type === 'kling') {
+      return {
+        ok: false,
+        message: '可灵暂不支持通过接口获取模型列表',
+        models: []
+      }
+    }
+
+    const envKey = external?.apiKeyEnv
+      ? process.env[external.apiKeyEnv]
+      : undefined
+    const apiKey =
+      input.apiKey?.trim() ||
+      (stored?.encryptedKey ? decryptKey(stored.encryptedKey) : '') ||
+      envKey ||
+      external?.apiKey ||
+      ''
+    const baseUrl = (input.baseUrl || external?.baseUrl || '')
+      .trim()
+      .replace(/\/+$/, '')
+
+    if (!baseUrl) return { ok: false, message: 'Base URL 不能为空', models: [] }
+    if (!apiKey) return { ok: false, message: 'API Key 不能为空', models: [] }
+
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 20000)
+    const response = await fetch(`${baseUrl}/models`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: controller.signal
+    })
+    clearTimeout(timer)
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '')
+      return {
+        ok: false,
+        message: `HTTP ${response.status} ${text.slice(0, 200)}`,
+        models: []
+      }
+    }
+
+    const payload = (await response.json().catch(() => null)) as unknown
+    const list = Array.isArray(payload)
+      ? payload
+      : Array.isArray((payload as { data?: unknown[] } | null)?.data)
+        ? ((payload as { data: unknown[] }).data)
+        : []
+
+    const models = list
+      .map((item) => {
+        if (typeof item === 'string') return item
+        const id = (item as { id?: unknown } | null)?.id
+        return typeof id === 'string' ? id : ''
+      })
+      .filter((id): id is string => id.length > 0)
+
+    return {
+      ok: true,
+      message:
+        models.length > 0
+          ? `找到 ${models.length} 个模型`
+          : '连接成功，但接口没有返回模型',
+      models
+    }
+  } catch (error) {
+    return { ok: false, message: String(error), models: [] }
   }
 }

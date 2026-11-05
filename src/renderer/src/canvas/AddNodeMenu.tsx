@@ -3,6 +3,7 @@ import { NODE_KINDS, NODE_META, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../components/Icon'
 import { useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
+import { uploadMaterialsAt } from './context-actions'
 
 const ICONS: Record<NodeKind, IconName> = {
   text: 'text',
@@ -11,8 +12,8 @@ const ICONS: Record<NodeKind, IconName> = {
   audio: 'audio'
 }
 
-const MENU_WIDTH = 200
-const MENU_HEIGHT = 300
+const MENU_WIDTH = 220
+const MENU_HEIGHT = 420
 
 export function AddNodeMenu() {
   const menu = useUIStore((state) => state.menu)
@@ -65,14 +66,33 @@ export function AddNodeMenu() {
     closeMenu()
   }
 
-  const left = Math.max(12, Math.min(menu.screen.x, window.innerWidth - MENU_WIDTH - 12))
-  const top = Math.max(12, Math.min(menu.screen.y, window.innerHeight - MENU_HEIGHT - 12))
+  const above = menu.placement === 'above'
+  const left = above
+    ? Math.max(
+        12,
+        Math.min(
+          menu.screen.x - MENU_WIDTH / 2,
+          window.innerWidth - MENU_WIDTH - 12
+        )
+      )
+    : Math.max(12, Math.min(menu.screen.x, window.innerWidth - MENU_WIDTH - 12))
+  const top = Math.max(
+    12,
+    Math.min(menu.screen.y, window.innerHeight - MENU_HEIGHT - 12)
+  )
+  const style = above
+    ? {
+        left,
+        bottom: window.innerHeight - menu.screen.y + 14,
+        width: MENU_WIDTH
+      }
+    : { left, top, width: MENU_WIDTH }
 
   return (
     <div
       ref={ref}
       className="add-menu"
-      style={{ left, top, width: MENU_WIDTH }}
+      style={style}
       onPointerDown={(event) => event.stopPropagation()}
     >
       <div className="add-menu__title">
@@ -103,6 +123,35 @@ export function AddNodeMenu() {
         ))}
         {kinds.length === 0 && <div className="add-menu__empty">没有匹配的节点</div>}
       </div>
+
+      {!menu.source && query.trim() === '' ? (
+        <>
+          <div className="add-menu__divider" />
+          <div className="add-menu__title">添加资源</div>
+          <button
+            type="button"
+            className="add-menu__item"
+            onClick={() => {
+              closeMenu()
+              void uploadMaterialsAt(menu.flow)
+            }}
+          >
+            <Icon name="folder-plus" size={16} />
+            <span>上传素材</span>
+          </button>
+          <button
+            type="button"
+            className="add-menu__item"
+            onClick={() => {
+              closeMenu()
+              useUIStore.getState().openHistory()
+            }}
+          >
+            <Icon name="history" size={16} />
+            <span>从生成历史选择</span>
+          </button>
+        </>
+      ) : null}
 
       {menu.source ? (
         <>

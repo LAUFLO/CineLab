@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useReactFlow, useViewport } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import type { Capability, ModelDef, ParamDef } from '@shared/provider-schema'
 import type { ReferenceInput, ReferenceRole } from '@shared/generation'
 import { Icon } from '../components/Icon'
-import { isGroupNode, useCanvasStore } from '../stores/canvas'
+import {
+  absolutePosition,
+  isGroupNode,
+  useCanvasStore
+} from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'
 import { useLibraryStore } from '../stores/library'
 import { useSettingsStore } from '../stores/settings'
@@ -52,7 +57,7 @@ export function PromptBar() {
   const edges = useCanvasStore((state) => state.edges)
   const onConnect = useCanvasStore((state) => state.onConnect)
   const onEdgesChange = useCanvasStore((state) => state.onEdgesChange)
-  const { flowToScreenPosition } = useReactFlow()
+  const { flowToScreenPosition, fitView } = useReactFlow()
   const viewport = useViewport()
 
   const providers = useSettingsStore((state) => state.providers)
@@ -81,11 +86,38 @@ export function PromptBar() {
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [watermark, setWatermark] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [uploadMenuOpen, setUploadMenuOpen] = useState(false)
+  const [refPreview, setRefPreview] = useState<{
+    path: string
+    scope?: ReferenceInput['scope']
+    x: number
+    y: number
+  } | null>(null)
   const suppressClickRef = useRef(false)
+  const uploadRef = useRef<HTMLDivElement>(null)
+  const refClickTimer = useRef<number | null>(null)
+  const showToast = useUIStore((state) => state.showToast)
+
+  useEffect(() => {
+    if (!uploadMenuOpen) return
+    const onPointerDown = (event: PointerEvent): void => {
+      if (
+        uploadRef.current &&
+        !uploadRef.current.contains(event.target as Node)
+      ) {
+        setUploadMenuOpen(false)
+      }
+    }
+    window.addEventListener('pointerdown', onPointerDown)
+    return () => window.removeEventListener('pointerdown', onPointerDown)
+  }, [uploadMenuOpen])
 
   const selectedNodes = nodes.filter((item) => item.selected)
   const single = selectedNodes.length === 1 ? selectedNodes[0] : undefined
-  const node = single && !isGroupNode(single) ? single : undefined
+  const node =
+    single && !isGroupNode(single) && !single.data.assetOnly
+      ? single
+      : undefined
   const kind: NodeKind = node?.data.kind ?? 'image'
   const runningMap = useGenerationStore((state) => state.running)
   const runningRunId = node ? runningMap[node.id] : undefined
@@ -273,7 +305,8 @@ export function PromptBar() {
   const layout = useMemo(() => {
     if (!node) return null
 
-    const position = flowToScreenPosition({ x: node.position.x, y: node.position.y })
+    const absolute = absolutePosition(node, nodes)
+    const position = flowToScreenPosition(absolute)
     const width = node.measured?.width ?? NODE_META[node.data.kind].width
     const height = node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
     const zoom = viewport.zoom
@@ -288,9 +321,91 @@ export function PromptBar() {
     )
 
     return { left, top }
-  }, [node, flowToScreenPosition, viewport.x, viewport.y, viewport.zoom])
+  }, [node, nodes, flowToScreenPosition, viewport.x, viewport.y, viewport.zoom])
 
   if (!node || !layout) return null
+
+  const handleLocalUpload = async (): Promise<void> => {
+    setUploadMenuOpen(false)
+    try {
+      const assets = await window.api.library.importAssets('场景')
+      if (assets.length === 0) return
+
+      const store = useCanvasStore.getState()
+      const base = absolutePosition(node, nodes)
+      let offsetY = 0
+
+      for (const asset of assets) {
+        const kind: NodeKind =
+          asset.kind === 'video'
+            ? 'video'
+            : asset.kind === 'audio'
+              ? 'audio'
+              : 'image'
+        const meta = NODE_META[kind]
+        const id = store.addNode(kind, {
+          x: base.x - meta.width - 80,
+          y: base.y + offsetY
+        })
+
+        store.patchNodeData(id, {
+          title: asset.name,
+          status: 'done',
+          assetOnly: true,
+          outputs: [
+            {
+              id: asset.path,
+              path: asset.path,
+              scope: 'global',
+              kind: asset.kind === 'template' ? 'image' : asset.kind,
+              createdAt: asset.modifiedAt ?? new Date().toISOString(),
+              model: '本地上传'
+            }
+          ],
+          selectedOutputId: asset.path
+        })
+
+        store.onConnect({ source: id, target: node.id })
+        offsetY += meta.height + TITLE_HEIGHT + 24
+      }
+
+      useCanvasStore.setState({
+        nodes: useCanvasStore.getState().nodes.map((entry) => ({
+          ...entry,
+          selected: entry.id === node.id
+        }))
+      })
+
+      showToast(`已上传 ${assets.length} 个素材并连线`)
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), 'error')
+    }
+  }
+
+  const handleRefClick = (ref: ReferenceInput): void => {
+    if (refClickTimer.current) return
+    refClickTimer.current = window.setTimeout(() => {
+      refClickTimer.current = null
+      removeRef(ref)
+    }, 220)
+  }
+
+  const handleRefDoubleClick = (ref: ReferenceInput): void => {
+    if (refClickTimer.current) {
+      clearTimeout(refClickTimer.current)
+      refClickTimer.current = null
+    }
+
+    const target = nodes.find(
+      (entry) =>
+        !isGroupNode(entry) &&
+        (entry.data.outputs ?? []).some((output) => output.path === ref.path)
+    )
+    if (!target) return
+
+    setRefPreview(null)
+    void fitView({ nodes: [target], padding: 0.8, duration: 300, maxZoom: 1.5 })
+  }
 
   const refs = (() => {
     const incoming = edges.filter((edge) => edge.target === node.id)
@@ -299,17 +414,31 @@ export function PromptBar() {
 
     for (const edge of incoming) {
       const source = nodes.find((item) => item.id === edge.source)
-      if (!source || isGroupNode(source)) continue
-      const outputs = source.data.outputs ?? []
-      const output =
-        outputs.find((item) => item.id === source?.data.selectedOutputId) ?? outputs[0]
-      if (!output || output.kind !== 'image') continue
+      if (!source) continue
 
-      const role: ReferenceRole =
-        imageIndex === 0 ? 'firstFrame' : imageIndex === 1 ? 'lastFrame' : 'reference'
-      result.push({ path: output.path, role, scope: output.scope })
-      imageIndex += 1
-      if (imageIndex >= 3) break
+      const entries = isGroupNode(source)
+        ? nodes.filter((item) => item.parentId === source.id)
+        : [source]
+
+      for (const entry of entries) {
+        if (imageIndex >= 3) break
+        if (isGroupNode(entry)) continue
+
+        const outputs = entry.data.outputs ?? []
+        const output =
+          outputs.find((item) => item.id === entry.data.selectedOutputId) ??
+          outputs[0]
+        if (!output || output.kind !== 'image') continue
+
+        const role: ReferenceRole =
+          imageIndex === 0
+            ? 'firstFrame'
+            : imageIndex === 1
+              ? 'lastFrame'
+              : 'reference'
+        result.push({ path: output.path, role, scope: output.scope })
+        imageIndex += 1
+      }
     }
 
     return result
@@ -456,14 +585,40 @@ export function PromptBar() {
       ) : null}
 
       <div className="promptbar__tools">
-        <button
-          type="button"
-          className="promptbar__tool"
-          onClick={() => openLibrary('场景')}
-        >
-          <Icon name="plus" size={13} />
-          上传
-        </button>
+        <div className="promptbar__upload-wrap" ref={uploadRef}>
+          <button
+            type="button"
+            className={`promptbar__tool ${uploadMenuOpen ? 'is-active' : ''}`}
+            onClick={() => setUploadMenuOpen((open) => !open)}
+          >
+            <Icon name="plus" size={13} />
+            上传
+          </button>
+
+          {uploadMenuOpen ? (
+            <div className="promptbar__upload-menu">
+              <button
+                type="button"
+                className="promptbar__upload-item"
+                onClick={() => void handleLocalUpload()}
+              >
+                <Icon name="folder-plus" size={14} />
+                本地上传
+              </button>
+              <button
+                type="button"
+                className="promptbar__upload-item"
+                onClick={() => {
+                  setUploadMenuOpen(false)
+                  openLibrary('场景')
+                }}
+              >
+                <Icon name="library" size={14} />
+                资产库上传
+              </button>
+            </div>
+          ) : null}
+        </div>
         <button
           type="button"
           className={`promptbar__tool ${picking ? 'is-active' : ''}`}
@@ -475,20 +630,6 @@ export function PromptBar() {
           <Icon name="frame" size={13} />
           画布参考
         </button>
-        {kind === 'image' || kind === 'video' ? (
-          <button
-            type="button"
-            className="promptbar__tool"
-            onClick={() => openLibrary('角色')}
-          >
-            <Icon name="text" size={13} />
-            角色库
-          </button>
-        ) : null}
-        <button type="button" className="promptbar__tool">
-          <Icon name="settings" size={13} />
-          更多
-        </button>
         <div className="promptbar__spacer" />
         {mergedRefs.length > 0 ? (
           <div className="promptbar__picked">
@@ -497,8 +638,22 @@ export function PromptBar() {
                 key={ref.path}
                 type="button"
                 className="promptbar__picked-item"
-                title={`${ref.path}（点击移除）`}
-                onClick={() => removeRef(ref)}
+                onPointerEnter={(event) => {
+                  const rect = event.currentTarget.getBoundingClientRect()
+                  setRefPreview({
+                    path: ref.path,
+                    scope: ref.scope,
+                    x: rect.left + rect.width / 2,
+                    y: rect.top - 8
+                  })
+                }}
+                onPointerLeave={() => setRefPreview(null)}
+                onClick={() => handleRefClick(ref)}
+                onDoubleClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  handleRefDoubleClick(ref)
+                }}
               >
                 <img src={assetUrl(ref.path, ref.scope)} alt="" />
                 <Icon name="close" size={10} />
@@ -735,7 +890,7 @@ export function PromptBar() {
             title="停止生成"
             onClick={() => void cancelGeneration(node.id)}
           >
-            <Icon name="stop" size={14} />
+            <span className="promptbar__stop-icon" />
           </button>
         ) : (
           <button
@@ -771,6 +926,21 @@ export function PromptBar() {
         </div>
       ) : null}
     </div>
+
+    {refPreview
+      ? createPortal(
+          <div
+            className="ref-preview"
+            style={{ left: refPreview.x, top: refPreview.y }}
+          >
+            <img
+              src={assetUrl(refPreview.path, refPreview.scope)}
+              alt=""
+            />
+          </div>,
+          document.body
+        )
+      : null}
     </>
   )
 }

@@ -27,6 +27,20 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const multiSelected = useCanvasStore(
     (state) => state.nodes.filter((node) => node.selected).length > 1
   )
+  const storyboardIndex = useCanvasStore((state) => {
+    const self = state.nodes.find((node) => node.id === id)
+    const parent = self?.parentId
+      ? state.nodes.find((node) => node.id === self.parentId)
+      : undefined
+    if (!parent || parent.type !== 'group') return 0
+    if (parent.data.mode !== 'storyboard' || parent.data.showIndex === false) {
+      return 0
+    }
+    const siblings = state.nodes.filter(
+      (node) => node.parentId === parent.id
+    )
+    return siblings.findIndex((node) => node.id === id) + 1
+  })
   const cancelGeneration = useGenerationStore((state) => state.cancel)
   const openLibraryPicker = useLibraryStore((state) => state.openPicker)
   const [editingTitle, setEditingTitle] = useState(false)
@@ -220,6 +234,12 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             </div>
           ) : null}
         </div>
+
+        {storyboardIndex > 0 ? (
+          <span className="cnode__index">
+            {String(storyboardIndex).padStart(2, '0')}
+          </span>
+        ) : null}
       </div>
 
       <Handle

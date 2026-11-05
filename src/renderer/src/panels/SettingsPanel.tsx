@@ -88,6 +88,7 @@ function ModelsSection() {
   const [config, setConfig] = useState<ModelsConfigStatus | null>(null)
   const [remoteModels, setRemoteModels] = useState<string[]>([])
   const [fetching, setFetching] = useState(false)
+  const [manualModel, setManualModel] = useState('')
 
   useEffect(() => {
     void load()
@@ -144,6 +145,13 @@ function ModelsSection() {
       params: []
     }
     addModel(model)
+  }
+
+  const addManualModel = (): void => {
+    const value = manualModel.trim()
+    if (!value) return
+    addRemoteModel(value)
+    setManualModel('')
   }
 
   const handleFetchModels = async (): Promise<void> => {
@@ -364,6 +372,27 @@ function ModelsSection() {
             {draft.models.length === 0 ? (
               <div className="model-list__empty">还没有添加模型</div>
             ) : null}
+          </div>
+
+          <div className="manual-model">
+            <input
+              value={manualModel}
+              placeholder="没有想要的模型？手动输入模型 ID"
+              onChange={(event) => setManualModel(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  addManualModel()
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="btn-secondary btn-small"
+              onClick={addManualModel}
+            >
+              添加
+            </button>
           </div>
 
           {remoteModels.length > 0 ? (

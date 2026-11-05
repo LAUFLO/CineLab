@@ -44,6 +44,8 @@ import type {
   MediaProbe,
   SplitAvRequest,
   SplitAvResult,
+  StitchRequest,
+  StitchResult,
   TrimVideoRequest,
   TrimVideoResult
 } from './media'
@@ -142,6 +144,7 @@ export interface ExportApi {
 
 export interface MediaApi {
   splitGrid(input: GridSplitRequest): Promise<GridSplitResult>
+  stitch(input: StitchRequest): Promise<StitchResult>
   extractFrame(input: ExtractFrameRequest): Promise<ExtractFrameResult>
   splitAv(input: SplitAvRequest): Promise<SplitAvResult>
   cropVideo(input: CropVideoRequest): Promise<CropVideoResult>

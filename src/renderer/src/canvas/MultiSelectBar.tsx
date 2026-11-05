@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { SaveAssetInput } from '@shared/library-schema'
 import { Icon } from '../components/Icon'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
@@ -11,6 +11,7 @@ export function MultiSelectBar() {
   const removeSelection = useCanvasStore((state) => state.removeSelection)
   const groupSelection = useCanvasStore((state) => state.groupSelection)
   const mergeSelection = useCanvasStore((state) => state.mergeSelection)
+  const createStoryboard = useCanvasStore((state) => state.createStoryboard)
   const showToast = useUIStore((state) => state.showToast)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   const viewport = useCanvasStore((state) => state.viewport)
@@ -24,6 +25,22 @@ export function MultiSelectBar() {
   const [position, setPosition] = useState<{ left: number; top: number } | null>(
     null
   )
+  const [groupMenuOpen, setGroupMenuOpen] = useState(false)
+  const groupMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!groupMenuOpen) return
+    const onPointerDown = (event: PointerEvent): void => {
+      if (
+        groupMenuRef.current &&
+        !groupMenuRef.current.contains(event.target as Node)
+      ) {
+        setGroupMenuOpen(false)
+      }
+    }
+    window.addEventListener('pointerdown', onPointerDown)
+    return () => window.removeEventListener('pointerdown', onPointerDown)
+  }, [groupMenuOpen])
 
   useLayoutEffect(() => {
     if (selected.length < 2) {
@@ -125,10 +142,25 @@ export function MultiSelectBar() {
   const groupCount = selected.filter(isGroupNode).length
   const canGroup = looseCount >= 2
   const canMerge = groupCount >= 2 || (groupCount >= 1 && looseCount >= 1)
+  const canStoryboard =
+    selected.length >= 2 &&
+    selected.length <= 25 &&
+    selected.every(
+      (node) =>
+        !isGroupNode(node) &&
+        !node.parentId &&
+        node.data.kind === 'image'
+    )
 
   const group = (): void => {
     const id = groupSelection()
     if (id) showToast('已创建分组')
+  }
+
+  const storyboard = (): void => {
+    const id = createStoryboard()
+    if (id) showToast('已创建分镜组')
+    else showToast('分镜组仅支持 2-25 个图片节点', 'error')
   }
 
   const merge = (): void => {
@@ -163,10 +195,48 @@ export function MultiSelectBar() {
       onPointerDown={(event) => event.stopPropagation()}
     >
       {canGroup ? (
-        <button type="button" className="multi-bar__btn" onClick={group}>
-          <Icon name="layers" size={14} />
-          <span>打组</span>
-        </button>
+        canStoryboard ? (
+          <div className="multi-bar__menu-wrap" ref={groupMenuRef}>
+            <button
+              type="button"
+              className={`multi-bar__btn ${groupMenuOpen ? 'is-open' : ''}`}
+              onClick={() => setGroupMenuOpen((open) => !open)}
+            >
+              <Icon name="layers" size={14} />
+              <span>打组</span>
+              <Icon name="chevron-down" size={12} />
+            </button>
+            {groupMenuOpen ? (
+              <div className="multi-bar__pop">
+                <button
+                  type="button"
+                  className="multi-bar__pop-item"
+                  onClick={() => {
+                    group()
+                    setGroupMenuOpen(false)
+                  }}
+                >
+                  打组
+                </button>
+                <button
+                  type="button"
+                  className="multi-bar__pop-item"
+                  onClick={() => {
+                    storyboard()
+                    setGroupMenuOpen(false)
+                  }}
+                >
+                  合并分镜组
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <button type="button" className="multi-bar__btn" onClick={group}>
+            <Icon name="layers" size={14} />
+            <span>打组</span>
+          </button>
+        )
       ) : null}
 
       {canMerge ? (

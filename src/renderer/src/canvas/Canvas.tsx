@@ -26,6 +26,7 @@ import { copySelection, pasteAt } from './context-actions'
 import { FlowEdge } from './edges/FlowEdge'
 import { GroupToolbar } from './GroupToolbar'
 import { MultiSelectBar } from './MultiSelectBar'
+import { StoryboardToolbar } from './StoryboardToolbar'
 import { CineNodeView } from './nodes/CineNodeView'
 import { GroupNodeView } from './nodes/GroupNodeView'
 import { PromptBar } from './PromptBar'
@@ -519,6 +520,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
       <PromptBar />
       <MultiSelectBar />
       <GroupToolbar />
+      <StoryboardToolbar />
       <AddNodeMenu />
       <CanvasContextMenu />
       <ShortcutPanel />

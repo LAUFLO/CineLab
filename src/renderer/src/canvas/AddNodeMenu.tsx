@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NODE_KINDS, NODE_META, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../components/Icon'
-import { useCanvasStore } from '../stores/canvas'
+import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 import { uploadMaterialsAt } from './context-actions'
 
@@ -20,6 +20,7 @@ export function AddNodeMenu() {
   const closeMenu = useUIStore((state) => state.closeMenu)
   const addNode = useCanvasStore((state) => state.addNode)
   const onConnect = useCanvasStore((state) => state.onConnect)
+  const nodes = useCanvasStore((state) => state.nodes)
 
   const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
@@ -49,6 +50,15 @@ export function AddNodeMenu() {
   }, [menu, closeMenu])
 
   if (!menu) return null
+
+  const sourceNode = menu.source
+    ? nodes.find((node) => node.id === menu.source?.nodeId)
+    : undefined
+  const sourceIsGroup = sourceNode ? isGroupNode(sourceNode) : false
+  const sourceChildren =
+    sourceIsGroup && sourceNode
+      ? nodes.filter((node) => node.parentId === sourceNode.id).length
+      : 0
 
   const kinds = NODE_KINDS.filter((kind) => NODE_META[kind].label.includes(query))
 
@@ -88,15 +98,45 @@ export function AddNodeMenu() {
       }
     : { left, top, width: MENU_WIDTH }
 
+  const wire = (() => {
+    if (!menu.source) return null
+
+    const side = menu.source.handle === 'source' ? 'right' : 'left'
+    const handle = document.querySelector<HTMLElement>(
+      `.react-flow__node[data-id="${menu.source.nodeId}"] .cnode__handle--${side}`
+    )
+    if (!handle) return null
+
+    const rect = handle.getBoundingClientRect()
+    const x1 = rect.left + rect.width / 2
+    const y1 = rect.top + rect.height / 2
+    const x2 = menu.screen.x
+    const y2 = menu.screen.y
+    const curve = Math.max(48, Math.abs(x2 - x1) * 0.4)
+
+    return `M ${x1} ${y1} C ${x1 + curve} ${y1}, ${x2 - curve} ${y2}, ${x2} ${y2}`
+  })()
+
   return (
-    <div
-      ref={ref}
-      className="add-menu"
-      style={style}
-      onPointerDown={(event) => event.stopPropagation()}
-    >
+    <>
+      {wire ? (
+        <svg className="add-menu__wire" aria-hidden="true">
+          <path d={wire} />
+        </svg>
+      ) : null}
+
+      <div
+        ref={ref}
+        className="add-menu"
+        style={style}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
       <div className="add-menu__title">
-        {menu.source ? '引用该节点生成' : '添加节点'}
+        {menu.source
+          ? sourceIsGroup
+            ? `引用组内 ${sourceChildren} 个节点`
+            : '引用该节点生成'
+          : '添加节点'}
       </div>
 
       <div className="add-menu__search">
@@ -162,6 +202,7 @@ export function AddNodeMenu() {
           </button>
         </>
       ) : null}
-    </div>
+      </div>
+    </>
   )
 }

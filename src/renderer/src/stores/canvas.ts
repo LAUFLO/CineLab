@@ -15,11 +15,17 @@ import {
   GROUP_GAP,
   GROUP_HEADER_HEIGHT,
   GROUP_PADDING,
+  GROUP_RATIO_VALUE,
   NODE_META,
+  STORYBOARD_CELL_WIDTH,
+  STORYBOARD_GAP,
+  STORYBOARD_MAX_NODES,
   TITLE_HEIGHT,
   type CineNodeData,
   type GroupColor,
+  type GroupMode,
   type GroupNodeData,
+  type GroupRatio,
   type NodeKind,
   type OutputRef
 } from '@shared/canvas-schema'
@@ -106,6 +112,13 @@ interface CanvasStore {
   removeSelection: () => number
   groupSelection: () => string | null
   mergeSelection: () => string | null
+  createStoryboard: () => string | null
+  arrangeStoryboard: (groupId: string) => void
+  setGroupMode: (groupId: string, mode: GroupMode) => void
+  setStoryboardGrid: (groupId: string, cols: number, rows: number) => void
+  setStoryboardRatio: (groupId: string, ratio: GroupRatio) => void
+  toggleStoryboardIndex: (groupId: string) => void
+  clearGroupChildren: (groupId: string) => number
   ungroup: (groupId: string) => void
   deleteGroupWithChildren: (groupId: string) => number
   renameGroup: (groupId: string, title: string) => void
@@ -183,7 +196,10 @@ function childrenOf(nodes: CanvasNode[], groupId: string): CanvasNode[] {
   return nodes.filter((node) => node.parentId === groupId)
 }
 
-function absolutePosition(node: CanvasNode, nodes: CanvasNode[]): XYPosition {
+export function absolutePosition(
+  node: CanvasNode,
+  nodes: CanvasNode[]
+): XYPosition {
   let x = node.position.x
   let y = node.position.y
   let parentId = node.parentId
@@ -916,6 +932,268 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
     set({ nodes })
     return groupId
+  },
+
+  createStoryboard: () => {
+    const all = get().nodes
+    const selected = all.filter((node) => node.selected)
+    const images = selected.filter(
+      (node) =>
+        !isGroupNode(node) && !node.parentId && node.data.kind === 'image'
+    )
+
+    if (
+      selected.length !== images.length ||
+      images.length < 2 ||
+      images.length > STORYBOARD_MAX_NODES
+    ) {
+      return null
+    }
+
+    get().pushHistory()
+
+    const ratio: GroupRatio = '16:9'
+    const count = images.length
+    const cols = count <= 3 ? count : Math.ceil(Math.sqrt(count))
+    const rows = Math.ceil(count / cols)
+    const cellHeight = Math.round(STORYBOARD_CELL_WIDTH / GROUP_RATIO_VALUE[ratio])
+    const nodeHeight = cellHeight + TITLE_HEIGHT
+
+    const minX = Math.min(...images.map((node) => node.position.x))
+    const minY = Math.min(...images.map((node) => node.position.y))
+    const groupX = minX - GROUP_PADDING
+    const groupY = minY - GROUP_HEADER_HEIGHT
+
+    const storyboardCount = all.filter(
+      (node) => isGroupNode(node) && node.data.mode === 'storyboard'
+    ).length
+    const groupId = nextId('group')
+
+    const group: GroupNode = {
+      id: groupId,
+      type: 'group',
+      position: { x: groupX, y: groupY },
+      data: {
+        title: `分镜组 ${storyboardCount + 1}`,
+        color: 'violet',
+        mode: 'storyboard',
+        ratio,
+        gridCols: cols,
+        gridRows: rows,
+        showIndex: true
+      },
+      style: {
+        width:
+          GROUP_PADDING * 2 +
+          cols * STORYBOARD_CELL_WIDTH +
+          (cols - 1) * STORYBOARD_GAP,
+        height:
+          GROUP_HEADER_HEIGHT +
+          GROUP_PADDING +
+          rows * nodeHeight +
+          (rows - 1) * STORYBOARD_GAP
+      },
+      selected: true,
+      zIndex: 0
+    }
+
+    const order = new Map(images.map((node, index) => [node.id, index]))
+    const ids = new Set(images.map((node) => node.id))
+
+    const nodes: CanvasNode[] = [
+      group,
+      ...all
+        .filter((node) => !ids.has(node.id))
+        .map((node) => ({ ...node, selected: false })),
+      ...images.map((node) => {
+        const index = order.get(node.id) as number
+        const col = index % cols
+        const row = Math.floor(index / cols)
+        return {
+          ...node,
+          parentId: groupId,
+          position: {
+            x: GROUP_PADDING + col * (STORYBOARD_CELL_WIDTH + STORYBOARD_GAP),
+            y: GROUP_HEADER_HEIGHT + row * (nodeHeight + STORYBOARD_GAP)
+          },
+          style: {
+            ...node.style,
+            width: STORYBOARD_CELL_WIDTH,
+            height: nodeHeight
+          },
+          zIndex: 1,
+          selected: false
+        }
+      })
+    ]
+
+    set({ nodes })
+    return groupId
+  },
+
+  arrangeStoryboard: (groupId) => {
+    const all = get().nodes
+    const group = all.find((node) => node.id === groupId)
+    if (!group || !isGroupNode(group)) return
+
+    const children = childrenOf(all, groupId)
+    if (children.length === 0) return
+
+    const ratio = group.data.ratio ?? '16:9'
+    const cols = Math.max(1, group.data.gridCols ?? 2)
+    const rows = Math.max(1, group.data.gridRows ?? Math.ceil(children.length / cols))
+    const cellHeight = Math.round(STORYBOARD_CELL_WIDTH / GROUP_RATIO_VALUE[ratio])
+    const nodeHeight = cellHeight + TITLE_HEIGHT
+
+    const positions = new Map<string, XYPosition>()
+    children.forEach((child, index) => {
+      const col = index % cols
+      const row = Math.floor(index / cols)
+      positions.set(child.id, {
+        x: GROUP_PADDING + col * (STORYBOARD_CELL_WIDTH + STORYBOARD_GAP),
+        y: GROUP_HEADER_HEIGHT + row * (nodeHeight + STORYBOARD_GAP)
+      })
+    })
+
+    const nodes = all.map((node) => {
+      if (node.id === groupId) {
+        return {
+          ...node,
+          style: {
+            ...node.style,
+            width:
+              GROUP_PADDING * 2 +
+              cols * STORYBOARD_CELL_WIDTH +
+              (cols - 1) * STORYBOARD_GAP,
+            height:
+              GROUP_HEADER_HEIGHT +
+              GROUP_PADDING +
+              rows * nodeHeight +
+              (rows - 1) * STORYBOARD_GAP
+          }
+        }
+      }
+
+      const position = positions.get(node.id)
+      if (!position) return node
+
+      return {
+        ...node,
+        position,
+        style: { ...node.style, width: STORYBOARD_CELL_WIDTH, height: nodeHeight }
+      }
+    })
+
+    set({ nodes })
+  },
+
+  setGroupMode: (groupId, mode) => {
+    const all = get().nodes
+    const group = all.find((node) => node.id === groupId)
+    if (!group || !isGroupNode(group)) return
+
+    get().pushHistory()
+
+    set({
+      nodes: all.map((node) =>
+        node.id === groupId && isGroupNode(node)
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                mode,
+                ratio: node.data.ratio ?? '16:9',
+                gridCols: node.data.gridCols ?? 2,
+                gridRows:
+                  node.data.gridRows ??
+                  Math.ceil(
+                    childrenOf(all, groupId).length /
+                      Math.max(1, node.data.gridCols ?? 2)
+                  ),
+                showIndex: node.data.showIndex ?? true
+              }
+            }
+          : node
+      )
+    })
+
+    if (mode === 'storyboard') get().arrangeStoryboard(groupId)
+  },
+
+  setStoryboardGrid: (groupId, cols, rows) => {
+    const all = get().nodes
+    const group = all.find((node) => node.id === groupId)
+    if (!group || !isGroupNode(group)) return
+
+    get().pushHistory()
+
+    set({
+      nodes: all.map((node) =>
+        node.id === groupId && isGroupNode(node)
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                gridCols: Math.min(10, Math.max(1, Math.round(cols))),
+                gridRows: Math.min(10, Math.max(1, Math.round(rows)))
+              }
+            }
+          : node
+      )
+    })
+
+    get().arrangeStoryboard(groupId)
+  },
+
+  setStoryboardRatio: (groupId, ratio) => {
+    const all = get().nodes
+    const group = all.find((node) => node.id === groupId)
+    if (!group || !isGroupNode(group)) return
+
+    get().pushHistory()
+
+    set({
+      nodes: all.map((node) =>
+        node.id === groupId && isGroupNode(node)
+          ? { ...node, data: { ...node.data, ratio } }
+          : node
+      )
+    })
+
+    get().arrangeStoryboard(groupId)
+  },
+
+  toggleStoryboardIndex: (groupId) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === groupId && isGroupNode(node)
+          ? {
+              ...node,
+              data: { ...node.data, showIndex: !node.data.showIndex }
+            }
+          : node
+      )
+    })
+  },
+
+  clearGroupChildren: (groupId) => {
+    const all = get().nodes
+    const group = all.find((node) => node.id === groupId)
+    if (!group || !isGroupNode(group)) return 0
+
+    const removed = new Set(childrenOf(all, groupId).map((node) => node.id))
+    if (removed.size === 0) return 0
+
+    get().pushHistory()
+
+    set({
+      nodes: all.filter((node) => !removed.has(node.id)),
+      edges: get().edges.filter(
+        (edge) => !removed.has(edge.source) && !removed.has(edge.target)
+      )
+    })
+
+    return removed.size
   },
 
   ungroup: (groupId) => {

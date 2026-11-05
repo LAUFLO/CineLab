@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import type { NodeProps } from '@xyflow/react'
+import {
+  Handle,
+  Position,
+  useReactFlow,
+  type NodeProps
+} from '@xyflow/react'
+import { Icon } from '../../components/Icon'
 import { useCanvasStore, type GroupNode } from '../../stores/canvas'
 import { useUIStore } from '../../stores/ui'
 
@@ -10,6 +16,23 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
   const renameGroup = useCanvasStore((state) => state.renameGroup)
   const renameId = useUIStore((state) => state.groupRenameId)
   const clearGroupRename = useUIStore((state) => state.clearGroupRename)
+  const openMenu = useUIStore((state) => state.openMenu)
+  const { screenToFlowPosition } = useReactFlow()
+
+  const openFromHandle = (event: React.MouseEvent): void => {
+    event.stopPropagation()
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    const center = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    }
+
+    openMenu({
+      screen: { x: rect.right + 10, y: rect.top - 6 },
+      flow: screenToFlowPosition(center),
+      source: { nodeId: id, handle: 'source' }
+    })
+  }
 
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(data.title)
@@ -41,8 +64,8 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
   return (
     <div
       className={`group-node group-node--${data.color} ${
-        selected ? 'is-selected' : ''
-      }`}
+        data.mode === 'storyboard' ? 'group-node--storyboard' : ''
+      } ${selected ? 'is-selected' : ''}`}
     >
       <div
         className="group-node__header"
@@ -70,6 +93,25 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
         )}
         <span className="group-node__count">{childCount} 个节点</span>
       </div>
+
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="cnode__handle cnode__handle--left"
+        title="接收上游连线"
+      >
+        <Icon name="plus" size={12} className="cnode__handle-icon" />
+      </Handle>
+
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="cnode__handle cnode__handle--right"
+        title="引用组内节点生成"
+        onClick={openFromHandle}
+      >
+        <Icon name="plus" size={12} className="cnode__handle-icon" />
+      </Handle>
     </div>
   )
 }

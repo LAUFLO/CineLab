@@ -10,6 +10,18 @@ export interface GridSplitResult {
   assets: GeneratedAsset[]
 }
 
+export interface StitchRequest {
+  paths: string[]
+  cols: number
+  rows: number
+  ratio: '16:9' | '9:16' | '1:1' | '4:3'
+  outputWidth?: number
+}
+
+export interface StitchResult {
+  asset: GeneratedAsset
+}
+
 export type FrameMode = 'first' | 'last' | 'current'
 
 export interface ExtractFrameRequest {

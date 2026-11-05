@@ -31,6 +31,8 @@ export interface CineNodeData extends Record<string, unknown> {
   progress?: number
   error?: string
   templates: string[]
+  /** 纯素材节点：由上传创建，不显示提示词输入框 */
+  assetOnly?: boolean
 }
 
 export type GroupColor =
@@ -71,9 +73,38 @@ export const GROUP_LABELS: Record<GroupColor, string> = {
   slate: '灰'
 }
 
+export type GroupMode = 'normal' | 'storyboard'
+
+export type GroupRatio = '16:9' | '9:16' | '1:1' | '4:3'
+
+export const GROUP_RATIOS: GroupRatio[] = ['16:9', '9:16', '1:1', '4:3']
+
+export const GROUP_RATIO_LABEL: Record<GroupRatio, string> = {
+  '16:9': '16:9',
+  '9:16': '9:16',
+  '1:1': '1:1',
+  '4:3': '4:3'
+}
+
+export const GROUP_RATIO_VALUE: Record<GroupRatio, number> = {
+  '16:9': 16 / 9,
+  '9:16': 9 / 16,
+  '1:1': 1,
+  '4:3': 4 / 3
+}
+
+export const STORYBOARD_MAX_NODES = 25
+export const STORYBOARD_CELL_WIDTH = 480
+export const STORYBOARD_GAP = 24
+
 export interface GroupNodeData extends Record<string, unknown> {
   title: string
   color: GroupColor
+  mode?: GroupMode
+  ratio?: GroupRatio
+  gridCols?: number
+  gridRows?: number
+  showIndex?: boolean
 }
 
 export const GROUP_HEADER_HEIGHT = 36

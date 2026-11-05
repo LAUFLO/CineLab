@@ -25,6 +25,33 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* 统一滚动条：颜色跟随主题，隐藏原生箭头 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  background-color: color-mix(in srgb, var(--text-3) 45%, transparent);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--text-2) 65%, transparent);
+}
+
+::-webkit-scrollbar-corner,
+::-webkit-scrollbar-button {
+  display: none;
+  background: transparent;
+}
+
 button {
   font: inherit;
   color: inherit;
@@ -633,6 +660,7 @@ body.is-exporting .react-flow__minimap {
 }
 
 .cnode__card {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -741,6 +769,67 @@ body.is-exporting .react-flow__minimap {
   height: 18px;
   margin: 0 4px;
   background: var(--divider);
+}
+
+.multi-bar__menu-wrap {
+  position: relative;
+}
+
+.multi-bar__pop {
+  position: absolute;
+  top: 46px;
+  left: 0;
+  min-width: 148px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-menu);
+  z-index: 95;
+}
+
+.multi-bar__pop-item {
+  display: block;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.multi-bar__pop-item:hover {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
+.cnode__index {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.group-node--storyboard {
+  border-style: dashed;
+  border-width: 1.5px;
+}
+
+.group-toolbar__btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.group-toolbar__pop-item.is-active {
+  background: var(--surface-hover);
+  color: var(--text-1);
 }
 
 /* 组节点容器：清掉 React Flow 默认的深色边框、背景和内边距 */
@@ -1215,7 +1304,9 @@ body.is-exporting .react-flow__minimap {
 }
 
 .cnode:hover .react-flow__handle.cnode__handle,
-.cnode.is-selected .react-flow__handle.cnode__handle {
+.cnode.is-selected .react-flow__handle.cnode__handle,
+.group-node:hover .react-flow__handle.cnode__handle,
+.group-node.is-selected .react-flow__handle.cnode__handle {
   opacity: 1;
 }
 
@@ -1276,6 +1367,63 @@ body.is-exporting .react-flow__minimap {
   border: 1px solid var(--border);
   box-shadow: var(--shadow-menu);
   animation: menu-in 120ms ease-out;
+}
+
+.add-menu__wire {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99;
+  pointer-events: none;
+}
+
+.add-menu__wire path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--link) 55%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.app-tooltip {
+  position: fixed;
+  z-index: 500;
+  transform: translate(-50%, -100%);
+  max-width: 360px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-float);
+  color: var(--text-1);
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: break-all;
+  pointer-events: none;
+}
+
+.app-tooltip.is-bottom {
+  transform: translate(-50%, 0);
+}
+
+.ref-preview {
+  position: fixed;
+  z-index: 400;
+  transform: translate(-50%, -100%);
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-menu);
+  pointer-events: none;
+}
+
+.ref-preview img {
+  display: block;
+  max-width: 320px;
+  max-height: 220px;
+  border-radius: 6px;
+  object-fit: contain;
 }
 
 @keyframes menu-in {
@@ -1478,6 +1626,41 @@ body.is-exporting .react-flow__minimap {
   color: var(--text-inverse);
 }
 
+.promptbar__upload-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.promptbar__upload-menu {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  min-width: 140px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-menu);
+  z-index: 20;
+}
+
+.promptbar__upload-item {
+  width: 100%;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.promptbar__upload-item:hover {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
 .promptbar__picked {
   display: flex;
   align-items: center;
@@ -1574,7 +1757,7 @@ body.is-picking .react-flow__node {
 }
 
 body.is-picking .react-flow__node:hover .cnode__card {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--pick-bar);
   outline-offset: 2px;
 }
 
@@ -1655,8 +1838,8 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .promptbar__send {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -1678,6 +1861,13 @@ body.is-picking .react-flow__node:hover .cnode__card {
 .promptbar__send.is-stop {
   background: var(--danger);
   color: #fff;
+}
+
+.promptbar__stop-icon {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: currentColor;
 }
 
 .promptbar__param-group {
@@ -2267,6 +2457,21 @@ body.is-picking .react-flow__node:hover .cnode__card {
 
 .field input:focus {
   border-color: var(--border-strong);
+}
+
+.manual-model {
+  display: flex;
+  gap: 8px;
+}
+
+.manual-model input {
+  flex: 1;
+  min-width: 0;
+}
+
+.manual-model .btn-small {
+  height: 34px;
+  padding: 0 16px;
 }
 
 .model-list {
@@ -3946,7 +4151,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .toolbar-switch.is-on {
-  background: var(--accent);
+  background: var(--pick-bar);
 }
 
 .toolbar-switch.is-on::after {
@@ -4169,7 +4374,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 
 .box-dialog__box {
   position: absolute;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--pick-bar);
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
   cursor: move;
 }
@@ -4179,7 +4384,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--pick-bar);
   background: var(--surface);
 }
 
@@ -4268,7 +4473,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 
 .sphere-editor__range input {
   width: 100%;
-  accent-color: var(--accent);
+  accent-color: var(--pick-bar);
 }
 
 .sphere-editor__chips {

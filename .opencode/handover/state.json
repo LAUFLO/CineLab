@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "project": "CineLab",
   "root": "D:\\CineLab",
   "updatedAt": "2026-11-05",
@@ -131,6 +131,12 @@
       "title": "分组节点：打组 / 合并分组 / 重命名 / 10 色 / 横竖网格排列 / 拖出脱离",
       "status": "pending",
       "note": "设计文档 docs/group-nodes.md 已完成，下一会话按该文档实现"
+    },
+    {
+      "id": "UI-1",
+      "title": "底部工具栏 P0+P1：添加入口、移动/抓手、快捷键面板、节点搜索、生成历史",
+      "status": "pending",
+      "note": "排在 GROUP-1 之后；资产库入口保留左下 StatusBar，不迁入底部中间工具栏"
     }
   ],
   "knownIssues": [

@@ -92,6 +92,33 @@ async function parseImageResponse(
   return outputs
 }
 
+function buildEditForm(
+  model: ModelDef,
+  prompt: string,
+  params: Record<string, unknown>,
+  refs: ReferenceImage[],
+  singleField: boolean
+): FormData | null {
+  const form = new FormData()
+  form.append('model', model.remoteModel)
+  form.append('prompt', prompt)
+  form.append('n', String(Number(params.n ?? 1)))
+  if (params.size) form.append('size', String(params.size))
+  if (params.quality) form.append('quality', String(params.quality))
+
+  let accepted = 0
+  for (let index = 0; index < refs.length; index += 1) {
+    const parsed = parseDataUrl(refs[index].dataUrl, index)
+    if (!parsed) continue
+    const field = singleField ? 'image' : refs.length === 1 ? 'image' : 'image[]'
+    form.append(field, parsed.blob, parsed.filename)
+    accepted += 1
+    if (singleField) break
+  }
+
+  return accepted > 0 ? form : null
+}
+
 export async function generateImage(
   model: ModelDef,
   provider: ProviderRuntime,
@@ -105,34 +132,43 @@ export async function generateImage(
 
   if (refs.length > 0) {
     ctx.onProgress(5, '提交图生图请求')
-    const form = new FormData()
-    form.append('model', model.remoteModel)
-    form.append('prompt', prompt)
-    form.append('n', String(Number(params.n ?? 1)))
-    if (params.size) form.append('size', String(params.size))
-    if (params.quality) form.append('quality', String(params.quality))
-
-    let accepted = 0
-    for (let index = 0; index < refs.length; index += 1) {
-      const parsed = parseDataUrl(refs[index].dataUrl, index)
-      if (!parsed) continue
-      const field = refs.length === 1 ? 'image' : 'image[]'
-      form.append(field, parsed.blob, parsed.filename)
-      accepted += 1
-    }
-
-    if (accepted === 0) {
+    const form = buildEditForm(model, prompt, params, refs, false)
+    if (!form) {
       throw new Error('参考图解析失败，无法发起图生图请求')
     }
 
-    const editResponse = await fetch(`${baseUrl}/images/edits`, {
+    let response = await fetch(`${baseUrl}/images/edits`, {
       method: 'POST',
       headers,
       body: form,
       signal: ctx.signal
     })
 
-    return parseImageResponse(editResponse, ctx)
+    if (!response.ok && refs.length > 1) {
+      const status = response.status
+      const text = await response.text().catch(() => '')
+      const imageFieldError =
+        (status === 400 || status === 422) && /image(\[\])?/i.test(text)
+
+      if (!imageFieldError) {
+        throw new Error(`HTTP ${status}: ${text.slice(0, 400)}`)
+      }
+
+      ctx.onProgress(15, '参考图字段不兼容，改用单图重试')
+      const fallback = buildEditForm(model, prompt, params, refs, true)
+      if (!fallback) {
+        throw new Error('参考图解析失败，无法重试图生图请求')
+      }
+
+      response = await fetch(`${baseUrl}/images/edits`, {
+        method: 'POST',
+        headers,
+        body: fallback,
+        signal: ctx.signal
+      })
+    }
+
+    return parseImageResponse(response, ctx)
   }
 
   const body: Record<string, unknown> = {

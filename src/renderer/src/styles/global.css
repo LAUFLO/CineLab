@@ -727,6 +727,33 @@ body.is-exporting .react-flow__minimap {
   background: var(--divider);
 }
 
+.alignment-guides {
+  position: fixed;
+  top: 40px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.alignment-guide {
+  position: absolute;
+  opacity: 0.85;
+}
+
+.alignment-guide--vertical {
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--link);
+}
+
+.alignment-guide--horizontal {
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--link);
+}
+
 .image-preview {
   position: fixed;
   inset: 0;

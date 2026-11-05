@@ -96,6 +96,7 @@ export function LibraryPanel() {
   const saveTemplate = useLibraryStore((state) => state.saveTemplate)
   const deleteTemplate = useLibraryStore((state) => state.deleteTemplate)
   const applyPrompt = useUIStore((state) => state.applyPrompt)
+  const showToast = useUIStore((state) => state.showToast)
 
   const [draft, setDraft] = useState<Draft | null>(null)
   const [templateDraft, setTemplateDraft] = useState<TemplateInput | null>(null)
@@ -144,6 +145,18 @@ export function LibraryPanel() {
     setTemplateMessage(null)
     applyPrompt(template.prompt)
     close()
+  }
+
+  const exportMaterial = async (id: string): Promise<void> => {
+    const material = materials.find((item) => item.id === id)
+    if (!material) return
+
+    const result = await window.api.export.asset(material.path, material.name)
+    if (result.ok) {
+      showToast(`已导出：${result.path ?? ''}`)
+    } else if (!result.canceled) {
+      showToast(result.error ?? '导出失败', 'error')
+    }
   }
 
   return (
@@ -384,6 +397,14 @@ export function LibraryPanel() {
                       }
                     >
                       <Icon name="plus" size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      title="导出素材"
+                      onClick={() => void exportMaterial(material.id)}
+                    >
+                      <Icon name="download" size={13} />
                     </button>
                     <button
                       type="button"

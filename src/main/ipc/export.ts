@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
-import { writeFile } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { copyFile, stat, writeFile } from 'node:fs/promises'
+import { basename, extname, join, resolve } from 'node:path'
 import type { ExportResult } from '../../shared/ipc-contract'
 import { getCurrentProjectRoot } from '../project/manager'
 import { zipDirectory } from '../export/zip'
@@ -79,6 +79,47 @@ export function registerExportIpc(): void {
 
       try {
         await writeFile(result.filePath, image.toPNG())
+        return { ok: true, path: result.filePath }
+      } catch (error) {
+        return { ok: false, error: errorMessage(error) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    'export:asset',
+    async (event, relPath: string, fileName: string): Promise<ExportResult> => {
+      const root = getCurrentProjectRoot()
+      if (!root) return { ok: false, error: '没有打开的项目' }
+
+      const rootPath = resolve(root)
+      const absolute = resolve(rootPath, relPath)
+      if (
+        !absolute.startsWith(`${rootPath}\\`) &&
+        !absolute.startsWith(`${rootPath}/`)
+      ) {
+        return { ok: false, error: '资源路径无效' }
+      }
+
+      try {
+        await stat(absolute)
+      } catch {
+        return { ok: false, error: '资源文件不存在' }
+      }
+
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const options = {
+        title: '导出素材',
+        defaultPath: join(app.getPath('documents'), `${safeName(fileName)}${extname(absolute)}`)
+      }
+      const result = win
+        ? await dialog.showSaveDialog(win, options)
+        : await dialog.showSaveDialog(options)
+
+      if (result.canceled || !result.filePath) return { ok: false, canceled: true }
+
+      try {
+        await copyFile(absolute, result.filePath)
         return { ok: true, path: result.filePath }
       } catch (error) {
         return { ok: false, error: errorMessage(error) }

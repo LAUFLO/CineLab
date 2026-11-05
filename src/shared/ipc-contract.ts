@@ -85,6 +85,7 @@ export interface ExportResult {
 export interface ExportApi {
   project(projectName: string): Promise<ExportResult>
   canvasPng(projectName: string, canvasName: string): Promise<ExportResult>
+  asset(relPath: string, fileName: string): Promise<ExportResult>
 }
 
 export interface CineApi {

@@ -15,6 +15,7 @@ const MIME: Record<string, string> = {
   '.mp4': 'video/mp4',
   '.webm': 'video/webm',
   '.mp3': 'audio/mpeg',
+  '.m4a': 'audio/mp4',
   '.wav': 'audio/wav',
   '.json': 'application/json',
   '.txt': 'text/plain'

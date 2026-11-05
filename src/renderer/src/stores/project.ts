@@ -236,3 +236,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   }
 }))
+if (import.meta.env.DEV) {
+  ;(window as unknown as { __projectStore?: typeof useProjectStore }).__projectStore =
+    useProjectStore
+}

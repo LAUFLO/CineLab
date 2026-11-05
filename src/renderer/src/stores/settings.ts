@@ -44,3 +44,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   openPanel: () => set({ panelOpen: true }),
   closePanel: () => set({ panelOpen: false })
 }))
+if (import.meta.env.DEV) {
+  ;(window as unknown as { __settingsStore?: typeof useSettingsStore }).__settingsStore =
+    useSettingsStore
+}

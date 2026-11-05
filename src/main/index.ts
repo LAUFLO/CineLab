@@ -3,8 +3,15 @@ import { registerIpc } from './ipc'
 import { registerAssetProtocol, registerAssetScheme } from './protocol'
 import { createMainWindow } from './window'
 
+if (process.env.CINELAB_USER_DATA) {
+  app.setPath('userData', process.env.CINELAB_USER_DATA)
+}
+
 if (!app.isPackaged) {
-  app.commandLine.appendSwitch('remote-debugging-port', '9222')
+  app.commandLine.appendSwitch(
+    'remote-debugging-port',
+    process.env.CINELAB_DEBUG_PORT ?? '9222'
+  )
 }
 
 registerAssetScheme()

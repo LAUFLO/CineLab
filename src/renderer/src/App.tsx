@@ -7,6 +7,7 @@ import { Toast } from './components/Toast'
 import { WindowControls } from './components/WindowControls'
 import { ConfirmDialog } from './panels/ConfirmDialog'
 import { LibraryPanel } from './panels/LibraryPanel'
+import { ToolbarSettings } from './canvas/nodes/ToolbarSettings'
 import { ProjectCenter } from './panels/ProjectCenter'
 import { SettingsPanel } from './panels/SettingsPanel'
 import { useCanvasStore } from './stores/canvas'
@@ -80,6 +81,7 @@ export default function App() {
         <StatusBar />
         <SettingsPanel />
         <LibraryPanel />
+        <ToolbarSettings />
         <ConfirmDialog />
         {error ? <div className="toast">{error}</div> : null}
       </div>

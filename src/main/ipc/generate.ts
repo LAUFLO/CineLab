@@ -120,7 +120,13 @@ export function registerGenerateIpc(): void {
     const isAudio = model.capability === 'audio.tts' || model.capability === 'audio.music'
     const isMusic = model.capability === 'audio.music'
     const isText = model.capability === 'text.chat'
-    const isAgnesVideo = /^agnes-video/i.test(model.remoteModel)
+    const adapter =
+      model.adapter ??
+      (/^agnes-video/i.test(model.remoteModel)
+        ? 'agnes-video'
+        : isVideo
+          ? 'volcengine-video'
+          : 'openai-compat')
 
     if (!isImage && !isVideo && !isAudio && !isText) {
       throw new Error('当前只支持图片、视频、文本和语音模型')
@@ -138,7 +144,7 @@ export function registerGenerateIpc(): void {
 
         const generate = (): Promise<ProviderOutput[]> =>
           isVideo
-            ? isAgnesVideo
+            ? adapter === 'agnes-video'
               ? generateVideoAgnes(
                   model,
                   { baseUrl: provider.baseUrl, apiKey: provider.apiKey },

@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "providers": [
+    {
+      "id": "agnes",
+      "name": "Agnes AI",
+      "type": "openai-compat",
+      "baseUrl": "https://api.agnes-ai.cn/v1",
+      "apiKeyEnv": "AGNES_API_KEY",
+      "models": [
+        {
+          "id": "agnes-image-2.5-flash",
+          "preset": "agnes-image-2.5-flash"
+        },
+        {
+          "id": "agnes-video-2.5-flash",
+          "preset": "agnes-video-2.5-flash"
+        }
+      ]
+    },
+    {
+      "id": "my-relay",
+      "name": "我的中转站",
+      "type": "openai-compat",
+      "baseUrl": "https://api.example.com/v1",
+      "apiKeyEnv": "MY_RELAY_KEY",
+      "models": [
+        {
+          "id": "gpt-image-1",
+          "preset": "gpt-image-1"
+        },
+        {
+          "id": "gpt-4o-mini",
+          "preset": "gpt-4o-mini"
+        },
+        {
+          "id": "tts-1",
+          "preset": "tts-1"
+        },
+        {
+          "id": "suno-music",
+          "preset": "suno-music"
+        }
+      ]
+    },
+    {
+      "id": "custom-image",
+      "name": "自定义图片服务",
+      "type": "openai-compat",
+      "adapter": "openai-compat",
+      "baseUrl": "https://api.example.com/v1",
+      "apiKeyEnv": "CUSTOM_IMAGE_KEY",
+      "models": [
+        {
+          "id": "my-image-v1",
+          "name": "My Image V1",
+          "capability": "image.t2i",
+          "remoteModel": "my-image-v1",
+          "params": [
+            {
+              "key": "size",
+              "label": "尺寸",
+              "type": "select",
+              "options": [
+                { "value": "1024x1024", "label": "1024×1024" },
+                { "value": "1536x1024", "label": "1536×1024" }
+              ],
+              "defaultValue": "1024x1024"
+            },
+            {
+              "key": "ratio",
+              "label": "比例",
+              "type": "select",
+              "options": [
+                { "value": "1:1", "label": "1:1" },
+                { "value": "16:9", "label": "16:9" }
+              ],
+              "defaultValue": "1:1"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

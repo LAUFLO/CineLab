@@ -11,3 +11,4 @@ data/
 .vite/
 *.tsbuildinfo
 *.cinelab/
+models.json

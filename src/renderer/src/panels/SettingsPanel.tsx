@@ -6,8 +6,10 @@ import {
   type ProviderConfig,
   type ProviderInput
 } from '@shared/provider-schema'
+import type { ModelsConfigStatus } from '@shared/models-file'
 import { Icon, type IconName } from '../components/Icon'
 import { useSettingsStore } from '../stores/settings'
+import { useUIStore } from '../stores/ui'
 
 type SectionId = 'models' | 'appearance' | 'shortcuts' | 'about'
 
@@ -49,13 +51,16 @@ function ModelsSection() {
   const save = useSettingsStore((state) => state.save)
   const remove = useSettingsStore((state) => state.remove)
   const test = useSettingsStore((state) => state.test)
+  const requestConfirm = useUIStore((state) => state.requestConfirm)
 
   const [draft, setDraft] = useState<ProviderInput | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  const [config, setConfig] = useState<ModelsConfigStatus | null>(null)
 
   useEffect(() => {
     void load()
+    void window.api.settings.modelsConfig().then(setConfig)
   }, [load])
 
   const updateField = <K extends keyof ProviderInput>(
@@ -119,12 +124,43 @@ function ModelsSection() {
     }
   }
 
-  const handleDelete = async (id: string): Promise<void> => {
-    setBusy(true)
+  const handleDelete = (id: string): void => {
+    const provider = providers.find((item) => item.id === id)
+    if (!provider) return
+
+    requestConfirm({
+      title: '删除供应商',
+      message: `确定删除「${provider.name}」吗？该供应商下的 ${provider.models.length} 个模型会一起移除，此操作不可撤销。`,
+      confirmLabel: '删除',
+      danger: true,
+      onConfirm: async () => {
+        setBusy(true)
+        try {
+          await remove(id)
+        } finally {
+          setBusy(false)
+        }
+      }
+    })
+  }
+
+  const handleOpenModelsFile = async (): Promise<void> => {
     try {
-      await remove(id)
-    } finally {
-      setBusy(false)
+      const file = await window.api.settings.openModelsFile()
+      setConfig(await window.api.settings.modelsConfig())
+      setMessage({ ok: true, text: `已打开 ${file}` })
+    } catch (error) {
+      setMessage({ ok: false, text: String(error) })
+    }
+  }
+
+  const handleReload = async (): Promise<void> => {
+    try {
+      await load()
+      setConfig(await window.api.settings.modelsConfig())
+      setMessage({ ok: true, text: '已重新加载模型配置' })
+    } catch (error) {
+      setMessage({ ok: false, text: String(error) })
     }
   }
 
@@ -240,34 +276,84 @@ function ModelsSection() {
 
   return (
     <div className="settings-section">
+      {config ? (
+        <div className="models-config">
+          <div className="models-config__head">
+            <div>
+              <div className="models-config__title">models.json</div>
+              <div
+                className="models-config__path"
+                title={config.activeFile ?? ''}
+              >
+                {config.activeFile ?? '未找到配置文件'}
+              </div>
+            </div>
+            <div className="models-config__actions">
+              <button
+                type="button"
+                className="btn-secondary btn-sm"
+                onClick={() => void handleReload()}
+              >
+                重新加载
+              </button>
+              <button
+                type="button"
+                className="btn-secondary btn-sm"
+                onClick={() => void handleOpenModelsFile()}
+              >
+                打开文件
+              </button>
+            </div>
+          </div>
+          <div className="models-config__meta">
+            {config.providerCount} 个 JSON 供应商 · {config.modelCount} 个模型
+          </div>
+          {config.errors.length > 0 ? (
+            <div className="models-config__errors">
+              {config.errors.map((error, index) => (
+                <div key={index}>{error}</div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="provider-list">
         {providers.map((provider) => (
           <div key={provider.id} className="provider-card">
             <div className="provider-card__main">
-              <div className="provider-card__name">{provider.name}</div>
+              <div className="provider-card__name">
+                {provider.name}
+                {provider.source === 'models' ? (
+                  <span className="provider-card__badge">models.json</span>
+                ) : null}
+              </div>
               <div className="provider-card__meta">{provider.baseUrl}</div>
               <div className="provider-card__meta">
                 {provider.models.length} 个模型 ·{' '}
                 {provider.hasKey ? 'Key 已保存' : '未设置 Key'}
+                {provider.source === 'models' ? ' · 只读' : ''}
               </div>
             </div>
-            <div className="provider-card__actions">
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={() => setDraft(toDraft(provider))}
-              >
-                <Icon name="settings" size={14} />
-              </button>
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={() => void handleDelete(provider.id)}
-                disabled={busy}
-              >
-                <Icon name="close" size={14} />
-              </button>
-            </div>
+            {provider.source !== 'models' ? (
+              <div className="provider-card__actions">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => setDraft(toDraft(provider))}
+                >
+                  <Icon name="settings" size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => handleDelete(provider.id)}
+                  disabled={busy}
+                >
+                  <Icon name="close" size={14} />
+                </button>
+              </div>
+            ) : null}
           </div>
         ))}
 
@@ -275,7 +361,7 @@ function ModelsSection() {
           <div className="provider-list__empty">
             还没有配置模型供应商。
             <br />
-            添加一个 OpenAI 兼容接口即可开始。
+            可以通过下方按钮添加，或直接编辑 models.json。
           </div>
         ) : null}
 

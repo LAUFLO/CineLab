@@ -23,6 +23,8 @@
 | 验证证据 | `.opencode/handover/evidence/` |
 | 界面规格 | `docs/ui-spec.md` |
 | 技术架构 | `docs/architecture.md` |
+| 模型配置 | `models.json`（仓库根或用户数据目录） |
+| 模型配置说明 | `docs/models.md` |
 
 ## 开发命令
 

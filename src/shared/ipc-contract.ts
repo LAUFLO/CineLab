@@ -73,6 +73,7 @@ export interface LibraryApi {
   pickCharacterImages(): Promise<string[]>
   listMaterials(): Promise<LibraryMaterial[]>
   importMaterials(): Promise<LibraryMaterial[]>
+  saveAssets(relPaths: string[]): Promise<LibraryMaterial[]>
   deleteMaterial(id: string): Promise<void>
   listTemplates(): Promise<PromptTemplate[]>
   saveTemplate(input: TemplateInput): Promise<PromptTemplate>
@@ -99,6 +100,7 @@ export interface ExportApi {
   project(projectName: string): Promise<ExportResult>
   canvasPng(projectName: string, canvasName: string): Promise<ExportResult>
   asset(relPath: string, fileName: string): Promise<ExportResult>
+  assets(relPaths: string[], fileName: string): Promise<ExportResult>
 }
 
 export interface CineApi {

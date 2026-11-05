@@ -18,6 +18,7 @@ import { AddNodeMenu } from './AddNodeMenu'
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { copySelection, pasteAt } from './context-actions'
 import { FlowEdge } from './edges/FlowEdge'
+import { MultiSelectBar } from './MultiSelectBar'
 import { CineNodeView } from './nodes/CineNodeView'
 import { PromptBar } from './PromptBar'
 
@@ -278,6 +279,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
       {nodes.length === 0 ? <EmptyState onCreate={createAtCenter} /> : null}
 
       <PromptBar />
+      <MultiSelectBar />
       <AddNodeMenu />
       <CanvasContextMenu />
     </>

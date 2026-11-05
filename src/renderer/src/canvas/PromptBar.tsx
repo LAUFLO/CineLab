@@ -82,7 +82,8 @@ export function PromptBar() {
   const [expanded, setExpanded] = useState(false)
   const suppressClickRef = useRef(false)
 
-  const node = nodes.find((item) => item.selected)
+  const selectedNodes = nodes.filter((item) => item.selected)
+  const node = selectedNodes.length === 1 ? selectedNodes[0] : undefined
   const kind: NodeKind = node?.data.kind ?? 'image'
   const runningMap = useGenerationStore((state) => state.running)
   const runningRunId = node ? runningMap[node.id] : undefined

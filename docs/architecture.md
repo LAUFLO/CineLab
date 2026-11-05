@@ -636,3 +636,35 @@ interface CineApi {
 | 画布组织 | 自由画布 | 分镜 / 场次 / 网格 | 用户明确选择完全复刻 LibTV |
 | 参数入口 | 仅 prompt bar | 节点内参数面板 | 节点保持干净，画布容纳更多内容 |
 | 缩略图 | Electron nativeImage + 浏览器 API | sharp / ffmpeg-static | 避免原生模块和 70MB 依赖 |
+
+---
+
+## 15. 全局资产库（2026-11）
+
+资产库不再跟随项目，统一存放在用户配置的全局目录，默认 `文档/CineLab Assets`，路径记录在 `userData/library.json`，可在设置 → 资产库中修改。
+
+```
+<全局库根>/
+├─ 角色/
+│  └─ 林小雨/
+│     ├─ 正面.png
+│     └─ 侧面.png
+├─ 场景/
+├─ 道具/
+├─ 风格/
+├─ 音频/
+└─ 提示词/
+   └─ 雪夜电影感.prompt.json
+```
+
+- 文件夹即分类，支持任意层级；首次启动自动创建上述 6 个默认文件夹。
+- 角色是「角色/<角色名>/」目录约定，PromptBar 角色菜单按目录扫描。
+- 提示词模板为 `.prompt.json`：`{ "version": 1, "kind": "image", "prompt": "..." }`，文件名即模板名。
+- 资产以磁盘为准，不维护索引；扫描时忽略 `.*`、`Thumbs.db`、`*.meta.json`、`*.prompt.json`。
+- 画布引用通过 `OutputRef.scope` 区分：`project` 相对项目根，`global` 相对库根。
+- 协议：`cinelab-asset://local/<项目相对路径>`、`cinelab-asset://global/<库相对路径>`。
+- 生成参考图按 scope 分别从项目根或库根读取。
+- 节点工具栏「入库」把当前选中输出复制到指定文件夹，文件名默认取节点标题，重名追加 ` (2)`。
+- 删除项目只删 `.cinelab` 文件夹，不影响全局资产库。
+
+限制：导出项目 zip 暂未打包 global 引用；旧项目内 `library/` 不再读取。

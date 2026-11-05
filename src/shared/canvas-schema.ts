@@ -1,3 +1,5 @@
+import type { AssetScope } from './asset-schema'
+
 export type NodeKind = 'text' | 'image' | 'video' | 'audio'
 
 export type NodeStatus = 'idle' | 'queued' | 'running' | 'done' | 'error'
@@ -5,6 +7,7 @@ export type NodeStatus = 'idle' | 'queued' | 'running' | 'done' | 'error'
 export interface OutputRef {
   id: string
   path: string
+  scope?: AssetScope
   kind: 'image' | 'video' | 'audio' | 'text'
   createdAt: string
   model: string

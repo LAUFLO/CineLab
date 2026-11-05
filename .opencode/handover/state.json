@@ -167,6 +167,21 @@
       "id": "K8",
       "area": "project",
       "content": "删除最后一个项目后停在欢迎页未端到端验证，需要真实删除唯一项目。"
+    },
+    {
+      "id": "K9",
+      "area": "library",
+      "content": "导出项目 zip 尚未打包全局资产引用，画布中的 global scope 路径换机器后会断图；二期需复制被引用资产进包并改写路径。"
+    },
+    {
+      "id": "K10",
+      "area": "library",
+      "content": "旧项目内 library/ 数据不再读取，未做迁移；当前无真实用户，暂不处理。"
+    },
+    {
+      "id": "K11",
+      "area": "library",
+      "content": "资产网格直接加载原图，未生成缩略图缓存；大库滚动可能卡顿。"
     }
   ],
   "gates": [],
@@ -467,6 +482,20 @@
       "evidence": [
         "src/renderer/src/styles/global.css"
       ]
+    },
+    {
+      "id": "T39",
+      "title": "全局资产库：全局根与路径配置、多级文件夹、节点一键入库、跨项目引用",
+      "evidence": [
+        ".opencode/handover/evidence/global-library.md"
+      ]
+    },
+    {
+      "id": "T40",
+      "title": "资产库居中大悬浮窗、全局提示词模板、文件夹树与资产网格",
+      "evidence": [
+        ".opencode/handover/evidence/global-library.md"
+      ]
     }
   ],
   "lessons": [
@@ -589,7 +618,7 @@
     "确认弹窗、全部项目浮窗使用应用内组件，与主题变量一致"
   ],
   "stats": {
-    "sessions": 6,
+    "sessions": 7,
     "completedMilestones": [
       "M0",
       "M1",

@@ -6,8 +6,8 @@ import { Icon, type IconName } from '../../components/Icon'
 import { useCanvasStore, type CineNode } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useUIStore } from '../../stores/ui'
-
-const ASSET_BASE = 'cinelab-asset://local'
+import { useLibraryStore } from '../../stores/library'
+import { assetUrl } from '../../lib/asset-url'
 
 const NODE_ICON: Record<NodeKind, IconName> = {
   text: 'text',
@@ -27,6 +27,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     (state) => state.nodes.filter((node) => node.selected).length > 1
   )
   const cancelGeneration = useGenerationStore((state) => state.cancel)
+  const openLibraryPicker = useLibraryStore((state) => state.openPicker)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -42,7 +43,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const currentIndex = selectedIndex >= 0 ? selectedIndex : 0
   const current = outputs[currentIndex] ?? null
 
-  const assetSrc = current ? `${ASSET_BASE}/${current.path}` : data.outputUrl
+  const assetSrc = current ? assetUrl(current.path, current.scope) : data.outputUrl
   const isBusy = data.status === 'queued' || data.status === 'running'
 
   const shiftVersion = (delta: number): void => {
@@ -120,6 +121,28 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             <Icon name="expand" size={14} />
             <span>展开</span>
           </button>
+          {current.kind !== 'text' ? (
+            <button
+              type="button"
+              className="cnode__toolbar-btn"
+              title={
+                current.scope === 'global'
+                  ? '已在资产库，可另存一份'
+                  : '加入资产库'
+              }
+              onClick={(event) => {
+                event.stopPropagation()
+                openLibraryPicker({
+                  sourcePath: current.path,
+                  scope: current.scope ?? 'project',
+                  name: data.title
+                })
+              }}
+            >
+              <Icon name="folder" size={14} />
+              <span>{current.scope === 'global' ? '已入库' : '入库'}</span>
+            </button>
+          ) : null}
         </div>
       ) : null}
 

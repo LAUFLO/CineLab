@@ -1,3 +1,5 @@
+import type { AssetScope } from './asset-schema'
+
 export type OutputKind = 'image' | 'video' | 'audio' | 'text'
 
 export type ReferenceRole = 'firstFrame' | 'lastFrame' | 'reference'
@@ -5,6 +7,8 @@ export type ReferenceRole = 'firstFrame' | 'lastFrame' | 'reference'
 export interface ReferenceInput {
   path: string
   role: ReferenceRole
+  /** 省略时按项目内相对路径解析 */
+  scope?: AssetScope
 }
 
 export interface GeneratedAsset {

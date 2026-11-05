@@ -33,6 +33,10 @@ export type IconName =
   | 'link'
   | 'magnet'
   | 'minimap'
+  | 'folder-plus'
+  | 'edit'
+  | 'trash'
+  | 'library'
 
 const paths: Record<IconName, ReactNode> = {
   logo: (
@@ -140,6 +144,30 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <path d="M6 4v8a6 6 0 0 0 12 0V4" />
       <path d="M6 9h4M14 9h4" />
+    </>
+  ),
+  'folder-plus': (
+    <>
+      <path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4l2 2h8A1.5 1.5 0 0 1 20.5 9v8A1.5 1.5 0 0 1 19 18.5H5A1.5 1.5 0 0 1 3.5 17z" />
+      <path d="M12 11v5M9.5 13.5h5" />
+    </>
+  ),
+  edit: (
+    <>
+      <path d="M4 20h4l10-10-4-4L4 16z" />
+      <path d="m14 6 4 4" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13" />
+      <path d="M10 11v5M14 11v5" />
+    </>
+  ),
+  library: (
+    <>
+      <path d="M4 5.5h4v14H4zM10 5.5h4v14h-4z" />
+      <path d="m16.5 6 3.2-1 2.3 13.5-3.2 1z" />
     </>
   ),
   minimap: (

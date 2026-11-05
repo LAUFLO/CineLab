@@ -18,9 +18,12 @@ export const cineNodeSchema = z.object({
         z.object({
           id: z.string(),
           path: z.string().max(500),
+          scope: z.enum(['project', 'global']).optional(),
           kind: z.enum(['image', 'video', 'audio', 'text']),
           createdAt: z.string(),
-          model: z.string().max(200)
+          model: z.string().max(200),
+          width: z.number().optional(),
+          height: z.number().optional()
         })
       )
       .max(100)

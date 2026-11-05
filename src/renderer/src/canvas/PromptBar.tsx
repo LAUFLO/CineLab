@@ -9,6 +9,7 @@ import { useGenerationStore } from '../stores/generation'
 import { useLibraryStore } from '../stores/library'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
+import { assetUrl } from '../lib/asset-url'
 
 const WIDTH = 760
 const HEIGHT = 132
@@ -58,8 +59,8 @@ export function PromptBar() {
   const openSettings = useSettingsStore((state) => state.openPanel)
   const openLibrary = useLibraryStore((state) => state.openPanel)
   const characters = useLibraryStore((state) => state.characters)
-  const materials = useLibraryStore((state) => state.materials)
-  const loadLibrary = useLibraryStore((state) => state.load)
+  const materials = useLibraryStore((state) => state.allAssets)
+  const loadLibrary = useLibraryStore((state) => state.refresh)
   const pendingPrompt = useUIStore((state) => state.pendingPrompt)
   const clearPendingPrompt = useUIStore((state) => state.clearPendingPrompt)
 
@@ -212,9 +213,19 @@ export function PromptBar() {
 
       onConnect({ source: sourceId, target: node.id })
       setPickedRefs((prev) =>
-        prev.some((ref) => ref.path === output.path)
+        prev.some(
+          (ref) =>
+            ref.path === output.path &&
+            (ref.scope ?? 'project') === (output.scope ?? 'project')
+        )
           ? prev
-          : [...prev, { path: output.path, role: 'reference' }]
+          : [
+              {
+                path: output.path,
+                role: 'reference',
+                scope: output.scope
+              }
+            ]
       )
     }
 
@@ -290,7 +301,7 @@ export function PromptBar() {
 
       const role: ReferenceRole =
         imageIndex === 0 ? 'firstFrame' : imageIndex === 1 ? 'lastFrame' : 'reference'
-      result.push({ path: output.path, role })
+      result.push({ path: output.path, role, scope: output.scope })
       imageIndex += 1
       if (imageIndex >= 3) break
     }
@@ -303,7 +314,8 @@ export function PromptBar() {
     if (!card) return []
     return card.referencePaths.map((path) => ({
       path,
-      role: 'reference' as const
+      role: 'reference' as const,
+      scope: 'global' as const
     }))
   })
   const autoRefs = (() => {
@@ -320,20 +332,24 @@ export function PromptBar() {
       const output =
         outputs.find((entry) => entry.id === item.data.selectedOutputId) ?? outputs[0]
       if (output?.kind === 'image') {
-        result.push({ path: output.path, role: 'reference' })
+        result.push({
+          path: output.path,
+          role: 'reference',
+          scope: output.scope
+        })
       }
     }
 
     for (const material of materials) {
       if (material.kind !== 'image') continue
       if (!text.includes(material.name)) continue
-      result.push({ path: material.path, role: 'reference' })
+      result.push({ path: material.path, role: 'reference', scope: 'global' })
     }
 
     for (const card of characters) {
       if (!text.includes(card.name)) continue
       for (const path of card.referencePaths) {
-        result.push({ path, role: 'reference' })
+        result.push({ path, role: 'reference', scope: 'global' })
       }
     }
 
@@ -344,8 +360,9 @@ export function PromptBar() {
     const seen = new Set<string>()
     const result: ReferenceInput[] = []
     for (const ref of [...pickedRefs, ...autoRefs, ...refs, ...characterRefs]) {
-      if (seen.has(ref.path)) continue
-      seen.add(ref.path)
+      const key = `${ref.scope ?? 'project'}:${ref.path}`
+      if (seen.has(key)) continue
+      seen.add(key)
       result.push(ref)
       if (result.length >= 4) break
     }
@@ -355,8 +372,16 @@ export function PromptBar() {
   const isRunning = Boolean(runningRunId)
   const canSend = Boolean(active) && promptText.trim().length > 0 && !isRunning
 
-  const removeRef = (path: string): void => {
-    setPickedRefs((prev) => prev.filter((item) => item.path !== path))
+  const removeRef = (ref: ReferenceInput): void => {
+    setPickedRefs((prev) =>
+      prev.filter(
+        (item) =>
+          !(
+            item.path === ref.path &&
+            (item.scope ?? 'project') === (ref.scope ?? 'project')
+          )
+      )
+    )
 
     const linked = edges.filter((edge) => {
       if (edge.target !== node.id) return false
@@ -364,14 +389,18 @@ export function PromptBar() {
       const outputs = source?.data.outputs ?? []
       const output =
         outputs.find((item) => item.id === source?.data.selectedOutputId) ?? outputs[0]
-      return output?.path === path
+      return (
+        output?.path === ref.path &&
+        (output?.scope ?? 'project') === (ref.scope ?? 'project')
+      )
     })
     if (linked.length > 0) {
       onEdgesChange(linked.map((edge) => ({ type: 'remove' as const, id: edge.id })))
     }
 
     const character = characters.find(
-      (card) => characterIds.includes(card.id) && card.referencePaths.includes(path)
+      (card) =>
+      characterIds.includes(card.id) && card.referencePaths.includes(ref.path)
     )
     if (character) {
       setCharacterIds((prev) => prev.filter((id) => id !== character.id))
@@ -423,7 +452,7 @@ export function PromptBar() {
         <button
           type="button"
           className="promptbar__tool"
-          onClick={() => openLibrary('materials')}
+          onClick={() => openLibrary('场景')}
         >
           <Icon name="plus" size={13} />
           上传
@@ -443,7 +472,7 @@ export function PromptBar() {
           <button
             type="button"
             className="promptbar__tool"
-            onClick={() => openLibrary('characters')}
+            onClick={() => openLibrary('角色')}
           >
             <Icon name="text" size={13} />
             角色库
@@ -462,9 +491,9 @@ export function PromptBar() {
                 type="button"
                 className="promptbar__picked-item"
                 title={`${ref.path}（点击移除）`}
-                onClick={() => removeRef(ref.path)}
+                onClick={() => removeRef(ref)}
               >
-                <img src={`cinelab-asset://local/${ref.path}`} alt="" />
+                <img src={assetUrl(ref.path, ref.scope)} alt="" />
                 <Icon name="close" size={10} />
               </button>
             ))}

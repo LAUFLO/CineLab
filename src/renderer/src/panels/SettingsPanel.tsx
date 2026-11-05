@@ -9,9 +9,10 @@ import {
 import type { ModelsConfigStatus } from '@shared/models-file'
 import { Icon, type IconName } from '../components/Icon'
 import { useSettingsStore } from '../stores/settings'
+import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
 
-type SectionId = 'models' | 'appearance' | 'shortcuts' | 'about'
+type SectionId = 'models' | 'library' | 'appearance' | 'shortcuts' | 'about'
 
 interface SectionDef {
   id: SectionId
@@ -21,6 +22,7 @@ interface SectionDef {
 
 const SECTIONS: SectionDef[] = [
   { id: 'models', label: '模型服务', icon: 'settings' },
+  { id: 'library', label: '资产库', icon: 'library' },
   { id: 'appearance', label: '外观', icon: 'sun' },
   { id: 'shortcuts', label: '快捷键', icon: 'help' },
   { id: 'about', label: '关于', icon: 'logo' }
@@ -440,6 +442,62 @@ function ModelsSection() {
   )
 }
 
+function LibrarySection() {
+  const root = useLibraryStore((state) => state.root)
+  const isDefault = useLibraryStore((state) => state.isDefault)
+  const chooseRoot = useLibraryStore((state) => state.chooseRoot)
+  const resetRoot = useLibraryStore((state) => state.resetRoot)
+  const revealRoot = useLibraryStore((state) => state.revealRoot)
+  const refresh = useLibraryStore((state) => state.refresh)
+
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  return (
+    <div className="settings-section">
+      <div className="settings-group-title">全局资产库</div>
+      <p className="settings-hint">
+        所有项目共用这个文件夹。删除项目不会删除资产库，图片、视频和提示词模板都可以跨项目使用。
+        建议选择空目录，应用会自动创建「角色 / 场景 / 道具 / 风格 / 音频 / 提示词」。
+      </p>
+
+      <div className="library-root-card">
+        <code>{root || '加载中…'}</code>
+      </div>
+
+      <div className="settings-actions">
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => void chooseRoot()}
+        >
+          选择文件夹
+        </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => void revealRoot()}
+        >
+          打开目录
+        </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => void resetRoot()}
+          disabled={isDefault}
+        >
+          恢复默认
+        </button>
+      </div>
+
+      <p className="settings-hint">
+        默认路径是「文档 / CineLab Assets」。可以直接在资源管理器里整理文件夹和文件，应用以磁盘内容为准。
+      </p>
+    </div>
+  )
+}
+
 function AppearanceSection() {
   const [mode, setMode] = useState<'light' | 'dark' | 'system'>(() => {
     const saved = localStorage.getItem('cinelab.theme.v1')
@@ -572,6 +630,7 @@ export function SettingsPanel() {
 
           <div className="settings-content">
             {active === 'models' ? <ModelsSection /> : null}
+            {active === 'library' ? <LibrarySection /> : null}
             {active === 'appearance' ? <AppearanceSection /> : null}
             {active === 'shortcuts' ? (
               <PlaceholderSection

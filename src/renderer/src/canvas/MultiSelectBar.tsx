@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useState } from 'react'
+import type { SaveAssetInput } from '@shared/library-schema'
 import { Icon } from '../components/Icon'
 import { useCanvasStore } from '../stores/canvas'
 import { useLibraryStore } from '../stores/library'
@@ -54,18 +55,27 @@ export function MultiSelectBar() {
 
   if (selected.length < 2 || !position) return null
 
-  const paths = (): string[] => {
-    const unique = new Set<string>()
+  const paths = (): SaveAssetInput[] => {
+    const unique = new Map<string, SaveAssetInput>()
 
     for (const node of selected) {
       const outputs = node.data.outputs ?? []
       const current =
         outputs.find((item) => item.id === node.data.selectedOutputId) ??
         outputs[0]
-      if (current?.path) unique.add(current.path)
+      if (!current?.path) continue
+
+      const key = `${current.scope ?? 'project'}:${current.path}`
+      if (!unique.has(key)) {
+        unique.set(key, {
+          path: current.path,
+          scope: current.scope,
+          name: node.data.title
+        })
+      }
     }
 
-    return [...unique]
+    return [...unique.values()]
   }
 
   const saveToLibrary = async (): Promise<void> => {
@@ -76,9 +86,9 @@ export function MultiSelectBar() {
     }
 
     try {
-      const materials = await window.api.library.saveAssets(list)
-      await useLibraryStore.getState().load()
-      showToast(`已保存 ${materials.length} 个素材到资产库`)
+      const saved = await window.api.library.saveAssets(list)
+      await useLibraryStore.getState().refresh()
+      showToast(`已保存 ${saved.length} 个素材到资产库（场景）`)
     } catch (error) {
       showToast(error instanceof Error ? error.message : String(error), 'error')
     }

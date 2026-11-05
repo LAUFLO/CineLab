@@ -1,0 +1,190 @@
+import { useEffect, useState } from 'react'
+import type { LibraryFolderNode } from '@shared/library-schema'
+import { DEFAULT_LIBRARY_FOLDERS } from '@shared/library-schema'
+import { Icon } from '../../components/Icon'
+
+interface FolderTreeProps {
+  tree: LibraryFolderNode[]
+  current: string
+  onSelect: (path: string) => void
+  onCreate: (parent: string) => void
+  onRename: (node: LibraryFolderNode) => void
+  onDelete: (node: LibraryFolderNode) => void
+}
+
+function isDefaultFolder(node: LibraryFolderNode): boolean {
+  return (
+    !node.path.includes('/') &&
+    (DEFAULT_LIBRARY_FOLDERS as readonly string[]).includes(node.path)
+  )
+}
+
+interface TreeRowProps extends FolderTreeProps {
+  node: LibraryFolderNode
+  depth: number
+  expanded: Set<string>
+  toggle: (path: string) => void
+}
+
+function TreeRow({
+  node,
+  depth,
+  expanded,
+  toggle,
+  current,
+  onSelect,
+  onCreate,
+  onRename,
+  onDelete
+}: TreeRowProps) {
+  const open = expanded.has(node.path)
+  const hasChildren = node.children.length > 0
+  const fixed = isDefaultFolder(node)
+
+  return (
+    <div className="library-tree__node">
+      <div
+        className={`library-tree__row ${current === node.path ? 'is-active' : ''}`}
+        style={{ paddingLeft: `${8 + depth * 14}px` }}
+      >
+        <button
+          type="button"
+          className="library-tree__toggle"
+          onClick={() => toggle(node.path)}
+          aria-label={open ? '折叠' : '展开'}
+        >
+          {hasChildren ? (
+            <Icon name={open ? 'chevron-down' : 'chevron-right'} size={11} />
+          ) : (
+            <span className="library-tree__dot" />
+          )}
+        </button>
+
+        <button
+          type="button"
+          className="library-tree__label"
+          onClick={() => onSelect(node.path)}
+          onDoubleClick={() => toggle(node.path)}
+        >
+          <Icon name="folder" size={14} />
+          <span className="library-tree__name">{node.name}</span>
+          {node.assetCount > 0 ? (
+            <span className="library-tree__count">{node.assetCount}</span>
+          ) : null}
+        </button>
+
+        <div className="library-tree__actions">
+          <button
+            type="button"
+            title="新建子文件夹"
+            onClick={() => onCreate(node.path)}
+          >
+            <Icon name="folder-plus" size={13} />
+          </button>
+          {fixed ? null : (
+            <>
+              <button
+                type="button"
+                title="重命名"
+                onClick={() => onRename(node)}
+              >
+                <Icon name="edit" size={13} />
+              </button>
+              <button
+                type="button"
+                title="删除空文件夹"
+                onClick={() => onDelete(node)}
+              >
+                <Icon name="trash" size={13} />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {open
+        ? node.children.map((child) => (
+            <TreeRow
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              expanded={expanded}
+              toggle={toggle}
+              current={current}
+              onSelect={onSelect}
+              onCreate={onCreate}
+              onRename={onRename}
+              onDelete={onDelete}
+              tree={[]}
+            />
+          ))
+        : null}
+    </div>
+  )
+}
+
+export function FolderTree(props: FolderTreeProps) {
+  const { tree, current, onSelect, onCreate } = props
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!current) return
+    const parts = current.split('/')
+    const ancestors = parts.map((_, index) => parts.slice(0, index + 1).join('/'))
+    setExpanded((previous) => {
+      const next = new Set(previous)
+      for (const path of ancestors) next.add(path)
+      return next
+    })
+  }, [current])
+
+  const toggle = (path: string): void => {
+    setExpanded((previous) => {
+      const next = new Set(previous)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
+      return next
+    })
+  }
+
+  return (
+    <div className="library-tree">
+      <div className={`library-tree__row ${current === '' ? 'is-active' : ''}`}>
+        <span className="library-tree__toggle">
+          <span className="library-tree__dot" />
+        </span>
+        <button
+          type="button"
+          className="library-tree__label"
+          onClick={() => onSelect('')}
+        >
+          <Icon name="grid" size={13} />
+          <span className="library-tree__name">全部素材</span>
+        </button>
+        <div className="library-tree__actions">
+          <button type="button" title="新建文件夹" onClick={() => onCreate('')}>
+            <Icon name="folder-plus" size={13} />
+          </button>
+        </div>
+      </div>
+
+      <div className="library-tree__children">
+        {tree.map((node) => (
+          <TreeRow
+            key={node.path}
+            node={node}
+            depth={0}
+            expanded={expanded}
+            toggle={toggle}
+            tree={tree}
+            current={current}
+            onSelect={onSelect}
+            onCreate={onCreate}
+            onRename={props.onRename}
+            onDelete={props.onDelete}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}

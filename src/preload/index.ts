@@ -6,7 +6,12 @@ import type {
   ProviderInput
 } from '../shared/provider-schema'
 import type { GenerateRequest, GenerationEvent } from '../shared/generation'
-import type { CharacterInput, TemplateInput } from '../shared/library-schema'
+import type { AssetRef } from '../shared/asset-schema'
+import type {
+  AddToLibraryInput,
+  SaveAssetInput,
+  TemplateInput
+} from '../shared/library-schema'
 
 const api: CineApi = {
   app: {
@@ -67,19 +72,35 @@ const api: CineApi = {
     }
   },
   library: {
+    root: () => ipcRenderer.invoke('library:root'),
+    chooseRoot: () => ipcRenderer.invoke('library:choose-root'),
+    resetRoot: () => ipcRenderer.invoke('library:reset-root'),
+    revealRoot: () => ipcRenderer.invoke('library:reveal-root'),
+
+    tree: () => ipcRenderer.invoke('library:tree'),
+    listAssets: (folder: string) =>
+      ipcRenderer.invoke('library:list-assets', folder),
+    listAllAssets: () => ipcRenderer.invoke('library:list-all-assets'),
+    createFolder: (parent: string, name: string) =>
+      ipcRenderer.invoke('library:create-folder', parent, name),
+    renameFolder: (path: string, name: string) =>
+      ipcRenderer.invoke('library:rename-folder', path, name),
+    deleteFolder: (path: string) =>
+      ipcRenderer.invoke('library:delete-folder', path),
+
+    importAssets: (folder: string) =>
+      ipcRenderer.invoke('library:import-assets', folder),
+    addAsset: (input: AddToLibraryInput) =>
+      ipcRenderer.invoke('library:add-asset', input),
+    renameAsset: (path: string, name: string) =>
+      ipcRenderer.invoke('library:rename-asset', path, name),
+    deleteAsset: (path: string) =>
+      ipcRenderer.invoke('library:delete-asset', path),
+    reveal: (path: string) => ipcRenderer.invoke('library:reveal', path),
+
     listCharacters: () => ipcRenderer.invoke('library:list-characters'),
-    saveCharacter: (input: CharacterInput) =>
-      ipcRenderer.invoke('library:save-character', input),
-    deleteCharacter: (id: string) =>
-      ipcRenderer.invoke('library:delete-character', id),
-    pickCharacterImages: () => ipcRenderer.invoke('library:pick-character-images'),
-    listMaterials: () => ipcRenderer.invoke('library:list-materials'),
-    importMaterials: () => ipcRenderer.invoke('library:import-materials'),
-    saveAssets: (relPaths: string[]) =>
-      ipcRenderer.invoke('library:save-assets', relPaths),
-    deleteMaterial: (id: string) =>
-      ipcRenderer.invoke('library:delete-material', id),
-    listTemplates: () => ipcRenderer.invoke('library:list-templates'),
+    saveAssets: (inputs: SaveAssetInput[], folder?: string) =>
+      ipcRenderer.invoke('library:save-assets', inputs, folder),    listTemplates: () => ipcRenderer.invoke('library:list-templates'),
     saveTemplate: (input: TemplateInput) =>
       ipcRenderer.invoke('library:save-template', input),
     deleteTemplate: (id: string) =>
@@ -90,11 +111,10 @@ const api: CineApi = {
       ipcRenderer.invoke('export:project', projectName),
     canvasPng: (projectName: string, canvasName: string) =>
       ipcRenderer.invoke('export:canvas-png', projectName, canvasName),
-    asset: (relPath: string, fileName: string) =>
-      ipcRenderer.invoke('export:asset', relPath, fileName),
-    assets: (relPaths: string[], fileName: string) =>
-      ipcRenderer.invoke('export:assets', relPaths, fileName)
-  },
+    asset: (relPath: string, fileName: string, scope?: 'project' | 'global') =>
+      ipcRenderer.invoke('export:asset', relPath, fileName, scope),
+    assets: (inputs: AssetRef[], fileName: string) =>
+      ipcRenderer.invoke('export:assets', inputs, fileName)  },
   clipboard: {
     read: () => ipcRenderer.invoke('clipboard:read')
   }

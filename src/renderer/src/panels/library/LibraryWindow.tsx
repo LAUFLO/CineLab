@@ -75,7 +75,7 @@ export function LibraryWindow() {
   const templates = useLibraryStore((state) => state.templates)
   const loading = useLibraryStore((state) => state.loading)
   const error = useLibraryStore((state) => state.error)
-  const pendingAdd = useLibraryStore((state) => state.pendingAdd)
+  const pendingAdds = useLibraryStore((state) => state.pendingAdds)
   const close = useLibraryStore((state) => state.closePanel)
   const setFolder = useLibraryStore((state) => state.setFolder)
   const createFolder = useLibraryStore((state) => state.createFolder)
@@ -195,8 +195,12 @@ export function LibraryWindow() {
       return
     }
 
-    void confirmAdd(folder).then((asset) => {
-      if (asset) showToast(`已加入资产库：${asset.path}`)
+    void confirmAdd(folder).then((saved) => {
+      if (saved.length === 1) {
+        showToast(`已加入资产库：${saved[0].path}`)
+      } else if (saved.length > 1) {
+        showToast(`已加入 ${saved.length} 个素材到资产库`)
+      }
     })
   }
 
@@ -210,8 +214,13 @@ export function LibraryWindow() {
           <div className="library-window__title">
             <Icon name="library" size={16} />
             <span>{mode === 'pick' ? '选择要加入的文件夹' : '资产库'}</span>
-            {mode === 'pick' && pendingAdd ? (
-              <span className="library-window__subject">· {pendingAdd.name}</span>
+            {mode === 'pick' && pendingAdds.length > 0 ? (
+              <span className="library-window__subject">
+                ·{' '}
+                {pendingAdds.length === 1
+                  ? pendingAdds[0].name
+                  : `${pendingAdds.length} 个素材`}
+              </span>
             ) : null}
           </div>
 
@@ -336,7 +345,7 @@ export function LibraryWindow() {
                   type="button"
                   className="btn-primary"
                   onClick={handleConfirmAdd}
-                  disabled={!folder || !pendingAdd}
+                  disabled={!folder || pendingAdds.length === 0}
                 >
                   加入到这里
                 </button>

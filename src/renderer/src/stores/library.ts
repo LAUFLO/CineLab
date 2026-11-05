@@ -28,10 +28,10 @@ interface LibraryState {
   templates: PromptTemplate[]
   loading: boolean
   error: string | null
-  pendingAdd: PendingAdd | null
+  pendingAdds: PendingAdd[]
 
   openPanel: (folder?: string) => void
-  openPicker: (pending: PendingAdd) => void
+  openPicker: (pending: PendingAdd | PendingAdd[]) => void
   closePanel: () => void
   setFolder: (folder: string) => Promise<void>
   refresh: () => Promise<void>
@@ -41,7 +41,7 @@ interface LibraryState {
   renameFolder: (path: string, name: string) => Promise<void>
   deleteFolder: (path: string) => Promise<void>
   importAssets: () => Promise<LibraryAsset[]>
-  confirmAdd: (folder: string) => Promise<LibraryAsset | null>
+  confirmAdd: (folder: string) => Promise<LibraryAsset[]>
   renameAsset: (path: string, name: string) => Promise<void>
   deleteAsset: (path: string) => Promise<void>
   reveal: (path: string) => Promise<void>
@@ -95,28 +95,29 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
     templates: [],
     loading: false,
     error: null,
-    pendingAdd: null,
+    pendingAdds: [],
 
     openPanel: (folder) => {
       const target = folder ?? get().folder
-      set({ panelOpen: true, mode: 'browse', pendingAdd: null, error: null })
+      set({ panelOpen: true, mode: 'browse', pendingAdds: [], error: null })
       void get()
         .refresh()
         .then(() => get().setFolder(target))
     },
 
     openPicker: (pending) => {
+      const pendingAdds = Array.isArray(pending) ? pending : [pending]
       set({
         panelOpen: true,
         mode: 'pick',
-        pendingAdd: pending,
+        pendingAdds,
         folder: '',
         error: null
       })
       void get().refresh()
     },
 
-    closePanel: () => set({ panelOpen: false, pendingAdd: null, error: null }),
+    closePanel: () => set({ panelOpen: false, pendingAdds: [], error: null }),
 
     setFolder: async (folder) => {
       set({ loading: true })
@@ -222,18 +223,26 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
     },
 
     confirmAdd: async (folder) => {
-      const pending = get().pendingAdd
-      if (!pending) return null
+      const pending = get().pendingAdds
+      if (pending.length === 0) return []
 
       try {
-        const asset = await window.api.library.addAsset({ ...pending, folder })
+        const saved = await window.api.library.saveAssets(
+          pending.map((item) => ({
+            path: item.sourcePath,
+            scope: item.scope,
+            name: item.name
+          })),
+          folder
+        )
+
         await Promise.all([loadTree(), loadCharacters()])
         if (get().folder === folder) await loadFolder(folder)
-        set({ error: null, pendingAdd: null, panelOpen: false })
-        return asset
+        set({ error: null, pendingAdds: [], panelOpen: false })
+        return saved
       } catch (error) {
         set({ error: messageOf(error) })
-        return null
+        return []
       }
     },
 

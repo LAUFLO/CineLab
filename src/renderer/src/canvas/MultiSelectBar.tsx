@@ -78,20 +78,20 @@ export function MultiSelectBar() {
     return [...unique.values()]
   }
 
-  const saveToLibrary = async (): Promise<void> => {
+  const saveToLibrary = (): void => {
     const list = paths()
     if (list.length === 0) {
       showToast('选中节点没有可保存的素材', 'error')
       return
     }
 
-    try {
-      const saved = await window.api.library.saveAssets(list)
-      await useLibraryStore.getState().refresh()
-      showToast(`已保存 ${saved.length} 个素材到资产库（场景）`)
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : String(error), 'error')
-    }
+    useLibraryStore.getState().openPicker(
+      list.map((item) => ({
+        sourcePath: item.path,
+        scope: item.scope ?? 'project',
+        name: item.name ?? '素材'
+      }))
+    )
   }
 
   const duplicate = (): void => {

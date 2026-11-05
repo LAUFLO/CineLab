@@ -52,7 +52,7 @@ D:\CineLab
 | M3 | ⚠️ 部分完成 | 火山方舟视频、首尾帧已通；可灵 JWT 待接 |
 | M4 | ✅ 完成 | TTS、资产库（角色/素材/模板/一致性） |
 | M5 | ✅ 已完成免安装版 | 绿色版与 zip 可用；安装包已从计划移除 |
-| M6 | ✅ 完成 | 导出（项目 zip / 画布 PNG / 选中素材）、画布参考；图片标记取消 |
+| M6 | ✅ 完成 | 导出、画布参考、节点比例与工具栏、智能引用、AI 水印开关；图片标记取消 |
 
 ## 已完成的关键工件
 
@@ -67,12 +67,12 @@ D:\CineLab
 - `src/main/providers/openai-compat.ts`：文生图/图生图、TTS、文本生成
 - `src/main/providers/volcengine.ts`：火山方舟视频异步轮询
 - `src/main/engine/queue.ts`：并发 2 任务队列、取消、进度事件
-- `src/main/assets/ingest.ts`：SHA-256 去重、缩略图、资产落盘
+- `src/main/assets/ingest.ts`：SHA-256 去重、缩略图、资产落盘、输出宽高记录
 - `src/main/protocol.ts`：`cinelab-asset://` 本地资产协议（支持 Range）
 - `src/renderer/src/stores/project.ts`：项目状态与 600ms 防抖自动保存
-- `src/renderer/src/canvas/nodes/CineNodeView.tsx`：节点统一外壳与版本栈
+- `src/renderer/src/canvas/nodes/CineNodeView.tsx`：节点统一外壳、版本栈、选中工具栏、图片浮窗
 - `src/renderer/src/canvas/AddNodeMenu.tsx`：「引用该节点生成」菜单
-- `src/renderer/src/canvas/PromptBar.tsx`：三行 prompt bar（工具/输入/参数/角色）
+- `src/renderer/src/canvas/PromptBar.tsx`：三行 prompt bar、画布参考、智能引用、比例网格、展开编辑
 - `src/main/library/store.ts`：角色卡、素材、模板存储与去重
 - `src/renderer/src/panels/LibraryPanel.tsx`：资产库面板（角色 / 素材 / 模板）
 - `src/renderer/src/panels/ProjectCenter.tsx`：无项目启动页、最近项目
@@ -90,6 +90,8 @@ D:\CineLab
 4. 弹窗与 topbar 平级，禁止渲染在 topbar 内部
 5. 主题切换只换 CSS 变量
 6. 有最近项目直接进画布；无项目进入项目中心，不自动创建
+7. 节点按输出实际比例显示，工具栏随节点选中出现
+8. prompt bar 参数选择用下拉/网格，可展开为居中编辑浮窗
 
 ## 环境注意
 

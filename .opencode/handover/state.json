@@ -1,13 +1,13 @@
 {
-  "version": 3,
+  "version": 4,
   "project": "CineLab",
   "root": "D:\\CineLab",
   "updatedAt": "2026-11-05",
   "phase": "M6",
   "phaseStatus": "completed",
-  "phaseGoal": "收尾完成：导出、画布参考已落地；图片标记按用户要求取消；AI 助手延后单独做",
+  "phaseGoal": "收尾完成：导出、画布参考、节点比例与交互打磨已落地；图片标记取消；AI 助手延后",
   "nextPhase": "待定",
-  "next_focus": null,
+  "next_focus": "K3 音频音乐生成：接入 audio.music 执行器",
   "frontier": [
     {
       "id": "M2-1",
@@ -119,6 +119,12 @@
       "title": "Agent 与画布协作",
       "status": "pending",
       "note": "用户明确延后，等 K5 完成后再单独设计"
+    },
+    {
+      "id": "K3-1",
+      "title": "音频音乐生成：接入 audio.music 执行器",
+      "status": "pending",
+      "note": "下一会话焦点"
     }
   ],
   "knownIssues": [
@@ -135,7 +141,7 @@
     {
       "id": "K3",
       "area": "generation",
-      "content": "audio.music 未接入执行器，PromptBar 会列出但无法生成。"
+      "content": "audio.music 未接入执行器，PromptBar 会列出但无法生成；已列为 K3-1，下一会话焦点。"
     },
     {
       "id": "K4",
@@ -380,6 +386,87 @@
       "evidence": [
         "src/main/settings/store.ts"
       ]
+    },
+    {
+      "id": "T29",
+      "title": "节点输出比例：记录图片真实宽高、视频按 ratio 推断、节点按比例伸缩",
+      "evidence": [
+        "src/main/assets/ingest.ts",
+        "src/main/ipc/generate.ts",
+        "src/renderer/src/stores/generation.ts",
+        ".opencode/handover/evidence/ui-polish-2026-11-05.md"
+      ]
+    },
+    {
+      "id": "T30",
+      "title": "节点悬浮工具栏：选中显示、主题配色、放大、图片浮窗预览",
+      "evidence": [
+        "src/renderer/src/canvas/nodes/CineNodeView.tsx",
+        "src/renderer/src/styles/global.css"
+      ]
+    },
+    {
+      "id": "T31",
+      "title": "比例选择改为 3 列网格菜单，带比例图标",
+      "evidence": [
+        "src/renderer/src/canvas/PromptBar.tsx",
+        "src/renderer/src/styles/global.css"
+      ]
+    },
+    {
+      "id": "T32",
+      "title": "智能引用 AutoLink：默认开启，匹配节点/素材/角色名称，移入高级设置",
+      "evidence": [
+        "src/renderer/src/canvas/PromptBar.tsx"
+      ]
+    },
+    {
+      "id": "T33",
+      "title": "生成中样式：居中标签 + 取消任务，隐藏工具栏与版本切换",
+      "evidence": [
+        "src/renderer/src/canvas/nodes/CineNodeView.tsx",
+        "src/renderer/src/styles/global.css"
+      ]
+    },
+    {
+      "id": "T34",
+      "title": "AI 水印开关：默认关闭，接入 MOSS output_watermark 与火山 watermark",
+      "evidence": [
+        "src/main/providers/openai-compat.ts",
+        "src/main/providers/volcengine.ts",
+        "src/renderer/src/canvas/PromptBar.tsx"
+      ]
+    },
+    {
+      "id": "T35",
+      "title": "prompt bar 可展开放大：居中可编辑浮窗，外部点击/Esc 恢复",
+      "evidence": [
+        "src/renderer/src/canvas/PromptBar.tsx",
+        "src/renderer/src/styles/global.css"
+      ]
+    },
+    {
+      "id": "T36",
+      "title": "高级设置按钮齿轮样式，面板改为向下弹出",
+      "evidence": [
+        "src/renderer/src/canvas/PromptBar.tsx",
+        "src/renderer/src/styles/global.css"
+      ]
+    },
+    {
+      "id": "T37",
+      "title": "画布点阵对比度提高；新增 expand 图标并统一节点工具栏与 prompt bar",
+      "evidence": [
+        "src/renderer/src/canvas/Canvas.tsx",
+        "src/renderer/src/components/Icon.tsx"
+      ]
+    },
+    {
+      "id": "T38",
+      "title": "资产库三个 tab 操作按钮居中，移除 tabs 底部灰线",
+      "evidence": [
+        "src/renderer/src/styles/global.css"
+      ]
     }
   ],
   "lessons": [
@@ -470,6 +557,26 @@
     {
       "category": "engineering",
       "content": "导出素材前必须把相对路径 resolve 后校验仍在项目根目录内，并先 stat 确认文件存在，再弹保存框。"
+    },
+    {
+      "category": "engineering",
+      "content": "GeneratedAsset 必须记录输出宽高：图片用 nativeImage 读取，视频按 ratio 推断；节点高度按输出比例更新，否则固定节点尺寸会把图片裁成错误比例。"
+    },
+    {
+      "category": "engineering",
+      "content": "图片预览浮窗必须用 createPortal 挂到 body：fixed 元素在 React Flow 的 transform 祖先内会相对视口/祖先定位，直接渲染会错位。"
+    },
+    {
+      "category": "engineering",
+      "content": "MOSS 的可见水印字段是 output_watermark: { enabled: boolean }，不是 watermark；火山视频用 watermark。"
+    },
+    {
+      "category": "procedure",
+      "content": "dev 运行时 TypeScript 7 原生编译器可能内存不足（cannot allocate memory），typecheck 前先停 dev 释放内存。"
+    },
+    {
+      "category": "preference",
+      "content": "节点悬浮工具栏随节点选中显示/隐藏，与 prompt bar 同步；按钮尺寸参考系统设置（28×28、齿轮图标）。"
     }
   ],
   "designConventions": [
@@ -482,7 +589,7 @@
     "确认弹窗、全部项目浮窗使用应用内组件，与主题变量一致"
   ],
   "stats": {
-    "sessions": 5,
+    "sessions": 6,
     "completedMilestones": [
       "M0",
       "M1",

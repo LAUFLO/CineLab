@@ -331,6 +331,28 @@ export async function renameAsset(relPath: string, name: string): Promise<string
   return toPosix(join(toNative(folder), target.fileName))
 }
 
+export async function moveAsset(
+  relPath: string,
+  folder: string
+): Promise<string> {
+  const root = await getLibraryRoot()
+  const source = safeJoin(root, relPath)
+  const info = await fs.stat(source)
+  if (!info.isFile()) throw new Error('目标不是文件')
+
+  const targetDir = safeJoin(root, folder)
+  if (resolve(dirname(source)) === resolve(targetDir)) return relPath
+
+  await fs.mkdir(targetDir, { recursive: true })
+
+  const ext = extname(source)
+  const name = basename(source, ext)
+  const target = await uniqueTarget(targetDir, name, ext)
+  await fs.rename(source, target.absolute)
+
+  return folder ? `${folder}/${target.fileName}` : target.fileName
+}
+
 export async function deleteAsset(relPath: string): Promise<void> {
   const root = await getLibraryRoot()
   const target = safeJoin(root, relPath)

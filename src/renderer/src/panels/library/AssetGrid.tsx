@@ -7,6 +7,7 @@ interface AssetGridProps {
   query: string
   onAddToCanvas: (asset: LibraryAsset) => void
   onExport: (asset: LibraryAsset) => void
+  onMove: (asset: LibraryAsset) => void
   onRename: (asset: LibraryAsset) => void
   onDelete: (asset: LibraryAsset) => void
   onReveal: (asset: LibraryAsset) => void
@@ -23,6 +24,7 @@ export function AssetGrid({
   query,
   onAddToCanvas,
   onExport,
+  onMove,
   onRename,
   onDelete,
   onReveal
@@ -103,6 +105,13 @@ export function AssetGrid({
               onClick={() => onExport(asset)}
             >
               <Icon name="download" size={13} />
+            </button>
+            <button
+              type="button"
+              title="移动到文件夹"
+              onClick={() => onMove(asset)}
+            >
+              <Icon name="move" size={13} />
             </button>
             <button
               type="button"

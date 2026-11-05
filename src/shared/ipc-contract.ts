@@ -86,6 +86,7 @@ export interface LibraryApi {
   importAssets(folder: string): Promise<LibraryAsset[]>
   addAsset(input: AddToLibraryInput): Promise<LibraryAsset>
   renameAsset(path: string, name: string): Promise<string>
+  moveAsset(path: string, folder: string): Promise<string>
   deleteAsset(path: string): Promise<void>
   reveal(path: string): Promise<void>
 

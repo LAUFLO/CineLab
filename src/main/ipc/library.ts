@@ -20,6 +20,7 @@ import {
   listAssets,
   listCharacters,
   listTree,
+  moveAsset,
   renameAsset,
   renameFolder,
   revealPath
@@ -155,6 +156,10 @@ export function registerLibraryIpc(): void {
 
   ipcMain.handle('library:rename-asset', (_event, path: string, name: string) =>
     renameAsset(path, name)
+  )
+
+  ipcMain.handle('library:move-asset', (_event, path: string, folder: string) =>
+    moveAsset(path, folder)
   )
 
   ipcMain.handle('library:delete-asset', (_event, path: string) =>

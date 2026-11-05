@@ -20,7 +20,7 @@ export function StatusBar() {
       <button
         type="button"
         className="statusbar__item"
-        onClick={() => openLibrary('characters')}
+        onClick={() => openLibrary('角色')}
       >
         <Icon name="folder" size={15} />
         资产管理

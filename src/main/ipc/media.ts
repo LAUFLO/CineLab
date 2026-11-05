@@ -7,11 +7,13 @@ import type {
   GridSplitRequest,
   RemoveSubtitlesRequest,
   SplitAvRequest,
+  StitchRequest,
   TrimVideoRequest
 } from '@shared/media'
 import { probeMedia } from '../media/ffmpeg'
 import { extractFrame } from '../media/frames'
 import { splitGrid } from '../media/grid'
+import { stitchGrid } from '../media/stitch'
 import { cropImage, cropImageRect } from '../media/image'
 import { resolveInside } from '../media/paths'
 import { cropVideo, removeSubtitles, splitAv, trimVideo } from '../media/video'
@@ -26,6 +28,10 @@ function requireProjectRoot(): string {
 export function registerMediaIpc(): void {
   ipcMain.handle('media:split-grid', async (_event, input: GridSplitRequest) => {
     return { assets: await splitGrid(requireProjectRoot(), input) }
+  })
+
+  ipcMain.handle('media:stitch', async (_event, input: StitchRequest) => {
+    return { asset: await stitchGrid(requireProjectRoot(), input) }
   })
 
   ipcMain.handle(

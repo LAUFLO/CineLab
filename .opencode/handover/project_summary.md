@@ -23,7 +23,7 @@
 ## 目录结构
 
 ```
-D:\CineLab
+C:\Users\LAUFLO\Documents\CineLab
 ├─ docs/                    ui-spec.md、architecture.md、node-toolbar-plan.md、group-nodes.md
 ├─ scripts/                 cdp-shot / cdp-eval / cdp-drag / cdp-connect、mock-openai
 ├─ src/
@@ -58,6 +58,9 @@ D:\CineLab
 | NODE-TOOLBAR P0 | ✅ 完成 | 工具栏框架、ffmpeg、宫格切分、裁剪、截取、拆轨、画面裁切、首/尾/当前帧抽帧 |
 | NODE-TOOLBAR P1 | ✅ 完成 | 九宫格、三视图、画面推演、光影校正、预设打光/多角度、人像、抠图 |
 | NODE-TOOLBAR P2 | ✅ 完成 | 自由裁剪、框选去字幕、3D 光位/机位球 |
+| GROUP-1 | ✅ 完成 | 分组节点：打组/合并/解组、10 色、排列、拖出脱离、复制、删除级联 |
+| UI-1 | ✅ 完成 | 底部工具栏：绿加号、工具浮窗、历史、快捷键、Ctrl+F 搜索、模型列表获取 |
+| STORYBOARD-1 | ✅ 完成 | 分镜组：2–25 张图片、比例/宫格、2K 拼接、序号、清空、转普通组 |
 
 ## 已完成的关键工件
 
@@ -101,7 +104,13 @@ D:\CineLab
 - `src/main/ipc/export.ts`：项目 zip、画布 PNG、选中素材导出
 - `src/renderer/src/components/WindowControls.tsx`：全局窗口三键
 - `src/renderer/src/components/Toast.tsx`：全局导出结果提示
-- `src/renderer/src/canvas/PromptBar.tsx`：画布参考拾取、自动连线、引用缩略图
+- `src/renderer/src/canvas/PromptBar.tsx`：画布参考拾取、自动连线、引用缩略图预览与双击聚焦
+- `src/renderer/src/canvas/GroupToolbar.tsx`、`nodes/GroupNodeView.tsx`：分组工具栏、组框与左右引用 handle
+- `src/renderer/src/canvas/StoryboardToolbar.tsx`、`src/main/media/stitch.ts`：分镜组工具栏与 2K 宫格拼接
+- `src/main/ipc/media.ts`：新增 `media:stitch` 拼接 IPC
+- `src/renderer/src/canvas/BottomBar.tsx`、`panels/HistoryPanel.tsx`、`NodeSearch.tsx`、`ShortcutPanel.tsx`：底部工具栏与三个浮窗
+- `src/renderer/src/components/AppTooltip.tsx`：统一悬浮提示（title → data-tip）
+- `src/main/settings/store.ts`：`fetchModels` 获取供应商模型列表
 
 ## 设计约定
 
@@ -119,6 +128,9 @@ D:\CineLab
 12. 新建派生节点必须自动连源节点；版本回写不新建节点
 13. P1 AI 操作统一走 `image.i2i` + 提示词模板 + 当前节点新版本
 14. 自由裁剪/字幕框选共用 `useBoxEditor`；打光/机位用 2D 投影球体
+15. 按钮强调色统一 `--pick-bar`（主题绿）；浮层居中用独立 `translate` 属性
+16. 可滚动浮层拦截 wheel，不带动画布；上传素材节点标记 `assetOnly`，不显示 prompt bar
+17. 组可作为引用源：连线到组时展开组内所有子节点输出
 
 ## 环境注意
 
@@ -126,6 +138,8 @@ D:\CineLab
 - `pnpm` 不在 PATH 时用 `corepack pnpm`
 - Electron 二进制缺失时用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 执行 `node node_modules/electron/install.js`
 - `ffmpeg-static` 需加入 `pnpm-workspace.yaml` 的 `allowBuilds`，否则二进制不下载
+- `ffmpeg-static` 安装报连接超时时，设置 `FFMPEG_BINARIES_URL=https://registry.npmmirror.com/-/binary/ffmpeg-static` 重跑
+- `corepack pnpm dev:isolated` 自动分配 CDP 端口与临时 userData，可与其它会话并行；重启会重置临时 userData
 - worktree 与主仓库同时运行会抢单实例锁；worktree 用 `CINELAB_USER_DATA` 独立目录，调试端口用 `CINELAB_DEBUG_PORT`
 - electron-builder `--dir` 在当前环境报 `EXDEV`，打包验证需在正常目录
 - 从 ZIP 解压的目录没有 `.git`，需要重新 init 并关联远程

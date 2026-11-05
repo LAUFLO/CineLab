@@ -20,6 +20,7 @@ import type {
   GridSplitRequest,
   RemoveSubtitlesRequest,
   SplitAvRequest,
+  StitchRequest,
   TrimVideoRequest
 } from '../shared/media'
 const api: CineApi = {
@@ -122,6 +123,8 @@ const api: CineApi = {
   media: {
     splitGrid: (input: GridSplitRequest) =>
       ipcRenderer.invoke('media:split-grid', input),
+    stitch: (input: StitchRequest) =>
+      ipcRenderer.invoke('media:stitch', input),
     extractFrame: (input: ExtractFrameRequest) =>
       ipcRenderer.invoke('media:extract-frame', input),
     probe: (path: string) => ipcRenderer.invoke('media:probe', path),

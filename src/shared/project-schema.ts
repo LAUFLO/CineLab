@@ -44,7 +44,8 @@ export const cineNodeSchema = z.object({
     selectedOutputId: z.string().max(120).optional(),
     progress: z.number().min(0).max(100).optional(),
     error: z.string().max(2000).optional(),
-    templates: z.array(z.string().max(100)).max(20)
+    templates: z.array(z.string().max(100)).max(20),
+    assetOnly: z.boolean().optional()
   }),
   style: z
     .object({
@@ -67,7 +68,12 @@ export const groupNodeSchema = z.object({
   position: z.object({ x: z.number(), y: z.number() }),
   data: z.object({
     title: z.string().max(200),
-    color: groupColorSchema
+    color: groupColorSchema,
+    mode: z.enum(['normal', 'storyboard']).optional(),
+    ratio: z.enum(['16:9', '9:16', '1:1', '4:3']).optional(),
+    gridCols: z.number().int().min(1).max(10).optional(),
+    gridRows: z.number().int().min(1).max(10).optional(),
+    showIndex: z.boolean().optional()
   }),
   style: z.object({
     width: z.number().positive(),

@@ -1,13 +1,13 @@
 {
-  "version": 8,
+  "version": 9,
   "project": "CineLab",
   "root": "D:\\CineLab",
-  "updatedAt": "2026-11-05",
+  "updatedAt": "2026-11-06",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
-  "nextPhase": "UI-1 底部工具栏 P0+P1",
-  "next_focus": "K 项收尾：真实 i2i 验证、Windows 打包验证、真实厂商 Key 端到端；P2 命令面板可另行排期",
+  "nextPhase": "UI 细节打磨（K 项收尾可随时插入）",
+  "next_focus": "继续 UI 细节打磨：优先修复使用中发现的视觉与交互问题，保持主题绿、圆角浮层、统一 tooltip 的规范；K 项收尾与 P2 命令面板暂缓",
   "frontier": [
     {
       "id": "M2-1",
@@ -142,6 +142,15 @@
       "note": "2026-11-05 实现完成：加号使用 --pick-bar 主题绿底并在按钮上方居中展开菜单（含上传/历史）、选择与抓手合并为一个浮窗按钮、V/H/Space 工具切换、快捷键面板、Ctrl+F 搜索、生成历史（定位/添加/保存/导出）；底部不再放设置入口。上传与导出因系统对话框未自动化验证。资产库入口仍在左下 StatusBar。",
       "evidence": [
         ".opencode/handover/evidence/UI-1-bottom-toolbar.md"
+      ]
+    },
+    {
+      "id": "STORYBOARD-1",
+      "title": "分镜组：图片节点打组、宫格排列、序号、2K 拼接、转普通组",
+      "status": "done",
+      "note": "2026-11-05 实现完成：仅图片节点 2-25 个；多选打组下拉含合并分镜组；工具栏含比例/宫格/拼接(2K)/序号/清空/转普通组/解组；拼接走 ffmpeg xstack 输出 2048 宽 PNG 并生成新节点。未支持全局资产路径与拖拽排序。",
+      "evidence": [
+        ".opencode/handover/evidence/storyboard-groups.md"
       ]
     },
     {
@@ -753,6 +762,30 @@
     {
       "category": "engineering",
       "content": "P2 交互：自由裁剪 / 字幕框选共用 useBoxEditor（拖拽 + 四角缩放）；打光 / 机位使用 2D 投影球体，拖拽映射为方位角与俯仰角，不引入 3D 引擎。"
+    },
+    {
+      "category": "engineering",
+      "content": "浮层居中不要用 transform: translateX(-50%)：menu-in 动画的 transform 会覆盖它，导致居中失效。改用独立的 translate: -50% 0 属性，multi-bar/group-toolbar 已按此修正。"
+    },
+    {
+      "category": "engineering",
+      "content": "React Flow 的 .react-flow__node-group 自带 1px 深色边框、白底、10px padding 和选中阴影；自定义组框必须显式清除，否则选中组会出现外层黑框。"
+    },
+    {
+      "category": "engineering",
+      "content": "组内节点的 position 是相对组框的坐标。prompt bar、对齐、弹出层等任何屏幕定位都要先经过 absolutePosition(node, nodes) 转绝对坐标，否则会偏到画布左上。"
+    },
+    {
+      "category": "engineering",
+      "content": "React Flow 的 panOnScroll 会监听 wheel；可滚动浮层（菜单、面板）必须在 wheel 捕获阶段 stopPropagation，否则滚菜单会连带平移画布。默认滚动行为不受 stopPropagation 影响。"
+    },
+    {
+      "category": "engineering",
+      "content": "上传创建的素材节点要写 data.assetOnly=true；PromptBar 选中节点时过滤该标记，否则选中素材节点会误弹提示词输入框。上传完成后要手动把 selected 恢复到原节点。"
+    },
+    {
+      "category": "procedure",
+      "content": "dev:isolated 每次重启会新建临时 userData（最近项目、主题、供应商配置都会重置），项目文件本身不受影响；改 src/shared 或 src/main 时 electron-vite 的 main watch 可能不重建，必须手动重启实例。"
     }
   ],
   "designConventions": [
@@ -776,6 +809,6 @@
       "M6"
     ],
     "partialMilestones": [],
-    "nextMilestone": "K 项收尾与真实环境验证"
+    "nextMilestone": "UI 细节打磨"
   }
 }

@@ -21,7 +21,11 @@ export function GroupToolbar() {
 
   const selected = nodes.filter((node) => node.selected)
   const group =
-    selected.length === 1 && isGroupNode(selected[0]) ? selected[0] : undefined
+    selected.length === 1 &&
+    isGroupNode(selected[0]) &&
+    selected[0].data.mode !== 'storyboard'
+      ? selected[0]
+      : undefined
 
   const [position, setPosition] = useState<{ left: number; top: number } | null>(
     null

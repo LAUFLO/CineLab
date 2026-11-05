@@ -3,6 +3,7 @@ import { BottomBar } from './canvas/BottomBar'
 import { Canvas } from './canvas/Canvas'
 import { StatusBar } from './canvas/StatusBar'
 import { TopBar } from './canvas/TopBar'
+import { AppTooltip } from './components/AppTooltip'
 import { Toast } from './components/Toast'
 import { WindowControls } from './components/WindowControls'
 import { ConfirmDialog } from './panels/ConfirmDialog'
@@ -50,6 +51,32 @@ export default function App() {
     scheduleSave()
   }, [nodes, edges, hydrated, phase, scheduleSave])
 
+  useEffect(() => {
+    const onWheel = (event: WheelEvent): void => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+
+      let element: HTMLElement | null = target as HTMLElement
+      while (element && element !== document.body) {
+        const style = window.getComputedStyle(element)
+        const scrollable =
+          (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+          element.scrollHeight > element.clientHeight
+        if (scrollable) {
+          event.stopPropagation()
+          return
+        }
+        element = element.parentElement
+      }
+    }
+
+    document.addEventListener('wheel', onWheel, {
+      capture: true,
+      passive: true
+    })
+    return () => document.removeEventListener('wheel', onWheel, { capture: true })
+  }, [])
+
   let content: ReactNode
 
   if (phase === 'loading') {
@@ -94,6 +121,7 @@ export default function App() {
       <SettingsPanel />
       <WindowControls theme={resolved} onToggleTheme={toggle} />
       <Toast />
+      <AppTooltip />
     </>
   )
 }

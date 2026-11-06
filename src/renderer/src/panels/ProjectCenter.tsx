@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { RecentProject } from '@shared/project-schema'
 import { BrandWordmark } from '../components/Brand'
 import { Icon } from '../components/Icon'
+import { ProjectCard } from '../components/ProjectCard'
 import { useProjectStore } from '../stores/project'
 
 export function ProjectCenter() {
@@ -12,6 +13,10 @@ export function ProjectCenter() {
 
   const [recent, setRecent] = useState<RecentProject[]>([])
   const [loading, setLoading] = useState(true)
+
+  const refreshRecent = (): void => {
+    void window.api.project.recent().then(setRecent)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -66,23 +71,12 @@ export function ProjectCenter() {
           <div className="project-center__recent">
             <div className="project-center__grid">
               {recent.map((project) => (
-                <button
+                <ProjectCard
                   key={project.path}
-                  type="button"
-                  className="project-center__card"
-                  onClick={() => void openPath(project.path)}
-                >
-                  <div className="project-center__cover">
-                    <Icon name="folder" size={22} />
-                  </div>
-                  <div className="project-center__card-name">{project.name}</div>
-                  <div className="project-center__card-path" title={project.path}>
-                    {project.path}
-                  </div>
-                  <div className="project-center__card-time">
-                    {new Date(project.lastOpenedAt).toLocaleString('zh-CN')}
-                  </div>
-                </button>
+                  project={project}
+                  onOpen={(path) => void openPath(path)}
+                  onChanged={refreshRecent}
+                />
               ))}
             </div>
           </div>

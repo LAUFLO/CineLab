@@ -207,6 +207,15 @@
       "evidence": [
         ".opencode/handover/evidence/BRAND-ASSETS-1.md"
       ]
+    },
+    {
+      "id": "PROJECT-COVER-1",
+      "title": "项目卡片封面：本地图片 / 画布图片，统一 1:1",
+      "status": "done",
+      "note": "新增项目 cover.png 存储、主进程 1:1 裁剪与 IPC、统一 ProjectCard 组件；欢迎页和全部项目弹窗共用 1:1 封面。typecheck/build 通过，画布图片选择与封面显示实测通过。",
+      "evidence": [
+        ".opencode/handover/evidence/PROJECT-COVER-1.md"
+      ]
     }
   ],
   "knownIssues": [

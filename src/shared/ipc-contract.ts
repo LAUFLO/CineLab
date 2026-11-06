@@ -69,6 +69,10 @@ export interface ProjectApi {
   open(path: string): Promise<ProjectSnapshot>
   saveCanvas(path: string, canvas: CanvasData): Promise<void>
   recent(): Promise<RecentProject[]>
+  readCover(path: string): Promise<string | null>
+  setCoverFromLocal(path: string): Promise<{ ok: boolean; canceled?: boolean }>
+  setCoverFromAsset(path: string, assetPath: string): Promise<{ ok: boolean }>
+  removeCover(path: string): Promise<void>
   pickCreate(): Promise<ProjectSnapshot | null>
   pickOpen(): Promise<ProjectSnapshot | null>
   reveal(path: string): Promise<void>

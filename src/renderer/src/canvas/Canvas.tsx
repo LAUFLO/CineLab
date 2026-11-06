@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import {
   Background,
   BackgroundVariant,
@@ -478,6 +478,13 @@ function CanvasInner({ theme }: { theme: Theme }) {
         ]
           .filter(Boolean)
           .join(' ') || undefined}
+        style={
+          {
+            '--canvas-zoom': viewport.zoom,
+            '--canvas-zoom-inverse': 1 / (viewport.zoom || 1),
+            '--node-toolbar-offset': `${10 / (viewport.zoom || 1)}px`
+          } as CSSProperties
+        }
         panOnScroll
         panOnDrag={handMode ? true : [1]}
         nodesDraggable={!handMode}

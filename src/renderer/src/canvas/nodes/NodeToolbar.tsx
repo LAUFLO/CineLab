@@ -524,10 +524,7 @@ export function NodeToolbar({
 
   const openDepthDialog = async (): Promise<void> => {
     try {
-      const [status, probe] = await Promise.all([
-        window.api.components.status(),
-        window.api.media.probe(current.path)
-      ])
+      const status = await window.api.components.status()
       const ready =
         status.find((item) => item.kind === 'depth-runtime')?.state ===
           'installed' &&
@@ -547,8 +544,16 @@ export function NodeToolbar({
         return
       }
 
+      const probe = await window.api.media.probe(current.path).catch((error: unknown) => {
+        console.error('[depth] failed to probe video', error)
+        return null
+      })
+      if (!probe) {
+        showToast('无法读取视频信息，请确认素材文件仍然存在', 'error')
+        return
+      }
       if (!probe.duration) {
-        showToast('无法读取视频时长', 'error')
+        showToast('无法读取视频时长，请确认素材文件仍然存在', 'error')
         return
       }
       setDepthDialog({ duration: probe.duration })

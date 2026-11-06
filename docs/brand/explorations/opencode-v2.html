@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineLab — OpenCode-style v2</title>
+<style>
+  :root {
+    --ink: #1A1817;
+    --paper: #F2EDE4;
+    --card: #FBF8F2;
+    --muted: #7A736B;
+    --line: #D8D0C4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 56px 32px 80px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 32px; }
+  .eyebrow { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-size: 34px; margin: 10px 0 8px; letter-spacing: -.02em; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .checker {
+    background-color: #fff;
+    background-image:
+      linear-gradient(45deg, #e3e3e3 25%, transparent 25%),
+      linear-gradient(-45deg, #e3e3e3 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e3e3e3 75%),
+      linear-gradient(-45deg, transparent 75%, #e3e3e3 75%);
+    background-size: 18px 18px;
+    background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); padding: 16px; }
+  .card .frame { border: 1px solid var(--line); }
+  .card img { width: 100%; display: block; }
+  .card h2 { font-size: 15px; margin: 14px 0 4px; font-weight: 600; }
+  .tag { display: inline-block; font-size: 10px; letter-spacing: .12em; color: var(--muted); border: 1px solid var(--line); padding: 3px 7px; margin-bottom: 8px; }
+  .card p { font-size: 12.5px; line-height: 1.65; color: #4A443E; margin: 5px 0; }
+  .verdict { font-size: 12px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 9px; margin-top: 10px; }
+  .dark-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; }
+  .dark-row .frame { background: #1A1817; border: 1px solid var(--line); padding: 24px; }
+  .dark-row img { width: 100%; display: block; }
+  .note { margin-top: 30px; padding: 20px 24px; background: var(--card); border-left: 3px solid #8A8580; font-size: 13px; line-height: 1.8; color: #4A443E; }
+  @media (max-width: 900px) { .grid, .dark-row { grid-template-columns: 1fr; } .wrap { padding: 32px 18px 56px; } h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CineLab · OpenCode-style Wordmark · Round 02</div>
+    <h1>黑灰字标 + C 字母图标</h1>
+    <div class="sub">去掉黄色 · 透明背景 · 模块化方块 · 仿 OpenCode App Icon</div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="tag">H1 · WORDMARK BLACK</div>
+      <div class="frame checker"><img src="H1-wordmark-black-transparent.png" alt="H1 全黑字标"></div>
+      <h2>H1. 全黑字标</h2>
+      <p><strong>结构：</strong>实心模块化 cinelab，等宽，纯直角，透明背景。</p>
+      <p class="verdict"><strong>初评：</strong>拼写正确，整体成立。但 c 与 i 的间距偏大、e 的横杠偏低、a 的上部形状偏圆，需要精修。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">H2 · WORDMARK TWO-TONE</div>
+      <div class="frame checker"><img src="H2-wordmark-two-tone-transparent.png" alt="H2 黑灰双色字标"></div>
+      <h2>H2. 黑灰双色字标</h2>
+      <p><strong>结构：</strong>cine 黑色 + lab 灰色，透明背景。</p>
+      <p class="verdict"><strong>初评：</strong>层次更接近 OpenCode 的双色逻辑。但灰色偏浅、对比不足，字距与字母形状问题与 H1 相同。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">H3 · ICON C / SPLIT</div>
+      <div class="frame checker"><img src="H3-icon-C-split-transparent.png" alt="H3 C 图标 白灰分层"></div>
+      <h2>H3. C 图标 · 白灰分层</h2>
+      <p><strong>结构：</strong>黑色方形底 + 模块化 C，上半白色、下半浅灰。</p>
+      <p class="verdict"><strong>初评：</strong>最接近 OpenCode 的 icon 结构。但 C 的左上与右上块有断点，上下分界不够清楚，需要重排方块。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">H4 · ICON C / GRAY</div>
+      <div class="frame checker"><img src="H4-icon-C-gray-transparent.png" alt="H4 C 图标 单灰"></div>
+      <h2>H4. C 图标 · 单灰</h2>
+      <p><strong>结构：</strong>黑色方形底 + 中灰模块化 C。</p>
+      <p class="verdict"><strong>初评：</strong>整体最统一，但 C 的剪影偏 "["，缺少 OpenCode 那种上下分层的记忆点。</p>
+    </div>
+  </div>
+
+  <div class="dark-row">
+    <div>
+      <div class="tag">ICON ON DARK</div>
+      <div class="frame"><img src="H3-icon-C-split-transparent.png" alt="H3 在深色背景上"></div>
+    </div>
+    <div>
+      <div class="tag">ICON ON DARK</div>
+      <div class="frame"><img src="H4-icon-C-gray-transparent.png" alt="H4 在深色背景上"></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>设计团队初评：</strong>H2 + H3 是最接近"OpenCode 语言 + CineLab 黑灰体系"的组合，但两者都还需要一轮结构性精修：
+    字标要统一字距与 e / a 的骨架，图标要把 C 的方块重排成连续结构，并让上下分界更明确。
+    透明 PNG 已生成，棋盘格背景用于确认透明区域。
+  </div>
+</div>
+</body>
+</html>

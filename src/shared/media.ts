@@ -100,3 +100,38 @@ export interface TrimVideoRequest {
 export interface TrimVideoResult {
   asset: GeneratedAsset
 }
+
+
+export interface DepthCaptureRequest {
+  path: string
+  quality?: 'fast' | 'standard' | 'long'
+  fps?: number
+}
+
+export interface DepthCaptureResult {
+  asset: GeneratedAsset
+  width: number
+  height: number
+  duration: number
+  frames: number
+}
+
+export type DepthTaskStatus =
+  | 'queued'
+  | 'running'
+  | 'done'
+  | 'error'
+  | 'cancelled'
+
+export interface DepthTaskEvent {
+  taskId: string
+  status: DepthTaskStatus
+  percent?: number
+  message?: string
+  result?: DepthCaptureResult
+  error?: string
+}
+
+export interface DepthTaskStartResult {
+  taskId: string
+}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ExportResult } from '@shared/ipc-contract'
 import type { RecentProject } from '@shared/project-schema'
+import { BrandWordmark } from '../components/Brand'
 import { Icon } from '../components/Icon'
 import { useProjectStore } from '../stores/project'
 import { useUIStore } from '../stores/ui'
@@ -149,7 +150,7 @@ export function TopBar() {
               setProjectsOpen(false)
             }}
           >
-            <Icon name="logo" size={18} />
+            <BrandWordmark height={16} />
             <Icon name="chevron-down" size={12} />
           </button>
 

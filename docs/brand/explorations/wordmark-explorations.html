@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineLab — Wordmark Exploration</title>
+<style>
+  :root {
+    --ink: #1A1817;
+    --amber: #E8A33D;
+    --paper: #F2EDE4;
+    --card: #FBF8F2;
+    --muted: #7A736B;
+    --line: #D8D0C4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 56px 32px 80px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-size: 34px; margin: 10px 0 8px; letter-spacing: -.02em; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); padding: 16px; }
+  .card img { width: 100%; display: block; background: var(--paper); }
+  .card h2 { font-size: 15px; margin: 14px 0 4px; font-weight: 600; }
+  .tag { display: inline-block; font-size: 10px; letter-spacing: .12em; color: var(--muted); border: 1px solid var(--line); padding: 3px 7px; margin-bottom: 8px; }
+  .card p { font-size: 12.5px; line-height: 1.65; color: #4A443E; margin: 5px 0; }
+  .verdict { font-size: 12px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 9px; margin-top: 10px; }
+  .note { margin-top: 36px; padding: 20px 24px; background: var(--card); border-left: 3px solid var(--amber); font-size: 13px; line-height: 1.8; color: #4A443E; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .wrap { padding: 32px 18px 56px; } h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CineLab · Wordmark Exploration · Round 01</div>
+    <h1>以英文名称重新设计</h1>
+    <div class="sub">四个字标方向 · 混合大小写 CineLab · 暗房暖光色系 · 尚未定稿</div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="tag">F1 · GEOMETRIC HUMANIST</div>
+      <img src="F1-geometric-humanist.png" alt="F1 几何人文字标">
+      <h2>F1. 几何人文字标</h2>
+      <p><strong>概念：</strong>几何骨架 + 轻微圆角，i 的点改为琥珀方框。</p>
+      <p class="verdict"><strong>初评：</strong>拼写正确，字体气质合适。但琥珀方块散落在多个字母之间，破坏了字标的整体性，需要重做。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">F2 · VIEWFINDER</div>
+      <img src="F2-viewfinder.png" alt="F2 取景框字标">
+      <h2>F2. 取景框字标</h2>
+      <p><strong>概念：</strong>C 与 L 的端点带取景框刻痕，i 上方琥珀方框。</p>
+      <p class="verdict"><strong>初评：</strong>拼写正确，画面最干净。但取景框刻痕几乎看不见，整体偏普通，缺少记忆点。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">F3 · LAB MONO</div>
+      <img src="F3-lab-mono.png" alt="F3 实验编号字标">
+      <h2>F3. 实验编号字标</h2>
+      <p><strong>概念：</strong>等宽打字机风格 + 左侧琥珀标本标记。</p>
+      <p class="verdict"><strong>初评：</strong>执行失败。文字被渲染成 "Ci-ne-La-b"，连字符分割且字距失控，像打字稿而不是 logo。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">F4 · LOCKUP</div>
+      <img src="F4-lockup.png" alt="F4 图形与字标锁定">
+      <h2>F4. 图形 + 字标锁定</h2>
+      <p><strong>概念：</strong>A 的光圈图形 + CineLab 字标，横向锁定，图标与文字分工。</p>
+      <p class="verdict"><strong>初评：</strong>四张里执行最完整、最实用。但字标偏粗，像通用科技公司字体，缺少 CineLab 自己的细节。</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>设计团队初评：</strong>F4 最接近"图形 + 英文名称"的完整 logo，F2 最克制但需要加强细节，F1 需要去掉散落的琥珀方块，F3 不建议继续。
+    如果你想要的是"A 的图形 + 英文名"的组合，F4 是当前最好的起点，下一步应精修字标的字重与图形/文字的比例关系。
+  </div>
+</div>
+</body>
+</html>

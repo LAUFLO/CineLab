@@ -10,11 +10,12 @@ interface SettingsState {
   providers: ProviderConfig[]
   loaded: boolean
   panelOpen: boolean
+  panelSection: string | null
   load: () => Promise<void>
   save: (input: ProviderInput) => Promise<ProviderConfig>
   remove: (id: string) => Promise<void>
   test: (input: ConnectionTestInput) => Promise<ConnectionTestResult>
-  openPanel: () => void
+  openPanel: (section?: string) => void
   closePanel: () => void
 }
 
@@ -22,6 +23,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   providers: [],
   loaded: false,
   panelOpen: false,
+  panelSection: null,
 
   load: async () => {
     const providers = await window.api.settings.listProviders()
@@ -41,8 +43,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   test: (input) => window.api.settings.testConnection(input),
 
-  openPanel: () => set({ panelOpen: true }),
-  closePanel: () => set({ panelOpen: false })
+  openPanel: (section) =>
+    set({ panelOpen: true, panelSection: section ?? null }),
+  closePanel: () => set({ panelOpen: false, panelSection: null })
 }))
 if (import.meta.env.DEV) {
   ;(window as unknown as { __settingsStore?: typeof useSettingsStore }).__settingsStore =

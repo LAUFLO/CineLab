@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineLab — OpenCode-style Wordmark</title>
+<style>
+  :root {
+    --ink: #1A1817;
+    --amber: #E8A33D;
+    --paper: #F2EDE4;
+    --card: #FBF8F2;
+    --muted: #7A736B;
+    --line: #D8D0C4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 56px 32px 80px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 32px; }
+  .eyebrow { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-size: 34px; margin: 10px 0 8px; letter-spacing: -.02em; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .ref { background: var(--card); border: 1px solid var(--line); padding: 18px 22px; font-size: 13px; line-height: 1.75; color: #4A443E; margin-bottom: 28px; }
+  .ref strong { color: var(--ink); }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 22px; }
+  .card { background: var(--card); border: 1px solid var(--line); padding: 16px; }
+  .card img { width: 100%; display: block; background: var(--paper); }
+  .card h2 { font-size: 15px; margin: 14px 0 4px; font-weight: 600; }
+  .tag { display: inline-block; font-size: 10px; letter-spacing: .12em; color: var(--muted); border: 1px solid var(--line); padding: 3px 7px; margin-bottom: 8px; }
+  .card p { font-size: 12.5px; line-height: 1.65; color: #4A443E; margin: 5px 0; }
+  .verdict { font-size: 12px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 9px; margin-top: 10px; }
+  .warn { margin-top: 30px; padding: 18px 22px; background: #FFF6E8; border-left: 3px solid var(--amber); font-size: 12.5px; line-height: 1.75; color: #5A4A36; }
+  @media (max-width: 900px) { .wrap { padding: 32px 18px 56px; } h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CineLab · OpenCode-style Wordmark · Round 01</div>
+    <h1>仿照 OpenCode 的模块化字标</h1>
+    <div class="sub">全小写 cinelab · 模块化方块 · 等宽 · 终端气质</div>
+  </header>
+
+  <div class="ref">
+    <strong>参考分析（opencode.ai/brand）：</strong>OpenCode 的字标是全小写 <code>opencode</code>，
+    由 24×36 的等宽方形单元构成，笔画宽 6，采用「外层深灰框 + 内层浅灰块」的嵌套双色结构，
+    字间距统一为 6，纯直角、无曲线。品牌字体为 <strong>Berkeley Mono</strong>（商业字体），
+    回退为 IBM Plex Mono、ui-monospace 等。
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="tag">G1 · NESTED GRAY</div>
+      <img src="G1-nested-gray.png" alt="G1 嵌套双色">
+      <h2>G1. 嵌套双色</h2>
+      <p><strong>结构：</strong>每个字母一个方形单元，深灰外框 + 浅灰内块，最忠实于 OpenCode 的嵌套语言。</p>
+      <p class="verdict"><strong>初评：</strong>最像参考，但七个单元彼此断开，整体读成"七张卡片"而不是一个连贯字标；字母 e / a 的内部结构需要收紧。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">G2 · PIXEL DOTS</div>
+      <img src="G2-solid-charcoal.png" alt="G2 点阵像素">
+      <h2>G2. 点阵像素</h2>
+      <p><strong>结构：</strong>用点阵方块拼出 cinelab，像 8-bit 像素字体。</p>
+      <p class="verdict"><strong>初评：</strong>偏离了 OpenCode 的实心方块语言，像复古游戏而不是终端工具；锯齿边缘在小尺寸下会脏。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">G3 · SOLID CHARCOAL + AMBER DOT</div>
+      <img src="G3-amber-dot.png" alt="G3 实心炭黑 + 琥珀点">
+      <h2>G3. 实心炭黑 + 琥珀点</h2>
+      <p><strong>结构：</strong>实心方块字形，直角、等宽，i 的点换成暖琥珀方块。</p>
+      <p class="verdict"><strong>初评：</strong>三者中最干净、最可用，终端气质与 CineLab 的暖色最协调。但字距不均，e 的横杠位置偏低，l 与 a 的衔接需要精修。</p>
+    </div>
+  </div>
+
+  <div class="warn">
+    <strong>两点必须提醒：</strong><br>
+    1. OpenCode 的品牌字体 Berkeley Mono 是商业字体，商业分发需要授权；VI 手册里会给出授权说明与替代方案（IBM Plex Mono / JetBrains Mono）。<br>
+    2. "完全仿照"建议做成<strong>同语言</strong>而不是复制资产——沿用模块化方块、等宽、双色层次的设计逻辑，但字母结构与间距应为 CineLab 重新设计，避免商标与品牌混淆风险。
+  </div>
+</div>
+</body>
+</html>

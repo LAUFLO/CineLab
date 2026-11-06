@@ -18,6 +18,7 @@ import type {
   GeneratedAsset,
   GenerationEvent
 } from './generation'
+import type { ComponentEvent, ComponentKind, ComponentStatus } from './components'
 import type {
   AddToLibraryInput,
   SaveAssetInput,
@@ -35,6 +36,10 @@ import type {
   CropImageResult,
   CropVideoRequest,
   CropVideoResult,
+  DepthCaptureRequest,
+  DepthCaptureResult,
+  DepthTaskEvent,
+  DepthTaskStartResult,
   ExtractFrameRequest,
   ExtractFrameResult,
   GridSplitRequest,
@@ -153,6 +158,18 @@ export interface MediaApi {
   cropImageRect(input: CropImageRectRequest): Promise<CropImageResult>
   trimVideo(input: TrimVideoRequest): Promise<TrimVideoResult>
   removeSubtitles(input: RemoveSubtitlesRequest): Promise<RemoveSubtitlesResult>
+  captureDepth(input: DepthCaptureRequest): Promise<DepthCaptureResult>
+  startDepthCapture(input: DepthCaptureRequest): Promise<DepthTaskStartResult>
+  cancelDepthCapture(taskId: string): Promise<void>
+  onDepthCaptureEvent(callback: (event: DepthTaskEvent) => void): () => void
+}
+
+export interface ComponentsApi {
+  status(): Promise<ComponentStatus[]>
+  install(kind: ComponentKind): Promise<{ started: boolean }>
+  pause(kind: ComponentKind): Promise<void>
+  remove(kind: ComponentKind): Promise<void>
+  onEvent(callback: (event: ComponentEvent) => void): () => void
 }
 
 export interface CineApi {
@@ -169,5 +186,6 @@ export interface CineApi {
   library: LibraryApi
   clipboard: ClipboardApi
   media: MediaApi
+  components: ComponentsApi
   export: ExportApi
 }

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineLab — Logo Exploration Round 01</title>
+<style>
+  :root {
+    --ink: #1A1817;
+    --amber: #E8A33D;
+    --paper: #F2EDE4;
+    --card: #FBF8F2;
+    --muted: #7A736B;
+    --line: #D8D0C4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 56px 32px 80px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 40px; }
+  .eyebrow { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-size: 34px; margin: 10px 0 8px; letter-spacing: -.02em; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
+  .card { background: var(--card); border: 1px solid var(--line); padding: 18px; }
+  .card img { width: 100%; aspect-ratio: 1; object-fit: contain; background: var(--paper); display: block; }
+  .card h2 { font-size: 16px; margin: 16px 0 6px; font-weight: 600; }
+  .tag { display: inline-block; font-size: 11px; letter-spacing: .12em; color: var(--muted); border: 1px solid var(--line); padding: 3px 8px; margin-bottom: 8px; }
+  .card p { font-size: 13px; line-height: 1.7; color: #4A443E; margin: 6px 0; }
+  .verdict { font-size: 12px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 12px; }
+  .note { margin-top: 40px; padding: 20px 24px; background: var(--card); border-left: 3px solid var(--amber); font-size: 13px; line-height: 1.8; color: #4A443E; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .wrap { padding: 32px 18px 56px; } h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CineLab · Brand Identity · Round 01</div>
+    <h1>Logo Exploration</h1>
+    <div class="sub">五条结构不同的方向 · 暗房暖光色系 · 仅供评审，尚未定稿</div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="tag">ROUTE A · APERTURE</div>
+      <img src="A-aperture.png" alt="A 光圈 / 光阑">
+      <h2>A. 光圈 / 光阑</h2>
+      <p><strong>概念：</strong>叶片围合出光圈，中心留一点暖琥珀光。镜头语言直给，精密、克制。</p>
+      <p class="verdict"><strong>初评：</strong>识别度最高、小尺寸最稳；但摄影类符号风险最高，需要靠开口比例与叶片手感建立差异。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">ROUTE B · MONOGRAM</div>
+      <img src="B-monogram.png" alt="B C/L 咬合">
+      <h2>B. C / L 咬合</h2>
+      <p><strong>概念：</strong>C 的开口作为画布入口，L 的竖笔作为工作台边缘，两字母共享一条结构线。</p>
+      <p class="verdict"><strong>初评：</strong>结构清晰、延展性好；但当前咬合感不足，更像并排字母，橙色方块位置偏悬空。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">ROUTE C · DARKROOM BENCH</div>
+      <img src="C-darkroom-bench.png" alt="C 暗房工作台">
+      <h2>C. 暗房工作台</h2>
+      <p><strong>概念：</strong>显影盘与胶片框合并，一角进入暖光。Lab 的实验感 + 工作室温度。</p>
+      <p class="verdict"><strong>初评：</strong>温度与工作室气质最强；但当前过于具象、带立体感，小尺寸会糊，需要重做。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">ROUTE D · CANVAS COORDINATE</div>
+      <img src="D-canvas-coordinate.png" alt="D 画布坐标系">
+      <h2>D. 画布坐标系</h2>
+      <p><strong>概念：</strong>四个坐标刻度 + 一条工作流曲线 + 一个琥珀节点，暗示无限画布上正在发生的工作流。</p>
+      <p class="verdict"><strong>初评：</strong>最贴近产品；但线条太细、记忆点弱，更像图表工具，不建议直接采用。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">ROUTE E · WORDMARK</div>
+      <img src="E-wordmark.png" alt="E 字标">
+      <h2>E. 字标驱动</h2>
+      <p><strong>概念：</strong>几何无衬线字标，i 上方琥珀方框，C 与 L 带取景框刻痕。</p>
+      <p class="verdict"><strong>初评：</strong>最实用、最适合启动页与文档；但字体偏常规，橙色细节太弱，需要定制字标。</p>
+    </div>
+
+    <div class="card">
+      <div class="tag">REVIEW GUIDE</div>
+      <img src="A-aperture.png" alt="评审示意" style="opacity:.18">
+      <h2>评审提示</h2>
+      <p>先看剪影，再看细节。把图片缩小到 32px 观察是否还成立；App 图标最终要在深色与浅色背景上都成立。</p>
+      <p class="verdict">本轮为探索图，不构成最终资产；选定方向后才进入精修。</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>设计团队初评：</strong>A 与 E 的完成度最高，B 结构最稳但需要强化咬合，C 有最好的温度但执行失败，D 概念对但形式太弱。
+    如果目标是「创作者工作台」而不是「相机工具」，A 需要克制摄影感，E 需要更独特的字体细节。
+  </div>
+</div>
+</body>
+</html>

@@ -6,12 +6,20 @@ import {
   type ProviderInput
 } from '@shared/provider-schema'
 import type { ModelsConfigStatus } from '@shared/models-file'
+import { BrandIcon, BrandWordmark } from '../components/Brand'
 import { Icon, type IconName } from '../components/Icon'
 import { useSettingsStore } from '../stores/settings'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
+import { ComponentsSection } from './ComponentsSection'
 
-type SectionId = 'models' | 'library' | 'appearance' | 'shortcuts' | 'about'
+type SectionId =
+  | 'models'
+  | 'library'
+  | 'components'
+  | 'appearance'
+  | 'shortcuts'
+  | 'about'
 
 interface SectionDef {
   id: SectionId
@@ -22,6 +30,7 @@ interface SectionDef {
 const SECTIONS: SectionDef[] = [
   { id: 'models', label: '模型服务', icon: 'settings' },
   { id: 'library', label: '资产库', icon: 'library' },
+  { id: 'components', label: '组件', icon: 'layers' },
   { id: 'appearance', label: '外观', icon: 'sun' },
   { id: 'shortcuts', label: '快捷键', icon: 'help' },
   { id: 'about', label: '关于', icon: 'logo' }
@@ -667,7 +676,7 @@ function PlaceholderSection({ title, description }: { title: string; description
 function AboutSection() {
   return (
     <div className="settings-section">
-      <div className="settings-group-title">CineLab</div>
+      <BrandWordmark height={20} className="settings-about__wordmark" />
       <p className="settings-placeholder">
         本地 AI 创作无限画布。模型完全自定义，数据存在你自己的硬盘上。
       </p>
@@ -691,6 +700,11 @@ export function SettingsPanel() {
   const open = useSettingsStore((state) => state.panelOpen)
   const close = useSettingsStore((state) => state.closePanel)
   const [active, setActive] = useState<SectionId>('models')
+  const panelSection = useSettingsStore((state) => state.panelSection)
+
+  useEffect(() => {
+    if (panelSection) setActive(panelSection as SectionId)
+  }, [panelSection])
 
   useEffect(() => {
     if (!open) return
@@ -734,7 +748,11 @@ export function SettingsPanel() {
                 }`}
                 onClick={() => setActive(section.id)}
               >
-                <Icon name={section.icon} size={15} />
+                {section.id === 'about' ? (
+                  <BrandIcon size={15} />
+                ) : (
+                  <Icon name={section.icon} size={15} />
+                )}
                 <span>{section.label}</span>
               </button>
             ))}
@@ -743,6 +761,7 @@ export function SettingsPanel() {
           <div className="settings-content">
             {active === 'models' ? <ModelsSection /> : null}
             {active === 'library' ? <LibrarySection /> : null}
+            {active === 'components' ? <ComponentsSection /> : null}
             {active === 'appearance' ? <AppearanceSection /> : null}
             {active === 'shortcuts' ? (
               <PlaceholderSection

@@ -1,15 +1,12 @@
 # models.json 模型配置
 
-CineLab 的模型供应商支持通过 `models.json` 配置，适合脚本或 Agent 直接新增模型，不用改代码。
+`models.json` 是 CineLab 唯一的模型供应商配置文件。设置页和手工编辑都直接修改这个文件，适合脚本或 Agent 批量新增模型，不用改代码。
 
 ## 文件位置
 
-按以下顺序读取，后面的文件覆盖前面的同名 provider：
+唯一位置：`%APPDATA%\cinelab\models.json`（设置页顶部会显示实际路径）。开发态和打包态使用同一个文件，不再读取仓库根。
 
-1. `%APPDATA%\CineLab\models.json`（打包后的用户配置）
-2. `D:\CineLab\models.json`（开发时的仓库根配置）
-
-示例见 `models.example.json`。`models.json` 已加入 `.gitignore`，不会被提交。
+示例见 `models.example.json`。仓库根的 `models.json` 已加入 `.gitignore`，不会被提交；需要时把示例复制到用户数据目录。
 
 ## 最小示例
 
@@ -117,17 +114,27 @@ CineLab 的模型供应商支持通过 `models.json` 配置，适合脚本或 Ag
 
 ## Key 优先级
 
-1. 设置面板里保存的加密 Key
+1. 设置面板里保存的加密 Key（存于 `settings.json`）
 2. `apiKeyEnv` 指向的环境变量
-3. `apiKey` 明文
+3. `apiKey` 明文字段：忽略，并在设置页显示警告
 
-Agent 配置时建议只写 `apiKeyEnv`，Key 由用户自己设置。
+`models.json` 本身不保存 Key。设置面板保存时只把供应商与模型写入 `models.json`，Key 加密写入 `settings.json`。
 
 ## 与设置面板的关系
 
-- `models.json` 里的 provider 在设置面板显示 `models.json` 标记，**只读**
-- 设置面板里的 provider 保存在 `settings.json`，Key 用 safeStorage 加密
-- 两者同 `id` 时，`models.json` 覆盖元数据和模型列表，但保留已加密的 Key
+- 设置面板直接读写 `models.json`：新增、编辑、删除供应商都会立即写入该文件
+- Key/Secret 单独用 safeStorage 加密后保存在 `settings.json`
+- 不存在“应用内配置”和“JSON 配置”两个来源，也不会出现只读条目
+- 手工编辑 `models.json` 后会自动刷新，也可以点“重新加载”
+
+## 从旧版本迁移
+
+旧版本把设置页添加的供应商存在 `settings.json`。启动时会自动迁移：
+
+- 供应商与模型元数据写入 `models.json`
+- 加密 Key/Secret 留在 `settings.json`
+- 迁移后删除旧的 `providers` 字段
+- 同 id 条目保留 `models.json` 中已有的元数据，避免覆盖手工配置
 
 ## 校验
 
@@ -145,7 +152,7 @@ node scripts/models-check.mjs models.example.json
 
 ## 修改后生效
 
-设置面板里点击“重新加载”，或刷新应用。修改 `models.json` 不需要重新打包。
+保存后自动生效。手工编辑 `models.json` 时应用会自动监听并刷新；也可以点设置页的“重新加载”。不需要重新打包。
 
 ## 常见错误
 
@@ -154,4 +161,5 @@ node scripts/models-check.mjs models.example.json
 | `capability 必须是 ...` | capability 拼错或不在支持列表 |
 | `preset 不存在` | 引用了不存在的内置预设，改成完整模型字段或换一个 preset |
 | `adapter 不支持` | adapter 还没实现，先使用 `openai-compat` |
+| `apiKey` 被忽略 | 明文 Key 不安全，请改用设置页或 `apiKeyEnv` |
 | `模型无法生成` | 参数 `key` 与执行器不一致，检查 `size` / `ratio` / `duration` 等约定 |

@@ -92,6 +92,7 @@ export interface SettingsApi {
   fetchModels(input: ConnectionTestInput): Promise<FetchModelsResult>
   modelsConfig(): Promise<ModelsConfigStatus>
   openModelsFile(): Promise<string>
+  onModelsChanged(callback: () => void): () => void
 }
 
 export interface GenerateApi {

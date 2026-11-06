@@ -105,6 +105,13 @@ function ModelsSection() {
   }, [load])
 
   useEffect(() => {
+    return window.api.settings.onModelsChanged(() => {
+      void load()
+      void window.api.settings.modelsConfig().then(setConfig)
+    })
+  }, [load])
+
+  useEffect(() => {
     setRemoteModels([])
   }, [draft?.id])
 
@@ -204,6 +211,7 @@ function ModelsSection() {
     setMessage(null)
     try {
       await save(draft)
+      setConfig(await window.api.settings.modelsConfig())
       setDraft(null)
       setMessage({ ok: true, text: '已保存' })
     } catch (error) {
@@ -246,6 +254,7 @@ function ModelsSection() {
         setBusy(true)
         try {
           await remove(id)
+          setConfig(await window.api.settings.modelsConfig())
         } finally {
           setBusy(false)
         }
@@ -461,7 +470,7 @@ function ModelsSection() {
         <div className="models-config">
           <div className="models-config__head">
             <div>
-              <div className="models-config__title">models.json</div>
+              <div className="models-config__title">模型供应商配置</div>
               <div
                 className="models-config__path"
                 title={config.activeFile ?? ''}
@@ -487,8 +496,15 @@ function ModelsSection() {
             </div>
           </div>
           <div className="models-config__meta">
-            {config.providerCount} 个 JSON 供应商 · {config.modelCount} 个模型
+            {config.providerCount} 个供应商 · {config.modelCount} 个模型
           </div>
+          {config.warnings.length > 0 ? (
+            <div className="models-config__warnings">
+              {config.warnings.map((warning, index) => (
+                <div key={index}>{warning}</div>
+              ))}
+            </div>
+          ) : null}
           {config.errors.length > 0 ? (
             <div className="models-config__errors">
               {config.errors.map((error, index) => (
@@ -503,40 +519,32 @@ function ModelsSection() {
         {providers.map((provider) => (
           <div key={provider.id} className="provider-card">
             <div className="provider-card__main">
-              <div className="provider-card__name">
-                {provider.name}
-                {provider.source === 'models' ? (
-                  <span className="provider-card__badge">models.json</span>
-                ) : null}
-              </div>
+              <div className="provider-card__name">{provider.name}</div>
               <div className="provider-card__meta">{provider.baseUrl}</div>
               <div className="provider-card__meta">
                 {provider.models.length} 个模型 ·{' '}
                 {provider.hasKey ? 'Key 已保存' : '未设置 Key'}
                 {provider.hasSecret ? ' · Secret 已保存' : ''}
-                {provider.source === 'models' ? ' · 只读' : ''}
                 {provider.type === 'kling' ? ' · 可灵' : ''}
               </div>
             </div>
-            {provider.source !== 'models' ? (
-              <div className="provider-card__actions">
-                <button
-                  type="button"
-                  className="icon-btn"
-                  onClick={() => setDraft(toDraft(provider))}
-                >
-                  <Icon name="settings" size={14} />
-                </button>
-                <button
-                  type="button"
-                  className="icon-btn"
-                  onClick={() => handleDelete(provider.id)}
-                  disabled={busy}
-                >
-                  <Icon name="close" size={14} />
-                </button>
-              </div>
-            ) : null}
+            <div className="provider-card__actions">
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setDraft(toDraft(provider))}
+              >
+                <Icon name="settings" size={14} />
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => handleDelete(provider.id)}
+                disabled={busy}
+              >
+                <Icon name="close" size={14} />
+              </button>
+            </div>
           </div>
         ))}
 
@@ -544,7 +552,7 @@ function ModelsSection() {
           <div className="provider-list__empty">
             还没有配置模型供应商。
             <br />
-            可以通过下方按钮添加，或直接编辑 models.json。
+            可以通过下方按钮添加，或直接编辑配置文件。
           </div>
         ) : null}
 

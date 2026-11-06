@@ -74,7 +74,12 @@ const api: CineApi = {
     fetchModels: (input: ConnectionTestInput) =>
       ipcRenderer.invoke('settings:fetch-models', input),
     modelsConfig: () => ipcRenderer.invoke('settings:models-config'),
-    openModelsFile: () => ipcRenderer.invoke('settings:open-models-file')
+    openModelsFile: () => ipcRenderer.invoke('settings:open-models-file'),
+    onModelsChanged: (callback: () => void) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('settings:models-changed', listener)
+      return () => ipcRenderer.removeListener('settings:models-changed', listener)
+    }
   },
   generate: {
     run: (request: GenerateRequest) => ipcRenderer.invoke('generate:run', request),

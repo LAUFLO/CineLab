@@ -11,14 +11,31 @@ import type {
   ProviderInput,
   ProviderType
 } from '@shared/provider-schema'
+import type { ModelsFileProvider } from '@shared/models-file'
 import { klingAuthorization } from '../providers/kling-auth'
 import {
+  enqueueModelsWrite,
   loadModelsConfig,
+  removeModelsProvider,
   resolveModels,
-  toModelsProvider
+  saveModelsConfig,
+  toModelsProvider,
+  upsertModelsProvider
 } from './models-config'
 
-interface StoredProvider {
+interface ProviderKeyEntry {
+  encryptedKey?: string
+  encryptedSecret?: string
+}
+
+type ProviderKeys = Record<string, ProviderKeyEntry>
+
+interface SettingsFile {
+  version: 2
+  providerKeys: ProviderKeys
+}
+
+interface LegacyStoredProvider {
   id: string
   name: string
   type?: ProviderType
@@ -26,29 +43,81 @@ interface StoredProvider {
   models: ModelDef[]
   encryptedKey?: string
   encryptedSecret?: string
-  createdAt: string
-  updatedAt: string
 }
 
-interface SettingsFile {
-  version: 1
-  providers: StoredProvider[]
+interface RawSettings {
+  version: number
+  providerKeys: ProviderKeys
+  legacyProviders: LegacyStoredProvider[]
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function settingsFile(): string {
   return join(app.getPath('userData'), 'settings.json')
 }
 
-async function readSettings(): Promise<SettingsFile> {
-  try {
-    const raw = JSON.parse(await fs.readFile(settingsFile(), 'utf8')) as Partial<SettingsFile>
-    if (Array.isArray(raw.providers)) {
-      return { version: 1, providers: raw.providers }
+function readProviderKeys(value: unknown): ProviderKeys {
+  if (!isRecord(value)) return {}
+
+  const result: ProviderKeys = {}
+  for (const [id, entry] of Object.entries(value)) {
+    if (!isRecord(entry)) continue
+    const encryptedKey =
+      typeof entry.encryptedKey === 'string' ? entry.encryptedKey : undefined
+    const encryptedSecret =
+      typeof entry.encryptedSecret === 'string' ? entry.encryptedSecret : undefined
+    if (encryptedKey || encryptedSecret) {
+      result[id] = {
+        ...(encryptedKey ? { encryptedKey } : {}),
+        ...(encryptedSecret ? { encryptedSecret } : {})
+      }
     }
-  } catch {
-    // 文件不存在或损坏，返回空配置
   }
-  return { version: 1, providers: [] }
+  return result
+}
+
+async function readRawSettings(): Promise<RawSettings> {
+  let raw: unknown
+  try {
+    raw = JSON.parse(await fs.readFile(settingsFile(), 'utf8')) as unknown
+  } catch {
+    return { version: 2, providerKeys: {}, legacyProviders: [] }
+  }
+
+  if (!isRecord(raw)) {
+    return { version: 2, providerKeys: {}, legacyProviders: [] }
+  }
+
+  if (Array.isArray(raw.providers)) {
+    const legacyProviders = raw.providers.filter(
+      (item): item is LegacyStoredProvider =>
+        isRecord(item) &&
+        typeof item.id === 'string' &&
+        typeof item.name === 'string' &&
+        typeof item.baseUrl === 'string'
+    )
+    const providerKeys: ProviderKeys = {}
+    for (const provider of legacyProviders) {
+      if (provider.encryptedKey || provider.encryptedSecret) {
+        providerKeys[provider.id] = {
+          ...(provider.encryptedKey ? { encryptedKey: provider.encryptedKey } : {}),
+          ...(provider.encryptedSecret
+            ? { encryptedSecret: provider.encryptedSecret }
+            : {})
+        }
+      }
+    }
+    return { version: 1, providerKeys, legacyProviders }
+  }
+
+  return {
+    version: 2,
+    providerKeys: readProviderKeys(raw.providerKeys),
+    legacyProviders: []
+  }
 }
 
 async function writeSettings(data: SettingsFile): Promise<void> {
@@ -77,35 +146,54 @@ function decryptKey(encrypted: string): string {
   return safeStorage.decryptString(Buffer.from(encrypted, 'base64'))
 }
 
-function toPublic(provider: StoredProvider): ProviderConfig {
-  return {
-    id: provider.id,
-    name: provider.name,
-    type: provider.type ?? 'openai-compat',
-    baseUrl: provider.baseUrl,
-    models: provider.models,
-    hasKey: Boolean(provider.encryptedKey),
-    hasSecret: Boolean(provider.encryptedSecret),
-    createdAt: provider.createdAt,
-    updatedAt: provider.updatedAt
+let migrationPromise: Promise<void> | null = null
+
+/** 把旧 settings.json 中的供应商迁移到 models.json，只保留加密 Key */
+export function ensureMigrated(): Promise<void> {
+  if (!migrationPromise) {
+    migrationPromise = migrateLegacySettings().catch((error: unknown) => {
+      migrationPromise = null
+      throw error
+    })
   }
+  return migrationPromise
+}
+
+async function migrateLegacySettings(): Promise<void> {
+  const raw = await readRawSettings()
+  if (raw.legacyProviders.length === 0) return
+
+  const config = await loadModelsConfig()
+  if (config.errors.length > 0) {
+    throw new Error(`models.json 存在错误，暂不迁移：${config.errors[0]}`)
+  }
+
+  const providers = [...config.providers]
+  const providerKeys: ProviderKeys = { ...raw.providerKeys }
+
+  for (const legacy of raw.legacyProviders) {
+    if (!providers.some((provider) => provider.id === legacy.id)) {
+      providers.push({
+        id: legacy.id,
+        name: legacy.name,
+        type: legacy.type ?? 'openai-compat',
+        baseUrl: legacy.baseUrl,
+        models: Array.isArray(legacy.models) ? legacy.models : []
+      })
+    }
+  }
+
+  await enqueueModelsWrite(() => saveModelsConfig(providers))
+  await writeSettings({ version: 2, providerKeys })
 }
 
 export async function listProviders(): Promise<ProviderConfig[]> {
-  const data = await readSettings()
-  const external = await loadModelsConfig()
-  const byId = new Map<string, ProviderConfig>()
+  await ensureMigrated()
+  const [config, raw] = await Promise.all([loadModelsConfig(), readRawSettings()])
 
-  for (const provider of data.providers) {
-    byId.set(provider.id, { ...toPublic(provider), source: 'settings' })
-  }
-
-  for (const provider of external.providers) {
-    const stored = data.providers.find((item) => item.id === provider.id)
-    byId.set(provider.id, toModelsProvider(provider, stored))
-  }
-
-  return [...byId.values()]
+  return config.providers.map((provider) =>
+    toModelsProvider(provider, raw.providerKeys[provider.id])
+  )
 }
 
 export interface ResolvedProvider {
@@ -117,124 +205,119 @@ export interface ResolvedProvider {
 }
 
 export async function resolveProvider(id: string): Promise<ResolvedProvider | null> {
-  const data = await readSettings()
-  const stored = data.providers.find((item) => item.id === id)
-  const external = (await loadModelsConfig()).providers.find(
-    (item) => item.id === id
-  )
+  await ensureMigrated()
+  const [config, raw] = await Promise.all([loadModelsConfig(), readRawSettings()])
+  const provider = config.providers.find((item) => item.id === id)
+  if (!provider) return null
 
-  if (external) {
-    const envKey = external.apiKeyEnv
-      ? process.env[external.apiKeyEnv]
-      : undefined
-
-    return {
-      type: external.type ?? stored?.type ?? 'openai-compat',
-      baseUrl: external.baseUrl,
-      apiKey: stored?.encryptedKey
-        ? decryptKey(stored.encryptedKey)
-        : envKey || external.apiKey || '',
-      secretKey: stored?.encryptedSecret
-        ? decryptKey(stored.encryptedSecret)
-        : '',
-      models: resolveModels(external)
-    }
-  }
-
-  if (!stored) return null
+  const stored = raw.providerKeys[id]
+  const envKey = provider.apiKeyEnv
+    ? process.env[provider.apiKeyEnv]
+    : undefined
 
   return {
-    type: stored.type ?? 'openai-compat',
-    baseUrl: stored.baseUrl,
-    apiKey: stored.encryptedKey ? decryptKey(stored.encryptedKey) : '',
-    secretKey: stored.encryptedSecret
-      ? decryptKey(stored.encryptedSecret)
-      : '',
-    models: stored.models
+    type: provider.type ?? 'openai-compat',
+    baseUrl: provider.baseUrl,
+    apiKey: stored?.encryptedKey ? decryptKey(stored.encryptedKey) : envKey || '',
+    secretKey: stored?.encryptedSecret ? decryptKey(stored.encryptedSecret) : '',
+    models: resolveModels(provider)
   }
+}
+
+let providerWriteChain: Promise<unknown> = Promise.resolve()
+
+function enqueueProviderWrite<T>(task: () => Promise<T>): Promise<T> {
+  const next = providerWriteChain.then(task, task)
+  providerWriteChain = next.catch(() => undefined)
+  return next
 }
 
 export async function saveProvider(input: ProviderInput): Promise<ProviderConfig> {
-  const external = await loadModelsConfig()
-  if (input.id && external.providers.some((provider) => provider.id === input.id)) {
-    throw new Error('该供应商来自 models.json，请直接编辑配置文件')
-  }
+  await ensureMigrated()
 
-  const data = await readSettings()
-  const now = new Date().toISOString()
-  const existing = input.id
-    ? data.providers.find((provider) => provider.id === input.id)
-    : undefined
+  return enqueueProviderWrite(async () => {
+    const config = await loadModelsConfig()
+    if (config.errors.length > 0) {
+      throw new Error(config.errors[0])
+    }
 
-  const provider: StoredProvider = {
-    id: existing?.id ?? randomUUID(),
-    name: input.name.trim() || '未命名供应商',
-    type: input.type ?? existing?.type ?? 'openai-compat',
-    baseUrl: input.baseUrl.trim().replace(/\/+$/, ''),
-    models: input.models,
-    encryptedKey:
-      input.apiKey && input.apiKey.trim()
-        ? encryptKey(input.apiKey.trim())
-        : existing?.encryptedKey,
-    encryptedSecret:
-      input.secretKey && input.secretKey.trim()
-        ? encryptKey(input.secretKey.trim())
-        : existing?.encryptedSecret,
-    createdAt: existing?.createdAt ?? now,
-    updatedAt: now
-  }
+    const id = input.id ?? randomUUID()
+    const existing = config.providers.find((provider) => provider.id === id)
+    const provider: ModelsFileProvider = {
+      ...(existing ?? {}),
+      id,
+      name: input.name.trim() || '未命名供应商',
+      type: input.type ?? existing?.type ?? 'openai-compat',
+      baseUrl: input.baseUrl.trim().replace(/\/+$/, ''),
+      models: input.models
+    }
+    delete provider.apiKey
 
-  if (existing) {
-    data.providers = data.providers.map((item) =>
-      item.id === provider.id ? provider : item
-    )
-  } else {
-    data.providers.push(provider)
-  }
+    await saveModelsConfig(upsertModelsProvider(config.providers, provider))
 
-  await writeSettings(data)
-  return toPublic(provider)
+    const raw = await readRawSettings()
+    const providerKeys: ProviderKeys = { ...raw.providerKeys }
+    const entry: ProviderKeyEntry = { ...(providerKeys[id] ?? {}) }
+
+    if (input.apiKey && input.apiKey.trim()) {
+      entry.encryptedKey = encryptKey(input.apiKey.trim())
+    }
+    if (input.secretKey && input.secretKey.trim()) {
+      entry.encryptedSecret = encryptKey(input.secretKey.trim())
+    }
+
+    if (entry.encryptedKey || entry.encryptedSecret) {
+      providerKeys[id] = entry
+    } else {
+      delete providerKeys[id]
+    }
+
+    await writeSettings({ version: 2, providerKeys })
+    return toModelsProvider(provider, entry)
+  })
 }
 
 export async function deleteProvider(id: string): Promise<void> {
-  const external = await loadModelsConfig()
-  if (external.providers.some((provider) => provider.id === id)) {
-    throw new Error('该供应商来自 models.json，请直接编辑配置文件')
-  }
+  await ensureMigrated()
 
-  const data = await readSettings()
-  data.providers = data.providers.filter((provider) => provider.id !== id)
-  await writeSettings(data)
+  await enqueueProviderWrite(async () => {
+    const config = await loadModelsConfig()
+    if (config.errors.length > 0) {
+      throw new Error(config.errors[0])
+    }
+
+    await saveModelsConfig(removeModelsProvider(config.providers, id))
+
+    const raw = await readRawSettings()
+    const providerKeys: ProviderKeys = { ...raw.providerKeys }
+    delete providerKeys[id]
+    await writeSettings({ version: 2, providerKeys })
+  })
 }
 
 export async function testConnection(
   input: ConnectionTestInput
 ): Promise<ConnectionTestResult> {
   try {
-    const data = await readSettings()
-    const stored = input.id
-      ? data.providers.find((provider) => provider.id === input.id)
+    const [config, raw] = await Promise.all([loadModelsConfig(), readRawSettings()])
+    const provider = input.id
+      ? config.providers.find((item) => item.id === input.id)
       : undefined
-    const external = input.id
-      ? (await loadModelsConfig()).providers.find(
-          (provider) => provider.id === input.id
-        )
+    const stored = input.id ? raw.providerKeys[input.id] : undefined
+    const envKey = provider?.apiKeyEnv
+      ? process.env[provider.apiKeyEnv]
       : undefined
 
-    const type = input.type ?? external?.type ?? stored?.type ?? 'openai-compat'
-    const envKey = external?.apiKeyEnv
-      ? process.env[external.apiKeyEnv]
-      : undefined
+    const type = input.type ?? provider?.type ?? 'openai-compat'
     const apiKey =
       input.apiKey?.trim() ||
       (stored?.encryptedKey ? decryptKey(stored.encryptedKey) : '') ||
       envKey ||
-      external?.apiKey ||
       ''
     const secretKey =
       input.secretKey?.trim() ||
       (stored?.encryptedSecret ? decryptKey(stored.encryptedSecret) : '')
-    const baseUrl = (input.baseUrl || external?.baseUrl || '')
+    const baseUrl = (input.baseUrl || provider?.baseUrl || '')
       .trim()
       .replace(/\/+$/, '')
 
@@ -289,17 +372,16 @@ export async function fetchModels(
   input: ConnectionTestInput
 ): Promise<FetchModelsResult> {
   try {
-    const data = await readSettings()
-    const stored = input.id
-      ? data.providers.find((provider) => provider.id === input.id)
+    const [config, raw] = await Promise.all([loadModelsConfig(), readRawSettings()])
+    const provider = input.id
+      ? config.providers.find((item) => item.id === input.id)
       : undefined
-    const external = input.id
-      ? (await loadModelsConfig()).providers.find(
-          (provider) => provider.id === input.id
-        )
+    const stored = input.id ? raw.providerKeys[input.id] : undefined
+    const envKey = provider?.apiKeyEnv
+      ? process.env[provider.apiKeyEnv]
       : undefined
 
-    const type = input.type ?? external?.type ?? stored?.type ?? 'openai-compat'
+    const type = input.type ?? provider?.type ?? 'openai-compat'
     if (type === 'kling') {
       return {
         ok: false,
@@ -308,16 +390,12 @@ export async function fetchModels(
       }
     }
 
-    const envKey = external?.apiKeyEnv
-      ? process.env[external.apiKeyEnv]
-      : undefined
     const apiKey =
       input.apiKey?.trim() ||
       (stored?.encryptedKey ? decryptKey(stored.encryptedKey) : '') ||
       envKey ||
-      external?.apiKey ||
       ''
-    const baseUrl = (input.baseUrl || external?.baseUrl || '')
+    const baseUrl = (input.baseUrl || provider?.baseUrl || '')
       .trim()
       .replace(/\/+$/, '')
 

@@ -3,6 +3,8 @@ import { registerIpc } from './ipc'
 import { registerAssetProtocol, registerAssetScheme } from './protocol'
 import { createMainWindow } from './window'
 import { ensureLibrary } from './library/config'
+import { ensureMigrated } from './settings/store'
+import { startModelsWatcher } from './settings/models-watch'
 import { appendFileSync } from 'node:fs'
 
 const diagLogPath = process.env.CINELAB_DIAG_LOG
@@ -71,6 +73,16 @@ if (!hasLock) {
       console.warn('[library] failed to initialize global library', error)
       diagLog(`ensureLibrary failed ${String(error)}`)
     }
+
+    try {
+      await ensureMigrated()
+      diagLog('migrate settings done')
+    } catch (error) {
+      console.warn('[settings] failed to migrate legacy settings', error)
+      diagLog(`migrate settings failed ${String(error)}`)
+    }
+
+    startModelsWatcher()
 
     registerAssetProtocol()
     diagLog('registerAssetProtocol done')

@@ -29,6 +29,7 @@
 | 分组设计 | `docs/group-nodes.md` |
 | 底部工具栏计划 | `docs/bottom-toolbar-plan.md` |
 | 深度动作捕捉方案 | `docs/depth-capture-plan.md` |
+| 后续路线图 | `docs/roadmap-plan.md` |
 
 ## 开发命令
 

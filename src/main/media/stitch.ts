@@ -6,7 +6,7 @@ import type { GeneratedAsset } from '@shared/generation'
 import type { StitchRequest } from '@shared/media'
 import { ingestAsset } from '../assets/ingest'
 import { runFfmpeg } from './ffmpeg'
-import { resolveInside } from './paths'
+import { resolveMediaPath } from './paths'
 
 const GAP = 8
 
@@ -27,7 +27,10 @@ export async function stitchGrid(
   const limited = input.paths.slice(0, cols * rows)
   if (limited.length === 0) throw new Error('没有可拼接的图片')
 
-  const files = limited.map((path) => resolveInside(projectRoot, path))
+  const files: string[] = []
+  for (const path of limited) {
+    files.push(await resolveMediaPath(projectRoot, path))
+  }
   const temp = join(app.getPath('temp'), `cinelab-stitch-${Date.now()}.png`)
 
   const filters = files

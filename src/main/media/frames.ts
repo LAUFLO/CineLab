@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import type { ExtractFrameRequest, ExtractFrameResult, FrameMode } from '@shared/media'
 import { ingestAsset } from '../assets/ingest'
 import { probeMedia, runFfmpeg } from './ffmpeg'
-import { resolveInside } from './paths'
+import { resolveMediaPath } from './paths'
 
 const LABEL: Record<FrameMode, string> = {
   first: '首帧',
@@ -17,7 +17,7 @@ export async function extractFrame(
   projectRoot: string,
   input: ExtractFrameRequest
 ): Promise<ExtractFrameResult> {
-  const absolute = resolveInside(projectRoot, input.path)
+  const absolute = await resolveMediaPath(projectRoot, input.path)
   const probe = await probeMedia(absolute)
 
   if (!probe.duration) throw new Error('无法读取视频时长')

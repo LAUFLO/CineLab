@@ -12,7 +12,7 @@ import type {
 } from '@shared/media'
 import { ingestAsset } from '../assets/ingest'
 import { probeMedia, runFfmpeg } from './ffmpeg'
-import { resolveInside } from './paths'
+import { resolveMediaPath } from './paths'
 
 const ALLOWED_RATIOS = new Set(['1:1', '16:9', '9:16', '4:3', '3:4'])
 
@@ -38,7 +38,7 @@ export async function trimVideo(
   projectRoot: string,
   input: TrimVideoRequest
 ): Promise<GeneratedAsset> {
-  const absolute = resolveInside(projectRoot, input.path)
+  const absolute = await resolveMediaPath(projectRoot, input.path)
   const probe = await probeMedia(absolute)
   const duration = probe.duration
 
@@ -81,7 +81,7 @@ export async function splitAv(
   projectRoot: string,
   input: SplitAvRequest
 ): Promise<SplitAvResult> {
-  const absolute = resolveInside(projectRoot, input.path)
+  const absolute = await resolveMediaPath(projectRoot, input.path)
   const probe = await probeMedia(absolute)
 
   if (!probe.hasAudio) throw new Error('当前视频无音轨，无法分离音视频')
@@ -139,7 +139,7 @@ export async function cropVideo(
 ): Promise<GeneratedAsset> {
   if (!ALLOWED_RATIOS.has(input.ratio)) throw new Error('不支持的裁切比例')
 
-  const absolute = resolveInside(projectRoot, input.path)
+  const absolute = await resolveMediaPath(projectRoot, input.path)
   const probe = await probeMedia(absolute)
 
   if (!probe.width || !probe.height) throw new Error('无法读取视频尺寸')
@@ -201,7 +201,7 @@ export async function removeSubtitles(
   projectRoot: string,
   input: RemoveSubtitlesRequest
 ): Promise<GeneratedAsset> {
-  const absolute = resolveInside(projectRoot, input.path)
+  const absolute = await resolveMediaPath(projectRoot, input.path)
   const probe = await probeMedia(absolute)
 
   if (!probe.width || !probe.height) throw new Error('无法读取视频尺寸')

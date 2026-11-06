@@ -8,7 +8,7 @@ import { ingestAsset } from '../assets/ingest'
 import { componentDirectory, isComponentInstalled } from '../components/service'
 import { MODEL_FILE } from '../components/installer'
 import { ffmpegBinary, probeMedia } from './ffmpeg'
-import { resolveInside } from './paths'
+import { resolveMediaPath } from './paths'
 
 const QUALITY = {
   fast: { longEdge: 854, inputSize: 364 },
@@ -28,7 +28,7 @@ export async function captureDepth(
   input: DepthCaptureRequest,
   options: DepthCaptureOptions = {}
 ): Promise<DepthCaptureResult> {
-  const absolute = resolveInside(projectRoot, input.path)
+  const absolute = await resolveMediaPath(projectRoot, input.path)
   const probe = await probeMedia(absolute)
 
   if (!probe.width || !probe.height || !probe.duration) {

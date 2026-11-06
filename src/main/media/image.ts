@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs'
 import type { GeneratedAsset } from '@shared/generation'
 import type { CropImageRectRequest, CropImageRequest } from '@shared/media'
 import { ingestAsset } from '../assets/ingest'
-import { resolveInside } from './paths'
+import { resolveMediaPath } from './paths'
 
 const ALLOWED_RATIOS = new Set(['1:1', '16:9', '9:16', '4:3', '3:4'])
 
@@ -17,7 +17,7 @@ export async function cropImage(
 ): Promise<GeneratedAsset> {
   if (!ALLOWED_RATIOS.has(input.ratio)) throw new Error('不支持的裁剪比例')
 
-  const absolute = resolveInside(projectRoot, input.path)
+  const absolute = await resolveMediaPath(projectRoot, input.path)
   const image = nativeImage.createFromBuffer(await fs.readFile(absolute))
 
   if (image.isEmpty()) throw new Error('无法读取图片')
@@ -60,7 +60,7 @@ export async function cropImageRect(
   projectRoot: string,
   input: CropImageRectRequest
 ): Promise<GeneratedAsset> {
-  const absolute = resolveInside(projectRoot, input.path)
+  const absolute = await resolveMediaPath(projectRoot, input.path)
   const image = nativeImage.createFromBuffer(await fs.readFile(absolute))
 
   if (image.isEmpty()) throw new Error('无法读取图片')

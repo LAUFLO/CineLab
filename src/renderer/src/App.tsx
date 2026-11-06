@@ -16,6 +16,7 @@ import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
 import { useProjectStore } from './stores/project'
 import { useSettingsStore } from './stores/settings'
+import { useUpdateStore } from './stores/update'
 import { subscribeDepthTasks } from './stores/depth-tasks'
 import { useTheme } from './theme/useTheme'
 
@@ -34,10 +35,15 @@ export default function App() {
 
   const loadProviders = useSettingsStore((state) => state.load)
   const subscribeGeneration = useGenerationStore((state) => state.subscribe)
+  const initUpdate = useUpdateStore((state) => state.init)
 
   useEffect(() => {
     void bootstrap()
   }, [bootstrap])
+
+  useEffect(() => {
+    initUpdate()
+  }, [initUpdate])
 
   useEffect(() => {
     void loadProviders()

@@ -2,12 +2,12 @@
   "version": 9,
   "project": "CineLab",
   "root": "D:\\CineLab",
-  "updatedAt": "2026-11-06",
+  "updatedAt": "2026-11-07",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "UI 细节打磨（K 项收尾可随时插入）",
-  "next_focus": "DEPTH-CAPTURE 收尾：真实素材视觉验收、UI 点击路径回归；打包机需将 CineLab.exe 加入加密软件白名单后再验证启动",
+  "next_focus": "DEPTH-CAPTURE 真实素材验收与 UI 回归；自动更新待正式发包后验证安装与 Release；P0 发布流程（签名 / 发版）收尾",
   "frontier": [
     {
       "id": "M2-1",
@@ -215,6 +215,15 @@
       "note": "新增项目 cover.png 存储、主进程 1:1 裁剪与 IPC、统一 ProjectCard 组件；欢迎页和全部项目弹窗共用 1:1 封面。typecheck/build 通过，画布图片选择与封面显示实测通过。",
       "evidence": [
         ".opencode/handover/evidence/PROJECT-COVER-1.md"
+      ]
+    },
+    {
+      "id": "UPDATE-1",
+      "title": "自动更新：检查 / 下载 / 重启安装入口（暂不正式发包）",
+      "status": "done",
+      "note": "electron-updater 6.8.11 接入；设置→关于显示版本、检查、下载进度、重启安装，顶栏有更新时提示；更新源配置为 GitHub Releases latest/download，当前未创建 Release，CI 仍 --publish never；已用本地 mock server 验证检查和下载，实际安装与真实 Release 待正式发包后验证。",
+      "evidence": [
+        ".opencode/handover/evidence/UPDATE-1.md"
       ]
     }
   ],

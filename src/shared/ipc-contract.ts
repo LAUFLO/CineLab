@@ -30,6 +30,7 @@ import type {
   TemplateInput
 } from './library-schema'
 import type { ModelsConfigStatus } from './models-file'
+import type { UpdateApi } from './update'
 import type {
   CropImageRectRequest,
   CropImageRequest,
@@ -193,4 +194,5 @@ export interface CineApi {
   media: MediaApi
   components: ComponentsApi
   export: ExportApi
+  update: UpdateApi
 }

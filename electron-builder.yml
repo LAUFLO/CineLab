@@ -25,3 +25,6 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   shortcutName: CineLab
+publish:
+  provider: generic
+  url: https://github.com/LAUFLO/CineLab/releases/latest/download

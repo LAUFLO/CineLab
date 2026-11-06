@@ -6,11 +6,13 @@ import {
   type ProviderInput
 } from '@shared/provider-schema'
 import type { ModelsConfigStatus } from '@shared/models-file'
+import type { UpdateStatus } from '@shared/update'
 import { BrandIcon, BrandWordmark } from '../components/Brand'
 import { Icon, type IconName } from '../components/Icon'
 import { useSettingsStore } from '../stores/settings'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
+import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
 
 type SectionId =
@@ -681,7 +683,42 @@ function PlaceholderSection({ title, description }: { title: string; description
   )
 }
 
+function updateLabel(status: UpdateStatus | null): string {
+  if (!status) return '正在读取更新状态…'
+  switch (status.state) {
+    case 'checking':
+      return '正在检查更新…'
+    case 'not-available':
+      return '已是最新版本'
+    case 'available':
+      return `发现新版本 ${status.latestVersion ?? ''}`
+    case 'downloading':
+      return `正在下载 ${status.percent ?? 0}%`
+    case 'downloaded':
+      return `新版本 ${status.latestVersion ?? ''} 已下载`
+    case 'error':
+      return status.error ?? '检查更新失败'
+    case 'unsupported':
+      return '当前构建不支持自动更新'
+    default:
+      return '尚未检查更新'
+  }
+}
+
 function AboutSection() {
+  const [version, setVersion] = useState('—')
+  const status = useUpdateStore((state) => state.status)
+  const check = useUpdateStore((state) => state.check)
+  const download = useUpdateStore((state) => state.download)
+  const install = useUpdateStore((state) => state.install)
+
+  useEffect(() => {
+    void window.api.app.getInfo().then((info) => setVersion(info.version))
+  }, [])
+
+  const busy = status?.state === 'checking' || status?.state === 'downloading'
+  const canCheck = status?.canCheck ?? false
+
   return (
     <div className="settings-section">
       <BrandWordmark height={20} className="settings-about__wordmark" />
@@ -690,7 +727,7 @@ function AboutSection() {
       </p>
       <div className="about-row">
         <span>版本</span>
-        <code>0.1.0</code>
+        <code>{version}</code>
       </div>
       <div className="about-row">
         <span>仓库</span>
@@ -699,6 +736,56 @@ function AboutSection() {
       <div className="about-row">
         <span>协议</span>
         <code>MIT</code>
+      </div>
+
+      <div className="update-card">
+        <div className="update-card__head">
+          <span className="update-card__title">软件更新</span>
+          <button
+            type="button"
+            className="btn-secondary btn-sm"
+            disabled={!canCheck || busy}
+            onClick={() => void check()}
+          >
+            {status?.state === 'checking' ? '检查中…' : '检查更新'}
+          </button>
+        </div>
+        <div
+          className={`update-card__status ${
+            status?.state === 'error' ? 'is-error' : ''
+          }`}
+        >
+          {updateLabel(status)}
+        </div>
+        {status?.state === 'downloading' ? (
+          <div className="update-card__bar">
+            <div
+              className="update-card__bar-fill"
+              style={{ width: `${status.percent ?? 0}%` }}
+            />
+          </div>
+        ) : null}
+        {status?.state === 'available' ? (
+          <button
+            type="button"
+            className="btn-primary btn-sm update-card__action"
+            onClick={() => void download()}
+          >
+            下载更新
+          </button>
+        ) : null}
+        {status?.state === 'downloaded' ? (
+          <button
+            type="button"
+            className="btn-primary btn-sm update-card__action"
+            onClick={() => void install()}
+          >
+            重启并安装
+          </button>
+        ) : null}
+        {status?.releaseNotes ? (
+          <div className="update-card__notes">{status.releaseNotes}</div>
+        ) : null}
       </div>
     </div>
   )

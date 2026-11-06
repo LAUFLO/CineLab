@@ -8,6 +8,7 @@ import type {
 import type { GenerateRequest, GenerationEvent } from '../shared/generation'
 import type { ComponentEvent, ComponentKind } from '../shared/components'
 import type { DepthTaskEvent } from '../shared/media'
+import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
 import type {
   AddToLibraryInput,
@@ -151,6 +152,23 @@ const api: CineApi = {
       ipcRenderer.on('components:event', listener)
       return () => {
         ipcRenderer.removeListener('components:event', listener)
+      }
+    }
+  },
+  update: {
+    getState: () => ipcRenderer.invoke('update:get-state'),
+    check: () => ipcRenderer.invoke('update:check'),
+    download: () => ipcRenderer.invoke('update:download'),
+    install: () => ipcRenderer.invoke('update:install'),
+    onEvent: (callback: (status: UpdateStatus) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: UpdateStatus
+      ): void => callback(payload)
+
+      ipcRenderer.on('update:event', listener)
+      return () => {
+        ipcRenderer.removeListener('update:event', listener)
       }
     }
   },

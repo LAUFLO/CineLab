@@ -12,6 +12,7 @@
 2. 每完成一个 frontier 项：更新 `state.json` 中对应 todo 状态，并在 `evidence/` 留一条验证记录。
 3. 用户说「收工 / 交接 / 同步状态 / handover」：执行 handover skill，重新生成投影文件。
 4. `state.json` 是唯一真相源；`boot-packet.md` 与 `project_summary.md` 是只读投影，禁止反写。
+5. 大功能（跨模块、涉及技术选型或外部依赖）在方案讨论确定后，必须先落 `docs/<feature>-plan.md`，再进入实现；方案变更先改文档再改代码。
 
 ## 状态与工件路径约定
 
@@ -27,6 +28,7 @@
 | 模型配置说明 | `docs/models.md` |
 | 分组设计 | `docs/group-nodes.md` |
 | 底部工具栏计划 | `docs/bottom-toolbar-plan.md` |
+| 深度动作捕捉方案 | `docs/depth-capture-plan.md` |
 
 ## 开发命令
 

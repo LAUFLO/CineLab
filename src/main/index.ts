@@ -3,6 +3,31 @@ import { registerIpc } from './ipc'
 import { registerAssetProtocol, registerAssetScheme } from './protocol'
 import { createMainWindow } from './window'
 import { ensureLibrary } from './library/config'
+import { appendFileSync } from 'node:fs'
+
+const diagLogPath = process.env.CINELAB_DIAG_LOG
+
+function diagLog(message: string): void {
+  if (!diagLogPath) return
+  try {
+    appendFileSync(diagLogPath, `${new Date().toISOString()} ${message}\n`, 'utf8')
+  } catch {
+    // diagnostics must never affect startup
+  }
+}
+
+process.on('uncaughtException', (error) => {
+  diagLog(
+    `uncaughtException ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`
+  )
+  throw error
+})
+
+process.on('unhandledRejection', (reason) => {
+  diagLog(
+    `unhandledRejection ${reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)}`
+  )
+})
 
 const isolatedUserData = process.env.CINELAB_USER_DATA
 if (isolatedUserData) {
@@ -13,7 +38,7 @@ if (process.env.CINELAB_USER_DATA) {
   app.setPath('userData', process.env.CINELAB_USER_DATA)
 }
 
-if (!app.isPackaged) {
+if (!app.isPackaged || process.env.CINELAB_DEBUG_PORT) {
   app.commandLine.appendSwitch(
     'remote-debugging-port',
     process.env.CINELAB_DEBUG_PORT ?? '9222'
@@ -37,21 +62,32 @@ if (!hasLock) {
   })
 
   app.whenReady().then(async () => {
+    diagLog('whenReady')
+
     try {
       await ensureLibrary()
+      diagLog('ensureLibrary done')
     } catch (error) {
       console.warn('[library] failed to initialize global library', error)
+      diagLog(`ensureLibrary failed ${String(error)}`)
     }
 
     registerAssetProtocol()
+    diagLog('registerAssetProtocol done')
     registerIpc()
+    diagLog('registerIpc done')
     createMainWindow()
+    diagLog('createMainWindow done')
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createMainWindow()
       }
     })
+  }).catch((error) => {
+    diagLog(
+      `whenReady rejected ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`
+    )
   })
 
   app.on('window-all-closed', () => {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { RecentProject } from '@shared/project-schema'
+import { BrandWordmark } from '../components/Brand'
 import { Icon } from '../components/Icon'
 import { useProjectStore } from '../stores/project'
 
@@ -35,8 +36,7 @@ export function ProjectCenter() {
     <div className="welcome-screen">
       <div className="project-center">
         <div className="project-center__brand">
-          <Icon name="logo" size={24} />
-          <span>CineLab</span>
+          <BrandWordmark height={30} />
         </div>
         <p className="project-center__hint">
           本地 AI 创作画布 · 数据存在你自己的硬盘上

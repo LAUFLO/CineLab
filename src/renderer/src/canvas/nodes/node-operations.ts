@@ -167,6 +167,15 @@ export const NODE_OPERATIONS: NodeOperation[] = [
 
   // ---------- P0：视频 ----------
   {
+    id: 'motion-capture',
+    label: '深度动作捕捉',
+    icon: 'video',
+    kinds: ['video'],
+    defaultPrimary: true,
+    implemented: true,
+    section: 'video'
+  },
+  {
     id: 'clip-trim',
     label: '片段截取',
     icon: 'scissors',
@@ -403,13 +412,6 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     icon: 'image',
     kinds: ['video'],
     section: 'video'
-  },
-  {
-    id: 'motion-capture',
-    label: '深度动作捕捉',
-    icon: 'video',
-    kinds: ['video'],
-    section: 'generate'
   },
   {
     id: 'intro',

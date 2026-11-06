@@ -19,7 +19,7 @@ export function WindowControls({ theme, onToggleTheme }: WindowControlsProps) {
       >
         <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
       </button>
-      <button type="button" className="icon-btn" title="设置" onClick={openSettings}>
+      <button type="button" className="icon-btn" title="设置" onClick={() => openSettings()}>
         <Icon name="settings" />
       </button>
       <span className="window-controls__divider" />

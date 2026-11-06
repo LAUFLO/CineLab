@@ -4,6 +4,7 @@ import { Canvas } from './canvas/Canvas'
 import { StatusBar } from './canvas/StatusBar'
 import { TopBar } from './canvas/TopBar'
 import { AppTooltip } from './components/AppTooltip'
+import { BrandWordmark } from './components/Brand'
 import { Toast } from './components/Toast'
 import { WindowControls } from './components/WindowControls'
 import { ConfirmDialog } from './panels/ConfirmDialog'
@@ -15,6 +16,7 @@ import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
 import { useProjectStore } from './stores/project'
 import { useSettingsStore } from './stores/settings'
+import { subscribeDepthTasks } from './stores/depth-tasks'
 import { useTheme } from './theme/useTheme'
 
 export default function App() {
@@ -45,6 +47,8 @@ export default function App() {
     const unsubscribe = subscribeGeneration()
     return unsubscribe
   }, [subscribeGeneration])
+
+  useEffect(() => subscribeDepthTasks(), [])
 
   useEffect(() => {
     if (!hydrated || phase !== 'ready') return
@@ -82,7 +86,7 @@ export default function App() {
   if (phase === 'loading') {
     content = (
       <div className="boot-screen">
-        <div className="boot-screen__logo">CineLab</div>
+        <BrandWordmark height={22} className="boot-screen__logo" />
         <div className="boot-screen__hint">正在打开项目…</div>
       </div>
     )
@@ -91,7 +95,7 @@ export default function App() {
   } else if (phase === 'error') {
     content = (
       <div className="boot-screen">
-        <div className="boot-screen__logo">CineLab</div>
+        <BrandWordmark height={22} className="boot-screen__logo" />
         <div className="boot-screen__hint">项目打开失败</div>
         <div className="boot-screen__error">{error}</div>
         <button type="button" className="empty-action" onClick={() => void bootstrap()}>

@@ -3,6 +3,7 @@ import type {
   CropImageRectRequest,
   CropImageRequest,
   CropVideoRequest,
+  DepthCaptureRequest,
   ExtractFrameRequest,
   GridSplitRequest,
   RemoveSubtitlesRequest,
@@ -11,6 +12,8 @@ import type {
   TrimVideoRequest
 } from '@shared/media'
 import { probeMedia } from '../media/ffmpeg'
+import { captureDepth } from '../media/depth'
+import { cancelDepthTask, startDepthTask } from '../media/depth-tasks'
 import { extractFrame } from '../media/frames'
 import { splitGrid } from '../media/grid'
 import { stitchGrid } from '../media/stitch'
@@ -26,6 +29,18 @@ function requireProjectRoot(): string {
 }
 
 export function registerMediaIpc(): void {
+  ipcMain.handle('media:capture-depth', async (_event, input: DepthCaptureRequest) => {
+    return captureDepth(requireProjectRoot(), input)
+  })
+
+  ipcMain.handle('media:depth-capture-start', async (_event, input: DepthCaptureRequest) => {
+    return startDepthTask(requireProjectRoot(), input)
+  })
+
+  ipcMain.handle('media:depth-capture-cancel', async (_event, taskId: string) => {
+    cancelDepthTask(taskId)
+  })
+
   ipcMain.handle('media:split-grid', async (_event, input: GridSplitRequest) => {
     return { assets: await splitGrid(requireProjectRoot(), input) }
   })

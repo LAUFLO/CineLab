@@ -6,11 +6,14 @@ import { isGroupNode, useCanvasStore } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useToolbarStore } from '../../stores/toolbar'
 import { useUIStore } from '../../stores/ui'
+import { useSettingsStore } from '../../stores/settings'
+import { trackDepthTask } from '../../stores/depth-tasks'
 import { AiOperationDialog } from './AiOperationDialog'
 import { CropDialog } from './CropDialog'
 import { SphereDialog } from './SphereDialog'
 import { SubtitleDialog } from './SubtitleDialog'
 import { TrimDialog } from './TrimDialog'
+import { DepthCaptureDialog } from './DepthCaptureDialog'
 import {
   OPERATION_SECTIONS,
   buildOperationPrompt,
@@ -62,6 +65,9 @@ export function NodeToolbar({
   const [moreSubId, setMoreSubId] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
   const [trimOpen, setTrimOpen] = useState(false)
+  const [depthDialog, setDepthDialog] = useState<{ duration: number } | null>(
+    null
+  )
   const [trimDuration, setTrimDuration] = useState(0)
   const [aiDialog, setAiDialog] = useState<{
     op: NodeOperation
@@ -516,6 +522,67 @@ export function NodeToolbar({
     })
   }
 
+  const openDepthDialog = async (): Promise<void> => {
+    try {
+      const [status, probe] = await Promise.all([
+        window.api.components.status(),
+        window.api.media.probe(current.path)
+      ])
+      const ready =
+        status.find((item) => item.kind === 'depth-runtime')?.state ===
+          'installed' &&
+        status.find((item) => item.kind === 'depth-model')?.state ===
+          'installed'
+
+      if (!ready) {
+        useUIStore.getState().requestConfirm({
+          title: '需要先安装深度组件',
+          message:
+            '「深度动作捕捉」需要「深度动作捕捉运行时」和「Video Depth Anything Small 模型」，合计约 375MB。是否前往设置安装？',
+          confirmLabel: '前往设置',
+          onConfirm: () => {
+            useSettingsStore.getState().openPanel('components')
+          }
+        })
+        return
+      }
+
+      if (!probe.duration) {
+        showToast('无法读取视频时长', 'error')
+        return
+      }
+      setDepthDialog({ duration: probe.duration })
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), 'error')
+    }
+  }
+
+  const confirmDepthCapture = async (
+    quality: 'fast' | 'standard' | 'long',
+    fps: number
+  ): Promise<void> => {
+    if (!depthDialog) return
+    setDepthDialog(null)
+
+    try {
+      const { taskId } = await window.api.media.startDepthCapture({
+        path: current.path,
+        quality,
+        fps
+      })
+      const node = useCanvasStore
+        .getState()
+        .nodes.find((entry) => entry.id === nodeId)
+      trackDepthTask(taskId, {
+        nodeId,
+        title: node && !isGroupNode(node) ? node.data.title : '视频'
+      })
+      showToast('已开始深度动作捕捉，完成后自动创建节点')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), 'error')
+    }
+  }
+
   const activate = (op: NodeOperation, item?: OperationMenuItem): void => {
     if (running) return
 
@@ -555,6 +622,11 @@ export function NodeToolbar({
 
     if (op.id === 'split-av') {
       void executeSplitAv()
+      return
+    }
+
+    if (op.id === 'motion-capture') {
+      void openDepthDialog()
       return
     }
 
@@ -807,6 +879,15 @@ export function NodeToolbar({
         </button>
       ) : null}
       </div>
+
+      <DepthCaptureDialog
+        open={Boolean(depthDialog)}
+        duration={depthDialog?.duration ?? 0}
+        onClose={() => setDepthDialog(null)}
+        onConfirm={(quality, fps) =>
+          void confirmDepthCapture(quality, fps)
+        }
+      />
 
       <TrimDialog
         open={trimOpen}

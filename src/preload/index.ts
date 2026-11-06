@@ -6,6 +6,8 @@ import type {
   ProviderInput
 } from '../shared/provider-schema'
 import type { GenerateRequest, GenerationEvent } from '../shared/generation'
+import type { ComponentEvent, ComponentKind } from '../shared/components'
+import type { DepthTaskEvent } from '../shared/media'
 import type { AssetRef } from '../shared/asset-schema'
 import type {
   AddToLibraryInput,
@@ -16,6 +18,7 @@ import type {
   CropImageRectRequest,
   CropImageRequest,
   CropVideoRequest,
+  DepthCaptureRequest,
   ExtractFrameRequest,
   GridSplitRequest,
   RemoveSubtitlesRequest,
@@ -120,6 +123,26 @@ const api: CineApi = {
     deleteTemplate: (id: string) =>
       ipcRenderer.invoke('library:delete-template', id)
   },
+  components: {
+    status: () => ipcRenderer.invoke('components:status'),
+    install: (kind: ComponentKind) =>
+      ipcRenderer.invoke('components:install', kind),
+    pause: (kind: ComponentKind) =>
+      ipcRenderer.invoke('components:pause', kind),
+    remove: (kind: ComponentKind) =>
+      ipcRenderer.invoke('components:remove', kind),
+    onEvent: (callback: (event: ComponentEvent) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: ComponentEvent
+      ): void => callback(payload)
+
+      ipcRenderer.on('components:event', listener)
+      return () => {
+        ipcRenderer.removeListener('components:event', listener)
+      }
+    }
+  },
   media: {
     splitGrid: (input: GridSplitRequest) =>
       ipcRenderer.invoke('media:split-grid', input),
@@ -137,7 +160,24 @@ const api: CineApi = {
     cropImageRect: (input: CropImageRectRequest) =>
       ipcRenderer.invoke('media:crop-image-rect', input),
     removeSubtitles: (input: RemoveSubtitlesRequest) =>
-      ipcRenderer.invoke('media:remove-subtitles', input)
+      ipcRenderer.invoke('media:remove-subtitles', input),
+    captureDepth: (input: DepthCaptureRequest) =>
+      ipcRenderer.invoke('media:capture-depth', input),
+    startDepthCapture: (input: DepthCaptureRequest) =>
+      ipcRenderer.invoke('media:depth-capture-start', input),
+    cancelDepthCapture: (taskId: string) =>
+      ipcRenderer.invoke('media:depth-capture-cancel', taskId),
+    onDepthCaptureEvent: (callback: (event: DepthTaskEvent) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: DepthTaskEvent
+      ): void => callback(payload)
+
+      ipcRenderer.on('depth-task:event', listener)
+      return () => {
+        ipcRenderer.removeListener('depth-task:event', listener)
+      }
+    }
   },
   export: {
     project: (projectName: string) =>

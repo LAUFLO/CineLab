@@ -334,6 +334,7 @@ export function PromptBar() {
 
       const store = useCanvasStore.getState()
       const base = absolutePosition(node, nodes)
+      const createdIds: string[] = []
       let offsetY = 0
 
       for (const asset of assets) {
@@ -348,6 +349,7 @@ export function PromptBar() {
           x: base.x - meta.width - 80,
           y: base.y + offsetY
         })
+        createdIds.push(id)
 
         store.patchNodeData(id, {
           title: asset.name,
@@ -368,6 +370,17 @@ export function PromptBar() {
 
         store.onConnect({ source: id, target: node.id })
         offsetY += meta.height + TITLE_HEIGHT + 24
+      }
+
+      if (createdIds.length >= 2) {
+        const groupCount = useCanvasStore
+          .getState()
+          .nodes.filter(isGroupNode).length
+        useCanvasStore.getState().createGroupFromNodes(createdIds, {
+          columns: 1,
+          title: `素材组 ${groupCount + 1}`,
+          color: 'amber'
+        })
       }
 
       useCanvasStore.setState({

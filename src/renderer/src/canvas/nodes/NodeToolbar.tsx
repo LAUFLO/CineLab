@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NODE_META, type NodeKind, type OutputRef } from '@shared/canvas-schema'
+import { NODE_META, GRID_SPLIT_CELL_WIDTH, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
 import { isGroupNode, useCanvasStore } from '../../stores/canvas'
@@ -163,13 +163,20 @@ export function NodeToolbar({
         cols
       })
       const width = node.measured?.width ?? NODE_META[node.data.kind].width
+      const groupCount = useCanvasStore.getState().nodes.filter(isGroupNode).length
 
       useCanvasStore.getState().addAssetNodes(
         'image',
         { x: node.position.x + width + 48, y: node.position.y },
         result.assets,
         `${node.data.title} · 切分`,
-        nodeId
+        nodeId,
+        {
+          columns: cols,
+          cellWidth: GRID_SPLIT_CELL_WIDTH,
+          groupTitle: `宫格组 ${groupCount + 1}`,
+          groupColor: 'green'
+        }
       )
       showToast(`已生成 ${result.assets.length} 个切分节点`)
     } catch (error) {
@@ -235,7 +242,7 @@ export function NodeToolbar({
       const width = node.measured?.width ?? NODE_META[node.data.kind].width
       const origin = { x: node.position.x + width + 48, y: node.position.y }
 
-      useCanvasStore.getState().addAssetNodes(
+      const videoIds = useCanvasStore.getState().addAssetNodes(
         'video',
         origin,
         [result.video],
@@ -243,13 +250,27 @@ export function NodeToolbar({
         nodeId
       )
 
-      if (result.audio) {
-        useCanvasStore.getState().addAssetNodes(
-          'audio',
-          { x: origin.x, y: origin.y + 420 },
-          [result.audio],
-          `${node.data.title} · 音轨`,
-          nodeId
+      const audioIds = result.audio
+        ? useCanvasStore.getState().addAssetNodes(
+            'audio',
+            { x: origin.x, y: origin.y + 420 },
+            [result.audio],
+            `${node.data.title} · 音轨`,
+            nodeId
+          )
+        : []
+
+      if (videoIds.length + audioIds.length >= 2) {
+        const groupCount = useCanvasStore
+          .getState()
+          .nodes.filter(isGroupNode).length
+        useCanvasStore.getState().createGroupFromNodes(
+          [...videoIds, ...audioIds],
+          {
+            columns: 1,
+            title: `音视频组 ${groupCount + 1}`,
+            color: 'cyan'
+          }
         )
       }
 

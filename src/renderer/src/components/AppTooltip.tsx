@@ -70,9 +70,15 @@ export function AppTooltip() {
 
       const rect = element.getBoundingClientRect()
       const showBelow = rect.top < 48
+      const estimatedWidth = Math.min(360, text.length * 13 + 20)
+      const half = estimatedWidth / 2
+      const x = Math.min(
+        Math.max(rect.left + rect.width / 2, half + 8),
+        window.innerWidth - half - 8
+      )
       setTip({
         text,
-        x: rect.left + rect.width / 2,
+        x,
         y: showBelow ? rect.bottom + 6 : rect.top - 6,
         placement: showBelow ? 'bottom' : 'top'
       })

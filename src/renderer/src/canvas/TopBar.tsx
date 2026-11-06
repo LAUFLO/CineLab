@@ -6,6 +6,8 @@ import { Icon } from '../components/Icon'
 import { ProjectCard } from '../components/ProjectCard'
 import { useProjectStore } from '../stores/project'
 import { useUIStore } from '../stores/ui'
+import { useSettingsStore } from '../stores/settings'
+import { useUpdateStore } from '../stores/update'
 
 export function TopBar() {
   const name = useProjectStore((state) => state.name)
@@ -25,6 +27,8 @@ export function TopBar() {
   const deleteCanvas = useProjectStore((state) => state.deleteCanvas)
   const deleteProject = useProjectStore((state) => state.deleteProject)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
+  const updateStatus = useUpdateStore((state) => state.status)
+  const openSettings = useSettingsStore((state) => state.openPanel)
 
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
   const [canvasMenuOpen, setCanvasMenuOpen] = useState(false)
@@ -327,6 +331,22 @@ export function TopBar() {
 
       <div className="topbar__group">
         <span className="topbar__save">{saveLabel}</span>
+        {updateStatus?.state === 'available' ||
+        updateStatus?.state === 'downloaded' ? (
+          <button
+            type="button"
+            className="icon-btn topbar__update"
+            title={
+              updateStatus.state === 'downloaded'
+                ? '新版本已下载，点击打开更新'
+                : `发现新版本 ${updateStatus.latestVersion ?? ''}`
+            }
+            onClick={() => openSettings('about')}
+          >
+            <Icon name="download" />
+            <span className="topbar__update-dot" />
+          </button>
+        ) : null}
         <div className="export-wrap" ref={exportRef}>
           <button
             className="icon-btn"

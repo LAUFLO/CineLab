@@ -8,6 +8,7 @@ import { registerExportIpc } from './export'
 import { registerClipboardIpc } from './clipboard'
 import { registerMediaIpc } from './media'
 import { registerComponentsIpc } from './components'
+import { registerUpdateIpc } from './update'
 
 function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
   return BrowserWindow.fromWebContents(sender)
@@ -22,6 +23,7 @@ export function registerIpc(): void {
   registerClipboardIpc()
   registerMediaIpc()
   registerComponentsIpc()
+  registerUpdateIpc()
 
   ipcMain.handle('app:get-info', () => ({
     version: app.getVersion(),

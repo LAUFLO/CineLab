@@ -2367,6 +2367,18 @@ body.is-picking .react-flow__node:hover .cnode__card {
   word-break: break-all;
 }
 
+.models-config__warnings {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
 .provider-list__empty {
   padding: 24px 8px;
   font-size: 12px;
@@ -3907,13 +3919,15 @@ body.is-picking .react-flow__node:hover .cnode__card {
 .cnode__toolbar {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 10px);
-  transform: translateX(-50%);
+  bottom: calc(100% + var(--node-toolbar-offset, 10px));
+  translate: -50% 0;
+  transform: scale(var(--canvas-zoom-inverse, 1));
+  transform-origin: bottom center;
   z-index: 10;
   display: flex;
   align-items: center;
   gap: 4px;
-  height: 42px;
+  height: 40px;
   padding: 0 8px;
   border-radius: 12px;
   background: var(--surface);

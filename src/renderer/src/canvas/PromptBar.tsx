@@ -103,7 +103,8 @@ export function PromptBar() {
     const onPointerDown = (event: PointerEvent): void => {
       if (
         uploadRef.current &&
-        !uploadRef.current.contains(event.target as Node)
+        event.target instanceof Node &&
+        !uploadRef.current.contains(event.target)
       ) {
         setUploadMenuOpen(false)
       }

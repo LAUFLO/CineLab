@@ -43,11 +43,13 @@ export function TopBar() {
     if (!projectMenuOpen && !canvasMenuOpen && !exportMenuOpen) return
 
     const onPointerDown = (event: PointerEvent): void => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (!(event.target instanceof Node)) return
+
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
         setProjectMenuOpen(false)
         setCanvasMenuOpen(false)
       }
-      if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
+      if (exportRef.current && !exportRef.current.contains(event.target)) {
         setExportMenuOpen(false)
       }
     }

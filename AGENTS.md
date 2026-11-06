@@ -24,12 +24,16 @@
 | 验证证据 | `.opencode/handover/evidence/` |
 | 界面规格 | `docs/ui-spec.md` |
 | 技术架构 | `docs/architecture.md` |
-| 模型配置 | `models.json`（仓库根或用户数据目录） |
+| 模型配置 | `models.json`（用户数据目录） |
 | 模型配置说明 | `docs/models.md` |
 | 分组设计 | `docs/group-nodes.md` |
 | 底部工具栏计划 | `docs/bottom-toolbar-plan.md` |
 | 深度动作捕捉方案 | `docs/depth-capture-plan.md` |
 | 后续路线图 | `docs/roadmap-plan.md` |
+| 模型配置统一方案 | `docs/models-config-unify-plan.md` |
+| 自动更新方案 | `docs/update-plan.md` |
+| 派生节点自动成组 | `docs/derived-nodes-group-plan.md` |
+| BeefTV 深度组件调研 | `docs/beef-tv-depth-research.md` |
 
 ## 开发命令
 

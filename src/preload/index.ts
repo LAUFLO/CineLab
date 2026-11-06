@@ -42,6 +42,12 @@ const api: CineApi = {
     saveCanvas: (path: string, canvas: CanvasData) =>
       ipcRenderer.invoke('project:save-canvas', path, canvas),
     recent: () => ipcRenderer.invoke('project:recent'),
+    readCover: (path: string) => ipcRenderer.invoke('project:cover-read', path),
+    setCoverFromLocal: (path: string) =>
+      ipcRenderer.invoke('project:cover-set-local', path),
+    setCoverFromAsset: (path: string, assetPath: string) =>
+      ipcRenderer.invoke('project:cover-set-asset', path, assetPath),
+    removeCover: (path: string) => ipcRenderer.invoke('project:cover-remove', path),
     pickCreate: () => ipcRenderer.invoke('project:pick-create'),
     pickOpen: () => ipcRenderer.invoke('project:pick-open'),
     reveal: (path: string) => ipcRenderer.invoke('project:reveal', path),

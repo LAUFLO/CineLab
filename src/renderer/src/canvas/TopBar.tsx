@@ -3,6 +3,7 @@ import type { ExportResult } from '@shared/ipc-contract'
 import type { RecentProject } from '@shared/project-schema'
 import { BrandWordmark } from '../components/Brand'
 import { Icon } from '../components/Icon'
+import { ProjectCard } from '../components/ProjectCard'
 import { useProjectStore } from '../stores/project'
 import { useUIStore } from '../stores/ui'
 
@@ -16,6 +17,7 @@ export function TopBar() {
   const startNew = useProjectStore((state) => state.startNew)
   const openExisting = useProjectStore((state) => state.openExisting)
   const openPath = useProjectStore((state) => state.openPath)
+  const projectPath = useProjectStore((state) => state.path)
   const renameProject = useProjectStore((state) => state.renameProject)
   const createCanvas = useProjectStore((state) => state.createCanvas)
   const switchCanvas = useProjectStore((state) => state.switchCanvas)
@@ -79,6 +81,10 @@ export function TopBar() {
     setRecent(list)
     setProjectMenuOpen(false)
     setProjectsOpen(true)
+  }
+
+  const refreshRecent = (): void => {
+    void window.api.project.recent().then(setRecent)
   }
 
   const submitProjectName = async (): Promise<void> => {
@@ -376,26 +382,16 @@ export function TopBar() {
               {recent.length > 0 ? (
                 <div className="projects-dialog__grid">
                   {recent.map((item) => (
-                    <button
+                    <ProjectCard
                       key={item.path}
-                      type="button"
-                      className="project-center__card"
-                      onClick={() => {
+                      project={item}
+                      onOpen={(path) => {
                         setProjectsOpen(false)
-                        void openPath(item.path)
+                        void openPath(path)
                       }}
-                    >
-                      <div className="project-center__cover">
-                        <Icon name="folder" size={16} />
-                      </div>
-                      <div className="project-center__card-name">{item.name}</div>
-                      <div className="project-center__card-path" title={item.path}>
-                        {item.path}
-                      </div>
-                      <div className="project-center__card-time">
-                        {new Date(item.lastOpenedAt).toLocaleString('zh-CN')}
-                      </div>
-                    </button>
+                      onChanged={refreshRecent}
+                      canPickCanvas={item.path === projectPath}
+                    />
                   ))}
                 </div>
               ) : (

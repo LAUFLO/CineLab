@@ -127,7 +127,8 @@ export const projectMetaSchema = z.object({
     )
     .min(1)
     .max(100),
-  activeCanvasId: z.string().min(1).max(120)
+  activeCanvasId: z.string().min(1).max(120),
+  cover: z.string().max(200).optional()
 })
 
 export type ProjectMeta = z.infer<typeof projectMetaSchema>
@@ -145,4 +146,5 @@ export interface RecentProject {
   path: string
   name: string
   lastOpenedAt: string
+  cover?: string
 }

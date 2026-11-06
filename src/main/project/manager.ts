@@ -1,6 +1,6 @@
-import { app } from 'electron'
+import { app, nativeImage } from 'electron'
 import { promises as fs } from 'node:fs'
-import { basename, dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve, sep } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import {
   canvasDataSchema,
@@ -66,7 +66,7 @@ export async function readRecent(): Promise<RecentProject[]> {
     const raw = await readJson(recentFile())
     if (!Array.isArray(raw)) return []
 
-    return raw
+    const items = raw
       .filter(
         (item): item is RecentProject =>
           typeof item === 'object' &&
@@ -75,6 +75,16 @@ export async function readRecent(): Promise<RecentProject[]> {
           typeof (item as RecentProject).name === 'string'
       )
       .slice(0, 10)
+
+    return await Promise.all(
+      items.map(async (item) => {
+        const hasCover = await fs
+          .access(join(item.path, COVER_FILE))
+          .then(() => true)
+          .catch(() => false)
+        return hasCover ? { ...item, cover: COVER_FILE } : item
+      })
+    )
   } catch {
     return []
   }
@@ -89,6 +99,74 @@ async function addRecent(path: string, name: string): Promise<void> {
 
   await fs.mkdir(dirname(recentFile()), { recursive: true })
   await writeJsonAtomic(recentFile(), next)
+}
+
+
+const COVER_FILE = 'cover.png'
+
+function normalizeCover(bytes: Buffer): Buffer {
+  const image = nativeImage.createFromBuffer(bytes)
+  if (image.isEmpty()) throw new Error('无法读取图片')
+
+  const { width, height } = image.getSize()
+  if (!width || !height) throw new Error('图片尺寸无效')
+
+  const size = Math.min(width, height)
+  const cropped = image.crop({
+    x: Math.floor((width - size) / 2),
+    y: Math.floor((height - size) / 2),
+    width: size,
+    height: size
+  })
+
+  return cropped.resize({ width: 512, height: 512, quality: 'best' }).toPNG()
+}
+
+export async function writeProjectCover(path: string, bytes: Buffer): Promise<void> {
+  const root = assertProjectPath(path)
+  const png = normalizeCover(bytes)
+  await fs.writeFile(join(root, COVER_FILE), png)
+
+  const meta = projectMetaSchema.parse(await readJson(join(root, 'project.json')))
+  meta.cover = COVER_FILE
+  await writeJsonAtomic(join(root, 'project.json'), meta)
+}
+
+export async function writeProjectCoverFromAsset(
+  path: string,
+  assetPath: string
+): Promise<void> {
+  const root = assertProjectPath(path)
+  const target = resolve(root, assetPath)
+  if (!target.startsWith(`${root}${sep}`) && target !== root) {
+    throw new Error('素材路径无效')
+  }
+  await writeProjectCover(path, await fs.readFile(target))
+}
+
+export async function readProjectCover(path: string): Promise<string | null> {
+  try {
+    const root = assertProjectPath(path)
+    const bytes = await fs.readFile(join(root, COVER_FILE))
+    return `data:image/png;base64,${bytes.toString('base64')}`
+  } catch {
+    return null
+  }
+}
+
+export async function removeProjectCover(path: string): Promise<void> {
+  const root = assertProjectPath(path)
+  await fs.rm(join(root, COVER_FILE), { force: true })
+
+  try {
+    const meta = projectMetaSchema.parse(await readJson(join(root, 'project.json')))
+    if (meta.cover) {
+      delete meta.cover
+      await writeJsonAtomic(join(root, 'project.json'), meta)
+    }
+  } catch {
+    // project meta missing — nothing else to clean up
+  }
 }
 
 export async function createProject(

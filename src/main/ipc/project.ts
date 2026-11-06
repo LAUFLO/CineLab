@@ -6,6 +6,7 @@ import {
   type OpenDialogOptions,
   type SaveDialogOptions
 } from 'electron'
+import { promises as fs } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import type { CanvasData } from '@shared/project-schema'
 import {
@@ -18,11 +19,15 @@ import {
   deleteProject,
   getCurrentProjectRoot,
   openProject,
+  readProjectCover,
   readRecent,
+  removeProjectCover,
   renameCanvas,
   renameProject,
   saveCanvas,
-  switchCanvas
+  switchCanvas,
+  writeProjectCover,
+  writeProjectCoverFromAsset
 } from '../project/manager'
 
 export function registerProjectIpc(): void {
@@ -39,6 +44,45 @@ export function registerProjectIpc(): void {
   )
 
   ipcMain.handle('project:recent', () => readRecent())
+
+  ipcMain.handle('project:cover-read', (_event, path: string) =>
+    readProjectCover(path)
+  )
+
+  ipcMain.handle('project:cover-set-local', async (event, path: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const options: OpenDialogOptions = {
+      title: '选择项目封面',
+      properties: ['openFile'],
+      filters: [
+        { name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp'] }
+      ]
+    }
+    const result = win
+      ? await dialog.showOpenDialog(win, options)
+      : await dialog.showOpenDialog(options)
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { ok: false, canceled: true }
+    }
+
+    await writeProjectCover(path, await fs.readFile(result.filePaths[0]))
+    return { ok: true }
+  })
+
+  ipcMain.handle(
+    'project:cover-set-asset',
+    async (_event, path: string, assetPath: string) => {
+      await writeProjectCoverFromAsset(path, assetPath)
+      return { ok: true }
+    }
+  )
+
+  ipcMain.handle('project:cover-remove', (_event, path: string) =>
+    removeProjectCover(path)
+  )
+
+
 
   ipcMain.handle('project:pick-create', async (event) => {
     const win = BrowserWindow.fromWebContents(event.sender)

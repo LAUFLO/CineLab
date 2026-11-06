@@ -18,7 +18,7 @@
 | 校验 | Zod 4 |
 | 媒体 | ffmpeg-static 5.3 + ffprobe-static 3.1 |
 | 存储 | 项目文件夹 + JSON / JSONL（不引入 SQLite） |
-| 打包 | 免安装绿色版 + zip（安装包已从计划移除） |
+| 打包 | electron-builder：NSIS 安装包 + zip（CI Windows 构建） |
 
 ## 目录结构
 
@@ -53,7 +53,7 @@ C:\Users\LAUFLO\Documents\CineLab
 | M2 | ✅ 完成 | 项目文件夹、模型配置、文生图/图生图、文本生成、队列、版本栈 |
 | M3 | ✅ 完成 | 火山方舟、可灵、MiniMax、智谱、Vidu 视频适配器；可灵支持 API Key 与 JWT |
 | M4 | ✅ 完成 | TTS、资产库（角色/素材/模板/一致性） |
-| M5 | ✅ 已完成免安装版 | 绿色版与 zip 可用；安装包已从计划移除 |
+| M5 | ✅ 完成 | NSIS 安装包 + zip；Windows CI 构建已跑通 |
 | M6 | ✅ 完成 | 导出、画布参考、节点比例与工具栏、智能引用、AI 水印开关；图片标记取消 |
 | NODE-TOOLBAR P0 | ✅ 完成 | 工具栏框架、ffmpeg、宫格切分、裁剪、截取、拆轨、画面裁切、首/尾/当前帧抽帧 |
 | NODE-TOOLBAR P1 | ✅ 完成 | 九宫格、三视图、画面推演、光影校正、预设打光/多角度、人像、抠图 |
@@ -61,6 +61,12 @@ C:\Users\LAUFLO\Documents\CineLab
 | GROUP-1 | ✅ 完成 | 分组节点：打组/合并/解组、10 色、排列、拖出脱离、复制、删除级联 |
 | UI-1 | ✅ 完成 | 底部工具栏：绿加号、工具浮窗、历史、快捷键、Ctrl+F 搜索、模型列表获取 |
 | STORYBOARD-1 | ✅ 完成 | 分镜组：2–25 张图片、比例/宫格、2K 拼接、序号、清空、转普通组 |
+| P0-1 | ✅ 完成 | 安装包只保留 win32-x64 ffprobe，225.6MB → 154.2MB |
+| P0-3 | ✅ 完成 | GitHub Actions Windows 打包，CI 全流程通过 |
+| MODELS-CONFIG-UNIFY | ✅ 完成 | models.json 唯一供应商清单；settings.json 只存加密 Key；旧数据迁移 |
+| UPDATE-1 | ✅ 完成 | electron-updater 检查/下载/重启安装入口；本地 mock 验证，暂不正式发包 |
+| UI-POLISH-2 | 🚧 待提交 | 窗口 86%、节点工具栏固定、对齐同边/中心、视频预览、节点尺寸、自动成组、宫格显示 |
+| RUNTIME-COMPONENTS-1 | ⏳ 下一焦点 | runtime 组件 CI 构建与 Release；模型已走官方 HF |
 
 ## 已完成的关键工件
 
@@ -71,8 +77,8 @@ C:\Users\LAUFLO\Documents\CineLab
 - `src/renderer/src/canvas/TopBar.tsx`：项目菜单、全部项目浮窗、画布下拉与内联重命名
 - `src/renderer/src/canvas/StatusBar.tsx`：左下悬浮工具条（资产/整理/视图/连线/吸附/缩放）
 - `src/renderer/src/panels/SettingsPanel.tsx`：居中设置浮窗，左侧导航（模型服务/外观/快捷键/关于）
-- `src/main/settings/store.ts`：Provider 配置与 safeStorage 加密 Key
-- `src/main/settings/models-config.ts`：`models.json` 读取、合并、预设解析与校验
+- `src/main/settings/store.ts`：Provider Key 加密存储、providerKeys 迁移
+- `src/main/settings/models-config.ts`：models.json 唯一读写、原子写、文件监听、预设解析与校验
 - `src/main/providers/openai-compat.ts`：文生图/图生图、TTS、文本生成、音乐生成
 - `src/main/providers/http-template.ts`：通用 HTTP 视频模板执行器
 - `src/main/providers/agnes.ts`：Agnes 视频适配器
@@ -111,6 +117,16 @@ C:\Users\LAUFLO\Documents\CineLab
 - `src/renderer/src/canvas/BottomBar.tsx`、`panels/HistoryPanel.tsx`、`NodeSearch.tsx`、`ShortcutPanel.tsx`：底部工具栏与三个浮窗
 - `src/renderer/src/components/AppTooltip.tsx`：统一悬浮提示（title → data-tip）
 - `src/main/settings/store.ts`：`fetchModels` 获取供应商模型列表
+- `src/main/settings/models-config.ts`：models.json 唯一读写、原子写、文件监听
+- `src/main/settings/store.ts`：providerKeys 加密 Key、旧 providers 迁移
+- `docs/models-config-unify-plan.md`：模型配置统一方案
+- `src/main/update/service.ts`、`src/main/ipc/update.ts`：electron-updater 状态机与 IPC
+- `docs/update-plan.md`：自动更新方案（暂不正式发包）
+- `src/main/components/manifest.ts`：depth-model 官方 HF + hf-mirror 源
+- `docs/beef-tv-depth-research.md`：BeefTV runtime 分发调研
+- `docs/derived-nodes-group-plan.md`：派生节点自动成组与尺寸规范
+- `.opencode/handover/evidence/UI-POLISH-2026-11-07.md`：节点尺寸/自动成组/对齐/预览验证
+- `.opencode/handover/evidence/MODELS-OFFICIAL-SOURCE.md`：模型官方源下载验证
 
 ## 设计约定
 
@@ -131,6 +147,11 @@ C:\Users\LAUFLO\Documents\CineLab
 15. 按钮强调色统一 `--pick-bar`（主题绿）；浮层居中用独立 `translate` 属性
 16. 可滚动浮层拦截 wheel，不带动画布；上传素材节点标记 `assetOnly`，不显示 prompt bar
 17. 组可作为引用源：连线到组时展开组内所有子节点输出
+18. 模型配置：models.json 唯一元数据清单，settings.json 只存加密 Key；明文 apiKey 忽略并警告
+19. 派生多节点自动成组：宫格切分 → 宫格组，分离音视频 → 音视频组，多文件上传 ≥2 → 素材组
+20. 节点默认尺寸：图片 360、视频 480、宫格 240、分镜组 480、文本/音频 348
+21. 对齐线只保留同侧边与中心线，不做边对中心
+22. 节点卡片不设固定 minHeight；图片/视频预览用 object-fit: contain，宫格每格按自身比例
 
 ## 环境注意
 
@@ -143,6 +164,9 @@ C:\Users\LAUFLO\Documents\CineLab
 - worktree 与主仓库同时运行会抢单实例锁；worktree 用 `CINELAB_USER_DATA` 独立目录，调试端口用 `CINELAB_DEBUG_PORT`
 - electron-builder `--dir` 在当前环境报 `EXDEV`，打包验证需在正常目录
 - 从 ZIP 解压的目录没有 `.git`，需要重新 init 并关联远程
+- runtime 组件本地测试：`node scripts/mock-component-server.mjs`（默认 8899）+ 设置 `CINELAB_COMPONENT_BASE_URL=http://127.0.0.1:8899`
+- 自动更新本地测试：`node scripts/mock-update-server.mjs`（8788）+ 设置 `CINELAB_UPDATE_URL=http://127.0.0.1:8788`
+- CI：`.github/workflows/build-win.yml` 已跑通；自动更新暂用 `--publish never`，不创建 Release
 
 ## 运行
 
@@ -151,4 +175,5 @@ corepack pnpm install
 corepack pnpm dev
 corepack pnpm typecheck
 corepack pnpm build
+corepack pnpm dist:win
 ```

@@ -1,13 +1,13 @@
 {
-  "version": 9,
+  "version": 10,
   "project": "CineLab",
-  "root": "D:\\CineLab",
+  "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
-  "nextPhase": "UI 细节打磨（K 项收尾可随时插入）",
-  "next_focus": "DEPTH-CAPTURE 真实素材验收与 UI 回归；自动更新待正式发包后验证安装与 Release；P0 发布流程（签名 / 发版）收尾",
+  "nextPhase": "UI 细节打磨与发布准备",
+  "next_focus": "runtime CI 构建发布：仿 BeefTV 用 GitHub Actions 构建 CPU runtime + manifest + Release；模型继续官方 HF；完成后验证组件下载并推进 DEPTH-CAPTURE-1 验收",
   "frontier": [
     {
       "id": "M2-1",
@@ -225,6 +225,62 @@
       "evidence": [
         ".opencode/handover/evidence/UPDATE-1.md"
       ]
+    },
+    {
+      "id": "MODELS-CONFIG-UNIFY",
+      "title": "模型配置统一：models.json 唯一清单，settings.json 只存加密 Key",
+      "status": "done",
+      "note": "提交 d0a888d。设置页直接读写 models.json，Key 加密存入 settings.json；旧 providers 迁移后删除；明文 apiKey 忽略并警告；文件监听自动刷新。",
+      "evidence": [
+        ".opencode/handover/evidence/MODELS-CONFIG-UNIFY.md",
+        "docs/models-config-unify-plan.md"
+      ]
+    },
+    {
+      "id": "MODELS-OFFICIAL-SOURCE",
+      "title": "深度模型组件改用官方 HuggingFace 源",
+      "status": "done",
+      "note": "depth-model 直接使用官方 VDA Small 权重（116,440,756 字节，sha256 133793...），主源 HF、备源 hf-mirror；打包应用实测下载安装通过。runtime 仍待发布。",
+      "evidence": [
+        ".opencode/handover/evidence/MODELS-OFFICIAL-SOURCE.md"
+      ]
+    },
+    {
+      "id": "AUTO-GROUP-1",
+      "title": "派生多节点自动成组：宫格切分 / 分离音视频 / 多文件上传",
+      "status": "done",
+      "note": "宫格切分自动创建宫格组并按行列排列；分离音视频创建音视频组；上传 ≥2 个文件创建素材组；单结果功能不成组。",
+      "evidence": [
+        "docs/derived-nodes-group-plan.md",
+        ".opencode/handover/evidence/UI-POLISH-2026-11-07.md"
+      ]
+    },
+    {
+      "id": "NODE-SIZE-1",
+      "title": "节点尺寸规范与旧项目迁移",
+      "status": "done",
+      "note": "图片 360、视频 480、宫格 240、分镜组 480、文本/音频不变；旧 614 图片/视频节点加载时迁移并重算高度；宫格节点按自身比例显示。",
+      "evidence": [
+        ".opencode/handover/evidence/UI-POLISH-2026-11-07.md"
+      ]
+    },
+    {
+      "id": "UI-POLISH-2",
+      "title": "UI 细节：窗口大小、节点工具栏、对齐线、视频预览、宫格显示",
+      "status": "done",
+      "note": "首次窗口按工作区 86% 且最大 1440×900；节点工具栏固定 40px 并反向缩放、间距收紧、菜单恢复向下；对齐只保留同边和中心线；视频节点展开支持全屏预览；宫格卡片移除固定 minHeight，图片改 contain 并按每格比例布局。",
+      "evidence": [
+        ".opencode/handover/evidence/UI-POLISH-2026-11-07.md"
+      ]
+    },
+    {
+      "id": "RUNTIME-COMPONENTS-1",
+      "title": "深度 runtime 组件 CI 构建与发布（下一焦点）",
+      "status": "pending",
+      "note": "当前默认源 depth-components-v1 Release 不存在，runtime 下载 404；模型已走官方 HF。下一步仿 BeefTV 新增 GitHub Actions Windows CPU runtime 构建（固定 Python 3.11、torch、VDA commit），生成 zip + manifest 并发布 Release；本地可用 CINELAB_COMPONENT_BASE_URL=http://127.0.0.1:8899 + scripts/mock-component-server.mjs 测试。",
+      "evidence": [
+        "docs/beef-tv-depth-research.md"
+      ]
     }
   ],
   "knownIssues": [
@@ -292,6 +348,26 @@
       "id": "K15",
       "area": "assets",
       "content": "测试在项目 assets 目录留下若干孤儿图片/视频素材，未清理，不影响画布引用。"
+    },
+    {
+      "id": "K16",
+      "area": "components",
+      "content": "runtime 组件默认源 depth-components-v1 Release 不存在，设置页下载 runtime 返回 HTTP 404；模型组件已改官方 HF 并验证。需 CI 构建 runtime 并发布，或使用本地 mock 源。"
+    },
+    {
+      "id": "K17",
+      "area": "repo",
+      "content": "工作区仍有未提交改动：本次 UI/模型/自动成组改动，以及另一路 src/main/media/* 的 resolveMediaPath 媒体路径改动；提交前需区分归属。"
+    },
+    {
+      "id": "K18",
+      "area": "update",
+      "content": "自动更新只完成本地 mock 的检查与下载验证；真实 GitHub Release、实际安装和代码签名未验证。"
+    },
+    {
+      "id": "K19",
+      "area": "ui",
+      "content": "宫格 2×2 文件已验证为原图精确四宫格（拼回 PSNR=inf）；预览已改 contain 和按格比例，仍待用户最终视觉验收。旧宫格组不自动重排。"
     }
   ],
   "gates": [],
@@ -830,6 +906,38 @@
     {
       "category": "procedure",
       "content": "dev:isolated 每次重启会新建临时 userData（最近项目、主题、供应商配置都会重置），项目文件本身不受影响；改 src/shared 或 src/main 时 electron-vite 的 main watch 可能不重建，必须手动重启实例。"
+    },
+    {
+      "category": "engineering",
+      "content": "模型配置只有 models.json 一个元数据真相源；settings.json 只存 providerKeys 加密 Key。新增/编辑/删除供应商同时维护 models.json 和 Key；明文 apiKey 只读取兼容并警告，不写入。"
+    },
+    {
+      "category": "preference",
+      "content": "派生多节点必须自动成组：宫格切分 → 宫格组（按切分行列），分离音视频 → 音视频组，多文件上传 ≥2 → 素材组；抽帧、拼接、深度捕捉、裁剪等单结果不成组。"
+    },
+    {
+      "category": "preference",
+      "content": "节点默认尺寸：图片 360、视频 480、宫格切分 240、分镜组 480、文本 348、音频 348。旧项目宽度 614 的图片/视频节点加载时迁移并重算高度。"
+    },
+    {
+      "category": "engineering",
+      "content": "对齐只允许同侧边与中心线：左↔左、右↔右、上↔上、下↔下、水平中心↔水平中心、垂直中心↔垂直中心；禁止边对中心或左边对右边。"
+    },
+    {
+      "category": "engineering",
+      "content": "节点卡片不能设置固定 minHeight（会撑破小尺寸节点和组框）；预览图片/视频使用 object-fit: contain，宫格每格按自身资源宽高比例计算节点高度。"
+    },
+    {
+      "category": "procedure",
+      "content": "runtime 组件没有官方现成 Windows 包；模型走官方 HuggingFace，runtime 必须自建。BeefTV 的做法是 GitHub Actions 固定 Python/PyTorch/VDA commit 构建 CPU/CUDA 包，签名 manifest 后发布 Release；详见 docs/beef-tv-depth-research.md。"
+    },
+    {
+      "category": "engineering",
+      "content": "自动更新用 electron-updater + generic provider，autoDownload=false，启动后延迟静默检查；本地用 CINELAB_UPDATE_URL 指向 mock server 验证，CI 仍 --publish never，真实 Release 和安装待正式发包验证。"
+    },
+    {
+      "category": "procedure",
+      "content": "工作区可能同时存在多个会话的改动；提交前先看 git status 和 diff 归属。本次 src/main/media/* 的 resolveMediaPath 改动不是 UI/模型任务的一部分，需单独确认。"
     }
   ],
   "designConventions": [
@@ -840,10 +948,14 @@
     "左下悬浮工具条 + 左上整体胶囊；资产库为左侧浮层，无全屏遮罩",
     "有最近项目启动直接进画布；无项目进入项目中心欢迎页，不自动创建项目",
     "确认弹窗、全部项目浮窗使用应用内组件，与主题变量一致",
-    "分组节点方案见 docs/group-nodes.md"
+    "分组节点方案见 docs/group-nodes.md",
+    "模型配置：models.json 为唯一元数据清单，settings.json 只存加密 Key",
+    "派生多节点自动成组：宫格/分离音视频/多文件上传；单结果功能不成组",
+    "节点默认尺寸：图片 360、视频 480、宫格 240、分镜 480、文本/音频 348",
+    "对齐线只保留同侧边与中心线"
   ],
   "stats": {
-    "sessions": 8,
+    "sessions": 9,
     "completedMilestones": [
       "M0",
       "M1",

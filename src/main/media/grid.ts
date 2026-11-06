@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs'
 import type { GeneratedAsset } from '@shared/generation'
 import type { GridSplitRequest } from '@shared/media'
 import { ingestAsset } from '../assets/ingest'
-import { resolveInside } from './paths'
+import { resolveMediaPath } from './paths'
 
 function clamp(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min
@@ -14,7 +14,7 @@ export async function splitGrid(
   projectRoot: string,
   input: GridSplitRequest
 ): Promise<GeneratedAsset[]> {
-  const absolute = resolveInside(projectRoot, input.path)
+  const absolute = await resolveMediaPath(projectRoot, input.path)
   const data = await fs.readFile(absolute)
   const image = nativeImage.createFromBuffer(data)
 

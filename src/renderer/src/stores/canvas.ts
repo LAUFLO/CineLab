@@ -73,6 +73,19 @@ function cloneSnapshot(nodes: CanvasNode[], edges: CineEdge[]): Snapshot {
 
 export type GroupArrangeMode = 'row' | 'column' | 'grid'
 
+export interface AddAssetLayout {
+  columns?: number
+  cellWidth?: number
+  groupTitle?: string
+  groupColor?: GroupColor
+}
+
+export interface CreateGroupOptions {
+  title?: string
+  color?: GroupColor
+  columns?: number
+}
+
 interface CanvasStore {
   nodes: CanvasNode[]
   edges: CineEdge[]
@@ -95,8 +108,13 @@ interface CanvasStore {
     origin: XYPosition,
     assets: GeneratedAsset[],
     titlePrefix: string,
-    sourceNodeId?: string
+    sourceNodeId?: string,
+    layout?: AddAssetLayout
   ) => string[]
+  createGroupFromNodes: (
+    nodeIds: string[],
+    options?: CreateGroupOptions
+  ) => string | null
   applyOutput: (nodeId: string, asset: GeneratedAsset, op?: string) => void
   patchNodeData: (nodeId: string, patch: Partial<CineNodeData>) => void
   resizeNode: (nodeId: string, height: number) => void
@@ -254,8 +272,39 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   loadCanvas: (nodes, edges, viewport) => {
+    const groupIds = new Set<string>()
+    const migrated = nodes.map((node) => {
+      if (isGroupNode(node)) return node
+      if (node.data.kind !== 'image' && node.data.kind !== 'video') return node
+
+      const width = Number(node.style?.width ?? 0)
+      if (width !== 614) return node
+
+      const meta = NODE_META[node.data.kind]
+      const output = node.data.outputs?.find(
+        (item) => item.width && item.height
+      )
+      const oldHeight = Number(
+        node.style?.height ?? meta.height + TITLE_HEIGHT
+      )
+      const height = output?.width && output?.height
+        ? Math.round((meta.width * output.height) / output.width) + TITLE_HEIGHT
+        : Math.round(oldHeight * (meta.width / width))
+
+      if (node.parentId) groupIds.add(node.parentId)
+
+      return {
+        ...node,
+        style: {
+          ...node.style,
+          width: meta.width,
+          height
+        }
+      }
+    })
+
     set({
-      nodes,
+      nodes: migrated,
       edges,
       viewport,
       hydrated: true,
@@ -263,6 +312,10 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       future: [],
       clipboard: null
     })
+
+    for (const groupId of groupIds) {
+      get().syncGroupBounds(groupId)
+    }
   },
 
   setViewport: (viewport) => {
@@ -362,27 +415,41 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return id
   },
 
-  addAssetNodes: (kind, origin, assets, titlePrefix, sourceNodeId) => {
+  addAssetNodes: (kind, origin, assets, titlePrefix, sourceNodeId, layout) => {
     if (assets.length === 0) return []
 
     get().pushHistory()
 
     const meta = NODE_META[kind]
-    const gap = 24
-    const columns = 3
-    const first = assets[0]
-    const ratio =
-      first?.width && first?.height
-        ? first.height / first.width
-        : meta.height / meta.width
-    const nodeHeight = Math.round(meta.width * ratio) + TITLE_HEIGHT
-    const colStep = meta.width + gap
-    const rowStep = nodeHeight + gap
-    const rows = Math.ceil(assets.length / columns)
-    const groupWidth = columns * meta.width + (columns - 1) * gap
-    const groupHeight = rows * nodeHeight + (rows - 1) * gap
-    const start = findFreeOrigin(get().nodes, origin, groupWidth, groupHeight, gap)
+    const gap = GROUP_GAP
+    const columns = Math.max(1, Math.round(layout?.columns ?? 3))
+    const width = Math.max(1, Math.round(layout?.cellWidth ?? meta.width))
+    const heights = assets.map((asset) => {
+      const ratio =
+        asset.width && asset.height
+          ? asset.height / asset.width
+          : meta.height / meta.width
+      return Math.round(width * ratio) + TITLE_HEIGHT
+    })
+    const rowHeights: number[] = []
+    heights.forEach((height, index) => {
+      const row = Math.floor(index / columns)
+      rowHeights[row] = Math.max(rowHeights[row] ?? 0, height)
+    })
+    const rows = rowHeights.length
+    const contentWidth = columns * width + (columns - 1) * gap
+    const contentHeight =
+      rowHeights.reduce((sum, height) => sum + height, 0) +
+      Math.max(0, rows - 1) * gap
+    const grouped = Boolean(layout?.groupTitle)
+    const outerWidth = grouped ? contentWidth + GROUP_PADDING * 2 : contentWidth
+    const outerHeight = grouped
+      ? contentHeight + GROUP_HEADER_HEIGHT + GROUP_PADDING
+      : contentHeight
+    const start = findFreeOrigin(get().nodes, origin, outerWidth, outerHeight, gap)
     const ids: string[] = []
+    const groupId = grouped ? nextId('group') : null
+    const groupCount = get().nodes.filter(isGroupNode).length
 
     const created: CineNode[] = assets.map((asset, index) => {
       const id = nextId(kind)
@@ -401,14 +468,28 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         hasAudio: asset.hasAudio
       }
 
+      const column = index % columns
+      const row = Math.floor(index / columns)
+      const rowOffset =
+        rowHeights.slice(0, row).reduce((sum, height) => sum + height, 0) +
+        row * gap
+      const position = grouped
+        ? {
+            x: GROUP_PADDING + column * (width + gap),
+            y: GROUP_HEADER_HEIGHT + rowOffset
+          }
+        : {
+            x: start.x + column * (width + gap),
+            y: start.y + rowOffset
+          }
+
       return {
         id,
         type: 'cine',
-        position: {
-          x: start.x + (index % columns) * colStep,
-          y: start.y + Math.floor(index / columns) * rowStep
-        },
+        ...(groupId ? { parentId: groupId } : {}),
+        position,
         selected: false,
+        ...(groupId ? { zIndex: 1 } : {}),
         data: {
           kind,
           title: `${titlePrefix} ${index + 1}`,
@@ -417,9 +498,25 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           selectedOutputId: output.id,
           templates: meta.templates
         },
-        style: { width: meta.width, height: nodeHeight }
+        style: { width, height: heights[index] }
       }
     })
+
+    const group: GroupNode | null =
+      grouped && groupId
+        ? {
+            id: groupId,
+            type: 'group',
+            position: start,
+            data: {
+              title: layout?.groupTitle ?? `分组 ${groupCount + 1}`,
+              color: layout?.groupColor ?? 'blue'
+            },
+            style: { width: outerWidth, height: outerHeight },
+            selected: true,
+            zIndex: 0
+          }
+        : null
 
     const createdEdges: CineEdge[] = sourceNodeId
       ? created.map((node) => ({
@@ -432,10 +529,111 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       : []
 
     set({
-      nodes: [...get().nodes, ...created],
+      nodes: [
+        ...(group
+          ? get().nodes.map((node) => ({ ...node, selected: false }))
+          : get().nodes),
+        ...(group ? [group] : []),
+        ...created
+      ],
       edges: [...get().edges, ...createdEdges]
     })
     return ids
+  },
+  createGroupFromNodes: (nodeIds, options) => {
+    const all = get().nodes
+    const wanted = new Set(nodeIds)
+    const targets = all.filter(
+      (node) => wanted.has(node.id) && !isGroupNode(node) && !node.parentId
+    )
+    if (targets.length < 2) return null
+
+    get().pushHistory()
+
+    const columns = Math.max(
+      1,
+      Math.round(options?.columns ?? Math.ceil(Math.sqrt(targets.length)))
+    )
+    const sizes = new Map(targets.map((node) => [node.id, nodeSize(node)]))
+    const columnWidths: number[] = []
+    const rowHeights: number[] = []
+
+    targets.forEach((node, index) => {
+      const size = sizes.get(node.id) as { width: number; height: number }
+      const column = index % columns
+      const row = Math.floor(index / columns)
+      columnWidths[column] = Math.max(columnWidths[column] ?? 0, size.width)
+      rowHeights[row] = Math.max(rowHeights[row] ?? 0, size.height)
+    })
+
+    const contentWidth =
+      columnWidths.reduce((sum, value) => sum + value, 0) +
+      Math.max(0, columns - 1) * GROUP_GAP
+    const contentHeight =
+      rowHeights.reduce((sum, value) => sum + value, 0) +
+      Math.max(0, rowHeights.length - 1) * GROUP_GAP
+
+    const absolute = new Map(
+      targets.map((node) => [node.id, absolutePosition(node, all)])
+    )
+    const minX = Math.min(...targets.map((node) => absolute.get(node.id)!.x))
+    const minY = Math.min(...targets.map((node) => absolute.get(node.id)!.y))
+
+    const groupId = nextId('group')
+    const groupCount = all.filter(isGroupNode).length
+
+    const positions = new Map<string, XYPosition>()
+    let y = GROUP_HEADER_HEIGHT
+    rowHeights.forEach((rowHeight, row) => {
+      let x = GROUP_PADDING
+      for (let column = 0; column < columns; column += 1) {
+        const node = targets[row * columns + column]
+        if (!node) break
+        const size = sizes.get(node.id) as { width: number; height: number }
+        positions.set(node.id, {
+          x: x + (columnWidths[column] - size.width) / 2,
+          y: y + (rowHeight - size.height) / 2
+        })
+        x += columnWidths[column] + GROUP_GAP
+      }
+      y += rowHeight + GROUP_GAP
+    })
+
+    const group: GroupNode = {
+      id: groupId,
+      type: 'group',
+      position: {
+        x: minX - GROUP_PADDING,
+        y: minY - GROUP_HEADER_HEIGHT
+      },
+      data: {
+        title: options?.title ?? `分组 ${groupCount + 1}`,
+        color: options?.color ?? 'blue'
+      },
+      style: {
+        width: contentWidth + GROUP_PADDING * 2,
+        height: contentHeight + GROUP_HEADER_HEIGHT + GROUP_PADDING
+      },
+      selected: true,
+      zIndex: 0
+    }
+
+    const ids = new Set(targets.map((node) => node.id))
+    const nodes = all.map((node) => {
+      if (ids.has(node.id)) {
+        return {
+          ...node,
+          parentId: groupId,
+          position: positions.get(node.id) ?? node.position,
+          zIndex: 1,
+          selected: false
+        }
+      }
+      return { ...node, selected: false }
+    })
+
+    set({ nodes: [group, ...nodes] })
+    return groupId
   },
   applyOutput: (nodeId, asset, op) => {
     const node = get().nodes.find((entry) => entry.id === nodeId)

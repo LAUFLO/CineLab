@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
-import { useCanvasStore, type CineNode } from '../../stores/canvas'
+import { nodeSize, useCanvasStore, type CineNode } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useUIStore } from '../../stores/ui'
 import { useLibraryStore } from '../../stores/library'
@@ -43,6 +43,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   })
   const cancelGeneration = useGenerationStore((state) => state.cancel)
   const openLibraryPicker = useLibraryStore((state) => state.openPicker)
+  const nodeWidth = useCanvasStore((state) => {
+    const found = state.nodes.find((entry) => entry.id === id)
+    return found ? nodeSize(found).width : meta.width
+  })
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -66,7 +70,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     if (next) {
       patchNodeData(id, { selectedOutputId: next.id })
       if (next.width && next.height) {
-        resizeNode(id, Math.round((meta.width * next.height) / next.width) + TITLE_HEIGHT)
+        resizeNode(id, Math.round((nodeWidth * next.height) / next.width) + TITLE_HEIGHT)
       }
     }
   }
@@ -162,7 +166,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         {data.status === 'error' ? <span className="cnode__badge is-error">失败</span> : null}
       </div>
 
-      <div className="cnode__card" style={{ minHeight: meta.height }}>
+      <div className="cnode__card">
         <div className={`cnode__preview cnode__preview--${data.kind}`}>
           {assetSrc && current?.kind === 'text' ? (
             <p className="cnode__text">{data.text ?? '文本已生成'}</p>
@@ -261,17 +265,29 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         <Icon name="plus" size={12} className="cnode__handle-icon" />
       </Handle>
     </div>
-    {previewOpen && current?.kind === 'image'
+    {previewOpen &&
+    current &&
+    (current.kind === 'image' || current.kind === 'video')
       ? createPortal(
           <div
             className="image-preview"
             onPointerDown={() => setPreviewOpen(false)}
           >
-            <img
-              src={`cinelab-asset://local/${current.path}`}
-              alt=""
-              onPointerDown={(event) => event.stopPropagation()}
-            />
+            {current.kind === 'image' ? (
+              <img
+                src={assetUrl(current.path, current.scope)}
+                alt=""
+                onPointerDown={(event) => event.stopPropagation()}
+              />
+            ) : (
+              <video
+                src={assetUrl(current.path, current.scope)}
+                controls
+                autoPlay
+                playsInline
+                onPointerDown={(event) => event.stopPropagation()}
+              />
+            )}
           </div>,
           document.body
         )

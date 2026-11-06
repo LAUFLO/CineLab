@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, screen, shell } from 'electron'
 import { appendFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -24,11 +24,16 @@ function logWindowError(message: string): void {
 }
 
 export function createMainWindow(): BrowserWindow {
+  const workArea = screen.getPrimaryDisplay().workAreaSize
+  const width = Math.min(1440, Math.max(1100, Math.round(workArea.width * 0.86)))
+  const height = Math.min(900, Math.max(700, Math.round(workArea.height * 0.86)))
+
   const win = new BrowserWindow({
-    width: 1600,
-    height: 1000,
+    width,
+    height,
     minWidth: 1100,
     minHeight: 700,
+    center: true,
     show: false,
     autoHideMenuBar: true,
     frame: false,

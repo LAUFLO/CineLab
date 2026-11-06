@@ -5,18 +5,30 @@ export interface ComponentDefinition {
   kind: ComponentKind
   label: string
   directory: string
-  manifestUrl: string
+  manifestUrl?: string
   fallback: ComponentManifest
 }
 
 const platform = `${process.platform}-${process.arch}`
 
-// 正式地址在组件发布后替换；开发期可用 CINELAB_COMPONENT_BASE_URL 指向本地 mock。
-const baseUrl =
+// runtime 没有官方现成包，需要自建；开发期可用 CINELAB_COMPONENT_BASE_URL 指向本地 mock。
+const runtimeBaseUrl =
   process.env.CINELAB_COMPONENT_BASE_URL ??
   'https://github.com/LAUFLO/CineLab/releases/download/depth-components-v1'
 
-function fallback(kind: ComponentKind, urls: string[] = []): ComponentManifest {
+const MODEL_URLS = [
+  'https://huggingface.co/depth-anything/Video-Depth-Anything-Small/resolve/main/video_depth_anything_vits.pth',
+  'https://hf-mirror.com/depth-anything/Video-Depth-Anything-Small/resolve/main/video_depth_anything_vits.pth'
+]
+const MODEL_SIZE = 116_440_756
+const MODEL_SHA256 =
+  '13379300b739e659f076a59d52e9801bd8d38c541a7e71f73bbca4dcfb013609'
+
+function fallback(
+  kind: ComponentKind,
+  urls: string[] = [],
+  overrides: Partial<ComponentManifest> = {}
+): ComponentManifest {
   return {
     version: 1,
     kind,
@@ -25,7 +37,8 @@ function fallback(kind: ComponentKind, urls: string[] = []): ComponentManifest {
     expandedSize: 0,
     sha256: '',
     urls,
-    files: 0
+    files: 0,
+    ...overrides
   }
 }
 
@@ -34,17 +47,22 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
     kind: 'depth-runtime',
     label: '深度运行时',
     directory: 'depth-runtime',
-    manifestUrl: `${baseUrl}/depth-runtime-manifest.json`,
-    fallback: fallback('depth-runtime', [`${baseUrl}/depth-runtime-${platform}.zip`])
+    manifestUrl: `${runtimeBaseUrl}/depth-runtime-manifest.json`,
+    fallback: fallback('depth-runtime', [
+      `${runtimeBaseUrl}/depth-runtime-win32-x64-v1.zip`
+    ])
   },
   'depth-model': {
     kind: 'depth-model',
     label: 'VDA Small 模型',
     directory: 'depth-model-vda-small',
-    manifestUrl: `${baseUrl}/depth-model-vda-small-manifest.json`,
-    fallback: fallback('depth-model', [
-      `${baseUrl}/video_depth_anything_vits.pth`
-    ])
+    // 模型直接使用官方权重，不再依赖自建 manifest
+    fallback: fallback('depth-model', MODEL_URLS, {
+      size: MODEL_SIZE,
+      expandedSize: MODEL_SIZE,
+      sha256: MODEL_SHA256,
+      files: 1
+    })
   }
 }
 
@@ -72,6 +90,8 @@ export async function fetchManifest(
   definition: ComponentDefinition,
   signal?: AbortSignal
 ): Promise<ComponentManifest> {
+  if (!definition.manifestUrl) return definition.fallback
+
   const timeout = AbortSignal.timeout(15_000)
   const combined = signal
     ? AbortSignal.any([signal, timeout])

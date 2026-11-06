@@ -96,6 +96,8 @@ export const GROUP_RATIO_VALUE: Record<GroupRatio, number> = {
 export const STORYBOARD_MAX_NODES = 25
 export const STORYBOARD_CELL_WIDTH = 480
 export const STORYBOARD_GAP = 24
+/** 宫格切分生成的单格宽度，比分镜组更紧凑 */
+export const GRID_SPLIT_CELL_WIDTH = 240
 
 export interface GroupNodeData extends Record<string, unknown> {
   title: string
@@ -127,14 +129,14 @@ export const NODE_META: Record<NodeKind, NodeMeta> = {
   },
   image: {
     label: '图片',
-    width: 614,
+    width: 360,
     height: 348,
     templates: ['图生图', '图片高清', '局部重绘']
   },
   video: {
     label: '视频',
-    width: 614,
-    height: 348,
+    width: 480,
+    height: 270,
     templates: ['首尾帧生成视频', '音效生成视频', '5 秒视频']
   },
   audio: {

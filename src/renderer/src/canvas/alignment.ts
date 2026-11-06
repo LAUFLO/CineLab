@@ -82,27 +82,23 @@ export function computeAlignment(
       otherBounds.bottom
     ]
 
-    for (const dragValue of dragVertical) {
-      for (const otherValue of otherVertical) {
-        const delta = otherValue - dragValue
-        if (
-          Math.abs(delta) <= threshold &&
-          (!vertical || Math.abs(delta) < Math.abs(vertical.delta))
-        ) {
-          vertical = { delta, value: otherValue }
-        }
+    for (let index = 0; index < dragVertical.length; index += 1) {
+      const delta = otherVertical[index] - dragVertical[index]
+      if (
+        Math.abs(delta) <= threshold &&
+        (!vertical || Math.abs(delta) < Math.abs(vertical.delta))
+      ) {
+        vertical = { delta, value: otherVertical[index] }
       }
     }
 
-    for (const dragValue of dragHorizontal) {
-      for (const otherValue of otherHorizontal) {
-        const delta = otherValue - dragValue
-        if (
-          Math.abs(delta) <= threshold &&
-          (!horizontal || Math.abs(delta) < Math.abs(horizontal.delta))
-        ) {
-          horizontal = { delta, value: otherValue }
-        }
+    for (let index = 0; index < dragHorizontal.length; index += 1) {
+      const delta = otherHorizontal[index] - dragHorizontal[index]
+      if (
+        Math.abs(delta) <= threshold &&
+        (!horizontal || Math.abs(delta) < Math.abs(horizontal.delta))
+      ) {
+        horizontal = { delta, value: otherHorizontal[index] }
       }
     }
   }

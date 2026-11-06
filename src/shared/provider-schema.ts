@@ -47,8 +47,6 @@ export interface ProviderConfig {
   models: ModelDef[]
   hasKey: boolean
   hasSecret: boolean
-  /** settings = 应用内配置，models = models.json */
-  source?: 'settings' | 'models'
   createdAt: string
   updatedAt: string
 }

@@ -1,5 +1,6 @@
 import { app } from 'electron'
 import { promises as fs } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import {
   MODEL_PRESETS,
@@ -43,6 +44,7 @@ const PARAM_TYPES = ['select', 'number', 'text', 'boolean']
 interface ParsedModels {
   providers: ModelsFileProvider[]
   errors: string[]
+  warnings: string[]
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -166,6 +168,11 @@ function validateModel(
     errors.push(`${path}.adapter 不支持：${adapter}，可用值 ${ADAPTERS.join(' / ')}`)
   }
 
+  const providerType = readString(item.providerType) as ProviderType | undefined
+  if (providerType && !PROVIDER_TYPES.includes(providerType)) {
+    errors.push(`${path}.providerType 必须是 ${PROVIDER_TYPES.join(' / ')}`)
+  }
+
   const template = item.template
   if (template !== undefined) {
     if (!isRecord(template)) {
@@ -200,6 +207,7 @@ function validateModel(
       ? { remoteModel: readString(item.remoteModel) }
       : {}),
     ...(adapter ? { adapter } : {}),
+    ...(providerType ? { providerType } : {}),
     ...(isRecord(template) ? { template: template as unknown as HttpTemplate } : {}),
     ...(params ? { params } : {})
   }
@@ -207,10 +215,11 @@ function validateModel(
 
 export function parseModelsFile(input: unknown, file: string): ParsedModels {
   const errors: string[] = []
+  const warnings: string[] = []
   const providers: ModelsFileProvider[] = []
 
   if (!isRecord(input)) {
-    return { providers, errors: [`${file}: 根节点必须是对象`] }
+    return { providers, errors: [`${file}: 根节点必须是对象`], warnings }
   }
 
   const version = Number(input.version ?? 1)
@@ -220,7 +229,7 @@ export function parseModelsFile(input: unknown, file: string): ParsedModels {
 
   if (!Array.isArray(input.providers)) {
     errors.push(`${file}: providers 必须是数组`)
-    return { providers, errors }
+    return { providers, errors, warnings }
   }
 
   const providerIds = new Set<string>()
@@ -282,6 +291,11 @@ export function parseModelsFile(input: unknown, file: string): ParsedModels {
 
     const apiKeyEnv = readString(item.apiKeyEnv)
     const apiKey = readString(item.apiKey)
+    if (apiKey) {
+      warnings.push(
+        `${path}.apiKey 是明文 Key，已忽略；请在设置页填写 Key，或改用 apiKeyEnv`
+      )
+    }
 
     providers.push({
       id,
@@ -290,62 +304,107 @@ export function parseModelsFile(input: unknown, file: string): ParsedModels {
       ...(adapter ? { adapter } : {}),
       baseUrl,
       ...(apiKeyEnv ? { apiKeyEnv } : {}),
-      ...(apiKey ? { apiKey } : {}),
       models
     })
   })
 
-  return { providers, errors }
+  return { providers, errors, warnings }
 }
 
-export function modelsFileCandidates(): string[] {
-  const files = [join(app.getPath('userData'), 'models.json')]
-  if (!app.isPackaged) {
-    const devFile = join(app.getAppPath(), 'models.json')
-    if (!files.includes(devFile)) files.push(devFile)
-  }
-  return files
+/** 唯一的模型配置文件：用户数据目录下的 models.json */
+export function modelsFilePath(): string {
+  return join(app.getPath('userData'), 'models.json')
 }
 
 export interface LoadedModelsConfig {
-  files: Array<{ path: string; exists: boolean }>
+  file: string
+  exists: boolean
   providers: ModelsFileProvider[]
   errors: string[]
+  warnings: string[]
 }
 
 export async function loadModelsConfig(): Promise<LoadedModelsConfig> {
-  const files: Array<{ path: string; exists: boolean }> = []
-  const providers = new Map<string, ModelsFileProvider>()
-  const errors: string[] = []
+  const file = modelsFilePath()
 
-  for (const file of modelsFileCandidates()) {
-    let raw: string
+  let raw: string
+  try {
+    raw = await fs.readFile(file, 'utf8')
+  } catch {
+    return { file, exists: false, providers: [], errors: [], warnings: [] }
+  }
 
-    try {
-      raw = await fs.readFile(file, 'utf8')
-    } catch {
-      files.push({ path: file, exists: false })
-      continue
-    }
-
-    files.push({ path: file, exists: true })
-
-    let json: unknown
-    try {
-      json = JSON.parse(raw) as ModelsFile
-    } catch (error) {
-      errors.push(`${file}: JSON 解析失败：${String(error)}`)
-      continue
-    }
-
-    const parsed = parseModelsFile(json, file)
-    errors.push(...parsed.errors)
-    for (const provider of parsed.providers) {
-      providers.set(provider.id, provider)
+  let json: unknown
+  try {
+    json = JSON.parse(raw) as ModelsFile
+  } catch (error) {
+    return {
+      file,
+      exists: true,
+      providers: [],
+      errors: [`${file}: JSON 解析失败：${String(error)}`],
+      warnings: []
     }
   }
 
-  return { files, providers: [...providers.values()], errors }
+  const parsed = parseModelsFile(json, file)
+  return {
+    file,
+    exists: true,
+    providers: parsed.providers,
+    errors: parsed.errors,
+    warnings: parsed.warnings
+  }
+}
+
+/** 把 provider 列表原子写入 models.json；永远不会写入 apiKey 明文字段 */
+export async function saveModelsConfig(
+  providers: ModelsFileProvider[]
+): Promise<void> {
+  const file = modelsFilePath()
+  await fs.mkdir(dirname(file), { recursive: true })
+
+  const safeProviders = providers.map((provider) => {
+    const copy = { ...provider }
+    delete copy.apiKey
+    return copy
+  })
+  const payload: ModelsFile = { version: 1, providers: safeProviders }
+
+  const tmp = `${file}.${process.pid}.${randomUUID().slice(0, 8)}.tmp`
+  await fs.writeFile(tmp, JSON.stringify(payload, null, 2), 'utf8')
+
+  try {
+    await fs.rename(tmp, file)
+  } catch {
+    await fs.rm(file, { force: true })
+    await fs.rename(tmp, file)
+  }
+}
+
+let writeChain: Promise<unknown> = Promise.resolve()
+
+/** 串行执行 models.json 写操作，避免并发保存互相覆盖 */
+export function enqueueModelsWrite<T>(task: () => Promise<T>): Promise<T> {
+  const next = writeChain.then(task, task)
+  writeChain = next.catch(() => undefined)
+  return next
+}
+
+export function upsertModelsProvider(
+  providers: ModelsFileProvider[],
+  provider: ModelsFileProvider
+): ModelsFileProvider[] {
+  const index = providers.findIndex((item) => item.id === provider.id)
+  if (index < 0) return [...providers, provider]
+  return providers.map((item, itemIndex) => (itemIndex === index ? provider : item))
+}
+
+export function removeModelsProvider(
+  providers: ModelsFileProvider[],
+  id: string
+): ModelsFileProvider[] {
+  return providers.filter((provider) => provider.id !== id)
 }
 
 function inferAdapter(remoteModel: string): string {
@@ -376,6 +435,9 @@ export function resolveModels(provider: ModelsFileProvider): ModelDef[] {
         provider.adapter ??
         preset?.adapter ??
         inferAdapter(remoteModel),
+      ...(item.providerType ?? preset?.providerType
+        ? { providerType: item.providerType ?? preset?.providerType }
+        : {}),
       ...(item.template ?? preset?.template
         ? { template: item.template ?? preset?.template }
         : {})
@@ -385,7 +447,7 @@ export function resolveModels(provider: ModelsFileProvider): ModelDef[] {
 
 export function toModelsProvider(
   provider: ModelsFileProvider,
-  stored?: { encryptedKey?: string; encryptedSecret?: string; createdAt?: string; updatedAt?: string }
+  stored?: { encryptedKey?: string; encryptedSecret?: string }
 ): ProviderConfig {
   const envKey = provider.apiKeyEnv
     ? process.env[provider.apiKeyEnv]
@@ -397,23 +459,20 @@ export function toModelsProvider(
     type: provider.type ?? 'openai-compat',
     baseUrl: provider.baseUrl,
     models: resolveModels(provider),
-    hasKey: Boolean(stored?.encryptedKey) || Boolean(envKey) || Boolean(provider.apiKey),
+    hasKey: Boolean(stored?.encryptedKey) || Boolean(envKey),
     hasSecret: Boolean(stored?.encryptedSecret),
-    source: 'models',
-    createdAt: stored?.createdAt ?? '',
-    updatedAt: stored?.updatedAt ?? ''
+    createdAt: '',
+    updatedAt: ''
   }
 }
 
 export async function modelsConfigStatus(): Promise<ModelsConfigStatus> {
   const config = await loadModelsConfig()
   return {
-    files: config.files.map((file) => file.path),
-    activeFile:
-      config.files.find((file) => file.exists)?.path ??
-      config.files[0]?.path ??
-      null,
+    files: [config.file],
+    activeFile: config.file,
     errors: config.errors,
+    warnings: config.warnings,
     providerCount: config.providers.length,
     modelCount: config.providers.reduce(
       (total, provider) => total + provider.models.length,
@@ -423,16 +482,17 @@ export async function modelsConfigStatus(): Promise<ModelsConfigStatus> {
 }
 
 export async function ensureModelsFile(): Promise<string> {
-  const config = await loadModelsConfig()
-  const existing = config.files.find((file) => file.exists)
-  if (existing) return existing.path
-
-  const target = modelsFileCandidates()[0]
-  await fs.mkdir(dirname(target), { recursive: true })
-  await fs.writeFile(
-    target,
-    JSON.stringify({ version: 1, providers: [] }, null, 2),
-    'utf8'
-  )
-  return target
+  const file = modelsFilePath()
+  try {
+    await fs.access(file)
+    return file
+  } catch {
+    await fs.mkdir(dirname(file), { recursive: true })
+    await fs.writeFile(
+      file,
+      JSON.stringify({ version: 1, providers: [] }, null, 2),
+      'utf8'
+    )
+    return file
+  }
 }

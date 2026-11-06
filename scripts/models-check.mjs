@@ -29,6 +29,7 @@ const ADAPTERS = [
 const PARAM_TYPES = ['select', 'number', 'text', 'boolean']
 
 const errors = []
+const warnings = []
 
 function isRecord(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -103,6 +104,11 @@ function checkModel(model, path) {
     errors.push(`${path}.adapter 不支持：${adapter}`)
   }
 
+  const providerType = readString(model.providerType)
+  if (providerType && !PROVIDER_TYPES.includes(providerType)) {
+    errors.push(`${path}.providerType 必须是 ${PROVIDER_TYPES.join(' / ')}`)
+  }
+
   if (model.params !== undefined) {
     if (!Array.isArray(model.params)) {
       errors.push(`${path}.params 必须是数组`)
@@ -158,6 +164,12 @@ if (!isRecord(data)) {
         errors.push(`${path}.adapter 不支持：${adapter}`)
       }
 
+      if (readString(provider.apiKey)) {
+        warnings.push(
+          `${path}.apiKey 是明文 Key，应用会忽略；请改用设置页或 apiKeyEnv`
+        )
+      }
+
       if (!Array.isArray(provider.models) || provider.models.length === 0) {
         errors.push(`${path}.models 不能为空`)
         return
@@ -183,6 +195,11 @@ if (errors.length > 0) {
   console.error(`[models:check] ${file} 校验失败：`)
   for (const error of errors) console.error(`- ${error}`)
   process.exit(1)
+}
+
+if (warnings.length > 0) {
+  console.warn(`[models:check] ${file} 警告：`)
+  for (const warning of warnings) console.warn(`- ${warning}`)
 }
 
 const providers = data.providers.length

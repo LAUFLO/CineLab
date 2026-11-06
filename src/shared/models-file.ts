@@ -8,6 +8,7 @@ export interface ModelsFileModel {
   capability?: Capability
   remoteModel?: string
   adapter?: string
+  providerType?: ProviderType
   template?: HttpTemplate
   params?: ParamDef[]
 }
@@ -19,6 +20,7 @@ export interface ModelsFileProvider {
   adapter?: string
   baseUrl: string
   apiKeyEnv?: string
+  /** 仅用于读取旧文件；应用会忽略明文 Key 并给出警告 */
   apiKey?: string
   models: ModelsFileModel[]
 }
@@ -32,6 +34,7 @@ export interface ModelsConfigStatus {
   files: string[]
   activeFile: string | null
   errors: string[]
+  warnings: string[]
   providerCount: number
   modelCount: number
 }

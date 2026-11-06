@@ -357,8 +357,8 @@ textarea {
 }
 
 .icon-btn--close:hover {
-  background: var(--danger);
-  color: #fff;
+  background: var(--surface-hover);
+  color: var(--text-1);
 }
 
 /* 窗口控制：所有页面常驻右上角 */
@@ -1389,7 +1389,7 @@ body.is-exporting .react-flow__minimap {
   position: fixed;
   z-index: 500;
   transform: translate(-50%, -100%);
-  max-width: 360px;
+  max-width: min(360px, calc(100vw - 16px));
   padding: 6px 10px;
   border-radius: 8px;
   background: var(--surface-raised);
@@ -1398,7 +1398,8 @@ body.is-exporting .react-flow__minimap {
   color: var(--text-1);
   font-size: 12px;
   line-height: 1.4;
-  word-break: break-all;
+  white-space: nowrap;
+  word-break: normal;
   pointer-events: none;
 }
 
@@ -1726,7 +1727,7 @@ body.is-exporting .react-flow__minimap {
   padding: 0 8px 0 14px;
   border-radius: 12px;
   background: var(--pick-bar);
-  color: #fff;
+  color: var(--text-inverse);
   font-size: 13px;
   white-space: nowrap;
   box-shadow: var(--shadow-float);
@@ -2927,26 +2928,41 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .project-center {
-  width: min(880px, 100%);
+  width: min(560px, 100%);
   margin: auto 0;
-  padding: 48px;
+  padding: 44px 48px;
   border-radius: 20px;
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-float);
+  text-align: center;
+  animation: welcome-in 220ms ease-out;
+}
+
+.project-center--has-recent {
+  width: min(960px, 100%);
+}
+
+@keyframes welcome-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .project-center__brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 28px;
-  font-weight: 700;
+  justify-content: center;
   color: var(--text-1);
 }
 
 .project-center__hint {
-  margin: 8px 0 30px;
+  margin: 10px 0 26px;
   font-size: 14px;
   color: var(--text-3);
 }
@@ -2954,20 +2970,20 @@ body.is-picking .react-flow__node:hover .cnode__card {
 .project-center__actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
+  justify-content: center;
+  gap: 10px;
 }
 
 .project-center__new {
-  height: 52px;
-  padding: 0 24px;
+  height: 48px;
+  padding: 0 22px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   border-radius: 12px;
   background: var(--text-1);
   color: var(--text-inverse);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .project-center__new:hover {
@@ -2975,12 +2991,12 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .project-center__open {
-  height: 52px;
+  height: 48px;
   padding: 0 20px;
   border-radius: 12px;
   border: 1px solid var(--border);
   color: var(--text-2);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .project-center__open:hover {
@@ -2988,20 +3004,18 @@ body.is-picking .react-flow__node:hover .cnode__card {
   color: var(--text-1);
 }
 
-.project-center__section-title {
-  margin-bottom: 10px;
-  font-size: 12px;
-  color: var(--text-3);
+.project-center--has-recent .project-center__recent {
+  margin-top: 32px;
 }
 
 .project-center__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
 .project-center__card {
-  padding: 14px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface-raised);
@@ -3015,7 +3029,6 @@ body.is-picking .react-flow__node:hover .cnode__card {
 
 .project-center__cover {
   aspect-ratio: 1;
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3026,7 +3039,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .project-center__card-name {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-1);
 }
 
@@ -3046,9 +3059,9 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .project-center__empty {
-  padding: 20px 8px;
+  margin-top: 28px;
   font-size: 12px;
-  line-height: 1.8;
+  line-height: 1.7;
   color: var(--text-3);
 }
 
@@ -3056,6 +3069,23 @@ body.is-picking .react-flow__node:hover .cnode__card {
   padding: 1px 5px;
   border-radius: 4px;
   background: var(--surface-hover);
+}
+
+@media (max-width: 720px) {
+  .project-center,
+  .project-center--has-recent {
+    padding: 36px 28px;
+  }
+
+  .project-center__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .project-center__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ===== 全部项目 ===== */
@@ -4514,12 +4544,12 @@ body.is-picking .react-flow__node:hover .cnode__card {
 /* ===== 底部工具栏工具态 ===== */
 .bottombar .bottombar__add {
   background: var(--pick-bar);
-  color: #fff;
+  color: var(--text-inverse);
 }
 
 .bottombar .bottombar__add:hover {
-  background: color-mix(in srgb, var(--pick-bar) 86%, #fff);
-  color: #fff;
+  background: color-mix(in srgb, var(--pick-bar) 86%, var(--text-1));
+  color: var(--text-inverse);
 }
 
 .bottombar__tool {

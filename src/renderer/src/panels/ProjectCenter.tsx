@@ -34,9 +34,9 @@ export function ProjectCenter() {
 
   return (
     <div className="welcome-screen">
-      <div className="project-center">
+      <div className={`project-center${recent.length > 0 ? ' project-center--has-recent' : ''}`}>
         <div className="project-center__brand">
-          <BrandWordmark height={30} />
+          <BrandWordmark height={64} />
         </div>
         <p className="project-center__hint">
           本地 AI 创作画布 · 数据存在你自己的硬盘上
@@ -64,7 +64,6 @@ export function ProjectCenter() {
 
         {recent.length > 0 ? (
           <div className="project-center__recent">
-            <div className="project-center__section-title">最近项目</div>
             <div className="project-center__grid">
               {recent.map((project) => (
                 <button
@@ -87,11 +86,11 @@ export function ProjectCenter() {
               ))}
             </div>
           </div>
-        ) : !loading ? (
-          <div className="project-center__empty">
-            还没有项目。新建一个，或打开已有的 <code>.cinelab</code> 项目。
-          </div>
-        ) : null}
+        ) : loading ? (
+          <div className="project-center__empty is-loading">正在读取最近项目…</div>
+        ) : (
+          <div className="project-center__empty">还没有项目，新建一个开始创作</div>
+        )}
       </div>
     </div>
   )

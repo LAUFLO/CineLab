@@ -33,7 +33,11 @@ export function AddNodeMenu() {
     if (!menu) return
 
     const onPointerDown = (event: PointerEvent): void => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
+      if (
+        ref.current &&
+        event.target instanceof Node &&
+        !ref.current.contains(event.target)
+      ) {
         closeMenu()
       }
     }

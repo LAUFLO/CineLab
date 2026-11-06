@@ -33,7 +33,8 @@ export function MultiSelectBar() {
     const onPointerDown = (event: PointerEvent): void => {
       if (
         groupMenuRef.current &&
-        !groupMenuRef.current.contains(event.target as Node)
+        event.target instanceof Node &&
+        !groupMenuRef.current.contains(event.target)
       ) {
         setGroupMenuOpen(false)
       }

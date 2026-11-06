@@ -19,7 +19,8 @@ export function BottomBar() {
     const onPointerDown = (event: PointerEvent): void => {
       if (
         toolWrapRef.current &&
-        !toolWrapRef.current.contains(event.target as Node)
+        event.target instanceof Node &&
+        !toolWrapRef.current.contains(event.target)
       ) {
         setToolMenuOpen(false)
       }

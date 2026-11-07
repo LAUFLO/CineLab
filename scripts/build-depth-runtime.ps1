@@ -146,12 +146,40 @@ print('SMOKE_OK', torch.__version__, numpy.__version__, cv2.__version__)
 }
 
 # 7. zip + manifest
+function New-RuntimeZip([string]$SourceDir, [string]$Destination) {
+  $sevenZip = Join-Path $env:ProgramFiles "7-Zip\7z.exe"
+  if (Test-Path $sevenZip) {
+    Push-Location $SourceDir
+    try {
+      & $sevenZip a -tzip -mx=5 $Destination "*" | Out-Null
+      if ($LASTEXITCODE -ne 0) { throw "7z compression failed" }
+    } finally {
+      Pop-Location
+    }
+    return
+  }
+
+  $tar = Get-Command tar.exe -ErrorAction SilentlyContinue
+  if ($tar) {
+    Push-Location $SourceDir
+    try {
+      & $tar.Source -a -c -f $Destination "*"
+      if ($LASTEXITCODE -ne 0) { throw "tar compression failed" }
+    } finally {
+      Pop-Location
+    }
+    return
+  }
+
+  Compress-Archive -Path (Join-Path $SourceDir "*") -DestinationPath $Destination -CompressionLevel Optimal
+}
+
 $zipName = "depth-runtime-win32-x64-v$RuntimeVersion.zip"
 $runtimeZip = Join-Path $OutputDir $zipName
 if (Test-Path $runtimeZip) { Remove-Item $runtimeZip -Force }
 
 Write-Output "compressing runtime"
-Compress-Archive -Path (Join-Path $runtime "*") -DestinationPath $runtimeZip -CompressionLevel Optimal
+New-RuntimeZip -SourceDir $runtime -Destination $runtimeZip
 
 Write-Output "hashing runtime"
 $hash = (Get-FileHash $runtimeZip -Algorithm SHA256).Hash.ToLower()

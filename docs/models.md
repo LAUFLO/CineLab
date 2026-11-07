@@ -104,11 +104,65 @@
 `http-template` 适合协议简单、但字段和端点不是 OpenAI 格式的服务。模板支持：
 
 - `auth.header` / `auth.prefix`：默认 `Authorization` + `Bearer `
-- `submit.path`：字符串，或按 `text` / `image` / `keyframe` / `reference` 分别配置
+- `submit.path`：字符串，或按 `text` / `image` / `keyframe` / `reference` / `video` 分别配置
 - `submit.bodyByMode`：不同模式使用不同请求体
+- `submit.contentType`：`json`（默认）或 `multipart`
 - `submit.omitEmpty`：删除模板里的空字段
 - `poll.path` / `taskIdPath` / `statusPath` / `resultPath`
-- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`、`{{refs.lastFrame}}`、`{{refs.frames}}`、`{{refs.images}}`、`{{taskId}}`
+- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`、`{{refs.lastFrame}}`、`{{refs.frames}}`、`{{refs.images}}`、`{{video.dataUrl}}`、`{{video.base64}}`、`{{video.mime}}`、`{{taskId}}`
+
+视频编辑/续写接口使用 `mode: "video"`。当请求带 `video` 输入时，模板自动进入 video 模式：
+
+```json
+{
+  "mode": "video",
+  "submit": {
+    "path": "/video/edit",
+    "bodyByMode": {
+      "video": {
+        "model": "your-video-edit-model",
+        "prompt": "{{prompt}}",
+        "video": "{{video.dataUrl}}"
+      }
+    }
+  },
+  "poll": {
+    "path": "/tasks/{{taskId}}",
+    "taskIdPath": "id",
+    "statusPath": "status",
+    "resultPath": "result.url"
+  }
+}
+```
+
+如果接口要求 multipart 上传，把 `contentType` 设为 `multipart`，body 里的 data URL 会自动转成文件字段：
+
+```json
+{
+  "mode": "video",
+  "submit": {
+    "path": "/upload/edit",
+    "contentType": "multipart",
+    "bodyByMode": {
+      "video": {
+        "model": "your-video-edit-model",
+        "prompt": "{{prompt}}",
+        "video": "{{video.dataUrl}}"
+      }
+    }
+  },
+  "poll": {
+    "path": "/tasks/{{taskId}}",
+    "taskIdPath": "id",
+    "statusPath": "status",
+    "resultPath": "result.url"
+  }
+}
+```
+
+绑定到节点操作：
+
+设置 → 操作模型，为「片段重拍 / 元素替换 / 智能续写 / 创意片头」选择对应的视频模型。绑定后节点工具栏会把当前视频作为 `video` 输入提交给该模型；未绑定时会提示去设置，不会使用首帧 i2v 近似。
 
 智谱示例：
 

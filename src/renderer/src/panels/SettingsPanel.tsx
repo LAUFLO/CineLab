@@ -16,10 +16,12 @@ import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
 import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
+import { OperationsSection } from './OperationsSection'
 import { ModelParamsDialog } from '../canvas/nodes/ModelParamsDialog'
 
 type SectionId =
   | 'models'
+  | 'operations'
   | 'library'
   | 'components'
   | 'appearance'
@@ -34,6 +36,7 @@ interface SectionDef {
 
 const SECTIONS: SectionDef[] = [
   { id: 'models', label: '模型服务', icon: 'settings' },
+  { id: 'operations', label: '操作模型', icon: 'film' },
   { id: 'library', label: '资产库', icon: 'library' },
   { id: 'components', label: '组件', icon: 'layers' },
   { id: 'appearance', label: '外观', icon: 'sun' },
@@ -1022,6 +1025,7 @@ export function SettingsPanel() {
 
           <div className="settings-content">
             {active === 'models' ? <ModelsSection /> : null}
+            {active === 'operations' ? <OperationsSection /> : null}
             {active === 'library' ? <LibrarySection /> : null}
             {active === 'components' ? <ComponentsSection /> : null}
             {active === 'appearance' ? <AppearanceSection /> : null}

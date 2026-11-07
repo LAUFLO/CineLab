@@ -26,6 +26,7 @@ import { generateVideoArk } from '../providers/volcengine'
 import { isRetryable, withRetry } from '../providers/retry'
 import { resolveProvider } from '../settings/store'
 import { getLibraryRoot } from '../library/config'
+import { resolveMediaPath } from '../media/paths'
 import { log } from '../logger'
 
 function broadcast(event: GenerationEvent): void {
@@ -69,6 +70,13 @@ const REF_MIME: Record<string, string> = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp'
+}
+
+const VIDEO_MIME: Record<string, string> = {
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mov': 'video/quicktime',
+  '.mkv': 'video/x-matroska'
 }
 
 const VIDEO_SIZE: Record<string, [number, number]> = {
@@ -115,6 +123,21 @@ async function loadRefs(
   }
 
   return loaded
+}
+
+async function loadVideo(
+  projectRoot: string,
+  video: ReferenceInput | undefined
+): Promise<{ dataUrl: string; mime: string } | undefined> {
+  if (!video) return undefined
+
+  const absolute = await resolveMediaPath(projectRoot, video.path, video.scope)
+  const data = await fs.readFile(absolute)
+  const mime = VIDEO_MIME[extname(absolute).toLowerCase()] ?? 'video/mp4'
+  return {
+    dataUrl: `data:${mime};base64,${data.toString('base64')}`,
+    mime
+  }
 }
 
 export function registerGenerateIpc(): void {
@@ -196,6 +219,7 @@ export function registerGenerateIpc(): void {
         if (request.refs && request.refs.length > 0 && refs.length === 0) {
           throw new Error('参考素材缺失或不在当前项目中，请重新添加素材')
         }
+        const video = await loadVideo(projectRoot, request.video)
         const runtime = {
           baseUrl: provider.baseUrl,
           apiKey: provider.apiKey,
@@ -206,6 +230,9 @@ export function registerGenerateIpc(): void {
 
         const generate = (): Promise<ProviderOutput[]> => {
           if (isVideo) {
+            if (video && adapter !== 'http-template') {
+              throw new Error('当前视频模型不支持视频输入，请在设置 → 操作模型中绑定 http-template 专用接口')
+            }
             if (adapter === 'agnes-video') {
               return generateVideoAgnes(
                 model,
@@ -223,6 +250,7 @@ export function registerGenerateIpc(): void {
                 request.prompt,
                 request.params,
                 refs,
+                video,
                 context
               )
             }

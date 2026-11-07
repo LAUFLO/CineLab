@@ -1,4 +1,4 @@
-export type HttpTemplateMode = 'text' | 'image' | 'keyframe' | 'reference'
+export type HttpTemplateMode = 'text' | 'image' | 'keyframe' | 'reference' | 'video'
 
 export interface HttpTemplateAuth {
   header?: string
@@ -10,6 +10,8 @@ export interface HttpTemplateSubmit {
   method?: string
   path: string | Partial<Record<HttpTemplateMode, string>>
   headers?: Record<string, string>
+  /** json（默认）或 multipart；multipart 时 body 中的 data URL 会自动转成文件 */
+  contentType?: 'json' | 'multipart'
   body?: unknown
   bodyByMode?: Partial<Record<HttpTemplateMode, unknown>>
   omitEmpty?: boolean

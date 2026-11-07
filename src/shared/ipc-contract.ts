@@ -31,6 +31,7 @@ import type {
   TemplateInput
 } from './library-schema'
 import type { ModelsConfigStatus } from './models-file'
+import type { OperationBindings } from './operation-schema'
 import type { UpdateApi } from './update'
 import type {
   CropImageRectRequest,
@@ -101,6 +102,8 @@ export interface SettingsApi {
   fetchModels(input: ConnectionTestInput): Promise<FetchModelsResult>
   modelsConfig(): Promise<ModelsConfigStatus>
   openModelsFile(): Promise<string>
+  getOperationBindings(): Promise<OperationBindings>
+  saveOperationBindings(bindings: OperationBindings): Promise<void>
   onModelsChanged(callback: () => void): () => void
 }
 

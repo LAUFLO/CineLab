@@ -13,11 +13,17 @@ interface ImageRef {
   role: string
 }
 
+interface VideoRef {
+  dataUrl: string
+  mime: string
+}
+
 interface TemplateContext {
   prompt: string
   model: ModelDef
   params: Record<string, unknown>
   refs: ImageRef[]
+  video?: VideoRef
   mode: HttpTemplateMode
   baseUrl: string
   taskId?: string
@@ -32,7 +38,8 @@ function joinUrl(baseUrl: string, path: string): string {
   return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`
 }
 
-function refsOfMode(refs: ImageRef[]): HttpTemplateMode {
+function refsOfMode(refs: ImageRef[], video?: VideoRef): HttpTemplateMode {
+  if (video) return 'video'
   if (refs.some((ref) => ref.role === 'firstFrame' || ref.role === 'lastFrame')) {
     return 'keyframe'
   }
@@ -66,6 +73,11 @@ function tokenValue(token: string, context: TemplateContext): unknown {
   if (token === 'mode') return context.mode
   if (token === 'taskId') return context.taskId
   if (token === 'baseUrl') return context.baseUrl
+  if (token === 'video.dataUrl') return context.video?.dataUrl
+  if (token === 'video.mime') return context.video?.mime
+  if (token === 'video.base64') {
+    return context.video?.dataUrl.replace(/^data:[^;]+;base64,/, '')
+  }
   if (token.startsWith('params.')) {
     return context.params[token.slice('params.'.length)]
   }
@@ -187,24 +199,93 @@ async function downloadOutput(
   return [{ data: Buffer.from(await response.arrayBuffer()), mime }]
 }
 
+function parseDataUrl(
+  value: string,
+  index: number
+): { blob: Blob; filename: string } | null {
+  const match = /^data:([^;]+);base64,(.+)$/s.exec(value)
+  if (!match) return null
+
+  const mime = match[1]
+  const ext = mime.startsWith('video/')
+    ? mime === 'video/webm'
+      ? 'webm'
+      : mime === 'video/quicktime'
+        ? 'mov'
+        : 'mp4'
+    : mime === 'image/jpeg'
+      ? 'jpg'
+      : mime === 'image/webp'
+        ? 'webp'
+        : 'png'
+  return {
+    blob: new Blob([Buffer.from(match[2], 'base64')], { type: mime }),
+    filename: `upload-${index}.${ext}`
+  }
+}
+
+function buildMultipart(body: unknown): FormData {
+  const form = new FormData()
+  let fileIndex = 0
+
+  const append = (key: string, value: unknown): void => {
+    if (value === undefined || value === null || value === '') return
+
+    if (typeof value === 'string' && value.startsWith('data:')) {
+      const parsed = parseDataUrl(value, fileIndex)
+      fileIndex += 1
+      if (parsed) form.append(key, parsed.blob, parsed.filename)
+      return
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) append(key, item)
+      return
+    }
+
+    if (typeof value === 'object') {
+      for (const [childKey, childValue] of Object.entries(
+        value as Record<string, unknown>
+      )) {
+        append(key ? `${key}[${childKey}]` : childKey, childValue)
+      }
+      return
+    }
+
+    form.append(key, String(value))
+  }
+
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    for (const [key, value] of Object.entries(body as Record<string, unknown>)) {
+      append(key, value)
+    }
+  } else {
+    append('body', body)
+  }
+
+  return form
+}
+
 export async function generateVideoHttpTemplate(
   model: ModelDef,
   provider: ProviderRuntime,
   prompt: string,
   params: Record<string, unknown>,
   refs: ImageRef[],
+  video: VideoRef | undefined,
   ctx: AdapterContext
 ): Promise<ProviderOutput[]> {
   const template = model.template
   if (!template) throw new Error('该模型没有配置 http-template')
 
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
-  const mode = template.mode ?? refsOfMode(refs)
+  const mode = template.mode ?? refsOfMode(refs, video)
   const context: TemplateContext = {
     prompt,
     model,
     params,
     refs,
+    ...(video ? { video } : {}),
     mode,
     baseUrl
   }
@@ -226,9 +307,10 @@ export async function generateVideoHttpTemplate(
     : replaceValue(bodyTemplate, context)
   if (template.submit.omitEmpty) body = omitEmpty(body)
 
+  const multipart = template.submit.contentType === 'multipart'
   const authHeader = template.auth?.header ?? 'Authorization'
   const baseHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(multipart ? {} : { 'Content-Type': 'application/json' }),
     ...(template.auth?.headers ?? {}),
     ...(template.submit.headers ?? {})
   }
@@ -236,13 +318,25 @@ export async function generateVideoHttpTemplate(
     baseHeaders[authHeader] = `${template.auth?.prefix ?? 'Bearer '}${provider.apiKey}`
   }
   const headers = mergeHeaders(baseHeaders, provider.headers)
+  if (multipart) {
+    for (const key of Object.keys(headers)) {
+      if (key.toLowerCase() === 'content-type') delete headers[key]
+    }
+  }
 
   ctx.onProgress(5, '提交任务')
+
+  const submitBody: BodyInit | undefined =
+    body === undefined
+      ? undefined
+      : multipart
+        ? buildMultipart(body)
+        : JSON.stringify(body)
 
   const submit = await fetch(joinUrl(baseUrl, submitPath), {
     method: template.submit.method ?? 'POST',
     headers,
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    ...(submitBody === undefined ? {} : { body: submitBody }),
     signal: ctx.signal
   })
 

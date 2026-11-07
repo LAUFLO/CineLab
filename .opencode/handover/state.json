@@ -1,5 +1,5 @@
 {
-  "version": 22,
+  "version": 23,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "整体验收与修复：安装 144ac61 包，重点验收全局资产导出、资产缩略图、多轨音频合成",
+  "next_focus": "整体验收与修复；导演台待调研排期；剪辑台等待其他会话完成后接入",
   "frontier": [
     {
       "id": "M2-1",
@@ -468,6 +468,18 @@
       "evidence": [
         ".opencode/handover/evidence/PACKAGE-2026-11-07-remaining.md"
       ]
+    },
+    {
+      "id": "EDITOR-1",
+      "title": "剪辑台（其他会话开发中）",
+      "status": "pending",
+      "note": "剪辑台正在其他会话开发中；当前会话不要改动相关文件或分支，接入前先与对方同步进度和接口。"
+    },
+    {
+      "id": "DIRECTOR-STAGE-1",
+      "title": "导演台：轻量级 3D 构图节点",
+      "status": "pending",
+      "note": "参考 LibTV 3D 导演台/3D-BOX 与 TapNow CineMap：人物素模、道具、多机位、机位截图回传画布、720° 全景背景。方案见 docs/director-stage-plan.md；待调研，不进入当前实现队列。"
     }
   ],
   "knownIssues": [
@@ -1194,6 +1206,14 @@
     {
       "category": "engineering",
       "content": "视频合成多轨音频用 [0:a]/[1:a]/[2:a] 分别 volume 后 amix duration=first:normalize=0；原声、BGM、旁白各自独立音量，BGM 循环、旁白不循环。"
+    },
+    {
+      "category": "repo",
+      "content": "剪辑台由其他会话开发中，当前会话不要改动剪辑台相关文件/分支；接入前先同步接口与进度。"
+    },
+    {
+      "category": "preference",
+      "content": "导演台作为独立大需求立项：优先做轻量 3D 构图节点（素模/道具/多机位/截图回传），不做 Blender 级建模；先落 docs/director-stage-plan.md 再实施。"
     }
   ],
   "designConventions": [

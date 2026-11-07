@@ -35,6 +35,8 @@
 | 派生节点自动成组 | `docs/derived-nodes-group-plan.md` |
 | BeefTV 深度组件调研 | `docs/beef-tv-depth-research.md` |
 | 深度 runtime 构建发布 | `docs/runtime-components-plan.md` |
+| 剩余本地增强方案 | `docs/remaining-features-plan.md` |
+| 导演台方案（待调研） | `docs/director-stage-plan.md` |
 
 ## 开发命令
 

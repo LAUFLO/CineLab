@@ -16,6 +16,7 @@ import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
 import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
+import { ModelParamsDialog } from '../canvas/nodes/ModelParamsDialog'
 
 type SectionId =
   | 'models'
@@ -110,6 +111,7 @@ function ModelsSection() {
   const [headerRows, setHeaderRows] = useState<
     Array<{ key: string; value: string }>
   >([])
+  const [paramModel, setParamModel] = useState<ModelDef | null>(null)
 
   useEffect(() => {
     void load()
@@ -478,15 +480,29 @@ function ModelsSection() {
                   <div className="model-item__name">{model.name}</div>
                   <div className="model-item__meta">
                     {CAPABILITY_LABEL[model.capability]} · {model.remoteModel}
+                    {model.params.length > 0
+                      ? ` · ${model.params.length} 个参数`
+                      : ''}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="icon-btn"
-                  onClick={() => removeModel(model.id)}
-                >
-                  <Icon name="close" size={12} />
-                </button>
+                <div className="model-item__actions">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    title="配置参数"
+                    onClick={() => setParamModel(model)}
+                  >
+                    <Icon name="settings" size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    title="删除模型"
+                    onClick={() => removeModel(model.id)}
+                  >
+                    <Icon name="close" size={12} />
+                  </button>
+                </div>
               </div>
             ))}
             {draft.models.length === 0 ? (
@@ -562,6 +578,27 @@ function ModelsSection() {
             保存
           </button>
         </div>
+
+        <ModelParamsDialog
+          model={paramModel}
+          onCancel={() => setParamModel(null)}
+          onSave={(params) => {
+            if (!paramModel) return
+            setDraft((current) =>
+              current
+                ? {
+                    ...current,
+                    models: current.models.map((item) =>
+                      item.id === paramModel.id
+                        ? { ...item, params }
+                        : item
+                    )
+                  }
+                : current
+            )
+            setParamModel(null)
+          }}
+        />
       </div>
     )
   }

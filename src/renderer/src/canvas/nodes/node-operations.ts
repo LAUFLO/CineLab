@@ -93,6 +93,18 @@ const PROMPT_ERASE =
 const PROMPT_ELEMENT_EDIT =
   '只修改蒙版透明区域内的元素，蒙版外区域保持完全不变。根据下面的描述调整选区内的对象，保持原有透视、光线、材质和画风一致：'
 
+const PROMPT_SHOT_RETAKE =
+  '重拍当前视频片段。保持人物身份、服装、场景、镜头角度、光线和画风一致，只重新生成动作与表演，让动作自然连贯；不要改变构图，不要文字、不要水印。'
+
+const PROMPT_ELEMENT_REPLACE =
+  '替换当前视频中的指定元素，保持镜头运动、人物身份、场景、光线和画风一致。替换后的元素要与画面透视、遮挡、阴影和运动自然融合；不要改变其他区域，不要文字、不要水印。'
+
+const PROMPT_EXTEND =
+  '延续当前视频的镜头运动、人物动作、节奏和光线，向后自然延长一段。保持同一场景、同一角色和同一画风，不要出现跳切、重复帧、文字或水印。'
+
+const PROMPT_INTRO =
+  '为当前视频生成一个简洁的片头。保持素材的人物、场景和画风一致，片头节奏干净，突出主题氛围，不要出现无关文字、logo 或水印。'
+
 const PROMPT_PORTRAIT: Record<string, string> = {
   natural:
     '在保持人物身份、五官、发型和构图完全不变的前提下，提升人像质感：真实皮肤纹理、自然毛孔和细微瑕疵，减少塑料感和过度磨皮，改善人物与背景的光影融合，输出写实摄影质感，不要文字、不要水印。',
@@ -450,24 +462,20 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '片段重拍',
     icon: 'history',
     kinds: ['video'],
+    implemented: true,
     section: 'video',
-    requires: {
-      type: 'video-edit-model',
-      label: '需要配置视频编辑模型（批次 3）',
-      panel: 'models'
-    }
+    prompt: PROMPT_SHOT_RETAKE,
+    hint: '专用接口'
   },
   {
     id: 'element-replace',
     label: '元素替换',
     icon: 'cursor',
     kinds: ['video'],
+    implemented: true,
     section: 'video',
-    requires: {
-      type: 'video-edit-model',
-      label: '需要配置视频编辑模型（批次 3）',
-      panel: 'models'
-    }
+    prompt: PROMPT_ELEMENT_REPLACE,
+    hint: '专用接口'
   },
   {
     id: 'object-remove',
@@ -500,24 +508,20 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '创意片头',
     icon: 'film',
     kinds: ['video'],
+    implemented: true,
     section: 'generate',
-    requires: {
-      type: 'video-model',
-      label: '需要配置视频模型（批次 3）',
-      panel: 'models'
-    }
+    prompt: PROMPT_INTRO,
+    hint: '专用接口'
   },
   {
     id: 'extend',
     label: '智能续写',
     icon: 'arrow-up',
     kinds: ['video'],
+    implemented: true,
     section: 'generate',
-    requires: {
-      type: 'video-edit-model',
-      label: '需要配置视频续写模型（批次 3）',
-      panel: 'models'
-    }
+    prompt: PROMPT_EXTEND,
+    hint: '专用接口'
   }
 ]
 

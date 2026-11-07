@@ -17,6 +17,7 @@ import { SphereDialog } from './SphereDialog'
 import { SubtitleDialog } from './SubtitleDialog'
 import { TrimDialog } from './TrimDialog'
 import { DepthCaptureDialog } from './DepthCaptureDialog'
+import { VideoOperationDialog } from './VideoOperationDialog'
 import {
   OPERATION_SECTIONS,
   buildOperationPrompt,
@@ -27,6 +28,7 @@ import {
   type OperationMenuItem,
   type OperationSection
 } from './node-operations'
+import { isVideoOperation } from '@shared/operation-schema'
 
 interface NodeToolbarProps {
   nodeId: string
@@ -63,6 +65,8 @@ export function NodeToolbar({
   const pinned = useToolbarStore((state) => state.pinned)
   const openSettings = useToolbarStore((state) => state.openSettings)
   const showToast = useUIStore((state) => state.showToast)
+  const providers = useSettingsStore((state) => state.providers)
+  const operationBindings = useSettingsStore((state) => state.operationBindings)
 
   const [openId, setOpenId] = useState<string | null>(null)
   const [moreSubId, setMoreSubId] = useState<string | null>(null)
@@ -81,6 +85,13 @@ export function NodeToolbar({
   const [maskDialog, setMaskDialog] = useState<{
     op: NodeOperation
     item?: OperationMenuItem
+    prompt: string
+  } | null>(null)
+  const [videoDialog, setVideoDialog] = useState<{
+    op: NodeOperation
+    modelKey: string
+    model: ModelDef
+    modelLabel: string
     prompt: string
   } | null>(null)
   const [cropDialog, setCropDialog] = useState<{
@@ -762,6 +773,73 @@ export function NodeToolbar({
     })
   }
 
+  const executeDedicatedVideo = (op: NodeOperation): void => {
+    const modelKey = operationBindings[op.id]
+    if (!modelKey) {
+      showToast(
+        `「${op.label}」还没有绑定专用接口，请先在设置 → 操作模型中配置`,
+        'error'
+      )
+      useSettingsStore.getState().openPanel('operations')
+      return
+    }
+
+    const slash = modelKey.indexOf('/')
+    const providerId = slash > 0 ? modelKey.slice(0, slash) : ''
+    const modelId = slash > 0 ? modelKey.slice(slash + 1) : ''
+    const provider = providers.find((item) => item.id === providerId)
+    const model = provider?.models.find((item) => item.id === modelId)
+
+    if (!provider || !model) {
+      showToast('绑定的专用接口模型已不存在，请重新绑定', 'error')
+      useSettingsStore.getState().openPanel('operations')
+      return
+    }
+
+    if (model.capability !== 'video.t2v') {
+      showToast('绑定的模型不是视频模型，请重新绑定', 'error')
+      useSettingsStore.getState().openPanel('operations')
+      return
+    }
+
+    if (model.adapter !== 'http-template' && !model.template) {
+      showToast(
+        '绑定的模型不是 http-template 专用接口，无法接收视频输入',
+        'error'
+      )
+      useSettingsStore.getState().openPanel('operations')
+      return
+    }
+
+    setVideoDialog({
+      op,
+      modelKey,
+      model,
+      modelLabel: `${provider.name} · ${model.name}`,
+      prompt: buildOperationPrompt(op)
+    })
+  }
+
+  const handleVideoConfirm = (prompt: string): void => {
+    if (!videoDialog) return
+    const { op, modelKey, model } = videoDialog
+    setVideoDialog(null)
+    showToast(`已提交「${op.label}」专用接口`)
+
+    void useGenerationStore.getState().run({
+      nodeId,
+      modelKey,
+      prompt,
+      params: { ...defaultParams(model), watermark: false },
+      video: {
+        path: current.path,
+        role: 'reference',
+        ...(current.scope ? { scope: current.scope } : {})
+      },
+      op: op.id
+    })
+  }
+
   const handleSphereConfirm = (
     prompt: string,
     modelKey: string,
@@ -971,6 +1049,11 @@ export function NodeToolbar({
 
     if (op.id === 'multi-angle' && item?.id === 'custom') {
       setSphereDialog('camera')
+      return
+    }
+
+    if (isVideoOperation(op.id)) {
+      executeDedicatedVideo(op)
       return
     }
 
@@ -1233,6 +1316,16 @@ export function NodeToolbar({
         onConfirm={(prompt, key, model) =>
           handleAiConfirm(prompt, key, model, aiDialog?.mask)
         }
+      />
+
+      <VideoOperationDialog
+        open={Boolean(videoDialog)}
+        title={videoDialog ? `${videoDialog.op.label} · 专用接口` : ''}
+        modelLabel={videoDialog?.modelLabel ?? ''}
+        initialPrompt={videoDialog?.prompt ?? ''}
+        busy={running}
+        onClose={() => setVideoDialog(null)}
+        onConfirm={handleVideoConfirm}
       />
 
       <MaskEditorDialog

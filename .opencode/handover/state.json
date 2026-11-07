@@ -1,5 +1,5 @@
 {
-  "version": 17,
+  "version": 18,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "批次 3：视频操作（片段重拍/元素替换/智能续写/创意片头）与操作模型绑定；批次 2 已完成待提交",
+  "next_focus": "批次 4：整体打包与验收；批次 3 已完成待提交",
   "frontier": [
     {
       "id": "M2-1",
@@ -424,6 +424,16 @@
         "docs/placeholder-operations-plan.md",
         ".opencode/handover/evidence/BATCH-2-vision-runtime.md"
       ]
+    },
+    {
+      "id": "BATCH-3",
+      "title": "工具栏占位功能批次 3：专用视频操作",
+      "status": "done",
+      "note": "HttpTemplate 支持 video 模式、video.dataUrl/base64/mime、multipart；设置页操作模型绑定四个视频操作；GenRequest.video 透传。本地 mock 专用接口端到端验证：8MB 视频提交、轮询、节点版本 2/2。不做 i2v 近似。",
+      "evidence": [
+        "docs/placeholder-operations-plan.md",
+        ".opencode/handover/evidence/BATCH-3-video-operations.md"
+      ]
     }
   ],
   "knownIssues": [
@@ -525,7 +535,7 @@
     {
       "id": "K25",
       "area": "operations",
-      "content": "工具栏占位功能批次 3 未实施：片段重拍、元素替换、智能续写、创意片头仍为明确依赖提示。"
+      "content": "专用视频接口的 multipart 上传代码已实现，但只用 JSON data URL 做了端到端验证；真实接口需按供应商字段联调。"
     },
     {
       "id": "K26",

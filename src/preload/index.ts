@@ -8,6 +8,7 @@ import type {
 } from '../shared/provider-schema'
 import type { GenerateRequest, GenerationEvent } from '../shared/generation'
 import type { ComponentEvent, ComponentKind } from '../shared/components'
+import type { OperationBindings } from '../shared/operation-schema'
 import type { DepthTaskEvent } from '../shared/media'
 import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
@@ -83,6 +84,10 @@ const api: CineApi = {
       ipcRenderer.invoke('settings:fetch-models', input),
     modelsConfig: () => ipcRenderer.invoke('settings:models-config'),
     openModelsFile: () => ipcRenderer.invoke('settings:open-models-file'),
+    getOperationBindings: () =>
+      ipcRenderer.invoke('settings:operation-bindings'),
+    saveOperationBindings: (bindings: OperationBindings) =>
+      ipcRenderer.invoke('settings:save-operation-bindings', bindings),
     onModelsChanged: (callback: () => void) => {
       const listener = (): void => callback()
       ipcRenderer.on('settings:models-changed', listener)

@@ -6,10 +6,13 @@ import type {
 import {
   deleteProvider,
   fetchModels,
+  getOperationBindings,
   listProviders,
+  saveOperationBindings,
   saveProvider,
   testConnection
 } from '../settings/store'
+import type { OperationBindings } from '@shared/operation-schema'
 import {
   ensureModelsFile,
   modelsConfigStatus
@@ -30,6 +33,11 @@ export function registerSettingsIpc(): void {
     fetchModels(input)
   )
   ipcMain.handle('settings:models-config', () => modelsConfigStatus())
+  ipcMain.handle('settings:operation-bindings', () => getOperationBindings())
+  ipcMain.handle(
+    'settings:save-operation-bindings',
+    (_event, bindings: OperationBindings) => saveOperationBindings(bindings)
+  )
   ipcMain.handle('settings:open-models-file', async () => {
     const file = await ensureModelsFile()
     await shell.openPath(file)

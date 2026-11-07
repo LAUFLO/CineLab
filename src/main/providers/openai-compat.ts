@@ -1,3 +1,4 @@
+import { httpFetch } from './http'
 import type { ModelDef } from '@shared/provider-schema'
 import { mergeHeaders } from './headers'
 import { sleep } from './retry'
@@ -81,7 +82,7 @@ async function parseImageResponse(
     if (item.b64_json) {
       outputs.push({ data: Buffer.from(item.b64_json, 'base64'), mime: 'image/png' })
     } else if (item.url) {
-      const download = await fetch(item.url, { signal: ctx.signal })
+      const download = await httpFetch(item.url, { signal: ctx.signal })
       if (!download.ok) {
         throw new Error(`下载图片失败：HTTP ${download.status}`)
       }
@@ -177,7 +178,7 @@ export async function generateImage(
 
     ctx.onProgress(5, refs.length > 0 ? '提交图生图请求' : '提交请求')
 
-    const response = await fetch(`${baseUrl}/images/generations`, {
+    const response = await httpFetch(`${baseUrl}/images/generations`, {
       method: 'POST',
       headers: {
         ...headers,
@@ -201,7 +202,7 @@ export async function generateImage(
       throw new Error('参考图解析失败，无法发起图生图请求')
     }
 
-    let response = await fetch(`${baseUrl}/images/edits`, {
+    let response = await httpFetch(`${baseUrl}/images/edits`, {
       method: 'POST',
       headers,
       body: form,
@@ -232,7 +233,7 @@ export async function generateImage(
         throw new Error('参考图解析失败，无法重试图生图请求')
       }
 
-      response = await fetch(`${baseUrl}/images/edits`, {
+      response = await httpFetch(`${baseUrl}/images/edits`, {
         method: 'POST',
         headers,
         body: fallback,
@@ -257,7 +258,7 @@ export async function generateImage(
 
   ctx.onProgress(5, '提交请求')
 
-  const response = await fetch(`${baseUrl}/images/generations`, {
+  const response = await httpFetch(`${baseUrl}/images/generations`, {
     method: 'POST',
     headers: {
       ...headers,
@@ -287,7 +288,7 @@ export async function generateSpeech(
 
   ctx.onProgress(10, '合成语音')
 
-  const response = await fetch(`${normalizeBaseUrl(provider.baseUrl)}/audio/speech`, {
+  const response = await httpFetch(`${normalizeBaseUrl(provider.baseUrl)}/audio/speech`, {
     method: 'POST',
     headers: mergeHeaders(
       {
@@ -332,7 +333,7 @@ export async function generateText(
 
   ctx.onProgress(10, '生成文本')
 
-  const response = await fetch(`${normalizeBaseUrl(provider.baseUrl)}/chat/completions`, {
+  const response = await httpFetch(`${normalizeBaseUrl(provider.baseUrl)}/chat/completions`, {
     method: 'POST',
     headers: mergeHeaders(
       {
@@ -417,7 +418,7 @@ async function downloadAudio(
   url: string,
   ctx: AdapterContext
 ): Promise<ImageOutput[]> {
-  const response = await fetch(url, { signal: ctx.signal })
+  const response = await httpFetch(url, { signal: ctx.signal })
 
   if (!response.ok) {
     throw new Error(`下载音频失败：HTTP ${response.status}`)
@@ -455,7 +456,7 @@ export async function generateMusic(
 
   ctx.onProgress(5, '提交音乐任务')
 
-  const response = await fetch(`${baseUrl}/audio/generations`, {
+  const response = await httpFetch(`${baseUrl}/audio/generations`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -499,7 +500,7 @@ export async function generateMusic(
     await sleep(2000, ctx.signal)
 
     try {
-      const poll = await fetch(
+      const poll = await httpFetch(
         `${baseUrl}/audio/generations/${encodeURIComponent(taskId)}`,
         { headers, signal: ctx.signal }
       )

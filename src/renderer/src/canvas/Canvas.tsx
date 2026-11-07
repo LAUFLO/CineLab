@@ -18,6 +18,7 @@ import {
   type CanvasNode
 } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
+import { usePreferencesStore } from '../stores/preferences'
 import { AddNodeMenu } from './AddNodeMenu'
 import { AlignmentGuides, type AlignmentGuide } from './AlignmentGuides'
 import { computeAlignment } from './alignment'
@@ -90,6 +91,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const snapToGrid = useUIStore((state) => state.snapToGrid)
   const edgesVisible = useUIStore((state) => state.edgesVisible)
   const minimapVisible = useUIStore((state) => state.minimapVisible)
+  const canvasPreferences = usePreferencesStore((state) => state.preferences.canvas)
   const fitViewToken = useUIStore((state) => state.fitViewToken)
   const arrangeToken = useUIStore((state) => state.arrangeToken)
   const { screenToFlowPosition, fitView, getNodes, setNodes, flowToScreenPosition, getZoom } =
@@ -485,7 +487,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
             '--node-toolbar-offset': `${10 / (viewport.zoom || 1)}px`
           } as CSSProperties
         }
-        panOnScroll
+        panOnScroll={canvasPreferences.scrollMode === 'pan'}
+        zoomOnScroll={canvasPreferences.scrollMode === 'zoom'}
         panOnDrag={handMode ? true : [1]}
         nodesDraggable={!handMode}
         snapToGrid={snapToGrid}
@@ -495,10 +498,21 @@ function CanvasInner({ theme }: { theme: Theme }) {
         selectionOnDrag={!handMode}
         onSelectionStart={() => setBoxSelecting(true)}
         onSelectionEnd={() => setBoxSelecting(false)}
-        zoomOnDoubleClick={false}
+        zoomOnDoubleClick={canvasPreferences.zoomOnDoubleClick}
         deleteKeyCode={null}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color={dotColor} />
+        {canvasPreferences.gridStyle === 'none' ? null : (
+          <Background
+            variant={
+              canvasPreferences.gridStyle === 'lines'
+                ? BackgroundVariant.Lines
+                : BackgroundVariant.Dots
+            }
+            gap={20}
+            size={1.2}
+            color={dotColor}
+          />
+        )}
         {minimapVisible ? (
           <MiniMap
             position="bottom-left"

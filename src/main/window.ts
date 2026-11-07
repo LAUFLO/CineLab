@@ -23,6 +23,19 @@ function logWindowError(message: string): void {
   }
 }
 
+const closeAllowed = new WeakSet<BrowserWindow>()
+
+export function allowWindowClose(win: BrowserWindow): void {
+  closeAllowed.add(win)
+  win.close()
+}
+
+export function allowAllWindowClose(): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    closeAllowed.add(win)
+  }
+}
+
 export function createMainWindow(): BrowserWindow {
   const workArea = screen.getPrimaryDisplay().workAreaSize
   const width = Math.min(1440, Math.max(1100, Math.round(workArea.width * 0.86)))
@@ -52,6 +65,12 @@ export function createMainWindow(): BrowserWindow {
 
   win.on('ready-to-show', () => {
     win.show()
+  })
+
+  win.on('close', (event) => {
+    if (closeAllowed.has(win) || win.webContents.isLoading()) return
+    event.preventDefault()
+    win.webContents.send('app:close-requested')
   })
 
   win.webContents.on('did-fail-load', (_event, code, description, url) => {

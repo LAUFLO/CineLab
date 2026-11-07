@@ -10,7 +10,7 @@ export function StatusBar() {
   const snapToGrid = useUIStore((state) => state.snapToGrid)
   const edgesVisible = useUIStore((state) => state.edgesVisible)
   const minimapVisible = useUIStore((state) => state.minimapVisible)
-  const toggleEdges = useUIStore((state) => state.toggleEdges)
+  const toggleEdges = usePreferencesStore((state) => state.toggleEdges)
   const toggleSnap = usePreferencesStore((state) => state.toggleSnap)
   const toggleMinimap = usePreferencesStore((state) => state.toggleMinimap)
   const requestFitView = useUIStore((state) => state.requestFitView)

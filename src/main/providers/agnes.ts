@@ -1,3 +1,4 @@
+import { httpFetch } from './http'
 import type { ModelDef } from '@shared/provider-schema'
 import type {
   AdapterContext,
@@ -78,7 +79,7 @@ export async function generateVideoAgnes(
 
   ctx.onProgress(5, '提交视频任务')
 
-  const submit = await fetch(`${baseUrl}/videos`, {
+  const submit = await httpFetch(`${baseUrl}/videos`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -111,7 +112,7 @@ export async function generateVideoAgnes(
     let task: AgnesTask
 
     try {
-      const response = await fetch(queryUrl, { headers, signal: ctx.signal })
+      const response = await httpFetch(queryUrl, { headers, signal: ctx.signal })
       if (!response.ok) {
         const text = await response.text().catch(() => '')
         throw new Error(`查询任务失败 HTTP ${response.status}: ${text.slice(0, 200)}`)
@@ -138,7 +139,7 @@ export async function generateVideoAgnes(
       let download: Response | null = null
       for (let retry = 0; retry < 3; retry += 1) {
         try {
-          const response = await fetch(task.url, { signal: ctx.signal })
+          const response = await httpFetch(task.url, { signal: ctx.signal })
           if (response.ok) {
             download = response
             break

@@ -1,3 +1,4 @@
+import { httpFetch } from './http'
 import type { HttpTemplateMode } from '@shared/http-template'
 import type { ModelDef } from '@shared/provider-schema'
 import type {
@@ -182,7 +183,7 @@ async function downloadOutput(
   let response: Response | null = null
   for (let retry = 0; retry < 3; retry += 1) {
     try {
-      const current = await fetch(value, { signal: ctx.signal })
+      const current = await httpFetch(value, { signal: ctx.signal })
       if (current.ok) {
         response = current
         break
@@ -333,7 +334,7 @@ export async function generateVideoHttpTemplate(
         ? buildMultipart(body)
         : JSON.stringify(body)
 
-  const submit = await fetch(joinUrl(baseUrl, submitPath), {
+  const submit = await httpFetch(joinUrl(baseUrl, submitPath), {
     method: template.submit.method ?? 'POST',
     headers,
     ...(submitBody === undefined ? {} : { body: submitBody }),
@@ -390,7 +391,7 @@ export async function generateVideoHttpTemplate(
         provider.headers
       )
 
-      const response = await fetch(joinUrl(baseUrl, pollPath), {
+      const response = await httpFetch(joinUrl(baseUrl, pollPath), {
         method: template.poll.method ?? 'GET',
         headers: pollHeaders,
         signal: ctx.signal

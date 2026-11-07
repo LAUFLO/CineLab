@@ -26,9 +26,14 @@ function notifyGenerationDone(title: string): void {
 interface GenerationState {
   running: Record<string, string>
   subscribe: () => () => void
-  run: (request: GenerateRequest) => Promise<void>
+  run: (
+    request: GenerateRequest,
+    options?: { retry?: boolean }
+  ) => Promise<void>
   cancel: (nodeId: string) => Promise<void>
 }
+
+const retryCounts = new Map<string, number>()
 
 function patchNode(nodeId: string, patch: Partial<CineNodeData>): void {
   useCanvasStore.getState().patchNodeData(nodeId, patch)
@@ -106,6 +111,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           const running = { ...get().running }
           delete running[event.nodeId]
           set({ running })
+          retryCounts.delete(event.nodeId)
           useGenerationHistoryStore.getState().finish(event.nodeId, 'done')
 
           const preferences = usePreferencesStore.getState().preferences
@@ -120,15 +126,48 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         }
 
         case 'error': {
+          const preferences = usePreferencesStore.getState().preferences
+          const attempts = retryCounts.get(event.nodeId) ?? 0
+          const entry = useGenerationHistoryStore
+            .getState()
+            .entries.find((item) => item.nodeId === event.nodeId)
+          const shouldRetry =
+            event.retryable &&
+            Boolean(entry) &&
+            attempts < preferences.generation.autoRetry
+
+          useGenerationHistoryStore
+            .getState()
+            .fail(event.nodeId, event.message, event.retryable)
+
+          const running = { ...get().running }
+          delete running[event.nodeId]
+          set({ running })
+
+          if (shouldRetry && entry) {
+            retryCounts.set(event.nodeId, attempts + 1)
+            patchNode(event.nodeId, {
+              status: 'queued',
+              progress: 0,
+              error: undefined
+            })
+            useUIStore
+              .getState()
+              .showToast(
+                `生成失败，正在自动重试 ${attempts + 1}/${preferences.generation.autoRetry}`,
+                'error'
+              )
+            window.setTimeout(() => {
+              void get().run(entry.request, { retry: true })
+            }, 800)
+            break
+          }
+
           patchNode(event.nodeId, {
             status: 'error',
             progress: 0,
             error: event.message
           })
-
-          useGenerationHistoryStore
-            .getState()
-            .fail(event.nodeId, event.message, event.retryable)
           useUIStore
             .getState()
             .showToast(
@@ -137,10 +176,6 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
                 : `生成失败：${event.message}`,
               'error'
             )
-
-          const running = { ...get().running }
-          delete running[event.nodeId]
-          set({ running })
           break
         }
 
@@ -150,6 +185,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           const running = { ...get().running }
           delete running[event.nodeId]
           set({ running })
+          retryCounts.delete(event.nodeId)
           useGenerationHistoryStore
             .getState()
             .finish(event.nodeId, 'cancelled')
@@ -158,7 +194,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       }
     }),
 
-  run: async (request) => {
+  run: async (request, options) => {
+    if (!options?.retry) retryCounts.delete(request.nodeId)
     useGenerationHistoryStore.getState().start(request)
     try {
       await window.api.generate.run(request)

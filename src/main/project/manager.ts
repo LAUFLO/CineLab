@@ -28,8 +28,10 @@ export function getCurrentProjectRoot(): string | null {
   return currentProjectRoot
 }
 
-export function defaultProjectsDir(): string {
-  return join(app.getPath('documents'), 'CineLab')
+export async function defaultProjectsDir(): Promise<string> {
+  const preferences = await getPreferences()
+  const custom = preferences.project.defaultDir.trim()
+  return custom ? resolve(custom) : join(app.getPath('documents'), 'CineLab')
 }
 
 function recentFile(): string {
@@ -180,7 +182,7 @@ export async function createProject(
   templateId: ProjectTemplateId = 'blank'
 ): Promise<ProjectSnapshot> {
   const safeName = sanitizeName(name)
-  const parent = parentDir ? resolve(parentDir) : defaultProjectsDir()
+  const parent = parentDir ? resolve(parentDir) : await defaultProjectsDir()
   await fs.mkdir(parent, { recursive: true })
 
   const folder = safeName.endsWith(PROJECT_EXT) ? safeName : `${safeName}${PROJECT_EXT}`

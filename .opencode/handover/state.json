@@ -1,5 +1,5 @@
 {
-  "version": 14,
+  "version": 15,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "整体验收与打包：typecheck/test/build，推送并生成安装包，验证 P3-2/P3-3 与既有功能",
+  "next_focus": "整体验收与修复：安装 2deea46 包后完整使用，收集问题并修复",
   "frontier": [
     {
       "id": "M2-1",
@@ -394,6 +394,15 @@
       "evidence": [
         "docs/library-export-enhancements-plan.md",
         ".opencode/handover/evidence/P3-3-library-export.md"
+      ]
+    },
+    {
+      "id": "PACKAGE-2026-11-07",
+      "title": "整体打包：P1-P3 全量功能",
+      "status": "done",
+      "note": "推送 2deea46，CI 42348036406 成功（typecheck/test/check:encryption/build/electron-builder）。安装包 162MB、zip 206MB，已下载到 Downloads\\cinelab-2deea46。",
+      "evidence": [
+        ".opencode/handover/evidence/PACKAGE-2026-11-07.md"
       ]
     }
   ],

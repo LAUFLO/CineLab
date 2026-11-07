@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NODE_KINDS, NODE_META, type NodeKind } from '@shared/canvas-schema'
 import type { TemplateInput } from '@shared/library-schema'
+import { Select } from '../../components/Select'
 
 interface TemplateDialogProps {
   initial: TemplateInput | null
@@ -46,17 +47,14 @@ export function TemplateDialog({ initial, onCancel, onSave }: TemplateDialogProp
 
         <label className="field">
           <span>适用节点</span>
-          <select
-            className="library-select"
+          <Select
             value={kind}
-            onChange={(event) => setKind(event.target.value as NodeKind)}
-          >
-            {NODE_KINDS.map((item) => (
-              <option key={item} value={item}>
-                {NODE_META[item].label}
-              </option>
-            ))}
-          </select>
+            options={NODE_KINDS.map((item) => ({
+              value: item,
+              label: NODE_META[item].label
+            }))}
+            onChange={(next) => setKind(next)}
+          />
         </label>
 
         <label className="field">

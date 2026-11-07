@@ -138,6 +138,35 @@ export function NodeToolbar({
     setMoreSubId(null)
   }
 
+  const sourceNode = (): {
+    title: string
+    origin: { x: number; y: number }
+  } | null => {
+    const found = useCanvasStore
+      .getState()
+      .nodes.find((entry) => entry.id === nodeId)
+    const node = found && !isGroupNode(found) ? found : undefined
+    if (!node) return null
+    const width = node.measured?.width ?? NODE_META[node.data.kind].width
+    return {
+      title: node.data.title,
+      origin: { x: node.position.x + width + 48, y: node.position.y }
+    }
+  }
+
+  const markRunning = (id: string): void => {
+    useCanvasStore
+      .getState()
+      .patchNodeData(id, { status: 'running', error: undefined })
+  }
+
+  const markFailed = (id: string, error: unknown): void => {
+    useCanvasStore.getState().patchNodeData(id, {
+      status: 'error',
+      error: error instanceof Error ? error.message : String(error)
+    })
+  }
+
   const executeGridSplit = async (item: OperationMenuItem): Promise<void> => {
     if (item.id === 'custom') {
       showToast('自定义行列暂未开放')
@@ -147,14 +176,28 @@ export function NodeToolbar({
     const [rows, cols] = item.id.split('x').map(Number)
     if (!rows || !cols) return
 
-    const found = useCanvasStore
-      .getState()
-      .nodes.find((entry) => entry.id === nodeId)
-    const node = found && !isGroupNode(found) ? found : undefined
-    if (!node) return
+    const source = sourceNode()
+    if (!source) return
 
     setRunning(true)
     showToast(`正在切分 ${rows} × ${cols}…`)
+
+    const groupCount = useCanvasStore
+      .getState()
+      .nodes.filter(isGroupNode).length
+    const pendingIds = useCanvasStore.getState().addPendingNodes(
+      'image',
+      source.origin,
+      rows * cols,
+      `${source.title} · 切分`,
+      nodeId,
+      {
+        columns: cols,
+        cellWidth: GRID_SPLIT_CELL_WIDTH,
+        groupTitle: `宫格组 ${groupCount + 1}`,
+        groupColor: 'green'
+      }
+    )
 
     try {
       const result = await window.api.media.splitGrid({
@@ -162,24 +205,15 @@ export function NodeToolbar({
         rows,
         cols
       })
-      const width = node.measured?.width ?? NODE_META[node.data.kind].width
-      const groupCount = useCanvasStore.getState().nodes.filter(isGroupNode).length
+      const state = useCanvasStore.getState()
 
-      useCanvasStore.getState().addAssetNodes(
-        'image',
-        { x: node.position.x + width + 48, y: node.position.y },
-        result.assets,
-        `${node.data.title} · 切分`,
-        nodeId,
-        {
-          columns: cols,
-          cellWidth: GRID_SPLIT_CELL_WIDTH,
-          groupTitle: `宫格组 ${groupCount + 1}`,
-          groupColor: 'green'
-        }
-      )
+      result.assets.forEach((asset, index) => {
+        const pendingId = pendingIds[index]
+        if (pendingId) state.applyOutput(pendingId, asset, `grid-split`)
+      })
       showToast(`已生成 ${result.assets.length} 个切分节点`)
     } catch (error) {
+      pendingIds.forEach((id) => markFailed(id, error))
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -187,11 +221,8 @@ export function NodeToolbar({
   }
 
   const executeFrame = async (item: OperationMenuItem): Promise<void> => {
-    const found = useCanvasStore
-      .getState()
-      .nodes.find((entry) => entry.id === nodeId)
-    const node = found && !isGroupNode(found) ? found : undefined
-    if (!node) return
+    const source = sourceNode()
+    if (!source) return
 
     let time: number | undefined
     if (item.id === 'current') {
@@ -204,23 +235,27 @@ export function NodeToolbar({
     setRunning(true)
     showToast(`正在截取${item.label}…`)
 
+    const pendingId = useCanvasStore.getState().addPendingNodes(
+      'image',
+      source.origin,
+      1,
+      `${source.title} · ${item.label}`,
+      nodeId
+    )[0]
+
     try {
       const result = await window.api.media.extractFrame({
         path: current.path,
         mode: item.id as 'first' | 'last' | 'current',
         time
       })
-      const width = node.measured?.width ?? NODE_META[node.data.kind].width
 
-      useCanvasStore.getState().addAssetNodes(
-        'image',
-        { x: node.position.x + width + 48, y: node.position.y },
-        [result.asset],
-        `${node.data.title} · ${item.label}`,
-        nodeId
-      )
+      useCanvasStore
+        .getState()
+        .applyOutput(pendingId, result.asset, `frame-${item.id}`)
       showToast(`已生成${item.label}`)
     } catch (error) {
+      markFailed(pendingId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -228,56 +263,57 @@ export function NodeToolbar({
   }
 
   const executeSplitAv = async (): Promise<void> => {
-    const found = useCanvasStore
-      .getState()
-      .nodes.find((entry) => entry.id === nodeId)
-    const node = found && !isGroupNode(found) ? found : undefined
-    if (!node) return
+    const source = sourceNode()
+    if (!source) return
 
     setRunning(true)
     showToast('正在分离音视频…')
 
+    const state = useCanvasStore.getState()
+    const pendingVideoId = state.addPendingNodes(
+      'video',
+      source.origin,
+      1,
+      `${source.title} · 无声`,
+      nodeId
+    )[0]
+    const pendingAudioId = state.addPendingNodes(
+      'audio',
+      { x: source.origin.x, y: source.origin.y + 420 },
+      1,
+      `${source.title} · 音轨`,
+      nodeId
+    )[0]
+
+    const groupCount = useCanvasStore
+      .getState()
+      .nodes.filter(isGroupNode).length
+    state.createGroupFromNodes([pendingVideoId, pendingAudioId], {
+      columns: 1,
+      title: `音视频组 ${groupCount + 1}`,
+      color: 'cyan'
+    })
+
     try {
       const result = await window.api.media.splitAv({ path: current.path })
-      const width = node.measured?.width ?? NODE_META[node.data.kind].width
-      const origin = { x: node.position.x + width + 48, y: node.position.y }
 
-      const videoIds = useCanvasStore.getState().addAssetNodes(
-        'video',
-        origin,
-        [result.video],
-        `${node.data.title} · 无声`,
-        nodeId
-      )
-
-      const audioIds = result.audio
-        ? useCanvasStore.getState().addAssetNodes(
-            'audio',
-            { x: origin.x, y: origin.y + 420 },
-            [result.audio],
-            `${node.data.title} · 音轨`,
-            nodeId
-          )
-        : []
-
-      if (videoIds.length + audioIds.length >= 2) {
-        const groupCount = useCanvasStore
+      useCanvasStore
+        .getState()
+        .applyOutput(pendingVideoId, result.video, 'split-av-video')
+      if (result.audio) {
+        useCanvasStore
           .getState()
-          .nodes.filter(isGroupNode).length
-        useCanvasStore.getState().createGroupFromNodes(
-          [...videoIds, ...audioIds],
-          {
-            columns: 1,
-            title: `音视频组 ${groupCount + 1}`,
-            color: 'cyan'
-          }
-        )
+          .applyOutput(pendingAudioId, result.audio, 'split-av-audio')
+      } else {
+        markFailed(pendingAudioId, '当前视频无音轨')
       }
 
       showToast(
         result.audio ? '已生成无声视频和音轨节点' : '已生成无声视频节点'
       )
     } catch (error) {
+      markFailed(pendingVideoId, error)
+      markFailed(pendingAudioId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -291,6 +327,7 @@ export function NodeToolbar({
     }
 
     setRunning(true)
+    markRunning(nodeId)
     showToast(`正在裁切为 ${item.label}…`)
 
     try {
@@ -303,6 +340,7 @@ export function NodeToolbar({
         `裁切完成：${result.asset.width ?? 0} × ${result.asset.height ?? 0}`
       )
     } catch (error) {
+      markFailed(nodeId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -316,6 +354,7 @@ export function NodeToolbar({
     }
 
     setRunning(true)
+    markRunning(nodeId)
     showToast(`正在裁剪为 ${item.label}…`)
 
     try {
@@ -328,6 +367,7 @@ export function NodeToolbar({
         `裁剪完成：${result.asset.width ?? 0} × ${result.asset.height ?? 0}`
       )
     } catch (error) {
+      markFailed(nodeId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -374,6 +414,7 @@ export function NodeToolbar({
   }): Promise<void> => {
     setCropDialog(null)
     setRunning(true)
+    markRunning(nodeId)
     showToast('正在裁剪…')
 
     try {
@@ -386,6 +427,7 @@ export function NodeToolbar({
         `裁剪完成：${result.asset.width ?? 0} × ${result.asset.height ?? 0}`
       )
     } catch (error) {
+      markFailed(nodeId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -432,6 +474,7 @@ export function NodeToolbar({
   }): Promise<void> => {
     setSubtitleDialog(null)
     setRunning(true)
+    markRunning(nodeId)
     showToast('正在框选去字幕…')
 
     try {
@@ -442,6 +485,7 @@ export function NodeToolbar({
       useCanvasStore.getState().applyOutput(nodeId, result.asset, 'subtitle-box')
       showToast('去字幕完成')
     } catch (error) {
+      markFailed(nodeId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -474,6 +518,7 @@ export function NodeToolbar({
   const executeTrim = async (start: number, end: number): Promise<void> => {
     setTrimOpen(false)
     setRunning(true)
+    markRunning(nodeId)
     showToast('正在截取…')
 
     try {
@@ -487,6 +532,7 @@ export function NodeToolbar({
         `截取完成：${(result.asset.duration ?? end - start).toFixed(1)} 秒`
       )
     } catch (error) {
+      markFailed(nodeId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -590,21 +636,31 @@ export function NodeToolbar({
     if (!depthDialog) return
     setDepthDialog(null)
 
+    const source = sourceNode()
+    if (!source) return
+
+    const pendingId = useCanvasStore.getState().addPendingNodes(
+      'video',
+      source.origin,
+      1,
+      `${source.title} · 深度`,
+      nodeId
+    )[0]
+
     try {
       const { taskId } = await window.api.media.startDepthCapture({
         path: current.path,
         quality,
         fps
       })
-      const node = useCanvasStore
-        .getState()
-        .nodes.find((entry) => entry.id === nodeId)
       trackDepthTask(taskId, {
         nodeId,
-        title: node && !isGroupNode(node) ? node.data.title : '视频'
+        pendingNodeId: pendingId,
+        title: source.title
       })
-      showToast('已开始深度动作捕捉，完成后自动创建节点')
+      showToast('已开始深度动作捕捉，完成后自动写入节点')
     } catch (error) {
+      markFailed(pendingId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     }
   }

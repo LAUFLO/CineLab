@@ -89,7 +89,7 @@ export function registerProjectIpc(): void {
     const win = BrowserWindow.fromWebContents(event.sender)
     const options: SaveDialogOptions = {
       title: '新建 CineLab 项目',
-      defaultPath: join(defaultProjectsDir(), '未命名项目.cinelab'),
+      defaultPath: join(await defaultProjectsDir(), '未命名项目.cinelab'),
       buttonLabel: '创建',
       filters: [{ name: 'CineLab 项目', extensions: ['cinelab'] }]
     }
@@ -108,7 +108,7 @@ export function registerProjectIpc(): void {
     const win = BrowserWindow.fromWebContents(event.sender)
     const options: OpenDialogOptions = {
       title: '打开 CineLab 项目',
-      defaultPath: defaultProjectsDir(),
+      defaultPath: await defaultProjectsDir(),
       properties: ['openDirectory']
     }
 

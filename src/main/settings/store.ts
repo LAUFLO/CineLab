@@ -15,6 +15,7 @@ import type { ModelsFileProvider } from '@shared/models-file'
 import type { OperationBindings } from '@shared/operation-schema'
 import { klingAuthorization } from '../providers/kling-auth'
 import { mergeHeaders } from '../providers/headers'
+import { httpFetch } from '../providers/http'
 import {
   enqueueModelsWrite,
   loadModelsConfig,
@@ -435,7 +436,7 @@ export async function testConnection(
     const timer = setTimeout(() => controller.abort(), 15000)
 
     if (type === 'kling') {
-      const response = await fetch(`${baseUrl}/v1/videos/text2video/0`, {
+      const response = await httpFetch(`${baseUrl}/v1/videos/text2video/0`, {
         headers: mergeHeaders(
           { Authorization: klingAuthorization(apiKey, secretKey) },
           customHeaders
@@ -455,7 +456,7 @@ export async function testConnection(
       return { ok: true, message: '连接成功（鉴权通过）' }
     }
 
-    const response = await fetch(`${baseUrl}/models`, {
+    const response = await httpFetch(`${baseUrl}/models`, {
       headers: mergeHeaders({ Authorization: `Bearer ${apiKey}` }, customHeaders),
       signal: controller.signal
     })
@@ -518,7 +519,7 @@ export async function fetchModels(
 
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 20000)
-    const response = await fetch(`${baseUrl}/models`, {
+    const response = await httpFetch(`${baseUrl}/models`, {
       headers: mergeHeaders({ Authorization: `Bearer ${apiKey}` }, customHeaders),
       signal: controller.signal
     })

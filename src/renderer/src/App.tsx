@@ -18,6 +18,7 @@ import { useGenerationHistoryStore } from './stores/generation-history'
 import { usePreferencesStore } from './stores/preferences'
 import { useProjectStore } from './stores/project'
 import { useSettingsStore } from './stores/settings'
+import { useUIStore } from './stores/ui'
 import { useUpdateStore } from './stores/update'
 import { subscribeDepthTasks } from './stores/depth-tasks'
 import { subscribeVisionTasks } from './stores/vision-tasks'
@@ -43,6 +44,9 @@ export default function App() {
   const historyLimit = usePreferencesStore(
     (state) => state.preferences.generation.historyLimit
   )
+  const confirmBeforeClose = usePreferencesStore(
+    (state) => state.preferences.project.confirmBeforeClose
+  )
 
   useEffect(() => {
     void loadPreferences()
@@ -51,6 +55,34 @@ export default function App() {
   useEffect(() => {
     useGenerationHistoryStore.getState().trim()
   }, [historyLimit])
+
+  useEffect(() => {
+    return window.api.app.onCloseRequested(() => {
+      const project = useProjectStore.getState()
+      const dirty = project.dirty || project.saving
+      const close = (): void => window.api.app.confirmClose()
+
+      if (!dirty) {
+        close()
+        return
+      }
+
+      if (!confirmBeforeClose) {
+        void project.saveNow().finally(close)
+        return
+      }
+
+      useUIStore.getState().requestConfirm({
+        title: '退出 CineLab',
+        message: '当前项目还有未保存的修改，退出前会自动保存。',
+        confirmLabel: '保存并退出',
+        onConfirm: async () => {
+          await useProjectStore.getState().saveNow()
+          close()
+        }
+      })
+    })
+  }, [confirmBeforeClose])
 
   useEffect(() => {
     void bootstrap()

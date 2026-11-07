@@ -31,6 +31,7 @@ import {
   saveTemplate
 } from '../library/templates'
 import { setAssetTags } from '../library/tags'
+import { clearThumbCache, getThumbCacheInfo } from '../library/thumbs'
 
 const ASSET_FILTERS = [
   {
@@ -184,4 +185,7 @@ export function registerLibraryIpc(): void {
   ipcMain.handle('library:delete-template', (_event, id: string) =>
     deleteTemplate(id)
   )
+
+  ipcMain.handle('library:thumb-cache-info', () => getThumbCacheInfo())
+  ipcMain.handle('library:clear-thumb-cache', () => clearThumbCache())
 }

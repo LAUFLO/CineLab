@@ -1,8 +1,8 @@
 {
-  "version": 30,
+  "version": 31,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-07",
+  "updatedAt": "2026-11-08",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
@@ -549,6 +549,16 @@
       "evidence": [
         "docs/general-settings-plan.md",
         ".opencode/handover/evidence/GENERAL-SETTINGS-1.md"
+      ]
+    },
+    {
+      "id": "GENERAL-SETTINGS-2",
+      "title": "通用设置第二批：关闭确认、画布行为、缓存、缩放、代理、导入导出",
+      "status": "done",
+      "note": "补齐关闭前确认、默认项目目录、连线/滚轮/双击/网格、自动重试、默认水印、更新检查与通道、缓存清理、界面缩放、代理与超时、导入导出。模型请求统一切到 net.fetch；语言因需要全量 i18n 暂缓。",
+      "evidence": [
+        "docs/general-settings-plan.md",
+        ".opencode/handover/evidence/GENERAL-SETTINGS-2.md"
       ]
     }
   ],
@@ -1324,6 +1334,18 @@
     {
       "category": "lesson",
       "content": "多个偏好开关连续修改时，渲染层必须先同步合并到最新状态再串行写盘，不能并行读取同一个旧快照，否则后写的旧值会覆盖前一个开关。"
+    },
+    {
+      "category": "lesson",
+      "content": "模型请求需要通过 Electron net.fetch 走会话网络栈，才能让代理设置生效；Node 全局 fetch 不读取会话代理。localhost 请求会被 Chromium 默认绕过代理。"
+    },
+    {
+      "category": "lesson",
+      "content": "窗口关闭确认不能用渲染进程 window.close() 验证，它可能绕过 close 拦截；标题栏关闭走 win.close() 才会经过主进程 close 事件。"
+    },
+    {
+      "category": "lesson",
+      "content": "设置页 Toggle 的 class 拼接必须保留空格（settings-toggle + \" is-on\"），否则 querySelector 和样式会同时失效。"
     }
   ],
   "designConventions": [

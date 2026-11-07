@@ -16,9 +16,15 @@ interface PreferencesState {
   updateProject: (patch: Partial<Preferences['project']>) => Promise<void>
   updateCanvas: (patch: Partial<Preferences['canvas']>) => Promise<void>
   updateGeneration: (patch: Partial<Preferences['generation']>) => Promise<void>
+  updateUpdates: (patch: Partial<Preferences['updates']>) => Promise<void>
+  updateStorage: (patch: Partial<Preferences['storage']>) => Promise<void>
+  updateUi: (patch: Partial<Preferences['ui']>) => Promise<void>
+  updateNetwork: (patch: Partial<Preferences['network']>) => Promise<void>
   setDefaultModel: (group: CapabilityGroup, key: string | null) => Promise<void>
   toggleSnap: () => Promise<void>
   toggleMinimap: () => Promise<void>
+  toggleEdges: () => Promise<void>
+  refresh: () => Promise<void>
   reset: () => Promise<void>
 }
 
@@ -31,8 +37,10 @@ function applySideEffects(preferences: Preferences): void {
     : 'false'
   useUIStore.setState({
     snapToGrid: preferences.canvas.snapToGrid,
-    minimapVisible: preferences.canvas.minimapVisible
+    minimapVisible: preferences.canvas.minimapVisible,
+    edgesVisible: preferences.canvas.edgesVisible
   })
+  void window.api.app.setZoom(preferences.ui.scale / 100)
 }
 
 export const usePreferencesStore = create<PreferencesState>((set, get) => {
@@ -116,6 +124,42 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => {
       })
     },
 
+    updateUpdates: async (patch) => {
+      await loaded()
+      const current = get().preferences
+      await commit({
+        ...current,
+        updates: { ...current.updates, ...patch }
+      })
+    },
+
+    updateStorage: async (patch) => {
+      await loaded()
+      const current = get().preferences
+      await commit({
+        ...current,
+        storage: { ...current.storage, ...patch }
+      })
+    },
+
+    updateUi: async (patch) => {
+      await loaded()
+      const current = get().preferences
+      await commit({
+        ...current,
+        ui: { ...current.ui, ...patch }
+      })
+    },
+
+    updateNetwork: async (patch) => {
+      await loaded()
+      const current = get().preferences
+      await commit({
+        ...current,
+        network: { ...current.network, ...patch }
+      })
+    },
+
     setDefaultModel: async (group, key) => {
       await loaded()
       const current = get().preferences
@@ -147,6 +191,26 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => {
           minimapVisible: !current.canvas.minimapVisible
         }
       })
+    },
+
+    toggleEdges: async () => {
+      await loaded()
+      const current = get().preferences
+      await commit({
+        ...current,
+        canvas: {
+          ...current.canvas,
+          edgesVisible: !current.canvas.edgesVisible
+        }
+      })
+    },
+
+    refresh: async () => {
+      try {
+        apply(normalizePreferences(await window.api.settings.getPreferences()))
+      } catch {
+        // 读取失败时保留当前值
+      }
     },
 
     reset: async () => {

@@ -71,9 +71,6 @@ interface UIStore {
   closeConfirm: () => void
   showToast: (message: string, tone?: ToastState['tone']) => void
   clearToast: () => void
-  toggleSnap: () => void
-  toggleEdges: () => void
-  toggleMinimap: () => void
   requestFitView: () => void
   requestArrange: () => void
 }
@@ -123,9 +120,6 @@ export const useUIStore = create<UIStore>((set) => ({
   closeConfirm: () => set({ confirm: null }),
   showToast: (message, tone = 'info') => set({ toast: { message, tone } }),
   clearToast: () => set({ toast: null }),
-  toggleSnap: () => set((state) => ({ snapToGrid: !state.snapToGrid })),
-  toggleEdges: () => set((state) => ({ edgesVisible: !state.edgesVisible })),
-  toggleMinimap: () => set((state) => ({ minimapVisible: !state.minimapVisible })),
   requestFitView: () => set((state) => ({ fitViewToken: state.fitViewToken + 1 })),
   requestArrange: () => set((state) => ({ arrangeToken: state.arrangeToken + 1 }))
 }))

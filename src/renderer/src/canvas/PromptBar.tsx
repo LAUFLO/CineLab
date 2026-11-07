@@ -119,6 +119,9 @@ export function PromptBar() {
   const autoLinkPreference = usePreferencesStore(
     (state) => state.preferences.generation.autoLink
   )
+  const watermarkPreference = usePreferencesStore(
+    (state) => state.preferences.generation.watermark
+  )
   const setDefaultModel = usePreferencesStore((state) => state.setDefaultModel)
   const updateGeneration = usePreferencesStore(
     (state) => state.updateGeneration
@@ -140,7 +143,7 @@ export function PromptBar() {
   const [pickHint, setPickHint] = useState<string | null>(null)
   const [autoLink, setAutoLink] = useState(autoLinkPreference)
   const [advancedOpen, setAdvancedOpen] = useState(false)
-  const [watermark, setWatermark] = useState(false)
+  const [watermark, setWatermark] = useState(watermarkPreference)
   const [expanded, setExpanded] = useState(false)
   const [uploadMenuOpen, setUploadMenuOpen] = useState(false)
   const [mentionOpen, setMentionOpen] = useState(false)
@@ -224,6 +227,10 @@ export function PromptBar() {
   useEffect(() => {
     setAutoLink(autoLinkPreference)
   }, [autoLinkPreference])
+
+  useEffect(() => {
+    setWatermark(watermarkPreference)
+  }, [watermarkPreference])
 
   useEffect(() => {
     void loadLibrary()
@@ -1405,7 +1412,11 @@ export function PromptBar() {
                     <button
                       type="button"
                       className={`promptbar__switch ${watermark ? 'is-on' : ''}`}
-                      onClick={() => setWatermark((open) => !open)}
+                      onClick={() => {
+                        const next = !watermark
+                        setWatermark(next)
+                        void updateGeneration({ watermark: next })
+                      }}
                     >
                       <span />
                     </button>

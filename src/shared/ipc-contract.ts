@@ -29,7 +29,8 @@ import type {
   LibraryFolderNode,
   LibraryRootInfo,
   PromptTemplate,
-  TemplateInput
+  TemplateInput,
+  ThumbCacheInfo
 } from './library-schema'
 import type { ModelsConfigStatus } from './models-file'
 import type { OperationBindings } from './operation-schema'
@@ -108,6 +109,9 @@ export interface SettingsApi {
   getPreferences(): Promise<Preferences>
   savePreferences(input: Preferences): Promise<Preferences>
   resetPreferences(): Promise<Preferences>
+  exportPreferences(): Promise<{ path?: string; canceled?: boolean }>
+  importPreferences(): Promise<Preferences | null>
+  chooseProjectDir(): Promise<string | null>
   openDataDir(): Promise<void>
   onModelsChanged(callback: () => void): () => void
 }
@@ -146,6 +150,8 @@ export interface LibraryApi {
   listTemplates(): Promise<PromptTemplate[]>
   saveTemplate(input: TemplateInput): Promise<PromptTemplate>
   deleteTemplate(id: string): Promise<void>
+  thumbCacheInfo(): Promise<ThumbCacheInfo>
+  clearThumbCache(): Promise<ThumbCacheInfo>
 }
 
 export interface ExportResult {
@@ -218,6 +224,9 @@ export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
     setTheme(theme: ThemeMode): Promise<void>
+    setZoom(factor: number): Promise<void>
+    onCloseRequested(callback: () => void): () => void
+    confirmClose(): void
     openLogs(): Promise<void>
     log(level: 'info' | 'warn' | 'error', message: string): Promise<void>
     minimize(): void

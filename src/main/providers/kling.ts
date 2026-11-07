@@ -1,3 +1,4 @@
+import { httpFetch } from './http'
 import type { ModelDef } from '@shared/provider-schema'
 import { klingAuthorization } from './kling-auth'
 import { mergeHeaders } from './headers'
@@ -47,7 +48,7 @@ async function downloadVideo(
   let response: Response | null = null
   for (let retry = 0; retry < 3; retry += 1) {
     try {
-      const current = await fetch(url, { signal: ctx.signal })
+      const current = await httpFetch(url, { signal: ctx.signal })
       if (current.ok) {
         response = current
         break
@@ -105,7 +106,7 @@ export async function generateVideoKling(
 
   ctx.onProgress(5, '提交视频任务')
 
-  const submit = await fetch(`${baseUrl}/v1/videos/${path}`, {
+  const submit = await httpFetch(`${baseUrl}/v1/videos/${path}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -130,7 +131,7 @@ export async function generateVideoKling(
   for (let attempt = 0; attempt < 180; attempt += 1) {
     await sleep(3000, ctx.signal)
 
-    const response = await fetch(
+    const response = await httpFetch(
       `${baseUrl}/v1/videos/${path}/${encodeURIComponent(taskId)}`,
       { headers, signal: ctx.signal }
     )

@@ -36,6 +36,13 @@ const api: CineApi = {
   app: {
     getInfo: () => ipcRenderer.invoke('app:get-info'),
     setTheme: (theme: ThemeMode) => ipcRenderer.invoke('app:set-theme', theme),
+    setZoom: (factor: number) => ipcRenderer.invoke('app:set-zoom', factor),
+    onCloseRequested: (callback: () => void) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('app:close-requested', listener)
+      return () => ipcRenderer.removeListener('app:close-requested', listener)
+    },
+    confirmClose: () => ipcRenderer.send('app:confirm-close'),
     openLogs: () => ipcRenderer.invoke('app:open-logs'),
     log: (level: 'info' | 'warn' | 'error', message: string) =>
       ipcRenderer.invoke('app:log', level, message),
@@ -93,6 +100,9 @@ const api: CineApi = {
     savePreferences: (input: Preferences) =>
       ipcRenderer.invoke('settings:save-preferences', input),
     resetPreferences: () => ipcRenderer.invoke('settings:reset-preferences'),
+    exportPreferences: () => ipcRenderer.invoke('settings:export-preferences'),
+    importPreferences: () => ipcRenderer.invoke('settings:import-preferences'),
+    chooseProjectDir: () => ipcRenderer.invoke('settings:choose-project-dir'),
     openDataDir: () => ipcRenderer.invoke('settings:open-data-dir'),
     onModelsChanged: (callback: () => void) => {
       const listener = (): void => callback()
@@ -149,11 +159,14 @@ const api: CineApi = {
 
     listCharacters: () => ipcRenderer.invoke('library:list-characters'),
     saveAssets: (inputs: SaveAssetInput[], folder?: string) =>
-      ipcRenderer.invoke('library:save-assets', inputs, folder),    listTemplates: () => ipcRenderer.invoke('library:list-templates'),
+      ipcRenderer.invoke('library:save-assets', inputs, folder),
+    listTemplates: () => ipcRenderer.invoke('library:list-templates'),
     saveTemplate: (input: TemplateInput) =>
       ipcRenderer.invoke('library:save-template', input),
     deleteTemplate: (id: string) =>
-      ipcRenderer.invoke('library:delete-template', id)
+      ipcRenderer.invoke('library:delete-template', id),
+    thumbCacheInfo: () => ipcRenderer.invoke('library:thumb-cache-info'),
+    clearThumbCache: () => ipcRenderer.invoke('library:clear-thumb-cache')
   },
   components: {
     status: () => ipcRenderer.invoke('components:status'),

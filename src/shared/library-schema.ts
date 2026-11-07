@@ -32,6 +32,11 @@ export interface LibraryRootInfo {
   isDefault: boolean
 }
 
+export interface ThumbCacheInfo {
+  bytes: number
+  files: number
+}
+
 /** 多选批量入库：来源节点输出 */
 export interface SaveAssetInput {
   path: string

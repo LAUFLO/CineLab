@@ -20,6 +20,8 @@ interface ProjectState {
   canvases: ProjectMeta['canvases']
   error: string | null
   saving: boolean
+  /** 画布有尚未写入磁盘的修改 */
+  dirty: boolean
   lastSavedAt: string | null
 
   bootstrap: () => Promise<void>
@@ -49,6 +51,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   canvases: [],
   error: null,
   saving: false,
+  dirty: false,
   lastSavedAt: null,
 
   bootstrap: async () => {
@@ -64,7 +67,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           canvasId: null,
           canvasName: '',
           canvases: [],
-          error: null
+          error: null,
+          dirty: false
         })
         return
       }
@@ -93,6 +97,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       canvases: snapshot.meta.canvases,
       error: null,
       saving: false,
+      dirty: false,
       lastSavedAt: null
     })
   },
@@ -126,6 +131,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   scheduleSave: () => {
     if (saveTimer) clearTimeout(saveTimer)
+    set({ dirty: true })
     const delay =
       usePreferencesStore.getState().preferences.project.autoSaveDelay
     saveTimer = setTimeout(() => {
@@ -151,7 +157,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         edges: canvas.edges as unknown as PersistedEdge[]
       })
 
-      set({ saving: false, lastSavedAt: new Date().toISOString(), error: null })
+      set({
+        saving: false,
+        dirty: false,
+        lastSavedAt: new Date().toISOString(),
+        error: null
+      })
     } catch (error) {
       set({ saving: false, error: String(error) })
     }

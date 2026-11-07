@@ -1,10 +1,10 @@
 # CineLab · Boot Packet
 
-> **下一会话优先**：整体打包与验收。批次 1-3 已完成，等待安装新包后完整验收并修 bug。
+> **下一会话优先**：整体验收与修复。安装 `02d921b` 包，重点验收蒙版/全景/视觉组件/专用视频操作绑定。
 
 ## 状态
 
-2026-11-07：工具栏占位功能批次 1-3 完成；视觉组件 `vision-components-v1` 已发布（InSPyReNet MIT + LaMa Apache-2.0，527MB）。最后提交 `6dac740`，工作区干净。
+2026-11-07：批次 1-3 完成并打包。CI 42364183939 成功（3m53s），安装包在 `Downloads\cinelab-02d921b`（156MB）。视觉组件 `vision-components-v1` 已发布（InSPyReNet MIT + LaMa Apache-2.0，527MB）。最后提交 `02d921b`，工作区干净。
 
 ## Frontier
 

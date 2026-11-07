@@ -91,7 +91,7 @@ VDA 不装 torchvision：`worker.py` 启动时提供 `Compose` shim，runtime �
 4. clone VDA 并 checkout 固定 commit，复制 `video_depth_anything/` 与 `utils/`
 5. 复制 `resources/depth-worker/worker.py`
 6. 清理 `__pycache__` / `*.pyc`
-7. 冒烟测试：用 runtime 自带 `python.exe` 导入 torch/cv2/numpy/einops/easydict/tqdm 和 `video_depth_anything.video_depth`，并断言 `torch.version.cuda is None`
+7. 冒烟测试：用 runtime 自带 `python.exe` 导入 torch/cv2/numpy/einops/easydict/tqdm，按 worker 真实顺序先启用 torchvision shim、再导入 `video_depth_anything.video_depth`，并断言 `torch.version.cuda is None`
 8. 压缩 zip，统计 SHA256 / 压缩体积 / 解压体积 / 文件数
 9. 生成 manifest，`urls` 指向 `-DownloadBase` 下的 zip
 

@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 14,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "P3-2 项目模板与示例项目：空白/分镜/产品广告/角色短片",
+  "next_focus": "整体验收与打包：typecheck/test/build，推送并生成安装包，验证 P3-2/P3-3 与既有功能",
   "frontier": [
     {
       "id": "M2-1",
@@ -375,6 +375,26 @@
         "docs/logging-plan.md",
         ".opencode/handover/evidence/P2-2-logging.md"
       ]
+    },
+    {
+      "id": "P3-2",
+      "title": "项目模板与示例项目",
+      "status": "done",
+      "note": "空白/分镜/产品广告/角色短片四套模板；欢迎页模板选择器；分镜组 2×2、产品/角色模板含文本、图片、视频节点与连线。提交 a926fdc。",
+      "evidence": [
+        "docs/project-templates-plan.md",
+        ".opencode/handover/evidence/P3-2-project-templates.md"
+      ]
+    },
+    {
+      "id": "P3-3",
+      "title": "资产库与导出增强",
+      "status": "done",
+      "note": "资产多选、批量移动/删除、标签（.tags.json + 搜索）、视频合成（720p/1080p、标准/高画质）、SRT 字幕烧录、BGM 循环混音。多轨独立控制留作后续。",
+      "evidence": [
+        "docs/library-export-enhancements-plan.md",
+        ".opencode/handover/evidence/P3-3-library-export.md"
+      ]
     }
   ],
   "knownIssues": [
@@ -461,7 +481,17 @@
     {
       "id": "K22",
       "area": "repo",
-      "content": "本地有多项未推送提交（音频节点、模型配置引导、错误反馈、请求头、参数编辑器、测试、日志）。下一次打包前需要统一推送并触发 build-win。"
+      "content": "本地有多项未推送提交（音频节点、模型配置引导、错误反馈、请求头、参数编辑器、测试、日志、模板、资产导出）。下一次打包前需要统一推送并触发 build-win。"
+    },
+    {
+      "id": "K23",
+      "area": "export",
+      "content": "视频合成的系统保存对话框、字幕文件选择、背景音乐选择未在 UI 中完整人工走通；ffmpeg 步骤已独立验证。"
+    },
+    {
+      "id": "K24",
+      "area": "export",
+      "content": "多轨音轨混合（BGM / 旁白 / 原声独立轨道与音量）未实现，目前是单 BGM 循环混入原声。"
     }
   ],
   "gates": [],

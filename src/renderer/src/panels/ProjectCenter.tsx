@@ -3,6 +3,7 @@ import type { RecentProject } from '@shared/project-schema'
 import { BrandWordmark } from '../components/Brand'
 import { Icon } from '../components/Icon'
 import { ProjectCard } from '../components/ProjectCard'
+import { PROJECT_TEMPLATES } from '@shared/project-templates'
 import { useProjectStore } from '../stores/project'
 import { useSettingsStore } from '../stores/settings'
 
@@ -28,6 +29,7 @@ export function ProjectCenter() {
 
   const [recent, setRecent] = useState<RecentProject[]>([])
   const [loading, setLoading] = useState(true)
+  const [templateOpen, setTemplateOpen] = useState(false)
 
   const refreshRecent = (): void => {
     void window.api.project.recent().then(setRecent)
@@ -66,7 +68,7 @@ export function ProjectCenter() {
           <button
             type="button"
             className="project-center__new"
-            onClick={() => void startNew()}
+            onClick={() => setTemplateOpen(true)}
           >
             <Icon name="plus" size={20} />
             新建项目
@@ -116,6 +118,54 @@ export function ProjectCenter() {
           <div className="project-center__empty">还没有项目，新建一个开始创作</div>
         )}
       </div>
+
+      {templateOpen ? (
+        <div
+          className="settings-overlay"
+          onPointerDown={() => setTemplateOpen(false)}
+        >
+          <div
+            className="template-picker"
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <header className="template-picker__head">
+              <div>
+                <div className="template-picker__title">选择项目模板</div>
+                <div className="template-picker__subtitle">
+                  模板只生成画布结构，不会预置模型或素材
+                </div>
+              </div>
+              <button
+                type="button"
+                className="icon-btn settings-dialog__close"
+                title="关闭"
+                onClick={() => setTemplateOpen(false)}
+              >
+                <Icon name="close" size={14} />
+              </button>
+            </header>
+
+            <div className="template-picker__grid">
+              {PROJECT_TEMPLATES.map((template) => (
+                <button
+                  key={template.id}
+                  type="button"
+                  className="template-picker__card"
+                  onClick={() => {
+                    setTemplateOpen(false)
+                    void startNew(template.id)
+                  }}
+                >
+                  <span className="template-picker__name">{template.name}</span>
+                  <span className="template-picker__desc">
+                    {template.description}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

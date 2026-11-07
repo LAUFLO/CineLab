@@ -5,6 +5,7 @@ import type {
   ProjectSnapshot,
   RecentProject
 } from './project-schema'
+import type { ProjectTemplateId } from './project-templates'
 import type {
   ConnectionTestInput,
   ConnectionTestResult,
@@ -66,7 +67,11 @@ export interface AppInfo {
 
 export interface ProjectApi {
   bootstrap(): Promise<ProjectSnapshot | null>
-  create(name: string, parentDir?: string): Promise<ProjectSnapshot>
+  create(
+    name: string,
+    parentDir?: string,
+    templateId?: ProjectTemplateId
+  ): Promise<ProjectSnapshot>
   open(path: string): Promise<ProjectSnapshot>
   saveCanvas(path: string, canvas: CanvasData): Promise<void>
   recent(): Promise<RecentProject[]>
@@ -74,7 +79,7 @@ export interface ProjectApi {
   setCoverFromLocal(path: string): Promise<{ ok: boolean; canceled?: boolean }>
   setCoverFromAsset(path: string, assetPath: string): Promise<{ ok: boolean }>
   removeCover(path: string): Promise<void>
-  pickCreate(): Promise<ProjectSnapshot | null>
+  pickCreate(templateId?: ProjectTemplateId): Promise<ProjectSnapshot | null>
   pickOpen(): Promise<ProjectSnapshot | null>
   reveal(path: string): Promise<void>
   rename(path: string, name: string): Promise<ProjectMeta>

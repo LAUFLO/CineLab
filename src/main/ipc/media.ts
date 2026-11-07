@@ -18,7 +18,7 @@ import { extractFrame } from '../media/frames'
 import { splitGrid } from '../media/grid'
 import { stitchGrid } from '../media/stitch'
 import { cropImage, cropImageRect } from '../media/image'
-import { resolveInside } from '../media/paths'
+import { resolveMediaPath } from '../media/paths'
 import { cropVideo, removeSubtitles, splitAv, trimVideo } from '../media/video'
 import { getCurrentProjectRoot } from '../project/manager'
 
@@ -65,7 +65,7 @@ export function registerMediaIpc(): void {
   })
 
   ipcMain.handle('media:probe', async (_event, path: string) => {
-    return probeMedia(resolveInside(requireProjectRoot(), path))
+    return probeMedia(await resolveMediaPath(requireProjectRoot(), path))
   })
 
   ipcMain.handle('media:crop-image', async (_event, input: CropImageRequest) => {

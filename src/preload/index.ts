@@ -226,8 +226,16 @@ const api: CineApi = {
       ipcRenderer.invoke('export:assets', inputs, fileName),
     concatVideos: (
       paths: string[],
-      options?: { resolution?: '720p' | '1080p'; quality?: 'standard' | 'high' }
-    ) => ipcRenderer.invoke('export:concat-videos', paths, options)
+      options?: {
+        resolution?: '720p' | '1080p'
+        quality?: 'standard' | 'high'
+        subtitlePath?: string
+        bgmPath?: string
+        bgmVolume?: number
+      }
+    ) => ipcRenderer.invoke('export:concat-videos', paths, options),
+    pickFile: (kind: 'subtitle' | 'audio') =>
+      ipcRenderer.invoke('export:pick-file', kind)
   },
   clipboard: {
     read: () => ipcRenderer.invoke('clipboard:read')

@@ -134,6 +134,8 @@ export function LibraryWindow() {
     'standard'
   )
   const [concatBusy, setConcatBusy] = useState(false)
+  const [concatSubtitle, setConcatSubtitle] = useState<string | null>(null)
+  const [concatBgm, setConcatBgm] = useState<string | null>(null)
   const [tagTarget, setTagTarget] = useState<LibraryAsset | null>(null)
   const [tagDraft, setTagDraft] = useState('')
 
@@ -251,7 +253,12 @@ export function LibraryWindow() {
     try {
       const result = await window.api.export.concatVideos(
         selectedVideos.map((asset) => asset.path),
-        { resolution: concatResolution, quality: concatQuality }
+        {
+          resolution: concatResolution,
+          quality: concatQuality,
+          ...(concatSubtitle ? { subtitlePath: concatSubtitle } : {}),
+          ...(concatBgm ? { bgmPath: concatBgm } : {})
+        }
       )
 
       if (result.ok) {
@@ -259,6 +266,8 @@ export function LibraryWindow() {
         setConcatOpen(false)
         setSelectionMode(false)
         setSelectedPaths(new Set())
+        setConcatSubtitle(null)
+        setConcatBgm(null)
       } else if (!result.canceled) {
         showToast(result.error ?? '合成失败', 'error')
       }
@@ -676,9 +685,65 @@ export function LibraryWindow() {
                 </div>
               </div>
 
+              <div className="concat-form__row">
+                <span>字幕</span>
+                <div className="concat-form__file">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void window.api.export
+                        .pickFile('subtitle')
+                        .then((path) => path && setConcatSubtitle(path))
+                    }
+                  >
+                    {concatSubtitle ? '更换 SRT' : '选择 SRT'}
+                  </button>
+                  <span title={concatSubtitle ?? ''}>
+                    {concatSubtitle
+                      ? concatSubtitle.split(/[\\/]/).pop()
+                      : '无（可选）'}
+                  </span>
+                  {concatSubtitle ? (
+                    <button
+                      type="button"
+                      onClick={() => setConcatSubtitle(null)}
+                    >
+                      清除
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="concat-form__row">
+                <span>背景音乐</span>
+                <div className="concat-form__file">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void window.api.export
+                        .pickFile('audio')
+                        .then((path) => path && setConcatBgm(path))
+                    }
+                  >
+                    {concatBgm ? '更换音频' : '选择音频'}
+                  </button>
+                  <span title={concatBgm ?? ''}>
+                    {concatBgm
+                      ? concatBgm.split(/[\\/]/).pop()
+                      : '无（可选）'}
+                  </span>
+                  {concatBgm ? (
+                    <button type="button" onClick={() => setConcatBgm(null)}>
+                      清除
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
               <div className="concat-form__hint">
                 按资产列表顺序拼接 {selectedVideos.length} 段视频，统一为 H.264 /
-                AAC，输出 MP4。
+                AAC，输出 MP4{concatBgm ? '；背景音乐将循环并混入原声' : ''}
+                {concatSubtitle ? '；字幕将烧录进画面' : ''}。
               </div>
             </div>
 

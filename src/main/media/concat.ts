@@ -12,7 +12,17 @@ export type ConcatQuality = 'standard' | 'high'
 export interface ConcatOptions {
   resolution?: ConcatResolution
   quality?: ConcatQuality
+  subtitlePath?: string
+  bgmPath?: string
+  bgmVolume?: number
   signal?: AbortSignal
+}
+
+function escapeSubtitlePath(path: string): string {
+  return path
+    .replace(/\\/g, '/')
+    .replace(/:/g, '\\:')
+    .replace(/'/g, "\\'")
 }
 
 /**
@@ -95,6 +105,7 @@ export async function concatVideos(
       .join('\n')
     await fs.writeFile(listPath, list, 'utf8')
 
+    const concatenated = join(tempDir, 'concatenated.mp4')
     await runFfmpeg(
       [
         '-y',
@@ -108,10 +119,72 @@ export async function concatVideos(
         'copy',
         '-movflags',
         '+faststart',
-        outputPath
+        concatenated
       ],
       { signal: options.signal }
     )
+
+    let current = concatenated
+
+    if (options.subtitlePath) {
+      const subtitled = join(tempDir, 'subtitled.mp4')
+      const escaped = escapeSubtitlePath(options.subtitlePath)
+      await runFfmpeg(
+        [
+          '-y',
+          '-i',
+          current,
+          '-vf',
+          `subtitles=filename='${escaped}':force_style='FontName=Microsoft YaHei,FontSize=18,Outline=1,Shadow=0'`,
+          '-c:v',
+          'libx264',
+          '-preset',
+          'medium',
+          '-crf',
+          String(crf),
+          '-c:a',
+          'copy',
+          subtitled
+        ],
+        { signal: options.signal }
+      )
+      current = subtitled
+    }
+
+    if (options.bgmPath) {
+      const volume = Math.min(1, Math.max(0.05, options.bgmVolume ?? 0.25))
+      await runFfmpeg(
+        [
+          '-y',
+          '-i',
+          current,
+          '-stream_loop',
+          '-1',
+          '-i',
+          options.bgmPath,
+          '-filter_complex',
+          `[1:a]volume=${volume}[bgm];[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=0[a]`,
+          '-map',
+          '0:v',
+          '-map',
+          '[a]',
+          '-c:v',
+          'copy',
+          '-c:a',
+          'aac',
+          '-b:a',
+          '192k',
+          '-shortest',
+          outputPath
+        ],
+        { signal: options.signal }
+      )
+      return
+    }
+
+    if (current !== outputPath) {
+      await fs.copyFile(current, outputPath)
+    }
   } finally {
     await fs.rm(tempDir, { recursive: true, force: true }).catch(() => undefined)
   }

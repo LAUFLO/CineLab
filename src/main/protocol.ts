@@ -34,7 +34,8 @@ export function registerAssetScheme(): void {
       privileges: {
         standard: true,
         secure: true,
-        supportFetchAPI: true
+        supportFetchAPI: true,
+        corsEnabled: true
       }
     }
   ])
@@ -85,7 +86,8 @@ export function registerAssetProtocol(): void {
               'Content-Range': `bytes ${start}-${end}/${stat.size}`,
               'Accept-Ranges': 'bytes',
               'Content-Length': String(chunk.length),
-              'Cache-Control': 'no-cache'
+              'Cache-Control': 'no-cache',
+              'Access-Control-Allow-Origin': '*'
             }
           })
         }
@@ -98,7 +100,8 @@ export function registerAssetProtocol(): void {
           'Content-Type': mime,
           'Content-Length': String(stat.size),
           'Accept-Ranges': 'bytes',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache',
+          'Access-Control-Allow-Origin': '*'
         }
       })
     } catch (error) {

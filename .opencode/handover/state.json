@@ -1,5 +1,5 @@
 {
-  "version": 15,
+  "version": 16,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "整体验收与修复：安装 2deea46 包后完整使用，收集问题并修复",
+  "next_focus": "批次 2：本地视觉 runtime（抠图/图层分离/视频抠像/智能去字幕/主体消除）；批次 1 已完成待提交",
   "frontier": [
     {
       "id": "M2-1",
@@ -404,6 +404,16 @@
       "evidence": [
         ".opencode/handover/evidence/PACKAGE-2026-11-07.md"
       ]
+    },
+    {
+      "id": "BATCH-1",
+      "title": "工具栏占位功能批次 1：图片编辑与全景",
+      "status": "done",
+      "note": "蒙版编辑器（画笔/矩形/橡皮/撤销）、重绘/擦除/元素编辑、扩图提示词版、720 全景生成与 three 查看器、未完成入口改为明确依赖。mask 端到端用本地 mock 验证，生成结果写入版本栈。",
+      "evidence": [
+        "docs/placeholder-operations-plan.md",
+        ".opencode/handover/evidence/BATCH-1-image-editing.md"
+      ]
     }
   ],
   "knownIssues": [
@@ -501,6 +511,21 @@
       "id": "K24",
       "area": "export",
       "content": "多轨音轨混合（BGM / 旁白 / 原声独立轨道与音量）未实现，目前是单 BGM 循环混入原声。"
+    },
+    {
+      "id": "K25",
+      "area": "operations",
+      "content": "工具栏占位功能批次 2/3 未实施：图层分离、视频抠像、智能去字幕、主体消除、片段重拍、元素替换、智能续写、创意片头仍为明确依赖提示。"
+    },
+    {
+      "id": "K26",
+      "area": "operations",
+      "content": "扩图当前为提示词版，未生成扩展画布与 mask；批次 2 用 LaMa/视觉组件兜底。"
+    },
+    {
+      "id": "K27",
+      "area": "operations",
+      "content": "蒙版编辑依赖模型支持 /images/edits mask；不支持的服务会返回明确错误。真实 i2i provider 的 mask 兼容性待更多验证。"
     }
   ],
   "gates": [],

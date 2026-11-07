@@ -56,7 +56,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             createdAt: asset.createdAt,
             model: asset.model,
             width: asset.width,
-            height: asset.height
+            height: asset.height,
+            op: asset.op
           }))
 
           const outputs = [...incoming, ...(node?.data.outputs ?? [])].slice(0, 20)

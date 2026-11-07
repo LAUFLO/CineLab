@@ -10,6 +10,7 @@ import { useLibraryStore } from '../../stores/library'
 import { assetUrl } from '../../lib/asset-url'
 import { AudioPlayer, timeLabel } from './AudioPlayer'
 import { NodeToolbar } from './NodeToolbar'
+import { PanoramaViewer } from './PanoramaViewer'
 
 const NODE_ICON: Record<NodeKind, IconName> = {
   text: 'text',
@@ -51,6 +52,8 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [panoramaOpen, setPanoramaOpen] = useState(false)
+  const [previewRatio, setPreviewRatio] = useState<number | null>(null)
 
   const submitTitle = (): void => {
     const next = titleDraft.trim()
@@ -65,6 +68,12 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
   const assetSrc = current ? assetUrl(current.path, current.scope) : data.outputUrl
   const isBusy = data.status === 'queued' || data.status === 'running'
+  const canPanorama = Boolean(
+    current &&
+      current.kind === 'image' &&
+      (current.op === 'panorama' ||
+        (previewRatio !== null && previewRatio >= 1.8))
+  )
 
   const shiftVersion = (delta: number): void => {
     const next = outputs[currentIndex + delta]
@@ -286,10 +295,31 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             className="image-preview"
             onPointerDown={() => setPreviewOpen(false)}
           >
+            {canPanorama ? (
+              <button
+                type="button"
+                className="image-preview__panorama"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={() => {
+                  setPreviewOpen(false)
+                  setPanoramaOpen(true)
+                }}
+              >
+                全景查看
+              </button>
+            ) : null}
             {current.kind === 'image' ? (
               <img
                 src={assetUrl(current.path, current.scope)}
                 alt=""
+                onLoad={(event) => {
+                  const image = event.currentTarget
+                  setPreviewRatio(
+                    image.naturalHeight > 0
+                      ? image.naturalWidth / image.naturalHeight
+                      : null
+                  )
+                }}
                 onPointerDown={(event) => event.stopPropagation()}
               />
             ) : (
@@ -305,6 +335,12 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           document.body
         )
       : null}
+
+      <PanoramaViewer
+        open={panoramaOpen && Boolean(current)}
+        src={current ? assetUrl(current.path, current.scope) : ''}
+        onClose={() => setPanoramaOpen(false)}
+      />
     </>
   )
 }

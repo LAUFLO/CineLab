@@ -71,16 +71,16 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
   },
   'vision-models': {
     kind: 'vision-models',
-    label: '视觉模型（RVM + LaMa）',
+    label: '视觉模型（InSPyReNet + LaMa）',
     directory: 'vision-models',
     manifestUrl: `${visionBaseUrl}/vision-models-manifest.json`,
     fallback: fallback('vision-models', [
       `${visionBaseUrl}/vision-models-win32-x64-v1.zip`
     ], {
-      size: 213_355_635,
-      expandedSize: 240_714_601,
-      sha256: '44934097a19fc6806740aab51965c24fab52926e5a47f86c9dae731253c57803',
-      files: 332
+      size: 526_828_343,
+      expandedSize: 573_254_295,
+      sha256: 'c00b66f631cb0231eaf286777170662658b7346123ccf16a09f5747e57a1a7f0',
+      files: 11
     })
   }
 }

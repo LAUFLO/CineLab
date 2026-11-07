@@ -45,9 +45,11 @@ async function readInstalled(kind: ComponentKind): Promise<ComponentManifest | n
     await fs.stat(required)
     if (kind === 'vision-models') {
       await fs.stat(join(dir, 'worker.py'))
-      await fs.stat(join(dir, 'models', 'rvm_mobilenetv3.pth'))
-      await fs.stat(join(dir, 'rvm', 'model', '__init__.py'))
-      await fs.stat(join(dir, 'site-packages', 'torchvision', '__init__.py'))
+      await fs.stat(join(dir, 'models', 'ckpt_fast.pth'))
+      await fs.stat(join(dir, 'models', 'big-lama.pt'))
+      await fs.stat(
+        join(dir, 'inspyrenet', 'transparent_background', '__init__.py')
+      )
     }
     return raw
   } catch {

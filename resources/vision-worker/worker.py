@@ -27,10 +27,9 @@ import numpy as np
 import torch
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(ROOT, "site-packages"))
-sys.path.insert(0, os.path.join(ROOT, "rvm"))
+sys.path.insert(0, os.path.join(ROOT, "inspyrenet"))
 
-from model import MattingNetwork  # noqa: E402
+from transparent_background.InSPyReNet import InSPyReNet_SwinB  # noqa: E402
 
 MAX_IMAGE_EDGE = 1280
 MAX_VIDEO_EDGE = 480
@@ -84,20 +83,26 @@ def resize_max(image: np.ndarray, max_edge: int) -> tuple[np.ndarray, float]:
 class Vision:
     def __init__(self, models_dir: str) -> None:
         self.models_dir = models_dir
-        self._rvm = None
+        self._inspyrenet = None
         self._lama = None
 
-    def rvm(self) -> MattingNetwork:
-        if self._rvm is None:
+    def inspyrenet(self):
+        if self._inspyrenet is None:
             progress(2, "加载抠像模型")
-            model = MattingNetwork("mobilenetv3").eval()
+            model = InSPyReNet_SwinB(
+                depth=64,
+                pretrained=False,
+                threshold=None,
+                base_size=[384, 384],
+            ).eval()
             state = torch.load(
-                os.path.join(self.models_dir, "rvm_mobilenetv3.pth"),
+                os.path.join(self.models_dir, "ckpt_fast.pth"),
                 map_location="cpu",
+                weights_only=True,
             )
-            model.load_state_dict(state)
-            self._rvm = model
-        return self._rvm
+            model.load_state_dict(state, strict=True)
+            self._inspyrenet = model
+        return self._inspyrenet
 
     def lama(self):
         if self._lama is None:
@@ -110,29 +115,24 @@ class Vision:
         return self._lama
 
 
-def rvm_alpha(
-    vision: Vision,
-    image_bgr: np.ndarray,
-    downsample_ratio: float = 1.0,
-    state: Optional[list] = None,
-) -> tuple[np.ndarray, list]:
+def saliency_alpha(vision: Vision, image_bgr: np.ndarray) -> np.ndarray:
+    h, w = image_bgr.shape[:2]
+    rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+    resized = cv2.resize(rgb, (384, 384), interpolation=cv2.INTER_AREA)
     tensor = (
-        torch.from_numpy(image_bgr[:, :, ::-1].copy())
-        .permute(2, 0, 1)
-        .unsqueeze(0)
-        .float()
-        / 255.0
+        torch.from_numpy(resized).permute(2, 0, 1).unsqueeze(0).float() / 255.0
     )
+    mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
+    std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
+    tensor = (tensor - mean) / std
+
     with torch.no_grad():
-        result = vision.rvm()(
-            tensor,
-            *(state or [None, None, None, None]),
-            downsample_ratio,
-            False,
-        )
-    fgr, pha, *rec = result
-    alpha = pha[0, 0].numpy()
-    return alpha, rec
+        pred = vision.inspyrenet()(tensor)
+
+    pred = torch.nn.functional.interpolate(
+        pred, (h, w), mode="bilinear", align_corners=True
+    )
+    return np.clip(pred[0, 0].numpy(), 0.0, 1.0)
 
 
 def lama_inpaint(vision: Vision, image_bgr: np.ndarray, mask_u8: np.ndarray) -> np.ndarray:
@@ -179,7 +179,7 @@ def task_matte_image(vision: Vision, args: argparse.Namespace) -> dict:
     image = read_image(args.input)
     h, w = image.shape[:2]
     processed, scale = resize_max(image, MAX_IMAGE_EDGE)
-    alpha, _ = rvm_alpha(vision, processed)
+    alpha = saliency_alpha(vision, processed)
     alpha_full = cv2.resize(alpha, (w, h), interpolation=cv2.INTER_LINEAR)
     alpha_full = np.clip(alpha_full, 0, 1)
 
@@ -194,7 +194,7 @@ def task_layer_split(vision: Vision, args: argparse.Namespace) -> dict:
     image = read_image(args.input)
     h, w = image.shape[:2]
     processed, _ = resize_max(image, MAX_IMAGE_EDGE)
-    alpha, _ = rvm_alpha(vision, processed)
+    alpha = saliency_alpha(vision, processed)
     alpha_full = np.clip(cv2.resize(alpha, (w, h), interpolation=cv2.INTER_LINEAR), 0, 1)
 
     foreground = image.astype(np.float32) * alpha_full[:, :, None]
@@ -335,12 +335,15 @@ def task_matte_video(vision: Vision, args: argparse.Namespace) -> dict:
     encoder = subprocess.Popen(command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
     processed = 0
-    state = [None, None, None, None]
+    previous_alpha = None
     try:
         for frame in ffmpeg_decode(args.ffmpeg, args.input, width, height):
             if processed >= frames:
                 break
-            alpha, state = rvm_alpha(vision, frame, 1.0, state)
+            alpha = saliency_alpha(vision, frame)
+            if previous_alpha is not None:
+                alpha = alpha * 0.65 + previous_alpha * 0.35
+            previous_alpha = alpha
             rgba = np.dstack(
                 [frame.astype(np.float32) * alpha[:, :, None], alpha * 255]
             ).astype(np.uint8)

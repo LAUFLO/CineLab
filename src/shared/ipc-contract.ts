@@ -160,8 +160,15 @@ export interface ExportApi {
   assets(inputs: AssetRef[], fileName: string): Promise<ExportResult>
   concatVideos(
     paths: string[],
-    options?: { resolution?: '720p' | '1080p'; quality?: 'standard' | 'high' }
+    options?: {
+      resolution?: '720p' | '1080p'
+      quality?: 'standard' | 'high'
+      subtitlePath?: string
+      bgmPath?: string
+      bgmVolume?: number
+    }
   ): Promise<ExportResult>
+  pickFile(kind: 'subtitle' | 'audio'): Promise<string | null>
 }
 
 export interface MediaApi {

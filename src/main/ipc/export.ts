@@ -1,4 +1,10 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  type OpenDialogOptions
+} from 'electron'
 import { copyFile, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, extname, join, resolve } from 'node:path'
@@ -91,11 +97,44 @@ export function registerExportIpc(): void {
   )
 
   ipcMain.handle(
+    'export:pick-file',
+    async (event, kind: 'subtitle' | 'audio'): Promise<string | null> => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const options: OpenDialogOptions = {
+        title: kind === 'subtitle' ? '选择字幕文件' : '选择背景音乐',
+        properties: ['openFile'],
+        filters:
+          kind === 'subtitle'
+            ? [{ name: '字幕文件', extensions: ['srt', 'ass', 'vtt'] }]
+            : [
+                {
+                  name: '音频文件',
+                  extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac']
+                }
+              ]
+      }
+
+      const result = win
+        ? await dialog.showOpenDialog(win, options)
+        : await dialog.showOpenDialog(options)
+
+      if (result.canceled || result.filePaths.length === 0) return null
+      return result.filePaths[0]
+    }
+  )
+
+  ipcMain.handle(
     'export:concat-videos',
     async (
       event,
       paths: string[],
-      options?: { resolution?: '720p' | '1080p'; quality?: 'standard' | 'high' }
+      options?: {
+        resolution?: '720p' | '1080p'
+        quality?: 'standard' | 'high'
+        subtitlePath?: string
+        bgmPath?: string
+        bgmVolume?: number
+      }
     ): Promise<ExportResult> => {
       if (!Array.isArray(paths) || paths.length < 2) {
         return { ok: false, error: '至少选择两个视频' }

@@ -1,5 +1,5 @@
 {
-  "version": 27,
+  "version": 28,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -519,6 +519,17 @@
       "evidence": [
         "docs/model-params-plan.md",
         ".opencode/handover/evidence/MODEL-PARAMS-5-simple.md"
+      ]
+    },
+    {
+      "id": "PROMPT-MENTION-1",
+      "title": "Prompt Bar：提示词持久化、@ 引用、AutoLink 反馈",
+      "status": "done",
+      "note": "提示词写入 node.data.prompt，切换节点/生成/重开项目都保留；@ 弹出已引用/画布/资产库/角色菜单，选择后插入 @名称 并高亮；AutoLink 显示数量与虚线缩略图；删除角色按钮；修复画布参考取消按钮。",
+      "evidence": [
+        "docs/prompt-mention-plan.md",
+        "docs/ui-spec.md",
+        ".opencode/handover/evidence/PROMPT-MENTION-1-at-reference.md"
       ]
     }
   ],
@@ -1270,6 +1281,18 @@
     {
       "category": "preference",
       "content": "模型参数配置页默认只展示用户能理解的显示名、类型、分组、选项和默认值；接口字段名等开发者信息收进「高级」折叠项，常用参数由卡片自动填好。"
+    },
+    {
+      "category": "preference",
+      "content": "Prompt Bar 的提示词必须按节点持久化到 node.data.prompt，生成完成、切换节点、重开项目都不能清空。"
+    },
+    {
+      "category": "preference",
+      "content": "提示词里的 @ 引用需要显式菜单（已引用/画布/资产库/角色）和输入框内 token 高亮；AutoLink 是文本自动匹配，必须给出数量或描边等可见反馈，不能静默生效。"
+    },
+    {
+      "category": "lesson",
+      "content": "项目节点的持久化 schema 是 zod 严格对象，新增 CineNodeData 字段时必须同步 cineNodeSchema，否则保存时会被剥离。"
     }
   ],
   "designConventions": [

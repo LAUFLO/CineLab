@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode
+} from 'react'
 import { createPortal } from 'react-dom'
 import { useReactFlow, useViewport } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
@@ -55,6 +62,42 @@ function ratioOf(label: string): string | null {
   return match ? `${match[1]} / ${match[2]}` : null
 }
 
+type MentionGroupName = '已引用' | '画布' | '资产库' | '角色'
+
+interface MentionItem {
+  key: string
+  name: string
+  group: MentionGroupName
+  path?: string
+  scope?: ReferenceInput['scope']
+  refs?: ReferenceInput[]
+  thumb?: string
+}
+
+const MENTION_GROUPS: MentionGroupName[] = ['已引用', '画布', '资产库', '角色']
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function renderMentionText(text: string, names: string[]): ReactNode[] {
+  if (names.length === 0) return [text]
+
+  const pattern = new RegExp(`(@(?:${names.map(escapeRegExp).join('|')}))`, 'g')
+  return text.split(pattern).map((part, index) => {
+    const mentioned =
+      part.startsWith('@') && names.some((name) => part === `@${name}`)
+
+    return mentioned ? (
+      <span key={index} className="promptbar__mention">
+        {part}
+      </span>
+    ) : (
+      part
+    )
+  })
+}
+
 export function PromptBar() {
   const nodes = useCanvasStore((state) => state.nodes)
   const edges = useCanvasStore((state) => state.edges)
@@ -77,8 +120,6 @@ export function PromptBar() {
 
   const [modelKey, setModelKey] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [characterMenuOpen, setCharacterMenuOpen] = useState(false)
-  const [characterIds, setCharacterIds] = useState<string[]>([])
   const [paramValues, setParamValues] = useState<Record<string, unknown>>({})
   const [customParamKeys, setCustomParamKeys] = useState<Set<string>>(new Set())
   const [promptText, setPromptText] = useState('')
@@ -91,6 +132,10 @@ export function PromptBar() {
   const [watermark, setWatermark] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [uploadMenuOpen, setUploadMenuOpen] = useState(false)
+  const [mentionOpen, setMentionOpen] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [mentionStart, setMentionStart] = useState<number | null>(null)
+  const [mentionIndex, setMentionIndex] = useState(0)
   const [refPreview, setRefPreview] = useState<{
     path: string
     scope?: ReferenceInput['scope']
@@ -100,6 +145,10 @@ export function PromptBar() {
   const suppressClickRef = useRef(false)
   const uploadRef = useRef<HTMLDivElement>(null)
   const refClickTimer = useRef<number | null>(null)
+  const promptRef = useRef('')
+  const promptSaveTimer = useRef<number | null>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const mirrorRef = useRef<HTMLDivElement>(null)
   const showToast = useUIStore((state) => state.showToast)
 
   useEffect(() => {
@@ -128,15 +177,31 @@ export function PromptBar() {
   const runningRunId = node ? runningMap[node.id] : undefined
 
   useEffect(() => {
-    setPromptText('')
+    const currentId = node?.id
+    const nextPrompt = node?.data.prompt ?? ''
+    setPromptText(nextPrompt)
+    promptRef.current = nextPrompt
     setMenuOpen(false)
-    setCharacterMenuOpen(false)
-    setCharacterIds([])
     setPickedRefs([])
     setPicking(false)
     setPickHint(null)
     setParamMenuKey(null)
     setExpanded(false)
+    setMentionOpen(false)
+    setMentionQuery('')
+    setMentionStart(null)
+    setMentionIndex(0)
+
+    return () => {
+      if (!currentId) return
+      if (promptSaveTimer.current) {
+        window.clearTimeout(promptSaveTimer.current)
+        promptSaveTimer.current = null
+      }
+      useCanvasStore.getState().patchNodeData(currentId, {
+        prompt: promptRef.current
+      })
+    }
   }, [node?.id])
 
   useEffect(() => {
@@ -175,6 +240,27 @@ export function PromptBar() {
     const timer = window.setTimeout(() => setPickHint(null), 2600)
     return () => window.clearTimeout(timer)
   }, [pickHint])
+
+  useEffect(() => {
+    if (!mentionOpen) return
+
+    const onPointerDown = (event: PointerEvent): void => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      if (target.closest('.mention-menu')) return
+      if (target.closest('.promptbar__input-wrap')) return
+      setMentionOpen(false)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [mentionOpen])
+
+  useEffect(() => {
+    if (!mentionOpen) return
+    const active = document.querySelector('.mention-menu__item.is-active')
+    active?.scrollIntoView({ block: 'nearest' })
+  }, [mentionIndex, mentionOpen])
 
   useEffect(() => {
     if (!paramMenuKey && !advancedOpen) return
@@ -219,6 +305,7 @@ export function PromptBar() {
       const target = event.target
       if (!(target instanceof Element)) return
       if (target.closest('.promptbar')) return
+      if (target.closest('.canvas-pick-bar')) return
 
       event.preventDefault()
       event.stopPropagation()
@@ -529,15 +616,6 @@ export function PromptBar() {
     return result
   })()
 
-  const characterRefs: ReferenceInput[] = characterIds.flatMap((id) => {
-    const card = characters.find((item) => item.id === id)
-    if (!card) return []
-    return card.referencePaths.map((path) => ({
-      path,
-      role: 'reference' as const,
-      scope: 'global' as const
-    }))
-  })
   const autoRefs = (() => {
     if (!autoLink) return []
     const text = promptText.trim()
@@ -579,7 +657,7 @@ export function PromptBar() {
   const mergedRefs = (() => {
     const seen = new Set<string>()
     const result: ReferenceInput[] = []
-    for (const ref of [...pickedRefs, ...autoRefs, ...refs, ...characterRefs]) {
+    for (const ref of [...pickedRefs, ...autoRefs, ...refs]) {
       const key = `${ref.scope ?? 'project'}:${ref.path}`
       if (seen.has(key)) continue
       seen.add(key)
@@ -588,6 +666,174 @@ export function PromptBar() {
     }
     return result
   })()
+
+  const updatePromptText = (value: string): void => {
+    setPromptText(value)
+    promptRef.current = value
+
+    const id = node?.id
+    if (!id) return
+    if (promptSaveTimer.current) window.clearTimeout(promptSaveTimer.current)
+    promptSaveTimer.current = window.setTimeout(() => {
+      promptSaveTimer.current = null
+      useCanvasStore.getState().patchNodeData(id, { prompt: value })
+    }, 350)
+  }
+
+  const refKey = (ref: Pick<ReferenceInput, 'path' | 'scope'>): string =>
+    `${ref.scope ?? 'project'}:${ref.path}`
+
+  const mentionItems = (() => {
+    if (!node) return [] as MentionItem[]
+
+    const referenced = new Set(mergedRefs.map(refKey))
+    const items: MentionItem[] = []
+    const seen = new Set<string>()
+
+    const push = (item: MentionItem): void => {
+      if (seen.has(item.key)) return
+      seen.add(item.key)
+      items.push(item)
+    }
+
+    for (const entry of nodes) {
+      if (entry.id === node.id || isGroupNode(entry)) continue
+      const outputs = entry.data.outputs ?? []
+      const output =
+        outputs.find((item) => item.id === entry.data.selectedOutputId) ?? outputs[0]
+      if (!output || output.kind !== 'image') continue
+
+      push({
+        key: `node:${entry.id}`,
+        name: entry.data.title,
+        group: referenced.has(refKey(output)) ? '已引用' : '画布',
+        path: output.path,
+        scope: output.scope,
+        thumb: output.path
+      })
+    }
+
+    for (const material of materials) {
+      if (material.kind !== 'image' && material.kind !== 'template') continue
+
+      const ref = { path: material.path, scope: 'global' as const }
+      push({
+        key: `asset:${material.path}`,
+        name: material.name,
+        group: referenced.has(refKey(ref)) ? '已引用' : '资产库',
+        path: material.path,
+        scope: 'global',
+        thumb: material.thumbnail ?? material.path
+      })
+    }
+
+    for (const card of characters) {
+      if (card.referencePaths.length === 0) continue
+      const refs = card.referencePaths.map((path) => ({
+        path,
+        role: 'reference' as const,
+        scope: 'global' as const
+      }))
+
+      push({
+        key: `character:${card.id}`,
+        name: card.name,
+        group: '角色',
+        path: card.referencePaths[0],
+        scope: 'global',
+        thumb: card.avatarPath ?? card.referencePaths[0],
+        refs
+      })
+    }
+
+    return items
+  })()
+
+  const mentionFiltered = mentionItems.filter((item) =>
+    mentionQuery
+      ? item.name.toLowerCase().includes(mentionQuery.toLowerCase())
+      : true
+  )
+  const mentionGroups = MENTION_GROUPS.map((name) => ({
+    name,
+    items: mentionFiltered.filter((item) => item.group === name)
+  })).filter((group) => group.items.length > 0)
+  const flatMentions = mentionGroups.flatMap((group) => group.items)
+  const mentionNames = [
+    ...new Set(
+      mergedRefs
+        .map(
+          (ref) =>
+            mentionItems.find(
+              (item) =>
+                item.path === ref.path ||
+                item.refs?.some((entry) => entry.path === ref.path)
+            )?.name
+        )
+        .filter((name): name is string => Boolean(name))
+    )
+  ].sort((a, b) => b.length - a.length)
+
+  const addRefs = (nextRefs: ReferenceInput[]): void => {
+    setPickedRefs((prev) => {
+      const seen = new Set(prev.map(refKey))
+      const added = nextRefs.filter((ref) => {
+        const key = refKey(ref)
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      return added.length > 0 ? [...prev, ...added] : prev
+    })
+  }
+
+  const applyMention = (item: MentionItem): void => {
+    const textarea = inputRef.current
+    const cursor = textarea?.selectionStart ?? promptText.length
+    const start = mentionStart ?? cursor
+    const insert = `@${item.name} `
+    const next = promptText.slice(0, start) + insert + promptText.slice(cursor)
+
+    updatePromptText(next)
+    setMentionOpen(false)
+    setMentionQuery('')
+    setMentionStart(null)
+    setMentionIndex(0)
+
+    const refsToAdd =
+      item.refs ??
+      (item.path
+        ? [{ path: item.path, role: 'reference' as const, scope: item.scope }]
+        : [])
+    if (refsToAdd.length > 0) addRefs(refsToAdd)
+
+    requestAnimationFrame(() => {
+      const position = start + insert.length
+      textarea?.focus()
+      textarea?.setSelectionRange(position, position)
+      if (textarea && mirrorRef.current) {
+        mirrorRef.current.scrollTop = textarea.scrollTop
+      }
+    })
+  }
+
+  const handlePromptChange = (event: ChangeEvent<HTMLTextAreaElement>): void => {
+    const value = event.target.value
+    updatePromptText(value)
+
+    const cursor = event.target.selectionStart ?? value.length
+    const before = value.slice(0, cursor)
+    const match = /(?:^|\s)@([^\s@]*)$/.exec(before)
+
+    if (match) {
+      setMentionOpen(true)
+      setMentionQuery(match[1])
+      setMentionStart(cursor - match[1].length - 1)
+      setMentionIndex(0)
+    } else if (mentionOpen) {
+      setMentionOpen(false)
+    }
+  }
 
   const isRunning = Boolean(runningRunId)
   const canSend = Boolean(active) && promptText.trim().length > 0 && !isRunning
@@ -618,14 +864,6 @@ export function PromptBar() {
     if (linked.length > 0) {
       onEdgesChange(linked.map((edge) => ({ type: 'remove' as const, id: edge.id })))
     }
-
-    const character = characters.find(
-      (card) =>
-      characterIds.includes(card.id) && card.referencePaths.includes(ref.path)
-    )
-    if (character) {
-      setCharacterIds((prev) => prev.filter((id) => id !== character.id))
-    }
   }
 
   const handleSend = (): void => {
@@ -649,7 +887,10 @@ export function PromptBar() {
           <button
             type="button"
             className="canvas-pick-bar__cancel"
-            onClick={() => setPicking(false)}
+            onClick={(event) => {
+              event.stopPropagation()
+              setPicking(false)
+            }}
           >
             取消
           </button>
@@ -718,36 +959,55 @@ export function PromptBar() {
         <div className="promptbar__spacer" />
         {mergedRefs.length > 0 ? (
           <div className="promptbar__picked">
-            {mergedRefs.map((ref) => (
-              <button
-                key={ref.path}
-                type="button"
-                className="promptbar__picked-item"
-                onPointerEnter={(event) => {
-                  const rect = event.currentTarget.getBoundingClientRect()
-                  setRefPreview({
-                    path: ref.path,
-                    scope: ref.scope,
-                    x: rect.left + rect.width / 2,
-                    y: rect.top - 8
-                  })
-                }}
-                onPointerLeave={() => setRefPreview(null)}
-                onClick={() => handleRefClick(ref)}
-                onDoubleClick={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  handleRefDoubleClick(ref)
-                }}
-              >
-                <img src={assetUrl(ref.path, ref.scope)} alt="" />
-                <Icon name="close" size={10} />
-              </button>
-            ))}
+            {mergedRefs.map((ref) => {
+              const auto = autoRefs.some(
+                (item) =>
+                  item.path === ref.path &&
+                  (item.scope ?? 'project') === (ref.scope ?? 'project')
+              )
+
+              return (
+                <button
+                  key={`${ref.scope ?? 'project'}:${ref.path}`}
+                  type="button"
+                  className={`promptbar__picked-item${
+                    auto ? ' is-auto' : ''
+                  }`}
+                  onPointerEnter={(event) => {
+                    const rect = event.currentTarget.getBoundingClientRect()
+                    setRefPreview({
+                      path: ref.path,
+                      scope: ref.scope,
+                      x: rect.left + rect.width / 2,
+                      y: rect.top - 8
+                    })
+                  }}
+                  onPointerLeave={() => setRefPreview(null)}
+                  onClick={() => handleRefClick(ref)}
+                  onDoubleClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    handleRefDoubleClick(ref)
+                  }}
+                >
+                  <img src={assetUrl(ref.path, ref.scope)} alt="" />
+                  <Icon name="close" size={10} />
+                </button>
+              )
+            })}
           </div>
         ) : null}
+        {autoRefs.length > 0 ? (
+          <span
+            className="promptbar__autolink"
+            title="智能引用 AutoLink 自动匹配的素材，可在高级设置中关闭"
+          >
+            <Icon name="sparkles" size={10} />
+            AutoLink {autoRefs.length}
+          </span>
+        ) : null}
         {mergedRefs.length > 0 ? (
-          <span className="promptbar__refs" title="来自画布参考、上游连线与角色卡">
+          <span className="promptbar__refs" title="来自画布参考、上游连线与智能引用">
             素材 {mergedRefs.length}
           </span>
         ) : null}
@@ -761,19 +1021,119 @@ export function PromptBar() {
         </button>
       </div>
 
-      <textarea
-        className="promptbar__input"
-        placeholder={PLACEHOLDER[kind]}
-        rows={2}
-        value={promptText}
-        onChange={(event) => setPromptText(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault()
-            handleSend()
-          }
-        }}
-      />
+      <div className="promptbar__input-wrap">
+        <div className="promptbar__mirror" ref={mirrorRef} aria-hidden>
+          {renderMentionText(promptText, mentionNames)}
+          {'\u200b'}
+        </div>
+
+        <textarea
+          ref={inputRef}
+          className="promptbar__input"
+          placeholder={PLACEHOLDER[kind]}
+          rows={2}
+          value={promptText}
+          onChange={handlePromptChange}
+          onScroll={(event) => {
+            if (mirrorRef.current) {
+              mirrorRef.current.scrollTop = event.currentTarget.scrollTop
+            }
+          }}
+          onKeyDown={(event) => {
+            if (mentionOpen) {
+              if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                if (flatMentions.length === 0) return
+                event.preventDefault()
+                setMentionIndex((current) => {
+                  const delta = event.key === 'ArrowDown' ? 1 : -1
+                  return (current + delta + flatMentions.length) % flatMentions.length
+                })
+                return
+              }
+
+              if (event.key === 'Enter') {
+                if (event.nativeEvent.isComposing) return
+                event.preventDefault()
+                const item =
+                  flatMentions[Math.min(mentionIndex, flatMentions.length - 1)]
+                if (item) {
+                  applyMention(item)
+                } else {
+                  setMentionOpen(false)
+                }
+                return
+              }
+
+              if (event.key === 'Escape') {
+                event.preventDefault()
+                setMentionOpen(false)
+                return
+              }
+            }
+
+            if (event.key === 'Enter' && !event.shiftKey) {
+              if (event.nativeEvent.isComposing) return
+              event.preventDefault()
+              handleSend()
+            }
+          }}
+        />
+
+        {mentionOpen ? (
+          <div className="mention-menu">
+            <div className="mention-menu__head">
+              <Icon name="search" size={12} />
+              <span>{mentionQuery || '搜索画布、资产库和角色'}</span>
+            </div>
+
+            <div className="mention-menu__list">
+              {mentionGroups.map((group) => (
+                <div className="mention-menu__section" key={group.name}>
+                  <div className="mention-menu__title">{group.name}</div>
+
+                  {group.items.map((item) => {
+                    const index = flatMentions.findIndex(
+                      (entry) => entry.key === item.key
+                    )
+
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        className={`mention-menu__item${
+                          index === mentionIndex ? ' is-active' : ''
+                        }`}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onMouseEnter={() => setMentionIndex(index)}
+                        onClick={() => applyMention(item)}
+                      >
+                        <span className="mention-menu__thumb">
+                          {item.thumb ? (
+                            <img
+                              src={assetUrl(item.thumb, item.scope)}
+                              alt=""
+                            />
+                          ) : (
+                            <Icon name="image" size={12} />
+                          )}
+                        </span>
+                        <span className="mention-menu__name">{item.name}</span>
+                        <span className="mention-menu__kind">
+                          {item.group === '角色' ? '角色卡' : '图片'}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
+
+              {flatMentions.length === 0 ? (
+                <div className="mention-menu__empty">没有匹配的素材</div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       <div className="promptbar__footer">
         {models.length === 0 ? (
@@ -815,67 +1175,6 @@ export function PromptBar() {
             ) : null}
           </div>
         )}
-
-        {kind === 'image' || kind === 'video' ? (
-          <div className="model-picker">
-            <button
-              type="button"
-              className="promptbar__chip"
-              onClick={() => {
-                setCharacterMenuOpen((open) => !open)
-                void loadLibrary()
-              }}
-            >
-              角色{characterIds.length > 0 ? ` ${characterIds.length}` : ''}
-              <Icon name="chevron-down" size={11} />
-            </button>
-
-            {characterMenuOpen ? (
-              <div className="model-menu character-menu">
-                {characters.length === 0 ? (
-                  <div className="model-menu__empty">还没有角色卡</div>
-                ) : (
-                  characters.map((card) => {
-                    const selected = characterIds.includes(card.id)
-
-                    return (
-                      <button
-                        key={card.id}
-                        type="button"
-                        className={`model-menu__item ${
-                          selected ? 'is-active' : ''
-                        }`}
-                        onClick={() =>
-                          setCharacterIds((prev) =>
-                            selected
-                              ? prev.filter((id) => id !== card.id)
-                              : [...prev, card.id]
-                          )
-                        }
-                      >
-                        <span>{card.name}</span>
-                        <span className="model-menu__provider">
-                          {card.referencePaths.length} 张参考图
-                        </span>
-                      </button>
-                    )
-                  })
-                )}
-
-                <button
-                  type="button"
-                  className="model-menu__item"
-                  onClick={() => {
-                    setCharacterMenuOpen(false)
-                    openLibrary('角色')
-                  }}
-                >
-                  管理角色库…
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
 
         {active ? (
           <div className="promptbar__param-group">
@@ -1138,7 +1437,7 @@ export function PromptBar() {
             <div>
               <div className="promptbar__advanced-label">智能引用 AutoLink</div>
               <div className="promptbar__advanced-desc">
-                自动匹配提示词中的节点、素材和角色名称
+                自动匹配提示词中的节点、素材和角色名称，匹配结果会显示在素材缩略图中
               </div>
             </div>
             <button

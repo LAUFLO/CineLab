@@ -90,6 +90,7 @@ C:\Users\LAUFLO\Documents\CineLab
 | MODEL-PARAMS-3 | ✅ 完成 | 比例/尺寸/分辨率支持 Prompt Bar 自定义输入 |
 | MODEL-PARAMS-4 | ✅ 完成 | 时长下拉可转 min/max 滑条，Prompt Bar 任意秒 |
 | MODEL-PARAMS-5 | ✅ 完成 | 接口字段名收进高级，默认只显示用户可理解字段 |
+| PROMPT-MENTION-1 | ✅ 完成 | 提示词按节点保留、@ 引用菜单与 token 高亮、AutoLink 反馈 |
 
 **下一步**：整体验收与修复；导演台调研排期；剪辑台等待其他会话完成。
 

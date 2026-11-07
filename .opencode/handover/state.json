@@ -1,5 +1,5 @@
 {
-  "version": 21,
+  "version": 22,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "整体验收与修复；K5 / Agent 后续单独讨论，文本节点流式能力等 Agent 阶段统一实现",
+  "next_focus": "整体验收与修复：安装 144ac61 包，重点验收全局资产导出、资产缩略图、多轨音频合成",
   "frontier": [
     {
       "id": "M2-1",
@@ -458,6 +458,15 @@
       "evidence": [
         "docs/remaining-features-plan.md",
         ".opencode/handover/evidence/REMAINING-1-local-enhancements.md"
+      ]
+    },
+    {
+      "id": "PACKAGE-2026-11-07-REMAINING",
+      "title": "打包：K9/K11/K24 剩余本地增强",
+      "status": "done",
+      "note": "提交 144ac61，CI 42368040739 成功（3m11s，18 tests）。安装包 156MB，已下载到 Downloads\\cinelab-144ac61。",
+      "evidence": [
+        ".opencode/handover/evidence/PACKAGE-2026-11-07-remaining.md"
       ]
     }
   ],

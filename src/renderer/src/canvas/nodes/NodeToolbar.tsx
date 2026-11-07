@@ -802,9 +802,9 @@ export function NodeToolbar({
       return
     }
 
-    if (model.adapter !== 'http-template' && !model.template) {
+    if (model.adapter !== 'http-template') {
       showToast(
-        '绑定的模型不是 http-template 专用接口，无法接收视频输入',
+        '绑定的模型不是 http-template 专用接口，请在模型配置中把 adapter 设为 http-template',
         'error'
       )
       useSettingsStore.getState().openPanel('operations')

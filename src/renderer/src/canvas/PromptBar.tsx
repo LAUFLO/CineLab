@@ -41,6 +41,9 @@ function defaultParams(model: ModelDef): Record<string, unknown> {
 }
 
 function paramLabel(param: ParamDef, value: unknown): string {
+  if (param.type === 'boolean') {
+    return value ? '开' : '关'
+  }
   if (param.type === 'select') {
     return param.options?.find((option) => option.value === value)?.label ?? String(value ?? '')
   }
@@ -814,8 +817,16 @@ export function PromptBar() {
                   type="button"
                   className="promptbar__chip"
                   onClick={() => {
-                    if (param.type !== 'select' || !param.options) return
-                    setParamMenuKey((open) => (open === param.key ? null : param.key))
+                    if (param.type === 'boolean') {
+                      setParamValues((prev) => ({
+                        ...prev,
+                        [param.key]: !prev[param.key]
+                      }))
+                      return
+                    }
+                    setParamMenuKey((open) =>
+                      open === param.key ? null : param.key
+                    )
                   }}
                   title={param.label}
                 >
@@ -878,6 +889,54 @@ export function PromptBar() {
                         </button>
                       </div>
                     ) : null}
+                  </div>
+                ) : null}
+
+                {paramMenuKey === param.key && param.type !== 'select' ? (
+                  <div className="param-menu param-menu--input">
+                    <input
+                      className="param-input nodrag nopan"
+                      type={param.type === 'number' ? 'number' : 'text'}
+                      defaultValue={String(values[param.key] ?? '')}
+                      autoFocus
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') {
+                          setParamMenuKey(null)
+                          return
+                        }
+                        if (event.key !== 'Enter') return
+                        const raw = event.currentTarget.value
+                        const next =
+                          param.type === 'number' ? Number(raw) : raw
+                        if (
+                          param.type === 'number' &&
+                          !Number.isFinite(next as number)
+                        ) {
+                          return
+                        }
+                        setParamValues((prev) => ({
+                          ...prev,
+                          [param.key]: next
+                        }))
+                        setParamMenuKey(null)
+                      }}
+                      onBlur={(event) => {
+                        const raw = event.currentTarget.value
+                        const next =
+                          param.type === 'number' ? Number(raw) : raw
+                        if (
+                          param.type === 'number' &&
+                          !Number.isFinite(next as number)
+                        ) {
+                          return
+                        }
+                        setParamValues((prev) => ({
+                          ...prev,
+                          [param.key]: next
+                        }))
+                        setParamMenuKey(null)
+                      }}
+                    />
                   </div>
                 ) : null}
               </div>

@@ -61,7 +61,9 @@
 | `capability` | 无 preset 时必填 | `image.t2i` / `image.i2i` / `text.chat` / `video.t2v` / `audio.tts` / `audio.music` |
 | `remoteModel` | 无 preset 时必填 | 请求里实际发送的模型 ID |
 | `adapter` | 否 | 覆盖 provider 的 adapter |
-| `params` | 否 | 节点 PromptBar 里显示的参数，结构同 `ParamDef` |
+| `params` | 否 | 节点 PromptBar 里显示的参数，结构同 `ParamDef`；设置页模型卡片的「参数」按钮可编辑，支持下拉/数字/文本/开关 |
+
+参数编辑器按模型能力提供模板：图片（尺寸/画幅比例/数量/质量）、视频（画幅比例/时长/分辨率/生成音频）、音频（声音/语速/格式）、文本（温度/最大 token）。下拉选项在编辑器中按「值|显示名」每行一个填写。
 
 ### params
 

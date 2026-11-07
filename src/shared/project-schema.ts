@@ -25,6 +25,7 @@ export const cineNodeSchema = z.object({
     title: z.string().max(200),
     status: nodeStatusSchema,
     text: z.string().max(20000).optional(),
+    prompt: z.string().max(20000).optional(),
     outputUrl: z.string().max(2000).optional(),
     outputs: z
       .array(

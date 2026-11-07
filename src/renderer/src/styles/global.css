@@ -1722,7 +1722,7 @@ body.is-exporting .react-flow__minimap {
   animation: none;
 }
 
-.promptbar.is-expanded .promptbar__input {
+.promptbar.is-expanded .promptbar__input-wrap {
   flex: 1;
   min-height: 200px;
 }
@@ -1818,6 +1818,11 @@ body.is-exporting .react-flow__minimap {
   border-radius: 6px;
   border: 1px solid var(--border);
   overflow: hidden;
+}
+
+.promptbar__picked-item.is-auto {
+  border-color: color-mix(in srgb, var(--link) 60%, transparent);
+  border-style: dashed;
 }
 
 .promptbar__picked-item img {
@@ -1922,21 +1927,167 @@ body.is-picking .react-flow__node:hover .cnode__card {
   flex: 1;
 }
 
-.promptbar__input {
+.promptbar__input-wrap {
+  position: relative;
   flex: 1;
   min-height: 0;
+}
+
+.promptbar__mirror,
+.promptbar__input {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  resize: none;
+  height: 100%;
+  padding: 6px 4px;
   border: none;
   outline: none;
   background: transparent;
-  padding: 6px 4px;
+  font-family: inherit;
   font-size: 14px;
   line-height: 20px;
+}
+
+.promptbar__mirror {
   color: var(--text-1);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.promptbar__input {
+  color: transparent;
+  caret-color: var(--text-1);
+  resize: none;
+  overflow-y: auto;
 }
 
 .promptbar__input::placeholder {
+  color: var(--text-3);
+}
+
+.promptbar__mention {
+  color: var(--link);
+  background: color-mix(in srgb, var(--link) 16%, transparent);
+  border-radius: 4px;
+}
+
+.promptbar__autolink {
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px dashed color-mix(in srgb, var(--link) 55%, transparent);
+  color: var(--link);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.mention-menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  width: 330px;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-menu);
+  overflow: hidden;
+  animation: menu-in 120ms ease-out;
+}
+
+.mention-menu__head {
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--divider);
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.mention-menu__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 5px;
+}
+
+.mention-menu__section + .mention-menu__section {
+  margin-top: 4px;
+}
+
+.mention-menu__title {
+  padding: 5px 8px;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.mention-menu__item {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  color: var(--text-2);
+  text-align: left;
+}
+
+.mention-menu__item:hover,
+.mention-menu__item.is-active {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
+.mention-menu__thumb {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-hover);
+  color: var(--text-3);
+}
+
+.mention-menu__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mention-menu__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.mention-menu__kind {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.mention-menu__empty {
+  padding: 18px 10px;
+  text-align: center;
+  font-size: 12px;
   color: var(--text-3);
 }
 

@@ -23,6 +23,8 @@ export interface GeneratedAsset {
   fps?: number
   hasAudio?: boolean
   text?: string
+  /** 生成来源操作，例如 panorama */
+  op?: string
 }
 
 export interface GenerateRequest {
@@ -32,6 +34,10 @@ export interface GenerateRequest {
   params: Record<string, unknown>
   negativePrompt?: string
   refs?: ReferenceInput[]
+  /** PNG data URL，透明区域表示需要编辑；仅图片模型使用 */
+  mask?: string
+  /** 操作标识，随生成结果写回 OutputRef.op */
+  op?: string
 }
 
 export type GenerationEvent =

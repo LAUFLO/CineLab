@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NODE_META, GRID_SPLIT_CELL_WIDTH, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
+import { assetUrl } from '../../lib/asset-url'
 import { isGroupNode, useCanvasStore } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useToolbarStore } from '../../stores/toolbar'
@@ -10,6 +11,7 @@ import { useSettingsStore } from '../../stores/settings'
 import { trackDepthTask } from '../../stores/depth-tasks'
 import { AiOperationDialog } from './AiOperationDialog'
 import { CropDialog } from './CropDialog'
+import { MaskEditorDialog } from './MaskEditorDialog'
 import { SphereDialog } from './SphereDialog'
 import { SubtitleDialog } from './SubtitleDialog'
 import { TrimDialog } from './TrimDialog'
@@ -70,6 +72,12 @@ export function NodeToolbar({
   )
   const [trimDuration, setTrimDuration] = useState(0)
   const [aiDialog, setAiDialog] = useState<{
+    op: NodeOperation
+    item?: OperationMenuItem
+    prompt: string
+    mask?: string
+  } | null>(null)
+  const [maskDialog, setMaskDialog] = useState<{
     op: NodeOperation
     item?: OperationMenuItem
     prompt: string
@@ -545,7 +553,11 @@ export function NodeToolbar({
   ): void => {
     const prompt = buildOperationPrompt(op, item)
     if (!prompt) {
-      showToast(`《${item?.label ?? op.label}》正在接入`)
+      showToast(`《${item?.label ?? op.label}》缺少提示词配置`, 'error')
+      return
+    }
+    if (op.mask) {
+      setMaskDialog({ op, item, prompt })
       return
     }
     setAiDialog({ op, item, prompt })
@@ -554,11 +566,13 @@ export function NodeToolbar({
   const handleAiConfirm = (
     prompt: string,
     modelKey: string,
-    model: ModelDef
+    model: ModelDef,
+    mask?: string
   ): void => {
     if (!aiDialog) return
 
     const label = aiDialog.item?.label ?? aiDialog.op.label
+    const opId = aiDialog.op.id
     setAiDialog(null)
     showToast(`已提交「${label}」生成`)
 
@@ -567,7 +581,15 @@ export function NodeToolbar({
       modelKey,
       prompt,
       params: { ...defaultParams(model), watermark: false },
-      refs: [{ path: current.path, role: 'reference' }]
+      refs: [
+        {
+          path: current.path,
+          role: 'reference',
+          ...(current.scope ? { scope: current.scope } : {})
+        }
+      ],
+      ...(mask ? { mask } : {}),
+      op: opId
     })
   }
 
@@ -585,7 +607,13 @@ export function NodeToolbar({
       modelKey,
       prompt,
       params: { ...defaultParams(model), watermark: false },
-      refs: [{ path: current.path, role: 'reference' }]
+      refs: [
+        {
+          path: current.path,
+          role: 'reference',
+          ...(current.scope ? { scope: current.scope } : {})
+        }
+      ]
     })
   }
 
@@ -678,7 +706,15 @@ export function NodeToolbar({
     closeMenus()
 
     if (!op.implemented) {
-      showToast(`《${item?.label ?? op.label}》正在接入`)
+      const label = item?.label ?? op.label
+      if (op.requires) {
+        showToast(`《${label}》${op.requires.label}`, 'error')
+        if (op.requires.panel) {
+          useSettingsStore.getState().openPanel(op.requires.panel)
+        }
+      } else {
+        showToast(`《${label}》暂不可用`, 'error')
+      }
       return
     }
 
@@ -722,7 +758,8 @@ export function NodeToolbar({
         void openSubtitleBox()
         return
       }
-      showToast('智能去字幕需要视频修复模型，暂未接入')
+      showToast('智能去字幕需要安装视觉组件（批次 2）', 'error')
+      useSettingsStore.getState().openPanel('components')
       return
     }
 
@@ -741,7 +778,7 @@ export function NodeToolbar({
       return
     }
 
-    showToast(`《${item?.label ?? op.label}》正在接入`)
+    showToast(`《${item?.label ?? op.label}》暂不可用`, 'error')
   }
 
   const togglePrimaryMenu = (op: NodeOperation): void => {
@@ -990,8 +1027,40 @@ export function NodeToolbar({
         }
         initialPrompt={aiDialog?.prompt ?? ''}
         busy={running}
+        masked={Boolean(aiDialog?.mask)}
         onClose={() => setAiDialog(null)}
-        onConfirm={handleAiConfirm}
+        onConfirm={(prompt, key, model) =>
+          handleAiConfirm(prompt, key, model, aiDialog?.mask)
+        }
+      />
+
+      <MaskEditorDialog
+        open={Boolean(maskDialog)}
+        title={
+          maskDialog
+            ? `${maskDialog.op.label}${
+                maskDialog.item ? ` · ${maskDialog.item.label}` : ''
+              }`
+            : ''
+        }
+        subtitle={
+          maskDialog?.op.id === 'erase'
+            ? '涂抹要移除的对象，模型会用周围背景补全'
+            : maskDialog?.op.id === 'element-edit'
+              ? '框选或涂抹要修改的元素，然后描述希望变成什么样'
+              : '涂抹要重绘的区域，透明区域会交给模型编辑'
+        }
+        src={assetUrl(current.path, current.scope)}
+        imageWidth={current.width ?? 1024}
+        imageHeight={current.height ?? 1024}
+        busy={running}
+        onClose={() => setMaskDialog(null)}
+        onConfirm={(mask) => {
+          if (!maskDialog) return
+          const pending = maskDialog
+          setMaskDialog(null)
+          setAiDialog({ ...pending, mask })
+        }}
       />
 
       <CropDialog

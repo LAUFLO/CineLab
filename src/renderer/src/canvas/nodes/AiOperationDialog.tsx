@@ -10,6 +10,7 @@ interface AiOperationDialogProps {
   title: string
   initialPrompt: string
   busy: boolean
+  masked?: boolean
   onClose: () => void
   onConfirm: (prompt: string, modelKey: string, model: ModelDef) => void
 }
@@ -19,6 +20,7 @@ export function AiOperationDialog({
   title,
   initialPrompt,
   busy,
+  masked = false,
   onClose,
   onConfirm
 }: AiOperationDialogProps) {
@@ -87,7 +89,9 @@ export function AiOperationDialog({
           <div>
             <div className="operation-dialog__title">{title}</div>
             <div className="operation-dialog__subtitle">
-              结果作为当前节点的新版本，保留原图
+              {masked
+                ? '只修改涂抹区域，结果作为当前节点的新版本'
+                : '结果作为当前节点的新版本，保留原图'}
             </div>
           </div>
           <button
@@ -146,6 +150,9 @@ export function AiOperationDialog({
 
             <div className="operation-dialog__hint">
               建议选择支持图生图的模型；提示词可以按需微调。
+              {masked
+                ? ' 当前操作会把蒙版一起提交，模型需要支持 /images/edits mask。'
+                : ''}
             </div>
           </>
         )}

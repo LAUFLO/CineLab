@@ -193,6 +193,9 @@ export function registerGenerateIpc(): void {
       nodeId: request.nodeId,
       run: async (signal, onProgress) => {
         const refs = await loadRefs(projectRoot, request.refs)
+        if (request.refs && request.refs.length > 0 && refs.length === 0) {
+          throw new Error('参考素材缺失或不在当前项目中，请重新添加素材')
+        }
         const runtime = {
           baseUrl: provider.baseUrl,
           apiKey: provider.apiKey,
@@ -288,7 +291,8 @@ export function registerGenerateIpc(): void {
             request.prompt,
             request.params,
             refs,
-            context
+            context,
+            request.mask
           )
         }
 
@@ -306,18 +310,17 @@ export function registerGenerateIpc(): void {
           : undefined
 
         for (const output of outputs) {
-          assets.push(
-            await ingestAsset({
-              projectPath: projectRoot,
-              data: output.data,
-              kind,
-              mime: output.mime,
-              model: model.name,
-              text: output.text,
-              width: videoSize?.[0],
-              height: videoSize?.[1]
-            })
-          )
+          const asset = await ingestAsset({
+            projectPath: projectRoot,
+            data: output.data,
+            kind,
+            mime: output.mime,
+            model: model.name,
+            text: output.text,
+            width: videoSize?.[0],
+            height: videoSize?.[1]
+          })
+          assets.push(request.op ? { ...asset, op: request.op } : asset)
         }
 
         return assets

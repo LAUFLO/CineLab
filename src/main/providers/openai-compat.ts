@@ -101,7 +101,8 @@ function buildEditForm(
   prompt: string,
   params: Record<string, unknown>,
   refs: ReferenceImage[],
-  singleField: boolean
+  singleField: boolean,
+  mask?: string
 ): FormData | null {
   const form = new FormData()
   const isMoss = /moss/i.test(model.remoteModel)
@@ -127,7 +128,17 @@ function buildEditForm(
     if (singleField) break
   }
 
-  return accepted > 0 ? form : null
+  if (accepted === 0) return null
+
+  if (mask) {
+    const parsed = parseDataUrl(mask, 0)
+    if (!parsed) {
+      throw new Error('蒙版解析失败，无法发起局部编辑请求')
+    }
+    form.append('mask', parsed.blob, 'mask.png')
+  }
+
+  return form
 }
 
 export async function generateImage(
@@ -136,7 +147,8 @@ export async function generateImage(
   prompt: string,
   params: Record<string, unknown>,
   refs: ReferenceImage[],
-  ctx: AdapterContext
+  ctx: AdapterContext,
+  mask?: string
 ): Promise<ImageOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
   const headers = mergeHeaders(
@@ -147,6 +159,9 @@ export async function generateImage(
   const isAgnes = /^agnes-image/i.test(model.remoteModel)
 
   if (isAgnes) {
+    if (mask) {
+      throw new Error('当前模型不支持蒙版编辑，请换用支持 /images/edits mask 的模型')
+    }
     const body: Record<string, unknown> = {
       model: model.remoteModel,
       prompt,
@@ -175,9 +190,13 @@ export async function generateImage(
     return parseImageResponse(response, ctx)
   }
 
+  if (mask && refs.length === 0) {
+    throw new Error('蒙版编辑需要一张参考图')
+  }
+
   if (refs.length > 0) {
     ctx.onProgress(5, '提交图生图请求')
-    const form = buildEditForm(model, prompt, params, refs, false)
+    const form = buildEditForm(model, prompt, params, refs, false, mask)
     if (!form) {
       throw new Error('参考图解析失败，无法发起图生图请求')
     }
@@ -188,6 +207,14 @@ export async function generateImage(
       body: form,
       signal: ctx.signal
     })
+
+    if (mask && !response.ok) {
+      const status = response.status
+      const text = await response.text().catch(() => '')
+      throw new Error(
+        `当前模型不支持蒙版编辑或蒙版格式不兼容（HTTP ${status}）：${text.slice(0, 200)}`
+      )
+    }
 
     if (!response.ok && refs.length > 1) {
       const status = response.status
@@ -200,7 +227,7 @@ export async function generateImage(
       }
 
       ctx.onProgress(15, '参考图字段不兼容，改用单图重试')
-      const fallback = buildEditForm(model, prompt, params, refs, true)
+      const fallback = buildEditForm(model, prompt, params, refs, true, mask)
       if (!fallback) {
         throw new Error('参考图解析失败，无法重试图生图请求')
       }

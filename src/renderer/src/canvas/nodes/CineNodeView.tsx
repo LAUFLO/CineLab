@@ -8,6 +8,7 @@ import { useGenerationStore } from '../../stores/generation'
 import { useUIStore } from '../../stores/ui'
 import { useLibraryStore } from '../../stores/library'
 import { assetUrl } from '../../lib/asset-url'
+import { AudioPlayer, timeLabel } from './AudioPlayer'
 import { NodeToolbar } from './NodeToolbar'
 
 const NODE_ICON: Record<NodeKind, IconName> = {
@@ -162,16 +163,28 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         ) : (
           <span>{data.title}</span>
         )}
-        {data.status === 'done' ? <span className="cnode__badge">已完成</span> : null}
+        {data.kind === 'audio' ? (
+          current?.duration ? (
+            <span className="cnode__title-time">
+              {timeLabel(current.duration, false)}
+            </span>
+          ) : null
+        ) : data.status === 'done' ? (
+          <span className="cnode__badge">已完成</span>
+        ) : null}
         {data.status === 'error' ? <span className="cnode__badge is-error">失败</span> : null}
       </div>
 
       <div className="cnode__card">
         <div className={`cnode__preview cnode__preview--${data.kind}`}>
-          {assetSrc && current?.kind === 'text' ? (
+          {data.kind === 'audio' ? (
+            <AudioPlayer
+              src={assetSrc ?? null}
+              busy={isBusy}
+              onCancel={() => void cancelGeneration(id)}
+            />
+          ) : assetSrc && current?.kind === 'text' ? (
             <p className="cnode__text">{data.text ?? '文本已生成'}</p>
-          ) : assetSrc && current?.kind === 'audio' ? (
-            <audio src={assetSrc} controls className="cnode__audio" />
           ) : assetSrc && (current?.kind === 'video' || data.kind === 'video') ? (
             <video src={assetSrc} className="cnode__media" muted playsInline controls />
           ) : assetSrc ? (
@@ -188,7 +201,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             <p className="cnode__text">{data.text}</p>
           ) : null}
 
-          {isBusy ? (
+          {isBusy && data.kind !== 'audio' ? (
             <div className="cnode__generating">
               <div className="cnode__generating-pill">
                 {data.status === 'queued' ? '排队中…' : '生成中…'}

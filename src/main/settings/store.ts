@@ -295,6 +295,34 @@ export async function deleteProvider(id: string): Promise<void> {
   })
 }
 
+function connectionErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const cause = (error as Error & { cause?: { code?: string } }).cause
+    const code = cause?.code
+    if (code === 'ENOTFOUND') return '域名解析失败，请检查 Base URL'
+    if (code === 'ECONNREFUSED') return '连接被拒绝，请检查 Base URL 和端口'
+    if (code === 'ECONNRESET') return '连接被重置，请稍后重试'
+    if (code === 'ETIMEDOUT') return '连接超时，请检查网络或代理'
+    if (error.name === 'AbortError') return '连接超时，请检查 Base URL 或网络'
+    return error.message
+  }
+  return String(error)
+}
+
+function httpErrorMessage(status: number, text: string): string {
+  if (status === 401 || status === 403) {
+    return `API Key 无效或没有权限（HTTP ${status}）`
+  }
+  if (status === 404) {
+    return '接口不存在（HTTP 404），请检查 Base URL 是否包含正确的版本路径'
+  }
+  if (status >= 500) {
+    return `服务端错误（HTTP ${status}），请稍后重试`
+  }
+  const detail = text.trim().slice(0, 200)
+  return detail ? `HTTP ${status}: ${detail}` : `HTTP ${status}`
+}
+
 export async function testConnection(
   input: ConnectionTestInput
 ): Promise<ConnectionTestResult> {
@@ -338,7 +366,7 @@ export async function testConnection(
         const text = await response.text().catch(() => '')
         return {
           ok: false,
-          message: `鉴权失败 HTTP ${response.status}: ${text.slice(0, 200)}`
+          message: httpErrorMessage(response.status, text)
         }
       }
 
@@ -353,7 +381,10 @@ export async function testConnection(
 
     if (!response.ok) {
       const text = await response.text().catch(() => '')
-      return { ok: false, message: `HTTP ${response.status} ${text.slice(0, 200)}` }
+      return {
+        ok: false,
+        message: httpErrorMessage(response.status, text)
+      }
     }
 
     const json = (await response.json().catch(() => null)) as { data?: unknown[] } | null
@@ -364,7 +395,7 @@ export async function testConnection(
       message: count > 0 ? `连接成功，发现 ${count} 个模型` : '连接成功'
     }
   } catch (error) {
-    return { ok: false, message: String(error) }
+    return { ok: false, message: connectionErrorMessage(error) }
   }
 }
 
@@ -414,7 +445,7 @@ export async function fetchModels(
       const text = await response.text().catch(() => '')
       return {
         ok: false,
-        message: `HTTP ${response.status} ${text.slice(0, 200)}`,
+        message: httpErrorMessage(response.status, text),
         models: []
       }
     }
@@ -443,6 +474,6 @@ export async function fetchModels(
       models
     }
   } catch (error) {
-    return { ok: false, message: String(error), models: [] }
+    return { ok: false, message: connectionErrorMessage(error), models: [] }
   }
 }

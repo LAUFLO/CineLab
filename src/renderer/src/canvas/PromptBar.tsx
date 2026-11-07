@@ -706,7 +706,7 @@ export function PromptBar() {
 
       <div className="promptbar__footer">
         {models.length === 0 ? (
-          <button type="button" className="promptbar__chip" onClick={() => openSettings()}>
+          <button type="button" className="promptbar__chip" onClick={() => openSettings('models')}>
             未配置模型
             <Icon name="chevron-down" size={11} />
           </button>

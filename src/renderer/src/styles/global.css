@@ -2601,6 +2601,52 @@ body.is-picking .react-flow__node:hover .cnode__card {
   text-align: center;
 }
 
+.provider-presets {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.provider-presets__label {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.provider-presets__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.provider-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--text-1);
+  text-align: left;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.provider-preset:hover {
+  border-color: var(--border-selected);
+  background: var(--surface-raised);
+}
+
+.provider-preset__name {
+  font-size: 13px;
+}
+
+.provider-preset__desc {
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.4;
+}
+
 .provider-form__back {
   align-self: flex-start;
   font-size: 12px;
@@ -3198,6 +3244,56 @@ body.is-picking .react-flow__node:hover .cnode__card {
   align-items: center;
   justify-content: center;
   gap: 10px;
+}
+
+.project-center__model-hint {
+  width: 100%;
+  max-width: 468px;
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--text-1);
+  text-align: left;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.project-center__model-hint:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+}
+
+.project-center__model-hint > svg {
+  flex: none;
+  color: var(--text-2);
+}
+
+.project-center__model-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.project-center__model-copy strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.project-center__model-copy small {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.project-center__model-action {
+  margin-left: auto;
+  flex: none;
+  font-size: 12px;
+  color: var(--text-2);
 }
 
 .project-center__new {

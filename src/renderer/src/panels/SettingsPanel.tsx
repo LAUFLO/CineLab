@@ -16,10 +16,12 @@ import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
 import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
+import { GeneralSettingsSection } from './GeneralSettingsSection'
 import { OperationsSection } from './OperationsSection'
 import { ModelParamsDialog } from '../canvas/nodes/ModelParamsDialog'
 
 type SectionId =
+  | 'general'
   | 'models'
   | 'operations'
   | 'library'
@@ -35,7 +37,8 @@ interface SectionDef {
 }
 
 const SECTIONS: SectionDef[] = [
-  { id: 'models', label: '模型服务', icon: 'settings' },
+  { id: 'general', label: '通用', icon: 'settings' },
+  { id: 'models', label: '模型服务', icon: 'robot' },
   { id: 'operations', label: '操作模型', icon: 'film' },
   { id: 'library', label: '资产库', icon: 'library' },
   { id: 'components', label: '组件', icon: 'layers' },
@@ -964,7 +967,7 @@ function AboutSection() {
 export function SettingsPanel() {
   const open = useSettingsStore((state) => state.panelOpen)
   const close = useSettingsStore((state) => state.closePanel)
-  const [active, setActive] = useState<SectionId>('models')
+  const [active, setActive] = useState<SectionId>('general')
   const panelSection = useSettingsStore((state) => state.panelSection)
 
   useEffect(() => {
@@ -1024,6 +1027,7 @@ export function SettingsPanel() {
           </nav>
 
           <div className="settings-content">
+            {active === 'general' ? <GeneralSettingsSection /> : null}
             {active === 'models' ? <ModelsSection /> : null}
             {active === 'operations' ? <OperationsSection /> : null}
             {active === 'library' ? <LibrarySection /> : null}

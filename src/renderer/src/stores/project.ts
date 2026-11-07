@@ -7,6 +7,7 @@ import type {
 } from '@shared/project-schema'
 import type { ProjectTemplateId } from '@shared/project-templates'
 import { useCanvasStore, type CineEdge, type CineNode } from './canvas'
+import { usePreferencesStore } from './preferences'
 
 type Phase = 'loading' | 'ready' | 'welcome' | 'error'
 
@@ -125,10 +126,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   scheduleSave: () => {
     if (saveTimer) clearTimeout(saveTimer)
+    const delay =
+      usePreferencesStore.getState().preferences.project.autoSaveDelay
     saveTimer = setTimeout(() => {
       saveTimer = null
       void get().saveNow()
-    }, 600)
+    }, delay)
   },
 
   saveNow: async () => {

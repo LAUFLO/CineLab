@@ -12,6 +12,7 @@ import type { OperationBindings } from '../shared/operation-schema'
 import type { DepthTaskEvent } from '../shared/media'
 import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
+import type { Preferences } from '../shared/preferences'
 import type {
   AddToLibraryInput,
   SaveAssetInput,
@@ -88,6 +89,11 @@ const api: CineApi = {
       ipcRenderer.invoke('settings:operation-bindings'),
     saveOperationBindings: (bindings: OperationBindings) =>
       ipcRenderer.invoke('settings:save-operation-bindings', bindings),
+    getPreferences: () => ipcRenderer.invoke('settings:get-preferences'),
+    savePreferences: (input: Preferences) =>
+      ipcRenderer.invoke('settings:save-preferences', input),
+    resetPreferences: () => ipcRenderer.invoke('settings:reset-preferences'),
+    openDataDir: () => ipcRenderer.invoke('settings:open-data-dir'),
     onModelsChanged: (callback: () => void) => {
       const listener = (): void => callback()
       ipcRenderer.on('settings:models-changed', listener)

@@ -19,6 +19,7 @@ import {
 } from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'
 import { useLibraryStore } from '../stores/library'
+import { usePreferencesStore } from '../stores/preferences'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { assetUrl } from '../lib/asset-url'
@@ -112,6 +113,16 @@ export function PromptBar() {
   const characters = useLibraryStore((state) => state.characters)
   const materials = useLibraryStore((state) => state.allAssets)
   const loadLibrary = useLibraryStore((state) => state.refresh)
+  const preferredModels = usePreferencesStore(
+    (state) => state.preferences.generation.defaultModels
+  )
+  const autoLinkPreference = usePreferencesStore(
+    (state) => state.preferences.generation.autoLink
+  )
+  const setDefaultModel = usePreferencesStore((state) => state.setDefaultModel)
+  const updateGeneration = usePreferencesStore(
+    (state) => state.updateGeneration
+  )
   const pendingPrompt = useUIStore((state) => state.pendingPrompt)
   const clearPendingPrompt = useUIStore((state) => state.clearPendingPrompt)
 
@@ -127,7 +138,7 @@ export function PromptBar() {
   const [pickedRefs, setPickedRefs] = useState<ReferenceInput[]>([])
   const [picking, setPicking] = useState(false)
   const [pickHint, setPickHint] = useState<string | null>(null)
-  const [autoLink, setAutoLink] = useState(true)
+  const [autoLink, setAutoLink] = useState(autoLinkPreference)
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [watermark, setWatermark] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -209,6 +220,10 @@ export function PromptBar() {
     setPromptText(pendingPrompt)
     clearPendingPrompt()
   }, [pendingPrompt, clearPendingPrompt])
+
+  useEffect(() => {
+    setAutoLink(autoLinkPreference)
+  }, [autoLinkPreference])
 
   useEffect(() => {
     void loadLibrary()
@@ -391,7 +406,11 @@ export function PromptBar() {
       .filter((item) => matches(item.model.capability))
   }, [providers, kind])
 
-  const active = models.find((item) => item.key === modelKey) ?? models[0] ?? null
+  const active =
+    models.find((item) => item.key === modelKey) ??
+    models.find((item) => item.key === preferredModels[kind]) ??
+    models[0] ??
+    null
   const values = active ? { ...defaultParams(active.model), ...paramValues } : {}
 
   useEffect(() => {
@@ -1165,6 +1184,7 @@ export function PromptBar() {
                       setModelKey(item.key)
                       setParamValues({})
                       setMenuOpen(false)
+                      void setDefaultModel(kind, item.key)
                     }}
                   >
                     <span>{item.model.name}</span>
@@ -1443,7 +1463,11 @@ export function PromptBar() {
             <button
               type="button"
               className={`promptbar__switch ${autoLink ? 'is-on' : ''}`}
-              onClick={() => setAutoLink((open) => !open)}
+              onClick={() => {
+                const next = !autoLink
+                setAutoLink(next)
+                void updateGeneration({ autoLink: next })
+              }}
             >
               <span />
             </button>

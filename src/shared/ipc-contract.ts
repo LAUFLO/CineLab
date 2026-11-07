@@ -20,6 +20,7 @@ import type {
   GenerationEvent
 } from './generation'
 import type { ComponentEvent, ComponentKind, ComponentStatus } from './components'
+import type { Preferences } from './preferences'
 import type {
   AddToLibraryInput,
   SaveAssetInput,
@@ -104,6 +105,10 @@ export interface SettingsApi {
   openModelsFile(): Promise<string>
   getOperationBindings(): Promise<OperationBindings>
   saveOperationBindings(bindings: OperationBindings): Promise<void>
+  getPreferences(): Promise<Preferences>
+  savePreferences(input: Preferences): Promise<Preferences>
+  resetPreferences(): Promise<Preferences>
+  openDataDir(): Promise<void>
   onModelsChanged(callback: () => void): () => void
 }
 

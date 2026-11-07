@@ -14,6 +14,8 @@ import { ProjectCenter } from './panels/ProjectCenter'
 import { SettingsPanel } from './panels/SettingsPanel'
 import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
+import { useGenerationHistoryStore } from './stores/generation-history'
+import { usePreferencesStore } from './stores/preferences'
 import { useProjectStore } from './stores/project'
 import { useSettingsStore } from './stores/settings'
 import { useUpdateStore } from './stores/update'
@@ -37,6 +39,18 @@ export default function App() {
   const loadProviders = useSettingsStore((state) => state.load)
   const subscribeGeneration = useGenerationStore((state) => state.subscribe)
   const initUpdate = useUpdateStore((state) => state.init)
+  const loadPreferences = usePreferencesStore((state) => state.load)
+  const historyLimit = usePreferencesStore(
+    (state) => state.preferences.generation.historyLimit
+  )
+
+  useEffect(() => {
+    void loadPreferences()
+  }, [loadPreferences])
+
+  useEffect(() => {
+    useGenerationHistoryStore.getState().trim()
+  }, [historyLimit])
 
   useEffect(() => {
     void bootstrap()

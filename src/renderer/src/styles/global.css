@@ -4339,6 +4339,45 @@ body.is-picking .react-flow__node:hover .cnode__card {
   color: var(--text-3);
 }
 
+.library-asset-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.library-asset-card__tags span {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  color: var(--text-3);
+  font-size: 10px;
+}
+
+.tag-input {
+  width: 100%;
+  height: 38px;
+  margin-top: 14px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text-1);
+  font-size: 13px;
+  outline: none;
+}
+
+.tag-input:focus {
+  border-color: var(--border-selected);
+}
+
+.tag-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
 .library-asset-card__actions {
   position: absolute;
   top: 6px;

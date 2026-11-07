@@ -126,6 +126,7 @@ export interface LibraryApi {
   renameAsset(path: string, name: string): Promise<string>
   moveAsset(path: string, folder: string): Promise<string>
   deleteAsset(path: string): Promise<void>
+  setAssetTags(path: string, tags: string[]): Promise<string[]>
   reveal(path: string): Promise<void>
 
   listCharacters(): Promise<CharacterCard[]>

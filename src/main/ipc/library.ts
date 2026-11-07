@@ -30,6 +30,7 @@ import {
   listTemplates,
   saveTemplate
 } from '../library/templates'
+import { setAssetTags } from '../library/tags'
 
 const ASSET_FILTERS = [
   {
@@ -164,6 +165,11 @@ export function registerLibraryIpc(): void {
 
   ipcMain.handle('library:delete-asset', (_event, path: string) =>
     deleteAsset(path)
+  )
+
+  ipcMain.handle(
+    'library:set-asset-tags',
+    (_event, path: string, tags: string[]) => setAssetTags(path, tags)
   )
 
   ipcMain.handle('library:reveal', (_event, path: string) => revealPath(path))

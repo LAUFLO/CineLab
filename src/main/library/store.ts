@@ -10,6 +10,12 @@ import type {
 import { CHARACTER_FOLDER, DEFAULT_LIBRARY_FOLDERS } from '@shared/library-schema'
 import { getCurrentProjectRoot } from '../project/manager'
 import { getLibraryRoot } from './config'
+import {
+  deleteAssetTags,
+  deleteFolderTags,
+  moveAssetTags,
+  readAssetTags
+} from './tags'
 
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'])
 const VIDEO_EXT = new Set(['.mp4', '.webm', '.mov', '.mkv'])
@@ -112,12 +118,16 @@ export async function listAssets(folder: string): Promise<LibraryAsset[]> {
   }
 
   const assets: LibraryAsset[] = []
+  const tags = await readAssetTags()
   for (const entry of entries) {
     if (!entry.isFile() || isIgnored(entry.name)) continue
     if (!kindFromExt(extname(entry.name).toLowerCase())) continue
 
     const relPath = toPosix(join(toNative(folder), entry.name))
-    assets.push(await pathToAsset(root, relPath))
+    assets.push({
+      ...(await pathToAsset(root, relPath)),
+      tags: tags[relPath] ?? []
+    })
   }
 
   return assets.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
@@ -208,7 +218,10 @@ export async function listAllAssets(): Promise<LibraryAsset[]> {
   }
 
   await walk('', 0)
-  return result.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+  const tags = await readAssetTags()
+  return result
+    .map((asset) => ({ ...asset, tags: tags[asset.path] ?? [] }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
 }
 
 export async function createFolder(
@@ -267,6 +280,7 @@ export async function deleteFolder(relPath: string): Promise<void> {
   }
 
   await fs.rmdir(target)
+  await deleteFolderTags(relPath)
 }
 
 export async function importFiles(
@@ -350,7 +364,9 @@ export async function moveAsset(
   const target = await uniqueTarget(targetDir, name, ext)
   await fs.rename(source, target.absolute)
 
-  return folder ? `${folder}/${target.fileName}` : target.fileName
+  const nextPath = folder ? `${folder}/${target.fileName}` : target.fileName
+  await moveAssetTags(relPath, nextPath)
+  return nextPath
 }
 
 export async function deleteAsset(relPath: string): Promise<void> {
@@ -359,6 +375,7 @@ export async function deleteAsset(relPath: string): Promise<void> {
   const info = await fs.stat(target)
   if (!info.isFile()) throw new Error('目标不是文件')
   await fs.rm(target, { force: true })
+  await deleteAssetTags(relPath)
 }
 
 export async function revealPath(relPath: string): Promise<void> {

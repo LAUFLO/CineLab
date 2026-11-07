@@ -1,5 +1,5 @@
 {
-  "version": 23,
+  "version": 24,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -480,6 +480,16 @@
       "title": "导演台：轻量级 3D 构图节点",
       "status": "pending",
       "note": "参考 LibTV 3D 导演台/3D-BOX 与 TapNow CineMap：人物素模、道具、多机位、机位截图回传画布、720° 全景背景。方案见 docs/director-stage-plan.md；待调研，不进入当前实现队列。"
+    },
+    {
+      "id": "MODEL-PARAMS-2",
+      "title": "模型参数编辑器：常用参数卡片 + 结构化选项编辑",
+      "status": "done",
+      "note": "常用参数改为带说明的卡片，支持全部添加；select 选项改为逐行显示名/接口值编辑；number 支持 min/max；保留自定义参数。保存/重开验证通过。",
+      "evidence": [
+        "docs/model-params-plan.md",
+        ".opencode/handover/evidence/MODEL-PARAMS-2-friendly-editor.md"
+      ]
     }
   ],
   "knownIssues": [
@@ -1214,6 +1224,10 @@
     {
       "category": "preference",
       "content": "导演台作为独立大需求立项：优先做轻量 3D 构图节点（素模/道具/多机位/截图回传），不做 Blender 级建模；先落 docs/director-stage-plan.md 再实施。"
+    },
+    {
+      "category": "preference",
+      "content": "模型参数编辑器面向首次配置用户：常用参数用带说明的卡片一键添加，选项用显示名/接口值逐行编辑，不要求手写「值|显示名」；接口字段名保留但作为次要信息，仍支持自定义参数。"
     }
   ],
   "designConventions": [

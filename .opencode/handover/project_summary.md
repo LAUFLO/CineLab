@@ -86,6 +86,7 @@ C:\Users\LAUFLO\Documents\CineLab
 | 打包 2026-11-07 | ✅ 完成 | 提交 144ac61，CI 42368040739，安装包 156MB |
 | DIRECTOR-STAGE-1 | 📋 待调研 | 导演台：3D 构图节点，参考 LibTV 3D-BOX / TapNow CineMap |
 | EDITOR-1 | 🚧 其他会话 | 剪辑台由其他会话开发中，等待接入 |
+| MODEL-PARAMS-2 | ✅ 完成 | 常用参数卡片、结构化选项编辑、min/max、自定义参数 |
 
 **下一步**：整体验收与修复；导演台调研排期；剪辑台等待其他会话完成。
 

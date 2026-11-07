@@ -1,5 +1,5 @@
 {
-  "version": 31,
+  "version": 32,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -559,6 +559,15 @@
       "evidence": [
         "docs/general-settings-plan.md",
         ".opencode/handover/evidence/GENERAL-SETTINGS-2.md"
+      ]
+    },
+    {
+      "id": "PACKAGE-8016cc9",
+      "title": "打包：完整通用设置",
+      "status": "done",
+      "note": "提交 8016cc9 已推送，CI 42391299132 成功（2m33s），安装包位于 C:\\Users\\LAUFLO\\Downloads\\cinelab-8016cc9。",
+      "evidence": [
+        ".opencode/handover/evidence/PACKAGE-2026-11-08.md"
       ]
     }
   ],

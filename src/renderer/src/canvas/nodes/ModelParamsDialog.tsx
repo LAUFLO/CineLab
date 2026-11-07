@@ -154,6 +154,37 @@ export function ModelParamsDialog({
     })
   }
 
+  const convertDurationToRange = (index: number): void => {
+    const row = rows[index]
+    if (!row) return
+
+    const values = (row.options ?? [])
+      .map((option) => Number(option.value))
+      .filter((value) => Number.isFinite(value))
+
+    if (values.length < 2) {
+      setError('时长选项不足两个，无法推导范围')
+      return
+    }
+
+    const min = Math.min(...values)
+    const max = Math.max(...values)
+    const current = Number(row.defaultValue)
+    const defaultValue = Number.isFinite(current)
+      ? Math.min(max, Math.max(min, current))
+      : min
+
+    updateRow(index, {
+      type: 'number',
+      options: undefined,
+      defaultValue,
+      min,
+      max,
+      allowCustom: false,
+      group: row.group?.trim() || '视频时长'
+    })
+  }
+
   const updateOption = (
     rowIndex: number,
     optionIndex: number,
@@ -402,7 +433,7 @@ export function ModelParamsDialog({
                   </button>
                 </div>
 
-                <div className="model-param__grid">
+                <div className="model-param__grid is-single">
                   <label>
                     <span>分组</span>
                     <input
@@ -413,6 +444,10 @@ export function ModelParamsDialog({
                       }
                     />
                   </label>
+                </div>
+
+                <details className="model-param__advanced">
+                  <summary>高级：接口字段名（通常不需要改）</summary>
                   <label>
                     <span>接口字段名</span>
                     <input
@@ -423,7 +458,22 @@ export function ModelParamsDialog({
                       }
                     />
                   </label>
-                </div>
+                </details>
+
+                {row.key === 'duration' && row.type === 'select' ? (
+                  <div className="model-param__duration-hint">
+                    <span>
+                      如果模型支持 4–12 秒这类连续秒数，可以改为滑条；只支持固定档位的模型请保留下拉。
+                    </span>
+                    <button
+                      type="button"
+                      className="model-param__convert"
+                      onClick={() => convertDurationToRange(index)}
+                    >
+                      改为时长滑条
+                    </button>
+                  </div>
+                ) : null}
 
                 {row.type === 'select' ? (
                   <div className="model-param__options">

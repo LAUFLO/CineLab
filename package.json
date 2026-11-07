@@ -11,6 +11,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "node scripts/typecheck.mjs",
+    "test": "vitest run",
     "check:encryption": "node scripts/check-encryption.mjs",
     "models:check": "node scripts/models-check.mjs",
     "dist": "electron-vite build && electron-builder",
@@ -39,6 +40,7 @@
     "electron-vite": "^6.0.0",
     "tailwindcss": "^4.3.4",
     "typescript": "^7.0.2",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
   }
 }

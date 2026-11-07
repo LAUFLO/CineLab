@@ -7,6 +7,7 @@ import type { DepthCaptureRequest, DepthCaptureResult } from '@shared/media'
 import { ingestAsset } from '../assets/ingest'
 import { componentDirectory, isComponentInstalled } from '../components/service'
 import { MODEL_FILE } from '../components/installer'
+import { log } from '../logger'
 import { ffmpegBinary, probeMedia } from './ffmpeg'
 import { resolveMediaPath } from './paths'
 
@@ -207,6 +208,10 @@ function runWorker(
         finish()
         return
       }
+      log.error('depth worker failed', {
+        code,
+        stderr: stderr.slice(-2000)
+      })
       finish(
         new Error(stderr.trim() || `深度处理失败（退出码 ${code}）`)
       )

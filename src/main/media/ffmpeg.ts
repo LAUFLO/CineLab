@@ -3,6 +3,7 @@ import ffmpegPath from 'ffmpeg-static'
 import ffprobeStatic from 'ffprobe-static'
 import { spawn } from 'node:child_process'
 import type { MediaProbe } from '@shared/media'
+import { log } from '../logger'
 
 function unpacked(path: string): string {
   if (!app.isPackaged) return path
@@ -78,6 +79,11 @@ export function runFfmpeg(
         finish()
         return
       }
+      log.error('ffmpeg failed', {
+        code,
+        args: args.slice(0, 12),
+        stderr: stderr.slice(-1000)
+      })
       finish(new Error(`ffmpeg 失败（退出码 ${code}）：${stderr.slice(-800)}`))
     })
   })

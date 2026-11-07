@@ -182,6 +182,8 @@ export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
     setTheme(theme: ThemeMode): Promise<void>
+    openLogs(): Promise<void>
+    log(level: 'info' | 'warn' | 'error', message: string): Promise<void>
     minimize(): void
     maximize(): void
     close(): void

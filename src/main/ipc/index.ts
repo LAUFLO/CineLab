@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeTheme } from 'electron'
+import { app, BrowserWindow, ipcMain, nativeTheme, shell } from 'electron'
 import type { ThemeMode } from '../../shared/ipc-contract'
 import { registerProjectIpc } from './project'
 import { registerSettingsIpc } from './settings'
@@ -9,6 +9,7 @@ import { registerClipboardIpc } from './clipboard'
 import { registerMediaIpc } from './media'
 import { registerComponentsIpc } from './components'
 import { registerUpdateIpc } from './update'
+import { log, logDirectory } from '../logger'
 
 function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
   return BrowserWindow.fromWebContents(sender)
@@ -34,6 +35,20 @@ export function registerIpc(): void {
   ipcMain.handle('app:set-theme', (_event, theme: ThemeMode) => {
     nativeTheme.themeSource = theme
   })
+
+  ipcMain.handle('app:open-logs', async () => {
+    await shell.openPath(logDirectory())
+  })
+
+  ipcMain.handle(
+    'app:log',
+    (_event, level: 'info' | 'warn' | 'error', message: string) => {
+      const text = `[renderer] ${String(message).slice(0, 2000)}`
+      if (level === 'error') log.error(text)
+      else if (level === 'warn') log.warn(text)
+      else log.info(text)
+    }
+  )
 
   ipcMain.on('window:minimize', (event) => {
     windowFromEvent(event.sender)?.minimize()

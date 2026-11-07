@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { CineApi, ThemeMode } from '../shared/ipc-contract'
 import type { CanvasData } from '../shared/project-schema'
+import type { ProjectTemplateId } from '../shared/project-templates'
 import type {
   ConnectionTestInput,
   ProviderInput
@@ -40,8 +41,8 @@ const api: CineApi = {
   },
   project: {
     bootstrap: () => ipcRenderer.invoke('project:bootstrap'),
-    create: (name: string, parentDir?: string) =>
-      ipcRenderer.invoke('project:create', name, parentDir),
+    create: (name: string, parentDir?: string, templateId?: ProjectTemplateId) =>
+      ipcRenderer.invoke('project:create', name, parentDir, templateId),
     open: (path: string) => ipcRenderer.invoke('project:open', path),
     saveCanvas: (path: string, canvas: CanvasData) =>
       ipcRenderer.invoke('project:save-canvas', path, canvas),
@@ -52,7 +53,8 @@ const api: CineApi = {
     setCoverFromAsset: (path: string, assetPath: string) =>
       ipcRenderer.invoke('project:cover-set-asset', path, assetPath),
     removeCover: (path: string) => ipcRenderer.invoke('project:cover-remove', path),
-    pickCreate: () => ipcRenderer.invoke('project:pick-create'),
+    pickCreate: (templateId?: ProjectTemplateId) =>
+      ipcRenderer.invoke('project:pick-create', templateId),
     pickOpen: () => ipcRenderer.invoke('project:pick-open'),
     reveal: (path: string) => ipcRenderer.invoke('project:reveal', path),
     rename: (path: string, name: string) =>

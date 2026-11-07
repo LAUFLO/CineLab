@@ -10,6 +10,10 @@ import {
   type ProjectSnapshot,
   type RecentProject
 } from '@shared/project-schema'
+import {
+  buildTemplateCanvas,
+  type ProjectTemplateId
+} from '@shared/project-templates'
 
 const PROJECT_EXT = '.cinelab'
 
@@ -171,7 +175,8 @@ export async function removeProjectCover(path: string): Promise<void> {
 
 export async function createProject(
   name: string,
-  parentDir?: string
+  parentDir?: string,
+  templateId: ProjectTemplateId = 'blank'
 ): Promise<ProjectSnapshot> {
   const safeName = sanitizeName(name)
   const parent = parentDir ? resolve(parentDir) : defaultProjectsDir()
@@ -203,14 +208,7 @@ export async function createProject(
     activeCanvasId: canvasId
   }
 
-  const canvas: CanvasData = {
-    schemaVersion: 1,
-    id: canvasId,
-    name: '画布 1',
-    viewport: { x: 0, y: 0, zoom: 1 },
-    nodes: [],
-    edges: []
-  }
+  const canvas: CanvasData = buildTemplateCanvas(templateId, canvasId)
 
   for (const dir of ['assets/img', 'assets/vid', 'assets/aud', 'assets/thumb', 'exports']) {
     await fs.mkdir(join(path, dir), { recursive: true })

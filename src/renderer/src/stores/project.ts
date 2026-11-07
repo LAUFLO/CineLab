@@ -5,6 +5,7 @@ import type {
   ProjectMeta,
   ProjectSnapshot
 } from '@shared/project-schema'
+import type { ProjectTemplateId } from '@shared/project-templates'
 import { useCanvasStore, type CineEdge, type CineNode } from './canvas'
 
 type Phase = 'loading' | 'ready' | 'welcome' | 'error'
@@ -22,7 +23,7 @@ interface ProjectState {
 
   bootstrap: () => Promise<void>
   applySnapshot: (snapshot: ProjectSnapshot) => void
-  startNew: () => Promise<void>
+  startNew: (templateId?: ProjectTemplateId) => Promise<void>
   openExisting: () => Promise<void>
   openPath: (path: string) => Promise<void>
   scheduleSave: () => void
@@ -95,9 +96,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     })
   },
 
-  startNew: async () => {
+  startNew: async (templateId) => {
     try {
-      const snapshot = await window.api.project.pickCreate()
+      const snapshot = await window.api.project.pickCreate(templateId)
       if (snapshot) get().applySnapshot(snapshot)
     } catch (error) {
       set({ error: String(error) })

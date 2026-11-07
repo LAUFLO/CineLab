@@ -3488,6 +3488,70 @@ body.is-picking .react-flow__node:hover .cnode__card {
   color: var(--text-2);
 }
 
+.template-picker {
+  width: 640px;
+  max-width: calc(100vw - 48px);
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-menu);
+}
+
+.template-picker__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.template-picker__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.template-picker__subtitle {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.template-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.template-picker__card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+  text-align: left;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.template-picker__card:hover {
+  border-color: var(--border-selected);
+  background: var(--surface-raised);
+}
+
+.template-picker__name {
+  font-size: 14px;
+  color: var(--text-1);
+}
+
+.template-picker__desc {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
 .project-center__new {
   height: 48px;
   padding: 0 22px;

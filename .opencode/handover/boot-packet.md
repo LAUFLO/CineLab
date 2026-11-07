@@ -1,25 +1,25 @@
 # CineLab · Boot Packet
 
-> **下一会话优先**：P1-1 模型配置引导。做空配置入口、常见 Provider 预设、测试连接，让新用户从欢迎页走到首次成功生成。
+> **下一会话优先**：P3-2 项目模板。新建项目可选空白 / 分镜 / 产品广告 / 角色短片，模板包含画布结构与提示词节点。
 
 ## 状态
 
-2026-11-07：runtime 已发布可下载；深度内存、media probe、抽帧、下拉框、占位节点、音频节点完成。已推送 4 个提交；`c9f9d9f` 音频样式未推送；用户安装包为 `9c35245`。
+2026-11-07：P1-1、P1-2、P2-1、P2-2 完成；模型自定义请求头、参数编辑器、合并生成设置面板完成。本地提交领先远端多个，尚未打包。最后提交 `f6debd8`。
 
 ## Frontier
 
-1. P1-1 模型配置引导
-2. DEPTH-CAPTURE-1 验收
+1. P3-2 项目模板
+2. P3-3 资产库与导出增强
 3. AGENT-1（延后）
 
 ## 缺口
 
-K20 深度/占位节点未打包验收；K21 音频真实波形未测；K22 未推送；K18 更新未验。
+K21 音频真实波形未测；K22 未推送未打包；K18 自动更新未验；P3-2/P3-3 未开始。
 
 ## 约定
 
-models.json 唯一清单；下拉用 Select；派生操作先建 running 占位节点并连线；深度 fast/long 238、standard 280；节点 360/480/240/480。
+models.json 唯一清单；请求头支持 `${ENV}`；参数合并为生成设置面板；派生操作先建 running 占位节点；深度 fast/long 238、standard 280。
 
 ## 验证
 
-`corepack pnpm typecheck && corepack pnpm build`
+`corepack pnpm typecheck && corepack pnpm test && corepack pnpm build`

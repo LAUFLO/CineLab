@@ -1,5 +1,5 @@
 {
-  "version": 12,
+  "version": 13,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "模型配置增强：自定义请求头 + 图片/视频模型参数编辑器",
+  "next_focus": "P3-2 项目模板与示例项目：空白/分镜/产品广告/角色短片",
   "frontier": [
     {
       "id": "M2-1",
@@ -185,8 +185,8 @@
     {
       "id": "DEPTH-CAPTURE-1",
       "title": "深度动作捕捉：VDA Small + Python sidecar 组件按需下载",
-      "status": "pending",
-      "note": "P0-P4 完成。runtime 已发布到 Release depth-components-v1 并由用户成功下载；深度推理内存已优化（快速/长片 inputSize 238 约 2.6GB，标准 280 约 4.1GB）。剩余：新安装包下用真实素材完成端到端视觉验收与 UI 点击路径回归。",
+      "status": "done",
+      "note": "2026-11-07 用户验证通过：runtime 已从 Release depth-components-v1 下载，深度捕捉可正常读取视频并输出结果。内存优化后快速/长片 inputSize 238 约 2.6GB，标准 280 约 4.1GB。",
       "evidence": [
         ".opencode/handover/evidence/DEPTH-CAPTURE-p0.md",
         ".opencode/handover/evidence/DEPTH-CAPTURE-p1.md",
@@ -196,7 +196,8 @@
         ".opencode/handover/evidence/DEPTH-CAPTURE-e2e.md",
         ".opencode/handover/evidence/DEPTH-CAPTURE-ui-polish.md",
         ".opencode/handover/evidence/DEPTH-CAPTURE-package.md",
-        ".opencode/handover/evidence/DEPTH-CAPTURE-packaged-e2e.md"
+        ".opencode/handover/evidence/DEPTH-CAPTURE-packaged-e2e.md",
+        ".opencode/handover/evidence/DEPTH-CAPTURE-1-final.md"
       ]
     },
     {
@@ -355,6 +356,25 @@
         "docs/error-feedback-plan.md",
         ".opencode/handover/evidence/P1-2-error-feedback.md"
       ]
+    },
+    {
+      "id": "P2-1",
+      "title": "最小测试与 CI",
+      "status": "done",
+      "note": "引入 vitest 5.1.0，4 个测试文件 15 个用例覆盖节点元数据、路径安全、自定义请求头、models.json 校验；build-win 增加 pnpm test。",
+      "evidence": [
+        ".opencode/handover/evidence/P2-1-testing-ci.md"
+      ]
+    },
+    {
+      "id": "P2-2",
+      "title": "本地日志与崩溃报告",
+      "status": "done",
+      "note": "electron-log 落盘 userData/logs/main.log；记录启动退出、未处理异常、渲染崩溃、子进程崩溃、生成/ffmpeg/深度失败；关于页新增打开日志目录。",
+      "evidence": [
+        "docs/logging-plan.md",
+        ".opencode/handover/evidence/P2-2-logging.md"
+      ]
     }
   ],
   "knownIssues": [
@@ -441,7 +461,7 @@
     {
       "id": "K22",
       "area": "repo",
-      "content": "本地有多项未推送提交：c9f9d9f 音频节点、8ebb711 模型配置引导、P1-2 错误反馈。下一次打包前需要统一推送并触发 build-win。"
+      "content": "本地有多项未推送提交（音频节点、模型配置引导、错误反馈、请求头、参数编辑器、测试、日志）。下一次打包前需要统一推送并触发 build-win。"
     }
   ],
   "gates": [],

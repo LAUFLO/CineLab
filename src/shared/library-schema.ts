@@ -12,6 +12,8 @@ export interface LibraryAsset {
   kind: LibraryAssetKind
   size: number
   modifiedAt: string
+  /** 缩略图相对库根路径，缓存于 .thumbs */
+  thumbnail?: string
   /** 用户标签，存储在库根 .tags.json */
   tags?: string[]
 }

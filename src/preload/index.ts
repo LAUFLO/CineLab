@@ -253,7 +253,10 @@ const api: CineApi = {
         quality?: 'standard' | 'high'
         subtitlePath?: string
         bgmPath?: string
+        narrationPath?: string
+        originalVolume?: number
         bgmVolume?: number
+        narrationVolume?: number
       }
     ) => ipcRenderer.invoke('export:concat-videos', paths, options),
     pickFile: (kind: 'subtitle' | 'audio') =>

@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os'
 import { basename, extname, join, resolve } from 'node:path'
 import type { ExportResult } from '../../shared/ipc-contract'
 import { getCurrentProjectRoot } from '../project/manager'
+import { exportProjectWithAssets } from '../export/project-export'
 import { zipDirectory } from '../export/zip'
 import { getLibraryRoot } from '../library/config'
 import { concatVideos } from '../media/concat'
@@ -52,11 +53,12 @@ export function registerExportIpc(): void {
       if (result.canceled || !result.filePath) return { ok: false, canceled: true }
 
       try {
-        await zipDirectory(root, result.filePath, {
-          rootName: basename(root),
-          ignore: ['.lock', '.trash']
-        })
-        return { ok: true, path: result.filePath }
+        const exportResult = await exportProjectWithAssets(root, result.filePath)
+        return {
+          ok: true,
+          path: result.filePath,
+          copiedAssets: exportResult.copiedAssets
+        }
       } catch (error) {
         return { ok: false, error: errorMessage(error) }
       }
@@ -133,7 +135,10 @@ export function registerExportIpc(): void {
         quality?: 'standard' | 'high'
         subtitlePath?: string
         bgmPath?: string
+        narrationPath?: string
+        originalVolume?: number
         bgmVolume?: number
+        narrationVolume?: number
       }
     ): Promise<ExportResult> => {
       if (!Array.isArray(paths) || paths.length < 2) {

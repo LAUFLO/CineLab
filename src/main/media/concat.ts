@@ -14,7 +14,10 @@ export interface ConcatOptions {
   quality?: ConcatQuality
   subtitlePath?: string
   bgmPath?: string
+  narrationPath?: string
+  originalVolume?: number
   bgmVolume?: number
+  narrationVolume?: number
   signal?: AbortSignal
 }
 
@@ -151,34 +154,68 @@ export async function concatVideos(
       current = subtitled
     }
 
-    if (options.bgmPath) {
-      const volume = Math.min(1, Math.max(0.05, options.bgmVolume ?? 0.25))
-      await runFfmpeg(
-        [
-          '-y',
-          '-i',
-          current,
-          '-stream_loop',
-          '-1',
-          '-i',
-          options.bgmPath,
-          '-filter_complex',
-          `[1:a]volume=${volume}[bgm];[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=0[a]`,
-          '-map',
-          '0:v',
-          '-map',
-          '[a]',
-          '-c:v',
-          'copy',
-          '-c:a',
-          'aac',
-          '-b:a',
-          '192k',
-          '-shortest',
-          outputPath
-        ],
-        { signal: options.signal }
+    if (
+      options.bgmPath ||
+      options.narrationPath ||
+      (options.originalVolume !== undefined && options.originalVolume !== 1)
+    ) {
+      const originalVolume = Math.min(
+        1,
+        Math.max(0, options.originalVolume ?? 1)
       )
+      const bgmVolume = Math.min(1, Math.max(0, options.bgmVolume ?? 0.25))
+      const narrationVolume = Math.min(
+        1,
+        Math.max(0, options.narrationVolume ?? 1)
+      )
+
+      const mixArgs: string[] = ['-y', '-i', current]
+      const filters: string[] = [`[0:a]volume=${originalVolume}[a0]`]
+      const labels: string[] = ['[a0]']
+      let inputIndex = 1
+
+      if (options.bgmPath) {
+        mixArgs.push('-stream_loop', '-1', '-i', options.bgmPath)
+        filters.push(`[${inputIndex}:a]volume=${bgmVolume}[a${inputIndex}]`)
+        labels.push(`[a${inputIndex}]`)
+        inputIndex += 1
+      }
+
+      if (options.narrationPath) {
+        mixArgs.push('-i', options.narrationPath)
+        filters.push(
+          `[${inputIndex}:a]volume=${narrationVolume}[a${inputIndex}]`
+        )
+        labels.push(`[a${inputIndex}]`)
+        inputIndex += 1
+      }
+
+      filters.push(
+        `${labels.join('')}amix=inputs=${labels.length}:duration=first:dropout_transition=0:normalize=0[a]`
+      )
+
+      mixArgs.push(
+        '-filter_complex',
+        filters.join(';'),
+        '-map',
+        '0:v',
+        '-map',
+        '[a]',
+        '-c:v',
+        'copy',
+        '-c:a',
+        'aac',
+        '-b:a',
+        '192k',
+        '-ar',
+        '48000',
+        '-ac',
+        '2',
+        '-shortest',
+        outputPath
+      )
+
+      await runFfmpeg(mixArgs, { signal: options.signal })
       return
     }
 

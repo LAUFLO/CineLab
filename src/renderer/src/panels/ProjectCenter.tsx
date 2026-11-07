@@ -4,12 +4,27 @@ import { BrandWordmark } from '../components/Brand'
 import { Icon } from '../components/Icon'
 import { ProjectCard } from '../components/ProjectCard'
 import { useProjectStore } from '../stores/project'
+import { useSettingsStore } from '../stores/settings'
 
 export function ProjectCenter() {
   const startNew = useProjectStore((state) => state.startNew)
   const openExisting = useProjectStore((state) => state.openExisting)
   const openPath = useProjectStore((state) => state.openPath)
   const error = useProjectStore((state) => state.error)
+  const providers = useSettingsStore((state) => state.providers)
+  const settingsLoaded = useSettingsStore((state) => state.loaded)
+  const loadSettings = useSettingsStore((state) => state.load)
+  const openSettings = useSettingsStore((state) => state.openPanel)
+
+  const hasUsableModel = providers.some(
+    (provider) => provider.models.length > 0 && provider.hasKey
+  )
+
+  useEffect(() => {
+    if (!settingsLoaded) {
+      void loadSettings().catch(() => undefined)
+    }
+  }, [settingsLoaded, loadSettings])
 
   const [recent, setRecent] = useState<RecentProject[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,6 +79,21 @@ export function ProjectCenter() {
             打开已有项目
           </button>
         </div>
+
+        {settingsLoaded && !hasUsableModel ? (
+          <button
+            type="button"
+            className="project-center__model-hint"
+            onClick={() => openSettings('models')}
+          >
+            <Icon name="settings" size={16} />
+            <span className="project-center__model-copy">
+              <strong>还没有配置模型</strong>
+              <small>添加一个模型供应商后即可开始生成</small>
+            </span>
+            <span className="project-center__model-action">配置模型 →</span>
+          </button>
+        ) : null}
 
         {error ? <div className="form-message is-error">{error}</div> : null}
 

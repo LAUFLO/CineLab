@@ -6,6 +6,7 @@ import {
   type ProviderInput
 } from '@shared/provider-schema'
 import type { ModelsConfigStatus } from '@shared/models-file'
+import { PROVIDER_PRESETS, providerPresetModels } from '@shared/provider-presets'
 import type { UpdateStatus } from '@shared/update'
 import { BrandIcon, BrandWordmark } from '../components/Brand'
 import { Icon, type IconName } from '../components/Icon'
@@ -39,13 +40,15 @@ const SECTIONS: SectionDef[] = [
   { id: 'about', label: '关于', icon: 'logo' }
 ]
 
-function emptyDraft(): ProviderInput {
+function emptyDraft(
+  preset?: (typeof PROVIDER_PRESETS)[number]
+): ProviderInput {
   return {
-    name: '',
-    type: 'openai-compat',
-    baseUrl: 'https://api.openai.com/v1',
+    name: preset?.name ?? '',
+    type: preset?.type ?? 'openai-compat',
+    baseUrl: preset?.baseUrl ?? 'https://api.openai.com/v1',
     apiKey: '',
-    models: []
+    models: preset ? providerPresetModels(preset) : []
   }
 }
 
@@ -93,6 +96,7 @@ function ModelsSection() {
   const remove = useSettingsStore((state) => state.remove)
   const test = useSettingsStore((state) => state.test)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
+  const showToast = useUIStore((state) => state.showToast)
 
   const [draft, setDraft] = useState<ProviderInput | null>(null)
   const [busy, setBusy] = useState(false)
@@ -210,6 +214,7 @@ function ModelsSection() {
       return
     }
 
+    const firstProvider = providers.length === 0
     setBusy(true)
     setMessage(null)
     try {
@@ -217,6 +222,9 @@ function ModelsSection() {
       setConfig(await window.api.settings.modelsConfig())
       setDraft(null)
       setMessage({ ok: true, text: '已保存' })
+      if (firstProvider) {
+        showToast('模型配置完成，回到画布开始创作')
+      }
     } catch (error) {
       setMessage({ ok: false, text: String(error) })
     } finally {
@@ -550,9 +558,29 @@ function ModelsSection() {
           <div className="provider-list__empty">
             还没有配置模型供应商。
             <br />
-            可以通过下方按钮添加，或直接编辑配置文件。
+            可以从下方快速预设开始，或手动添加。
           </div>
         ) : null}
+
+        <div className="provider-presets">
+          <div className="provider-presets__label">快速预设</div>
+          <div className="provider-presets__grid">
+            {PROVIDER_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className="provider-preset"
+                onClick={() => {
+                  setMessage(null)
+                  setDraft(emptyDraft(preset))
+                }}
+              >
+                <span className="provider-preset__name">{preset.name}</span>
+                <span className="provider-preset__desc">{preset.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         <button
           type="button"

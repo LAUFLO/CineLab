@@ -1,0 +1,81 @@
+name: Build Depth Runtime
+
+on:
+  workflow_dispatch:
+    inputs:
+      vda_ref:
+        description: Video-Depth-Anything commit or tag
+        required: false
+        default: 4f5ae23172ba60fd7bc11ef671cca678842c7072
+  push:
+    tags:
+      - 'depth-components-v1'
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_TAG: depth-components-v1
+  RUNTIME_ZIP: depth-runtime-win32-x64-v1.zip
+  RUNTIME_MANIFEST: depth-runtime-manifest.json
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.9'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: pip-depth-runtime-${{ runner.os }}-${{ hashFiles('scripts/build-depth-runtime.ps1') }}
+          restore-keys: |
+            pip-depth-runtime-${{ runner.os }}-
+
+      - name: Build runtime
+        shell: pwsh
+        run: |
+          $vdaRef = "${{ inputs.vda_ref }}"
+          if (-not $vdaRef) { $vdaRef = "4f5ae23172ba60fd7bc11ef671cca678842c7072" }
+          ./scripts/build-depth-runtime.ps1 `
+            -PythonVersion "3.11.9" `
+            -TorchVersion "2.8.0" `
+            -VdaRef $vdaRef `
+            -DownloadBase "https://github.com/${{ github.repository }}/releases/download/$env:RELEASE_TAG"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: depth-runtime-v1
+          path: |
+            build/components/depth-runtime-win32-x64-v1.zip
+            build/components/depth-runtime-manifest.json
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Publish release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $releases = gh release list --limit 100 --json tagName | ConvertFrom-Json
+          $exists = $releases | Where-Object { $_.tagName -eq $env:RELEASE_TAG }
+          if (-not $exists) {
+            gh release create $env:RELEASE_TAG `
+              --title "深度组件 v1" `
+              --notes "CineLab 深度动作捕捉 runtime 组件（Windows x64 CPU）。包含 Python 3.11.9、PyTorch 2.8.0 CPU、OpenCV 与 Video-Depth-Anything（固定 commit），不是 CineLab 应用安装包。" `
+              --prerelease
+            if ($LASTEXITCODE -ne 0) { throw "release create failed" }
+          }
+
+          gh release upload $env:RELEASE_TAG `
+            "build/components/$env:RUNTIME_ZIP" `
+            "build/components/$env:RUNTIME_MANIFEST" `
+            --clobber
+          if ($LASTEXITCODE -ne 0) { throw "release upload failed" }

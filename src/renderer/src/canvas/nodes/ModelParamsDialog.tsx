@@ -143,6 +143,7 @@ export function ModelParamsDialog({
           key: row.key.trim(),
           label: row.label.trim(),
           type,
+          ...(row.group?.trim() ? { group: row.group.trim() } : {}),
           ...(options && options.length > 0 ? { options } : {}),
           ...(defaultValue !== undefined ? { defaultValue } : {}),
           ...(row.min !== undefined ? { min: row.min } : {}),
@@ -272,6 +273,17 @@ export function ModelParamsDialog({
                       }
                     />
                   )}
+                </div>
+
+                <div className="model-param__default">
+                  <span>分组</span>
+                  <input
+                    value={row.group ?? ''}
+                    placeholder="例如：比例 / 清晰度 / 生成数量"
+                    onChange={(event) =>
+                      updateRow(index, { group: event.target.value })
+                    }
+                  />
                 </div>
               </div>
             ))

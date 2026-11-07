@@ -306,6 +306,26 @@ export function PromptBar() {
   const active = models.find((item) => item.key === modelKey) ?? models[0] ?? null
   const values = active ? { ...defaultParams(active.model), ...paramValues } : {}
 
+  const paramGroups = useMemo(() => {
+    if (!active) return []
+    const groups = new Map<string, ParamDef[]>()
+    for (const param of active.model.params) {
+      const name = param.group?.trim() || '其它'
+      const list = groups.get(name) ?? []
+      list.push(param)
+      groups.set(name, list)
+    }
+    return [...groups.entries()].map(([name, params]) => ({ name, params }))
+  }, [active])
+
+  const paramSummary = active
+    ? active.model.params
+        .map((param) => paramLabel(param, values[param.key]))
+        .filter((label) => label.length > 0)
+        .slice(0, 4)
+        .join(' · ')
+    : ''
+
   const layout = useMemo(() => {
     if (!node) return null
 
@@ -811,136 +831,189 @@ export function PromptBar() {
 
         {active ? (
           <div className="promptbar__param-group">
-            {active.model.params.map((param) => (
-              <div key={param.key} className="param-picker">
-                <button
-                  type="button"
-                  className="promptbar__chip"
-                  onClick={() => {
-                    if (param.type === 'boolean') {
-                      setParamValues((prev) => ({
-                        ...prev,
-                        [param.key]: !prev[param.key]
-                      }))
-                      return
-                    }
-                    setParamMenuKey((open) =>
-                      open === param.key ? null : param.key
-                    )
-                  }}
-                  title={param.label}
-                >
-                  <span className="promptbar__param-label">{param.label}</span>
-                  {paramLabel(param, values[param.key])}
-                  {param.type === 'select' ? (
-                    <Icon name="chevron-down" size={10} />
-                  ) : null}
-                </button>
+            <div className="param-picker">
+              <button
+                type="button"
+                className="promptbar__chip promptbar__param-summary"
+                onClick={() =>
+                  setParamMenuKey((open) =>
+                    open === '__all__' ? null : '__all__'
+                  )
+                }
+                title="生成设置"
+              >
+                <span className="promptbar__param-summary-text">
+                  {paramSummary || '生成设置'}
+                </span>
+                <Icon name="chevron-down" size={10} />
+              </button>
 
-                {paramMenuKey === param.key && param.options ? (
-                  <div
-                    className={`param-menu ${
-                      param.options.every((option) => ratioOf(option.label))
-                        ? 'is-grid'
-                        : ''
-                    }`}
-                  >
-                    {param.options.map((option) => {
-                      const ratio = ratioOf(option.label)
+              {paramMenuKey === '__all__' ? (
+                <div className="param-panel">
+                  {paramGroups.map((group) => (
+                    <div className="param-panel__section" key={group.name}>
+                      <div className="param-panel__title">{group.name}</div>
 
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`param-menu__item ${
-                            ratio ? 'param-menu__item--grid' : ''
-                          } ${
-                            String(option.value) === String(values[param.key])
-                              ? 'is-active'
-                              : ''
-                          }`}
-                          onClick={() => {
-                            setParamValues((prev) => ({
-                              ...prev,
-                              [param.key]: option.value
-                            }))
-                            setParamMenuKey(null)
-                          }}
-                        >
-                          {ratio ? (
-                            <span
-                              className="param-menu__ratio"
-                              style={{ aspectRatio: ratio }}
+                      {group.params.map((param) => {
+                        if (param.type === 'select' && param.options) {
+                          const ratioGrid = param.options.every((option) =>
+                            ratioOf(option.label)
+                          )
+
+                          return (
+                            <div
+                              key={param.key}
+                              className={`param-panel__grid${ratioGrid ? ' is-ratio' : ''}`}
+                            >
+                              {param.options.map((option) => {
+                                const ratio = ratioOf(option.label)
+
+                                return (
+                                  <button
+                                    key={option.value}
+                                    type="button"
+                                    className={`param-panel__option${
+                                      ratio
+                                        ? ' param-panel__option--ratio'
+                                        : ''
+                                    }${
+                                      String(option.value) ===
+                                      String(values[param.key])
+                                        ? ' is-active'
+                                        : ''
+                                    }`}
+                                    onClick={() =>
+                                      setParamValues((prev) => ({
+                                        ...prev,
+                                        [param.key]: option.value
+                                      }))
+                                    }
+                                  >
+                                    {ratio ? (
+                                      <span
+                                        className="param-panel__ratio"
+                                        style={{ aspectRatio: ratio }}
+                                      />
+                                    ) : null}
+                                    {option.label}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )
+                        }
+
+                        if (param.type === 'boolean') {
+                          return (
+                            <div
+                              key={param.key}
+                              className="param-panel__grid is-two"
+                            >
+                              {[true, false].map((value) => (
+                                <button
+                                  key={String(value)}
+                                  type="button"
+                                  className={`param-panel__option${
+                                    Boolean(values[param.key]) === value
+                                      ? ' is-active'
+                                      : ''
+                                  }`}
+                                  onClick={() =>
+                                    setParamValues((prev) => ({
+                                      ...prev,
+                                      [param.key]: value
+                                    }))
+                                  }
+                                >
+                                  {value ? '开启' : '关闭'}
+                                </button>
+                              ))}
+                            </div>
+                          )
+                        }
+
+                        if (
+                          param.key === 'duration' &&
+                          param.type === 'number'
+                        ) {
+                          const value = Number(
+                            values[param.key] ?? param.defaultValue ?? 5
+                          )
+
+                          return (
+                            <div
+                              key={param.key}
+                              className="param-panel__range"
+                            >
+                              <input
+                                type="range"
+                                min={param.min ?? 1}
+                                max={param.max ?? 30}
+                                step={1}
+                                value={value}
+                                onChange={(event) =>
+                                  setParamValues((prev) => ({
+                                    ...prev,
+                                    [param.key]: Number(event.target.value)
+                                  }))
+                                }
+                              />
+                              <span className="param-panel__range-value">
+                                {value}s
+                              </span>
+                            </div>
+                          )
+                        }
+
+                        return (
+                          <div
+                            key={param.key}
+                            className="param-panel__input-row"
+                          >
+                            <span>{param.label}</span>
+                            <input
+                              className="param-input nodrag nopan"
+                              type={
+                                param.type === 'number' ? 'number' : 'text'
+                              }
+                              value={String(values[param.key] ?? '')}
+                              onChange={(event) => {
+                                const raw = event.target.value
+                                const next =
+                                  param.type === 'number'
+                                    ? Number(raw)
+                                    : raw
+                                if (
+                                  param.type === 'number' &&
+                                  !Number.isFinite(next as number)
+                                ) {
+                                  return
+                                }
+                                setParamValues((prev) => ({
+                                  ...prev,
+                                  [param.key]: next
+                                }))
+                              }}
                             />
-                          ) : null}
-                          {option.label}
-                        </button>
-                      )
-                    })}
-                    {param.options.every((option) => ratioOf(option.label)) ? (
-                      <div className="param-menu__watermark">
-                        <span>AI 水印</span>
-                        <button
-                          type="button"
-                          className={`promptbar__switch ${watermark ? 'is-on' : ''}`}
-                          onClick={() => setWatermark((open) => !open)}
-                        >
-                          <span />
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ))}
 
-                {paramMenuKey === param.key && param.type !== 'select' ? (
-                  <div className="param-menu param-menu--input">
-                    <input
-                      className="param-input nodrag nopan"
-                      type={param.type === 'number' ? 'number' : 'text'}
-                      defaultValue={String(values[param.key] ?? '')}
-                      autoFocus
-                      onKeyDown={(event) => {
-                        if (event.key === 'Escape') {
-                          setParamMenuKey(null)
-                          return
-                        }
-                        if (event.key !== 'Enter') return
-                        const raw = event.currentTarget.value
-                        const next =
-                          param.type === 'number' ? Number(raw) : raw
-                        if (
-                          param.type === 'number' &&
-                          !Number.isFinite(next as number)
-                        ) {
-                          return
-                        }
-                        setParamValues((prev) => ({
-                          ...prev,
-                          [param.key]: next
-                        }))
-                        setParamMenuKey(null)
-                      }}
-                      onBlur={(event) => {
-                        const raw = event.currentTarget.value
-                        const next =
-                          param.type === 'number' ? Number(raw) : raw
-                        if (
-                          param.type === 'number' &&
-                          !Number.isFinite(next as number)
-                        ) {
-                          return
-                        }
-                        setParamValues((prev) => ({
-                          ...prev,
-                          [param.key]: next
-                        }))
-                        setParamMenuKey(null)
-                      }}
-                    />
+                  <div className="param-panel__switch-row">
+                    <span>AI 水印</span>
+                    <button
+                      type="button"
+                      className={`promptbar__switch ${watermark ? 'is-on' : ''}`}
+                      onClick={() => setWatermark((open) => !open)}
+                    >
+                      <span />
+                    </button>
                   </div>
-                ) : null}
-              </div>
-            ))}
+                </div>
+              ) : null}
+            </div>
           </div>
         ) : (
           <span className="promptbar__params">配置模型后生成参数会出现在这里</span>

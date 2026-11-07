@@ -94,6 +94,7 @@ function validateParams(
     if (item.defaultValue !== undefined) {
       param.defaultValue = item.defaultValue as ParamDef['defaultValue']
     }
+    if (readString(item.group)) param.group = readString(item.group)
     if (item.min !== undefined) param.min = Number(item.min)
     if (item.max !== undefined) param.max = Number(item.max)
 

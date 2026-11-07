@@ -4,6 +4,8 @@ import { registerAssetProtocol, registerAssetScheme } from './protocol'
 import { createMainWindow } from './window'
 import { ensureLibrary } from './library/config'
 import { ensureMigrated } from './settings/store'
+import { getPreferences } from './settings/preferences'
+import { generationQueue } from './engine/queue'
 import { startModelsWatcher } from './settings/models-watch'
 import { log, setupLogging } from './logger'
 import { appendFileSync } from 'node:fs'
@@ -86,6 +88,15 @@ if (!hasLock) {
     } catch (error) {
       console.warn('[settings] failed to migrate legacy settings', error)
       diagLog(`migrate settings failed ${String(error)}`)
+    }
+
+    try {
+      const preferences = await getPreferences()
+      generationQueue.setConcurrency(preferences.generation.concurrency)
+      diagLog('preferences loaded')
+    } catch (error) {
+      console.warn('[settings] failed to load preferences', error)
+      diagLog(`load preferences failed ${String(error)}`)
     }
 
     startModelsWatcher()

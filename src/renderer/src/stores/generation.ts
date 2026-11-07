@@ -3,7 +3,25 @@ import { NODE_META, TITLE_HEIGHT, type CineNodeData, type OutputRef } from '@sha
 import type { GenerateRequest } from '@shared/generation'
 import { isGroupNode, useCanvasStore } from './canvas'
 import { useGenerationHistoryStore } from './generation-history'
+import { usePreferencesStore } from './preferences'
 import { useUIStore } from './ui'
+
+function notifyGenerationDone(title: string): void {
+  try {
+    if (typeof Notification === 'undefined') return
+    if (Notification.permission !== 'granted') return
+
+    const notification = new Notification('生成完成', {
+      body: `${title} 已完成`
+    })
+    notification.onclick = () => {
+      window.focus()
+      notification.close()
+    }
+  } catch {
+    // 系统通知失败不影响生成流程
+  }
+}
 
 interface GenerationState {
   running: Record<string, string>
@@ -89,6 +107,15 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           delete running[event.nodeId]
           set({ running })
           useGenerationHistoryStore.getState().finish(event.nodeId, 'done')
+
+          const preferences = usePreferencesStore.getState().preferences
+          if (
+            preferences.generation.notifyOnComplete &&
+            typeof document !== 'undefined' &&
+            !document.hasFocus()
+          ) {
+            notifyGenerationDone(node?.data.title ?? '生成任务')
+          }
           break
         }
 

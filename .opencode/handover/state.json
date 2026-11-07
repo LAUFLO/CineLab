@@ -1,5 +1,5 @@
 {
-  "version": 29,
+  "version": 30,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -539,6 +539,16 @@
       "note": "提交 a26157d 已推送，CI 42385621365 成功（3m15s），安装包位于 C:\\Users\\LAUFLO\\Downloads\\cinelab-a26157d。",
       "evidence": [
         ".opencode/handover/evidence/PACKAGE-2026-11-07-prompt-mention.md"
+      ]
+    },
+    {
+      "id": "GENERAL-SETTINGS-1",
+      "title": "设置页通用分区：启动、画布、生成、通知、存储",
+      "status": "done",
+      "note": "新增 preferences.json + IPC + preferencesStore；实现启动打开最近项目、自动保存间隔、网格吸附、小地图、默认模型、并发数、完成通知、AutoLink、历史保留、减少动效、数据目录与重置。主题保留独立外观分区。",
+      "evidence": [
+        "docs/general-settings-plan.md",
+        ".opencode/handover/evidence/GENERAL-SETTINGS-1.md"
       ]
     }
   ],
@@ -1306,6 +1316,14 @@
     {
       "category": "environment",
       "content": "本机访问 github.com:443 需要代理。Clash Verge 的内核可能与 UDP 7897 冲突导致 TCP 代理未监听；可用临时配置改 mixed-port 为 7890 启动 verge-mihomo，再通过 HTTPS_PROXY 推送和 gh 下载 artifact。"
+    },
+    {
+      "category": "preference",
+      "content": "设置页需要独立的「通用」分区承载启动、画布、生成、通知和存储偏好；主题保留独立「外观」，后续在「外观」扩展连线颜色、节点边框和画布背景。"
+    },
+    {
+      "category": "lesson",
+      "content": "多个偏好开关连续修改时，渲染层必须先同步合并到最新状态再串行写盘，不能并行读取同一个旧快照，否则后写的旧值会覆盖前一个开关。"
     }
   ],
   "designConventions": [

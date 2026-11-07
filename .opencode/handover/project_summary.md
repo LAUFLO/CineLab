@@ -92,6 +92,7 @@ C:\Users\LAUFLO\Documents\CineLab
 | MODEL-PARAMS-4 | ✅ 完成 | 时长下拉可转 min/max 滑条，Prompt Bar 任意秒 |
 | MODEL-PARAMS-5 | ✅ 完成 | 接口字段名收进高级，默认只显示用户可理解字段 |
 | PROMPT-MENTION-1 | ✅ 完成 | 提示词按节点保留、@ 引用菜单与 token 高亮、AutoLink 反馈 |
+| GENERAL-SETTINGS-1 | ✅ 完成 | 通用设置：启动、自动保存、吸附、小地图、默认模型、并发、通知、历史、动效、重置 |
 
 **下一步**：整体验收与修复；导演台调研排期；剪辑台等待其他会话完成。
 

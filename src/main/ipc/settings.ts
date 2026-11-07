@@ -1,8 +1,9 @@
-import { ipcMain, shell } from 'electron'
+import { app, ipcMain, shell } from 'electron'
 import type {
   ConnectionTestInput,
   ProviderInput
 } from '@shared/provider-schema'
+import type { Preferences } from '@shared/preferences'
 import {
   deleteProvider,
   fetchModels,
@@ -12,6 +13,12 @@ import {
   saveProvider,
   testConnection
 } from '../settings/store'
+import {
+  getPreferences,
+  resetPreferences,
+  savePreferences
+} from '../settings/preferences'
+import { generationQueue } from '../engine/queue'
 import type { OperationBindings } from '@shared/operation-schema'
 import {
   ensureModelsFile,
@@ -42,5 +49,22 @@ export function registerSettingsIpc(): void {
     const file = await ensureModelsFile()
     await shell.openPath(file)
     return file
+  })
+  ipcMain.handle('settings:get-preferences', () => getPreferences())
+  ipcMain.handle(
+    'settings:save-preferences',
+    async (_event, input: Preferences) => {
+      const next = await savePreferences(input)
+      generationQueue.setConcurrency(next.generation.concurrency)
+      return next
+    }
+  )
+  ipcMain.handle('settings:reset-preferences', async () => {
+    const next = await resetPreferences()
+    generationQueue.setConcurrency(next.generation.concurrency)
+    return next
+  })
+  ipcMain.handle('settings:open-data-dir', async () => {
+    await shell.openPath(app.getPath('userData'))
   })
 }

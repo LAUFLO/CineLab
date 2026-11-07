@@ -14,6 +14,7 @@ import {
   buildTemplateCanvas,
   type ProjectTemplateId
 } from '@shared/project-templates'
+import { getPreferences } from '../settings/preferences'
 
 const PROJECT_EXT = '.cinelab'
 
@@ -253,6 +254,9 @@ export async function saveCanvas(projectPath: string, canvas: CanvasData): Promi
 }
 
 export async function bootstrap(): Promise<ProjectSnapshot | null> {
+  const preferences = await getPreferences()
+  if (!preferences.startup.openRecentProject) return null
+
   const recents = await readRecent()
 
   for (const recent of recents) {

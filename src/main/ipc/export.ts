@@ -6,6 +6,7 @@ import type { ExportResult } from '../../shared/ipc-contract'
 import { getCurrentProjectRoot } from '../project/manager'
 import { zipDirectory } from '../export/zip'
 import { getLibraryRoot } from '../library/config'
+import { concatVideos } from '../media/concat'
 import type { AssetRef, AssetScope } from '../../shared/asset-schema'
 
 function stamp(): string {
@@ -82,6 +83,40 @@ export function registerExportIpc(): void {
 
       try {
         await writeFile(result.filePath, image.toPNG())
+        return { ok: true, path: result.filePath }
+      } catch (error) {
+        return { ok: false, error: errorMessage(error) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    'export:concat-videos',
+    async (
+      event,
+      paths: string[],
+      options?: { resolution?: '720p' | '1080p'; quality?: 'standard' | 'high' }
+    ): Promise<ExportResult> => {
+      if (!Array.isArray(paths) || paths.length < 2) {
+        return { ok: false, error: '至少选择两个视频' }
+      }
+
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const optionsDialog = {
+        title: '合成视频',
+        defaultPath: join(app.getPath('videos'), `CineLab-合成视频-${stamp()}.mp4`),
+        filters: [{ name: 'MP4 视频', extensions: ['mp4'] }]
+      }
+      const result = win
+        ? await dialog.showSaveDialog(win, optionsDialog)
+        : await dialog.showSaveDialog(optionsDialog)
+
+      if (result.canceled || !result.filePath) {
+        return { ok: false, canceled: true }
+      }
+
+      try {
+        await concatVideos(paths, result.filePath, options)
         return { ok: true, path: result.filePath }
       } catch (error) {
         return { ok: false, error: errorMessage(error) }

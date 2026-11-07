@@ -156,7 +156,12 @@ export interface ExportApi {
   project(projectName: string): Promise<ExportResult>
   canvasPng(projectName: string, canvasName: string): Promise<ExportResult>
   asset(relPath: string, fileName: string, scope?: AssetScope): Promise<ExportResult>
-  assets(inputs: AssetRef[], fileName: string): Promise<ExportResult>}
+  assets(inputs: AssetRef[], fileName: string): Promise<ExportResult>
+  concatVideos(
+    paths: string[],
+    options?: { resolution?: '720p' | '1080p'; quality?: 'standard' | 'high' }
+  ): Promise<ExportResult>
+}
 
 export interface MediaApi {
   splitGrid(input: GridSplitRequest): Promise<GridSplitResult>

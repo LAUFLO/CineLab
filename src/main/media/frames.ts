@@ -35,18 +35,32 @@ export async function extractFrame(
   const outPath = join(tmpDir, 'frame.png')
 
   try {
+    // -ss/-sseof must be input options: seeking past the last frame with an
+    // output-side -ss makes ffmpeg exit 0 without writing any file.
+    const seek =
+      input.mode === 'last'
+        ? ['-sseof', '-0.1']
+        : ['-ss', time.toFixed(3)]
+
     await runFfmpeg([
       '-y',
+      ...seek,
       '-i',
       absolute,
-      '-ss',
-      time.toFixed(3),
       '-frames:v',
       '1',
       '-vsync',
       '0',
       outPath
     ])
+
+    const written = await fs
+      .access(outPath)
+      .then(() => true)
+      .catch(() => false)
+    if (!written) {
+      throw new Error('未能抽取到视频帧，请更换素材或稍后重试')
+    }
 
     const data = await fs.readFile(outPath)
     const asset = await ingestAsset({

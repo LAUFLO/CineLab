@@ -5200,6 +5200,22 @@ body.is-picking .react-flow__node:hover .cnode__card {
   color: var(--text-3);
 }
 
+.history-row__sub.is-error {
+  color: var(--danger);
+  overflow: hidden;
+}
+
+.history-row__sub.is-error span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-row__thumb.is-error {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
 .history-row__actions {
   display: flex;
   gap: 2px;
@@ -5207,6 +5223,10 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .history-row:hover .history-row__actions {
+  opacity: 1;
+}
+
+.history-row--error .history-row__actions {
   opacity: 1;
 }
 
@@ -5222,6 +5242,13 @@ body.is-picking .react-flow__node:hover .cnode__card {
 
 .history-action:hover {
   background: var(--surface);
+  color: var(--text-1);
+}
+
+.history-action--text {
+  width: auto;
+  padding: 0 8px;
+  font-size: 12px;
   color: var(--text-1);
 }
 

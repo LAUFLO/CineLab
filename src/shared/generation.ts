@@ -44,7 +44,13 @@ export type GenerationEvent =
       message?: string
     }
   | { type: 'done'; nodeId: string; runId: string; assets: GeneratedAsset[] }
-  | { type: 'error'; nodeId: string; runId: string; message: string }
+  | {
+      type: 'error'
+      nodeId: string
+      runId: string
+      message: string
+      retryable?: boolean
+    }
   | { type: 'cancelled'; nodeId: string; runId: string }
 
 export interface GenerateHandle {

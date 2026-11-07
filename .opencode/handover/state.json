@@ -1,5 +1,5 @@
 {
-  "version": 28,
+  "version": 29,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -530,6 +530,15 @@
         "docs/prompt-mention-plan.md",
         "docs/ui-spec.md",
         ".opencode/handover/evidence/PROMPT-MENTION-1-at-reference.md"
+      ]
+    },
+    {
+      "id": "PACKAGE-a26157d",
+      "title": "打包：提示词持久化与 @ 引用",
+      "status": "done",
+      "note": "提交 a26157d 已推送，CI 42385621365 成功（3m15s），安装包位于 C:\\Users\\LAUFLO\\Downloads\\cinelab-a26157d。",
+      "evidence": [
+        ".opencode/handover/evidence/PACKAGE-2026-11-07-prompt-mention.md"
       ]
     }
   ],
@@ -1293,6 +1302,10 @@
     {
       "category": "lesson",
       "content": "项目节点的持久化 schema 是 zod 严格对象，新增 CineNodeData 字段时必须同步 cineNodeSchema，否则保存时会被剥离。"
+    },
+    {
+      "category": "environment",
+      "content": "本机访问 github.com:443 需要代理。Clash Verge 的内核可能与 UDP 7897 冲突导致 TCP 代理未监听；可用临时配置改 mixed-port 为 7890 启动 verge-mihomo，再通过 HTTPS_PROXY 推送和 gh 下载 artifact。"
     }
   ],
   "designConventions": [

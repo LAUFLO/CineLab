@@ -24,7 +24,7 @@ export function OperationsSection() {
           .map((model) => ({
             key: `${provider.id}/${model.id}`,
             label: `${provider.name} · ${model.name}`,
-            hasTemplate: Boolean(model.template),
+            hasTemplate: model.adapter === 'http-template' && Boolean(model.template),
             adapter: model.adapter
           }))
       ),

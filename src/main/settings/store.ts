@@ -13,6 +13,7 @@ import type {
 } from '@shared/provider-schema'
 import type { ModelsFileProvider } from '@shared/models-file'
 import { klingAuthorization } from '../providers/kling-auth'
+import { mergeHeaders } from '../providers/headers'
 import {
   enqueueModelsWrite,
   loadModelsConfig,
@@ -199,6 +200,7 @@ export async function listProviders(): Promise<ProviderConfig[]> {
 export interface ResolvedProvider {
   type: ProviderType
   baseUrl: string
+  headers?: Record<string, string>
   apiKey: string
   secretKey: string
   models: ModelDef[]
@@ -218,6 +220,7 @@ export async function resolveProvider(id: string): Promise<ResolvedProvider | nu
   return {
     type: provider.type ?? 'openai-compat',
     baseUrl: provider.baseUrl,
+    ...(provider.headers ? { headers: provider.headers } : {}),
     apiKey: stored?.encryptedKey ? decryptKey(stored.encryptedKey) : envKey || '',
     secretKey: stored?.encryptedSecret ? decryptKey(stored.encryptedSecret) : '',
     models: resolveModels(provider)
@@ -252,6 +255,17 @@ export async function saveProvider(input: ProviderInput): Promise<ProviderConfig
       models: input.models
     }
     delete provider.apiKey
+
+    const headers = Object.fromEntries(
+      Object.entries(input.headers ?? {})
+        .map(([key, value]) => [key.trim(), value] as const)
+        .filter(([key, value]) => key.length > 0 && value.length > 0)
+    )
+    if (Object.keys(headers).length > 0) {
+      provider.headers = headers
+    } else {
+      delete provider.headers
+    }
 
     await saveModelsConfig(upsertModelsProvider(config.providers, provider))
 
@@ -337,6 +351,7 @@ export async function testConnection(
       : undefined
 
     const type = input.type ?? provider?.type ?? 'openai-compat'
+    const customHeaders = input.headers ?? provider?.headers
     const apiKey =
       input.apiKey?.trim() ||
       (stored?.encryptedKey ? decryptKey(stored.encryptedKey) : '') ||
@@ -357,7 +372,10 @@ export async function testConnection(
 
     if (type === 'kling') {
       const response = await fetch(`${baseUrl}/v1/videos/text2video/0`, {
-        headers: { Authorization: klingAuthorization(apiKey, secretKey) },
+        headers: mergeHeaders(
+          { Authorization: klingAuthorization(apiKey, secretKey) },
+          customHeaders
+        ),
         signal: controller.signal
       })
       clearTimeout(timer)
@@ -374,7 +392,7 @@ export async function testConnection(
     }
 
     const response = await fetch(`${baseUrl}/models`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: mergeHeaders({ Authorization: `Bearer ${apiKey}` }, customHeaders),
       signal: controller.signal
     })
     clearTimeout(timer)
@@ -413,6 +431,7 @@ export async function fetchModels(
       : undefined
 
     const type = input.type ?? provider?.type ?? 'openai-compat'
+    const customHeaders = input.headers ?? provider?.headers
     if (type === 'kling') {
       return {
         ok: false,
@@ -436,7 +455,7 @@ export async function fetchModels(
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 20000)
     const response = await fetch(`${baseUrl}/models`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: mergeHeaders({ Authorization: `Bearer ${apiKey}` }, customHeaders),
       signal: controller.signal
     })
     clearTimeout(timer)

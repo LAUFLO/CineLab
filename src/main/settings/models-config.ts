@@ -213,6 +213,34 @@ function validateModel(
   }
 }
 
+function validateHeaders(
+  value: unknown,
+  path: string,
+  errors: string[]
+): Record<string, string> | undefined {
+  if (value === undefined) return undefined
+  if (!isRecord(value)) {
+    errors.push(`${path} 必须是对象`)
+    return undefined
+  }
+
+  const headers: Record<string, string> = {}
+  for (const [rawKey, entry] of Object.entries(value)) {
+    const key = rawKey.trim()
+    if (!key) {
+      errors.push(`${path} 存在空 header 名称`)
+      continue
+    }
+    if (typeof entry !== 'string') {
+      errors.push(`${path}.${key} 必须是字符串`)
+      continue
+    }
+    headers[key] = entry
+  }
+
+  return headers
+}
+
 export function parseModelsFile(input: unknown, file: string): ParsedModels {
   const errors: string[] = []
   const warnings: string[] = []
@@ -268,6 +296,8 @@ export function parseModelsFile(input: unknown, file: string): ParsedModels {
       return
     }
 
+    const headers = validateHeaders(item.headers, `${path}.headers`, errors)
+
     if (!Array.isArray(item.models) || item.models.length === 0) {
       errors.push(`${path}.models 不能为空`)
       return
@@ -303,6 +333,7 @@ export function parseModelsFile(input: unknown, file: string): ParsedModels {
       ...(type ? { type } : {}),
       ...(adapter ? { adapter } : {}),
       baseUrl,
+      ...(headers && Object.keys(headers).length > 0 ? { headers } : {}),
       ...(apiKeyEnv ? { apiKeyEnv } : {}),
       models
     })
@@ -458,6 +489,7 @@ export function toModelsProvider(
     name: provider.name,
     type: provider.type ?? 'openai-compat',
     baseUrl: provider.baseUrl,
+    ...(provider.headers ? { headers: provider.headers } : {}),
     models: resolveModels(provider),
     hasKey: Boolean(stored?.encryptedKey) || Boolean(envKey),
     hasSecret: Boolean(stored?.encryptedSecret),

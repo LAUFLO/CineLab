@@ -4,6 +4,7 @@ import type {
   ProviderOutput,
   ProviderRuntime
 } from './openai-compat'
+import { mergeHeaders } from './headers'
 import { sleep } from './retry'
 
 interface ImageRef {
@@ -42,10 +43,13 @@ export async function generateVideoAgnes(
 ): Promise<ProviderOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
   const origin = new URL(baseUrl).origin
-  const headers = {
-    Authorization: `Bearer ${provider.apiKey}`,
-    'Content-Type': 'application/json'
-  }
+  const headers = mergeHeaders(
+    {
+      Authorization: `Bearer ${provider.apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    provider.headers
+  )
 
   const firstFrame = refs.find((ref) => ref.role === 'firstFrame')
   const lastFrame = refs.find((ref) => ref.role === 'lastFrame')

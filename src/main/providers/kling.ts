@@ -1,5 +1,6 @@
 import type { ModelDef } from '@shared/provider-schema'
 import { klingAuthorization } from './kling-auth'
+import { mergeHeaders } from './headers'
 import type {
   AdapterContext,
   ProviderOutput,
@@ -77,10 +78,13 @@ export async function generateVideoKling(
   const isImageMode = Boolean(first || last)
   const path = isImageMode ? 'image2video' : 'text2video'
 
-  const headers = {
-    Authorization: klingAuthorization(provider.apiKey, provider.secretKey),
-    'Content-Type': 'application/json'
-  }
+  const headers = mergeHeaders(
+    {
+      Authorization: klingAuthorization(provider.apiKey, provider.secretKey),
+      'Content-Type': 'application/json'
+    },
+    provider.headers
+  )
 
   const body: Record<string, unknown> = {
     model_name: model.remoteModel,

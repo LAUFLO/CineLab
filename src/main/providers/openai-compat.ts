@@ -1,10 +1,12 @@
 import type { ModelDef } from '@shared/provider-schema'
+import { mergeHeaders } from './headers'
 import { sleep } from './retry'
 
 export interface ProviderRuntime {
   baseUrl: string
   apiKey: string
   secretKey?: string
+  headers?: Record<string, string>
 }
 
 export interface AdapterContext {
@@ -137,7 +139,10 @@ export async function generateImage(
   ctx: AdapterContext
 ): Promise<ImageOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
-  const headers = { Authorization: `Bearer ${provider.apiKey}` }
+  const headers = mergeHeaders(
+    { Authorization: `Bearer ${provider.apiKey}` },
+    provider.headers
+  )
   const isMoss = /moss/i.test(model.remoteModel)
   const isAgnes = /^agnes-image/i.test(model.remoteModel)
 
@@ -257,10 +262,13 @@ export async function generateSpeech(
 
   const response = await fetch(`${normalizeBaseUrl(provider.baseUrl)}/audio/speech`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${provider.apiKey}`
-    },
+    headers: mergeHeaders(
+      {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${provider.apiKey}`
+      },
+      provider.headers
+    ),
     body: JSON.stringify(body),
     signal: ctx.signal
   })
@@ -299,10 +307,13 @@ export async function generateText(
 
   const response = await fetch(`${normalizeBaseUrl(provider.baseUrl)}/chat/completions`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${provider.apiKey}`
-    },
+    headers: mergeHeaders(
+      {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${provider.apiKey}`
+      },
+      provider.headers
+    ),
     body: JSON.stringify(body),
     signal: ctx.signal
   })
@@ -397,10 +408,13 @@ export async function generateMusic(
   ctx: AdapterContext
 ): Promise<ImageOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
-  const headers = {
-    Authorization: `Bearer ${provider.apiKey}`,
-    'Content-Type': 'application/json'
-  }
+  const headers = mergeHeaders(
+    {
+      Authorization: `Bearer ${provider.apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    provider.headers
+  )
 
   const body: Record<string, unknown> = {
     model: model.remoteModel,

@@ -5,6 +5,7 @@ import type {
   ProviderRuntime
 } from './openai-compat'
 import { sleep } from './retry'
+import { mergeHeaders } from './headers'
 
 interface ImageRef {
   dataUrl: string
@@ -33,10 +34,13 @@ function normalizeBaseUrl(baseUrl: string): string {
 }
 
 function baseHeaders(provider: ProviderRuntime): Record<string, string> {
-  return {
-    Authorization: `Bearer ${provider.apiKey}`,
-    'Content-Type': 'application/json'
-  }
+  return mergeHeaders(
+    {
+      Authorization: `Bearer ${provider.apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    provider.headers
+  )
 }
 
 async function downloadVideo(

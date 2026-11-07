@@ -121,8 +121,18 @@ export function LibraryWindow() {
   const [query, setQuery] = useState('')
   const [nameDialog, setNameDialog] = useState<NameDialogState>(null)
   const [templateDialog, setTemplateDialog] = useState<TemplateInput | null>(null)
-  const [moveTarget, setMoveTarget] = useState<LibraryAsset | null>(null)
+  const [moveTargets, setMoveTargets] = useState<LibraryAsset[]>([])
   const [moveFolder, setMoveFolder] = useState('')
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
+  const [concatOpen, setConcatOpen] = useState(false)
+  const [concatResolution, setConcatResolution] = useState<'720p' | '1080p'>(
+    '720p'
+  )
+  const [concatQuality, setConcatQuality] = useState<'standard' | 'high'>(
+    'standard'
+  )
+  const [concatBusy, setConcatBusy] = useState(false)
 
   if (!open) return null
 
@@ -168,22 +178,90 @@ export function LibraryWindow() {
   }
 
   const handleMove = (asset: LibraryAsset): void => {
-    setMoveTarget(asset)
+    setMoveTargets([asset])
     setMoveFolder('')
   }
 
-  const handleConfirmMove = (): void => {
-    if (!moveTarget || !moveFolder) return
+  const handleConfirmMove = async (): Promise<void> => {
+    if (moveTargets.length === 0 || !moveFolder) return
 
-    const oldPath = moveTarget.path
-    void moveAsset(oldPath, moveFolder).then((next) => {
-      if (!next) return
+    const targets = [...moveTargets]
+    for (const asset of targets) {
+      const next = await moveAsset(asset.path, moveFolder)
+      if (next) syncCanvasAssetPath(asset.path, next)
+    }
 
-      syncCanvasAssetPath(oldPath, next)
-      setMoveTarget(null)
-      setMoveFolder('')
-      showToast(`已移动到 ${moveFolder}`)
+    setMoveTargets([])
+    setMoveFolder('')
+    setSelectedPaths(new Set())
+    showToast(`已移动 ${targets.length} 个素材到 ${moveFolder}`)
+  }
+
+  const selectedAssets = assets.filter((asset) =>
+    selectedPaths.has(asset.path)
+  )
+  const selectedVideos = selectedAssets.filter(
+    (asset) => asset.kind === 'video'
+  )
+  const canConcat =
+    selectedVideos.length >= 2 &&
+    selectedVideos.length === selectedAssets.length
+
+  const handleSelectFolder = (path: string): void => {
+    setSelectedPaths(new Set())
+    setSelectionMode(false)
+    void setFolder(path)
+  }
+
+  const toggleSelect = (asset: LibraryAsset): void => {
+    setSelectedPaths((current) => {
+      const next = new Set(current)
+      if (next.has(asset.path)) next.delete(asset.path)
+      else next.add(asset.path)
+      return next
     })
+  }
+
+  const handleBatchDelete = (): void => {
+    if (selectedAssets.length === 0) return
+    const targets = [...selectedAssets]
+
+    requestConfirm({
+      title: '删除素材',
+      message: `确定删除选中的 ${targets.length} 个素材吗？画布中已引用它们的节点会显示为缺失。`,
+      confirmLabel: '删除',
+      danger: true,
+      onConfirm: async () => {
+        for (const asset of targets) {
+          await deleteAsset(asset.path)
+        }
+        setSelectedPaths(new Set())
+        showToast(`已删除 ${targets.length} 个素材`)
+      }
+    })
+  }
+
+  const handleConcat = async (): Promise<void> => {
+    if (!canConcat) return
+
+    setConcatBusy(true)
+    try {
+      const result = await window.api.export.concatVideos(
+        selectedVideos.map((asset) => asset.path),
+        { resolution: concatResolution, quality: concatQuality }
+      )
+
+      if (result.ok) {
+        showToast(`已合成：${result.path ?? ''}`)
+        setConcatOpen(false)
+        setSelectionMode(false)
+        setSelectedPaths(new Set())
+      } else if (!result.canceled) {
+        showToast(result.error ?? '合成失败', 'error')
+      }
+    } finally {
+      setConcatBusy(false)
+    }
   }
 
   const handleExport = (asset: LibraryAsset): void => {
@@ -278,6 +356,18 @@ export function LibraryWindow() {
                 placeholder="搜索当前文件夹"
               />
             </div>
+            {mode === 'browse' && !isTemplateFolder ? (
+              <button
+                type="button"
+                className="btn-secondary btn-small"
+                onClick={() => {
+                  setSelectionMode((current) => !current)
+                  setSelectedPaths(new Set())
+                }}
+              >
+                {selectionMode ? '退出选择' : '选择'}
+              </button>
+            ) : null}
             <button
               type="button"
               className="icon-btn"
@@ -297,7 +387,7 @@ export function LibraryWindow() {
             <FolderTree
               tree={tree}
               current={folder}
-              onSelect={(path) => void setFolder(path)}
+              onSelect={handleSelectFolder}
               onCreate={handleCreateFolder}
               onRename={(node) =>
                 setNameDialog({ kind: 'rename-folder', node })
@@ -311,7 +401,7 @@ export function LibraryWindow() {
 
           <main className="library-window__main">
             <div className="library-breadcrumb">
-              <button type="button" onClick={() => void setFolder('')}>
+              <button type="button" onClick={() => handleSelectFolder('')}>
                 全部
               </button>
               {segments.map((segment, index) => {
@@ -319,7 +409,7 @@ export function LibraryWindow() {
                 return (
                   <span key={path}>
                     <Icon name="chevron-right" size={10} />
-                    <button type="button" onClick={() => void setFolder(path)}>
+                    <button type="button" onClick={() => handleSelectFolder(path)}>
                       {segment}
                     </button>
                   </span>
@@ -347,6 +437,9 @@ export function LibraryWindow() {
               <AssetGrid
                 assets={assets}
                 query={query}
+                selectionMode={selectionMode}
+                selectedPaths={selectedPaths}
+                onToggleSelect={toggleSelect}
                 onAddToCanvas={handleAddToCanvas}
                 onExport={handleExport}
                 onMove={handleMove}
@@ -362,27 +455,93 @@ export function LibraryWindow() {
 
         <footer className="library-window__foot">
           <div className="library-window__foot-left">
-            {mode === 'browse' ? (
-              <button type="button" className="btn-secondary" onClick={handleImport}>
-                <Icon name="plus" size={13} />
-                上传
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => handleCreateFolder(folder)}
-            >
-              <Icon name="folder-plus" size={13} />
-              新建文件夹
-            </button>
-            <span className="library-window__count">
-              {assets.length} 个素材 · {templates.length} 个模板
-            </span>
+            {selectionMode ? (
+              <>
+                <button
+                  type="button"
+                  className="btn-secondary btn-small"
+                  onClick={() =>
+                    setSelectedPaths(new Set(assets.map((asset) => asset.path)))
+                  }
+                >
+                  全选
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary btn-small"
+                  onClick={() => setSelectedPaths(new Set())}
+                >
+                  清空
+                </button>
+                <span className="library-window__count">
+                  已选 {selectedAssets.length} 个
+                </span>
+              </>
+            ) : (
+              <>
+                {mode === 'browse' ? (
+                  <button type="button" className="btn-secondary" onClick={handleImport}>
+                    <Icon name="plus" size={13} />
+                    上传
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => handleCreateFolder(folder)}
+                >
+                  <Icon name="folder-plus" size={13} />
+                  新建文件夹
+                </button>
+                <span className="library-window__count">
+                  {assets.length} 个素材 · {templates.length} 个模板
+                </span>
+              </>
+            )}
           </div>
 
           <div className="library-window__foot-right">
-            {mode === 'pick' ? (
+            {selectionMode ? (
+              <>
+                <button
+                  type="button"
+                  className="btn-secondary btn-small"
+                  disabled={selectedAssets.length === 0}
+                  onClick={() => {
+                    setMoveTargets(selectedAssets)
+                    setMoveFolder('')
+                  }}
+                >
+                  移动到
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary btn-small"
+                  disabled={!canConcat}
+                  onClick={() => setConcatOpen(true)}
+                >
+                  合成视频
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary btn-small is-danger"
+                  disabled={selectedAssets.length === 0}
+                  onClick={handleBatchDelete}
+                >
+                  删除
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary btn-small"
+                  onClick={() => {
+                    setSelectionMode(false)
+                    setSelectedPaths(new Set())
+                  }}
+                >
+                  完成
+                </button>
+              </>
+            ) : mode === 'pick' ? (
               <>
                 <button type="button" className="btn-secondary" onClick={close}>
                   取消
@@ -405,14 +564,16 @@ export function LibraryWindow() {
         </footer>
       </div>
 
-      {moveTarget ? (
-        <div className="library-modal" onPointerDown={() => setMoveTarget(null)}>
+      {moveTargets.length > 0 ? (
+        <div className="library-modal" onPointerDown={() => setMoveTargets([])}>
           <div
             className="library-modal__panel library-modal__panel--wide"
             onPointerDown={(event) => event.stopPropagation()}
           >
             <div className="library-modal__title">
-              移动「{moveTarget.name}」到
+              {moveTargets.length === 1
+                ? `移动「${moveTargets[0].name}」到`
+                : `移动 ${moveTargets.length} 个素材到`}
             </div>
 
             <div className="library-move-tree">
@@ -431,17 +592,91 @@ export function LibraryWindow() {
               <button
                 type="button"
                 className="btn-secondary"
-                onClick={() => setMoveTarget(null)}
+                onClick={() => setMoveTargets([])}
               >
                 取消
               </button>
               <button
                 type="button"
                 className="btn-primary"
-                onClick={handleConfirmMove}
+                onClick={() => void handleConfirmMove()}
                 disabled={!moveFolder}
               >
                 移动到此处
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {concatOpen ? (
+        <div className="library-modal" onPointerDown={() => setConcatOpen(false)}>
+          <div
+            className="library-modal__panel"
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <div className="library-modal__title">合成视频</div>
+
+            <div className="concat-form">
+              <div className="concat-form__row">
+                <span>分辨率</span>
+                <div className="concat-form__options">
+                  {(['720p', '1080p'] as const).map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={concatResolution === value ? 'is-active' : ''}
+                      onClick={() => setConcatResolution(value)}
+                    >
+                      {value === '720p' ? '720P' : '1080P'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="concat-form__row">
+                <span>画质</span>
+                <div className="concat-form__options">
+                  {(
+                    [
+                      ['standard', '标准'],
+                      ['high', '高画质']
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={concatQuality === value ? 'is-active' : ''}
+                      onClick={() => setConcatQuality(value)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="concat-form__hint">
+                按资产列表顺序拼接 {selectedVideos.length} 段视频，统一为 H.264 /
+                AAC，输出 MP4。
+              </div>
+            </div>
+
+            <div className="library-modal__actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={concatBusy}
+                onClick={() => setConcatOpen(false)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={concatBusy}
+                onClick={() => void handleConcat()}
+              >
+                {concatBusy ? '合成中…' : '选择位置并合成'}
               </button>
             </div>
           </div>

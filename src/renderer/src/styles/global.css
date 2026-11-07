@@ -4265,6 +4265,34 @@ body.is-picking .react-flow__node:hover .cnode__card {
   border-color: var(--border-strong);
 }
 
+.library-asset-card.is-selected {
+  border-color: var(--border-selected);
+  box-shadow: 0 0 0 1px var(--border-selected);
+}
+
+.library-asset-card__check {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-inverse);
+  font-size: 12px;
+}
+
+.library-asset-card.is-selected .library-asset-card__check {
+  border-color: var(--pick-bar);
+  background: var(--pick-bar);
+  color: var(--text-inverse);
+}
+
 .library-asset-card__preview {
   aspect-ratio: 1 / 1;
   display: flex;
@@ -4484,6 +4512,54 @@ body.is-picking .react-flow__node:hover .cnode__card {
 
 .library-modal__panel--wide {
   width: 560px;
+}
+
+.concat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 16px 0 20px;
+}
+
+.concat-form__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.concat-form__options {
+  display: flex;
+  gap: 8px;
+}
+
+.concat-form__options button {
+  min-width: 80px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.concat-form__options button.is-active {
+  border-color: var(--border-selected);
+  background: var(--surface-raised);
+  color: var(--text-1);
+}
+
+.concat-form__hint {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
+.library-window__foot .btn-secondary.is-danger {
+  color: var(--danger);
 }
 
 .library-modal__title {

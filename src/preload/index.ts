@@ -221,7 +221,12 @@ const api: CineApi = {
     asset: (relPath: string, fileName: string, scope?: 'project' | 'global') =>
       ipcRenderer.invoke('export:asset', relPath, fileName, scope),
     assets: (inputs: AssetRef[], fileName: string) =>
-      ipcRenderer.invoke('export:assets', inputs, fileName)  },
+      ipcRenderer.invoke('export:assets', inputs, fileName),
+    concatVideos: (
+      paths: string[],
+      options?: { resolution?: '720p' | '1080p'; quality?: 'standard' | 'high' }
+    ) => ipcRenderer.invoke('export:concat-videos', paths, options)
+  },
   clipboard: {
     read: () => ipcRenderer.invoke('clipboard:read')
   }

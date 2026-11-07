@@ -2141,6 +2141,32 @@ body.is-picking .react-flow__node:hover .cnode__card {
   min-height: 62px;
 }
 
+.param-panel__option--custom {
+  border-style: dashed;
+  color: var(--text-3);
+}
+
+.param-panel__option--custom.is-active {
+  border-style: solid;
+  color: var(--text-1);
+}
+
+.param-panel__custom-input {
+  grid-column: 1 / -1;
+  height: 34px;
+  padding: 0 9px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-1);
+  font-size: 12px;
+  outline: none;
+}
+
+.param-panel__custom-input:focus {
+  border-color: var(--border-selected);
+}
+
 .param-panel__ratio {
   width: 20px;
   max-height: 20px;
@@ -6300,6 +6326,19 @@ body.is-picking .react-flow__node:hover .cnode__card {
   width: 180px;
   height: 30px;
   font-size: 12px;
+}
+
+.model-param__check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  color: var(--text-3);
+  cursor: pointer;
+}
+
+.model-param__check input {
+  accent-color: var(--text-1);
 }
 
 .model-params__footer {

@@ -25,6 +25,8 @@ export interface ParamDef {
   defaultValue?: string | number | boolean
   min?: number
   max?: number
+  /** 允许在 Prompt Bar 中不选预设、直接输入自定义值 */
+  allowCustom?: boolean
 }
 
 export interface ModelDef {

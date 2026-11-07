@@ -10,10 +10,12 @@ import { MODEL_FILE } from '../components/installer'
 import { ffmpegBinary, probeMedia } from './ffmpeg'
 import { resolveMediaPath } from './paths'
 
+// CPU 推理的峰值内存由处理短边决定，与帧数关系不大。
+// 364 -> 约 7.2GB / 97 帧，280 -> 约 4.1GB，238 -> 约 2.6GB。
 const QUALITY = {
-  fast: { longEdge: 854, inputSize: 364 },
-  standard: { longEdge: 1280, inputSize: 518 },
-  long: { longEdge: 854, inputSize: 364 }
+  fast: { longEdge: 854, inputSize: 238 },
+  standard: { longEdge: 1280, inputSize: 280 },
+  long: { longEdge: 854, inputSize: 238 }
 } as const
 
 const MAX_SECONDS = 30

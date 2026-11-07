@@ -12,6 +12,8 @@ export interface LibraryAsset {
   kind: LibraryAssetKind
   size: number
   modifiedAt: string
+  /** 用户标签，存储在库根 .tags.json */
+  tags?: string[]
 }
 
 export interface LibraryFolderNode {

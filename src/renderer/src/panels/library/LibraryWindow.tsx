@@ -109,6 +109,7 @@ export function LibraryWindow() {
   const renameAsset = useLibraryStore((state) => state.renameAsset)
   const moveAsset = useLibraryStore((state) => state.moveAsset)
   const deleteAsset = useLibraryStore((state) => state.deleteAsset)
+  const setAssetTags = useLibraryStore((state) => state.setAssetTags)
   const reveal = useLibraryStore((state) => state.reveal)
   const revealRoot = useLibraryStore((state) => state.revealRoot)
   const saveTemplate = useLibraryStore((state) => state.saveTemplate)
@@ -133,6 +134,8 @@ export function LibraryWindow() {
     'standard'
   )
   const [concatBusy, setConcatBusy] = useState(false)
+  const [tagTarget, setTagTarget] = useState<LibraryAsset | null>(null)
+  const [tagDraft, setTagDraft] = useState('')
 
   if (!open) return null
 
@@ -262,6 +265,20 @@ export function LibraryWindow() {
     } finally {
       setConcatBusy(false)
     }
+  }
+
+  const handleSaveTags = async (): Promise<void> => {
+    if (!tagTarget) return
+
+    const tags = tagDraft
+      .split(/[,，]/)
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+
+    await setAssetTags(tagTarget.path, tags)
+    setTagTarget(null)
+    setTagDraft('')
+    showToast(tags.length > 0 ? `已保存 ${tags.length} 个标签` : '已清空标签')
   }
 
   const handleExport = (asset: LibraryAsset): void => {
@@ -446,6 +463,10 @@ export function LibraryWindow() {
                 onRename={(asset) =>
                   setNameDialog({ kind: 'rename-asset', asset })
                 }
+                onEditTags={(asset) => {
+                  setTagTarget(asset)
+                  setTagDraft((asset.tags ?? []).join(', '))
+                }}
                 onDelete={handleDeleteAsset}
                 onReveal={(asset) => void reveal(asset.path)}
               />
@@ -677,6 +698,50 @@ export function LibraryWindow() {
                 onClick={() => void handleConcat()}
               >
                 {concatBusy ? '合成中…' : '选择位置并合成'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {tagTarget ? (
+        <div className="library-modal" onPointerDown={() => setTagTarget(null)}>
+          <div
+            className="library-modal__panel"
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <div className="library-modal__title">标签「{tagTarget.name}」</div>
+
+            <input
+              className="tag-input"
+              value={tagDraft}
+              placeholder="多个标签用逗号分隔，例如：人物, 夜景"
+              autoFocus
+              onChange={(event) => setTagDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void handleSaveTags()
+                if (event.key === 'Escape') setTagTarget(null)
+              }}
+            />
+
+            <div className="tag-hint">
+              标签保存在资产库根目录的 .tags.json，不修改原文件。
+            </div>
+
+            <div className="library-modal__actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setTagTarget(null)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => void handleSaveTags()}
+              >
+                保存标签
               </button>
             </div>
           </div>

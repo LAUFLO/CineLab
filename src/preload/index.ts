@@ -130,6 +130,8 @@ const api: CineApi = {
       ipcRenderer.invoke('library:move-asset', path, folder),
     deleteAsset: (path: string) =>
       ipcRenderer.invoke('library:delete-asset', path),
+    setAssetTags: (path: string, tags: string[]) =>
+      ipcRenderer.invoke('library:set-asset-tags', path, tags),
     reveal: (path: string) => ipcRenderer.invoke('library:reveal', path),
 
     listCharacters: () => ipcRenderer.invoke('library:list-characters'),

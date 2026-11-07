@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "批次 4：整体打包与验收；批次 3 已完成待提交",
+  "next_focus": "整体打包与验收：推送批次 1-3，触发 build-win，安装新包后完整验收并修 bug",
   "frontier": [
     {
       "id": "M2-1",

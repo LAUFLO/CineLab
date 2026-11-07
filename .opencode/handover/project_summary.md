@@ -76,6 +76,10 @@ C:\Users\LAUFLO\Documents\CineLab
 | P2-1 / P2-2 | ✅ 完成 | Vitest + CI、electron-log 日志与崩溃诊断 |
 | P3-2 | ✅ 完成 | 空白/分镜/产品广告/角色短片项目模板 |
 | P3-3 | ✅ 完成 | 资产多选/批量/标签、视频合成（字幕/BGM） |
+| BATCH-1 | ✅ 完成 | 蒙版编辑、重绘/擦除/元素编辑、720 全景 |
+| BATCH-2 | ✅ 完成 | InSPyReNet + LaMa 视觉组件，抠图/图层分离/视频抠像/智能修复/扩图 |
+| BATCH-3 | ✅ 完成 | 专用视频 HTTP 模板、视频输入、操作模型绑定 |
+| vision-components-v1 | ✅ 发布 | InSPyReNet MIT + LaMa Apache-2.0，527MB |
 | 打包 2026-11-07 | ✅ 完成 | 提交 2deea46，CI 42348036406，安装包 162MB |
 
 ## 已完成的关键工件

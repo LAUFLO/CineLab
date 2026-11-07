@@ -55,7 +55,7 @@ corepack pnpm build      通过
 
 ## 未完成 / 风险
 
-- `vision-components-v1` Release 尚未发布。
+- Release 已发布：https://github.com/LAUFLO/CineLab/releases/tag/vision-components-v1
 - InSPyReNet 逐帧推理无时序记忆，已加 EMA 平滑；视频质量仍弱于专用视频抠像模型。
 - 视频修复 CPU 耗时较长，10 秒上限；后续可增加更快的修复模型或 GPU。
 - 智能去字幕仍需手动框选，自动字幕检测未接入。

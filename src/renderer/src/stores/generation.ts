@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { NODE_META, TITLE_HEIGHT, type CineNodeData, type OutputRef } from '@shared/canvas-schema'
 import type { GenerateRequest } from '@shared/generation'
 import { isGroupNode, useCanvasStore } from './canvas'
+import { useGenerationHistoryStore } from './generation-history'
+import { useUIStore } from './ui'
 
 interface GenerationState {
   running: Record<string, string>
@@ -22,6 +24,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       switch (event.type) {
         case 'queued': {
           set({ running: { ...get().running, [event.nodeId]: event.runId } })
+          useGenerationHistoryStore
+            .getState()
+            .bindRun(event.nodeId, event.runId)
           patchNode(event.nodeId, {
             status: 'queued',
             progress: 0,
@@ -82,6 +87,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           const running = { ...get().running }
           delete running[event.nodeId]
           set({ running })
+          useGenerationHistoryStore.getState().finish(event.nodeId, 'done')
           break
         }
 
@@ -91,6 +97,18 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             progress: 0,
             error: event.message
           })
+
+          useGenerationHistoryStore
+            .getState()
+            .fail(event.nodeId, event.message, event.retryable)
+          useUIStore
+            .getState()
+            .showToast(
+              event.retryable
+                ? `生成失败：${event.message}（可重试）`
+                : `生成失败：${event.message}`,
+              'error'
+            )
 
           const running = { ...get().running }
           delete running[event.nodeId]
@@ -104,19 +122,23 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           const running = { ...get().running }
           delete running[event.nodeId]
           set({ running })
+          useGenerationHistoryStore
+            .getState()
+            .finish(event.nodeId, 'cancelled')
           break
         }
       }
     }),
 
   run: async (request) => {
+    useGenerationHistoryStore.getState().start(request)
     try {
       await window.api.generate.run(request)
     } catch (error) {
-      patchNode(request.nodeId, {
-        status: 'error',
-        error: error instanceof Error ? error.message : String(error)
-      })
+      const message = error instanceof Error ? error.message : String(error)
+      patchNode(request.nodeId, { status: 'error', error: message })
+      useGenerationHistoryStore.getState().fail(request.nodeId, message, false)
+      useUIStore.getState().showToast(`生成失败：${message}`, 'error')
     }
   },
 

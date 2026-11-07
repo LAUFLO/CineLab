@@ -5,6 +5,11 @@ import type { GeneratedAsset } from '@shared/generation'
 import { Icon } from '../components/Icon'
 import { assetUrl } from '../lib/asset-url'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
+import { useGenerationStore } from '../stores/generation'
+import {
+  useGenerationHistoryStore,
+  type GenerationHistoryEntry
+} from '../stores/generation-history'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
 
@@ -65,6 +70,16 @@ export function HistoryPanel() {
       )
   }, [nodes])
 
+  const historyEntries = useGenerationHistoryStore((state) => state.entries)
+  const removeHistory = useGenerationHistoryStore((state) => state.remove)
+  const failures = useMemo(
+    () =>
+      historyEntries.filter(
+        (entry) => entry.status === 'error' || entry.status === 'cancelled'
+      ),
+    [historyEntries]
+  )
+
   useEffect(() => {
     if (!open) return
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -80,6 +95,18 @@ export function HistoryPanel() {
     const node = nodes.find((entry) => entry.id === item.nodeId)
     if (!node) return
     void fitView({ nodes: [node], padding: 0.8, duration: 300, maxZoom: 1.5 })
+    close()
+  }
+
+  const retry = (entry: GenerationHistoryEntry): void => {
+    const exists = nodes.some(
+      (node) => node.id === entry.nodeId && !isGroupNode(node)
+    )
+    if (!exists) {
+      showToast('原节点已删除，无法重试', 'error')
+      return
+    }
+    void useGenerationStore.getState().run(entry.request)
     close()
   }
 
@@ -130,7 +157,9 @@ export function HistoryPanel() {
       >
         <header className="history-dialog__head">
           <span>生成历史</span>
-          <span className="history-dialog__count">{items.length} 条</span>
+          <span className="history-dialog__count">
+            {items.length + failures.length} 条
+          </span>
           <button
             type="button"
             className="icon-btn settings-dialog__close"
@@ -142,10 +171,58 @@ export function HistoryPanel() {
         </header>
 
         <div className="history-dialog__body">
-          {items.length === 0 ? (
+          {items.length === 0 && failures.length === 0 ? (
             <div className="history-empty">还没有生成记录</div>
           ) : (
-            items.map((item) => (
+            <>
+              {failures.map((entry) => (
+                <div
+                  key={`fail:${entry.nodeId}:${entry.createdAt}`}
+                  className="history-row history-row--error"
+                >
+                  <div className="history-row__thumb is-error">
+                    <Icon
+                      name={entry.status === 'cancelled' ? 'stop' : 'close'}
+                      size={18}
+                    />
+                  </div>
+                  <div className="history-row__meta">
+                    <div className="history-row__title">{entry.title}</div>
+                    <div className="history-row__sub is-error">
+                      <span>
+                        {entry.status === 'cancelled'
+                          ? '已取消'
+                          : entry.error ?? '生成失败'}
+                      </span>
+                    </div>
+                    <div className="history-row__sub">
+                      <span>{formatTime(entry.createdAt)}</span>
+                      {entry.retryable ? <span>可重试</span> : null}
+                    </div>
+                  </div>
+                  <div className="history-row__actions">
+                    {entry.status === 'error' ? (
+                      <button
+                        type="button"
+                        className="history-action history-action--text"
+                        title="重试"
+                        onClick={() => retry(entry)}
+                      >
+                        重试
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="history-action"
+                      title="移除记录"
+                      onClick={() => removeHistory(entry.nodeId)}
+                    >
+                      <Icon name="trash" size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {items.map((item) => (
               <div key={item.key} className="history-row">
                 <div className="history-row__thumb">
                   {item.output.kind === 'image' ? (
@@ -212,7 +289,8 @@ export function HistoryPanel() {
                   </button>
                 </div>
               </div>
-            ))
+            ))}
+            </>
           )}
         </div>
       </div>

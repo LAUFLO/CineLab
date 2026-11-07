@@ -240,7 +240,7 @@ const VIDEO_TEMPLATES: ParamTemplate[] = [
   {
     id: 'duration',
     def: VIDEO_DURATION,
-    description: '单段视频时长，按模型支持范围填写'
+    description: '如果模型支持任意秒数，用数字范围（Prompt Bar 显示滑条）；只支持固定档位则用下拉'
   },
   {
     id: 'resolution',

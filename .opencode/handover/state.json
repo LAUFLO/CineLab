@@ -1,5 +1,5 @@
 {
-  "version": 25,
+  "version": 27,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -499,6 +499,26 @@
       "evidence": [
         "docs/model-params-plan.md",
         ".opencode/handover/evidence/MODEL-PARAMS-3-custom-values.md"
+      ]
+    },
+    {
+      "id": "MODEL-PARAMS-4",
+      "title": "视频时长滑条：模型配置 min/max",
+      "status": "done",
+      "note": "时长下拉可一键「改为时长滑条」，自动取选项 min/max 并切为数字参数；Prompt Bar 对 duration 数字参数渲染 1 秒步进滑块。固定档位模型仍保留下拉，避免发送不支持的值。",
+      "evidence": [
+        "docs/model-params-plan.md",
+        ".opencode/handover/evidence/MODEL-PARAMS-4-duration-slider.md"
+      ]
+    },
+    {
+      "id": "MODEL-PARAMS-5",
+      "title": "模型参数页简化：接口字段名收进高级",
+      "status": "done",
+      "note": "参数主区域只保留显示名、控件类型、分组、选项和默认值；接口字段名移到「高级」折叠项，常用参数卡片自动填好。",
+      "evidence": [
+        "docs/model-params-plan.md",
+        ".opencode/handover/evidence/MODEL-PARAMS-5-simple.md"
       ]
     }
   ],
@@ -1242,6 +1262,14 @@
     {
       "category": "preference",
       "content": "模型的下拉参数需要支持 allowCustom：比例/尺寸/分辨率在 Prompt Bar 预设旁提供「自定义」输入，不能假设模型只支持预设选项。"
+    },
+    {
+      "category": "preference",
+      "content": "视频时长是否连续由模型能力决定：固定档位用下拉；支持连续秒数的模型在参数配置里填 min/max，Prompt Bar 用 1 秒步进滑块，不能默认所有模型都能滑。"
+    },
+    {
+      "category": "preference",
+      "content": "模型参数配置页默认只展示用户能理解的显示名、类型、分组、选项和默认值；接口字段名等开发者信息收进「高级」折叠项，常用参数由卡片自动填好。"
     }
   ],
   "designConventions": [

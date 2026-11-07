@@ -1,5 +1,5 @@
 {
-  "version": 20,
+  "version": 21,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "AGENT-1 / P4 立项：先讨论 AGENT-1 与 P4（剪辑台/Agent 集成/智能剪辑/超分）的优先级与边界，落 docs/<feature>-plan.md 后再实施",
+  "next_focus": "整体验收与修复；K5 / Agent 后续单独讨论，文本节点流式能力等 Agent 阶段统一实现",
   "frontier": [
     {
       "id": "M2-1",
@@ -449,6 +449,16 @@
       "title": "AGENT-1 / P4 大功能立项讨论与方案文档",
       "status": "pending",
       "note": "范围：AGENT-1、剪辑台、Agent 集成、智能剪辑、超分。每项先落 docs/<feature>-plan.md，明确交互、技术选型、数据结构和验收标准后再排期。"
+    },
+    {
+      "id": "REMAINING-1",
+      "title": "剩余已知限制：K9 全局资产导出、K11 缩略图、K24 多轨音频",
+      "status": "done",
+      "note": "K9 导出 staging 复制全局资产并改写路径；K11 .thumbs 缓存（图片 nativeImage / 视频 ffmpeg）；K24 原声/BGM/旁白三路音量混合。K2 文本流式/多轮按用户要求移除，等 Agent 阶段再做。",
+      "evidence": [
+        "docs/remaining-features-plan.md",
+        ".opencode/handover/evidence/REMAINING-1-local-enhancements.md"
+      ]
     }
   ],
   "knownIssues": [
@@ -456,11 +466,6 @@
       "id": "K1",
       "area": "generation",
       "content": "图生图支持多图 image[]；字段被中转站拒绝时自动回退单图 image。仍待真实 i2i provider 端到端验证。"
-    },
-    {
-      "id": "K2",
-      "area": "generation",
-      "content": "文本生成已接通标准 /chat/completions；流式输出、多轮上下文未实现。"
     },
     {
       "id": "K5",
@@ -483,19 +488,9 @@
       "content": "删除最后一个项目后停在欢迎页未端到端验证，需要真实删除唯一项目。"
     },
     {
-      "id": "K9",
-      "area": "library",
-      "content": "导出项目 zip 尚未打包全局资产引用，画布中的 global scope 路径换机器后会断图；二期需复制被引用资产进包并改写路径。"
-    },
-    {
       "id": "K10",
       "area": "library",
       "content": "旧项目内 library/ 数据不再读取，未做迁移；当前无真实用户，暂不处理。"
-    },
-    {
-      "id": "K11",
-      "area": "library",
-      "content": "资产网格直接加载原图，未生成缩略图缓存；大库滚动可能卡顿。"
     },
     {
       "id": "K12",
@@ -541,11 +536,6 @@
       "id": "K23",
       "area": "export",
       "content": "视频合成的系统保存对话框、字幕文件选择、背景音乐选择未在 UI 中完整人工走通；ffmpeg 步骤已独立验证。"
-    },
-    {
-      "id": "K24",
-      "area": "export",
-      "content": "多轨音轨混合（BGM / 旁白 / 原声独立轨道与音量）未实现，目前是单 BGM 循环混入原声。"
     },
     {
       "id": "K25",
@@ -1179,6 +1169,22 @@
     {
       "category": "procedure",
       "content": "dev:isolated 的 CDP 端口以脚本打印为准；9222 被其他会话占用时使用打印的端口，测试前先确认归属，禁止复用或关闭其他会话的 Electron 实例。"
+    },
+    {
+      "category": "preference",
+      "content": "文本节点不做流式输出和多轮对话；后续画布集成 Agent 时再统一实现流式能力。"
+    },
+    {
+      "category": "engineering",
+      "content": "项目导出包含全局资产时先在 staging 复制项目、复制全局素材到 assets/global、改写画布 outputs 的 scope 和 path，再压缩；缺失素材必须中止导出。"
+    },
+    {
+      "category": "engineering",
+      "content": "资产缩略图缓存在库根 .thumbs/，键包含相对路径 + mtime + size；图片用 nativeImage，视频用 ffmpeg 抽 0.1 秒帧，AssetGrid 优先加载缩略图。"
+    },
+    {
+      "category": "engineering",
+      "content": "视频合成多轨音频用 [0:a]/[1:a]/[2:a] 分别 volume 后 amix duration=first:normalize=0；原声、BGM、旁白各自独立音量，BGM 循环、旁白不循环。"
     }
   ],
   "designConventions": [

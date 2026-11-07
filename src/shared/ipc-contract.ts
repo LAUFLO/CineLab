@@ -148,6 +148,7 @@ export interface ExportResult {
   path?: string
   canceled?: boolean
   error?: string
+  copiedAssets?: number
 }
 
 export type ClipboardContent =
@@ -171,7 +172,10 @@ export interface ExportApi {
       quality?: 'standard' | 'high'
       subtitlePath?: string
       bgmPath?: string
+      narrationPath?: string
+      originalVolume?: number
       bgmVolume?: number
+      narrationVolume?: number
     }
   ): Promise<ExportResult>
   pickFile(kind: 'subtitle' | 'audio'): Promise<string | null>

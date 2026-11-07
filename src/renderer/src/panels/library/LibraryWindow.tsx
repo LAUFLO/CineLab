@@ -136,6 +136,10 @@ export function LibraryWindow() {
   const [concatBusy, setConcatBusy] = useState(false)
   const [concatSubtitle, setConcatSubtitle] = useState<string | null>(null)
   const [concatBgm, setConcatBgm] = useState<string | null>(null)
+  const [concatNarration, setConcatNarration] = useState<string | null>(null)
+  const [concatOriginalVolume, setConcatOriginalVolume] = useState(100)
+  const [concatBgmVolume, setConcatBgmVolume] = useState(25)
+  const [concatNarrationVolume, setConcatNarrationVolume] = useState(100)
   const [tagTarget, setTagTarget] = useState<LibraryAsset | null>(null)
   const [tagDraft, setTagDraft] = useState('')
 
@@ -257,7 +261,11 @@ export function LibraryWindow() {
           resolution: concatResolution,
           quality: concatQuality,
           ...(concatSubtitle ? { subtitlePath: concatSubtitle } : {}),
-          ...(concatBgm ? { bgmPath: concatBgm } : {})
+          ...(concatBgm ? { bgmPath: concatBgm } : {}),
+          ...(concatNarration ? { narrationPath: concatNarration } : {}),
+          originalVolume: concatOriginalVolume / 100,
+          bgmVolume: concatBgmVolume / 100,
+          narrationVolume: concatNarrationVolume / 100
         }
       )
 
@@ -268,6 +276,10 @@ export function LibraryWindow() {
         setSelectedPaths(new Set())
         setConcatSubtitle(null)
         setConcatBgm(null)
+        setConcatNarration(null)
+        setConcatOriginalVolume(100)
+        setConcatBgmVolume(25)
+        setConcatNarrationVolume(100)
       } else if (!result.canceled) {
         showToast(result.error ?? '合成失败', 'error')
       }
@@ -740,10 +752,86 @@ export function LibraryWindow() {
                 </div>
               </div>
 
+              <div className="concat-form__row">
+                <span>旁白</span>
+                <div className="concat-form__file">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void window.api.export
+                        .pickFile('audio')
+                        .then((path) => path && setConcatNarration(path))
+                    }
+                  >
+                    {concatNarration ? '更换音频' : '选择音频'}
+                  </button>
+                  <span title={concatNarration ?? ''}>
+                    {concatNarration
+                      ? concatNarration.split(/[\\/]/).pop()
+                      : '无（可选）'}
+                  </span>
+                  {concatNarration ? (
+                    <button
+                      type="button"
+                      onClick={() => setConcatNarration(null)}
+                    >
+                      清除
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="concat-form__row">
+                <span>音量</span>
+                <div className="concat-form__volumes">
+                  <label>
+                    原声
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={concatOriginalVolume}
+                      onChange={(event) =>
+                        setConcatOriginalVolume(Number(event.target.value))
+                      }
+                    />
+                    <em>{concatOriginalVolume}%</em>
+                  </label>
+                  <label>
+                    BGM
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={concatBgmVolume}
+                      onChange={(event) =>
+                        setConcatBgmVolume(Number(event.target.value))
+                      }
+                    />
+                    <em>{concatBgmVolume}%</em>
+                  </label>
+                  <label>
+                    旁白
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={concatNarrationVolume}
+                      onChange={(event) =>
+                        setConcatNarrationVolume(Number(event.target.value))
+                      }
+                    />
+                    <em>{concatNarrationVolume}%</em>
+                  </label>
+                </div>
+              </div>
+
               <div className="concat-form__hint">
                 按资产列表顺序拼接 {selectedVideos.length} 段视频，统一为 H.264 /
-                AAC，输出 MP4{concatBgm ? '；背景音乐将循环并混入原声' : ''}
-                {concatSubtitle ? '；字幕将烧录进画面' : ''}。
+                AAC，输出 MP4
+                {concatBgm ? '；背景音乐循环' : ''}
+                {concatNarration ? '；旁白混入' : ''}
+                {concatSubtitle ? '；字幕烧录进画面' : ''}。
               </div>
             </div>
 

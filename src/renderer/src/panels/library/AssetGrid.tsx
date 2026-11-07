@@ -84,7 +84,14 @@ export function AssetGrid({
             }
             title={selectionMode ? '选择素材' : '添加到画布'}
           >
-            {asset.kind === 'image' ? (
+            {asset.thumbnail ? (
+              <img
+                src={assetUrl(asset.thumbnail, 'global')}
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+            ) : asset.kind === 'image' ? (
               <img
                 src={assetUrl(asset.path, 'global')}
                 alt=""

@@ -82,8 +82,9 @@ C:\Users\LAUFLO\Documents\CineLab
 | vision-components-v1 | ✅ 发布 | InSPyReNet MIT + LaMa Apache-2.0，527MB |
 | 打包 2026-11-07 | ✅ 完成 | 提交 02d921b，CI 42364183939，安装包 156MB |
 | 打包 2026-11-07 | ✅ 完成 | 提交 2deea46，CI 42348036406，安装包 162MB |
+| REMAINING-1 | ✅ 完成 | 全局资产导出、资产缩略图、多轨音频；K2 文本流式移除 |
 
-**下一步**：AGENT-1 / P4 立项讨论，先确定优先级与方案文档，不直接进入实现。
+**下一步**：整体验收与修复；K5 / Agent 后续单独讨论。
 
 ## 已完成的关键工件
 

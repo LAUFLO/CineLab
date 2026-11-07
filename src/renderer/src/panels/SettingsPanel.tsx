@@ -894,6 +894,16 @@ function AboutSection() {
         <span>协议</span>
         <code>MIT</code>
       </div>
+      <div className="about-row">
+        <span>日志</span>
+        <button
+          type="button"
+          className="btn-secondary btn-sm"
+          onClick={() => void window.api.app.openLogs()}
+        >
+          打开日志目录
+        </button>
+      </div>
 
       <div className="update-card">
         <div className="update-card__head">

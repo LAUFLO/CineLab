@@ -26,6 +26,7 @@ import { generateVideoArk } from '../providers/volcengine'
 import { isRetryable, withRetry } from '../providers/retry'
 import { resolveProvider } from '../settings/store'
 import { getLibraryRoot } from '../library/config'
+import { log } from '../logger'
 
 function broadcast(event: GenerationEvent): void {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -130,11 +131,18 @@ export function registerGenerateIpc(): void {
   })
 
   generationQueue.on('error', (job: QueueJob, error: unknown) => {
+    const message = formatGenerationError(error)
+    log.error('generation failed', {
+      nodeId: job.nodeId,
+      runId: job.id,
+      message,
+      retryable: isRetryable(error)
+    })
     broadcast({
       type: 'error',
       nodeId: job.nodeId,
       runId: job.id,
-      message: formatGenerationError(error),
+      message,
       retryable: isRetryable(error)
     })
   })

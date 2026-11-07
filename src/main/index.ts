@@ -5,6 +5,7 @@ import { createMainWindow } from './window'
 import { ensureLibrary } from './library/config'
 import { ensureMigrated } from './settings/store'
 import { startModelsWatcher } from './settings/models-watch'
+import { log, setupLogging } from './logger'
 import { appendFileSync } from 'node:fs'
 
 const diagLogPath = process.env.CINELAB_DIAG_LOG
@@ -22,6 +23,7 @@ process.on('uncaughtException', (error) => {
   diagLog(
     `uncaughtException ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`
   )
+  log.error('uncaughtException', error)
   throw error
 })
 
@@ -29,6 +31,7 @@ process.on('unhandledRejection', (reason) => {
   diagLog(
     `unhandledRejection ${reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)}`
   )
+  log.error('unhandledRejection', reason)
 })
 
 const isolatedUserData = process.env.CINELAB_USER_DATA
@@ -39,6 +42,8 @@ if (isolatedUserData) {
 if (process.env.CINELAB_USER_DATA) {
   app.setPath('userData', process.env.CINELAB_USER_DATA)
 }
+
+setupLogging()
 
 if (!app.isPackaged || process.env.CINELAB_DEBUG_PORT) {
   app.commandLine.appendSwitch(
@@ -65,6 +70,7 @@ if (!hasLock) {
 
   app.whenReady().then(async () => {
     diagLog('whenReady')
+    log.info('app ready')
 
     try {
       await ensureLibrary()
@@ -106,5 +112,21 @@ if (!hasLock) {
     if (process.platform !== 'darwin') {
       app.quit()
     }
+  })
+
+  app.on('render-process-gone', (_event, webContents, details) => {
+    log.error('render-process-gone', {
+      url: webContents.getURL(),
+      reason: details.reason,
+      exitCode: details.exitCode
+    })
+  })
+
+  app.on('child-process-gone', (_event, details) => {
+    log.error('child-process-gone', details)
+  })
+
+  app.on('before-quit', () => {
+    log.info('app quitting')
   })
 }

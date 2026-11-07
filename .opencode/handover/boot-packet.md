@@ -1,25 +1,24 @@
 # CineLab · Boot Packet
 
-> **下一会话**：runtime CI 构建发布。仿 BeefTV 用 GitHub Actions 构建 Windows CPU runtime（固定 Python/torch/VDA），产出 zip + manifest 发 Release；模型走官方 HF。之后验证组件下载与 DEPTH-CAPTURE-1。
+> **下一会话优先**：P1-1 模型配置引导。做空配置入口、常见 Provider 预设、测试连接，让新用户从欢迎页走到首次成功生成。
 
 ## 状态
 
-M7 完成；P0-1/P0-3 已提交。未提交：节点尺寸、自动成组、对齐、视频预览、模型源、窗口/工具栏；media 改动属另一路。
+2026-11-07：runtime 已发布可下载；深度内存、media probe、抽帧、下拉框、占位节点、音频节点完成。已推送 4 个提交；`c9f9d9f` 音频样式未推送；用户安装包为 `9c35245`。
 
 ## Frontier
 
-1. RUNTIME-COMPONENTS-1
+1. P1-1 模型配置引导
 2. DEPTH-CAPTURE-1 验收
-3. 提交工作区
-4. AGENT-1
+3. AGENT-1（延后）
 
 ## 缺口
 
-runtime Release 404；真实 Key/i2i、自动更新安装未验；旧宫格组不重排。
+K20 深度/占位节点未打包验收；K21 音频真实波形未测；K22 未推送；K18 更新未验。
 
 ## 约定
 
-models.json 唯一清单 + settings.json 密钥；节点 360/480/240/480；派生多节点自动成组；对齐只同边/中心。
+models.json 唯一清单；下拉用 Select；派生操作先建 running 占位节点并连线；深度 fast/long 238、standard 280；节点 360/480/240/480。
 
 ## 验证
 

@@ -1,13 +1,13 @@
 {
-  "version": 10,
+  "version": 11,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
-  "nextPhase": "UI 细节打磨与发布准备",
-  "next_focus": "runtime CI 构建发布：仿 BeefTV 用 GitHub Actions 构建 CPU runtime + manifest + Release；模型继续官方 HF；完成后验证组件下载并推进 DEPTH-CAPTURE-1 验收",
+  "nextPhase": "发布前体验完善",
+  "next_focus": "P1-1 模型配置引导：空配置入口、常见 Provider 预设、测试连接与首次成功生成引导",
   "frontier": [
     {
       "id": "M2-1",
@@ -186,7 +186,7 @@
       "id": "DEPTH-CAPTURE-1",
       "title": "深度动作捕捉：VDA Small + Python sidecar 组件按需下载",
       "status": "pending",
-      "note": "P0-P4 完成。安装包 225.6MB，组件未进包；打包态实测组件下载安装成功，横屏 640x360 / 竖屏 360x640 深度输出正确。本机 CineLab.exe 因企业透明加密软件进程白名单读到密文无法启动，用官方 electron.exe 验证功能全部正常；干净机器预期可用。剩余：真实素材视觉验收、UI 点击路径回归。",
+      "note": "P0-P4 完成。runtime 已发布到 Release depth-components-v1 并由用户成功下载；深度推理内存已优化（快速/长片 inputSize 238 约 2.6GB，标准 280 约 4.1GB）。剩余：新安装包下用真实素材完成端到端视觉验收与 UI 点击路径回归。",
       "evidence": [
         ".opencode/handover/evidence/DEPTH-CAPTURE-p0.md",
         ".opencode/handover/evidence/DEPTH-CAPTURE-p1.md",
@@ -275,11 +275,66 @@
     },
     {
       "id": "RUNTIME-COMPONENTS-1",
-      "title": "深度 runtime 组件 CI 构建与发布（下一焦点）",
-      "status": "pending",
-      "note": "当前默认源 depth-components-v1 Release 不存在，runtime 下载 404；模型已走官方 HF。下一步仿 BeefTV 新增 GitHub Actions Windows CPU runtime 构建（固定 Python 3.11、torch、VDA commit），生成 zip + manifest 并发布 Release；本地可用 CINELAB_COMPONENT_BASE_URL=http://127.0.0.1:8899 + scripts/mock-component-server.mjs 测试。",
+      "title": "深度 runtime 组件 CI 构建与发布",
+      "status": "done",
+      "note": "2026-11-07 完成：新增 depth-runtime workflow 与参数化构建脚本，固定 Python 3.11.9 / torch 2.8.0 CPU / VDA 4f5ae23；Release depth-components-v1 已发布 zip 678MB + manifest，SHA256 与 GitHub digest 一致，用户已成功下载。",
       "evidence": [
-        "docs/beef-tv-depth-research.md"
+        "docs/runtime-components-plan.md",
+        ".opencode/handover/evidence/RUNTIME-COMPONENTS-1.md"
+      ]
+    },
+    {
+      "id": "DEPTH-MEMORY-1",
+      "title": "深度捕捉内存优化：降低 CPU 推理处理分辨率",
+      "status": "done",
+      "note": "4 秒 97 帧实测：inputSize 364 峰值 7.2GB/231s，280 为 4.1GB/120s，238 为 2.6GB/82s。三档改为 fast 238、standard 280、long 238；输出长边仍 854/1280，参数由主进程传入，无需重发 runtime。",
+      "evidence": [
+        ".opencode/handover/evidence/RUNTIME-COMPONENTS-1.md"
+      ]
+    },
+    {
+      "id": "MEDIA-PROBE-GLOBAL-1",
+      "title": "媒体 probe 支持全局资产库路径",
+      "status": "done",
+      "note": "media:probe 从 resolveInside 改为 resolveMediaPath，全局 scope 视频可正常裁剪、抽帧、深度捕捉。提交 07911f2。",
+      "evidence": [
+        ".opencode/handover/evidence/MEDIA-FIXES-2026-11-07.md"
+      ]
+    },
+    {
+      "id": "FRAME-EXTRACT-1",
+      "title": "抽帧 seek 修复：尾帧不再 ENOENT",
+      "status": "done",
+      "note": "尾帧改用输入侧 -sseof -0.1，首帧/当前帧改为输入侧 -ss，并检查输出文件存在性。提交 2c4e8fd。",
+      "evidence": [
+        ".opencode/handover/evidence/MEDIA-FIXES-2026-11-07.md"
+      ]
+    },
+    {
+      "id": "UI-DROPDOWN-1",
+      "title": "下拉框样式统一：自定义 Select 替换原生 select",
+      "status": "done",
+      "note": "新增 components/Select.tsx，替换设置、模板、深度档位/帧率、AI 操作、光位/机位共 6 处原生下拉；深色主题菜单已截图验证。提交 9c35245。",
+      "evidence": [
+        ".opencode/handover/evidence/UI-DROPDOWN-1.md"
+      ]
+    },
+    {
+      "id": "PENDING-NODES-1",
+      "title": "派生操作先建占位节点并连线",
+      "status": "done",
+      "note": "新增 addPendingNodes；深度、抽帧、宫格、分离音视频、拼接提交后立即创建 running 节点，完成 applyOutput、失败标红；回写类操作标记当前节点进行中。提交 9c35245，打包态待验证。",
+      "evidence": [
+        ".opencode/handover/evidence/PENDING-NODES-1.md"
+      ]
+    },
+    {
+      "id": "AUDIO-NODE-UI-1",
+      "title": "音频节点波形播放器样式",
+      "status": "done",
+      "note": "新增 AudioPlayer：点阵内容区、真实波形、红色播放头、底部播放控制、生成中胶囊，去掉右上角循环/时钟按钮。提交 c9f9d9f（未推送）。",
+      "evidence": [
+        ".opencode/handover/evidence/AUDIO-NODE-UI-1.md"
       ]
     }
   ],
@@ -350,16 +405,6 @@
       "content": "测试在项目 assets 目录留下若干孤儿图片/视频素材，未清理，不影响画布引用。"
     },
     {
-      "id": "K16",
-      "area": "components",
-      "content": "runtime 组件默认源 depth-components-v1 Release 不存在，设置页下载 runtime 返回 HTTP 404；模型组件已改官方 HF 并验证。需 CI 构建 runtime 并发布，或使用本地 mock 源。"
-    },
-    {
-      "id": "K17",
-      "area": "repo",
-      "content": "工作区仍有未提交改动：本次 UI/模型/自动成组改动，以及另一路 src/main/media/* 的 resolveMediaPath 媒体路径改动；提交前需区分归属。"
-    },
-    {
       "id": "K18",
       "area": "update",
       "content": "自动更新只完成本地 mock 的检查与下载验证；真实 GitHub Release、实际安装和代码签名未验证。"
@@ -368,6 +413,21 @@
       "id": "K19",
       "area": "ui",
       "content": "宫格 2×2 文件已验证为原图精确四宫格（拼回 PSNR=inf）；预览已改 contain 和按格比例，仍待用户最终视觉验收。旧宫格组不自动重排。"
+    },
+    {
+      "id": "K20",
+      "area": "depth",
+      "content": "深度捕捉内存修复与占位节点改造尚未在打包态做真实素材端到端验收；需用新安装包确认峰值约 2.6GB、生成中节点立即出现并自动连线。"
+    },
+    {
+      "id": "K21",
+      "area": "ui",
+      "content": "音频节点波形播放器只验证了空态布局，真实音频文件的波形解码、播放、seek 与时长显示尚未实测。"
+    },
+    {
+      "id": "K22",
+      "area": "repo",
+      "content": "音频节点样式提交 c9f9d9f 仍在本地未推送；下一次打包前需要先推送并触发 build-win。"
     }
   ],
   "gates": [],
@@ -938,6 +998,30 @@
     {
       "category": "procedure",
       "content": "工作区可能同时存在多个会话的改动；提交前先看 git status 和 diff 归属。本次 src/main/media/* 的 resolveMediaPath 改动不是 UI/模型任务的一部分，需单独确认。"
+    },
+    {
+      "category": "engineering",
+      "content": "深度 runtime 构建固定 Python 3.11.9 / torch 2.8.0 CPU / VDA 4f5ae23；Compress-Archive 超过约 2GB 会报 Stream was too long，改用 7z -tzip 流式压缩；Release 标记 prerelease 可避免 electron-updater 误判应用更新。"
+    },
+    {
+      "category": "engineering",
+      "content": "VDA CPU 推理峰值内存由处理短边主导而非帧数：364 约 7.2GB、280 约 4.1GB、238 约 2.6GB（4 秒 97 帧实测）。inputSize 由主进程 --input-size 传入，调整参数不需要重发 runtime 组件。"
+    },
+    {
+      "category": "engineering",
+      "content": "所有媒体操作（probe/裁剪/抽帧/深度）必须走 resolveMediaPath，不能只用 resolveInside；全局资产 scope=global 的路径需要回退全局库根。"
+    },
+    {
+      "category": "preference",
+      "content": "下拉框统一使用 components/Select.tsx 自定义组件，不用原生 select；原生 option 展开列表由系统绘制，无法完全主题化。"
+    },
+    {
+      "category": "preference",
+      "content": "派生操作（深度/抽帧/宫格/分离音视频/拼接）必须先建 status=running 占位节点并连源节点，完成 applyOutput 写回，失败 patchNodeData 标红；不能等任务完成才创建节点。"
+    },
+    {
+      "category": "engineering",
+      "content": "音频节点用 fetch(cinelab-asset://) + AudioContext.decodeAudioData 计算峰值绘制真实波形，隐藏原生 audio controls；生成中显示胶囊取消，不显示右上角循环/时钟按钮。"
     }
   ],
   "designConventions": [
@@ -955,7 +1039,7 @@
     "对齐线只保留同侧边与中心线"
   ],
   "stats": {
-    "sessions": 9,
+    "sessions": 10,
     "completedMilestones": [
       "M0",
       "M1",
@@ -965,6 +1049,6 @@
       "M6"
     ],
     "partialMilestones": [],
-    "nextMilestone": "UI 细节打磨"
+    "nextMilestone": "P1-1 模型配置引导"
   }
 }

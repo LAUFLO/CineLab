@@ -25,7 +25,7 @@
 ```
 C:\Users\LAUFLO\Documents\CineLab
 ├─ docs/                    ui-spec.md、architecture.md、node-toolbar-plan.md、group-nodes.md
-├─ scripts/                 cdp-shot / cdp-eval / cdp-drag / cdp-connect、mock-openai
+├─ scripts/                 cdp-shot / cdp-eval / cdp-drag / cdp-connect、mock-openai、build-depth-runtime
 ├─ src/
 │  ├─ main/                 窗口、IPC、项目/多画布、Provider、队列、资产落盘、media、资产库、自定义协议
 │  ├─ preload/              contextBridge 白名单
@@ -65,8 +65,13 @@ C:\Users\LAUFLO\Documents\CineLab
 | P0-3 | ✅ 完成 | GitHub Actions Windows 打包，CI 全流程通过 |
 | MODELS-CONFIG-UNIFY | ✅ 完成 | models.json 唯一供应商清单；settings.json 只存加密 Key；旧数据迁移 |
 | UPDATE-1 | ✅ 完成 | electron-updater 检查/下载/重启安装入口；本地 mock 验证，暂不正式发包 |
-| UI-POLISH-2 | 🚧 待提交 | 窗口 86%、节点工具栏固定、对齐同边/中心、视频预览、节点尺寸、自动成组、宫格显示 |
-| RUNTIME-COMPONENTS-1 | ⏳ 下一焦点 | runtime 组件 CI 构建与 Release；模型已走官方 HF |
+| UI-POLISH-2 | ✅ 完成 | 窗口 86%、节点工具栏固定、对齐同边/中心、视频预览、节点尺寸、自动成组、宫格显示 |
+| RUNTIME-COMPONENTS-1 | ✅ 完成 | 深度 runtime CI 构建与 Release `depth-components-v1`，zip + manifest，SHA256 校验通过 |
+| DEPTH-MEMORY-1 | ✅ 完成 | 深度推理 inputSize 优化，4 秒视频峰值 7.2GB → 2.6GB |
+| MEDIA-FIXES | ✅ 完成 | 全局资产 probe 回退、抽尾帧 seek 修复 |
+| UI-DROPDOWN-1 | ✅ 完成 | 自定义 Select 替换 6 处原生下拉 |
+| PENDING-NODES-1 | ✅ 完成 | 派生操作先建生成中节点并连线，失败标红 |
+| AUDIO-NODE-UI-1 | ✅ 完成 | 音频节点点阵波形播放器，去掉右上角循环/时钟按钮 |
 
 ## 已完成的关键工件
 
@@ -127,6 +132,15 @@ C:\Users\LAUFLO\Documents\CineLab
 - `docs/derived-nodes-group-plan.md`：派生节点自动成组与尺寸规范
 - `.opencode/handover/evidence/UI-POLISH-2026-11-07.md`：节点尺寸/自动成组/对齐/预览验证
 - `.opencode/handover/evidence/MODELS-OFFICIAL-SOURCE.md`：模型官方源下载验证
+- `docs/runtime-components-plan.md`：深度 runtime 构建、发布与版本策略
+- `scripts/build-depth-runtime.ps1`、`.github/workflows/depth-runtime.yml`：runtime CI 构建与 Release
+- `src/renderer/src/components/Select.tsx`：统一主题下拉组件
+- `src/renderer/src/canvas/nodes/AudioPlayer.tsx`：音频波形播放器
+- `.opencode/handover/evidence/RUNTIME-COMPONENTS-1.md`：runtime 发布与深度内存实测
+- `.opencode/handover/evidence/MEDIA-FIXES-2026-11-07.md`：全局库 probe 与抽帧修复
+- `.opencode/handover/evidence/PENDING-NODES-1.md`：占位节点与手柄间距
+- `.opencode/handover/evidence/UI-DROPDOWN-1.md`：下拉框统一
+- `.opencode/handover/evidence/AUDIO-NODE-UI-1.md`：音频节点样式
 
 ## 设计约定
 
@@ -152,6 +166,10 @@ C:\Users\LAUFLO\Documents\CineLab
 20. 节点默认尺寸：图片 360、视频 480、宫格 240、分镜组 480、文本/音频 348
 21. 对齐线只保留同侧边与中心线，不做边对中心
 22. 节点卡片不设固定 minHeight；图片/视频预览用 object-fit: contain，宫格每格按自身比例
+23. 下拉框统一使用 `components/Select.tsx`，禁止原生 `<select>`
+24. 派生操作先建 `status: 'running'` 占位节点并自动连线；完成 `applyOutput`，失败标红保留
+25. 深度推理参数：fast/long inputSize 238、standard 280；改参数不需要重发 runtime
+26. 音频节点使用点阵内容区 + Web Audio 波形 + 自定义播放控制，不显示右上角循环/时钟按钮
 
 ## 环境注意
 
@@ -166,7 +184,9 @@ C:\Users\LAUFLO\Documents\CineLab
 - 从 ZIP 解压的目录没有 `.git`，需要重新 init 并关联远程
 - runtime 组件本地测试：`node scripts/mock-component-server.mjs`（默认 8899）+ 设置 `CINELAB_COMPONENT_BASE_URL=http://127.0.0.1:8899`
 - 自动更新本地测试：`node scripts/mock-update-server.mjs`（8788）+ 设置 `CINELAB_UPDATE_URL=http://127.0.0.1:8788`
-- CI：`.github/workflows/build-win.yml` 已跑通；自动更新暂用 `--publish never`，不创建 Release
+- CI：`.github/workflows/build-win.yml` 已跑通；应用打包仍 `--publish never`
+- 深度 runtime：`.github/workflows/depth-runtime.yml` 构建，Release `depth-components-v1`（prerelease）；本地 mock 源仍可用 `scripts/mock-component-server.mjs`
+- 深度捕捉内存：CPU 峰值由 inputSize 主导（238 约 2.6GB、280 约 4.1GB、364 约 7.2GB）；调整参数只需更新应用，不用重下 runtime
 
 ## 运行
 

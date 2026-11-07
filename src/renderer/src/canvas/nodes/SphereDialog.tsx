@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
+import { Select } from '../../components/Select'
 import { useSettingsStore } from '../../stores/settings'
 
 interface SphereDialogProps {
@@ -328,18 +329,17 @@ export function SphereDialog({
         ) : (
           <label className="operation-dialog__field">
             <span>使用模型</span>
-            <select
+            <Select
               value={modelKey}
-              onChange={(event) => setModelKey(event.target.value)}
+              options={models.map((item) => ({
+                value: item.key,
+                label: `${item.providerName} · ${item.model.name}${
+                  item.model.capability === 'image.i2i' ? '' : '（文生图）'
+                }`
+              }))}
+              onChange={(next) => setModelKey(next)}
               disabled={busy}
-            >
-              {models.map((item) => (
-                <option key={item.key} value={item.key}>
-                  {item.providerName} · {item.model.name}
-                  {item.model.capability === 'image.i2i' ? '' : '（文生图）'}
-                </option>
-              ))}
-            </select>
+            />
           </label>
         )}
 

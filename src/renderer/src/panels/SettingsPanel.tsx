@@ -9,6 +9,7 @@ import type { ModelsConfigStatus } from '@shared/models-file'
 import type { UpdateStatus } from '@shared/update'
 import { BrandIcon, BrandWordmark } from '../components/Brand'
 import { Icon, type IconName } from '../components/Icon'
+import { Select } from '../components/Select'
 import { useSettingsStore } from '../stores/settings'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
@@ -306,20 +307,15 @@ function ModelsSection() {
 
         <label className="field">
           <span>类型</span>
-          <select
-            className="library-select"
+          <Select
             value={draft.type ?? 'openai-compat'}
-            onChange={(event) => {
-              const next = event.target.value as ProviderInput['type']
-              setDraft((current) =>
-                current ? { ...current, type: next } : current
-              )
-            }}
+            options={[
+              { value: 'openai-compat', label: 'OpenAI 兼容' },
+              { value: 'kling', label: '可灵' }
+            ]}
+            onChange={(next) => updateField('type', next)}
             disabled={Boolean(draft.id)}
-          >
-            <option value="openai-compat">OpenAI 兼容</option>
-            <option value="kling">可灵</option>
-          </select>
+          />
         </label>
 
         <label className="field">

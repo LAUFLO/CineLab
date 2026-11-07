@@ -4,6 +4,7 @@ import { useUIStore } from './ui'
 
 interface DepthTaskMeta {
   nodeId: string
+  pendingNodeId: string
   title: string
 }
 
@@ -30,18 +31,27 @@ export function subscribeDepthTasks(): () => void {
   }
 }
 
+function markFailed(meta: DepthTaskMeta, message: string): void {
+  useCanvasStore.getState().patchNodeData(meta.pendingNodeId, {
+    status: 'error',
+    error: message
+  })
+}
+
 function handleDepthEvent(event: DepthTaskEvent): void {
   const showToast = useUIStore.getState().showToast
   const meta = metas.get(event.taskId)
 
   if (event.status === 'error') {
     metas.delete(event.taskId)
+    if (meta) markFailed(meta, event.error ?? '深度动作捕捉失败')
     showToast(event.error ?? '深度动作捕捉失败', 'error')
     return
   }
 
   if (event.status === 'cancelled') {
     metas.delete(event.taskId)
+    if (meta) markFailed(meta, '已取消')
     showToast('已取消深度动作捕捉')
     return
   }
@@ -51,21 +61,9 @@ function handleDepthEvent(event: DepthTaskEvent): void {
   metas.delete(event.taskId)
   if (!meta) return
 
-  const state = useCanvasStore.getState()
-  const source = state.nodes.find((node) => node.id === meta.nodeId)
-  const width = source?.measured?.width ?? 320
-  const origin = {
-    x: (source?.position.x ?? 0) + width + 48,
-    y: source?.position.y ?? 0
-  }
-
-  state.addAssetNodes(
-    'video',
-    origin,
-    [event.result.asset],
-    `${meta.title} · 深度`,
-    meta.nodeId
-  )
+  useCanvasStore
+    .getState()
+    .applyOutput(meta.pendingNodeId, event.result.asset, '深度动作捕捉')
 
   showToast('深度动作捕捉完成')
 }

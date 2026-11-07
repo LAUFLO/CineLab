@@ -111,6 +111,14 @@ interface CanvasStore {
     sourceNodeId?: string,
     layout?: AddAssetLayout
   ) => string[]
+  addPendingNodes: (
+    kind: NodeKind,
+    origin: XYPosition,
+    count: number,
+    titlePrefix: string,
+    sourceNodeId?: string,
+    layout?: AddAssetLayout
+  ) => string[]
   createGroupFromNodes: (
     nodeIds: string[],
     options?: CreateGroupOptions
@@ -499,6 +507,106 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           templates: meta.templates
         },
         style: { width, height: heights[index] }
+      }
+    })
+
+    const group: GroupNode | null =
+      grouped && groupId
+        ? {
+            id: groupId,
+            type: 'group',
+            position: start,
+            data: {
+              title: layout?.groupTitle ?? `分组 ${groupCount + 1}`,
+              color: layout?.groupColor ?? 'blue'
+            },
+            style: { width: outerWidth, height: outerHeight },
+            selected: true,
+            zIndex: 0
+          }
+        : null
+
+    const createdEdges: CineEdge[] = sourceNodeId
+      ? created.map((node) => ({
+          id: nextId('edge'),
+          source: sourceNodeId,
+          target: node.id,
+          type: 'flow',
+          data: { role: 'auto' }
+        }))
+      : []
+
+    set({
+      nodes: [
+        ...(group
+          ? get().nodes.map((node) => ({ ...node, selected: false }))
+          : get().nodes),
+        ...(group ? [group] : []),
+        ...created
+      ],
+      edges: [...get().edges, ...createdEdges]
+    })
+    return ids
+  },
+  addPendingNodes: (kind, origin, count, titlePrefix, sourceNodeId, layout) => {
+    const total = Math.max(1, Math.round(count))
+    get().pushHistory()
+
+    const meta = NODE_META[kind]
+    const gap = GROUP_GAP
+    const columns = Math.max(1, Math.round(layout?.columns ?? 1))
+    const width = Math.max(1, Math.round(layout?.cellWidth ?? meta.width))
+    const height =
+      Math.round(width * (meta.height / meta.width)) + TITLE_HEIGHT
+    const rows = Math.ceil(total / columns)
+    const contentWidth = columns * width + (columns - 1) * gap
+    const contentHeight = rows * height + Math.max(0, rows - 1) * gap
+    const grouped = Boolean(layout?.groupTitle)
+    const outerWidth = grouped ? contentWidth + GROUP_PADDING * 2 : contentWidth
+    const outerHeight = grouped
+      ? contentHeight + GROUP_HEADER_HEIGHT + GROUP_PADDING
+      : contentHeight
+    const start = findFreeOrigin(
+      get().nodes,
+      origin,
+      outerWidth,
+      outerHeight,
+      gap
+    )
+    const ids: string[] = []
+    const groupId = grouped ? nextId('group') : null
+    const groupCount = get().nodes.filter(isGroupNode).length
+
+    const created: CineNode[] = Array.from({ length: total }, (_, index) => {
+      const id = nextId(kind)
+      ids.push(id)
+
+      const column = index % columns
+      const row = Math.floor(index / columns)
+      const position = grouped
+        ? {
+            x: GROUP_PADDING + column * (width + gap),
+            y: GROUP_HEADER_HEIGHT + row * (height + gap)
+          }
+        : {
+            x: start.x + column * (width + gap),
+            y: start.y + row * (height + gap)
+          }
+
+      return {
+        id,
+        type: 'cine',
+        ...(groupId ? { parentId: groupId } : {}),
+        position,
+        selected: false,
+        ...(groupId ? { zIndex: 1 } : {}),
+        data: {
+          kind,
+          title: total > 1 ? `${titlePrefix} ${index + 1}` : titlePrefix,
+          status: 'running',
+          templates: meta.templates
+        },
+        style: { width, height }
       }
     })
 

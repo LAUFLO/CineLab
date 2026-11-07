@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ComponentStatus } from '@shared/components'
 import { Icon } from '../../components/Icon'
+import { Select } from '../../components/Select'
 
 type Quality = 'fast' | 'standard' | 'long'
 
@@ -91,30 +92,22 @@ export function DepthCaptureDialog({
         <div className="operation-dialog__row">
           <label className="operation-dialog__field">
             <span>档位</span>
-            <select
+            <Select
               value={quality}
-              onChange={(event) =>
-                setQuality(event.target.value as Quality)
-              }
-            >
-              {QUALITY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              options={QUALITY_OPTIONS}
+              onChange={(next) => setQuality(next)}
+            />
           </label>
           <label className="operation-dialog__field">
             <span>帧率</span>
-            <select
+            <Select
               value={fpsMode}
-              onChange={(event) =>
-                setFpsMode(event.target.value as 'source' | '24')
-              }
-            >
-              <option value="source">跟随源视频</option>
-              <option value="24">固定 24fps</option>
-            </select>
+              options={[
+                { value: 'source', label: '跟随源视频' },
+                { value: '24', label: '固定 24fps' }
+              ]}
+              onChange={(next) => setFpsMode(next)}
+            />
           </label>
         </div>
 

@@ -32,7 +32,9 @@ export function StoryboardToolbar() {
   const clearGroupChildren = useCanvasStore((state) => state.clearGroupChildren)
   const setGroupMode = useCanvasStore((state) => state.setGroupMode)
   const ungroup = useCanvasStore((state) => state.ungroup)
-  const addAssetNodes = useCanvasStore((state) => state.addAssetNodes)
+  const addPendingNodes = useCanvasStore((state) => state.addPendingNodes)
+  const applyOutput = useCanvasStore((state) => state.applyOutput)
+  const patchNodeData = useCanvasStore((state) => state.patchNodeData)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   const showToast = useUIStore((state) => state.showToast)
 
@@ -102,6 +104,18 @@ export function StoryboardToolbar() {
     }
 
     setStitching(true)
+
+    const groupHeight = Number(group.style?.height ?? 400)
+    const pendingId = addPendingNodes(
+      'image',
+      {
+        x: group.position.x,
+        y: group.position.y + groupHeight + 80
+      },
+      1,
+      '分镜拼接'
+    )[0]
+
     try {
       const result = await window.api.media.stitch({
         paths,
@@ -111,18 +125,13 @@ export function StoryboardToolbar() {
         outputWidth: 2048
       })
 
-      const groupHeight = Number(group.style?.height ?? 400)
-      addAssetNodes(
-        'image',
-        {
-          x: group.position.x,
-          y: group.position.y + groupHeight + 80
-        },
-        [result.asset],
-        '分镜拼接'
-      )
-      showToast('拼接完成，已生成新节点')
+      applyOutput(pendingId, result.asset, 'storyboard-stitch')
+      showToast('拼接完成，已写入新节点')
     } catch (error) {
+      patchNodeData(pendingId, {
+        status: 'error',
+        error: error instanceof Error ? error.message : String(error)
+      })
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setStitching(false)

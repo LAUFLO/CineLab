@@ -39,7 +39,7 @@ async function ensureReady(): Promise<void> {
     throw new Error('视觉功能需要深度动作捕捉运行时，请先在设置 → 组件中安装')
   }
   if (!vision) {
-    throw new Error('视觉模型未安装，请先在设置 → 组件中下载「视觉模型（RVM + LaMa）」')
+    throw new Error('视觉模型未安装，请先在设置 → 组件中下载「视觉模型（InSPyReNet + LaMa）」')
   }
 }
 
@@ -242,7 +242,7 @@ export async function runVisionTask(
         data: await fs.readFile(output),
         kind: 'image',
         mime: 'image/png',
-        model: 'RVM 抠图'
+        model: 'InSPyReNet 抠图'
       })
       return { kind: request.kind, asset, width: asset.width, height: asset.height }
     }
@@ -268,7 +268,7 @@ export async function runVisionTask(
           data: await fs.readFile(foreground),
           kind: 'image',
           mime: 'image/png',
-          model: 'RVM 前景图层'
+          model: 'InSPyReNet 前景图层'
         }),
         ingestAsset({
           projectPath: projectRoot,
@@ -388,7 +388,7 @@ export async function runVisionTask(
         data: await fs.readFile(output),
         kind: 'video',
         mime: 'video/webm',
-        model: 'RVM 视频抠像'
+        model: 'InSPyReNet 视频抠像'
       })
       return {
         kind: request.kind,

@@ -7,21 +7,21 @@
 
 - 复用 `depth-runtime` 的 Python 3.11 + PyTorch 2.8 CPU 环境，不重复下载约 1GB 运行时。
 - `vision-models` 组件包含：
-  - RVM `rvm_mobilenetv3.pth` + model 代码（GPL-3.0）
+  - InSPyReNet fast `ckpt_fast.pth` + 精简模型代码（MIT）
   - LaMa `big-lama.pt`（Apache-2.0）
-  - torchvision 0.23.0 CPU + Pillow（site-packages）
   - `worker.py`、NOTICE
-- 组件体积：zip 213,355,635 字节，解压 240,714,601 字节，332 文件。
-- SHA256：`44934097a19fc6806740aab51965c24fab52926e5a47f86c9dae731253c57803`
+- 为规避 GPL，已把初版 RVM 替换为 InSPyReNet；同时去掉了 timm/kornia/torchvision/Pillow 依赖，仅保留 torch/cv2。
+- 组件体积：zip 526,828,343 字节，解压 573,254,295 字节，11 文件。
+- SHA256：`c00b66f631cb0231eaf286777170662658b7346123ccf16a09f5747e57a1a7f0`
 
 ## worker 任务
 
 | 任务 | 实现 | 实测 |
 |---|---|---|
-| `matte-image` | RVM 单图抠图 | 0.84 秒 |
-| `layer-split` | RVM 前景 + LaMa 背景修复 | 6.64 秒 |
+| `matte-image` | InSPyReNet 单图抠像 | 2.92 秒（含模型加载） |
+| `layer-split` | InSPyReNet 前景 + LaMa 背景修复 | 10.39 秒 |
 | `outpaint-image` | LaMa 扩展画布并补全 | 9.87 秒（1728×1728） |
-| `matte-video` | RVM 逐帧 + VP9 alpha WebM | 5.53 秒（480P / 2 秒） |
+| `matte-video` | InSPyReNet 逐帧 + EMA 时序平滑 + VP9 alpha WebM | 24 帧 34.65 秒（480P） |
 | `repair-video` | LaMa 逐帧修复框选区域 | 73.55 秒（720P / 2 秒） |
 | `inpaint-image` | LaMa 蒙版修复 | 管线已实现 |
 
@@ -55,6 +55,7 @@ corepack pnpm build      通过
 
 ## 未完成 / 风险
 
-- `vision-components-v1` Release 尚未发布；发布前需确认 RVM GPL-3.0 合规。
+- `vision-components-v1` Release 尚未发布。
+- InSPyReNet 逐帧推理无时序记忆，已加 EMA 平滑；视频质量仍弱于专用视频抠像模型。
 - 视频修复 CPU 耗时较长，10 秒上限；后续可增加更快的修复模型或 GPU。
 - 智能去字幕仍需手动框选，自动字幕检测未接入。

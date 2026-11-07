@@ -64,24 +64,24 @@ interface NodeOperation {
 
 | 功能 | 实现 |
 |---|---|
-| 抠图 | RVM 输出透明前景 PNG；组件未安装时回退到图片模型提示词抠图 |
-| 图层分离 | RVM 前景 PNG + LaMa 背景修复，输出两个图层节点 |
-| 视频智能抠像 | RVM 输出带 alpha 的 WebM，限制 480P / 10 秒 |
+| 抠图 | InSPyReNet 输出透明前景 PNG；组件未安装时回退到图片模型提示词抠图 |
+| 图层分离 | InSPyReNet 前景 PNG + LaMa 背景修复，输出两个图层节点 |
+| 视频智能抠像 | InSPyReNet 逐帧 + 时序平滑，输出带 alpha 的 WebM，限制 480P / 10 秒 |
 | 智能去字幕 | 框选字幕区域 + LaMa 逐帧修复 |
 | 主体消除 | 框选主体 + LaMa 逐帧修复 |
 | 扩图 | 选择目标比例，LaMa 扩展画布并补全边缘 |
 
 组件复用 `depth-runtime` 的 Python/PyTorch 环境：
 
-- `vision-models`：RVM 权重 + LaMa 权重 + worker + torchvision/Pillow，约 213MB 压缩 / 241MB 解压。
-- 不新增独立 runtime，避免重复下载约 1GB 的 PyTorch。
+- `vision-models`：InSPyReNet fast 权重 + LaMa 权重 + worker，约 527MB 压缩 / 573MB 解压。
+- 不新增独立 runtime，避免重复下载约 1GB 的 PyTorch；InSPyReNet 代码已去除 timm/kornia 依赖，仅保留 torch/cv2。
 - worker 通过 stdout JSON 行上报进度，主进程沿用 `depth-tasks` 的任务/取消模式。
 
 限制：
 
 - 视频修复与抠像只支持短片（默认 ≤10 秒），超限直接拒绝并提示。
 - 视频抠像输出 480P，CPU 推理耗时较长，必须显示进度并支持取消。
-- RVM 为 GPL-3.0，组件内附 NOTICE；对外发布前需确认许可证合规。
+- InSPyReNet 为 MIT，LaMa 为 Apache-2.0，组件内附 NOTICE；可对外发布。
 
 ### 批次 3：视频操作
 
@@ -136,9 +136,9 @@ interface NodeOperation {
 
 实测记录（2026-11-07）：
 
-- RVM 图片抠图 0.84 秒，图层分离 6.64 秒，LaMa 1:1 扩图 9.87 秒。
-- 2 秒 720P 视频修复 73.55 秒，480P 视频抠像 5.53 秒，输出 WebM 带 `ALPHA_MODE=1`。
-- 隔离实例本地 mock 组件源安装 `vision-models` 成功，组件 213MB / 解压 241MB / 332 文件。
+- InSPyReNet 图片抠图 2.92 秒（含加载），图层分离 10.39 秒，LaMa 1:1 扩图 9.87 秒。
+- 2 秒 720P 视频修复 73.55 秒；480P 视频抠像 24 帧 34.65 秒，输出 WebM 带 `ALPHA_MODE=1`。
+- 隔离实例本地 mock 组件源安装 `vision-models` 成功，组件 527MB / 解压 573MB / 11 文件。
 - UI 实测：图层分离生成 2 个已完成节点；视频抠像生成 WebM 节点；本地扩图写入版本 2/2；本地抠图写入版本 3/3；智能去字幕、主体消除对话框标题正确。
 - `pnpm typecheck` / `pnpm test` / `pnpm build` 通过。
 
@@ -150,8 +150,8 @@ interface NodeOperation {
 |---|---|
 | 用户模型不支持 mask | 明确报错并提示换模型；批次 2 用本地 LaMa 兜底 |
 | 全景图比例不标准 | 查看器兼容任意比例，UI 提示可能拉伸 |
-| 视觉组件体积与 CPU 耗时 | 复用深度运行时，仅下载约 213MB 模型；视频限制 ≤10 秒、抠像 480P、显示进度与取消 |
-| RVM GPL-3.0 许可证 | 组件内附 NOTICE 与来源；对外发布前确认合规或替换为宽松许可证模型 |
+| 视觉组件体积与 CPU 耗时 | 复用深度运行时，仅下载约 527MB 模型；视频限制 ≤10 秒、抠像 480P、显示进度与取消 |
+| InSPyReNet 逐帧抠像无时序记忆 | 视频增加 EMA 时序平滑；质量仍弱于专用视频抠像模型，后续可换 MatAnyone 等 |
 | 视频编辑 API 协议不统一 | 通过操作模型绑定 + HTTP 模板接入，不硬编码厂商 |
 | 近似重生成误导用户 | 未配置专用 API 时强制二次确认，文案写明「整段重生成」 |
 
@@ -161,4 +161,4 @@ interface NodeOperation {
 |---|---|
 | 2026-11-07 | 立项：13 个占位入口分四批补齐；批次 1 开工 |
 | 2026-11-07 | 批次 1 完成：蒙版编辑器、重绘/擦除/元素编辑、720 全景、状态改造 |
-| 2026-11-07 | 批次 2 完成：RVM + LaMa 视觉组件、抠图/图层分离/视频抠像/智能修复/本地扩图 |
+| 2026-11-07 | 批次 2 完成：InSPyReNet + LaMa 视觉组件、抠图/图层分离/视频抠像/智能修复/本地扩图 |

@@ -419,7 +419,7 @@
       "id": "BATCH-2",
       "title": "工具栏占位功能批次 2：本地视觉 runtime",
       "status": "done",
-      "note": "RVM + LaMa 视觉组件（复用 depth-runtime Python/PyTorch），组件 213MB。抠图、图层分离、视频抠像、智能去字幕、主体消除、本地扩图接入；任务进度/取消/节点回写已验证。RVM GPL-3.0，发布前需确认合规。",
+      "note": "InSPyReNet + LaMa 视觉组件（复用 depth-runtime Python/PyTorch），组件 527MB。抠图、图层分离、视频抠像、智能去字幕、主体消除、本地扩图接入；任务进度/取消/节点回写已验证。InSPyReNet MIT、LaMa Apache-2.0，可对外发布。",
       "evidence": [
         "docs/placeholder-operations-plan.md",
         ".opencode/handover/evidence/BATCH-2-vision-runtime.md"
@@ -540,7 +540,7 @@
     {
       "id": "K28",
       "area": "release",
-      "content": "vision-models 组件已本地构建（213MB），但尚未发布 vision-components-v1 Release。RVM 为 GPL-3.0，发布前需确认许可证合规或替换模型。"
+      "content": "vision-models 组件已本地构建（527MB，InSPyReNet MIT + LaMa Apache-2.0），但尚未发布 vision-components-v1 Release。"
     }
   ],
   "gates": [],

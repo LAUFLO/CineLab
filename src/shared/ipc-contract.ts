@@ -54,7 +54,10 @@ import type {
   StitchRequest,
   StitchResult,
   TrimVideoRequest,
-  TrimVideoResult
+  TrimVideoResult,
+  VisionTaskEvent,
+  VisionTaskRequest,
+  VisionTaskStartResult
 } from './media'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -186,6 +189,9 @@ export interface MediaApi {
   startDepthCapture(input: DepthCaptureRequest): Promise<DepthTaskStartResult>
   cancelDepthCapture(taskId: string): Promise<void>
   onDepthCaptureEvent(callback: (event: DepthTaskEvent) => void): () => void
+  startVisionTask(input: VisionTaskRequest): Promise<VisionTaskStartResult>
+  cancelVisionTask(taskId: string): Promise<void>
+  onVisionTaskEvent(callback: (event: VisionTaskEvent) => void): () => void
 }
 
 export interface ComponentsApi {

@@ -9,6 +9,7 @@ import { useToolbarStore } from '../../stores/toolbar'
 import { useUIStore } from '../../stores/ui'
 import { useSettingsStore } from '../../stores/settings'
 import { trackDepthTask } from '../../stores/depth-tasks'
+import { trackVisionTask } from '../../stores/vision-tasks'
 import { AiOperationDialog } from './AiOperationDialog'
 import { CropDialog } from './CropDialog'
 import { MaskEditorDialog } from './MaskEditorDialog'
@@ -92,6 +93,8 @@ export function NodeToolbar({
     width: number
     height: number
   } | null>(null)
+  const [subtitleMode, setSubtitleMode] = useState<'delogo' | 'vision'>('delogo')
+  const [subtitleTitle, setSubtitleTitle] = useState('框选去字幕')
   const [sphereDialog, setSphereDialog] = useState<'light' | 'camera' | null>(
     null
   )
@@ -173,6 +176,161 @@ export function NodeToolbar({
       status: 'error',
       error: error instanceof Error ? error.message : String(error)
     })
+  }
+
+  const visionReady = async (): Promise<boolean> => {
+    try {
+      const status = await window.api.components.status()
+      return (
+        status.find((item) => item.kind === 'depth-runtime')?.state ===
+          'installed' &&
+        status.find((item) => item.kind === 'vision-models')?.state ===
+          'installed'
+      )
+    } catch {
+      return false
+    }
+  }
+
+  const ensureVision = async (): Promise<boolean> => {
+    if (await visionReady()) return true
+    showToast(
+      '需要先安装「深度动作捕捉运行时」和「视觉模型（RVM + LaMa）」',
+      'error'
+    )
+    useSettingsStore.getState().openPanel('components')
+    return false
+  }
+
+  const startVisionTask = async (
+    request: Parameters<typeof window.api.media.startVisionTask>[0],
+    meta: Parameters<typeof trackVisionTask>[1]
+  ): Promise<void> => {
+    try {
+      const { taskId } = await window.api.media.startVisionTask({
+        ...request,
+        ...(current.scope ? { scope: current.scope } : {})
+      })
+      trackVisionTask(taskId, meta)
+    } catch (error) {
+      meta.pendingIds.forEach((id) => markFailed(id, error))
+      showToast(error instanceof Error ? error.message : String(error), 'error')
+    }
+  }
+
+  const executeLayerSplit = async (): Promise<void> => {
+    const source = sourceNode()
+    if (!source || !(await ensureVision())) return
+
+    const pendingIds = useCanvasStore
+      .getState()
+      .addPendingNodes('image', source.origin, 2, `${source.title} · 图层`, nodeId)
+
+    showToast('已开始图层分离，完成后自动写入节点')
+    await startVisionTask(
+      { kind: 'layer-split', path: current.path },
+      {
+        mode: 'pending',
+        nodeId,
+        pendingIds,
+        op: 'layer-split',
+        title: '图层分离'
+      }
+    )
+  }
+
+  const executeMatteVideo = async (): Promise<void> => {
+    const source = sourceNode()
+    if (!source || !(await ensureVision())) return
+
+    const pendingIds = useCanvasStore
+      .getState()
+      .addPendingNodes('video', source.origin, 1, `${source.title} · 抠像`, nodeId)
+
+    showToast('已开始视频抠像，完成后自动写入节点')
+    await startVisionTask(
+      { kind: 'matte-video', path: current.path },
+      {
+        mode: 'pending',
+        nodeId,
+        pendingIds,
+        op: 'matting',
+        title: '视频抠像'
+      }
+    )
+  }
+
+  const executeVisionRepair = async (
+    rect: { x: number; y: number; width: number; height: number },
+    title: string
+  ): Promise<void> => {
+    const source = sourceNode()
+    if (!source || !(await ensureVision())) return
+
+    const pendingIds = useCanvasStore
+      .getState()
+      .addPendingNodes('video', source.origin, 1, `${source.title} · ${title}`, nodeId)
+
+    showToast(`已开始${title}，完成后自动写入节点`)
+    await startVisionTask(
+      { kind: 'repair-video', path: current.path, rect },
+      {
+        mode: 'pending',
+        nodeId,
+        pendingIds,
+        op: title,
+        title
+      }
+    )
+  }
+
+  const executeOutpaint = async (item: OperationMenuItem): Promise<void> => {
+    if (!(await visionReady())) {
+      const op = ops.find((entry) => entry.id === 'outpaint')
+      if (op) executeAiOperation(op, item)
+      return
+    }
+
+    const ratio = item.id as
+      | '16:9'
+      | '9:16'
+      | '1:1'
+      | '4:3'
+      | '3:4'
+      | '21:9'
+    showToast(`已开始扩成 ${item.label.replace('扩成 ', '')}`)
+    await startVisionTask(
+      { kind: 'outpaint-image', path: current.path, ratio },
+      {
+        mode: 'apply',
+        nodeId,
+        pendingIds: [],
+        op: 'outpaint',
+        title: '扩图'
+      }
+    )
+  }
+
+  const executeCutout = async (): Promise<void> => {
+    const op = ops.find((entry) => entry.id === 'cutout')
+    if (!op) return
+
+    if (!(await visionReady())) {
+      executeAiOperation(op)
+      return
+    }
+
+    showToast('已开始本地抠图')
+    await startVisionTask(
+      { kind: 'matte-image', path: current.path },
+      {
+        mode: 'apply',
+        nodeId,
+        pendingIds: [],
+        op: 'cutout',
+        title: '抠图'
+      }
+    )
   }
 
   const executeGridSplit = async (item: OperationMenuItem): Promise<void> => {
@@ -442,13 +600,18 @@ export function NodeToolbar({
     }
   }
 
-  const openSubtitleBox = async (): Promise<void> => {
+  const openSubtitleBox = async (
+    mode: 'delogo' | 'vision' = 'delogo',
+    title = '框选去字幕'
+  ): Promise<void> => {
+    setSubtitleMode(mode)
+    setSubtitleTitle(title)
     const width = current.width
     const height = current.height
 
     if (width && height) {
       setSubtitleDialog({
-        src: `cinelab-asset://local/${current.path}`,
+        src: assetUrl(current.path, current.scope),
         width,
         height
       })
@@ -463,7 +626,7 @@ export function NodeToolbar({
         return
       }
       setSubtitleDialog({
-        src: `cinelab-asset://local/${current.path}`,
+        src: assetUrl(current.path, current.scope),
         width: probe.width,
         height: probe.height
       })
@@ -480,6 +643,12 @@ export function NodeToolbar({
     width: number
     height: number
   }): Promise<void> => {
+    if (subtitleMode === 'vision') {
+      setSubtitleDialog(null)
+      void executeVisionRepair(rect, subtitleTitle)
+      return
+    }
+
     setSubtitleDialog(null)
     setRunning(true)
     markRunning(nodeId)
@@ -755,11 +924,43 @@ export function NodeToolbar({
 
     if (op.id === 'subtitle') {
       if (item?.id === 'box') {
-        void openSubtitleBox()
+        void openSubtitleBox('delogo', '框选去字幕')
         return
       }
-      showToast('智能去字幕需要安装视觉组件（批次 2）', 'error')
-      useSettingsStore.getState().openPanel('components')
+      void (async () => {
+        if (await ensureVision()) {
+          await openSubtitleBox('vision', '智能去字幕')
+        }
+      })()
+      return
+    }
+
+    if (op.id === 'layer-split') {
+      void executeLayerSplit()
+      return
+    }
+
+    if (op.id === 'matting') {
+      void executeMatteVideo()
+      return
+    }
+
+    if (op.id === 'object-remove') {
+      void (async () => {
+        if (await ensureVision()) {
+          await openSubtitleBox('vision', '主体消除')
+        }
+      })()
+      return
+    }
+
+    if (op.id === 'outpaint' && item) {
+      void executeOutpaint(item)
+      return
+    }
+
+    if (op.id === 'cutout') {
+      void executeCutout()
       return
     }
 
@@ -1075,6 +1276,7 @@ export function NodeToolbar({
 
       <SubtitleDialog
         open={Boolean(subtitleDialog)}
+        title={subtitleTitle}
         src={subtitleDialog?.src ?? ''}
         videoWidth={subtitleDialog?.width ?? 1}
         videoHeight={subtitleDialog?.height ?? 1}

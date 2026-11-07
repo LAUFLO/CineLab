@@ -16,6 +16,11 @@ const runtimeBaseUrl =
   process.env.CINELAB_COMPONENT_BASE_URL ??
   'https://github.com/LAUFLO/CineLab/releases/download/depth-components-v1'
 
+const visionBaseUrl =
+  process.env.CINELAB_VISION_BASE_URL ??
+  process.env.CINELAB_COMPONENT_BASE_URL ??
+  'https://github.com/LAUFLO/CineLab/releases/download/vision-components-v1'
+
 const MODEL_URLS = [
   'https://huggingface.co/depth-anything/Video-Depth-Anything-Small/resolve/main/video_depth_anything_vits.pth',
   'https://hf-mirror.com/depth-anything/Video-Depth-Anything-Small/resolve/main/video_depth_anything_vits.pth'
@@ -62,6 +67,20 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
       expandedSize: MODEL_SIZE,
       sha256: MODEL_SHA256,
       files: 1
+    })
+  },
+  'vision-models': {
+    kind: 'vision-models',
+    label: '视觉模型（RVM + LaMa）',
+    directory: 'vision-models',
+    manifestUrl: `${visionBaseUrl}/vision-models-manifest.json`,
+    fallback: fallback('vision-models', [
+      `${visionBaseUrl}/vision-models-win32-x64-v1.zip`
+    ], {
+      size: 213_355_635,
+      expandedSize: 240_714_601,
+      sha256: '44934097a19fc6806740aab51965c24fab52926e5a47f86c9dae731253c57803',
+      files: 332
     })
   }
 }

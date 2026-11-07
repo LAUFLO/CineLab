@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react'
 import type { ComponentKind, ComponentStatus } from '@shared/components'
 import { useUIStore } from '../stores/ui'
 
-const KIND_ORDER: ComponentKind[] = ['depth-runtime', 'depth-model']
+const KIND_ORDER: ComponentKind[] = [
+  'depth-runtime',
+  'depth-model',
+  'vision-models'
+]
 
 const COMPONENT_META: Record<
   ComponentKind,
@@ -21,6 +25,13 @@ const COMPONENT_META: Record<
       'ByteDance 开源的视频深度模型权重（Apache-2.0）。负责逐帧估计深度并保持全片时序一致，输出近白远黑的控制视频。',
     uninstallHint:
       '卸载后，深度推理缺少模型权重，「深度动作捕捉」将无法使用。已生成的深度视频节点不受影响，可随时重新下载。'
+  },
+  'vision-models': {
+    name: '视觉模型（RVM + LaMa）',
+    description:
+      'RVM 抠像与 LaMa 修复模型，约 220MB。复用深度运行时的 Python/PyTorch 环境，请先安装「深度动作捕捉运行时」。安装后可解锁抠图、图层分离、视频抠像、智能去字幕、主体消除和本地扩图。',
+    uninstallHint:
+      '卸载后，抠图、图层分离、视频抠像、智能修复和本地扩图将无法使用。已生成的素材节点不受影响，可随时重新下载。'
   }
 }
 

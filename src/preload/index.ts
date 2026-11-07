@@ -26,7 +26,9 @@ import type {
   RemoveSubtitlesRequest,
   SplitAvRequest,
   StitchRequest,
-  TrimVideoRequest
+  TrimVideoRequest,
+  VisionTaskEvent,
+  VisionTaskRequest
 } from '../shared/media'
 const api: CineApi = {
   app: {
@@ -212,6 +214,21 @@ const api: CineApi = {
       ipcRenderer.on('depth-task:event', listener)
       return () => {
         ipcRenderer.removeListener('depth-task:event', listener)
+      }
+    },
+    startVisionTask: (input: VisionTaskRequest) =>
+      ipcRenderer.invoke('media:vision-start', input),
+    cancelVisionTask: (taskId: string) =>
+      ipcRenderer.invoke('media:vision-cancel', taskId),
+    onVisionTaskEvent: (callback: (event: VisionTaskEvent) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: VisionTaskEvent
+      ): void => callback(payload)
+
+      ipcRenderer.on('vision-task:event', listener)
+      return () => {
+        ipcRenderer.removeListener('vision-task:event', listener)
       }
     }
   },

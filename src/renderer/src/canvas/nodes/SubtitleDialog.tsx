@@ -5,6 +5,7 @@ import { useBoxEditor } from './useBoxEditor'
 
 interface SubtitleDialogProps {
   open: boolean
+  title?: string
   src: string
   videoWidth: number
   videoHeight: number
@@ -23,6 +24,7 @@ const MAX_HEIGHT = 420
 
 export function SubtitleDialog({
   open,
+  title = '框选去字幕',
   src,
   videoWidth,
   videoHeight,
@@ -85,7 +87,7 @@ export function SubtitleDialog({
       >
         <div className="box-dialog__header">
           <div>
-            <div className="box-dialog__title">框选去字幕</div>
+            <div className="box-dialog__title">{title}</div>
             <div className="box-dialog__subtitle">
               框住字幕区域，使用区域擦除处理
             </div>
@@ -164,7 +166,7 @@ export function SubtitleDialog({
             disabled={busy || rect.width < 2 || rect.height < 2}
             onClick={() => onConfirm(rect)}
           >
-            {busy ? '处理中…' : '应用去字幕'}
+            {busy ? '处理中…' : '开始处理'}
           </button>
         </div>
       </div>

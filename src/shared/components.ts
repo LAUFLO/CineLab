@@ -1,4 +1,4 @@
-export type ComponentKind = 'depth-runtime' | 'depth-model'
+export type ComponentKind = 'depth-runtime' | 'depth-model' | 'vision-models'
 
 export type ComponentState =
   | 'not-installed'

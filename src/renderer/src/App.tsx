@@ -18,6 +18,7 @@ import { useProjectStore } from './stores/project'
 import { useSettingsStore } from './stores/settings'
 import { useUpdateStore } from './stores/update'
 import { subscribeDepthTasks } from './stores/depth-tasks'
+import { subscribeVisionTasks } from './stores/vision-tasks'
 import { useTheme } from './theme/useTheme'
 
 export default function App() {
@@ -55,6 +56,8 @@ export default function App() {
   }, [subscribeGeneration])
 
   useEffect(() => subscribeDepthTasks(), [])
+
+  useEffect(() => subscribeVisionTasks(), [])
 
   useEffect(() => {
     if (!hydrated || phase !== 'ready') return

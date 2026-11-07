@@ -9,7 +9,8 @@ import type {
   RemoveSubtitlesRequest,
   SplitAvRequest,
   StitchRequest,
-  TrimVideoRequest
+  TrimVideoRequest,
+  VisionTaskRequest
 } from '@shared/media'
 import { probeMedia } from '../media/ffmpeg'
 import { captureDepth } from '../media/depth'
@@ -20,6 +21,10 @@ import { stitchGrid } from '../media/stitch'
 import { cropImage, cropImageRect } from '../media/image'
 import { resolveMediaPath } from '../media/paths'
 import { cropVideo, removeSubtitles, splitAv, trimVideo } from '../media/video'
+import {
+  cancelVisionTask,
+  startVisionTask
+} from '../media/vision-tasks'
 import { getCurrentProjectRoot } from '../project/manager'
 
 function requireProjectRoot(): string {
@@ -89,4 +94,14 @@ export function registerMediaIpc(): void {
       return { asset: await removeSubtitles(requireProjectRoot(), input) }
     }
   )
+
+  ipcMain.handle(
+    'media:vision-start',
+    (_event, input: VisionTaskRequest) =>
+      startVisionTask(requireProjectRoot(), input)
+  )
+
+  ipcMain.handle('media:vision-cancel', (_event, taskId: string) => {
+    cancelVisionTask(taskId)
+  })
 }

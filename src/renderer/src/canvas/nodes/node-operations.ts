@@ -369,7 +369,15 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     implemented: true,
     section: 'edit',
     prompt: PROMPT_OUTPAINT,
-    hint: '向四周扩展'
+    hint: '向四周扩展',
+    menu: [
+      { id: '16:9', label: '扩成 16:9' },
+      { id: '9:16', label: '扩成 9:16' },
+      { id: '1:1', label: '扩成 1:1' },
+      { id: '4:3', label: '扩成 4:3' },
+      { id: '3:4', label: '扩成 3:4' },
+      { id: '21:9', label: '扩成 21:9' }
+    ]
   },
   {
     id: 'cutout',
@@ -418,6 +426,7 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '图层分离',
     icon: 'layers',
     kinds: ['image'],
+    implemented: true,
     section: 'edit',
     requires: {
       type: 'vision-component',
@@ -465,6 +474,7 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '主体消除',
     icon: 'target',
     kinds: ['video'],
+    implemented: true,
     section: 'video',
     requires: {
       type: 'vision-component',
@@ -477,6 +487,7 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '智能抠像',
     icon: 'image',
     kinds: ['video'],
+    implemented: true,
     section: 'video',
     requires: {
       type: 'vision-component',

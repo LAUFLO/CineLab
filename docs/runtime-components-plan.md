@@ -92,7 +92,7 @@ VDA 不装 torchvision：`worker.py` 启动时提供 `Compose` shim，runtime �
 5. 复制 `resources/depth-worker/worker.py`
 6. 清理 `__pycache__` / `*.pyc`
 7. 冒烟测试：用 runtime 自带 `python.exe` 导入 torch/cv2/numpy/einops/easydict/tqdm，按 worker 真实顺序先启用 torchvision shim、再导入 `video_depth_anything.video_depth`，并断言 `torch.version.cuda is None`
-8. 压缩 zip，统计 SHA256 / 压缩体积 / 解压体积 / 文件数
+8. 压缩 zip（优先 7-Zip 流式压缩，缺失时回退 tar，避免 `Compress-Archive` 的内存流 2GB 限制），统计 SHA256 / 压缩体积 / 解压体积 / 文件数
 9. 生成 manifest，`urls` 指向 `-DownloadBase` 下的 zip
 
 现有 `scripts/build-depth-components.ps1` 保留不动，作为本地快速验证脚本；它包含本机路径和模型打包逻辑，不用于 CI。

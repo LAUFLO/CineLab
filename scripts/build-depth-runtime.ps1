@@ -132,6 +132,8 @@ if (-not $SkipSmokeTest) {
 import sys
 sys.path.insert(0, r'$runtime')
 import torch, cv2, numpy, einops, easydict, tqdm
+from worker import ensure_torchvision_compose
+ensure_torchvision_compose()
 from video_depth_anything.video_depth import VideoDepthAnything
 assert torch.version.cuda is None, 'runtime must use CPU torch'
 print('SMOKE_OK', torch.__version__, numpy.__version__, cv2.__version__)

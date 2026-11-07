@@ -39,8 +39,16 @@ async function readInstalled(kind: ComponentKind): Promise<ComponentManifest | n
     const required =
       kind === 'depth-model'
         ? join(dir, MODEL_FILE)
-        : join(dir, 'python', 'python.exe')
+        : kind === 'vision-models'
+          ? join(dir, 'models', 'big-lama.pt')
+          : join(dir, 'python', 'python.exe')
     await fs.stat(required)
+    if (kind === 'vision-models') {
+      await fs.stat(join(dir, 'worker.py'))
+      await fs.stat(join(dir, 'models', 'rvm_mobilenetv3.pth'))
+      await fs.stat(join(dir, 'rvm', 'model', '__init__.py'))
+      await fs.stat(join(dir, 'site-packages', 'torchvision', '__init__.py'))
+    }
     return raw
   } catch {
     return null

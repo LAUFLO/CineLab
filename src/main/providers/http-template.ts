@@ -6,6 +6,7 @@ import type {
   ProviderRuntime
 } from './openai-compat'
 import { sleep } from './retry'
+import { mergeHeaders } from './headers'
 
 interface ImageRef {
   dataUrl: string
@@ -226,14 +227,15 @@ export async function generateVideoHttpTemplate(
   if (template.submit.omitEmpty) body = omitEmpty(body)
 
   const authHeader = template.auth?.header ?? 'Authorization'
-  const headers: Record<string, string> = {
+  const baseHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(template.auth?.headers ?? {}),
     ...(template.submit.headers ?? {})
   }
   if (provider.apiKey) {
-    headers[authHeader] = `${template.auth?.prefix ?? 'Bearer '}${provider.apiKey}`
+    baseHeaders[authHeader] = `${template.auth?.prefix ?? 'Bearer '}${provider.apiKey}`
   }
+  const headers = mergeHeaders(baseHeaders, provider.headers)
 
   ctx.onProgress(5, '提交任务')
 
@@ -286,10 +288,13 @@ export async function generateVideoHttpTemplate(
 
     try {
       const pollPath = String(replaceValue(template.poll.path, context))
-      const pollHeaders: Record<string, string> = {
-        ...headers,
-        ...(template.poll.headers ?? {})
-      }
+      const pollHeaders = mergeHeaders(
+        {
+          ...headers,
+          ...(template.poll.headers ?? {})
+        },
+        provider.headers
+      )
 
       const response = await fetch(joinUrl(baseUrl, pollPath), {
         method: template.poll.method ?? 'GET',

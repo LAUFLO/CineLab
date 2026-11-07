@@ -19,6 +19,10 @@
       "name": "我的中转站",
       "type": "openai-compat",
       "baseUrl": "https://api.example.com/v1",
+      "headers": {
+        "x-app": "opencode",
+        "x-client-version": "1.0.0"
+      },
       "apiKeyEnv": "MY_RELAY_KEY",
       "models": [
         {
@@ -42,6 +46,7 @@
 | `type` | 否 | `openai-compat` 或 `kling`，默认 `openai-compat` |
 | `adapter` | 否 | 默认执行器：`openai-compat`、`agnes-video`、`volcengine-video`、`http-template`、`minimax-video`、`minimax-legacy`、`kling-video` |
 | `baseUrl` | 是 | 接口根地址，例如 `https://api.example.com/v1` |
+| `headers` | 否 | 附加到该供应商所有请求的自定义请求头，键值对；值支持 `${ENV_NAME}` 环境变量插值 |
 | `apiKeyEnv` | 否 | 从该环境变量读取 API Key |
 | `apiKey` | 否 | 明文 Key，不推荐 |
 | `models` | 是 | 模型数组，至少一个 |

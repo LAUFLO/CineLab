@@ -44,6 +44,7 @@ export interface ProviderConfig {
   name: string
   type: ProviderType
   baseUrl: string
+  headers?: Record<string, string>
   models: ModelDef[]
   hasKey: boolean
   hasSecret: boolean
@@ -56,6 +57,8 @@ export interface ProviderInput {
   type?: ProviderType
   name: string
   baseUrl: string
+  /** 附加到该供应商所有请求的自定义请求头；值支持 ${ENV_NAME} */
+  headers?: Record<string, string>
   apiKey?: string
   secretKey?: string
   models: ModelDef[]
@@ -65,6 +68,7 @@ export interface ConnectionTestInput {
   id?: string
   type?: ProviderType
   baseUrl: string
+  headers?: Record<string, string>
   apiKey?: string
   secretKey?: string
 }

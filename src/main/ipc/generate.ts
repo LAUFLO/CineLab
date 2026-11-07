@@ -188,7 +188,8 @@ export function registerGenerateIpc(): void {
         const runtime = {
           baseUrl: provider.baseUrl,
           apiKey: provider.apiKey,
-          secretKey: provider.secretKey
+          secretKey: provider.secretKey,
+          headers: provider.headers
         }
         const context = { signal, onProgress }
 

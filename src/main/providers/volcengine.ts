@@ -1,4 +1,5 @@
 import type { ModelDef } from '@shared/provider-schema'
+import { mergeHeaders } from './headers'
 import { sleep } from './retry'
 import type { AdapterContext, ImageOutput, ProviderRuntime } from './openai-compat'
 
@@ -33,10 +34,13 @@ export async function generateVideoArk(
   ctx: AdapterContext
 ): Promise<ImageOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
-  const headers = {
-    Authorization: `Bearer ${provider.apiKey}`,
-    'Content-Type': 'application/json'
-  }
+  const headers = mergeHeaders(
+    {
+      Authorization: `Bearer ${provider.apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    provider.headers
+  )
 
   const content: unknown[] = [{ type: 'text', text: prompt }]
 

@@ -47,6 +47,7 @@ function emptyDraft(
     name: preset?.name ?? '',
     type: preset?.type ?? 'openai-compat',
     baseUrl: preset?.baseUrl ?? 'https://api.openai.com/v1',
+    headers: {},
     apiKey: '',
     models: preset ? providerPresetModels(preset) : []
   }
@@ -58,6 +59,7 @@ function toDraft(provider: ProviderConfig): ProviderInput {
     type: provider.type,
     name: provider.name,
     baseUrl: provider.baseUrl,
+    headers: provider.headers ?? {},
     apiKey: '',
     models: provider.models
   }
@@ -105,6 +107,9 @@ function ModelsSection() {
   const [remoteModels, setRemoteModels] = useState<string[]>([])
   const [fetching, setFetching] = useState(false)
   const [manualModel, setManualModel] = useState('')
+  const [headerRows, setHeaderRows] = useState<
+    Array<{ key: string; value: string }>
+  >([])
 
   useEffect(() => {
     void load()
@@ -127,6 +132,48 @@ function ModelsSection() {
     value: ProviderInput[K]
   ): void => {
     setDraft((current) => (current ? { ...current, [key]: value } : current))
+  }
+
+  const openDraft = (next: ProviderInput | null): void => {
+    setDraft(next)
+    setHeaderRows(
+      next
+        ? Object.entries(next.headers ?? {}).map(([key, value]) => ({
+            key,
+            value
+          }))
+        : []
+    )
+  }
+
+  const rowsToHeaders = (
+    rows: Array<{ key: string; value: string }>
+  ): Record<string, string> =>
+    Object.fromEntries(
+      rows
+        .map((row) => [row.key.trim(), row.value] as const)
+        .filter(([key]) => key.length > 0)
+    )
+
+  const updateHeaderRow = (
+    index: number,
+    patch: Partial<{ key: string; value: string }>
+  ): void => {
+    const next = headerRows.map((row, rowIndex) =>
+      rowIndex === index ? { ...row, ...patch } : row
+    )
+    setHeaderRows(next)
+    updateField('headers', rowsToHeaders(next))
+  }
+
+  const addHeaderRow = (): void => {
+    setHeaderRows((current) => [...current, { key: '', value: '' }])
+  }
+
+  const removeHeaderRow = (index: number): void => {
+    const next = headerRows.filter((_, rowIndex) => rowIndex !== index)
+    setHeaderRows(next)
+    updateField('headers', rowsToHeaders(next))
   }
 
   const addModel = (model: ModelDef): void => {
@@ -195,6 +242,7 @@ function ModelsSection() {
         id: draft.id,
         type: draft.type,
         baseUrl: draft.baseUrl,
+        headers: draft.headers,
         apiKey: draft.apiKey,
         secretKey: draft.secretKey
       })
@@ -220,7 +268,7 @@ function ModelsSection() {
     try {
       await save(draft)
       setConfig(await window.api.settings.modelsConfig())
-      setDraft(null)
+      openDraft(null)
       setMessage({ ok: true, text: '已保存' })
       if (firstProvider) {
         showToast('模型配置完成，回到画布开始创作')
@@ -241,6 +289,7 @@ function ModelsSection() {
         id: draft.id,
         type: draft.type,
         baseUrl: draft.baseUrl,
+        headers: draft.headers,
         apiKey: draft.apiKey,
         secretKey: draft.secretKey
       })
@@ -362,6 +411,53 @@ function ModelsSection() {
             />
           </label>
         ) : null}
+
+        <div className="field">
+          <div className="field__head">
+            <span>自定义请求头</span>
+            <button
+              type="button"
+              className="btn-secondary btn-small"
+              onClick={addHeaderRow}
+            >
+              + 添加
+            </button>
+          </div>
+          {headerRows.length === 0 ? (
+            <div className="field__hint">
+              可选。部分服务需要固定请求头；值支持 {'${ENV_NAME}'} 环境变量。
+            </div>
+          ) : (
+            <div className="header-list">
+              {headerRows.map((row, index) => (
+                <div className="header-row" key={index}>
+                  <input
+                    value={row.key}
+                    placeholder="Header 名称"
+                    onChange={(event) =>
+                      updateHeaderRow(index, { key: event.target.value })
+                    }
+                  />
+                  <input
+                    value={row.value}
+                    placeholder="值，支持 ${ENV_NAME}"
+                    onChange={(event) =>
+                      updateHeaderRow(index, { value: event.target.value })
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    title="删除请求头"
+                    onClick={() => removeHeaderRow(index)}
+                  >
+                    <Icon name="close" size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="field">
           <div className="field__head">
@@ -538,7 +634,7 @@ function ModelsSection() {
               <button
                 type="button"
                 className="icon-btn"
-                onClick={() => setDraft(toDraft(provider))}
+                onClick={() => openDraft(toDraft(provider))}
               >
                 <Icon name="settings" size={14} />
               </button>
@@ -572,7 +668,7 @@ function ModelsSection() {
                 className="provider-preset"
                 onClick={() => {
                   setMessage(null)
-                  setDraft(emptyDraft(preset))
+                  openDraft(emptyDraft(preset))
                 }}
               >
                 <span className="provider-preset__name">{preset.name}</span>
@@ -587,7 +683,7 @@ function ModelsSection() {
           className="btn-primary btn-block"
           onClick={() => {
             setMessage(null)
-            setDraft(emptyDraft())
+            openDraft(emptyDraft())
           }}
         >
           + 添加供应商

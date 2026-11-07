@@ -1,5 +1,5 @@
 {
-  "version": 24,
+  "version": 25,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -489,6 +489,16 @@
       "evidence": [
         "docs/model-params-plan.md",
         ".opencode/handover/evidence/MODEL-PARAMS-2-friendly-editor.md"
+      ]
+    },
+    {
+      "id": "MODEL-PARAMS-3",
+      "title": "模型参数自定义值：Prompt Bar 自定义比例/尺寸",
+      "status": "done",
+      "note": "ParamDef 增加 allowCustom；模型参数编辑器增加「允许自定义值」；Prompt Bar 的比例/尺寸/分辨率可选「自定义」并输入 2:1、2048x1152 等。保存/摘要显示/退出自定义已验证。",
+      "evidence": [
+        "docs/model-params-plan.md",
+        ".opencode/handover/evidence/MODEL-PARAMS-3-custom-values.md"
       ]
     }
   ],
@@ -1228,6 +1238,10 @@
     {
       "category": "preference",
       "content": "模型参数编辑器面向首次配置用户：常用参数用带说明的卡片一键添加，选项用显示名/接口值逐行编辑，不要求手写「值|显示名」；接口字段名保留但作为次要信息，仍支持自定义参数。"
+    },
+    {
+      "category": "preference",
+      "content": "模型的下拉参数需要支持 allowCustom：比例/尺寸/分辨率在 Prompt Bar 预设旁提供「自定义」输入，不能假设模型只支持预设选项。"
     }
   ],
   "designConventions": [

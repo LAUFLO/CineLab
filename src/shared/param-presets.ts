@@ -18,7 +18,8 @@ const IMAGE_SIZE: ParamDef = {
     { value: '1024x1536', label: '1024×1536' },
     { value: '512x512', label: '512×512' }
   ],
-  defaultValue: '1024x1024'
+  defaultValue: '1024x1024',
+  allowCustom: true
 }
 
 const IMAGE_RATIO: ParamDef = {
@@ -34,7 +35,8 @@ const IMAGE_RATIO: ParamDef = {
     { value: '3:4', label: '3:4' },
     { value: '21:9', label: '21:9' }
   ],
-  defaultValue: '1:1'
+  defaultValue: '1:1',
+  allowCustom: true
 }
 
 const IMAGE_COUNT: ParamDef = {
@@ -88,7 +90,8 @@ const VIDEO_RATIO: ParamDef = {
     { value: '3:4', label: '3:4' },
     { value: '21:9', label: '21:9' }
   ],
-  defaultValue: '16:9'
+  defaultValue: '16:9',
+  allowCustom: true
 }
 
 const VIDEO_DURATION: ParamDef = {
@@ -111,7 +114,8 @@ const VIDEO_RESOLUTION: ParamDef = {
     { value: '720p', label: '720p' },
     { value: '1080p', label: '1080p' }
   ],
-  defaultValue: '720p'
+  defaultValue: '720p',
+  allowCustom: true
 }
 
 const VIDEO_AUDIO: ParamDef = {

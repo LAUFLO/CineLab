@@ -134,7 +134,10 @@ export function ModelParamsDialog({
       updateRow(index, {
         type,
         options,
-        defaultValue: options[0]?.value
+        defaultValue: options[0]?.value,
+        allowCustom:
+          row.allowCustom ??
+          ['size', 'ratio', 'resolution'].includes(row.key)
       })
       return
     }
@@ -270,7 +273,8 @@ export function ModelParamsDialog({
         ...(options && options.length > 0 ? { options } : {}),
         ...(defaultValue !== undefined ? { defaultValue } : {}),
         ...(row.min !== undefined ? { min: Number(row.min) } : {}),
-        ...(row.max !== undefined ? { max: Number(row.max) } : {})
+        ...(row.max !== undefined ? { max: Number(row.max) } : {}),
+        ...(row.allowCustom ? { allowCustom: true } : {})
       })
     })
 
@@ -482,6 +486,19 @@ export function ModelParamsDialog({
                         }
                       />
                     </div>
+
+                    <label className="model-param__check">
+                      <input
+                        type="checkbox"
+                        checked={row.allowCustom === true}
+                        onChange={(event) =>
+                          updateRow(index, {
+                            allowCustom: event.target.checked
+                          })
+                        }
+                      />
+                      <span>允许在生成设置中自定义值</span>
+                    </label>
                   </div>
                 ) : null}
 

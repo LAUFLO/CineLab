@@ -80,6 +80,7 @@ export function PromptBar() {
   const [characterMenuOpen, setCharacterMenuOpen] = useState(false)
   const [characterIds, setCharacterIds] = useState<string[]>([])
   const [paramValues, setParamValues] = useState<Record<string, unknown>>({})
+  const [customParamKeys, setCustomParamKeys] = useState<Set<string>>(new Set())
   const [promptText, setPromptText] = useState('')
   const [paramMenuKey, setParamMenuKey] = useState<string | null>(null)
   const [pickedRefs, setPickedRefs] = useState<ReferenceInput[]>([])
@@ -305,6 +306,53 @@ export function PromptBar() {
 
   const active = models.find((item) => item.key === modelKey) ?? models[0] ?? null
   const values = active ? { ...defaultParams(active.model), ...paramValues } : {}
+
+  useEffect(() => {
+    setCustomParamKeys(new Set())
+  }, [active?.key])
+
+  const paramAllowsCustom = (param: ParamDef): boolean =>
+    param.allowCustom === true ||
+    (param.allowCustom === undefined &&
+      ['ratio', 'size', 'resolution'].includes(param.key))
+
+  const isParamCustom = (param: ParamDef): boolean => {
+    if (customParamKeys.has(param.key)) return true
+    const value = values[param.key]
+    return (
+      value !== undefined &&
+      value !== null &&
+      value !== '' &&
+      !(param.options ?? []).some(
+        (option) => String(option.value) === String(value)
+      )
+    )
+  }
+
+  const enableCustomParam = (param: ParamDef): void => {
+    setCustomParamKeys((current) => {
+      const next = new Set(current)
+      next.add(param.key)
+      return next
+    })
+    setParamValues((current) => ({
+      ...current,
+      [param.key]:
+        current[param.key] ??
+        values[param.key] ??
+        param.defaultValue ??
+        ''
+    }))
+  }
+
+  const selectPreset = (param: ParamDef, value: string): void => {
+    setCustomParamKeys((current) => {
+      const next = new Set(current)
+      next.delete(param.key)
+      return next
+    })
+    setParamValues((current) => ({ ...current, [param.key]: value }))
+  }
 
   const paramGroups = useMemo(() => {
     if (!active) return []
@@ -859,6 +907,8 @@ export function PromptBar() {
                           const ratioGrid = param.options.every((option) =>
                             ratioOf(option.label)
                           )
+                          const custom = isParamCustom(param)
+                          const allowCustom = paramAllowsCustom(param)
 
                           return (
                             <div
@@ -878,15 +928,13 @@ export function PromptBar() {
                                         : ''
                                     }${
                                       String(option.value) ===
-                                      String(values[param.key])
+                                      String(values[param.key]) &&
+                                      !custom
                                         ? ' is-active'
                                         : ''
                                     }`}
                                     onClick={() =>
-                                      setParamValues((prev) => ({
-                                        ...prev,
-                                        [param.key]: option.value
-                                      }))
+                                      selectPreset(param, option.value)
                                     }
                                   >
                                     {ratio ? (
@@ -899,6 +947,38 @@ export function PromptBar() {
                                   </button>
                                 )
                               })}
+
+                              {allowCustom ? (
+                                <button
+                                  type="button"
+                                  className={`param-panel__option param-panel__option--custom${
+                                    custom ? ' is-active' : ''
+                                  }`}
+                                  onClick={() => enableCustomParam(param)}
+                                >
+                                  自定义
+                                </button>
+                              ) : null}
+
+                              {custom ? (
+                                <input
+                                  className="param-panel__custom-input"
+                                  value={String(values[param.key] ?? '')}
+                                  placeholder={
+                                    param.key === 'ratio'
+                                      ? '例如 2:1'
+                                      : param.key === 'size'
+                                        ? '例如 2048x1152'
+                                        : '输入自定义值'
+                                  }
+                                  onChange={(event) =>
+                                    setParamValues((current) => ({
+                                      ...current,
+                                      [param.key]: event.target.value
+                                    }))
+                                  }
+                                />
+                              ) : null}
                             </div>
                           )
                         }

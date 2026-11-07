@@ -97,6 +97,7 @@ function validateParams(
     if (readString(item.group)) param.group = readString(item.group)
     if (item.min !== undefined) param.min = Number(item.min)
     if (item.max !== undefined) param.max = Number(item.max)
+    if (item.allowCustom === true) param.allowCustom = true
 
     if (type === 'select') {
       if (!Array.isArray(item.options) || item.options.length === 0) {

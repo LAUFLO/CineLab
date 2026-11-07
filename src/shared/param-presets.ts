@@ -8,6 +8,7 @@ export interface ParamTemplate {
 const IMAGE_SIZE: ParamDef = {
   key: 'size',
   label: '尺寸',
+  group: '尺寸',
   type: 'select',
   options: [
     { value: '1024x1024', label: '1024×1024' },
@@ -21,6 +22,7 @@ const IMAGE_SIZE: ParamDef = {
 const IMAGE_RATIO: ParamDef = {
   key: 'ratio',
   label: '画幅比例',
+  group: '比例',
   type: 'select',
   options: [
     { value: '1:1', label: '1:1' },
@@ -36,6 +38,7 @@ const IMAGE_RATIO: ParamDef = {
 const IMAGE_COUNT: ParamDef = {
   key: 'n',
   label: '数量',
+  group: '生成数量',
   type: 'select',
   options: [
     { value: '1', label: '1 张' },
@@ -49,6 +52,7 @@ const IMAGE_COUNT: ParamDef = {
 const IMAGE_QUALITY: ParamDef = {
   key: 'quality',
   label: '质量',
+  group: '画质',
   type: 'select',
   options: [
     { value: 'auto', label: '自动' },
@@ -62,6 +66,7 @@ const IMAGE_QUALITY: ParamDef = {
 const VIDEO_RATIO: ParamDef = {
   key: 'ratio',
   label: '画幅比例',
+  group: '比例',
   type: 'select',
   options: [
     { value: '16:9', label: '16:9' },
@@ -77,18 +82,17 @@ const VIDEO_RATIO: ParamDef = {
 const VIDEO_DURATION: ParamDef = {
   key: 'duration',
   label: '时长',
-  type: 'select',
-  options: [
-    { value: '5', label: '5 秒' },
-    { value: '10', label: '10 秒' },
-    { value: '15', label: '15 秒' }
-  ],
-  defaultValue: '5'
+  group: '视频时长',
+  type: 'number',
+  defaultValue: 5,
+  min: 1,
+  max: 30
 }
 
 const VIDEO_RESOLUTION: ParamDef = {
   key: 'resolution',
   label: '分辨率',
+  group: '清晰度',
   type: 'select',
   options: [
     { value: '480p', label: '480p' },
@@ -101,6 +105,7 @@ const VIDEO_RESOLUTION: ParamDef = {
 const VIDEO_AUDIO: ParamDef = {
   key: 'generate_audio',
   label: '生成音频',
+  group: '生成音频',
   type: 'boolean',
   defaultValue: false
 }
@@ -108,6 +113,7 @@ const VIDEO_AUDIO: ParamDef = {
 const AUDIO_VOICE: ParamDef = {
   key: 'voice',
   label: '声音',
+  group: '声音',
   type: 'select',
   options: [
     { value: 'alloy', label: 'Alloy' },
@@ -123,6 +129,7 @@ const AUDIO_VOICE: ParamDef = {
 const AUDIO_SPEED: ParamDef = {
   key: 'speed',
   label: '语速',
+  group: '语速',
   type: 'select',
   options: [
     { value: '0.5', label: '0.5×' },
@@ -137,6 +144,7 @@ const AUDIO_SPEED: ParamDef = {
 const AUDIO_FORMAT: ParamDef = {
   key: 'format',
   label: '格式',
+  group: '格式',
   type: 'select',
   options: [
     { value: 'mp3', label: 'MP3' },
@@ -149,6 +157,7 @@ const AUDIO_FORMAT: ParamDef = {
 const TEXT_TEMPERATURE: ParamDef = {
   key: 'temperature',
   label: '温度',
+  group: '生成',
   type: 'number',
   defaultValue: 0.7,
   min: 0,
@@ -158,6 +167,7 @@ const TEXT_TEMPERATURE: ParamDef = {
 const TEXT_MAX_TOKENS: ParamDef = {
   key: 'max_tokens',
   label: '最大 token',
+  group: '生成',
   type: 'number',
   defaultValue: 2048,
   min: 1,

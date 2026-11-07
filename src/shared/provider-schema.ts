@@ -19,6 +19,8 @@ export interface ParamDef {
   key: string
   label: string
   type: 'select' | 'number' | 'text' | 'boolean'
+  /** 参数面板中的分组名称，例如「比例」「清晰度」「生成数量」 */
+  group?: string
   options?: ParamOption[]
   defaultValue?: string | number | boolean
   min?: number

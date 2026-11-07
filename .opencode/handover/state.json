@@ -1,5 +1,5 @@
 {
-  "version": 19,
+  "version": 20,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-07",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "整体验收与修复：安装 02d921b 包，重点验收蒙版/全景/视觉组件/专用视频操作绑定",
+  "next_focus": "AGENT-1 / P4 立项：先讨论 AGENT-1 与 P4（剪辑台/Agent 集成/智能剪辑/超分）的优先级与边界，落 docs/<feature>-plan.md 后再实施",
   "frontier": [
     {
       "id": "M2-1",
@@ -118,7 +118,7 @@
       "id": "AGENT-1",
       "title": "Agent 与画布协作",
       "status": "pending",
-      "note": "用户明确延后，等 K5 完成后再单独设计"
+      "note": "用户明确延后；下一阶段与 P4 一起做立项讨论，先确定优先级、交互形态和方案文档，不直接进入实现。"
     },
     {
       "id": "K3-1",
@@ -443,6 +443,12 @@
       "evidence": [
         ".opencode/handover/evidence/PACKAGE-2026-11-07-batches.md"
       ]
+    },
+    {
+      "id": "P4-PLAN",
+      "title": "AGENT-1 / P4 大功能立项讨论与方案文档",
+      "status": "pending",
+      "note": "范围：AGENT-1、剪辑台、Agent 集成、智能剪辑、超分。每项先落 docs/<feature>-plan.md，明确交互、技术选型、数据结构和验收标准后再排期。"
     }
   ],
   "knownIssues": [
@@ -1149,6 +1155,30 @@
     {
       "category": "engineering",
       "content": "音频节点用 fetch(cinelab-asset://) + AudioContext.decodeAudioData 计算峰值绘制真实波形，隐藏原生 audio controls；生成中显示胶囊取消，不显示右上角循环/时钟按钮。"
+    },
+    {
+      "category": "engineering",
+      "content": "视觉组件优先复用 depth-runtime 的 Python/PyTorch 环境，只单独下载模型与 worker；InSPyReNet（MIT）+ LaMa（Apache-2.0）替代 GPL 的 RVM，组件约 527MB。"
+    },
+    {
+      "category": "engineering",
+      "content": "蒙版编辑器输出 PNG，透明区域表示需要编辑；OpenAI 兼容 /images/edits 的 mask 按此语义提交。全局资产作为参考图必须带 scope，否则会按项目路径找不到而退化成文生图。"
+    },
+    {
+      "category": "engineering",
+      "content": "专用视频操作统一走 http-template 的 video 模式：GenerateRequest.video 透传，模板支持 video.dataUrl / video.base64 / video.mime 与 multipart；通过设置 → 操作模型绑定，不做首帧 i2v 近似。"
+    },
+    {
+      "category": "engineering",
+      "content": "自定义 cinelab-asset 协议需要 corsEnabled 和 Access-Control-Allow-Origin，否则 three.js 的纹理加载会失败；资产协议同时要支持 Range。"
+    },
+    {
+      "category": "procedure",
+      "content": "Windows 组件 zip 使用 Compress-Archive 生成；不要用 tar -C stage . 打包，tar 会写入 ./ 根条目，extract-zip 会以 out of bound path 拒绝安装。"
+    },
+    {
+      "category": "procedure",
+      "content": "dev:isolated 的 CDP 端口以脚本打印为准；9222 被其他会话占用时使用打印的端口，测试前先确认归属，禁止复用或关闭其他会话的 Electron 实例。"
     }
   ],
   "designConventions": [

@@ -75,6 +75,7 @@ interface NodeOperation {
 
 - `vision-models`：InSPyReNet fast 权重 + LaMa 权重 + worker，约 527MB 压缩 / 573MB 解压。
 - 不新增独立 runtime，避免重复下载约 1GB 的 PyTorch；InSPyReNet 代码已去除 timm/kornia 依赖，仅保留 torch/cv2。
+- Release：`vision-components-v1`（prerelease），资产 `vision-models-win32-x64-v1.zip` + `vision-models-manifest.json`。
 - worker 通过 stdout JSON 行上报进度，主进程沿用 `depth-tasks` 的任务/取消模式。
 
 限制：

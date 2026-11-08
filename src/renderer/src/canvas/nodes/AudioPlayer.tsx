@@ -2,17 +2,17 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react'
 
 interface AudioPlayerProps {
   src: string | null
+  path?: string | null
+  scope?: 'project' | 'global'
   busy?: boolean
   onCancel?: () => void
 }
 
 const WAVE_BARS = 96
+const FLAT_BARS = Array.from({ length: WAVE_BARS }, () => 0.06)
 const waveformCache = new Map<string, number[]>()
 
-async function computeWaveform(src: string): Promise<number[]> {
-  const cached = waveformCache.get(src)
-  if (cached) return cached
-
+async function decodeWithWebAudio(src: string): Promise<number[]> {
   const response = await fetch(src)
   const buffer = await response.arrayBuffer()
   const context = new AudioContext()
@@ -35,12 +35,42 @@ async function computeWaveform(src: string): Promise<number[]> {
     }
 
     const max = Math.max(...peaks, 0.0001)
-    const normalized = peaks.map((peak) => Math.max(0.07, peak / max))
-    waveformCache.set(src, normalized)
-    return normalized
+    return peaks.map((peak) => Math.max(0.06, peak / max))
   } finally {
     void context.close()
   }
+}
+
+async function computeWaveform(
+  src: string,
+  path?: string | null,
+  scope?: 'project' | 'global'
+): Promise<number[]> {
+  const key = path ? `${scope ?? 'project'}:${path}` : src
+  const cached = waveformCache.get(key)
+  if (cached) return cached
+
+  let values: number[] | null = null
+
+  if (path) {
+    try {
+      const peaks = await window.api.media.audioPeaks({
+        path,
+        scope,
+        buckets: WAVE_BARS
+      })
+      if (peaks.length > 0) values = peaks
+    } catch {
+      // 主进程无法解析时退回 Web Audio
+    }
+  }
+
+  if (!values) {
+    values = await decodeWithWebAudio(src)
+  }
+
+  waveformCache.set(key, values)
+  return values
 }
 
 export function timeLabel(seconds: number, pad = true): string {
@@ -52,7 +82,13 @@ export function timeLabel(seconds: number, pad = true): string {
     : `${minutes}:${String(rest).padStart(2, '0')}`
 }
 
-export function AudioPlayer({ src, busy, onCancel }: AudioPlayerProps) {
+export function AudioPlayer({
+  src,
+  path,
+  scope,
+  busy,
+  onCancel
+}: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [peaks, setPeaks] = useState<number[]>([])
   const [playing, setPlaying] = useState(false)
@@ -67,24 +103,18 @@ export function AudioPlayer({ src, busy, onCancel }: AudioPlayerProps) {
     if (!src) return
 
     let alive = true
-    void computeWaveform(src)
+    void computeWaveform(src, path, scope)
       .then((values) => {
         if (alive) setPeaks(values)
       })
       .catch(() => {
-        if (alive) {
-          setPeaks(
-            Array.from({ length: WAVE_BARS }, (_, index) =>
-              0.12 + Math.abs(Math.sin(index * 0.55)) * 0.5
-            )
-          )
-        }
+        if (alive) setPeaks([])
       })
 
     return () => {
       alive = false
     }
-  }, [src])
+  }, [src, path, scope])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -133,12 +163,7 @@ export function AudioPlayer({ src, busy, onCancel }: AudioPlayerProps) {
   }
 
   const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0
-  const bars =
-    peaks.length > 0
-      ? peaks
-      : Array.from({ length: WAVE_BARS }, (_, index) =>
-          0.15 + Math.abs(Math.sin(index * 0.4)) * 0.45
-        )
+  const bars = peaks.length > 0 ? peaks : FLAT_BARS
 
   return (
     <div className={`audio-node${busy ? ' is-busy' : ''}`}>

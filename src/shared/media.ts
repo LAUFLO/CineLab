@@ -1,5 +1,11 @@
 import type { GeneratedAsset } from './generation'
 
+export interface AudioPeaksRequest {
+  path: string
+  scope?: 'project' | 'global'
+  buckets?: number
+}
+
 export interface GridSplitRequest {
   path: string
   rows: number

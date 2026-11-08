@@ -36,6 +36,7 @@ import type { ModelsConfigStatus } from './models-file'
 import type { OperationBindings } from './operation-schema'
 import type { UpdateApi } from './update'
 import type {
+  AudioPeaksRequest,
   CropImageRectRequest,
   CropImageRequest,
   CropImageResult,
@@ -199,6 +200,7 @@ export interface MediaApi {
   splitAv(input: SplitAvRequest): Promise<SplitAvResult>
   cropVideo(input: CropVideoRequest): Promise<CropVideoResult>
   probe(path: string): Promise<MediaProbe>
+  audioPeaks(input: AudioPeaksRequest): Promise<number[]>
   cropImage(input: CropImageRequest): Promise<CropImageResult>
   cropImageRect(input: CropImageRectRequest): Promise<CropImageResult>
   trimVideo(input: TrimVideoRequest): Promise<TrimVideoResult>

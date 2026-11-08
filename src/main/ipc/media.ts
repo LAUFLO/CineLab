@@ -25,6 +25,7 @@ import { stitchGrid } from '../media/stitch'
 import { cropImage, cropImageRect } from '../media/image'
 import { resolveInside, resolveMediaPath } from '../media/paths'
 import { cropVideo, removeSubtitles, splitAv, trimVideo } from '../media/video'
+import { detectSubtitleRect } from '../media/subtitle-detect'
 import { mediaThumbnail } from '../media/thumbnail'
 import { ensureProxy } from '../media/proxy'
 import {
@@ -174,6 +175,22 @@ export function registerMediaIpc(): void {
     'media:remove-subtitles',
     async (_event, input: RemoveSubtitlesRequest) => {
       return { asset: await removeSubtitles(requireProjectRoot(), input) }
+    }
+  )
+
+  ipcMain.handle(
+    'media:detect-subtitle-rect',
+    async (
+      _event,
+      path: string,
+      scope?: 'project' | 'global'
+    ) => {
+      const absolute = await resolveMediaPath(
+        requireProjectRoot(),
+        path,
+        scope
+      )
+      return detectSubtitleRect(absolute)
     }
   )
 

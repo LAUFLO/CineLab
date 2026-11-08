@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Handle, Position, useReactFlow, useViewport, type NodeProps } from '@xyflow/react'
+import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
 import {
-  absolutePosition,
   nodeSize,
   useCanvasStore,
   type CineNode
@@ -14,6 +13,8 @@ import { useGenerationHistoryStore } from '../../stores/generation-history'
 import { useUIStore } from '../../stores/ui'
 import { useLibraryStore } from '../../stores/library'
 import { useStudioStore } from '../../stores/studio'
+import { TextEditorDialog } from './TextEditorDialog'
+import { renderMarkdown } from './text-markdown'
 import { createStudioFromNode } from '../../studio/nodes'
 import { assetUrl } from '../../lib/asset-url'
 import { AudioPlayer, timeLabel } from './AudioPlayer'
@@ -60,32 +61,28 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     const found = state.nodes.find((entry) => entry.id === id)
     return found ? nodeSize(found).width : meta.width
   })
-  const viewport = useViewport()
-  const node = useCanvasStore((state) =>
-    state.nodes.find((entry) => entry.id === id)
-  )
-  const absolute = node
-    ? absolutePosition(node, useCanvasStore.getState().nodes)
-    : null
-  const screenCenter = absolute
-    ? (absolute.x + nodeWidth / 2) * viewport.zoom + viewport.x
-    : window.innerWidth / 2
-  const toolbarAlign: 'left' | 'center' | 'right' =
-    screenCenter > window.innerWidth * 0.62
-      ? 'right'
-      : screenCenter < window.innerWidth * 0.38
-        ? 'left'
-        : 'center'
+  const toolbarAlign = 'center' as const
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [panoramaOpen, setPanoramaOpen] = useState(false)
+  const [textEditorOpen, setTextEditorOpen] = useState(false)
   const [previewRatio, setPreviewRatio] = useState<number | null>(null)
 
   const submitTitle = (): void => {
     const next = titleDraft.trim()
     setEditingTitle(false)
     if (next && next !== data.title) patchNodeData(id, { title: next })
+  }
+
+  const openTextEditor = (event: React.MouseEvent): void => {
+    event.stopPropagation()
+    setTextEditorOpen(true)
+  }
+
+  const saveText = (text: string): void => {
+    patchNodeData(id, { text, status: 'done' })
+    setTextEditorOpen(false)
   }
 
   const retryGeneration = (): void => {
@@ -194,15 +191,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         />      ) : null}
 
       {selected && !multiSelected && !current && !isBusy ? (
-        <div
-          className={`cnode__toolbar cnode__toolbar--minimal nodrag nopan ${
-            toolbarAlign === 'left'
-              ? 'is-left'
-              : toolbarAlign === 'right'
-                ? 'is-right'
-                : ''
-          }`}
-        >
+        <div className="cnode__toolbar cnode__toolbar--minimal nodrag nopan">
           <button
             type="button"
             className="cnode__toolbar-btn"
@@ -267,7 +256,13 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               onCancel={() => void cancelGeneration(id)}
             />
           ) : assetSrc && current?.kind === 'text' ? (
-            <p className="cnode__text">{data.text ?? '文本已生成'}</p>
+            <div
+              className="cnode__text cnode__text--markdown"
+              onDoubleClick={openTextEditor}
+              dangerouslySetInnerHTML={{
+                __html: renderMarkdown(data.text ?? '文本已生成')
+              }}
+            />
           ) : assetSrc && (current?.kind === 'video' || data.kind === 'video') ? (
             <VideoPlayer
               src={assetSrc}
@@ -285,7 +280,13 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           )}
 
           {!assetSrc && data.kind === 'text' && data.text ? (
-            <p className="cnode__text">{data.text}</p>
+            <div
+              className="cnode__text cnode__text--markdown"
+              onDoubleClick={openTextEditor}
+              dangerouslySetInnerHTML={{
+                __html: renderMarkdown(data.text)
+              }}
+            />
           ) : null}
 
           {isBusy && data.kind !== 'audio' ? (
@@ -324,6 +325,18 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             </div>
           ) : null}
 
+          {data.kind === 'text' && !isBusy ? (
+            <button
+              type="button"
+              className="cnode__text-edit nodrag nopan"
+              title="编辑文本（支持 Markdown）"
+              onClick={openTextEditor}
+            >
+              <Icon name="edit" size={12} />
+              编辑
+            </button>
+          ) : null}
+
           {outputs.length > 1 && !isBusy ? (
             <div className="cnode__versions nodrag nopan">
               <button
@@ -360,29 +373,32 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         ) : null}
       </div>
 
-      {data.kind !== 'study' ? (
-        <>
-          <Handle
-            type="target"
-            position={Position.Left}
-            className="cnode__handle cnode__handle--left"
-            title="接收上游连线"
-          >
-            <Icon name="plus" size={12} className="cnode__handle-icon" />
-          </Handle>
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="cnode__handle cnode__handle--left"
+        title="接收上游连线"
+      >
+        <Icon name="plus" size={12} className="cnode__handle-icon" />
+      </Handle>
 
-          <Handle
-            type="source"
-            position={Position.Right}
-            className="cnode__handle cnode__handle--right"
-            title="生成下游节点"
-            onClick={openFromHandle}
-          >
-            <Icon name="plus" size={12} className="cnode__handle-icon" />
-          </Handle>
-        </>
-      ) : null}
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="cnode__handle cnode__handle--right"
+        title="生成下游节点"
+        onClick={openFromHandle}
+      >
+        <Icon name="plus" size={12} className="cnode__handle-icon" />
+      </Handle>
     </div>
+    <TextEditorDialog
+      open={textEditorOpen}
+      title={data.title}
+      initialText={data.text ?? ''}
+      onClose={() => setTextEditorOpen(false)}
+      onSave={saveText}
+    />
     {previewOpen &&
     current &&
     (current.kind === 'image' || current.kind === 'video')

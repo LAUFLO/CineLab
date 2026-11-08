@@ -31,6 +31,8 @@ interface ShotRange {
 
 interface AutoAnalysisSegment {
   index?: number
+  from?: number
+  to?: number
   title?: string
   type?: string
   shotSize?: string
@@ -158,9 +160,15 @@ function buildPrompt(
     '',
     ...list,
     '',
-    '请严格按给定镜头输出，不要增删镜头或修改时间。每个镜头补充：',
-    '- title：4–8 个字的镜头标题',
-    '- type：镜头类型，例如 开场、推进、转折、高潮、结尾、过渡',
+    '下面这些是按画面变化切出的候选镜头。请完成两件事：',
+    '1. 根据画面内容和叙事，把连续候选镜头合并成更合理的分镜；不要拆分候选镜头。',
+    '2. 为每个最终分镜补充画面描述与镜头语言。',
+    '',
+    'segments 每项用 from/to 表示包含的候选镜头编号（从 1 开始）。',
+    '必须连续覆盖全部候选镜头、不重叠、不遗漏；可以不合并，from 和 to 相同即可。',
+    '每个最终分镜补充：',
+    '- title：4–8 个字的分镜标题',
+    '- type：分镜类型，例如 开场、推进、转折、高潮、结尾、过渡',
     '- shotSize：景别，例如 大远景、远景、全景、中景、近景、特写',
     '- cameraAngle：机位/角度，例如 平视、俯拍、仰拍、侧面、过肩',
     '- cameraMove：运镜，例如 固定、推、拉、摇、移、跟拍、环绕',
@@ -179,9 +187,10 @@ function buildPrompt(
           type: 'array',
           items: {
             type: 'object',
-            required: ['index', 'title', 'shotSize', 'cameraAngle', 'cameraMove', 'visualDescription', 'imagePrompt'],
+            required: ['from', 'to', 'title', 'shotSize', 'cameraAngle', 'cameraMove', 'visualDescription', 'imagePrompt'],
             properties: {
-              index: { type: 'number' },
+              from: { type: 'number' },
+              to: { type: 'number' },
               title: { type: 'string' },
               type: { type: 'string' },
               shotSize: { type: 'string' },
@@ -197,7 +206,7 @@ function buildPrompt(
         }
       }
     }),
-    'index 从 1 开始，与上面的镜头编号一致。'
+    'from/to 从 1 开始，与上面的候选镜头编号一致。'
   ].join('\n')
 }
 
@@ -212,7 +221,9 @@ function parseJson(raw: string): unknown {
 
 function applyAnalysis(
   study: FilmStudy,
-  payload: unknown
+  payload: unknown,
+  shots: ShotRange[],
+  frames: FilmStudyFrame[]
 ): FilmStudy {
   const record =
     payload && typeof payload === 'object' && !Array.isArray(payload)
@@ -221,16 +232,24 @@ function applyAnalysis(
   const rawSegments = Array.isArray(record.segments) ? record.segments : []
   if (rawSegments.length === 0) throw new Error('模型没有返回分镜数据')
 
-  const byIndex = new Map<number, AutoAnalysisSegment>()
-  const ordered: AutoAnalysisSegment[] = []
+  const entries: AutoAnalysisSegment[] = []
   for (const item of rawSegments) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) continue
     const segment = item as Record<string, unknown>
-    const entry: AutoAnalysisSegment = {
-      index:
-        typeof segment.index === 'number' && Number.isFinite(segment.index)
+    const rawFrom =
+      typeof segment.from === 'number' && Number.isFinite(segment.from)
+        ? Math.round(segment.from)
+        : typeof segment.index === 'number' && Number.isFinite(segment.index)
           ? Math.round(segment.index)
-          : undefined,
+          : undefined
+    const rawTo =
+      typeof segment.to === 'number' && Number.isFinite(segment.to)
+        ? Math.round(segment.to)
+        : rawFrom
+    entries.push({
+      from: rawFrom,
+      to: rawTo,
+      index: rawFrom,
       title: readText(segment.title),
       type: readText(segment.type),
       shotSize: readText(segment.shotSize),
@@ -241,28 +260,79 @@ function applyAnalysis(
       imagePrompt: readText(segment.imagePrompt),
       voiceOver: readText(segment.voiceOver),
       musicCue: readText(segment.musicCue)
-    }
-    ordered.push(entry)
-    if (entry.index) byIndex.set(entry.index, entry)
+    })
   }
 
-  const segments = study.segments.map((segment, index) => {
-    const analysis = byIndex.get(index + 1) ?? ordered[index]
-    if (!analysis) return segment
-    return {
-      ...segment,
-      title: analysis.title ?? segment.title,
-      type: analysis.type ?? segment.type,
-      shotSize: analysis.shotSize,
-      cameraAngle: analysis.cameraAngle,
-      cameraMove: analysis.cameraMove,
-      lighting: analysis.lighting,
-      visualDescription: analysis.visualDescription,
-      imagePrompt: analysis.imagePrompt,
-      voiceOver: analysis.voiceOver,
-      musicCue: analysis.musicCue
+  // 优先使用模型给出的 from/to 语义合并；必须连续覆盖全部候选镜头
+  const groups = entries
+    .filter(
+      (entry): entry is AutoAnalysisSegment & { from: number; to: number } =>
+        entry.from !== undefined &&
+        entry.to !== undefined &&
+        entry.from >= 1 &&
+        entry.to <= shots.length &&
+        entry.to >= entry.from
+    )
+    .sort((a, b) => a.from - b.from)
+
+  let segments: FilmStudySegment[] | null = null
+  if (groups.length > 0) {
+    let cursor = 1
+    const valid = groups.every((group) => {
+      if (group.from !== cursor) return false
+      cursor = group.to + 1
+      return true
+    })
+    if (valid && cursor === shots.length + 1) {
+      segments = groups.map((group) => {
+        const from = group.from
+        const to = group.to
+        const base = study.segments[from - 1]
+        return {
+          id: randomUUID(),
+          startTime: shots[from - 1].start,
+          endTime: shots[to - 1].end,
+          title: group.title ?? base?.title ?? baseTitle(from - 1),
+          type: group.type ?? '分镜',
+          coverFile: frames[from - 1]?.file,
+          shotSize: group.shotSize,
+          cameraAngle: group.cameraAngle,
+          cameraMove: group.cameraMove,
+          lighting: group.lighting,
+          visualDescription: group.visualDescription,
+          imagePrompt: group.imagePrompt,
+          voiceOver: group.voiceOver,
+          musicCue: group.musicCue
+        }
+      })
     }
-  })
+  }
+
+  if (!segments) {
+    const byIndex = new Map<number, AutoAnalysisSegment>()
+    const ordered: AutoAnalysisSegment[] = []
+    for (const entry of entries) {
+      ordered.push(entry)
+      if (entry.index) byIndex.set(entry.index, entry)
+    }
+    segments = study.segments.map((segment, index) => {
+      const analysis = byIndex.get(index + 1) ?? ordered[index]
+      if (!analysis) return segment
+      return {
+        ...segment,
+        title: analysis.title ?? segment.title,
+        type: analysis.type ?? segment.type,
+        shotSize: analysis.shotSize,
+        cameraAngle: analysis.cameraAngle,
+        cameraMove: analysis.cameraMove,
+        lighting: analysis.lighting,
+        visualDescription: analysis.visualDescription,
+        imagePrompt: analysis.imagePrompt,
+        voiceOver: analysis.voiceOver,
+        musicCue: analysis.musicCue
+      }
+    })
+  }
 
   return {
     ...study,
@@ -353,7 +423,7 @@ async function requestAnalysis(
   const raw = json.choices?.[0]?.message?.content?.trim()
   if (!raw) throw new Error('模型没有返回分析内容')
 
-  return applyAnalysis(study, parseJson(raw))
+  return applyAnalysis(study, parseJson(raw), shots, frames)
 }
 
 export async function autoFilmStudy(

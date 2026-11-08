@@ -28,3 +28,6 @@ nsis:
 publish:
   provider: generic
   url: https://github.com/LAUFLO/CineLab/releases/latest/download
+extraResources:
+  - from: resources/sounds
+    to: sounds

@@ -312,6 +312,70 @@ export async function generateSpeech(
   return [{ data: Buffer.from(await response.arrayBuffer()), mime }]
 }
 
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
+/**
+ * 支持 system + 多轮消息的 OpenAI 兼容 chat 请求。
+ * 供剪辑助手使用，不改变现有单轮 generateText 行为。
+ */
+export async function chatCompletion(
+  model: ModelDef,
+  provider: ProviderRuntime,
+  messages: ChatMessage[],
+  params: Record<string, unknown>,
+  ctx: AdapterContext
+): Promise<string> {
+  const body: Record<string, unknown> = {
+    model: model.remoteModel,
+    messages
+  }
+
+  if (params.temperature !== undefined) {
+    body.temperature = Number(params.temperature)
+  }
+  if (params.max_tokens !== undefined) {
+    body.max_tokens = Number(params.max_tokens)
+  }
+
+  ctx.onProgress(10, '生成文本')
+
+  const response = await httpFetch(
+    `${normalizeBaseUrl(provider.baseUrl)}/chat/completions`,
+    {
+      method: 'POST',
+      headers: mergeHeaders(
+        {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${provider.apiKey}`
+        },
+        provider.headers
+      ),
+      body: JSON.stringify(body),
+      signal: ctx.signal
+    }
+  )
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '')
+    throw new Error(`HTTP ${response.status}: ${text.slice(0, 400)}`)
+  }
+
+  const json = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string } }>
+  }
+  const content = json.choices?.[0]?.message?.content?.trim()
+
+  if (!content) {
+    throw new Error('接口没有返回文本内容')
+  }
+
+  ctx.onProgress(90, '生成完成')
+  return content
+}
+
 export async function generateText(
   model: ModelDef,
   provider: ProviderRuntime,

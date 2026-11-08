@@ -224,6 +224,8 @@ const api: CineApi = {
     proxy: (path: string) => ipcRenderer.invoke('media:proxy', path),
     audioPeaks: (input: AudioPeaksRequest) =>
       ipcRenderer.invoke('media:audio-peaks', input),
+    listSounds: () => ipcRenderer.invoke('media:list-sounds'),
+    importSound: (id: string) => ipcRenderer.invoke('media:import-sound', id),
     splitAv: (input: SplitAvRequest) => ipcRenderer.invoke('media:split-av', input),
     cropVideo: (input: CropVideoRequest) => ipcRenderer.invoke('media:crop-video', input),
     cropImage: (input: CropImageRequest) =>
@@ -275,7 +277,8 @@ const api: CineApi = {
       ipcRenderer.invoke('timeline:duplicate', timelineId),
     exportVtt: (doc: TimelineDoc) =>
       ipcRenderer.invoke('timeline:export-vtt', doc),
-    export: (doc: TimelineDoc) => ipcRenderer.invoke('timeline:export', doc),
+    export: (doc: TimelineDoc, settings?: import('../shared/ipc-contract').TimelineExportSettings) =>
+      ipcRenderer.invoke('timeline:export', doc, settings),
     cancelExport: () => ipcRenderer.invoke('timeline:export-cancel'),
     onExportProgress: (callback) => {
       const listener = (
@@ -302,6 +305,10 @@ const api: CineApi = {
     analyze: (input) => ipcRenderer.invoke('timeline:analyze', input),
     importSubtitles: (path?: string) =>
       ipcRenderer.invoke('timeline:import-subtitles', path)
+  },
+  agent: {
+    chat: (input) => ipcRenderer.invoke('agent:chat', input),
+    cancel: () => ipcRenderer.invoke('agent:cancel')
   },
   export: {
     project: (projectName: string) =>

@@ -4,6 +4,10 @@ import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { Writable } from 'node:stream'
 import type { TimelineExportProgress } from '@shared/ipc-contract'
+import type {
+  TimelineExportSettings,
+  TimelineVideoCodec
+} from '@shared/ipc-contract'
 import { docDurationMs } from '@shared/timeline-layout'
 import type { TimelineClip, TimelineDoc } from '@shared/timeline-schema'
 import { ffmpegBinary, probeMedia, runFfmpeg } from '../media/ffmpeg'
@@ -16,9 +20,58 @@ export type { TimelineExportProgress }
 
 export interface TimelineExportOptions {
   signal?: AbortSignal
+  settings?: TimelineExportSettings
 }
 
 const CANCELED = '已取消'
+
+function videoEncoderArgs(
+  codec: TimelineVideoCodec | undefined,
+  crf: number | undefined
+): string[] {
+  if (codec === 'hevc') {
+    return [
+      '-c:v',
+      'libx265',
+      '-preset',
+      'medium',
+      '-crf',
+      String(crf ?? 22),
+      '-pix_fmt',
+      'yuv420p',
+      '-tag:v',
+      'hvc1'
+    ]
+  }
+
+  if (codec === 'av1') {
+    return [
+      '-c:v',
+      'libaom-av1',
+      '-crf',
+      String(crf ?? 30),
+      '-b:v',
+      '0',
+      '-cpu-used',
+      '6',
+      '-row-mt',
+      '1',
+      '-pix_fmt',
+      'yuv420p'
+    ]
+  }
+
+  return [
+    '-c:v',
+    'libx264',
+    '-preset',
+    'medium',
+    '-crf',
+    String(crf ?? 18),
+    '-pix_fmt',
+    'yuv420p'
+  ]
+}
 
 function throwIfCanceled(signal?: AbortSignal): void {
   if (signal?.aborted) throw new Error(CANCELED)
@@ -274,9 +327,11 @@ export async function exportTimeline(
   onProgress: (progress: TimelineExportProgress) => void,
   options: TimelineExportOptions = {}
 ): Promise<string> {
-  const { signal } = options
+  const { signal, settings } = options
 
-  const fastClips = fastPathClips(doc)
+  const canUseFastPath =
+    settings?.codec === undefined || settings.codec === 'h264'
+  const fastClips = canUseFastPath ? fastPathClips(doc) : null
   if (fastClips) {
     const copied = await tryExportStreamCopy(
       projectRoot,
@@ -345,14 +400,7 @@ export async function exportTimeline(
         '0:v',
         '-map',
         plan.outputLabel,
-        '-c:v',
-        'libx264',
-        '-preset',
-        'medium',
-        '-crf',
-        '18',
-        '-pix_fmt',
-        'yuv420p',
+        ...videoEncoderArgs(settings?.codec, settings?.crf),
         '-c:a',
         'aac',
         '-b:a',
@@ -365,14 +413,7 @@ export async function exportTimeline(
       )
     } else {
       args.push(
-        '-c:v',
-        'libx264',
-        '-preset',
-        'medium',
-        '-crf',
-        '18',
-        '-pix_fmt',
-        'yuv420p',
+        ...videoEncoderArgs(settings?.codec, settings?.crf),
         '-t',
         (totalMs / 1000).toFixed(3),
         '-movflags',

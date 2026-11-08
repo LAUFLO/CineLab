@@ -7,6 +7,7 @@ import {
   moveClips,
   overwriteClips,
   removeClips,
+  removeRanges,
   splitClips,
   trimClip
 } from '../timeline-edit'
@@ -35,6 +36,43 @@ function spans(doc: TimelineDoc, trackId: string) {
 }
 
 describe('insert and overwrite', () => {
+  it('inserts a clip and pushes later clips', () => {
+    const { doc, v1 } = setup()
+    clipAt(doc, v1, 0, 5000)
+    const incoming = createClip({
+      trackId: v1,
+      kind: 'image',
+      startMs: 2000,
+      durationMs: 2000
+    })
+
+    insertClips(doc, v1, 2000, [incoming])
+
+    expect(spans(doc, v1)).toEqual([
+      [0, 2000],
+      [2000, 2000],
+      [4000, 3000]
+    ])
+  })
+
+  it('rounds a fractional insert time so the split tail is pushed', () => {
+    const { doc, v1 } = setup()
+    clipAt(doc, v1, 0, 5000)
+    const incoming = createClip({
+      trackId: v1,
+      kind: 'image',
+      startMs: 2000,
+      durationMs: 2000
+    })
+
+    insertClips(doc, v1, 2000.6, [incoming])
+
+    expect(spans(doc, v1)).toEqual([
+      [0, 2001],
+      [2001, 2000],
+      [4001, 2999]
+    ])
+  })
   it('insert splits the clip under the pointer and pushes the rest right', () => {
     const { doc, v1 } = setup()
     clipAt(doc, v1, 0, 2000)
@@ -169,6 +207,83 @@ describe('gaps', () => {
       [0, 1000],
       [1000, 1000],
       [2000, 500]
+    ])
+  })
+})
+
+describe('removeRanges', () => {
+  it('cuts ranges and closes gaps on all tracks', () => {
+    const { doc, v1, a1, subtitle } = setup()
+    clipAt(doc, v1, 0, 5000)
+    doc.clips.push(
+      createClip({ trackId: a1, kind: 'audio', startMs: 0, durationMs: 5000 }),
+      createClip({ trackId: subtitle, kind: 'text', startMs: 0, durationMs: 5000 })
+    )
+
+    removeRanges(doc, [{ startMs: 1000, endMs: 2000 }], true)
+
+    expect(spans(doc, v1)).toEqual([
+      [0, 1000],
+      [1000, 3000]
+    ])
+    expect(spans(doc, a1)).toEqual([
+      [0, 1000],
+      [1000, 3000]
+    ])
+    expect(spans(doc, subtitle)).toEqual([
+      [0, 1000],
+      [1000, 3000]
+    ])
+  })
+
+  it('handles multiple ranges from the back', () => {
+    const { doc, v1 } = setup()
+    clipAt(doc, v1, 0, 5000)
+
+    removeRanges(
+      doc,
+      [
+        { startMs: 1000, endMs: 2000 },
+        { startMs: 3000, endMs: 3500 }
+      ],
+      true
+    )
+
+    expect(spans(doc, v1)).toEqual([
+      [0, 1000],
+      [1000, 1000],
+      [2000, 1500]
+    ])
+  })
+
+  it('keeps locked tracks untouched', () => {
+    const { doc, v1, a1 } = setup()
+    clipAt(doc, v1, 0, 5000)
+    doc.clips.push(
+      createClip({ trackId: a1, kind: 'audio', startMs: 0, durationMs: 5000 })
+    )
+    doc.tracks = doc.tracks.map((track) =>
+      track.id === v1 ? { ...track, locked: true } : track
+    )
+
+    removeRanges(doc, [{ startMs: 1000, endMs: 2000 }], true)
+
+    expect(spans(doc, v1)).toEqual([[0, 5000]])
+    expect(spans(doc, a1)).toEqual([
+      [0, 1000],
+      [1000, 3000]
+    ])
+  })
+
+  it('can leave gaps when ripple is false', () => {
+    const { doc, v1 } = setup()
+    clipAt(doc, v1, 0, 5000)
+
+    removeRanges(doc, [{ startMs: 1000, endMs: 2000 }], false)
+
+    expect(spans(doc, v1)).toEqual([
+      [0, 1000],
+      [2000, 3000]
     ])
   })
 })

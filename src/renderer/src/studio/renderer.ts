@@ -1,5 +1,6 @@
 import type { TimelineClip, TimelineDoc } from '@shared/timeline-schema'
 import { evaluateClipKeys, type EvaluatedClip } from '@shared/timeline-keyframes'
+import { canvasFilterString } from '@shared/filters'
 import { transitionState } from '@shared/timeline-transition'
 import { assetUrl } from '../lib/asset-url'
 
@@ -112,12 +113,39 @@ function sourceSize(source: HTMLVideoElement | HTMLImageElement): [number, numbe
   return [source.naturalWidth, source.naturalHeight]
 }
 
+interface DrawEffect {
+  translateX?: number
+  translateY?: number
+  scale?: number
+}
+
+function drawVignette(ctx: CanvasRenderingContext2D, intensity: number): void {
+  if (intensity <= 0) return
+  const width = ctx.canvas.width
+  const height = ctx.canvas.height
+  const gradient = ctx.createRadialGradient(
+    width / 2,
+    height / 2,
+    Math.min(width, height) * 0.25,
+    width / 2,
+    height / 2,
+    Math.max(width, height) * 0.75
+  )
+  gradient.addColorStop(0, 'rgba(0,0,0,0)')
+  gradient.addColorStop(1, `rgba(0,0,0,${Math.min(0.85, intensity * 0.7)})`)
+  ctx.save()
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, width, height)
+  ctx.restore()
+}
+
 function drawMedia(
   ctx: CanvasRenderingContext2D,
   clip: TimelineClip,
   source: HTMLVideoElement | HTMLImageElement,
   keys: EvaluatedClip,
-  alpha = 1
+  alpha = 1,
+  effect?: DrawEffect
 ): void {
   const [sw, sh] = sourceSize(source)
   if (!sw || !sh) return
@@ -130,17 +158,26 @@ function drawMedia(
   const fit = Math.max(width / sw, height / sh)
   const drawWidth = sw * fit * keys.scale * stretchX
   const drawHeight = sh * fit * keys.scale * stretchY
+  const filterValue = canvasFilterString(clip.filter)
 
   ctx.save()
+  if (filterValue) ctx.filter = filterValue
   ctx.globalAlpha = Math.min(1, Math.max(0, keys.opacity * alpha))
   ctx.globalCompositeOperation = BLEND_TO_COMPOSITE[clip.blend] ?? 'source-over'
   ctx.translate(
-    width / 2 + keys.position.x * width,
-    height / 2 + keys.position.y * height
+    width / 2 + keys.position.x * width + (effect?.translateX ?? 0),
+    height / 2 + keys.position.y * height + (effect?.translateY ?? 0)
   )
   ctx.rotate((keys.rotation * Math.PI) / 180)
+  if (effect?.scale && effect.scale !== 1) {
+    ctx.scale(effect.scale, effect.scale)
+  }
   ctx.drawImage(source, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight)
   ctx.restore()
+
+  if (clip.filter?.vignette) {
+    drawVignette(ctx, clip.filter.vignette)
+  }
 }
 
 function drawText(
@@ -250,7 +287,8 @@ function drawClipFrame(
   timeMs: number,
   alpha: number,
   doc: TimelineDoc,
-  pools: RendererPools
+  pools: RendererPools,
+  effect?: DrawEffect
 ): void {
   const keys = evaluateClipKeys(clip, timeMs)
 
@@ -275,7 +313,7 @@ function drawClipFrame(
     return
   }
 
-  drawMedia(ctx, clip, source, keys, alpha)
+  drawMedia(ctx, clip, source, keys, alpha, effect)
 }
 
 /** 把时间线在 timeMs 的一帧画到 canvas */
@@ -310,15 +348,72 @@ export function renderTimeline({ ctx, doc, timeMs, pools, playing }: RenderInput
 
       if (transition && clip.kind !== 'text') {
         const previous = previousClipForTransition(doc, clip)
-        if (previous) {
+        const drawPrevious = (alpha: number, effect?: DrawEffect): void => {
+          if (!previous) return
           drawClipFrame(
             ctx,
             previous,
             clip.startMs + localMs,
-            transition.outgoingAlpha,
+            alpha,
             doc,
-            pools
+            pools,
+            effect
           )
+        }
+
+        if (
+          transition.type === 'wipe-left' ||
+          transition.type === 'wipe-right'
+        ) {
+          drawPrevious(1)
+          ctx.save()
+          ctx.beginPath()
+          if (transition.type === 'wipe-left') {
+            ctx.rect(0, 0, width * transition.progress, height)
+          } else {
+            ctx.rect(
+              width * (1 - transition.progress),
+              0,
+              width * transition.progress,
+              height
+            )
+          }
+          ctx.clip()
+          drawClipFrame(ctx, clip, timeMs, 1, doc, pools)
+          ctx.restore()
+          continue
+        }
+
+        if (
+          transition.type === 'slide-left' ||
+          transition.type === 'slide-right'
+        ) {
+          const direction = transition.type === 'slide-left' ? 1 : -1
+          drawPrevious(1, {
+            translateX: -direction * width * transition.progress
+          })
+          drawClipFrame(ctx, clip, timeMs, 1, doc, pools, {
+            translateX: direction * width * (1 - transition.progress)
+          })
+          continue
+        }
+
+        if (transition.type === 'zoom-in') {
+          drawPrevious(1 - transition.progress)
+          drawClipFrame(
+            ctx,
+            clip,
+            timeMs,
+            transition.progress,
+            doc,
+            pools,
+            { scale: 0.85 + 0.15 * transition.progress }
+          )
+          continue
+        }
+
+        if (previous) {
+          drawPrevious(transition.outgoingAlpha)
         }
         drawClipFrame(
           ctx,

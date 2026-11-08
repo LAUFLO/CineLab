@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { docDurationMs, formatTimecode } from '@shared/timeline-layout'
 import type { OutputRef } from '@shared/canvas-schema'
+import type { TimelineVideoCodec } from '@shared/ipc-contract'
 import { assetUrl } from '../../lib/asset-url'
 import { Icon } from '../../components/Icon'
 import {
@@ -33,6 +34,7 @@ export function FilmNodeView({ id, data, selected }: NodeProps<FilmNode>) {
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [exporting, setExporting] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [codec, setCodec] = useState<TimelineVideoCodec>('h264')
   const [previewOpen, setPreviewOpen] = useState(false)
   const patchFilmNode = useCanvasStore((state) => state.patchFilmNode)
   const setFilmStatus = useCanvasStore((state) => state.setFilmStatus)
@@ -129,7 +131,7 @@ export function FilmNodeView({ id, data, selected }: NodeProps<FilmNode>) {
     })
 
     try {
-      const result = await window.api.timeline.export(doc)
+      const result = await window.api.timeline.export(doc, { codec })
       if (result.canceled) {
         setFilmStatus(id, current ? 'stale' : 'pending')
         showToast('已取消生成成片')
@@ -394,6 +396,20 @@ export function FilmNodeView({ id, data, selected }: NodeProps<FilmNode>) {
             >
               VTT
             </button>
+            <select
+              className="film-node__codec nodrag nopan"
+              title="导出编码"
+              value={codec}
+              disabled={busy}
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) =>
+                setCodec(event.target.value as TimelineVideoCodec)
+              }
+            >
+              <option value="h264">H.264</option>
+              <option value="hevc">HEVC</option>
+              <option value="av1">AV1</option>
+            </select>
             <button
               type="button"
               className="film-node__btn is-primary"

@@ -17,17 +17,20 @@ import {
 import {
   type ClipMove,
   type EditMode,
+  type TimeRange,
   closeGaps,
   cutRange,
   insertClips,
   moveClips,
   normalizeClips,
   removeClips,
+  removeRanges,
+  splitAt,
   splitClips,
   trimClip
 } from './timeline-edit'
 
-export type { ClipMove, EditMode }
+export type { ClipMove, EditMode, TimeRange }
 
 export type TimelineCommand =
   | { op: 'addClip'; clip: TimelineClip }
@@ -42,7 +45,14 @@ export type TimelineCommand =
   | { op: 'moveClips'; moves: ClipMove[]; mode?: EditMode }
   | { op: 'trimClip'; clipId: string; edge: 'start' | 'end'; deltaMs: number; ripple?: boolean }
   | { op: 'splitClips'; clipIds: string[]; atMs: number }
+  | { op: 'splitAt'; trackId: string; atMs: number }
   | { op: 'removeClips'; clipIds: string[]; ripple?: boolean }
+  | {
+      op: 'removeRanges'
+      ranges: TimeRange[]
+      ripple?: boolean
+      trackIds?: string[]
+    }
   | { op: 'updateClip'; clipId: string; patch: Partial<TimelineClip> }
   | { op: 'setClipSpeed'; clipId: string; speed: number }
   | { op: 'setClipTransform'; clipId: string; transform: Partial<NonNullable<TimelineClip['transform']>> }
@@ -135,8 +145,16 @@ function applyInPlace(doc: TimelineDoc, command: TimelineCommand): void {
       splitClips(doc, command.clipIds, command.atMs)
       return
 
+    case 'splitAt':
+      splitAt(doc, command.trackId, command.atMs)
+      return
+
     case 'removeClips':
       removeClips(doc, command.clipIds, command.ripple ?? isMainRipple(doc, command.clipIds))
+      return
+
+    case 'removeRanges':
+      removeRanges(doc, command.ranges, command.ripple ?? true, command.trackIds)
       return
 
     case 'updateClip': {

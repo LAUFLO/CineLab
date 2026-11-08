@@ -4,6 +4,7 @@ import { basename } from 'node:path'
 import type {
   TimelineAnalysisRequest,
   TimelineExportResult,
+  TimelineExportSettings,
   TimelineSubtitleImportResult,
   TimelineTranscribeProgress,
   TimelineTranscribeRequest
@@ -118,7 +119,11 @@ export function registerTimelineIpc(): void {
 
   ipcMain.handle(
     'timeline:export',
-    async (event, doc: TimelineDoc): Promise<TimelineExportResult> => {
+    async (
+      event,
+      doc: TimelineDoc,
+      settings?: TimelineExportSettings
+    ): Promise<TimelineExportResult> => {
       const root = getCurrentProjectRoot()
       if (!root) throw new Error('没有打开的项目')
       if (activeExport) throw new Error('已有导出任务正在进行')
@@ -135,7 +140,7 @@ export function registerTimelineIpc(): void {
               event.sender.send('timeline:export-progress', progress)
             }
           },
-          { signal: controller.signal }
+          { signal: controller.signal, settings }
         )
         return { ok: true, path }
       } catch (error) {

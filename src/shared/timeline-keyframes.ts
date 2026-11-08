@@ -14,7 +14,42 @@ function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value))
 }
 
-function easeValue(t: number, ease: KeyEase): number {
+function cubicBezier(
+  t: number,
+  points: readonly [number, number, number, number]
+): number {
+  const [x1, y1, x2, y2] = points
+  let low = 0
+  let high = 1
+  let u = t
+
+  for (let index = 0; index < 24; index += 1) {
+    const x =
+      3 * (1 - u) * (1 - u) * u * x1 +
+      3 * (1 - u) * u * u * x2 +
+      u * u * u
+    if (Math.abs(x - t) < 1e-4) break
+    if (x < t) low = u
+    else high = u
+    u = (low + high) / 2
+  }
+
+  return (
+    3 * (1 - u) * (1 - u) * u * y1 +
+    3 * (1 - u) * u * u * y2 +
+    u * u * u
+  )
+}
+
+function easeValue(
+  t: number,
+  ease: KeyEase,
+  bezier?: readonly [number, number, number, number]
+): number {
+  if (ease === 'bezier') {
+    return cubicBezier(t, bezier ?? [0.42, 0, 0.58, 1])
+  }
+
   switch (ease) {
     case 'ease-in':
       return t * t
@@ -60,7 +95,7 @@ function numberAt(
       return fallback
     }
     const span = next.at - current.at
-    const t = span <= 0 ? 1 : easeValue((at - current.at) / span, next.ease)
+    const t = span <= 0 ? 1 : easeValue((at - current.at) / span, next.ease, next.bezier)
     return current.value + (next.value - current.value) * t
   }
 
@@ -97,7 +132,7 @@ function positionAt(
     const nextValue = valueOf(next)
     if (!currentValue || !nextValue) return fallback
     const span = next.at - current.at
-    const t = span <= 0 ? 1 : easeValue((at - current.at) / span, next.ease)
+    const t = span <= 0 ? 1 : easeValue((at - current.at) / span, next.ease, next.bezier)
     return {
       x: currentValue.x + (nextValue.x - currentValue.x) * t,
       y: currentValue.y + (nextValue.y - currentValue.y) * t

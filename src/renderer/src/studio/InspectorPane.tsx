@@ -1,10 +1,29 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TimelineAnalysisKind } from '@shared/ipc-contract'
+import type { TimeRange } from '@shared/timeline-edit'
 import { formatTimecode } from '@shared/timeline-layout'
 import { evaluateClipKeys } from '@shared/timeline-keyframes'
-import { newMarkerId, type ClipKey, type TimelineClip } from '@shared/timeline-schema'
+import {
+  buildBeatMarkerPlan,
+  buildBeatSplitPlan,
+  buildRemoveSilencePlan,
+  buildSplitByShotsPlan,
+  type TimelinePlan
+} from '@shared/timeline-tools'
+import { DEFAULT_AUDIO_FX } from '@shared/audio-fx'
+import { DEFAULT_FILTER, FILTER_PRESETS } from '@shared/filters'
+import { SUBTITLE_PRESETS } from '@shared/subtitle-presets'
+import {
+  newMarkerId,
+  type AudioFxSettings,
+  type ClipFilter,
+  type ClipKey,
+  type TimelineClip
+} from '@shared/timeline-schema'
 import { useTimelineStore } from '../stores/timeline'
 import { useUIStore } from '../stores/ui'
+import { AssistantPane } from './AssistantPane'
+import { BezierEditor } from './BezierEditor'
 
 const BLEND_LABEL: Record<string, string> = {
   normal: '正常',
@@ -84,6 +103,25 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
 
   return (
     <Section title="字幕">
+      <label className="studio-field">
+        <span>预设</span>
+        <select
+          value=""
+          onChange={(event) => {
+            const preset = SUBTITLE_PRESETS.find(
+              (item) => item.id === event.target.value
+            )
+            if (preset) commit(preset.style)
+          }}
+        >
+          <option value="">选择样式</option>
+          {SUBTITLE_PRESETS.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="studio-field">
         <span>内容</span>
         <textarea
@@ -419,7 +457,11 @@ function KeyframeSection({
       ) : (
         <div className="studio-keyframes">
           {clip.keys.map((key, index) => (
-            <div className="studio-keyframe" key={`${key.property}-${index}`}>
+            <div
+              className="studio-keyframe-group"
+              key={`${key.property}-${index}`}
+            >
+              <div className="studio-keyframe">
               <span className="studio-keyframe__prop">
                 {
                   {
@@ -496,7 +538,11 @@ function KeyframeSection({
                 value={key.ease}
                 onChange={(event) =>
                   patchKey(index, {
-                    ease: event.target.value as ClipKey['ease']
+                    ease: event.target.value as ClipKey['ease'],
+                    bezier:
+                      event.target.value === 'bezier'
+                        ? (key.bezier ?? [0.42, 0, 0.58, 1])
+                        : undefined
                   })
                 }
               >
@@ -504,6 +550,7 @@ function KeyframeSection({
                 <option value="ease-in">缓入</option>
                 <option value="ease-out">缓出</option>
                 <option value="ease-in-out">缓入缓出</option>
+                <option value="bezier">曲线</option>
               </select>
               <button
                 type="button"
@@ -515,6 +562,15 @@ function KeyframeSection({
               >
                 ×
               </button>
+              </div>
+              {key.ease === 'bezier' ? (
+                <BezierEditor
+                  value={key.bezier ?? [0.42, 0, 0.58, 1]}
+                  onChange={(bezier) =>
+                    patchKey(index, { ease: 'bezier', bezier })
+                  }
+                />
+              ) : null}
             </div>
           ))}
         </div>
@@ -529,7 +585,195 @@ export function InspectorPane() {
   const dispatch = useTimelineStore((state) => state.dispatch)
   const playheadMs = useTimelineStore((state) => state.playheadMs)
   const showToast = useUIStore((state) => state.showToast)
+  const requestConfirm = useUIStore((state) => state.requestConfirm)
+  type AutoCutAction = 'silence' | 'shots' | 'beats' | 'beat-split'
+  const [runningAction, setRunningAction] = useState<AutoCutAction | null>(null)
+  const [pane, setPane] = useState<'props' | 'assistant'>('props')
   const clip = doc?.clips.find((item) => item.id === selectedIds[0]) ?? null
+
+  const confirmPlan = (
+    plan: TimelinePlan,
+    label: string,
+    clearSelection = false
+  ): void => {
+    if (plan.commands.length === 0) {
+      showToast(plan.summary, 'error')
+      return
+    }
+    requestConfirm({
+      title: `自动粗剪 · ${label}`,
+      message: [plan.summary, ...plan.warnings].join('\n'),
+      confirmLabel: '应用',
+      onConfirm: () => {
+        const latest = useTimelineStore.getState()
+        if (!latest.doc) return
+        latest.dispatch({
+          op: 'batch',
+          label: `自动粗剪 · ${label}`,
+          commands: plan.commands
+        })
+        if (clearSelection) latest.select([])
+        showToast(plan.summary)
+      }
+    })
+  }
+
+  const runRemoveSilence = async (): Promise<void> => {
+    if (runningAction) return
+    const state = useTimelineStore.getState()
+    const currentDoc = state.doc
+    if (!currentDoc) return
+
+    const selected = currentDoc.clips.find(
+      (item) =>
+        state.selectedIds.includes(item.id) &&
+        item.media &&
+        (item.kind === 'video' || item.kind === 'audio') &&
+        !item.muted
+    )
+    const targets = selected
+      ? [selected]
+      : currentDoc.clips.filter((item) => {
+          const track = currentDoc.tracks.find(
+            (candidate) => candidate.id === item.trackId
+          )
+          return (
+            item.media &&
+            (item.kind === 'video' || item.kind === 'audio') &&
+            !item.muted &&
+            track?.locked !== true
+          )
+        })
+
+    if (targets.length === 0) {
+      showToast('时间线上没有可检测的视频/音频片段', 'error')
+      return
+    }
+
+    setRunningAction('silence')
+    try {
+      const ranges: TimeRange[] = []
+      let failed = 0
+
+      for (const item of targets) {
+        if (!item.media) continue
+        try {
+          const result = await window.api.timeline.analyze({
+            kind: 'silences',
+            path: item.media.path,
+            scope: item.media.scope,
+            sourceStartMs: item.sourceStartMs,
+            durationMs: item.durationMs,
+            speed: item.speed
+          })
+          for (const marker of result.markers) {
+            if (!marker.durationMs) continue
+            ranges.push({
+              startMs: item.startMs + marker.atMs,
+              endMs: item.startMs + marker.atMs + marker.durationMs
+            })
+          }
+        } catch {
+          failed += 1
+        }
+      }
+
+      const plan = buildRemoveSilencePlan(currentDoc, ranges, {
+        paddingMs: 120,
+        minDurationMs: 400
+      })
+      if (failed > 0) {
+        plan.warnings.push(`${failed} 个片段检测失败，已跳过`)
+      }
+      confirmPlan(plan, '删静音', true)
+    } finally {
+      setRunningAction(null)
+    }
+  }
+
+  const runSplitByShots = async (): Promise<void> => {
+    if (runningAction) return
+    const state = useTimelineStore.getState()
+    const currentDoc = state.doc
+    if (!currentDoc) return
+
+    const target = currentDoc.clips.find(
+      (item) =>
+        state.selectedIds.includes(item.id) &&
+        item.kind === 'video' &&
+        item.media &&
+        !item.muted
+    )
+    if (!target?.media) {
+      showToast('先选中一个视频片段', 'error')
+      return
+    }
+
+    setRunningAction('shots')
+    try {
+      const result = await window.api.timeline.analyze({
+        kind: 'shots',
+        path: target.media.path,
+        scope: target.media.scope,
+        sourceStartMs: target.sourceStartMs,
+        durationMs: target.durationMs,
+        speed: target.speed
+      })
+      const cuts = result.markers.map((marker) => target.startMs + marker.atMs)
+      const plan = buildSplitByShotsPlan(currentDoc, target.id, cuts, {
+        minShotMs: 500,
+        edgePaddingMs: 100
+      })
+      confirmPlan(plan, '按镜头切分')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), 'error')
+    } finally {
+      setRunningAction(null)
+    }
+  }
+
+  const runBeatAction = async (mode: 'markers' | 'split'): Promise<void> => {
+    if (runningAction) return
+    const state = useTimelineStore.getState()
+    const currentDoc = state.doc
+    if (!currentDoc) return
+
+    const target = currentDoc.clips.find(
+      (item) =>
+        state.selectedIds.includes(item.id) &&
+        item.media &&
+        (item.kind === 'video' || item.kind === 'audio') &&
+        !item.muted
+    )
+    if (!target?.media) {
+      showToast('先选中一个音频或视频片段作为节拍源', 'error')
+      return
+    }
+
+    setRunningAction(mode === 'markers' ? 'beats' : 'beat-split')
+    try {
+      const result = await window.api.timeline.analyze({
+        kind: 'beats',
+        path: target.media.path,
+        scope: target.media.scope,
+        sourceStartMs: target.sourceStartMs,
+        durationMs: target.durationMs,
+        speed: target.speed
+      })
+      const beats = result.markers.map((marker) => target.startMs + marker.atMs)
+      const plan =
+        mode === 'markers'
+          ? buildBeatMarkerPlan(currentDoc, beats)
+          : buildBeatSplitPlan(currentDoc, beats, {
+              trackId: target.kind === 'video' ? target.trackId : undefined
+            })
+      confirmPlan(plan, mode === 'markers' ? '节拍标记' : '节拍切分')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), 'error')
+    } finally {
+      setRunningAction(null)
+    }
+  }
 
   const detachAudio = async (): Promise<void> => {
     if (!clip?.media || clip.kind !== 'video') return
@@ -548,7 +792,7 @@ export function InspectorPane() {
   }
 
   const changeTransition = (
-    type: 'none' | 'fade' | 'dip-black',
+    type: 'none' | NonNullable<TimelineClip['transitionIn']>['type'],
     durationMs: number
   ): void => {
     if (!clip) return
@@ -571,15 +815,54 @@ export function InspectorPane() {
     dispatch({ op: 'setClipTransform', clipId: clip.id, transform: patch })
   }
 
+  const updateAudioFx = (patch: Partial<AudioFxSettings>): void => {
+    if (!clip) return
+    dispatch({
+      op: 'updateClip',
+      clipId: clip.id,
+      patch: {
+        audioFx: { ...(clip.audioFx ?? DEFAULT_AUDIO_FX), ...patch }
+      }
+    })
+  }
+
+  const changeFilter = (patch: Partial<ClipFilter>): void => {
+    if (!clip) return
+    dispatch({
+      op: 'updateClip',
+      clipId: clip.id,
+      patch: {
+        filter: { ...(clip.filter ?? DEFAULT_FILTER), ...patch }
+      }
+    })
+  }
+
   if (!doc) {
     return <aside className="studio-inspector" />
   }
 
   return (
     <aside className="studio-inspector">
-      <div className="studio-inspector__head">属性</div>
+      <div className="studio-inspector__tabs">
+        <button
+          type="button"
+          className={`studio-inspector__tab ${pane === 'props' ? 'is-active' : ''}`}
+          onClick={() => setPane('props')}
+        >
+          属性
+        </button>
+        <button
+          type="button"
+          className={`studio-inspector__tab ${pane === 'assistant' ? 'is-active' : ''}`}
+          onClick={() => setPane('assistant')}
+        >
+          助手
+        </button>
+      </div>
 
-      {clip ? (
+      {pane === 'assistant' ? (
+        <AssistantPane />
+      ) : clip ? (
         <>
           <Section title="基础">
             <Field label="名称" value={clip.name || '—'} />
@@ -702,6 +985,120 @@ export function InspectorPane() {
           </Section>
 
           {clip.kind === 'video' || clip.kind === 'image' ? (
+            <Section title="滤镜">
+              <label className="studio-field">
+                <span>预设</span>
+                <select
+                  value=""
+                  onChange={(event) => {
+                    const preset = FILTER_PRESETS.find(
+                      (item) => item.id === event.target.value
+                    )
+                    if (!preset) return
+                    dispatch({
+                      op: 'updateClip',
+                      clipId: clip.id,
+                      patch: { filter: { ...preset.value } }
+                    })
+                  }}
+                >
+                  <option value="">选择滤镜</option>
+                  {FILTER_PRESETS.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="studio-field">
+                <span>亮度</span>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={1.5}
+                  step={0.01}
+                  value={clip.filter?.brightness ?? 1}
+                  onChange={(event) =>
+                    changeFilter({ brightness: Number(event.target.value) })
+                  }
+                />
+              </label>
+              <label className="studio-field">
+                <span>对比度</span>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={1.8}
+                  step={0.01}
+                  value={clip.filter?.contrast ?? 1}
+                  onChange={(event) =>
+                    changeFilter({ contrast: Number(event.target.value) })
+                  }
+                />
+              </label>
+              <label className="studio-field">
+                <span>饱和度</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={0.01}
+                  value={clip.filter?.saturation ?? 1}
+                  onChange={(event) =>
+                    changeFilter({ saturation: Number(event.target.value) })
+                  }
+                />
+              </label>
+              <label className="studio-field">
+                <span>模糊</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={12}
+                  step={0.5}
+                  value={clip.filter?.blur ?? 0}
+                  onChange={(event) =>
+                    changeFilter({ blur: Number(event.target.value) })
+                  }
+                />
+              </label>
+              <label className="studio-field">
+                <span>暗角</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={clip.filter?.vignette ?? 0}
+                  onChange={(event) =>
+                    changeFilter({ vignette: Number(event.target.value) })
+                  }
+                />
+              </label>
+              <label className="studio-check">
+                <input
+                  type="checkbox"
+                  checked={(clip.filter?.grayscale ?? 0) > 0}
+                  onChange={(event) =>
+                    changeFilter({ grayscale: event.target.checked ? 1 : 0 })
+                  }
+                />
+                黑白
+              </label>
+              <label className="studio-check">
+                <input
+                  type="checkbox"
+                  checked={(clip.filter?.sepia ?? 0) > 0}
+                  onChange={(event) =>
+                    changeFilter({ sepia: event.target.checked ? 0.55 : 0 })
+                  }
+                />
+                复古
+              </label>
+            </Section>
+          ) : null}
+
+          {clip.kind === 'video' || clip.kind === 'image' ? (
             <Section title="转场">
               <label className="studio-field">
                 <span>类型</span>
@@ -709,7 +1106,8 @@ export function InspectorPane() {
                   value={clip.transitionIn?.type ?? 'none'}
                   onChange={(event) =>
                     changeTransition(
-                      event.target.value as 'none' | 'fade' | 'dip-black',
+                      event.target
+                        .value as 'none' | NonNullable<TimelineClip['transitionIn']>['type'],
                       clip.transitionIn?.durationMs ?? 500
                     )
                   }
@@ -717,6 +1115,11 @@ export function InspectorPane() {
                   <option value="none">无</option>
                   <option value="fade">交叉淡化</option>
                   <option value="dip-black">黑场</option>
+                  <option value="wipe-left">左擦除</option>
+                  <option value="wipe-right">右擦除</option>
+                  <option value="slide-left">左滑入</option>
+                  <option value="slide-right">右滑入</option>
+                  <option value="zoom-in">缩放进入</option>
                 </select>
               </label>
               <label className="studio-field">
@@ -759,6 +1162,60 @@ export function InspectorPane() {
                 变速时保持音高
               </label>
             ) : null}
+            {clip.kind !== 'text' ? (
+              <>
+                <label className="studio-check">
+                  <input
+                    type="checkbox"
+                    checked={clip.audioFx?.denoise ?? false}
+                    onChange={(event) =>
+                      updateAudioFx({ denoise: event.target.checked })
+                    }
+                  />
+                  降噪
+                </label>
+                <label className="studio-check">
+                  <input
+                    type="checkbox"
+                    checked={clip.audioFx?.enhanceVoice ?? false}
+                    onChange={(event) =>
+                      updateAudioFx({ enhanceVoice: event.target.checked })
+                    }
+                  />
+                  增强人声
+                </label>
+                <label className="studio-check">
+                  <input
+                    type="checkbox"
+                    checked={clip.audioFx?.loudness ?? false}
+                    onChange={(event) =>
+                      updateAudioFx({ loudness: event.target.checked })
+                    }
+                  />
+                  响度均衡
+                </label>
+                <label className="studio-field">
+                  <span>变声</span>
+                  <select
+                    value={clip.audioFx?.voiceEffect ?? 'none'}
+                    onChange={(event) =>
+                      updateAudioFx({
+                        voiceEffect: event.target
+                          .value as AudioFxSettings['voiceEffect']
+                      })
+                    }
+                  >
+                    <option value="none">无</option>
+                    <option value="chipmunk">花栗鼠</option>
+                    <option value="robot">机器人</option>
+                    <option value="telephone">电话</option>
+                  </select>
+                </label>
+                <small className="studio-field-hint">
+                  音频清理在导出时生效
+                </small>
+              </>
+            ) : null}
             {clip.kind === 'video' && clip.media ? (
               <button
                 type="button"
@@ -772,6 +1229,48 @@ export function InspectorPane() {
 
           {clip.kind !== 'text' ? (
             <AnalysisSection clip={clip} />
+          ) : null}
+
+          {(clip.kind === 'video' || clip.kind === 'audio') && clip.media ? (
+            <Section title="自动粗剪">
+              <button
+                type="button"
+                className="studio-ghost-btn"
+                disabled={runningAction !== null}
+                onClick={() => void runRemoveSilence()}
+              >
+                {runningAction === 'silence' ? '检测中…' : '删除静音'}
+              </button>
+              {clip.kind === 'video' ? (
+                <button
+                  type="button"
+                  className="studio-ghost-btn"
+                  disabled={runningAction !== null}
+                  onClick={() => void runSplitByShots()}
+                >
+                  {runningAction === 'shots' ? '检测中…' : '按镜头切分'}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="studio-ghost-btn"
+                disabled={runningAction !== null}
+                onClick={() => void runBeatAction('markers')}
+              >
+                {runningAction === 'beats' ? '检测中…' : '节拍标记'}
+              </button>
+              <button
+                type="button"
+                className="studio-ghost-btn"
+                disabled={runningAction !== null}
+                onClick={() => void runBeatAction('split')}
+              >
+                {runningAction === 'beat-split' ? '检测中…' : '节拍切分'}
+              </button>
+              <small className="studio-field-hint">
+                静音两端保留 120ms，过短区间跳过；所有操作可 Ctrl+Z 恢复
+              </small>
+            </Section>
           ) : null}
 
           {clip.kind !== 'text' ? (
@@ -796,6 +1295,14 @@ export function InspectorPane() {
           <Field label="片段" value={`${doc.clips.length} 个`} />
           <Field label="轨道" value={`${doc.tracks.length} 条`} />
           <Field label="标记" value={`${doc.markers.length} 个`} />
+          <button
+            type="button"
+            className="studio-ghost-btn"
+            disabled={runningAction !== null}
+            onClick={() => void runRemoveSilence()}
+          >
+            {runningAction === 'silence' ? '检测中…' : '整条时间线删静音'}
+          </button>
           {doc.markers.length > 0 ? (
             <button
               type="button"

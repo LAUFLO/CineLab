@@ -56,6 +56,18 @@ export const clipCropSchema = z.object({
   bottom: z.number().min(0).max(1).default(0)
 })
 
+export const clipFilterSchema = z.object({
+  brightness: z.number().min(0).max(2).default(1),
+  contrast: z.number().min(0).max(2).default(1),
+  saturation: z.number().min(0).max(2).default(1),
+  blur: z.number().min(0).max(20).default(0),
+  grayscale: z.number().min(0).max(1).default(0),
+  sepia: z.number().min(0).max(1).default(0),
+  hueRotate: z.number().min(-180).max(180).default(0),
+  invert: z.number().min(0).max(1).default(0),
+  vignette: z.number().min(0).max(1).default(0)
+})
+
 export const textStrokeSchema = z.object({
   color: z.string().max(50),
   width: z.number().min(0).max(50)
@@ -101,12 +113,40 @@ export const clipKeySchema = z.object({
   /** 0-1，片段内比例 */
   at: z.number().min(0).max(1),
   value: z.union([z.number(), z.object({ x: z.number(), y: z.number() })]),
-  ease: z.enum(['linear', 'ease-in', 'ease-out', 'ease-in-out']).default('linear')
+  ease: z
+    .enum(['linear', 'ease-in', 'ease-out', 'ease-in-out', 'bezier'])
+    .default('linear'),
+  /** cubic-bezier 控制点 x1,y1,x2,y2 */
+  bezier: z
+    .tuple([
+      z.number().min(0).max(1),
+      z.number().min(-0.5).max(1.5),
+      z.number().min(0).max(1),
+      z.number().min(-0.5).max(1.5)
+    ])
+    .optional()
 })
 
 export const transitionInSchema = z.object({
-  type: z.enum(['fade', 'dip-black']),
+  type: z.enum([
+    'fade',
+    'dip-black',
+    'wipe-left',
+    'wipe-right',
+    'slide-left',
+    'slide-right',
+    'zoom-in'
+  ]),
   durationMs: z.number().min(MIN_TRANSITION_MS).max(10000)
+})
+
+export const audioFxSchema = z.object({
+  denoise: z.boolean().default(false),
+  enhanceVoice: z.boolean().default(false),
+  loudness: z.boolean().default(false),
+  voiceEffect: z
+    .enum(['none', 'chipmunk', 'robot', 'telephone'])
+    .default('none')
 })
 
 export const timelineClipSchema = z.object({
@@ -130,6 +170,7 @@ export const timelineClipSchema = z.object({
     .enum(['normal', 'multiply', 'screen', 'add', 'lighten', 'darken'])
     .default('normal'),
   crop: clipCropSchema.optional(),
+  filter: clipFilterSchema.optional(),
 
   // 声音
   volume: z.number().min(0).max(4).default(1),
@@ -137,6 +178,7 @@ export const timelineClipSchema = z.object({
   fadeOutMs: z.number().min(0).default(0),
   muted: z.boolean().default(false),
   preservePitch: z.boolean().default(true),
+  audioFx: audioFxSchema.optional(),
 
   // 文字 / 字幕
   text: textStyleSchema.optional(),
@@ -198,10 +240,12 @@ export type TimelineClipKind = z.infer<typeof timelineClipKindSchema>
 export type TimelineMediaRef = z.infer<typeof timelineMediaRefSchema>
 export type ClipTransform = z.infer<typeof clipTransformSchema>
 export type ClipCrop = z.infer<typeof clipCropSchema>
+export type ClipFilter = z.infer<typeof clipFilterSchema>
 export type TextStyle = z.infer<typeof textStyleSchema>
 export type ClipKey = z.infer<typeof clipKeySchema>
 export type ClipKeyProperty = z.infer<typeof clipKeyPropertySchema>
 export type TransitionIn = z.infer<typeof transitionInSchema>
+export type AudioFxSettings = z.infer<typeof audioFxSchema>
 export type TimelineClip = z.infer<typeof timelineClipSchema>
 export type TimelineTrack = z.infer<typeof timelineTrackSchema>
 export type TimelineMarker = z.infer<typeof timelineMarkerSchema>

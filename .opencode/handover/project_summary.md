@@ -26,8 +26,9 @@
 | `AGENT-CANVAS-TOOLS-1` | 创建 / 连接 / 删除节点 |
 | `AGENT-GROUP-TOOLS-1` | 分组 / 解散分组 |
 | `AGENT-PROPOSAL-1` | 生成提案 propose/submit、提案卡、幂等、失效 |
-| 验证 | 185 测试、`typecheck`、`build` 通过；真实 Agnes 图片提案生成完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 7 个提交、落后 1 个（a768e64），未推送；推送前先同步 |
+| `STAGE-COMMANDS-1` | 导演台场景 schema、17 类命令、原子 batch、撤销/重做历史 |
+| 验证 | 202 测试、`typecheck` 通过；真实 Agnes 图片提案生成完成 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 10 个提交、落后 1 个（a768e64），未推送；推送前先同步 |
 
 ## 关键工件
 
@@ -42,11 +43,11 @@
 
 ## 下一步
 
-1. `StageCommand` 骨架
-2. 剪辑助手 `clip` profile
-3. 技能管理 UI
-4. 删除 / 批量操作二次确认
-5. 整体验收；Agnes 视频队列补测
+1. 导演台场景文件存储与画布 `stage` 节点接入
+2. three.js 3D 视口与机位切换
+3. `stage.*` Agent 工具执行层
+4. 运镜时间轴与本地白模预演
+5. 剪辑助手 `clip` profile、技能管理 UI、删除/批量二次确认
 
 ## 设计约定
 
@@ -55,6 +56,7 @@
 - 模型请求走主进程 `httpFetch`，保持 Electron 会话代理生效。
 - Agent 会话存 `<project>/.cinelab/agent/sessions/<id>.jsonl`。
 - 生成提案存 `<project>/.cinelab/agent/proposals/<id>.json`。
+- 导演台场景存 `<project>/stages/<stageId>.json`；手动编辑与 Agent 共用 `StageCommand`。
 - 工具执行在渲染进程；主进程构造 scope、权限和回合事务。
 - 生成必须走提案确认，不直接执行；`generation_submit` 不暴露给模型。
 

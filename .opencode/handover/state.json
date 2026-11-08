@@ -1,5 +1,5 @@
 {
-  "version": 51,
+  "version": 52,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "生成提案 propose/submit 已完成并真实 Agnes 验证（catalog → 提案卡 → 用户确认 → 出图 → 幂等 → 新消息失效；185 测试通过，主进程约 436KB）；金额预估已按用户要求整体移除。下一步做 StageCommand 骨架：导演台场景/机位/运镜命令与 schema，先不接 UI；之后重建 clip profile、技能管理 UI、删除/批量二次确认。",
+  "next_focus": "StageCommand 骨架已完成：stage-schema + stage-commands + 原子 batch + 撤销历史 + 202 测试通过；金额预估已整体移除。下一步做导演台场景文件存储与画布 stage 节点接入（P0），再接 three.js 视口与 stage.* Agent 工具；clip profile、技能管理 UI、删除/批量二次确认仍在队列。",
   "frontier": [
     {
       "id": "M2-1",
@@ -210,6 +210,19 @@
         "src/main/engine/start-generation.ts",
         "src/shared/agent-proposal.ts",
         "src/renderer/src/agent/AgentPanel.tsx"
+      ]
+    },
+    {
+      "id": "STAGE-COMMANDS-1",
+      "title": "StageCommand 骨架：场景 schema、命令层、批量原子执行、撤销历史",
+      "status": "done",
+      "note": "2026-11-09 完成。新增 src/shared/stage-schema.ts（DirectorStageDoc、对象、机位、镜头、运镜关键帧、动作轨、预览参数、限制与校验）和 src/shared/stage-commands.ts（17 类命令、applyStageCommands 原子 batch、StageChange、StageEffect、push/undo/redo 历史）。删除父对象会清理子对象 parentId 与动作轨；被镜头引用的机位拒绝删除。30 文件 202 测试通过，typecheck 通过。尚未接入画布 stage 节点、3D 视口、场景文件存储和 stage.* Agent 工具执行层。",
+      "evidence": [
+        ".opencode/handover/evidence/STAGE-COMMANDS-1.md",
+        "docs/director-stage-plan.md",
+        "src/shared/stage-schema.ts",
+        "src/shared/stage-commands.ts",
+        "src/shared/__tests__/stage-commands.test.ts"
       ]
     },
     {
@@ -2124,6 +2137,10 @@
     {
       "category": "engineering",
       "content": "不要做金额预估：不同供应商计费差异大，部分模型免费，本地无法可靠推算；生成提案只展示目标、模型、参数和数量。"
+    },
+    {
+      "category": "engineering",
+      "content": "StageCommand 必须原子批量执行：任意一条失败整批回滚；删除父对象要清理子对象 parentId 与动作轨，被镜头引用的机位拒绝删除。"
     }
   ],
   "designConventions": [
@@ -2140,7 +2157,8 @@
     "节点默认尺寸：图片 360、视频 480、宫格 240、分镜 480、文本/音频 348",
     "对齐线只保留同侧边与中心线",
     "Agent 会话存储在 <project>/.cinelab/agent/sessions/<id>.jsonl；工具执行在渲染进程，主进程构造 scope 与回合事务",
-    "Agent 生成提案存储在 <project>/.cinelab/agent/proposals/<id>.json；提案提交前不产生网络请求"
+    "Agent 生成提案存储在 <project>/.cinelab/agent/proposals/<id>.json；提案提交前不产生网络请求",
+    "导演台场景存储在 <project>/stages/<stageId>.json；手动编辑与 Agent 共用 StageCommand"
   ],
   "stats": {
     "sessions": 12,
@@ -2156,6 +2174,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "StageCommand 骨架"
+    "nextMilestone": "Stage 场景存储与画布节点接入"
   }
 }

@@ -16,6 +16,7 @@ import type { Preferences } from '../shared/preferences'
 import type { TimelineDoc } from '../shared/timeline-schema'
 import type {
   FilmStudy,
+  FilmStudyAutoRequest,
   FilmStudyExportResult,
   FilmStudyExtractRequest,
   FilmStudyProgress
@@ -319,6 +320,8 @@ const api: CineApi = {
   filmStudy: {
     extract: (input: FilmStudyExtractRequest) =>
       ipcRenderer.invoke('film-study:extract', input),
+    auto: (input: FilmStudyAutoRequest) =>
+      ipcRenderer.invoke('film-study:auto', input),
     cancel: (nodeId: string) =>
       ipcRenderer.invoke('film-study:cancel', nodeId),
     load: (studyId: string) =>

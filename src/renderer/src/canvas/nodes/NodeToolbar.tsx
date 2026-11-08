@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NODE_META, GRID_SPLIT_CELL_WIDTH, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
@@ -69,9 +69,12 @@ export function NodeToolbar({
   const pinned = useToolbarStore((state) => state.pinned)
   const openSettings = useToolbarStore((state) => state.openSettings)
   const showToast = useUIStore((state) => state.showToast)
+  const nodeCommand = useUIStore((state) => state.nodeCommand)
+  const consumeNodeCommand = useUIStore((state) => state.consumeNodeCommand)
 
   const [openId, setOpenId] = useState<string | null>(null)
   const [moreSubId, setMoreSubId] = useState<string | null>(null)
+  const lastCommandRef = useRef(0)
   const [running, setRunning] = useState(false)
   const [trimOpen, setTrimOpen] = useState(false)
   const [depthDialog, setDepthDialog] = useState<{ duration: number } | null>(
@@ -117,12 +120,20 @@ export function NodeToolbar({
   const primaryOps = ops
     .filter((op) => pinnedIds.includes(op.id))
     .slice(0, MAX_PRIMARY)
-  const moreOps = ops.filter((op) => !pinnedIds.includes(op.id))
+  // 超出主区上限的默认操作也应该出现在「更多」里，避免被静默隐藏
+  const primaryIds = new Set(primaryOps.map((op) => op.id))
+  const moreOps = ops.filter((op) => !primaryIds.has(op.id))
 
   const moreGroups = SECTION_ORDER.map((section) => ({
     section,
     items: moreOps.filter((op) => (op.section ?? 'edit') === section)
   })).filter((group) => group.items.length > 0)
+
+  useEffect(() => {
+    if (!openId) return
+    document.body.classList.add('is-node-menu-open')
+    return () => document.body.classList.remove('is-node-menu-open')
+  }, [openId])
 
   useEffect(() => {
     if (!openId) return
@@ -401,8 +412,25 @@ export function NodeToolbar({
     const source = sourceNode()
     if (!source) return
 
-    const studyNodeId = useCanvasStore.getState().addNode('study', source.origin)
-    useCanvasStore.getState().patchNodeData(studyNodeId, {
+    const state = useCanvasStore.getState()
+    const sourceEntry = state.nodes.find((entry) => entry.id === nodeId)
+    const sourceKind: NodeKind =
+      sourceEntry && sourceEntry.type === 'cine'
+        ? sourceEntry.data.kind
+        : 'video'
+    const sourceHeight = sourceEntry
+      ? sourceEntry.measured?.height ?? NODE_META[sourceKind].height
+      : 300
+    const studyNodeId = state.addNode(
+      'study',
+      sourceEntry
+        ? {
+            x: sourceEntry.position.x,
+            y: sourceEntry.position.y + sourceHeight + 80
+          }
+        : source.origin
+    )
+    state.patchNodeData(studyNodeId, {
       title: `${source.title} · 拉片`,
       status: 'queued',
       progress: 0,
@@ -411,17 +439,19 @@ export function NodeToolbar({
       sourcePath: current.path,
       sourceScope: current.scope,
       sourceName: source.title,
-      studyInterval: interval
+      studyInterval: interval,
+      studyOutputs: { storyboard: true, sheet: true }
     })
+    state.onConnect({ source: nodeId, target: studyNodeId })
 
-    showToast('已创建拉片节点，正在抽帧…')
-    void useFilmStudyStore.getState().start({
-      nodeId: studyNodeId,
-      path: current.path,
-      scope: current.scope,
+    showToast(
+      interval > 0
+        ? `已创建拉片节点，按 ${interval} 秒/镜拆分…`
+        : '已创建拉片节点，正在自动拆解分镜…'
+    )
+    void useFilmStudyStore.getState().runAuto(studyNodeId, {
       interval,
-      sourceName: source.title,
-      sourceNodeId: nodeId
+      outputs: { storyboard: true, sheet: true }
     })
   }
 
@@ -937,7 +967,7 @@ export function NodeToolbar({
     }
 
     if (op.id === 'film-study' && item) {
-      startFilmStudy(Number(item.id))
+      startFilmStudy(item.id === 'auto' ? 0 : Number(item.id))
       return
     }
 
@@ -1045,6 +1075,35 @@ export function NodeToolbar({
     setMoreSubId(null)
     setOpenId((currentId) => (currentId === op.id ? null : op.id))
   }
+
+  useEffect(() => {
+    if (!nodeCommand || nodeCommand.nodeId !== nodeId) return
+    if (lastCommandRef.current === nodeCommand.nonce) return
+    lastCommandRef.current = nodeCommand.nonce
+    consumeNodeCommand()
+
+    if (nodeCommand.action === 'expand') {
+      onExpand()
+      return
+    }
+    if (nodeCommand.action === 'download') {
+      onDownload()
+      return
+    }
+    if (nodeCommand.action === 'library') {
+      libraryAction?.onClick()
+      return
+    }
+    if (nodeCommand.action === 'operation' && nodeCommand.opId) {
+      const op = ops.find((entry) => entry.id === nodeCommand.opId)
+      if (!op) return
+      const item = nodeCommand.itemId
+        ? op.menu?.find((entry) => entry.id === nodeCommand.itemId)
+        : undefined
+      activate(op, item)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeCommand, nodeId])
 
   return (
     <>
@@ -1208,7 +1267,9 @@ export function NodeToolbar({
         </div>
       ) : null}
 
-      <span className="cnode__toolbar-divider" />
+      {primaryOps.length > 0 || moreOps.length > 0 ? (
+        <span className="cnode__toolbar-divider" />
+      ) : null}
 
       <button
         type="button"

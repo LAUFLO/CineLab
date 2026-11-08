@@ -54,6 +54,18 @@ export const cineNodeSchema = z.object({
     sourceScope: z.enum(['project', 'global']).optional(),
     sourceName: z.string().max(200).optional(),
     studyInterval: z.number().optional(),
+    studyModelKey: z.string().max(200).optional(),
+    studyOutputs: z
+      .object({
+        storyboard: z.boolean().optional(),
+        sheet: z.boolean().optional(),
+        motion: z.boolean().optional(),
+        music: z.boolean().optional()
+      })
+      .optional(),
+    studyAnalyzed: z.boolean().optional(),
+    studyAnalysisError: z.string().max(2000).optional(),
+    studyOutputNodeIds: z.array(z.string().max(120)).max(80).optional(),
     studySummary: z
       .object({
         studyId: z.string().max(120),

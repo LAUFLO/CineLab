@@ -18,6 +18,19 @@ export interface ContextMenuState {
   flow: XYPosition
 }
 
+export interface NodeContextMenuState {
+  screen: XYPosition
+  nodeId: string
+}
+
+export interface NodeCommandState {
+  nodeId: string
+  action: 'operation' | 'expand' | 'download' | 'library'
+  opId?: string
+  itemId?: string
+  nonce: number
+}
+
 export interface ConfirmState {
   title: string
   message: string
@@ -39,6 +52,8 @@ export type CanvasTool = 'select' | 'hand'
 interface UIStore {
   menu: MenuState | null
   contextMenu: ContextMenuState | null
+  nodeContextMenu: NodeContextMenuState | null
+  nodeCommand: NodeCommandState | null
   pendingPrompt: string | null
   confirm: ConfirmState | null
   toast: ToastState | null
@@ -68,6 +83,12 @@ interface UIStore {
   closeMenu: () => void
   openContextMenu: (menu: ContextMenuState) => void
   closeContextMenu: () => void
+  openNodeContextMenu: (menu: NodeContextMenuState) => void
+  closeNodeContextMenu: () => void
+  runNodeCommand: (
+    command: Omit<NodeCommandState, 'nonce'>
+  ) => void
+  consumeNodeCommand: () => void
   applyPrompt: (prompt: string) => void
   clearPendingPrompt: () => void
   requestConfirm: (confirm: ConfirmState) => void
@@ -81,6 +102,8 @@ interface UIStore {
 export const useUIStore = create<UIStore>((set) => ({
   menu: null,
   contextMenu: null,
+  nodeContextMenu: null,
+  nodeCommand: null,
   pendingPrompt: null,
   confirm: null,
   toast: null,
@@ -117,6 +140,14 @@ export const useUIStore = create<UIStore>((set) => ({
   closeMenu: () => set({ menu: null }),
   openContextMenu: (contextMenu) => set({ contextMenu, menu: null }),
   closeContextMenu: () => set({ contextMenu: null }),
+  openNodeContextMenu: (nodeContextMenu) =>
+    set({ nodeContextMenu, menu: null, contextMenu: null }),
+  closeNodeContextMenu: () => set({ nodeContextMenu: null }),
+  runNodeCommand: (command) =>
+    set((state) => ({
+      nodeCommand: { ...command, nonce: (state.nodeCommand?.nonce ?? 0) + 1 }
+    })),
+  consumeNodeCommand: () => set({ nodeCommand: null }),
   applyPrompt: (prompt) => set({ pendingPrompt: prompt }),
   clearPendingPrompt: () => set({ pendingPrompt: null }),
   requestConfirm: (confirm) => set({ confirm }),

@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "剪辑室 M1-M3、Concat 第一/第二批已完成；feat/clip-studio（fa30ff5）已合并最新 main（ac3350a）并快进本地 main，工作区通过 typecheck、145 测试、build、check:encryption。下一步整体验收与 bug 修复；远程 feat/clip-studio 与 PR #1 尚未更新。",
+  "next_focus": "剪辑室 M1-M3、Concat、拉片改版等已合并到 main。旧剪辑助手已按用户要求删除，改由自研通用 AgentRuntime 重新编码；spike 已通过（工具调用/回合撤销/会话恢复/SSE/Agnes 文本与图片/本地代理），视频队列待重试。下一步：基于 main 重建 agent-runtime 接线，进入批次 1（工具注册表/CanvasCommand/StageCommand 骨架/技能目录）。",
   "frontier": [
     {
       "id": "M2-1",
@@ -118,7 +118,26 @@
       "id": "AGENT-1",
       "title": "Agent 与画布协作",
       "status": "pending",
-      "note": "用户明确延后；下一阶段与 P4 一起做立项讨论，先确定优先级、交互形态和方案文档，不直接进入实现。"
+      "note": "2026-11-08 架构方案已确认（docs/agent-architecture-plan.md），通用 AgentRuntime 最小闭环 spike 通过。剪辑助手旧实现（结构化 JSON 单轮计划）已按用户要求删除，改由通用运行时重新编码。下一步进入批次 1。",
+      "evidence": [
+        "docs/agent-full-scope.md",
+        "docs/agent-architecture-plan.md",
+        ".opencode/handover/evidence/AGENT-SPIKE-1.md"
+      ]
+    },
+    {
+      "id": "AGENT-SPIKE-1",
+      "title": "Agent 最小闭环：工具调用 / 画布改名 / 回合撤销 / 会话恢复 / 流式",
+      "status": "done",
+      "note": "2026-11-08 完成。自研 AgentRuntime 跑通：模型请求走现有 provider，主进程构造 scope，工具执行在渲染进程，回合一次 pushHistory + 一次 undo，JSONL 会话重启恢复。mock 与真实 Agnes 3.0 Flash 均验证 canvas_get → canvas_update_title；只读模式拒绝写工具；取消显示「已停止本轮」；SSE 流式 34 个 text_delta；Agnes Image 2.5 Flash 真实出图；本地真实代理验证 httpFetch 走会话代理。Agnes Video 2.5 Flash 因 503 video_queue_full 待重试。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-SPIKE-1.md",
+        ".opencode/handover/evidence/AGENT-SPIKE-1-tools.png",
+        "src/main/agent/",
+        "src/main/ipc/agent.ts",
+        "src/renderer/src/agent/",
+        "src/shared/agent.ts"
+      ]
     },
     {
       "id": "K3-1",
@@ -927,8 +946,8 @@
     {
       "id": "CLIP-STUDIO-M3-AGENT",
       "title": "剪辑室 M3：内置剪辑助手（单轮计划）",
-      "status": "done",
-      "note": "2026-11-08 完成。新增 shared agent 协议与 parseAgentPlan、openai-compat chatCompletion（system + 多轮）、主进程 agent:chat/cancel、preload API、检查器属性/助手页签、AssistantPane 消息与方案卡片；模型未配置时明确引导。本地 mock provider 实测：发送「删掉所有静音」→ 模型 JSON 计划 → 方案卡片 3 段 3.1 秒 13→10 → 应用 4→7 片段 → 撤销恢复。typecheck、117 测试、build 通过；真实模型 Key 待验收。",
+      "status": "dropped",
+      "note": "2026-11-08 已按用户要求删除旧剪辑助手实现（AssistantPane、shared/agent 结构化计划、main/agent/chat、agent:chat 通道），改由通用 AgentRuntime 重新编码；timeline-tools 与检查器自动粗剪按钮保留。原实现曾通过 mock 验证，evidence 仅作历史记录。",
       "evidence": [
         ".opencode/handover/evidence/CLIP-STUDIO-M3-AGENT.md",
         "src/shared/agent.ts",
@@ -1226,6 +1245,11 @@
       "id": "K11",
       "area": "library",
       "content": "资产网格直接加载原图，未生成缩略图缓存；大库滚动可能卡顿。"
+    },
+    {
+      "id": "K28",
+      "area": "agent",
+      "content": "通用 AgentRuntime 已验证 mock、Agnes 3.0 Flash、Image 2.5 Flash、本地代理和 SSE 流式；Agnes Video 2.5 Flash 因 503 video_queue_full 未完成真实生成；外网代理、上下文预算、生成提案、技能、多 profile、导演台尚未实现。旧剪辑助手已删除，待用通用运行时重新编码。"
     }
   ],
   "gates": [],
@@ -1972,6 +1996,18 @@
     {
       "category": "preference",
       "content": "拉片结果的可视化要能反向驱动播放器：点击泳道段落、结构树节点、情绪点都应 seek 到对应时间。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 取消不能只依赖 net.fetch 的 abort；runtime 需要 abortable race 立即结束 turn，否则 UI 会一直停在停止按钮。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 工具消息要在开始时写 running、结束时写结果，加载时按 callId 合并；否则重启后失败工具会显示完成。"
+    },
+    {
+      "category": "engineering",
+      "content": "OpenAI 兼容流式：请求加 stream:true，按 data: 行解析 delta.content 与 delta.tool_calls（按 index 累积 id/name/arguments）；content-type 不是 text/event-stream 时回退整段 JSON。"
     }
   ],
   "designConventions": [
@@ -1986,7 +2022,8 @@
     "模型配置：models.json 为唯一元数据清单，settings.json 只存加密 Key",
     "派生多节点自动成组：宫格/分离音视频/多文件上传；单结果功能不成组",
     "节点默认尺寸：图片 360、视频 480、宫格 240、分镜 480、文本/音频 348",
-    "对齐线只保留同侧边与中心线"
+    "对齐线只保留同侧边与中心线",
+    "Agent 会话存储在 <project>/.cinelab/agent/sessions/<id>.jsonl；工具执行在渲染进程，主进程构造 scope 与回合事务"
   ],
   "stats": {
     "sessions": 10,

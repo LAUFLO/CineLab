@@ -42,9 +42,16 @@ import type {
   ThumbCacheInfo
 } from './library-schema'
 import type { ModelsConfigStatus } from './models-file'
+import type {
+  AgentChatRequest,
+  AgentEvent,
+  AgentModelInfo,
+  AgentSessionSnapshot,
+  AgentToolCallRequest,
+  AgentToolResultInput
+} from './agent'
 import type { OperationBindings } from './operation-schema'
 import type { TimelineDoc } from './timeline-schema'
-import type { AgentChatRequest, AgentChatResult } from './agent'
 import type { ImportedSound, SoundAsset } from './sound-schema'
 import type { UpdateApi } from './update'
 import type {
@@ -342,11 +349,6 @@ export interface TimelineApi {
   importSubtitles(path?: string): Promise<TimelineSubtitleImportResult | null>
 }
 
-export interface AgentApi {
-  chat(input: AgentChatRequest): Promise<AgentChatResult>
-  cancel(): Promise<void>
-}
-
 export interface FilmStudyApi {
   extract(input: FilmStudyExtractRequest): Promise<FilmStudyExtractResult>
   auto(input: FilmStudyAutoRequest): Promise<FilmStudyAutoResult>
@@ -362,6 +364,16 @@ export interface FilmStudyApi {
   analyze(studyId: string, modelKey: string): Promise<FilmStudy>
   contactSheet(studyId: string): Promise<GeneratedAsset>
   onProgress(callback: (progress: FilmStudyProgress) => void): () => void
+}
+
+export interface AgentApi {
+  chat(input: AgentChatRequest): Promise<{ turnId: string }>
+  cancel(turnId: string): Promise<void>
+  toolResult(input: AgentToolResultInput): Promise<void>
+  sessionLoad(): Promise<AgentSessionSnapshot>
+  modelInfo(): Promise<AgentModelInfo | null>
+  onEvent(callback: (event: AgentEvent) => void): () => void
+  onToolCall(callback: (call: AgentToolCallRequest) => void): () => void
 }
 
 export interface CineApi {
@@ -384,9 +396,9 @@ export interface CineApi {
   clipboard: ClipboardApi
   media: MediaApi
   timeline: TimelineApi
-  agent: AgentApi
   filmStudy: FilmStudyApi
   components: ComponentsApi
   export: ExportApi
   update: UpdateApi
+  agent: AgentApi
 }

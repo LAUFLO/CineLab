@@ -21,19 +21,23 @@ export function resolveInside(root: string, relative: string): string {
  */
 export async function resolveMediaPath(
   projectRoot: string,
-  relative: string
+  relative: string,
+  scope?: 'project' | 'global'
 ): Promise<string> {
-  const local = resolveInside(projectRoot, relative)
+  const libraryRoot = await getLibraryRoot()
+  const candidates =
+    scope === 'global'
+      ? [resolveInside(libraryRoot, relative), resolveInside(projectRoot, relative)]
+      : [resolveInside(projectRoot, relative), resolveInside(libraryRoot, relative)]
 
-  try {
-    await fs.access(local)
-    return local
-  } catch {
-    // 项目内不存在，尝试全局资产库
+  for (const candidate of candidates) {
+    try {
+      await fs.access(candidate)
+      return candidate
+    } catch {
+      // 继续尝试下一个根目录
+    }
   }
 
-  const libraryRoot = await getLibraryRoot()
-  const globalPath = resolveInside(libraryRoot, relative)
-  await fs.access(globalPath)
-  return globalPath
+  throw new Error('素材文件不存在或已被移动')
 }

@@ -1,6 +1,7 @@
 export type ComponentKind =
   | 'depth-runtime'
   | 'depth-model'
+  | 'vision-models'
   | 'whisper-runtime'
   | 'whisper-model'
 

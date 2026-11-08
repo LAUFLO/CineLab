@@ -1,5 +1,11 @@
 import type { GeneratedAsset } from './generation'
 
+export interface AudioPeaksRequest {
+  path: string
+  scope?: 'project' | 'global'
+  buckets?: number
+}
+
 export interface GridSplitRequest {
   path: string
   rows: number
@@ -138,5 +144,61 @@ export interface DepthTaskEvent {
 }
 
 export interface DepthTaskStartResult {
+  taskId: string
+}
+
+export type VisionTaskKind =
+  | 'matte-image'
+  | 'layer-split'
+  | 'inpaint-image'
+  | 'outpaint-image'
+  | 'matte-video'
+  | 'repair-video'
+
+export interface VisionRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export interface VisionTaskRequest {
+  kind: VisionTaskKind
+  path: string
+  scope?: 'project' | 'global'
+  /** inpaint-image 使用，PNG data URL，透明区域表示需要修复 */
+  mask?: string
+  /** outpaint-image 使用 */
+  ratio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4' | '21:9'
+  /** repair-video 使用，坐标基于原视频像素 */
+  rect?: VisionRect
+}
+
+export type VisionTaskStatus =
+  | 'queued'
+  | 'running'
+  | 'done'
+  | 'error'
+  | 'cancelled'
+
+export interface VisionTaskResult {
+  kind: VisionTaskKind
+  asset?: GeneratedAsset
+  background?: GeneratedAsset
+  width?: number
+  height?: number
+  frames?: number
+}
+
+export interface VisionTaskEvent {
+  taskId: string
+  status: VisionTaskStatus
+  percent?: number
+  message?: string
+  result?: VisionTaskResult
+  error?: string
+}
+
+export interface VisionTaskStartResult {
   taskId: string
 }

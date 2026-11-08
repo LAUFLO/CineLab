@@ -1,3 +1,4 @@
+import { httpFetch } from './http'
 import type { ModelDef } from '@shared/provider-schema'
 import type {
   AdapterContext,
@@ -52,7 +53,7 @@ async function downloadVideo(
   let response: Response | null = null
   for (let retry = 0; retry < 3; retry += 1) {
     try {
-      const current = await fetch(url, { signal: ctx.signal })
+      const current = await httpFetch(url, { signal: ctx.signal })
       if (current.ok) {
         response = current
         break
@@ -109,7 +110,7 @@ async function generateH3(
 
   ctx.onProgress(5, '提交视频任务')
 
-  const submit = await fetch(`${baseUrl}/v2/video_generation`, {
+  const submit = await httpFetch(`${baseUrl}/v2/video_generation`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -130,7 +131,7 @@ async function generateH3(
   for (let attempt = 0; attempt < 180; attempt += 1) {
     await sleep(3000, ctx.signal)
 
-    const response = await fetch(
+    const response = await httpFetch(
       `${baseUrl}/v2/query/video_generation/${encodeURIComponent(taskId)}`,
       { headers, signal: ctx.signal }
     )
@@ -186,7 +187,7 @@ async function generateLegacy(
 
   ctx.onProgress(5, '提交视频任务')
 
-  const submit = await fetch(`${baseUrl}/v1/video_generation`, {
+  const submit = await httpFetch(`${baseUrl}/v1/video_generation`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -213,7 +214,7 @@ async function generateLegacy(
   for (let attempt = 0; attempt < 180; attempt += 1) {
     await sleep(3000, ctx.signal)
 
-    const response = await fetch(
+    const response = await httpFetch(
       `${baseUrl}/v1/query/video_generation?task_id=${encodeURIComponent(taskId)}`,
       { headers, signal: ctx.signal }
     )
@@ -243,7 +244,7 @@ async function generateLegacy(
 
   ctx.onProgress(90, '获取视频文件')
 
-  const fileResponse = await fetch(
+  const fileResponse = await httpFetch(
     `${baseUrl}/v1/files/retrieve?file_id=${encodeURIComponent(fileId)}`,
     { headers, signal: ctx.signal }
   )

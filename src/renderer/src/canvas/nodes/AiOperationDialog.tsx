@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ModelDef } from '@shared/provider-schema'
+import { modelInputs } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
 import { Select } from '../../components/Select'
 import { useSettingsStore } from '../../stores/settings'
@@ -10,6 +11,7 @@ interface AiOperationDialogProps {
   title: string
   initialPrompt: string
   busy: boolean
+  masked?: boolean
   onClose: () => void
   onConfirm: (prompt: string, modelKey: string, model: ModelDef) => void
 }
@@ -19,6 +21,7 @@ export function AiOperationDialog({
   title,
   initialPrompt,
   busy,
+  masked = false,
   onClose,
   onConfirm
 }: AiOperationDialogProps) {
@@ -40,13 +43,17 @@ export function AiOperationDialog({
           }))
       )
       .sort((a, b) => {
-        const rank = (capability: string): number =>
-          capability === 'image.i2i' ? 0 : 1
-        return rank(a.model.capability) - rank(b.model.capability)
+        const rank = (item: { model: ModelDef }): number =>
+          (modelInputs(item.model).includes('image') ? 0 : 10) +
+          (item.model.capability === 'image.i2i' ? 0 : 1)
+        return rank(a) - rank(b)
       })
   }, [providers])
 
-  const firstModelKey = models[0]?.key ?? ''
+  const firstModelKey =
+    models.find((item) => modelInputs(item.model).includes('image'))?.key ??
+    models[0]?.key ??
+    ''
   const [prompt, setPrompt] = useState(initialPrompt)
   const [modelKey, setModelKey] = useState(firstModelKey)
 
@@ -70,7 +77,11 @@ export function AiOperationDialog({
   if (!open) return null
 
   const active = models.find((item) => item.key === modelKey)
-  const valid = Boolean(active) && prompt.trim().length > 0
+  const activeSupportsImage = active
+    ? modelInputs(active.model).includes('image')
+    : false
+  const valid =
+    Boolean(active) && activeSupportsImage && prompt.trim().length > 0
 
   return createPortal(
     <div
@@ -87,7 +98,9 @@ export function AiOperationDialog({
           <div>
             <div className="operation-dialog__title">{title}</div>
             <div className="operation-dialog__subtitle">
-              结果作为当前节点的新版本，保留原图
+              {masked
+                ? '只修改涂抹区域，结果作为当前节点的新版本'
+                : '结果作为当前节点的新版本，保留原图'}
             </div>
           </div>
           <button
@@ -125,8 +138,11 @@ export function AiOperationDialog({
                 options={models.map((item) => ({
                   value: item.key,
                   label: `${item.providerName} · ${item.model.name}${
-                    item.model.capability === 'image.i2i' ? '' : '（文生图）'
-                  }`
+                    modelInputs(item.model).includes('image')
+                      ? ''
+                      : '（不支持参考图）'
+                  }`,
+                  disabled: !modelInputs(item.model).includes('image')
                 }))}
                 onChange={(next) => setModelKey(next)}
                 disabled={busy}
@@ -146,6 +162,9 @@ export function AiOperationDialog({
 
             <div className="operation-dialog__hint">
               建议选择支持图生图的模型；提示词可以按需微调。
+              {masked
+                ? ' 当前操作会把蒙版一起提交，模型需要支持 /images/edits mask。'
+                : ''}
             </div>
           </>
         )}

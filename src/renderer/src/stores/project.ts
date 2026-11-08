@@ -5,7 +5,9 @@ import type {
   ProjectMeta,
   ProjectSnapshot
 } from '@shared/project-schema'
+import type { ProjectTemplateId } from '@shared/project-templates'
 import { useCanvasStore, type CineEdge, type CineNode } from './canvas'
+import { usePreferencesStore } from './preferences'
 
 type Phase = 'loading' | 'ready' | 'welcome' | 'error'
 
@@ -18,11 +20,13 @@ interface ProjectState {
   canvases: ProjectMeta['canvases']
   error: string | null
   saving: boolean
+  /** 画布有尚未写入磁盘的修改 */
+  dirty: boolean
   lastSavedAt: string | null
 
   bootstrap: () => Promise<void>
   applySnapshot: (snapshot: ProjectSnapshot) => void
-  startNew: () => Promise<void>
+  startNew: (templateId?: ProjectTemplateId) => Promise<void>
   openExisting: () => Promise<void>
   openPath: (path: string) => Promise<void>
   scheduleSave: () => void
@@ -47,6 +51,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   canvases: [],
   error: null,
   saving: false,
+  dirty: false,
   lastSavedAt: null,
 
   bootstrap: async () => {
@@ -62,7 +67,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           canvasId: null,
           canvasName: '',
           canvases: [],
-          error: null
+          error: null,
+          dirty: false
         })
         return
       }
@@ -91,13 +97,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       canvases: snapshot.meta.canvases,
       error: null,
       saving: false,
+      dirty: false,
       lastSavedAt: null
     })
   },
 
-  startNew: async () => {
+  startNew: async (templateId) => {
     try {
-      const snapshot = await window.api.project.pickCreate()
+      const snapshot = await window.api.project.pickCreate(templateId)
       if (snapshot) get().applySnapshot(snapshot)
     } catch (error) {
       set({ error: String(error) })
@@ -124,10 +131,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   scheduleSave: () => {
     if (saveTimer) clearTimeout(saveTimer)
+    set({ dirty: true })
+    const delay =
+      usePreferencesStore.getState().preferences.project.autoSaveDelay
     saveTimer = setTimeout(() => {
       saveTimer = null
       void get().saveNow()
-    }, 600)
+    }, delay)
   },
 
   saveNow: async () => {
@@ -147,7 +157,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         edges: canvas.edges as unknown as PersistedEdge[]
       })
 
-      set({ saving: false, lastSavedAt: new Date().toISOString(), error: null })
+      set({
+        saving: false,
+        dirty: false,
+        lastSavedAt: new Date().toISOString(),
+        error: null
+      })
     } catch (error) {
       set({ saving: false, error: String(error) })
     }

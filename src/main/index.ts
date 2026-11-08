@@ -1,9 +1,12 @@
 import { app, BrowserWindow } from 'electron'
 import { registerIpc } from './ipc'
 import { registerAssetProtocol, registerAssetScheme } from './protocol'
-import { createMainWindow } from './window'
+import { createMainWindow, allowAllWindowClose } from './window'
 import { ensureLibrary } from './library/config'
+import { cleanupThumbCache } from './library/thumbs'
 import { ensureMigrated } from './settings/store'
+import { getPreferences } from './settings/preferences'
+import { applyRuntimePreferences } from './settings/apply'
 import { startModelsWatcher } from './settings/models-watch'
 import { log, setupLogging } from './logger'
 import { appendFileSync } from 'node:fs'
@@ -88,13 +91,46 @@ if (!hasLock) {
       diagLog(`migrate settings failed ${String(error)}`)
     }
 
+    let startupPreferences: Awaited<ReturnType<typeof getPreferences>> | null =
+      null
+
+    try {
+      startupPreferences = await getPreferences()
+      diagLog('preferences loaded')
+    } catch (error) {
+      console.warn('[settings] failed to load preferences', error)
+      diagLog(`load preferences failed ${String(error)}`)
+    }
+
+    if (startupPreferences && startupPreferences.storage.autoCleanCacheDays > 0) {
+      const days = startupPreferences.storage.autoCleanCacheDays
+      void cleanupThumbCache(days)
+        .then((result) => {
+          if (result.removed > 0) {
+            diagLog(`thumb cache cleaned files=${result.removed}`)
+          }
+        })
+        .catch((error) => {
+          diagLog(`thumb cache cleanup failed ${String(error)}`)
+        })
+    }
+
     startModelsWatcher()
 
     registerAssetProtocol()
     diagLog('registerAssetProtocol done')
     registerIpc()
     diagLog('registerIpc done')
-    createMainWindow()
+
+    if (startupPreferences) {
+      await applyRuntimePreferences(startupPreferences)
+      diagLog('runtime preferences applied')
+    }
+
+    const mainWindow = createMainWindow()
+    if (startupPreferences) {
+      mainWindow.webContents.setZoomFactor(startupPreferences.ui.scale / 100)
+    }
     diagLog('createMainWindow done')
 
     app.on('activate', () => {
@@ -106,6 +142,10 @@ if (!hasLock) {
     diagLog(
       `whenReady rejected ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`
     )
+  })
+
+  app.on('before-quit', () => {
+    allowAllWindowClose()
   })
 
   app.on('window-all-closed', () => {

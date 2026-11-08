@@ -15,10 +15,14 @@ import { SettingsPanel } from './panels/SettingsPanel'
 import { StudioWindow } from './studio/StudioWindow'
 import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
+import { useGenerationHistoryStore } from './stores/generation-history'
+import { usePreferencesStore } from './stores/preferences'
 import { useProjectStore } from './stores/project'
 import { useSettingsStore } from './stores/settings'
+import { useUIStore } from './stores/ui'
 import { useUpdateStore } from './stores/update'
 import { subscribeDepthTasks } from './stores/depth-tasks'
+import { subscribeVisionTasks } from './stores/vision-tasks'
 import { useTheme } from './theme/useTheme'
 
 export default function App() {
@@ -37,6 +41,49 @@ export default function App() {
   const loadProviders = useSettingsStore((state) => state.load)
   const subscribeGeneration = useGenerationStore((state) => state.subscribe)
   const initUpdate = useUpdateStore((state) => state.init)
+  const loadPreferences = usePreferencesStore((state) => state.load)
+  const historyLimit = usePreferencesStore(
+    (state) => state.preferences.generation.historyLimit
+  )
+  const confirmBeforeClose = usePreferencesStore(
+    (state) => state.preferences.project.confirmBeforeClose
+  )
+
+  useEffect(() => {
+    void loadPreferences()
+  }, [loadPreferences])
+
+  useEffect(() => {
+    useGenerationHistoryStore.getState().trim()
+  }, [historyLimit])
+
+  useEffect(() => {
+    return window.api.app.onCloseRequested(() => {
+      const project = useProjectStore.getState()
+      const dirty = project.dirty || project.saving
+      const close = (): void => window.api.app.confirmClose()
+
+      if (!dirty) {
+        close()
+        return
+      }
+
+      if (!confirmBeforeClose) {
+        void project.saveNow().finally(close)
+        return
+      }
+
+      useUIStore.getState().requestConfirm({
+        title: '退出 CineLab',
+        message: '当前项目还有未保存的修改，退出前会自动保存。',
+        confirmLabel: '保存并退出',
+        onConfirm: async () => {
+          await useProjectStore.getState().saveNow()
+          close()
+        }
+      })
+    })
+  }, [confirmBeforeClose])
 
   useEffect(() => {
     void bootstrap()
@@ -56,6 +103,8 @@ export default function App() {
   }, [subscribeGeneration])
 
   useEffect(() => subscribeDepthTasks(), [])
+
+  useEffect(() => subscribeVisionTasks(), [])
 
   useEffect(() => {
     if (!hydrated || phase !== 'ready') return

@@ -15,6 +15,18 @@ export interface OperationMenuItem {
   disabled?: boolean
 }
 
+export type OperationRequirementType =
+  | 'image-model'
+  | 'video-model'
+  | 'video-edit-model'
+  | 'vision-component'
+
+export interface OperationRequires {
+  type: OperationRequirementType
+  label: string
+  panel?: 'models' | 'components'
+}
+
 export type OperationSection = 'generate' | 'edit' | 'video'
 
 export interface NodeOperation {
@@ -24,8 +36,12 @@ export interface NodeOperation {
   kinds: NodeKind[]
   /** 默认固定到一级工具栏 */
   defaultPrimary?: boolean
-  /** 框架阶段全部为 false，点击只提示「正在接入」 */
+  /** 已实现的操作可直接执行 */
   implemented?: boolean
+  /** 未实现时说明缺少的模型或组件 */
+  requires?: OperationRequires
+  /** 需要先进入蒙版编辑器 */
+  mask?: boolean
   menu?: OperationMenuItem[]
   section?: OperationSection
   hint?: string
@@ -61,6 +77,33 @@ const PROMPT_COLOR_GRADE =
 
 const PROMPT_CUTOUT =
   '去除参考图背景，完整保留主体，输出透明背景 PNG；主体边缘干净自然，保留发丝和半透明细节，不要阴影、不要文字、不要水印。若模型不支持透明通道，请输出纯白背景的干净抠图。'
+
+const PROMPT_PANORAMA =
+  '基于参考图生成一张 2:1 等距柱状投影（equirectangular）的 360° 全景图。保持原图的场景、主体、光线和画风，把视角向左右和上下自然延展成完整环境，画面首尾能够无缝衔接；不要分屏、不要边框、不要文字、不要水印。'
+
+const PROMPT_OUTPAINT =
+  '将参考图向外自然扩展，补全画面外缺失的环境。保持原图主体、构图中心、光线方向、透视和画风不变，扩图区域与原图边缘自然衔接，不要出现明显接缝、复制痕迹、文字或水印。'
+
+const PROMPT_INPAINT =
+  '只修改蒙版透明区域内的内容，蒙版外区域保持完全不变。根据下面的描述重绘选区：'
+
+const PROMPT_ERASE =
+  '移除蒙版透明区域内的对象，并用周围背景自然补全。保持选区外的画面、人物、光影和构图完全不变，不要留下模糊块、重复纹理、文字或水印。'
+
+const PROMPT_ELEMENT_EDIT =
+  '只修改蒙版透明区域内的元素，蒙版外区域保持完全不变。根据下面的描述调整选区内的对象，保持原有透视、光线、材质和画风一致：'
+
+const PROMPT_SHOT_RETAKE =
+  '重拍当前视频片段。保持人物身份、服装、场景、镜头角度、光线和画风一致，只重新生成动作与表演，让动作自然连贯；不要改变构图，不要文字、不要水印。'
+
+const PROMPT_ELEMENT_REPLACE =
+  '替换当前视频中的指定元素，保持镜头运动、人物身份、场景、光线和画风一致。替换后的元素要与画面透视、遮挡、阴影和运动自然融合；不要改变其他区域，不要文字、不要水印。'
+
+const PROMPT_EXTEND =
+  '延续当前视频的镜头运动、人物动作、节奏和光线，向后自然延长一段。保持同一场景、同一角色和同一画风，不要出现跳切、重复帧、文字或水印。'
+
+const PROMPT_INTRO =
+  '为当前视频生成一个简洁的片头。保持素材的人物、场景和画风一致，片头节奏干净，突出主题氛围，不要出现无关文字、logo 或水印。'
 
 const PROMPT_PORTRAIT: Record<string, string> = {
   natural:
@@ -283,7 +326,10 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '720 度全景图',
     icon: 'expand',
     kinds: ['image'],
-    section: 'generate'
+    implemented: true,
+    section: 'generate',
+    prompt: PROMPT_PANORAMA,
+    hint: '生成 2:1 全景'
   },
   {
     id: 'color-grade',
@@ -332,8 +378,18 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '扩图',
     icon: 'expand',
     kinds: ['image'],
+    implemented: true,
     section: 'edit',
-    disabledReason: () => '扩图依赖蒙版，暂未开放'
+    prompt: PROMPT_OUTPAINT,
+    hint: '向四周扩展',
+    menu: [
+      { id: '16:9', label: '扩成 16:9' },
+      { id: '9:16', label: '扩成 9:16' },
+      { id: '1:1', label: '扩成 1:1' },
+      { id: '4:3', label: '扩成 4:3' },
+      { id: '3:4', label: '扩成 3:4' },
+      { id: '21:9', label: '扩成 21:9' }
+    ]
   },
   {
     id: 'cutout',
@@ -349,30 +405,46 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '重绘',
     icon: 'droplet',
     kinds: ['image'],
+    implemented: true,
+    mask: true,
     section: 'edit',
-    disabledReason: () => '蒙版编辑器未开放，暂不能重绘'
+    prompt: PROMPT_INPAINT,
+    hint: '涂抹后改内容'
   },
   {
     id: 'erase',
     label: '擦除',
     icon: 'close',
     kinds: ['image'],
+    implemented: true,
+    mask: true,
     section: 'edit',
-    disabledReason: () => '蒙版编辑器未开放，暂不能擦除'
+    prompt: PROMPT_ERASE,
+    hint: '涂抹后移除'
   },
   {
     id: 'element-edit',
     label: '元素编辑',
     icon: 'cursor',
     kinds: ['image'],
-    section: 'edit'
+    implemented: true,
+    mask: true,
+    section: 'edit',
+    prompt: PROMPT_ELEMENT_EDIT,
+    hint: '框选局部修改'
   },
   {
     id: 'layer-split',
     label: '图层分离',
     icon: 'layers',
     kinds: ['image'],
-    section: 'edit'
+    implemented: true,
+    section: 'edit',
+    requires: {
+      type: 'vision-component',
+      label: '需要安装视觉组件（批次 2）',
+      panel: 'components'
+    }
   },
 
   // ---------- 视频：更多 ----------
@@ -390,42 +462,66 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '片段重拍',
     icon: 'history',
     kinds: ['video'],
-    section: 'video'
+    implemented: true,
+    section: 'video',
+    prompt: PROMPT_SHOT_RETAKE,
+    hint: '专用接口'
   },
   {
     id: 'element-replace',
     label: '元素替换',
     icon: 'cursor',
     kinds: ['video'],
-    section: 'video'
+    implemented: true,
+    section: 'video',
+    prompt: PROMPT_ELEMENT_REPLACE,
+    hint: '专用接口'
   },
   {
     id: 'object-remove',
     label: '主体消除',
     icon: 'target',
     kinds: ['video'],
-    section: 'video'
+    implemented: true,
+    section: 'video',
+    requires: {
+      type: 'vision-component',
+      label: '需要安装视觉组件（批次 2）',
+      panel: 'components'
+    }
   },
   {
     id: 'matting',
     label: '智能抠像',
     icon: 'image',
     kinds: ['video'],
-    section: 'video'
+    implemented: true,
+    section: 'video',
+    requires: {
+      type: 'vision-component',
+      label: '需要安装视觉组件（批次 2）',
+      panel: 'components'
+    }
   },
   {
     id: 'intro',
     label: '创意片头',
     icon: 'film',
     kinds: ['video'],
-    section: 'generate'
+    implemented: true,
+    section: 'generate',
+    prompt: PROMPT_INTRO,
+    hint: '专用接口'
   },
   {
     id: 'extend',
     label: '智能续写',
     icon: 'arrow-up',
     kinds: ['video'],
-    section: 'generate'
+    implemented: true,
+    section: 'generate',
+    prompt: PROMPT_EXTEND,
+    hint: '专用接口'
   }
 ]
 
@@ -448,8 +544,8 @@ export function defaultPrimaryForKind(kind: NodeKind): string[] {
 }
 
 /**
- * 操作执行入口。框架阶段只返回 false，由工具栏提示「正在接入」。
- * 后续接入本地媒体处理 / 模型执行器时，在这里分发。
+ * 操作执行入口。未实现的操作由工具栏根据 requires 提示缺少的模型或组件。
+ * 本地媒体处理与模型执行在 NodeToolbar 中分发。
  */
 export function runNodeOperation(
   op: NodeOperation,

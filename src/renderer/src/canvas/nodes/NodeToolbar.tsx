@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NODE_META, GRID_SPLIT_CELL_WIDTH, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
+import { assetUrl } from '../../lib/asset-url'
 import { isGroupNode, useCanvasStore } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useToolbarStore } from '../../stores/toolbar'
@@ -9,13 +10,16 @@ import { useUIStore } from '../../stores/ui'
 import { useSettingsStore } from '../../stores/settings'
 import { useStudioStore } from '../../stores/studio'
 import { trackDepthTask } from '../../stores/depth-tasks'
+import { trackVisionTask } from '../../stores/vision-tasks'
 import { createStudioFromNode } from '../../studio/nodes'
 import { AiOperationDialog } from './AiOperationDialog'
 import { CropDialog } from './CropDialog'
+import { MaskEditorDialog } from './MaskEditorDialog'
 import { SphereDialog } from './SphereDialog'
 import { SubtitleDialog } from './SubtitleDialog'
 import { TrimDialog } from './TrimDialog'
 import { DepthCaptureDialog } from './DepthCaptureDialog'
+import { VideoOperationDialog } from './VideoOperationDialog'
 import {
   OPERATION_SECTIONS,
   buildOperationPrompt,
@@ -26,6 +30,7 @@ import {
   type OperationMenuItem,
   type OperationSection
 } from './node-operations'
+import { isVideoOperation } from '@shared/operation-schema'
 
 interface NodeToolbarProps {
   nodeId: string
@@ -64,6 +69,8 @@ export function NodeToolbar({
   const pinned = useToolbarStore((state) => state.pinned)
   const openSettings = useToolbarStore((state) => state.openSettings)
   const showToast = useUIStore((state) => state.showToast)
+  const providers = useSettingsStore((state) => state.providers)
+  const operationBindings = useSettingsStore((state) => state.operationBindings)
 
   const [openId, setOpenId] = useState<string | null>(null)
   const [moreSubId, setMoreSubId] = useState<string | null>(null)
@@ -77,6 +84,19 @@ export function NodeToolbar({
     op: NodeOperation
     item?: OperationMenuItem
     prompt: string
+    mask?: string
+  } | null>(null)
+  const [maskDialog, setMaskDialog] = useState<{
+    op: NodeOperation
+    item?: OperationMenuItem
+    prompt: string
+  } | null>(null)
+  const [videoDialog, setVideoDialog] = useState<{
+    op: NodeOperation
+    modelKey: string
+    model: ModelDef
+    modelLabel: string
+    prompt: string
   } | null>(null)
   const [cropDialog, setCropDialog] = useState<{
     src: string
@@ -88,6 +108,8 @@ export function NodeToolbar({
     width: number
     height: number
   } | null>(null)
+  const [subtitleMode, setSubtitleMode] = useState<'delogo' | 'vision'>('delogo')
+  const [subtitleTitle, setSubtitleTitle] = useState('框选去字幕')
   const [sphereDialog, setSphereDialog] = useState<'light' | 'camera' | null>(
     null
   )
@@ -174,6 +196,161 @@ export function NodeToolbar({
       status: 'error',
       error: error instanceof Error ? error.message : String(error)
     })
+  }
+
+  const visionReady = async (): Promise<boolean> => {
+    try {
+      const status = await window.api.components.status()
+      return (
+        status.find((item) => item.kind === 'depth-runtime')?.state ===
+          'installed' &&
+        status.find((item) => item.kind === 'vision-models')?.state ===
+          'installed'
+      )
+    } catch {
+      return false
+    }
+  }
+
+  const ensureVision = async (): Promise<boolean> => {
+    if (await visionReady()) return true
+    showToast(
+      '需要先安装「深度动作捕捉运行时」和「视觉模型（RVM + LaMa）」',
+      'error'
+    )
+    useSettingsStore.getState().openPanel('components')
+    return false
+  }
+
+  const startVisionTask = async (
+    request: Parameters<typeof window.api.media.startVisionTask>[0],
+    meta: Parameters<typeof trackVisionTask>[1]
+  ): Promise<void> => {
+    try {
+      const { taskId } = await window.api.media.startVisionTask({
+        ...request,
+        ...(current.scope ? { scope: current.scope } : {})
+      })
+      trackVisionTask(taskId, meta)
+    } catch (error) {
+      meta.pendingIds.forEach((id) => markFailed(id, error))
+      showToast(error instanceof Error ? error.message : String(error), 'error')
+    }
+  }
+
+  const executeLayerSplit = async (): Promise<void> => {
+    const source = sourceNode()
+    if (!source || !(await ensureVision())) return
+
+    const pendingIds = useCanvasStore
+      .getState()
+      .addPendingNodes('image', source.origin, 2, `${source.title} · 图层`, nodeId)
+
+    showToast('已开始图层分离，完成后自动写入节点')
+    await startVisionTask(
+      { kind: 'layer-split', path: current.path },
+      {
+        mode: 'pending',
+        nodeId,
+        pendingIds,
+        op: 'layer-split',
+        title: '图层分离'
+      }
+    )
+  }
+
+  const executeMatteVideo = async (): Promise<void> => {
+    const source = sourceNode()
+    if (!source || !(await ensureVision())) return
+
+    const pendingIds = useCanvasStore
+      .getState()
+      .addPendingNodes('video', source.origin, 1, `${source.title} · 抠像`, nodeId)
+
+    showToast('已开始视频抠像，完成后自动写入节点')
+    await startVisionTask(
+      { kind: 'matte-video', path: current.path },
+      {
+        mode: 'pending',
+        nodeId,
+        pendingIds,
+        op: 'matting',
+        title: '视频抠像'
+      }
+    )
+  }
+
+  const executeVisionRepair = async (
+    rect: { x: number; y: number; width: number; height: number },
+    title: string
+  ): Promise<void> => {
+    const source = sourceNode()
+    if (!source || !(await ensureVision())) return
+
+    const pendingIds = useCanvasStore
+      .getState()
+      .addPendingNodes('video', source.origin, 1, `${source.title} · ${title}`, nodeId)
+
+    showToast(`已开始${title}，完成后自动写入节点`)
+    await startVisionTask(
+      { kind: 'repair-video', path: current.path, rect },
+      {
+        mode: 'pending',
+        nodeId,
+        pendingIds,
+        op: title,
+        title
+      }
+    )
+  }
+
+  const executeOutpaint = async (item: OperationMenuItem): Promise<void> => {
+    if (!(await visionReady())) {
+      const op = ops.find((entry) => entry.id === 'outpaint')
+      if (op) executeAiOperation(op, item)
+      return
+    }
+
+    const ratio = item.id as
+      | '16:9'
+      | '9:16'
+      | '1:1'
+      | '4:3'
+      | '3:4'
+      | '21:9'
+    showToast(`已开始扩成 ${item.label.replace('扩成 ', '')}`)
+    await startVisionTask(
+      { kind: 'outpaint-image', path: current.path, ratio },
+      {
+        mode: 'apply',
+        nodeId,
+        pendingIds: [],
+        op: 'outpaint',
+        title: '扩图'
+      }
+    )
+  }
+
+  const executeCutout = async (): Promise<void> => {
+    const op = ops.find((entry) => entry.id === 'cutout')
+    if (!op) return
+
+    if (!(await visionReady())) {
+      executeAiOperation(op)
+      return
+    }
+
+    showToast('已开始本地抠图')
+    await startVisionTask(
+      { kind: 'matte-image', path: current.path },
+      {
+        mode: 'apply',
+        nodeId,
+        pendingIds: [],
+        op: 'cutout',
+        title: '抠图'
+      }
+    )
   }
 
   const executeGridSplit = async (item: OperationMenuItem): Promise<void> => {
@@ -443,13 +620,18 @@ export function NodeToolbar({
     }
   }
 
-  const openSubtitleBox = async (): Promise<void> => {
+  const openSubtitleBox = async (
+    mode: 'delogo' | 'vision' = 'delogo',
+    title = '框选去字幕'
+  ): Promise<void> => {
+    setSubtitleMode(mode)
+    setSubtitleTitle(title)
     const width = current.width
     const height = current.height
 
     if (width && height) {
       setSubtitleDialog({
-        src: `cinelab-asset://local/${current.path}`,
+        src: assetUrl(current.path, current.scope),
         width,
         height
       })
@@ -464,7 +646,7 @@ export function NodeToolbar({
         return
       }
       setSubtitleDialog({
-        src: `cinelab-asset://local/${current.path}`,
+        src: assetUrl(current.path, current.scope),
         width: probe.width,
         height: probe.height
       })
@@ -481,6 +663,12 @@ export function NodeToolbar({
     width: number
     height: number
   }): Promise<void> => {
+    if (subtitleMode === 'vision') {
+      setSubtitleDialog(null)
+      void executeVisionRepair(rect, subtitleTitle)
+      return
+    }
+
     setSubtitleDialog(null)
     setRunning(true)
     markRunning(nodeId)
@@ -554,7 +742,11 @@ export function NodeToolbar({
   ): void => {
     const prompt = buildOperationPrompt(op, item)
     if (!prompt) {
-      showToast(`《${item?.label ?? op.label}》正在接入`)
+      showToast(`《${item?.label ?? op.label}》缺少提示词配置`, 'error')
+      return
+    }
+    if (op.mask) {
+      setMaskDialog({ op, item, prompt })
       return
     }
     setAiDialog({ op, item, prompt })
@@ -563,11 +755,13 @@ export function NodeToolbar({
   const handleAiConfirm = (
     prompt: string,
     modelKey: string,
-    model: ModelDef
+    model: ModelDef,
+    mask?: string
   ): void => {
     if (!aiDialog) return
 
     const label = aiDialog.item?.label ?? aiDialog.op.label
+    const opId = aiDialog.op.id
     setAiDialog(null)
     showToast(`已提交「${label}」生成`)
 
@@ -576,7 +770,82 @@ export function NodeToolbar({
       modelKey,
       prompt,
       params: { ...defaultParams(model), watermark: false },
-      refs: [{ path: current.path, role: 'reference' }]
+      refs: [
+        {
+          path: current.path,
+          role: 'reference',
+          ...(current.scope ? { scope: current.scope } : {})
+        }
+      ],
+      ...(mask ? { mask } : {}),
+      op: opId
+    })
+  }
+
+  const executeDedicatedVideo = (op: NodeOperation): void => {
+    const modelKey = operationBindings[op.id]
+    if (!modelKey) {
+      showToast(
+        `「${op.label}」还没有绑定专用接口，请先在设置 → 操作模型中配置`,
+        'error'
+      )
+      useSettingsStore.getState().openPanel('operations')
+      return
+    }
+
+    const slash = modelKey.indexOf('/')
+    const providerId = slash > 0 ? modelKey.slice(0, slash) : ''
+    const modelId = slash > 0 ? modelKey.slice(slash + 1) : ''
+    const provider = providers.find((item) => item.id === providerId)
+    const model = provider?.models.find((item) => item.id === modelId)
+
+    if (!provider || !model) {
+      showToast('绑定的专用接口模型已不存在，请重新绑定', 'error')
+      useSettingsStore.getState().openPanel('operations')
+      return
+    }
+
+    if (model.capability !== 'video.t2v') {
+      showToast('绑定的模型不是视频模型，请重新绑定', 'error')
+      useSettingsStore.getState().openPanel('operations')
+      return
+    }
+
+    if (model.adapter !== 'http-template') {
+      showToast(
+        '绑定的模型不是 http-template 专用接口，请在模型配置中把 adapter 设为 http-template',
+        'error'
+      )
+      useSettingsStore.getState().openPanel('operations')
+      return
+    }
+
+    setVideoDialog({
+      op,
+      modelKey,
+      model,
+      modelLabel: `${provider.name} · ${model.name}`,
+      prompt: buildOperationPrompt(op)
+    })
+  }
+
+  const handleVideoConfirm = (prompt: string): void => {
+    if (!videoDialog) return
+    const { op, modelKey, model } = videoDialog
+    setVideoDialog(null)
+    showToast(`已提交「${op.label}」专用接口`)
+
+    void useGenerationStore.getState().run({
+      nodeId,
+      modelKey,
+      prompt,
+      params: { ...defaultParams(model), watermark: false },
+      video: {
+        path: current.path,
+        role: 'reference',
+        ...(current.scope ? { scope: current.scope } : {})
+      },
+      op: op.id
     })
   }
 
@@ -594,7 +863,13 @@ export function NodeToolbar({
       modelKey,
       prompt,
       params: { ...defaultParams(model), watermark: false },
-      refs: [{ path: current.path, role: 'reference' }]
+      refs: [
+        {
+          path: current.path,
+          role: 'reference',
+          ...(current.scope ? { scope: current.scope } : {})
+        }
+      ]
     })
   }
 
@@ -687,7 +962,15 @@ export function NodeToolbar({
     closeMenus()
 
     if (!op.implemented) {
-      showToast(`《${item?.label ?? op.label}》正在接入`)
+      const label = item?.label ?? op.label
+      if (op.requires) {
+        showToast(`《${label}》${op.requires.label}`, 'error')
+        if (op.requires.panel) {
+          useSettingsStore.getState().openPanel(op.requires.panel)
+        }
+      } else {
+        showToast(`《${label}》暂不可用`, 'error')
+      }
       return
     }
 
@@ -728,10 +1011,43 @@ export function NodeToolbar({
 
     if (op.id === 'subtitle') {
       if (item?.id === 'box') {
-        void openSubtitleBox()
+        void openSubtitleBox('delogo', '框选去字幕')
         return
       }
-      showToast('智能去字幕需要视频修复模型，暂未接入')
+      void (async () => {
+        if (await ensureVision()) {
+          await openSubtitleBox('vision', '智能去字幕')
+        }
+      })()
+      return
+    }
+
+    if (op.id === 'layer-split') {
+      void executeLayerSplit()
+      return
+    }
+
+    if (op.id === 'matting') {
+      void executeMatteVideo()
+      return
+    }
+
+    if (op.id === 'object-remove') {
+      void (async () => {
+        if (await ensureVision()) {
+          await openSubtitleBox('vision', '主体消除')
+        }
+      })()
+      return
+    }
+
+    if (op.id === 'outpaint' && item) {
+      void executeOutpaint(item)
+      return
+    }
+
+    if (op.id === 'cutout') {
+      void executeCutout()
       return
     }
 
@@ -745,12 +1061,17 @@ export function NodeToolbar({
       return
     }
 
+    if (isVideoOperation(op.id)) {
+      executeDedicatedVideo(op)
+      return
+    }
+
     if (op.prompt || op.promptByItem) {
       executeAiOperation(op, item)
       return
     }
 
-    showToast(`《${item?.label ?? op.label}》正在接入`)
+    showToast(`《${item?.label ?? op.label}》暂不可用`, 'error')
   }
 
   const togglePrimaryMenu = (op: NodeOperation): void => {
@@ -1010,8 +1331,50 @@ export function NodeToolbar({
         }
         initialPrompt={aiDialog?.prompt ?? ''}
         busy={running}
+        masked={Boolean(aiDialog?.mask)}
         onClose={() => setAiDialog(null)}
-        onConfirm={handleAiConfirm}
+        onConfirm={(prompt, key, model) =>
+          handleAiConfirm(prompt, key, model, aiDialog?.mask)
+        }
+      />
+
+      <VideoOperationDialog
+        open={Boolean(videoDialog)}
+        title={videoDialog ? `${videoDialog.op.label} · 专用接口` : ''}
+        modelLabel={videoDialog?.modelLabel ?? ''}
+        initialPrompt={videoDialog?.prompt ?? ''}
+        busy={running}
+        onClose={() => setVideoDialog(null)}
+        onConfirm={handleVideoConfirm}
+      />
+
+      <MaskEditorDialog
+        open={Boolean(maskDialog)}
+        title={
+          maskDialog
+            ? `${maskDialog.op.label}${
+                maskDialog.item ? ` · ${maskDialog.item.label}` : ''
+              }`
+            : ''
+        }
+        subtitle={
+          maskDialog?.op.id === 'erase'
+            ? '涂抹要移除的对象，模型会用周围背景补全'
+            : maskDialog?.op.id === 'element-edit'
+              ? '框选或涂抹要修改的元素，然后描述希望变成什么样'
+              : '涂抹要重绘的区域，透明区域会交给模型编辑'
+        }
+        src={assetUrl(current.path, current.scope)}
+        imageWidth={current.width ?? 1024}
+        imageHeight={current.height ?? 1024}
+        busy={running}
+        onClose={() => setMaskDialog(null)}
+        onConfirm={(mask) => {
+          if (!maskDialog) return
+          const pending = maskDialog
+          setMaskDialog(null)
+          setAiDialog({ ...pending, mask })
+        }}
       />
 
       <CropDialog
@@ -1026,6 +1389,7 @@ export function NodeToolbar({
 
       <SubtitleDialog
         open={Boolean(subtitleDialog)}
+        title={subtitleTitle}
         src={subtitleDialog?.src ?? ''}
         videoWidth={subtitleDialog?.width ?? 1}
         videoHeight={subtitleDialog?.height ?? 1}

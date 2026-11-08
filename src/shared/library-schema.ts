@@ -12,6 +12,10 @@ export interface LibraryAsset {
   kind: LibraryAssetKind
   size: number
   modifiedAt: string
+  /** 缩略图相对库根路径，缓存于 .thumbs */
+  thumbnail?: string
+  /** 用户标签，存储在库根 .tags.json */
+  tags?: string[]
 }
 
 export interface LibraryFolderNode {
@@ -26,6 +30,11 @@ export interface LibraryFolderNode {
 export interface LibraryRootInfo {
   root: string
   isDefault: boolean
+}
+
+export interface ThumbCacheInfo {
+  bytes: number
+  files: number
 }
 
 /** 多选批量入库：来源节点输出 */

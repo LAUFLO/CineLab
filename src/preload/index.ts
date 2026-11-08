@@ -1,15 +1,18 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { CineApi, ThemeMode } from '../shared/ipc-contract'
 import type { CanvasData } from '../shared/project-schema'
+import type { ProjectTemplateId } from '../shared/project-templates'
 import type {
   ConnectionTestInput,
   ProviderInput
 } from '../shared/provider-schema'
 import type { GenerateRequest, GenerationEvent } from '../shared/generation'
 import type { ComponentEvent, ComponentKind } from '../shared/components'
+import type { OperationBindings } from '../shared/operation-schema'
 import type { DepthTaskEvent } from '../shared/media'
 import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
+import type { Preferences } from '../shared/preferences'
 import type { TimelineDoc } from '../shared/timeline-schema'
 import type {
   AddToLibraryInput,
@@ -17,6 +20,7 @@ import type {
   TemplateInput
 } from '../shared/library-schema'
 import type {
+  AudioPeaksRequest,
   CropImageRectRequest,
   CropImageRequest,
   CropVideoRequest,
@@ -26,12 +30,21 @@ import type {
   RemoveSubtitlesRequest,
   SplitAvRequest,
   StitchRequest,
-  TrimVideoRequest
+  TrimVideoRequest,
+  VisionTaskEvent,
+  VisionTaskRequest
 } from '../shared/media'
 const api: CineApi = {
   app: {
     getInfo: () => ipcRenderer.invoke('app:get-info'),
     setTheme: (theme: ThemeMode) => ipcRenderer.invoke('app:set-theme', theme),
+    setZoom: (factor: number) => ipcRenderer.invoke('app:set-zoom', factor),
+    onCloseRequested: (callback: () => void) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('app:close-requested', listener)
+      return () => ipcRenderer.removeListener('app:close-requested', listener)
+    },
+    confirmClose: () => ipcRenderer.send('app:confirm-close'),
     openLogs: () => ipcRenderer.invoke('app:open-logs'),
     log: (level: 'info' | 'warn' | 'error', message: string) =>
       ipcRenderer.invoke('app:log', level, message),
@@ -41,8 +54,8 @@ const api: CineApi = {
   },
   project: {
     bootstrap: () => ipcRenderer.invoke('project:bootstrap'),
-    create: (name: string, parentDir?: string) =>
-      ipcRenderer.invoke('project:create', name, parentDir),
+    create: (name: string, parentDir?: string, templateId?: ProjectTemplateId) =>
+      ipcRenderer.invoke('project:create', name, parentDir, templateId),
     open: (path: string) => ipcRenderer.invoke('project:open', path),
     saveCanvas: (path: string, canvas: CanvasData) =>
       ipcRenderer.invoke('project:save-canvas', path, canvas),
@@ -53,7 +66,8 @@ const api: CineApi = {
     setCoverFromAsset: (path: string, assetPath: string) =>
       ipcRenderer.invoke('project:cover-set-asset', path, assetPath),
     removeCover: (path: string) => ipcRenderer.invoke('project:cover-remove', path),
-    pickCreate: () => ipcRenderer.invoke('project:pick-create'),
+    pickCreate: (templateId?: ProjectTemplateId) =>
+      ipcRenderer.invoke('project:pick-create', templateId),
     pickOpen: () => ipcRenderer.invoke('project:pick-open'),
     reveal: (path: string) => ipcRenderer.invoke('project:reveal', path),
     rename: (path: string, name: string) =>
@@ -80,6 +94,18 @@ const api: CineApi = {
       ipcRenderer.invoke('settings:fetch-models', input),
     modelsConfig: () => ipcRenderer.invoke('settings:models-config'),
     openModelsFile: () => ipcRenderer.invoke('settings:open-models-file'),
+    getOperationBindings: () =>
+      ipcRenderer.invoke('settings:operation-bindings'),
+    saveOperationBindings: (bindings: OperationBindings) =>
+      ipcRenderer.invoke('settings:save-operation-bindings', bindings),
+    getPreferences: () => ipcRenderer.invoke('settings:get-preferences'),
+    savePreferences: (input: Preferences) =>
+      ipcRenderer.invoke('settings:save-preferences', input),
+    resetPreferences: () => ipcRenderer.invoke('settings:reset-preferences'),
+    exportPreferences: () => ipcRenderer.invoke('settings:export-preferences'),
+    importPreferences: () => ipcRenderer.invoke('settings:import-preferences'),
+    chooseProjectDir: () => ipcRenderer.invoke('settings:choose-project-dir'),
+    openDataDir: () => ipcRenderer.invoke('settings:open-data-dir'),
     onModelsChanged: (callback: () => void) => {
       const listener = (): void => callback()
       ipcRenderer.on('settings:models-changed', listener)
@@ -129,15 +155,20 @@ const api: CineApi = {
       ipcRenderer.invoke('library:move-asset', path, folder),
     deleteAsset: (path: string) =>
       ipcRenderer.invoke('library:delete-asset', path),
+    setAssetTags: (path: string, tags: string[]) =>
+      ipcRenderer.invoke('library:set-asset-tags', path, tags),
     reveal: (path: string) => ipcRenderer.invoke('library:reveal', path),
 
     listCharacters: () => ipcRenderer.invoke('library:list-characters'),
     saveAssets: (inputs: SaveAssetInput[], folder?: string) =>
-      ipcRenderer.invoke('library:save-assets', inputs, folder),    listTemplates: () => ipcRenderer.invoke('library:list-templates'),
+      ipcRenderer.invoke('library:save-assets', inputs, folder),
+    listTemplates: () => ipcRenderer.invoke('library:list-templates'),
     saveTemplate: (input: TemplateInput) =>
       ipcRenderer.invoke('library:save-template', input),
     deleteTemplate: (id: string) =>
-      ipcRenderer.invoke('library:delete-template', id)
+      ipcRenderer.invoke('library:delete-template', id),
+    thumbCacheInfo: () => ipcRenderer.invoke('library:thumb-cache-info'),
+    clearThumbCache: () => ipcRenderer.invoke('library:clear-thumb-cache')
   },
   components: {
     status: () => ipcRenderer.invoke('components:status'),
@@ -191,6 +222,8 @@ const api: CineApi = {
     thumbnail: (path: string, atSeconds?: number, kind?: 'video' | 'audio') =>
       ipcRenderer.invoke('media:thumbnail', path, atSeconds, kind),
     proxy: (path: string) => ipcRenderer.invoke('media:proxy', path),
+    audioPeaks: (input: AudioPeaksRequest) =>
+      ipcRenderer.invoke('media:audio-peaks', input),
     splitAv: (input: SplitAvRequest) => ipcRenderer.invoke('media:split-av', input),
     cropVideo: (input: CropVideoRequest) => ipcRenderer.invoke('media:crop-video', input),
     cropImage: (input: CropImageRequest) =>
@@ -216,6 +249,21 @@ const api: CineApi = {
       ipcRenderer.on('depth-task:event', listener)
       return () => {
         ipcRenderer.removeListener('depth-task:event', listener)
+      }
+    },
+    startVisionTask: (input: VisionTaskRequest) =>
+      ipcRenderer.invoke('media:vision-start', input),
+    cancelVisionTask: (taskId: string) =>
+      ipcRenderer.invoke('media:vision-cancel', taskId),
+    onVisionTaskEvent: (callback: (event: VisionTaskEvent) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: VisionTaskEvent
+      ): void => callback(payload)
+
+      ipcRenderer.on('vision-task:event', listener)
+      return () => {
+        ipcRenderer.removeListener('vision-task:event', listener)
       }
     }
   },
@@ -263,7 +311,23 @@ const api: CineApi = {
     asset: (relPath: string, fileName: string, scope?: 'project' | 'global') =>
       ipcRenderer.invoke('export:asset', relPath, fileName, scope),
     assets: (inputs: AssetRef[], fileName: string) =>
-      ipcRenderer.invoke('export:assets', inputs, fileName)  },
+      ipcRenderer.invoke('export:assets', inputs, fileName),
+    concatVideos: (
+      paths: string[],
+      options?: {
+        resolution?: '720p' | '1080p'
+        quality?: 'standard' | 'high'
+        subtitlePath?: string
+        bgmPath?: string
+        narrationPath?: string
+        originalVolume?: number
+        bgmVolume?: number
+        narrationVolume?: number
+      }
+    ) => ipcRenderer.invoke('export:concat-videos', paths, options),
+    pickFile: (kind: 'subtitle' | 'audio') =>
+      ipcRenderer.invoke('export:pick-file', kind)
+  },
   clipboard: {
     read: () => ipcRenderer.invoke('clipboard:read')
   }

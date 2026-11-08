@@ -1,11 +1,19 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  type OpenDialogOptions
+} from 'electron'
 import { copyFile, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, extname, join, resolve } from 'node:path'
 import type { ExportResult } from '../../shared/ipc-contract'
 import { getCurrentProjectRoot } from '../project/manager'
+import { exportProjectWithAssets } from '../export/project-export'
 import { zipDirectory } from '../export/zip'
 import { getLibraryRoot } from '../library/config'
+import { concatVideos } from '../media/concat'
 import type { AssetRef, AssetScope } from '../../shared/asset-schema'
 
 function stamp(): string {
@@ -45,11 +53,12 @@ export function registerExportIpc(): void {
       if (result.canceled || !result.filePath) return { ok: false, canceled: true }
 
       try {
-        await zipDirectory(root, result.filePath, {
-          rootName: basename(root),
-          ignore: ['.lock', '.trash']
-        })
-        return { ok: true, path: result.filePath }
+        const exportResult = await exportProjectWithAssets(root, result.filePath)
+        return {
+          ok: true,
+          path: result.filePath,
+          copiedAssets: exportResult.copiedAssets
+        }
       } catch (error) {
         return { ok: false, error: errorMessage(error) }
       }
@@ -82,6 +91,76 @@ export function registerExportIpc(): void {
 
       try {
         await writeFile(result.filePath, image.toPNG())
+        return { ok: true, path: result.filePath }
+      } catch (error) {
+        return { ok: false, error: errorMessage(error) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    'export:pick-file',
+    async (event, kind: 'subtitle' | 'audio'): Promise<string | null> => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const options: OpenDialogOptions = {
+        title: kind === 'subtitle' ? '选择字幕文件' : '选择背景音乐',
+        properties: ['openFile'],
+        filters:
+          kind === 'subtitle'
+            ? [{ name: '字幕文件', extensions: ['srt', 'ass', 'vtt'] }]
+            : [
+                {
+                  name: '音频文件',
+                  extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac']
+                }
+              ]
+      }
+
+      const result = win
+        ? await dialog.showOpenDialog(win, options)
+        : await dialog.showOpenDialog(options)
+
+      if (result.canceled || result.filePaths.length === 0) return null
+      return result.filePaths[0]
+    }
+  )
+
+  ipcMain.handle(
+    'export:concat-videos',
+    async (
+      event,
+      paths: string[],
+      options?: {
+        resolution?: '720p' | '1080p'
+        quality?: 'standard' | 'high'
+        subtitlePath?: string
+        bgmPath?: string
+        narrationPath?: string
+        originalVolume?: number
+        bgmVolume?: number
+        narrationVolume?: number
+      }
+    ): Promise<ExportResult> => {
+      if (!Array.isArray(paths) || paths.length < 2) {
+        return { ok: false, error: '至少选择两个视频' }
+      }
+
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const optionsDialog = {
+        title: '合成视频',
+        defaultPath: join(app.getPath('videos'), `CineLab-合成视频-${stamp()}.mp4`),
+        filters: [{ name: 'MP4 视频', extensions: ['mp4'] }]
+      }
+      const result = win
+        ? await dialog.showSaveDialog(win, optionsDialog)
+        : await dialog.showSaveDialog(optionsDialog)
+
+      if (result.canceled || !result.filePath) {
+        return { ok: false, canceled: true }
+      }
+
+      try {
+        await concatVideos(paths, result.filePath, options)
         return { ok: true, path: result.filePath }
       } catch (error) {
         return { ok: false, error: errorMessage(error) }

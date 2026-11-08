@@ -1,6 +1,7 @@
 import { Icon } from '../components/Icon'
 import { useCanvasStore } from '../stores/canvas'
 import { useLibraryStore } from '../stores/library'
+import { usePreferencesStore } from '../stores/preferences'
 import { useUIStore } from '../stores/ui'
 
 export function StatusBar() {
@@ -9,9 +10,9 @@ export function StatusBar() {
   const snapToGrid = useUIStore((state) => state.snapToGrid)
   const edgesVisible = useUIStore((state) => state.edgesVisible)
   const minimapVisible = useUIStore((state) => state.minimapVisible)
-  const toggleSnap = useUIStore((state) => state.toggleSnap)
-  const toggleEdges = useUIStore((state) => state.toggleEdges)
-  const toggleMinimap = useUIStore((state) => state.toggleMinimap)
+  const toggleEdges = usePreferencesStore((state) => state.toggleEdges)
+  const toggleSnap = usePreferencesStore((state) => state.toggleSnap)
+  const toggleMinimap = usePreferencesStore((state) => state.toggleMinimap)
   const requestFitView = useUIStore((state) => state.requestFitView)
   const requestArrange = useUIStore((state) => state.requestArrange)
 

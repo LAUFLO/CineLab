@@ -5,6 +5,7 @@ import type {
   ProjectSnapshot,
   RecentProject
 } from './project-schema'
+import type { ProjectTemplateId } from './project-templates'
 import type {
   ConnectionTestInput,
   ConnectionTestResult,
@@ -19,6 +20,7 @@ import type {
   GenerationEvent
 } from './generation'
 import type { ComponentEvent, ComponentKind, ComponentStatus } from './components'
+import type { Preferences } from './preferences'
 import type {
   AddToLibraryInput,
   SaveAssetInput,
@@ -27,12 +29,15 @@ import type {
   LibraryFolderNode,
   LibraryRootInfo,
   PromptTemplate,
-  TemplateInput
+  TemplateInput,
+  ThumbCacheInfo
 } from './library-schema'
 import type { ModelsConfigStatus } from './models-file'
+import type { OperationBindings } from './operation-schema'
 import type { TimelineDoc } from './timeline-schema'
 import type { UpdateApi } from './update'
 import type {
+  AudioPeaksRequest,
   CropImageRectRequest,
   CropImageRequest,
   CropImageResult,
@@ -54,7 +59,10 @@ import type {
   StitchRequest,
   StitchResult,
   TrimVideoRequest,
-  TrimVideoResult
+  TrimVideoResult,
+  VisionTaskEvent,
+  VisionTaskRequest,
+  VisionTaskStartResult
 } from './media'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -67,7 +75,11 @@ export interface AppInfo {
 
 export interface ProjectApi {
   bootstrap(): Promise<ProjectSnapshot | null>
-  create(name: string, parentDir?: string): Promise<ProjectSnapshot>
+  create(
+    name: string,
+    parentDir?: string,
+    templateId?: ProjectTemplateId
+  ): Promise<ProjectSnapshot>
   open(path: string): Promise<ProjectSnapshot>
   saveCanvas(path: string, canvas: CanvasData): Promise<void>
   recent(): Promise<RecentProject[]>
@@ -75,7 +87,7 @@ export interface ProjectApi {
   setCoverFromLocal(path: string): Promise<{ ok: boolean; canceled?: boolean }>
   setCoverFromAsset(path: string, assetPath: string): Promise<{ ok: boolean }>
   removeCover(path: string): Promise<void>
-  pickCreate(): Promise<ProjectSnapshot | null>
+  pickCreate(templateId?: ProjectTemplateId): Promise<ProjectSnapshot | null>
   pickOpen(): Promise<ProjectSnapshot | null>
   reveal(path: string): Promise<void>
   rename(path: string, name: string): Promise<ProjectMeta>
@@ -94,6 +106,15 @@ export interface SettingsApi {
   fetchModels(input: ConnectionTestInput): Promise<FetchModelsResult>
   modelsConfig(): Promise<ModelsConfigStatus>
   openModelsFile(): Promise<string>
+  getOperationBindings(): Promise<OperationBindings>
+  saveOperationBindings(bindings: OperationBindings): Promise<void>
+  getPreferences(): Promise<Preferences>
+  savePreferences(input: Preferences): Promise<Preferences>
+  resetPreferences(): Promise<Preferences>
+  exportPreferences(): Promise<{ path?: string; canceled?: boolean }>
+  importPreferences(): Promise<Preferences | null>
+  chooseProjectDir(): Promise<string | null>
+  openDataDir(): Promise<void>
   onModelsChanged(callback: () => void): () => void
 }
 
@@ -122,6 +143,7 @@ export interface LibraryApi {
   renameAsset(path: string, name: string): Promise<string>
   moveAsset(path: string, folder: string): Promise<string>
   deleteAsset(path: string): Promise<void>
+  setAssetTags(path: string, tags: string[]): Promise<string[]>
   reveal(path: string): Promise<void>
 
   listCharacters(): Promise<CharacterCard[]>
@@ -130,6 +152,8 @@ export interface LibraryApi {
   listTemplates(): Promise<PromptTemplate[]>
   saveTemplate(input: TemplateInput): Promise<PromptTemplate>
   deleteTemplate(id: string): Promise<void>
+  thumbCacheInfo(): Promise<ThumbCacheInfo>
+  clearThumbCache(): Promise<ThumbCacheInfo>
 }
 
 export interface ExportResult {
@@ -137,6 +161,7 @@ export interface ExportResult {
   path?: string
   canceled?: boolean
   error?: string
+  copiedAssets?: number
 }
 
 export type ClipboardContent =
@@ -152,7 +177,22 @@ export interface ExportApi {
   project(projectName: string): Promise<ExportResult>
   canvasPng(projectName: string, canvasName: string): Promise<ExportResult>
   asset(relPath: string, fileName: string, scope?: AssetScope): Promise<ExportResult>
-  assets(inputs: AssetRef[], fileName: string): Promise<ExportResult>}
+  assets(inputs: AssetRef[], fileName: string): Promise<ExportResult>
+  concatVideos(
+    paths: string[],
+    options?: {
+      resolution?: '720p' | '1080p'
+      quality?: 'standard' | 'high'
+      subtitlePath?: string
+      bgmPath?: string
+      narrationPath?: string
+      originalVolume?: number
+      bgmVolume?: number
+      narrationVolume?: number
+    }
+  ): Promise<ExportResult>
+  pickFile(kind: 'subtitle' | 'audio'): Promise<string | null>
+}
 
 export interface MediaApi {
   splitGrid(input: GridSplitRequest): Promise<GridSplitResult>
@@ -167,6 +207,7 @@ export interface MediaApi {
   ): Promise<boolean[]>
   thumbnail(path: string, atSeconds?: number, kind?: 'video' | 'audio'): Promise<string | null>
   proxy(path: string): Promise<string | null>
+  audioPeaks(input: AudioPeaksRequest): Promise<number[]>
   cropImage(input: CropImageRequest): Promise<CropImageResult>
   cropImageRect(input: CropImageRectRequest): Promise<CropImageResult>
   trimVideo(input: TrimVideoRequest): Promise<TrimVideoResult>
@@ -175,6 +216,9 @@ export interface MediaApi {
   startDepthCapture(input: DepthCaptureRequest): Promise<DepthTaskStartResult>
   cancelDepthCapture(taskId: string): Promise<void>
   onDepthCaptureEvent(callback: (event: DepthTaskEvent) => void): () => void
+  startVisionTask(input: VisionTaskRequest): Promise<VisionTaskStartResult>
+  cancelVisionTask(taskId: string): Promise<void>
+  onVisionTaskEvent(callback: (event: VisionTaskEvent) => void): () => void
 }
 
 export interface ComponentsApi {
@@ -282,6 +326,9 @@ export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
     setTheme(theme: ThemeMode): Promise<void>
+    setZoom(factor: number): Promise<void>
+    onCloseRequested(callback: () => void): () => void
+    confirmClose(): void
     openLogs(): Promise<void>
     log(level: 'info' | 'warn' | 'error', message: string): Promise<void>
     minimize(): void

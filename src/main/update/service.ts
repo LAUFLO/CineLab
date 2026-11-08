@@ -1,6 +1,8 @@
 import { app, BrowserWindow } from 'electron'
 import { autoUpdater, type UpdateInfo } from 'electron-updater'
 import type { UpdateState, UpdateStatus } from '@shared/update'
+import type { UpdateChannel } from '@shared/preferences'
+import { getPreferences } from '../settings/preferences'
 
 let status: UpdateStatus = {
   state: 'idle',
@@ -51,6 +53,14 @@ function handleError(error: unknown): void {
 
 export function getUpdateStatus(): UpdateStatus {
   return status
+}
+
+export function applyUpdatePreferences(updates: {
+  channel: UpdateChannel
+}): void {
+  const beta = updates.channel === 'beta'
+  autoUpdater.allowPrerelease = beta
+  autoUpdater.channel = beta ? 'beta' : 'latest'
 }
 
 export async function checkForUpdates(): Promise<UpdateStatus> {
@@ -176,9 +186,13 @@ export function initUpdateService(): void {
   if (status.canCheck) {
     silentCheckTimer = setTimeout(() => {
       silentCheckTimer = null
-      if (status.state === 'idle') {
-        void checkForUpdates()
-      }
+      void getPreferences()
+        .then((preferences) => {
+          if (preferences.updates.checkOnStartup && status.state === 'idle') {
+            void checkForUpdates()
+          }
+        })
+        .catch(() => undefined)
     }, 8000)
     silentCheckTimer.unref?.()
   }

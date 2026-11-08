@@ -30,6 +30,8 @@ import {
   listTemplates,
   saveTemplate
 } from '../library/templates'
+import { setAssetTags } from '../library/tags'
+import { clearThumbCache, getThumbCacheInfo } from '../library/thumbs'
 
 const ASSET_FILTERS = [
   {
@@ -166,6 +168,11 @@ export function registerLibraryIpc(): void {
     deleteAsset(path)
   )
 
+  ipcMain.handle(
+    'library:set-asset-tags',
+    (_event, path: string, tags: string[]) => setAssetTags(path, tags)
+  )
+
   ipcMain.handle('library:reveal', (_event, path: string) => revealPath(path))
 
   ipcMain.handle('library:list-characters', () => listCharacters())
@@ -178,4 +185,7 @@ export function registerLibraryIpc(): void {
   ipcMain.handle('library:delete-template', (_event, id: string) =>
     deleteTemplate(id)
   )
+
+  ipcMain.handle('library:thumb-cache-info', () => getThumbCacheInfo())
+  ipcMain.handle('library:clear-thumb-cache', () => clearThumbCache())
 }

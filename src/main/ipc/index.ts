@@ -11,6 +11,7 @@ import { registerTimelineIpc } from './timeline'
 import { registerComponentsIpc } from './components'
 import { registerUpdateIpc } from './update'
 import { log, logDirectory } from '../logger'
+import { allowWindowClose } from '../window'
 
 function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
   return BrowserWindow.fromWebContents(sender)
@@ -36,6 +37,17 @@ export function registerIpc(): void {
 
   ipcMain.handle('app:set-theme', (_event, theme: ThemeMode) => {
     nativeTheme.themeSource = theme
+  })
+
+  ipcMain.handle('app:set-zoom', (event, factor: number) => {
+    const win = windowFromEvent(event.sender)
+    if (!win || !Number.isFinite(factor)) return
+    win.webContents.setZoomFactor(Math.min(2, Math.max(0.5, factor)))
+  })
+
+  ipcMain.on('app:confirm-close', (event) => {
+    const win = windowFromEvent(event.sender)
+    if (win) allowWindowClose(win)
   })
 
   ipcMain.handle('app:open-logs', async () => {

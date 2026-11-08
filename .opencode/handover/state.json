@@ -2,12 +2,12 @@
   "version": 13,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-07",
+  "updatedAt": "2026-11-08",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "P3-2 项目模板与示例项目：空白/分镜/产品广告/角色短片",
+  "next_focus": "剪辑室 P3/P4 已知限制已全部清零：关键帧、画中画、detachAudio、linkage、预览音高、整条时间线自动字幕、镜头/静音/节拍、SRT/VTT 导入、转场音频交叉淡化均已完成并验证。下一步按 backlog 处理次优先级项（字幕重叠截短、颜色撤销合并）或进入发布前体验完善。",
   "frontier": [
     {
       "id": "M2-1",
@@ -374,6 +374,323 @@
       "evidence": [
         "docs/logging-plan.md",
         ".opencode/handover/evidence/P2-2-logging.md"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P0",
+      "title": "剪辑室内核：时间线 schema / Command 层 / 编辑纯函数 / 撤销 / 布局",
+      "status": "done",
+      "note": "2026-11-07 完成。新增 src/shared/timeline-schema.ts、timeline-edit.ts、timeline-commands.ts、timeline-layout.ts、timeline-history.ts；毫秒整数；17 种命令；插入/覆盖/移动/裁剪/切割/删除/闭合空隙/linkage；快照撤销上限 50；39 个用例。typecheck 与全量 54 个测试通过。",
+      "evidence": [
+        "docs/clip-studio-plan.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P0.md",
+        "src/shared/timeline-schema.ts",
+        "src/shared/timeline-edit.ts",
+        "src/shared/timeline-commands.ts",
+        "src/shared/timeline-layout.ts",
+        "src/shared/timeline-history.ts"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P1-SHELL",
+      "title": "剪辑室静态布局壳：浮窗、素材池、预览、检查器、时间线",
+      "status": "done",
+      "note": "2026-11-07 完成。新增 stores/studio.ts、studio/ 六个组件、styles/studio.css；Ctrl+Shift+E 打开、Esc 关闭；左右面板可折叠；时间线四条轨道含主轨标识与播放头；typecheck、54 个测试、build 通过；CDP 截图确认。当前为静态假数据，交互未接线。",
+      "evidence": [
+        "docs/clip-studio-plan.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-shell.md",
+        "src/renderer/src/studio/StudioWindow.tsx",
+        "src/renderer/src/styles/studio.css"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P1-INTERACT",
+      "title": "时间线交互第一批：选中、播放头、双击添加、撤销重做",
+      "status": "done",
+      "note": "2026-11-07 完成。新增 stores/timeline.ts、studio/demo.ts；TimelinePane 从 TimelineDoc 渲染；标尺跳转、片段选中、双击素材追加主轨、撤销重做、工具与吸附/磁性状态均已验证。CDP 实测：播放头 522px、片段 7→8、时长 00:32→00:36、撤销 8→7、重做 7→8。typecheck、54 测试、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-interact.md",
+        "src/renderer/src/stores/timeline.ts",
+        "src/renderer/src/studio/TimelinePane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P1-HANDLES",
+      "title": "时间线手势：拖拽、裁剪、切割、吸附、快捷键",
+      "status": "done",
+      "note": "2026-11-07 完成。新增 timeline-snap.ts（0/播放头/片段边缘吸附）；TimelinePane 支持片段拖动、左右边缘裁剪、切割工具、V/C/Delete/Ctrl+Z/Ctrl+K 快捷键；修复 moveClips 不闭合原位置导致总时长膨胀的问题。CDP 实测：拖拽 +120px 时长不变、裁剪 315→215px、切割 8→9 段。typecheck、57 测试、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-handles.md",
+        "src/shared/timeline-snap.ts",
+        "src/renderer/src/studio/TimelinePane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P1-ZOOM",
+      "title": "时间线缩放与横向滚动",
+      "status": "done",
+      "note": "2026-11-07 完成。时间线 body 改为 flex + scroll，轨道头固定，标尺/轨道/播放头共享 scrollLeft；工具栏缩放 50%–400%，Ctrl+滚轮锚点缩放，Shift+滚轮横滚。CDP 实测 100%→160%、内容 1046→1674px、锚点 scrollLeft 313px、缩放后拖拽仍正确。typecheck、57 测试、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-zoom.md",
+        "src/renderer/src/studio/TimelinePane.tsx",
+        "src/renderer/src/styles/studio.css"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P1-POLISH",
+      "title": "快捷键作用域、检查器联动、节点工具栏瘦身",
+      "status": "done",
+      "note": "2026-11-07 完成。新增 studio/scope.ts，画布 Canvas/TopBar/BottomBar/PromptBar 的全局键盘监听在剪辑室打开时让位；InspectorPane 联动选中片段显示真实字段、未选中显示时间线设置；NodeToolbar 删除尺寸展示，高度 36、按钮 28、字号 12、主操作图标 14。新增 docs/clip-studio-backlog.md 统一未完成项清单。typecheck、57 测试、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-polish.md",
+        "docs/clip-studio-backlog.md",
+        "src/renderer/src/studio/scope.ts",
+        "src/renderer/src/studio/InspectorPane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P1-CROSS",
+      "title": "跨轨道拖拽与 Alt ripple 裁剪",
+      "status": "done",
+      "note": "2026-11-07 完成。拖拽按鼠标 Y 计算目标轨道，原轨道隐藏、目标轨道显示半透明幽灵；Alt 拖边缘传 ripple。CDP 实测 V1 3→2、V2 1→2，镜头 01 移到 V2；裁剪 324→244px，后续片段前移，总时长 00:32 保持。typecheck 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-cross-ripple.md",
+        "src/renderer/src/studio/TimelinePane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P1-PERSIST",
+      "title": "素材拖拽、时间线与布局持久化、滚动增强",
+      "status": "done",
+      "note": "2026-11-07 完成。新增 studio/persist.ts；素材卡片 draggable，轨道 dragover/drop 接收；时间线按项目路径存 localStorage，doc 变化 400ms 防抖保存；布局折叠与比例持久化；纵向 scrollTop 同步；边缘 rAF 自动滚动与滚动补偿。实测：拖入 6→8、删除后存储 7→6、reload 加载 6、折叠状态 reload 保留。真实缩略图仍依赖真实素材接线。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-persist-drag.md",
+        "src/renderer/src/studio/persist.ts",
+        "src/renderer/src/studio/TimelinePane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P2-CANVAS",
+      "title": "Canvas 渲染器与预览播放",
+      "status": "done",
+      "note": "2026-11-07 基础版完成。新增 studio/renderer.ts（视频/图片/文字/变换/透明度/混合模式）、PreviewStage.tsx（rAF 播放时钟）、PreviewPane 播放控制；store 增加 playing/play/pause/togglePlay。真实视频验证：复制 3 段素材到测试项目 assets/vid，预览 1 秒处正确显示画面与字幕。视频/图片素材仍写死在 demo，音频混音未接。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-canvas.md",
+        "src/renderer/src/studio/renderer.ts",
+        "src/renderer/src/studio/PreviewStage.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P2-POOL",
+      "title": "素材池动态化：画布节点输出与全局资产库",
+      "status": "done",
+      "note": "2026-11-07 完成。新增 studio/assets.ts（PoolAsset、节点/资产库转换、assetToClip）；MaterialPool 改为画布素材 + 资产库两页签，空态；拖拽传完整 JSON；TimelinePane drop 不再依赖 demo 列表。实测资产库「真实素材-01」拖入 V1，片段 7→9。画布素材页签已接 useCanvasStore，当前测试项目画布为空。真实缩略图与上传页签待后续。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-pool.md",
+        "src/renderer/src/studio/assets.ts",
+        "src/renderer/src/studio/MaterialPool.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P2-THUMB",
+      "title": "素材池真实缩略图：视频首帧由主进程 ffmpeg 抽取",
+      "status": "done",
+      "note": "2026-11-07 完成。新增 main/media/thumbnail.ts 与 media:thumbnail IPC：磁盘 + 内存缓存、最多 2 个 ffmpeg 并发、probe 后取片头 10% 避开黑场、音频 showwavespic 波形；统一 PNG 输出（JPEG 不支持透明会变黑）。AssetThumbnail 图片直出、视频抽帧、音频波形。CDP 确认 11 个卡片缩略图全部生成。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-thumb.md",
+        "src/main/media/thumbnail.ts",
+        "src/renderer/src/studio/MaterialPool.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P2-CLIP-MEDIA",
+      "title": "时间线片段缩略图与音频波形",
+      "status": "done",
+      "note": "2026-11-07 完成。ClipMedia 抽帧池按 1 秒间隔固定生成（最多 8 帧），显示帧数按像素宽度从池中采样，缩放不重新抽帧；音频波形 repeat-x 循环，偏移按 sourceStartMs % 总时长 × 像素计算；最小帧数 1。CDP 实测 100% 16 帧、160% 25 帧且无空白，波形持续铺满。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-clip-media.md",
+        "src/renderer/src/studio/ClipMedia.tsx",
+        "src/renderer/src/studio/TimelinePane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P2-EXPORT",
+      "title": "完整导出：隐藏窗口逐帧渲染 + ffmpeg 编码",
+      "status": "done",
+      "note": "2026-11-07 完成。新增 timeline-render 渲染页、main/timeline/export.ts、timeline:export IPC、preload/contract、顶部「生成成片」按钮与进度；cinelab-asset 开启 corsEnabled 并加 CORS 头，解决 canvas 污染。音频混音：atrim/asetpts/volume/afade/adelay/amix，输出用 -t 总时长而非 -shortest。实测 26 秒 1080p 导出约 2 分钟，ffprobe 确认 780 帧 + 音频流 / 16.1MB。后续改为 image2pipe 流式写帧，取消临时帧目录；新增取消 IPC 与半成品清理。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-export.md",
+        "src/main/timeline/export.ts",
+        "src/renderer/src/studio/timeline-render.ts"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P2-FAST",
+      "title": "快速路径、540p 代理、预览音频",
+      "status": "done",
+      "note": "2026-11-07 完成。fast-path.ts 判定单视频轨纯拼接；新增 stream-copy.ts，源参数一致时 concat demuxer + -c copy，不重新编码；不满足时回退 exportFastPath 的 trim/scale/pad/concat 编码；音频加 apad 补静音；新增 media:proxy 生成 .cache/proxy 540p 代理；PreviewStage 用 WebAudio 混音预览。实测 3 分钟纯拼接 stream-copy 3.47 秒，编码快速路径 144 秒；3 秒 1080p 编码快速路径 1.8 秒。代理已接入预览，快速路径支持视频自带音频。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-fastproxy.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-final.md",
+        "src/main/timeline/fast-path.ts",
+        "src/main/timeline/stream-copy.ts",
+        "src/main/media/proxy.ts"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P2-LIMITS",
+      "title": "消除 P2 最后四条限制：seek 暂停、视频自带音频、代理接入预览、媒体就绪重绘",
+      "status": "done",
+      "note": "2026-11-07 完成。标尺/轨道 seek 前暂停；完整路径收集视频自带音频（probeMedia + 路径缓存 + [i:a:0]）；快速路径增加音频链与 anullsrc 静音、concat 按 [v][a] 交错；代理在 PreviewStage 后台生成并切换视频源；新增 MEDIA_READY_EVENT（loadeddata/seeked/load）驱动静止帧重绘；预览音频新增视频自带音轨的 HTMLAudioElement 调度。实测：10 秒快速路径带 AAC 3.4 秒导出；5 秒逐帧带音频 7.8 秒；代理文件生成并预览正常；播放中 seek 从 00:04 停到 00:02 不再前进；视频音轨触发 1 次 play。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-limits.md",
+        "src/main/timeline/export.ts",
+        "src/renderer/src/studio/PreviewStage.tsx",
+        "src/renderer/src/studio/renderer.ts"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P2-FINAL",
+      "title": "P2 收尾：4K、流式帧、stream-copy、取消、长片稳定",
+      "status": "done",
+      "note": "2026-11-07 完成。完整路径改为 ffmpeg image2pipe stdin 流式写帧，移除临时 JPEG 目录；新增 stream-copy.ts（concat demuxer + -c copy），不满足源参数一致时回退编码快速路径；timeline:export 返回 {ok,path,canceled}，新增 timeline:export-cancel 与 UI「取消生成」；runFfmpeg 与流式 ffmpeg 等待子进程退出后再 reject，解决 Windows 半成品删除失败。实测：4K 4 秒 24.4-26.2 秒 / 120 帧，连续两次导出结束内存 890/889MB；30 秒 1080p 逐帧 39.9 秒；3 分钟 stream-copy 3.47 秒（0.019x），编码快速路径 144 秒；逐帧/stream-copy/编码快速路径取消均无残留、无临时目录；图片片段预览与导出 PSNR 39.16dB。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-final.md",
+        "src/main/timeline/export.ts",
+        "src/main/timeline/stream-copy.ts",
+        "src/main/media/ffmpeg.ts",
+        "src/main/ipc/timeline.ts",
+        "src/renderer/src/studio/StudioTopBar.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-NODES-1",
+      "title": "节点接线第一刀：studio / film 双节点、时间线文件、版本栈、唯一导出入口",
+      "status": "done",
+      "note": "2026-11-07 完成。新增 StudioNodeData/FilmNodeData 与 project-schema；时间线改存 timelines/<id>.json，新增 timeline:load/save IPC；StudioNodeView/FilmNodeView 注册到画布；右键菜单、媒体节点工具栏、Ctrl+Shift+E 均可创建/打开剪辑室；首次有片段自动派生成片节点并连线；成片节点复用 outputs 版本栈并成为唯一导出入口，剪辑室移除导出按钮；保存只标 stale，打开不标脏，切换剪辑室先保存上一个时间线。实测：工具栏/右键入口创建并连线；1 片段保存后成片自动出现；6 秒 1080p 导出 2.55MB；编辑后 stale；再导出版本 2；版本切换 1/2；reload 后节点/连线/片段数/2 个版本全部恢复；打开关闭不修改时 ready 保持。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-NODES-1.md",
+        "src/main/timeline/storage.ts",
+        "src/renderer/src/canvas/nodes/StudioNodeView.tsx",
+        "src/renderer/src/canvas/nodes/FilmNodeView.tsx",
+        "src/renderer/src/studio/nodes.ts",
+        "src/renderer/src/studio/StudioWindow.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-NODES-2",
+      "title": "节点接线第二刀：上传同步、多选/分镜组入口、删除与复制语义",
+      "status": "done",
+      "note": "2026-11-07 完成。上传页签接真实导入：全局库「剪辑室素材」→ probe → 按类型建节点 → 成组 → 逐个连到剪辑室；createStudioFromNodes 支持媒体/成片/分组/分镜组并按选择顺序连线；画布素材页签按入边顺序展示。确认弹窗扩展三按钮：删除剪辑室可选保留成片（成片原地转 cine 视频，outputs 与下游连线保留）或一起删除；单独删成片后清空 filmNodeId，重新打开自动补建。新增 timeline:duplicate 深拷贝；创建副本与 Ctrl+C/V 都会生成新 timelineId 文件，不复制成片。实测上传图片+视频 2 节点/1 组/2 边/global scope；多选 3 节点 3 边；分镜组 2 边；保留/一起删除/单删成片/补建/副本/粘贴/reload 全部通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-NODES-2.md",
+        "src/renderer/src/studio/nodes.ts",
+        "src/renderer/src/canvas/delete-actions.ts",
+        "src/renderer/src/canvas/MultiSelectBar.tsx",
+        "src/renderer/src/canvas/StoryboardToolbar.tsx",
+        "src/renderer/src/studio/MaterialPool.tsx",
+        "src/main/timeline/storage.ts"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-NODES-3",
+      "title": "节点接线第三刀：引用状态、missing、无输出入口、工具栏对齐",
+      "status": "done",
+      "note": "2026-11-07 完成。PoolAsset/assetToClip 写入 nodeId/outputId；剪辑室保存 references，成片保存 upstreamAck；新增 media:exists 与 studio/references.ts（analyzeClipReferences / referencesFromDoc / upstreamSignature）。时间线片段显示「素材缺失 / 有新版本」，素材池卡片显示「有新版本」，UpstreamWatcher 在剪辑室关闭时也能把成片标 stale；导出后写 upstreamAck，同一版本不反复标脏。无输出节点新增精简「剪辑室」工具栏。分组复制展开子节点，分组内删除剪辑室支持保留成片，成片会先脱组再保留。工具栏 36/28/12/0 5px/1px，按屏幕位置自动左中右对齐：360 图片 471×36 居中，480 视频 735×36 右对齐且完整可见。实测换新 output stale、重导出保持 ready、删节点 missing、无输出入口、分组复制/删除、reload 均通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-NODES-3.md",
+        "src/renderer/src/studio/references.ts",
+        "src/renderer/src/canvas/UpstreamWatcher.tsx",
+        "src/main/ipc/media.ts",
+        "src/renderer/src/canvas/nodes/CineNodeView.tsx",
+        "src/renderer/src/canvas/delete-actions.ts"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P3-SUBTITLES",
+      "title": "P3 字幕：添加、样式编辑、烧录、VTT 导出；节点收尾",
+      "status": "done",
+      "note": "2026-11-08 完成。时间线工具栏「字幕」在播放头创建 3 秒字幕；属性面板可编辑内容/字体/字号/颜色/对齐/粗斜体/阴影/描边，失焦或 Ctrl+Enter 提交，clip.name 同步内容；使用同一 drawText 渲染器烧录。成片节点新增 VTT 按钮，主进程过滤 subtitle 轨可见片段并按时间排序输出标准 WebVTT 到 exports/字幕-<时间>.vtt。实测：预览和导出抽帧均显示「你好 CineLab」；5 秒 1080p 150 帧；VTT 时间码 00:00:00.000 --> 00:00:03.000；reload 后字幕样式与标签保留。节点收尾：新增 media:exists-many，引用分析改批量查询；下载/展开/入库图标化，360 图片工具栏 471→378，480 视频 735→642；多时间线由多个剪辑室节点覆盖。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P3-SUBTITLES.md",
+        "src/renderer/src/studio/InspectorPane.tsx",
+        "src/renderer/src/studio/TimelinePane.tsx",
+        "src/main/timeline/vtt.ts",
+        "src/renderer/src/canvas/nodes/FilmNodeView.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P3P4",
+      "title": "P3 转场/变速 + P4 whisper 自动字幕",
+      "status": "done",
+      "note": "2026-11-08 完成。转场：新增 transitionState 与单测，canvas 渲染器支持上一片段尾部交叉淡化/黑场，属性面板可设类型/时长，片段显示「淡/黑」标记；实测红蓝图 fade 中点为紫、dip-black 中点为黑，10 秒导出抽 5.5 秒帧一致。变速：属性面板 0.25-4×，导出音频按源时长×speed 并走 atempo（保持音高）或 asetrate；5 秒视频 2× 导出 2.5 秒/75 帧/音频 2.5 秒。自动字幕：组件新增 whisper-runtime（官方 v1.7.6 3.67MB）与 whisper-model（ggml-base 148MB），安装器支持多 model；主进程抽 16k WAV + whisper-cli JSON 分段，IPC 带进度/取消；时间线「自动字幕」按选中片段和 speed 映射生成字幕轨，批量 addClips 一条撤销。实测组件下载安装成功，TTS 英文语音转写生成 0-4.96 秒字幕并 reload 保留。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P3P4-TRANSITIONS-WHISPER.md",
+        "src/shared/timeline-transition.ts",
+        "src/renderer/src/studio/renderer.ts",
+        "src/main/timeline/transcribe.ts",
+        "src/main/components/manifest.ts"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P3-EDIT-KERNEL",
+      "title": "剪辑内核补全：关键帧 / 画中画 / detachAudio / linkage / 预览音高",
+      "status": "done",
+      "note": "2026-11-08 完成。timeline-keyframes 支持位置/缩放/旋转/透明度/音量与四种缓动；渲染器与预览音频按播放头求值；检查器可编辑 transform、画中画预设、关键帧列表、分离音频；linkage 接入移动/头部裁剪/删除；预览改用 HTMLAudioElement preservesPitch。typecheck、74 测试、build 通过；导出实测透明度 YAVG 16→80、画中画右下区域 YAVG 81。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P3-EDIT-KERNEL.md",
+        "src/shared/timeline-keyframes.ts",
+        "src/renderer/src/studio/renderer.ts",
+        "src/renderer/src/studio/PreviewStage.tsx",
+        "src/renderer/src/studio/InspectorPane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-P4-ANALYSIS",
+      "title": "P4 分析层：整条时间线自动字幕 / 镜头静音节拍 / SRT-VTT 导入 / 转场音频",
+      "status": "done",
+      "note": "2026-11-08 完成。audio-mix 统一导出与转写混音并实现转场音频交叉淡化；transcribe 支持整条时间线；新增 scdet/silencedetect/PCM 能量节拍分析与 IPC；marker 支持 durationMs 并在标尺渲染；SRT/VTT 解析与导入 IPC；检查器 AI 分析区批量写 marker。实测视频原声 10 秒处生成字幕、镜头 2000ms、静音 3 条、节拍 4 条、SRT 2 条 cue、2.4 秒转场音频导出无爆音。typecheck、74 测试、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-P4-ANALYSIS.md",
+        "src/main/timeline/audio-mix.ts",
+        "src/main/timeline/analysis.ts",
+        "src/main/timeline/transcribe.ts",
+        "src/shared/subtitles.ts"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-1",
+      "title": "剪辑室：时间线剪辑 + AI 智能剪辑",
+      "status": "pending",
+      "note": "2026-11-08 方案定稿；POC-1 完成：DOM 截图无法输出 4K，导出渲染器改为 Canvas 2D。P0 内核完成。P1 全部完成。P2 完成：Canvas 渲染与预览、逐帧完整导出、音频混音、stream-copy/编码快速路径、540p 代理、4K、流式写帧、导出取消、长片稳定。节点接线三刀完成：双节点、时间线文件、版本栈、唯一导出、上传同步、批量入口、删除/复制、引用状态/missing/upstreamAck、无输出入口、工具栏对齐。P3 完成：字幕编辑/烧录/VTT、转场、变速与音高保持、关键帧、画中画、detachAudio、linkage。P4 完成：whisper 组件、片段与整条时间线语音转写、镜头/静音/节拍检测、SRT/VTT 导入、转场音频交叉淡化。统一未完成项清单见 docs/clip-studio-backlog.md；剩余仅为字幕重叠截短、颜色选择器撤销合并等次优先级项。",
+      "evidence": [
+        "docs/clip-studio-plan.md",
+        "docs/clip-studio-backlog.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-POC1.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P0.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-shell.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-interact.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-handles.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-zoom.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-polish.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-cross-ripple.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P1-persist-drag.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-canvas.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-pool.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-thumb.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-clip-media.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-export.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-fastproxy.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-limits.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P2-final.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-NODES-1.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-NODES-2.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-NODES-3.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P3-SUBTITLES.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P3P4-TRANSITIONS-WHISPER.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P3-EDIT-KERNEL.md",
+        ".opencode/handover/evidence/CLIP-STUDIO-P4-ANALYSIS.md",
+        "scripts/poc-capture/"
       ]
     }
   ],

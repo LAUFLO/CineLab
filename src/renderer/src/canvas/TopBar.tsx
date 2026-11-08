@@ -8,6 +8,7 @@ import { useProjectStore } from '../stores/project'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useUpdateStore } from '../stores/update'
+import { studioOpen } from '../studio/scope'
 
 export function TopBar() {
   const name = useProjectStore((state) => state.name)
@@ -58,6 +59,7 @@ export function TopBar() {
       }
     }
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (studioOpen()) return
       if (event.key === 'Escape') {
         setProjectMenuOpen(false)
         setCanvasMenuOpen(false)

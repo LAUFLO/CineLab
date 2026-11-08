@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; padding: 0; width: var(--stage-w, 1920px); height: var(--stage-h, 1080px); overflow: hidden; background: #0a0a0a; }
+  .stage { position: relative; width: var(--stage-w, 1920px); height: var(--stage-h, 1080px); overflow: hidden; background: #0a0a0a; }
+  video {
+    position: absolute; inset: 0; width: var(--stage-w, 1920px); height: var(--stage-h, 1080px);
+    object-fit: cover; opacity: 0;
+  }
+  .caption {
+    position: absolute; left: 0; right: 0; bottom: 90px;
+    text-align: center; font-family: Arial, sans-serif;
+    font-size: 64px; font-weight: 700; color: #ffffff;
+    text-shadow: 0 4px 18px rgba(0,0,0,.65);
+  }
+  .caption span { background: rgba(0,0,0,.45); padding: 10px 28px; border-radius: 12px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <video id="a" src="out/media/a.mp4" muted playsinline preload="auto"></video>
+  <video id="b" src="out/media/b.mp4" muted playsinline preload="auto"></video>
+  <video id="c" src="out/media/c.mp4" muted playsinline preload="auto"></video>
+  <div class="caption"><span>CineLab POC 01</span></div>
+</div>
+<script>
+  const videos = [document.getElementById('a'), document.getElementById('b'), document.getElementById('c')];
+  const clips = [
+    { el: videos[0], start: 0, end: 3.5 },
+    { el: videos[1], start: 3.5, end: 7 },
+    { el: videos[2], start: 7, end: 10 }
+  ];
+
+  window.ready = Promise.all(videos.map((v) => new Promise((resolve) => {
+    if (v.readyState >= 1) return resolve();
+    const done = () => resolve();
+    v.addEventListener('loadedmetadata', done, { once: true });
+    v.addEventListener('error', done, { once: true });
+  }))).then(() => document.fonts.ready);
+
+  window.seek = async (t) => {
+    const waits = [];
+    for (const c of clips) {
+      const active = t >= c.start && t < c.end;
+      c.el.style.opacity = active ? '1' : '0';
+      if (!active) continue;
+      const target = t - c.start;
+      if (Math.abs(c.el.currentTime - target) > 0.0005) {
+        waits.push(new Promise((resolve) => {
+          const done = () => resolve();
+          c.el.addEventListener('seeked', done, { once: true });
+          c.el.currentTime = target;
+          setTimeout(done, 2000);
+        }));
+      }
+    }
+    await Promise.all(waits);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  };
+</script>
+</body>
+</html>

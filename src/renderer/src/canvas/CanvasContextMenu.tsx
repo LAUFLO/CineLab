@@ -1,15 +1,18 @@
 import { useEffect, useRef } from 'react'
 import { useCanvasStore } from '../stores/canvas'
+import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
+import { createStudioAt } from '../studio/nodes'
 import { pasteAt, uploadMaterialsAt } from './context-actions'
 
 const MENU_WIDTH = 224
-const MENU_HEIGHT = 268
+const MENU_HEIGHT = 304
 
 export function CanvasContextMenu() {
   const menu = useUIStore((state) => state.contextMenu)
   const close = useUIStore((state) => state.closeContextMenu)
   const openMenu = useUIStore((state) => state.openMenu)
+  const openStudio = useStudioStore((state) => state.openStudio)
 
   const canUndo = useCanvasStore((state) => state.past.length > 0)
   const canRedo = useCanvasStore((state) => state.future.length > 0)
@@ -82,6 +85,18 @@ export function CanvasContextMenu() {
         }}
       >
         <span>添加节点</span>
+      </button>
+
+      <button
+        type="button"
+        className="ctx-menu__item"
+        onClick={() => {
+          close()
+          const studioId = createStudioAt(menu.flow)
+          openStudio(studioId)
+        }}
+      >
+        <span>剪辑室</span>
       </button>
 
       <div className="ctx-menu__divider" />

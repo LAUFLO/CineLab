@@ -5,8 +5,14 @@ import {
   type GroupRatio
 } from '@shared/canvas-schema'
 import { Icon } from '../components/Icon'
-import { isGroupNode, useCanvasStore } from '../stores/canvas'
+import {
+  isGroupNode,
+  selectedNodeOutput,
+  useCanvasStore
+} from '../stores/canvas'
+import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
+import { createStudioFromNodes } from '../studio/nodes'
 
 type MenuKind = 'ratio' | 'grid' | null
 
@@ -37,6 +43,7 @@ export function StoryboardToolbar() {
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   const showToast = useUIStore((state) => state.showToast)
+  const openStudio = useStudioStore((state) => state.openStudio)
 
   const selected = nodes.filter((node) => node.selected)
   const group =
@@ -91,10 +98,7 @@ export function StoryboardToolbar() {
 
     for (const child of children) {
       if (isGroupNode(child)) continue
-      const outputs = child.data.outputs ?? []
-      const current =
-        outputs.find((item) => item.id === child.data.selectedOutputId) ??
-        outputs[0]
+      const current = selectedNodeOutput(child)
       if (current?.path) paths.push(current.path)
     }
 
@@ -157,6 +161,19 @@ export function StoryboardToolbar() {
         if (removed > 0) showToast(`已清空 ${removed} 个节点`)
       }
     })
+  }
+
+  const makeStudio = (): void => {
+    const studioId = createStudioFromNodes(
+      [group.id],
+      `${group.data.title} · 剪辑室`
+    )
+    if (!studioId) {
+      showToast('组内没有可送入剪辑室的素材', 'error')
+      return
+    }
+    openStudio(studioId)
+    showToast('已创建剪辑室并送入分镜素材')
   }
 
   return (
@@ -238,6 +255,16 @@ export function StoryboardToolbar() {
       >
         <Icon name="layers" size={14} />
         <span>{stitching ? '拼接中…' : '拼接(2K)'}</span>
+      </button>
+
+      <button
+        type="button"
+        className="group-toolbar__btn"
+        title="把分镜组内素材送入剪辑室"
+        onClick={makeStudio}
+      >
+        <Icon name="film" size={14} />
+        <span>剪辑室</span>
       </button>
 
       <button

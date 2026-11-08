@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
-import { NODE_META, type NodeKind } from '@shared/canvas-schema'
+import { NODE_META, type CanvasNodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../components/Icon'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 
-const ICONS: Record<NodeKind, IconName> = {
+const ICONS: Record<CanvasNodeKind, IconName> = {
   text: 'text',
   image: 'image',
   video: 'video',
-  audio: 'audio'
+  audio: 'audio',
+  studio: 'film',
+  film: 'film'
 }
 
 export function NodeSearch() {
@@ -37,7 +39,8 @@ export function NodeSearch() {
         if (!keyword) return true
         const title = node.data.title.toLowerCase()
         const kind = NODE_META[node.data.kind].label.toLowerCase()
-        const text = (node.data.text ?? '').toLowerCase()
+        const text =
+          node.type === 'cine' ? (node.data.text ?? '').toLowerCase() : ''
         return (
           title.includes(keyword) ||
           kind.includes(keyword) ||

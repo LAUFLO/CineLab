@@ -30,6 +30,7 @@ import type {
   TemplateInput
 } from './library-schema'
 import type { ModelsConfigStatus } from './models-file'
+import type { TimelineDoc } from './timeline-schema'
 import type { UpdateApi } from './update'
 import type {
   CropImageRectRequest,
@@ -160,6 +161,12 @@ export interface MediaApi {
   splitAv(input: SplitAvRequest): Promise<SplitAvResult>
   cropVideo(input: CropVideoRequest): Promise<CropVideoResult>
   probe(path: string): Promise<MediaProbe>
+  exists(path: string, scope?: 'project' | 'global'): Promise<boolean>
+  existsMany(
+    entries: { path: string; scope: 'project' | 'global' }[]
+  ): Promise<boolean[]>
+  thumbnail(path: string, atSeconds?: number, kind?: 'video' | 'audio'): Promise<string | null>
+  proxy(path: string): Promise<string | null>
   cropImage(input: CropImageRequest): Promise<CropImageResult>
   cropImageRect(input: CropImageRectRequest): Promise<CropImageResult>
   trimVideo(input: TrimVideoRequest): Promise<TrimVideoResult>
@@ -178,6 +185,99 @@ export interface ComponentsApi {
   onEvent(callback: (event: ComponentEvent) => void): () => void
 }
 
+export interface TimelineExportProgress {
+  frame: number
+  total: number
+  stage: 'rendering' | 'encoding' | 'done'
+}
+
+export interface TimelineExportResult {
+  ok: boolean
+  path?: string
+  canceled?: boolean
+}
+
+export type TimelineTranscribeRequest =
+  | {
+      mode: 'clip'
+      path: string
+      scope: 'project' | 'global'
+      sourceStartMs: number
+      durationMs: number
+      speed: number
+    }
+  | {
+      mode: 'timeline'
+      doc: TimelineDoc
+    }
+
+export interface TimelineTranscribeSegment {
+  startMs: number
+  durationMs: number
+  text: string
+}
+
+export interface TimelineTranscribeResult {
+  segments: TimelineTranscribeSegment[]
+  language?: string
+}
+
+export interface TimelineTranscribeProgress {
+  stage: 'extracting' | 'transcribing'
+  percent: number
+}
+
+export type TimelineAnalysisKind = 'shots' | 'silences' | 'beats'
+
+export interface TimelineAnalysisRequest {
+  kind: TimelineAnalysisKind
+  path: string
+  scope: 'project' | 'global'
+  sourceStartMs: number
+  durationMs: number
+  speed: number
+}
+
+export interface TimelineAnalysisMarker {
+  /** 相对片段起点的毫秒 */
+  atMs: number
+  label: string
+  durationMs?: number
+  color?: string
+}
+
+export interface TimelineAnalysisResult {
+  markers: TimelineAnalysisMarker[]
+}
+
+export interface TimelineSubtitleCue {
+  startMs: number
+  endMs: number
+  text: string
+}
+
+export interface TimelineSubtitleImportResult {
+  name: string
+  cues: TimelineSubtitleCue[]
+}
+
+export interface TimelineApi {
+  load(timelineId: string): Promise<TimelineDoc | null>
+  save(timelineId: string, doc: TimelineDoc): Promise<void>
+  duplicate(timelineId: string): Promise<string>
+  exportVtt(doc: TimelineDoc): Promise<string>
+  export(doc: TimelineDoc): Promise<TimelineExportResult>
+  cancelExport(): Promise<void>
+  onExportProgress(callback: (progress: TimelineExportProgress) => void): () => void
+  transcribe(input: TimelineTranscribeRequest): Promise<TimelineTranscribeResult>
+  cancelTranscribe(): Promise<void>
+  onTranscribeProgress(
+    callback: (progress: TimelineTranscribeProgress) => void
+  ): () => void
+  analyze(input: TimelineAnalysisRequest): Promise<TimelineAnalysisResult>
+  importSubtitles(path?: string): Promise<TimelineSubtitleImportResult | null>
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -194,6 +294,7 @@ export interface CineApi {
   library: LibraryApi
   clipboard: ClipboardApi
   media: MediaApi
+  timeline: TimelineApi
   components: ComponentsApi
   export: ExportApi
   update: UpdateApi

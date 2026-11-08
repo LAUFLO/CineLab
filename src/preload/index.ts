@@ -10,6 +10,7 @@ import type { ComponentEvent, ComponentKind } from '../shared/components'
 import type { DepthTaskEvent } from '../shared/media'
 import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
+import type { TimelineDoc } from '../shared/timeline-schema'
 import type {
   AddToLibraryInput,
   SaveAssetInput,
@@ -183,6 +184,13 @@ const api: CineApi = {
     extractFrame: (input: ExtractFrameRequest) =>
       ipcRenderer.invoke('media:extract-frame', input),
     probe: (path: string) => ipcRenderer.invoke('media:probe', path),
+    exists: (path: string, scope?: 'project' | 'global') =>
+      ipcRenderer.invoke('media:exists', path, scope),
+    existsMany: (entries: { path: string; scope: 'project' | 'global' }[]) =>
+      ipcRenderer.invoke('media:exists-many', entries),
+    thumbnail: (path: string, atSeconds?: number, kind?: 'video' | 'audio') =>
+      ipcRenderer.invoke('media:thumbnail', path, atSeconds, kind),
+    proxy: (path: string) => ipcRenderer.invoke('media:proxy', path),
     splitAv: (input: SplitAvRequest) => ipcRenderer.invoke('media:split-av', input),
     cropVideo: (input: CropVideoRequest) => ipcRenderer.invoke('media:crop-video', input),
     cropImage: (input: CropImageRequest) =>
@@ -210,6 +218,42 @@ const api: CineApi = {
         ipcRenderer.removeListener('depth-task:event', listener)
       }
     }
+  },
+  timeline: {
+    load: (timelineId: string) => ipcRenderer.invoke('timeline:load', timelineId),
+    save: (timelineId: string, doc: TimelineDoc) =>
+      ipcRenderer.invoke('timeline:save', timelineId, doc),
+    duplicate: (timelineId: string) =>
+      ipcRenderer.invoke('timeline:duplicate', timelineId),
+    exportVtt: (doc: TimelineDoc) =>
+      ipcRenderer.invoke('timeline:export-vtt', doc),
+    export: (doc: TimelineDoc) => ipcRenderer.invoke('timeline:export', doc),
+    cancelExport: () => ipcRenderer.invoke('timeline:export-cancel'),
+    onExportProgress: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        progress: import('../shared/ipc-contract').TimelineExportProgress
+      ): void => callback(progress)
+      ipcRenderer.on('timeline:export-progress', listener)
+      return () => {
+        ipcRenderer.removeListener('timeline:export-progress', listener)
+      }
+    },
+    transcribe: (input) => ipcRenderer.invoke('timeline:transcribe', input),
+    cancelTranscribe: () => ipcRenderer.invoke('timeline:transcribe-cancel'),
+    onTranscribeProgress: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        progress: import('../shared/ipc-contract').TimelineTranscribeProgress
+      ): void => callback(progress)
+      ipcRenderer.on('timeline:transcribe-progress', listener)
+      return () => {
+        ipcRenderer.removeListener('timeline:transcribe-progress', listener)
+      }
+    },
+    analyze: (input) => ipcRenderer.invoke('timeline:analyze', input),
+    importSubtitles: (path?: string) =>
+      ipcRenderer.invoke('timeline:import-subtitles', path)
   },
   export: {
     project: (projectName: string) =>

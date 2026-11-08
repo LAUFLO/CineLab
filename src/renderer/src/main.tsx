@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './styles/global.css'
+import './styles/studio.css'
 
 window.addEventListener('error', (event) => {
   const message = `${event.message} @ ${event.filename ?? ''}:${event.lineno ?? 0}`

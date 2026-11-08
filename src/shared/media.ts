@@ -60,6 +60,11 @@ export interface MediaProbe {
   duration?: number
   fps?: number
   hasAudio: boolean
+  videoCodec?: string
+  pixFmt?: string
+  audioCodec?: string
+  audioSampleRate?: number
+  audioChannels?: number
 }
 
 export interface CropImageRequest {

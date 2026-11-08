@@ -36,9 +36,15 @@ export function runFfmpeg(
 
     let stderr = ''
     let settled = false
+    let aborted = false
+    let killTimer: ReturnType<typeof setTimeout> | null = null
 
     const cleanup = (): void => {
       options.signal?.removeEventListener('abort', onAbort)
+      if (killTimer) {
+        clearTimeout(killTimer)
+        killTimer = null
+      }
     }
 
     const finish = (error?: Error): void => {
@@ -50,15 +56,18 @@ export function runFfmpeg(
     }
 
     const onAbort = (): void => {
+      if (aborted) return
+      aborted = true
       child.kill('SIGKILL')
-      finish(new Error('已取消'))
+      // 等待子进程真正退出后再 reject，避免 Windows 上删除仍被占用的半成品
+      killTimer = setTimeout(() => finish(new Error('已取消')), 5000)
     }
 
     if (options.signal?.aborted) {
       onAbort()
-      return
+    } else {
+      options.signal?.addEventListener('abort', onAbort)
     }
-    options.signal?.addEventListener('abort', onAbort)
 
     child.stdout?.setEncoding('utf8')
     child.stdout?.on('data', (chunk: string) => {
@@ -75,6 +84,10 @@ export function runFfmpeg(
 
     child.on('error', (error) => finish(error))
     child.on('close', (code) => {
+      if (aborted) {
+        finish(new Error('已取消'))
+        return
+      }
       if (code === 0) {
         finish()
         return
@@ -91,9 +104,13 @@ export function runFfmpeg(
 
 interface FfprobeStream {
   codec_type?: string
+  codec_name?: string
   width?: number
   height?: number
   avg_frame_rate?: string
+  pix_fmt?: string
+  sample_rate?: string
+  channels?: number
   duration?: string
 }
 
@@ -161,7 +178,14 @@ export function probeMedia(path: string): Promise<MediaProbe> {
           height: video?.height,
           duration: Number.isFinite(duration) && duration > 0 ? duration : undefined,
           fps,
-          hasAudio: Boolean(audio)
+          hasAudio: Boolean(audio),
+          videoCodec: video?.codec_name,
+          pixFmt: video?.pix_fmt,
+          audioCodec: audio?.codec_name,
+          audioSampleRate: audio?.sample_rate
+            ? Number(audio.sample_rate)
+            : undefined,
+          audioChannels: audio?.channels
         })
       } catch (error) {
         reject(error)

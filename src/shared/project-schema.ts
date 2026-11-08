@@ -1,6 +1,22 @@
 import { z } from 'zod'
 
 export const nodeKindSchema = z.enum(['text', 'image', 'video', 'audio'])
+
+export const outputRefSchema = z.object({
+  id: z.string(),
+  path: z.string().max(500),
+  scope: z.enum(['project', 'global']).optional(),
+  kind: z.enum(['image', 'video', 'audio', 'text']),
+  createdAt: z.string(),
+  model: z.string().max(200),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  duration: z.number().optional(),
+  fps: z.number().optional(),
+  hasAudio: z.boolean().optional(),
+  op: z.string().optional(),
+  parentOutputId: z.string().optional()
+})
 export const nodeStatusSchema = z.enum(['idle', 'queued', 'running', 'done', 'error'])
 export const groupColorSchema = z.enum([
   'blue',
@@ -26,26 +42,76 @@ export const cineNodeSchema = z.object({
     status: nodeStatusSchema,
     text: z.string().max(20000).optional(),
     outputUrl: z.string().max(2000).optional(),
-    outputs: z
-      .array(
-        z.object({
-          id: z.string(),
-          path: z.string().max(500),
-          scope: z.enum(['project', 'global']).optional(),
-          kind: z.enum(['image', 'video', 'audio', 'text']),
-          createdAt: z.string(),
-          model: z.string().max(200),
-          width: z.number().optional(),
-          height: z.number().optional()
-        })
-      )
-      .max(100)
-      .optional(),
+    outputs: z.array(outputRefSchema).max(100).optional(),
     selectedOutputId: z.string().max(120).optional(),
     progress: z.number().min(0).max(100).optional(),
     error: z.string().max(2000).optional(),
     templates: z.array(z.string().max(100)).max(20),
     assetOnly: z.boolean().optional()
+  }),
+  style: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional()
+    })
+    .optional(),
+  selected: z.boolean().optional(),
+  measured: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional()
+    })
+    .optional()
+})
+
+export const studioNodeSchema = z.object({
+  id: z.string().min(1).max(120),
+  type: z.literal('studio'),
+  parentId: z.string().min(1).max(120).optional(),
+  position: z.object({ x: z.number(), y: z.number() }),
+  data: z.object({
+    kind: z.literal('studio'),
+    title: z.string().max(200),
+    status: nodeStatusSchema,
+    timelineId: z.string().min(1).max(120),
+    filmNodeId: z.string().max(120).optional(),
+    clipCount: z.number().int().min(0).optional(),
+    durationMs: z.number().min(0).optional(),
+    references: z.record(z.string().max(120), z.string().max(120)).optional(),
+    templates: z.array(z.string().max(100)).max(20)
+  }),
+  style: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional()
+    })
+    .optional(),
+  selected: z.boolean().optional(),
+  measured: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional()
+    })
+    .optional()
+})
+
+export const filmNodeSchema = z.object({
+  id: z.string().min(1).max(120),
+  type: z.literal('film'),
+  parentId: z.string().min(1).max(120).optional(),
+  position: z.object({ x: z.number(), y: z.number() }),
+  data: z.object({
+    kind: z.literal('film'),
+    title: z.string().max(200),
+    status: nodeStatusSchema,
+    studioNodeId: z.string().max(120).optional(),
+    filmStatus: z
+      .enum(['pending', 'rendering', 'ready', 'stale', 'empty', 'missing'])
+      .optional(),
+    outputs: z.array(outputRefSchema).max(100).optional(),
+    selectedOutputId: z.string().max(120).optional(),
+    upstreamAck: z.string().max(2000).optional(),
+    templates: z.array(z.string().max(100)).max(20)
   }),
   style: z
     .object({
@@ -88,7 +154,12 @@ export const groupNodeSchema = z.object({
     .optional()
 })
 
-export const canvasNodeSchema = z.union([cineNodeSchema, groupNodeSchema])
+export const canvasNodeSchema = z.union([
+  cineNodeSchema,
+  studioNodeSchema,
+  filmNodeSchema,
+  groupNodeSchema
+])
 
 export const cineEdgeSchema = z.object({
   id: z.string().min(1).max(120),
@@ -133,7 +204,13 @@ export const projectMetaSchema = z.object({
 
 export type ProjectMeta = z.infer<typeof projectMetaSchema>
 export type CanvasData = z.infer<typeof canvasDataSchema>
-export type PersistedNode = z.infer<typeof cineNodeSchema>
+export type PersistedCineNode = z.infer<typeof cineNodeSchema>
+export type PersistedStudioNode = z.infer<typeof studioNodeSchema>
+export type PersistedFilmNode = z.infer<typeof filmNodeSchema>
+export type PersistedNode =
+  | PersistedCineNode
+  | PersistedStudioNode
+  | PersistedFilmNode
 export type PersistedEdge = z.infer<typeof cineEdgeSchema>
 
 export interface ProjectSnapshot {

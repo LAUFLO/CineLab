@@ -3,7 +3,10 @@ import { join } from 'node:path'
 import extract from 'extract-zip'
 import type { ComponentKind, ComponentManifest } from '@shared/components'
 
-export const MODEL_FILE = 'video_depth_anything_vits.pth'
+export const MODEL_FILES: Partial<Record<ComponentKind, string>> = {
+  'depth-model': 'video_depth_anything_vits.pth',
+  'whisper-model': 'ggml-base.bin'
+}
 
 export async function installComponentFiles(
   kind: ComponentKind,
@@ -13,8 +16,9 @@ export async function installComponentFiles(
 ): Promise<void> {
   await fs.mkdir(targetDir, { recursive: true })
 
-  if (kind === 'depth-model') {
-    const destination = join(targetDir, MODEL_FILE)
+  const modelFile = MODEL_FILES[kind]
+  if (modelFile) {
+    const destination = join(targetDir, modelFile)
     await fs.rm(destination, { force: true })
     await fs.rename(downloadPath, destination)
     await writeManifest(targetDir, manifest)

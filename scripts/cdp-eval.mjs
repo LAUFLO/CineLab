@@ -1,5 +1,7 @@
 const targets = await (await fetch(`http://127.0.0.1:${process.env.CINELAB_DEBUG_PORT ?? process.env.CDP_PORT ?? '9222'}/json/list`)).json()
-const page = targets.find((target) => target.type === 'page')
+const page = targets.find(
+  (target) => target.type === 'page' && !target.url.includes('timeline-render')
+)
 if (!page) {
   console.error('no page')
   process.exit(1)

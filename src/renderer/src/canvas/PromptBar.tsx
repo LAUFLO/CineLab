@@ -8,6 +8,8 @@ import { Icon } from '../components/Icon'
 import {
   absolutePosition,
   isGroupNode,
+  nodeOutputs,
+  selectedNodeOutput,
   useCanvasStore
 } from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'
@@ -15,6 +17,7 @@ import { useLibraryStore } from '../stores/library'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { assetUrl } from '../lib/asset-url'
+import { studioOpen } from '../studio/scope'
 
 const WIDTH = 760
 const HEIGHT = 132
@@ -119,7 +122,7 @@ export function PromptBar() {
   const selectedNodes = nodes.filter((item) => item.selected)
   const single = selectedNodes.length === 1 ? selectedNodes[0] : undefined
   const node =
-    single && !isGroupNode(single) && !single.data.assetOnly
+    single && single.type === 'cine' && !single.data.assetOnly
       ? single
       : undefined
   const kind: NodeKind = node?.data.kind ?? 'image'
@@ -158,6 +161,7 @@ export function PromptBar() {
       setExpanded(false)
     }
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (studioOpen()) return
       if (event.key === 'Escape') setExpanded(false)
     }
 
@@ -238,9 +242,7 @@ export function PromptBar() {
         setPicking(false)
         return
       }
-      const outputs = source.data.outputs ?? []
-      const output =
-        outputs.find((item) => item.id === source?.data.selectedOutputId) ?? outputs[0]
+      const output = selectedNodeOutput(source)
 
       setPicking(false)
       if (!output) {
@@ -271,6 +273,7 @@ export function PromptBar() {
     }
 
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (studioOpen()) return
       if (event.key === 'Escape') setPicking(false)
     }
 
@@ -436,7 +439,7 @@ export function PromptBar() {
     const target = nodes.find(
       (entry) =>
         !isGroupNode(entry) &&
-        (entry.data.outputs ?? []).some((output) => output.path === ref.path)
+        nodeOutputs(entry).some((output) => output.path === ref.path)
     )
     if (!target) return
 
@@ -461,10 +464,7 @@ export function PromptBar() {
         if (imageIndex >= 3) break
         if (isGroupNode(entry)) continue
 
-        const outputs = entry.data.outputs ?? []
-        const output =
-          outputs.find((item) => item.id === entry.data.selectedOutputId) ??
-          outputs[0]
+        const output = selectedNodeOutput(entry)
         if (!output || output.kind !== 'image') continue
 
         const role: ReferenceRole =
@@ -500,9 +500,7 @@ export function PromptBar() {
     for (const item of nodes) {
       if (item.id === node.id || isGroupNode(item)) continue
       if (!text.includes(item.data.title)) continue
-      const outputs = item.data.outputs ?? []
-      const output =
-        outputs.find((entry) => entry.id === item.data.selectedOutputId) ?? outputs[0]
+      const output = selectedNodeOutput(item)
       if (output?.kind === 'image') {
         result.push({
           path: output.path,
@@ -559,9 +557,7 @@ export function PromptBar() {
       if (edge.target !== node.id) return false
       const source = nodes.find((item) => item.id === edge.source)
       if (!source || isGroupNode(source)) return false
-      const outputs = source.data.outputs ?? []
-      const output =
-        outputs.find((item) => item.id === source.data.selectedOutputId) ?? outputs[0]
+      const output = selectedNodeOutput(source)
       return (
         output?.path === ref.path &&
         (output?.scope ?? 'project') === (ref.scope ?? 'project')

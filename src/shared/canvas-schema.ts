@@ -2,6 +2,16 @@ import type { AssetScope } from './asset-schema'
 
 export type NodeKind = 'text' | 'image' | 'video' | 'audio'
 
+export type CanvasNodeKind = NodeKind | 'studio' | 'film'
+
+export type FilmStatus =
+  | 'pending'
+  | 'rendering'
+  | 'ready'
+  | 'stale'
+  | 'empty'
+  | 'missing'
+
 export type NodeStatus = 'idle' | 'queued' | 'running' | 'done' | 'error'
 
 export interface OutputRef {
@@ -33,6 +43,32 @@ export interface CineNodeData extends Record<string, unknown> {
   templates: string[]
   /** 纯素材节点：由上传创建，不显示提示词输入框 */
   assetOnly?: boolean
+}
+
+export interface StudioNodeData extends Record<string, unknown> {
+  kind: 'studio'
+  title: string
+  status: NodeStatus
+  timelineId: string
+  filmNodeId?: string
+  clipCount?: number
+  durationMs?: number
+  /** 时间线里引用的画布节点 → outputId，用于关闭剪辑室后判断上游更新 */
+  references?: Record<string, string>
+  templates: string[]
+}
+
+export interface FilmNodeData extends Record<string, unknown> {
+  kind: 'film'
+  title: string
+  status: NodeStatus
+  studioNodeId?: string
+  filmStatus?: FilmStatus
+  outputs?: OutputRef[]
+  selectedOutputId?: string
+  /** 上次导出时的上游输出签名，避免同一版本反复标 stale */
+  upstreamAck?: string
+  templates: string[]
 }
 
 export type GroupColor =
@@ -120,7 +156,7 @@ export interface NodeMeta {
   templates: string[]
 }
 
-export const NODE_META: Record<NodeKind, NodeMeta> = {
+export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
   text: {
     label: '文本',
     width: 348,
@@ -144,6 +180,18 @@ export const NODE_META: Record<NodeKind, NodeMeta> = {
     width: 348,
     height: 220,
     templates: ['文字转语音', '音乐生成']
+  },
+  studio: {
+    label: '剪辑室',
+    width: 360,
+    height: 260,
+    templates: []
+  },
+  film: {
+    label: '成片',
+    width: 480,
+    height: 320,
+    templates: []
   }
 }
 

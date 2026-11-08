@@ -63,6 +63,44 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
       sha256: MODEL_SHA256,
       files: 1
     })
+  },
+  'whisper-runtime': {
+    kind: 'whisper-runtime',
+    label: '本地字幕运行时',
+    directory: 'whisper-runtime',
+    // 官方 whisper.cpp v1.7.6 Windows x64 包
+    fallback: fallback(
+      'whisper-runtime',
+      [
+        'https://github.com/ggml-org/whisper.cpp/releases/download/v1.7.6/whisper-bin-x64.zip'
+      ],
+      {
+        size: 3_675_974,
+        expandedSize: 12_000_000,
+        sha256:
+          '0d2eca299c248f965bd0341bcb219db4b433c7f0c0ce2200d4df85765e8156a9',
+        files: 22
+      }
+    )
+  },
+  'whisper-model': {
+    kind: 'whisper-model',
+    label: 'Whisper Base 模型',
+    directory: 'whisper-model-base',
+    fallback: fallback(
+      'whisper-model',
+      [
+        'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
+        'https://hf-mirror.com/ggerganov/whisper.cpp/resolve/main/ggml-base.bin'
+      ],
+      {
+        size: 147_951_465,
+        expandedSize: 147_951_465,
+        sha256:
+          '60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe',
+        files: 1
+      }
+    )
   }
 }
 

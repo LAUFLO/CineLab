@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; padding: 0; background: #0a0a0a; overflow: hidden; }
+  canvas { display: block; }
+  video { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="3840" height="2160"></canvas>
+<video id="a" src="out/media/a.mp4" muted playsinline preload="auto"></video>
+<video id="b" src="out/media/b.mp4" muted playsinline preload="auto"></video>
+<video id="c" src="out/media/c.mp4" muted playsinline preload="auto"></video>
+<script>
+  const canvas = document.getElementById('c')
+  const params = new URLSearchParams(location.search)
+  canvas.width = Number(params.get('w') || 3840)
+  canvas.height = Number(params.get('h') || 2160)
+  const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: true })
+  const videos = [document.getElementById('a'), document.getElementById('b'), document.getElementById('c')]
+  const clips = [
+    { el: videos[0], start: 0, end: 3.5 },
+    { el: videos[1], start: 3.5, end: 7 },
+    { el: videos[2], start: 7, end: 10 }
+  ]
+
+  window.ready = Promise.all(videos.map((v) => new Promise((resolve) => {
+    if (v.readyState >= 1) return resolve()
+    const done = () => resolve()
+    v.addEventListener('loadedmetadata', done, { once: true })
+    v.addEventListener('error', done, { once: true })
+  }))).then(() => document.fonts.ready)
+
+  function activeAt(t) {
+    return clips.find((c) => t >= c.start && t < c.end) || clips[clips.length - 1]
+  }
+
+  window.seek = async (t) => {
+    const clip = activeAt(t)
+    const target = t - clip.start
+    if (Math.abs(clip.el.currentTime - target) > 0.0005) {
+      await new Promise((resolve) => {
+        const done = () => resolve()
+        clip.el.addEventListener('seeked', done, { once: true })
+        clip.el.currentTime = target
+        setTimeout(done, 2000)
+      })
+    }
+  }
+
+  window.draw = (t) => {
+    const clip = activeAt(t)
+    ctx.fillStyle = '#000'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    if (clip.el.videoWidth) {
+      ctx.drawImage(clip.el, 0, 0, canvas.width, canvas.height)
+    }
+    ctx.font = 'bold 128px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'
+    const text = 'CineLab POC 01'
+    const width = ctx.measureText(text).width
+    ctx.fillRect((canvas.width - width) / 2 - 56, canvas.height - 280, width + 112, 170)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(text, canvas.width / 2, canvas.height - 170)
+  }
+
+  window.frame = async (t) => {
+    const started = performance.now()
+    await window.seek(t)
+    const seekMs = performance.now() - started
+    const drawStart = performance.now()
+    window.draw(t)
+    const drawMs = performance.now() - drawStart
+    const encodeStart = performance.now()
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
+    const encodeMs = performance.now() - encodeStart
+    return { dataUrl, seekMs, drawMs, encodeMs }
+  }
+</script>
+</body>
+</html>

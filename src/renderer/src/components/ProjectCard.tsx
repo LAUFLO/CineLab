@@ -27,7 +27,13 @@ function useCanvasImages(enabled: boolean): CanvasImage[] {
     const images: CanvasImage[] = []
 
     for (const node of nodes) {
-      if (isGroupNode(node) || node.data.kind !== 'image') continue
+      if (
+        isGroupNode(node) ||
+        node.type !== 'cine' ||
+        node.data.kind !== 'image'
+      ) {
+        continue
+      }
 
       for (const output of node.data.outputs ?? []) {
         if (output.kind !== 'image' || output.scope === 'global') continue

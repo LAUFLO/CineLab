@@ -7,7 +7,9 @@ import { useGenerationStore } from '../../stores/generation'
 import { useToolbarStore } from '../../stores/toolbar'
 import { useUIStore } from '../../stores/ui'
 import { useSettingsStore } from '../../stores/settings'
+import { useStudioStore } from '../../stores/studio'
 import { trackDepthTask } from '../../stores/depth-tasks'
+import { createStudioFromNode } from '../../studio/nodes'
 import { AiOperationDialog } from './AiOperationDialog'
 import { CropDialog } from './CropDialog'
 import { SphereDialog } from './SphereDialog'
@@ -29,6 +31,7 @@ interface NodeToolbarProps {
   nodeId: string
   kind: NodeKind
   current: OutputRef
+  align?: 'left' | 'center' | 'right'
   onDownload: () => void
   onExpand: () => void
   libraryAction?: {
@@ -53,6 +56,7 @@ export function NodeToolbar({
   nodeId,
   kind,
   current,
+  align = 'center',
   onDownload,
   onExpand,
   libraryAction
@@ -136,6 +140,11 @@ export function NodeToolbar({
   const closeMenus = (): void => {
     setOpenId(null)
     setMoreSubId(null)
+  }
+
+  const openStudioFromNode = (): void => {
+    const studioId = createStudioFromNode(nodeId)
+    if (studioId) useStudioStore.getState().openStudio(studioId)
   }
 
   const sourceNode = (): {
@@ -756,13 +765,11 @@ export function NodeToolbar({
 
   return (
     <>
-      <div className="cnode__toolbar nodrag nopan">
-      {current.width && current.height ? (
-        <span className="cnode__toolbar-size">
-          {current.width} × {current.height}
-        </span>
-      ) : null}
-
+      <div
+        className={`cnode__toolbar nodrag nopan ${
+          align === 'left' ? 'is-left' : align === 'right' ? 'is-right' : ''
+        }`}
+      >
       {primaryOps.map((op) => {
         const reason = op.disabledReason?.(ctx) ?? null
         const hasMenu = Boolean(op.menu)
@@ -782,7 +789,7 @@ export function NodeToolbar({
                 else activate(op)
               }}
             >
-              <Icon name={op.icon} size={15} />
+              <Icon name={op.icon} size={14} />
               <span>{op.label}</span>
               {hasMenu ? <Icon name="chevron-down" size={10} /> : null}
             </button>
@@ -822,7 +829,7 @@ export function NodeToolbar({
               setOpenId((currentId) => (currentId === 'more' ? null : 'more'))
             }}
           >
-            <Icon name="more" size={15} />
+            <Icon name="more" size={14} />
             <span>更多</span>
             <Icon name="chevron-down" size={10} />
           </button>
@@ -923,27 +930,40 @@ export function NodeToolbar({
       <button
         type="button"
         className="cnode__toolbar-btn"
+        title="用当前节点创建剪辑室"
+        onClick={(event) => {
+          event.stopPropagation()
+          openStudioFromNode()
+        }}
+      >
+        <Icon name="film" size={14} />
+        <span>剪辑室</span>
+      </button>
+
+      <button
+        type="button"
+        className="cnode__toolbar-btn"
         title="下载素材"
+        aria-label="下载素材"
         onClick={(event) => {
           event.stopPropagation()
           onDownload()
         }}
       >
-        <Icon name="download" size={15} />
-        <span>下载</span>
+        <Icon name="download" size={14} />
       </button>
 
       <button
         type="button"
         className="cnode__toolbar-btn"
         title="查看大图"
+        aria-label="查看大图"
         onClick={(event) => {
           event.stopPropagation()
           onExpand()
         }}
       >
         <Icon name="expand" size={14} />
-        <span>展开</span>
       </button>
 
       {libraryAction ? (
@@ -951,13 +971,13 @@ export function NodeToolbar({
           type="button"
           className="cnode__toolbar-btn"
           title={libraryAction.title}
+          aria-label={libraryAction.label}
           onClick={(event) => {
             event.stopPropagation()
             libraryAction.onClick()
           }}
         >
           <Icon name="folder" size={14} />
-          <span>{libraryAction.label}</span>
         </button>
       ) : null}
       </div>

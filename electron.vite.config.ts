@@ -21,6 +21,14 @@ export default defineConfig({
     }
   },
   renderer: {
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/renderer/index.html'),
+          'timeline-render': resolve('src/renderer/timeline-render.html')
+        }
+      }
+    },
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),

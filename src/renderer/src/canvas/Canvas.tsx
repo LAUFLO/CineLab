@@ -18,25 +18,35 @@ import {
   type CanvasNode
 } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
+import { studioOpen } from '../studio/scope'
 import { AddNodeMenu } from './AddNodeMenu'
 import { AlignmentGuides, type AlignmentGuide } from './AlignmentGuides'
 import { computeAlignment } from './alignment'
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { copySelection, pasteAt } from './context-actions'
+import { requestDeleteSelection } from './delete-actions'
 import { FlowEdge } from './edges/FlowEdge'
 import { GroupToolbar } from './GroupToolbar'
 import { MultiSelectBar } from './MultiSelectBar'
 import { StoryboardToolbar } from './StoryboardToolbar'
 import { CineNodeView } from './nodes/CineNodeView'
+import { FilmNodeView } from './nodes/FilmNodeView'
 import { GroupNodeView } from './nodes/GroupNodeView'
+import { StudioNodeView } from './nodes/StudioNodeView'
 import { PromptBar } from './PromptBar'
+import { UpstreamWatcher } from './UpstreamWatcher'
 import { HistoryPanel } from '../panels/HistoryPanel'
 import { NodeSearch } from '../panels/NodeSearch'
 import { ShortcutPanel } from '../panels/ShortcutPanel'
 
 type Theme = 'light' | 'dark'
 
-const nodeTypes = { cine: CineNodeView, group: GroupNodeView }
+const nodeTypes = {
+  cine: CineNodeView,
+  group: GroupNodeView,
+  studio: StudioNodeView,
+  film: FilmNodeView
+}
 const edgeTypes = { flow: FlowEdge }
 
 function EmptyState({ onCreate }: { onCreate: (kind: NodeKind) => void }) {
@@ -123,6 +133,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
       Boolean(target.closest('input, textarea, [contenteditable="true"]'))
 
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (studioOpen()) return
       if (event.code !== 'Space' || editable(event.target)) return
       event.preventDefault()
       setSpaceHeld(true)
@@ -155,6 +166,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (studioOpen()) return
       if (event.altKey && event.shiftKey && event.key.toLowerCase() === 'f') {
         event.preventDefault()
         useUIStore.getState().requestArrange()
@@ -175,30 +187,10 @@ function CanvasInner({ theme }: { theme: Theme }) {
         (event.key === 'Delete' || event.key === 'Backspace')
       ) {
         const state = useCanvasStore.getState()
-        const selected = state.nodes.filter((node) => node.selected)
-        if (selected.length === 0) return
+        if (!state.nodes.some((node) => node.selected)) return
 
         event.preventDefault()
-
-        if (selected.some(isGroupNode)) {
-          const groupIds = selected
-            .filter(isGroupNode)
-            .map((node) => node.id)
-          const childCount = state.nodes.filter(
-            (node) => node.parentId && groupIds.includes(node.parentId)
-          ).length
-          useUIStore.getState().requestConfirm({
-            title: '删除组及组内节点',
-            message: `确定删除选中的 ${selected.length} 个分组及其 ${childCount} 个子节点吗？此操作不可撤销。`,
-            confirmLabel: '删除',
-            danger: true,
-            onConfirm: () => {
-              state.removeSelection()
-            }
-          })
-        } else {
-          state.removeSelection()
-        }
+        requestDeleteSelection()
         return
       }
 
@@ -524,6 +516,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
       {nodes.length === 0 ? <EmptyState onCreate={createAtCenter} /> : null}
 
       <AlignmentGuides guides={guides} />
+      <UpstreamWatcher />
       <PromptBar />
       <MultiSelectBar />
       <GroupToolbar />

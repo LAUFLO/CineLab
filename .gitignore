@@ -3,6 +3,7 @@ out/
 release/
 dist/
 .tmp/
+scripts/tmp/
 *.log
 *.err
 .DS_Store

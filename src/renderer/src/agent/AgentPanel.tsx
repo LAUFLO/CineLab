@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import type { AgentProposal } from '@shared/agent'
+import {
+  formatProposalCost,
+  proposalStatusLabel
+} from '@shared/agent-proposal'
 import {
   agentTurnChangeCount,
   useAgentStore,
@@ -36,6 +41,102 @@ function MessageBubble({ message }: { message: AgentMessage }) {
   )
 }
 
+function ProposalCard({
+  proposal,
+  busy,
+  onSubmit,
+  onCancel
+}: {
+  proposal: AgentProposal
+  busy: boolean
+  onSubmit: () => void
+  onCancel: () => void
+}) {
+  const pending = proposal.status === 'pending'
+  const params = Object.entries(proposal.request.params)
+    .filter(
+      ([key, value]) =>
+        key !== 'negative_prompt' &&
+        (typeof value === 'string' ||
+          typeof value === 'number' ||
+          typeof value === 'boolean')
+    )
+    .slice(0, 5)
+    .map(([key, value]) => {
+      const text = String(value)
+      return `${key}=${text.length > 24 ? `${text.slice(0, 24)}…` : text}`
+    })
+
+  return (
+    <section className={`agent-proposal agent-proposal--${proposal.status}`}>
+      <header className="agent-proposal__head">
+        <span className="agent-proposal__title">生成提案</span>
+        <span className="agent-proposal__status">
+          {proposalStatusLabel(proposal.status)}
+        </span>
+      </header>
+
+      <div className="agent-proposal__row">
+        <span>节点</span>
+        <strong>{proposal.nodeTitle || proposal.request.nodeId}</strong>
+      </div>
+      <div className="agent-proposal__row">
+        <span>模型</span>
+        <strong>{proposal.modelName}</strong>
+      </div>
+      {params.length > 0 ? (
+        <div className="agent-proposal__row">
+          <span>参数</span>
+          <strong>{params.join(' · ')}</strong>
+        </div>
+      ) : null}
+      <div className="agent-proposal__row">
+        <span>数量</span>
+        <strong>{proposal.count}</strong>
+      </div>
+      <div className="agent-proposal__row">
+        <span>预估费用</span>
+        <strong>{formatProposalCost(proposal.estimatedCost)}</strong>
+      </div>
+
+      <div className="agent-proposal__prompt">{proposal.request.prompt}</div>
+
+      {proposal.error ? (
+        <div className="agent-proposal__error">{proposal.error}</div>
+      ) : null}
+
+      {pending ? (
+        <div className="agent-proposal__actions">
+          <button
+            type="button"
+            className="agent-proposal__confirm"
+            onClick={onSubmit}
+            disabled={busy}
+          >
+            {busy ? '提交中…' : '确认生成'}
+          </button>
+          <button
+            type="button"
+            className="agent-proposal__cancel"
+            onClick={onCancel}
+            disabled={busy}
+          >
+            取消
+          </button>
+        </div>
+      ) : proposal.status === 'submitted' ? (
+        <div className="agent-proposal__hint">已提交，生成完成后会自动写回节点。</div>
+      ) : proposal.status === 'expired' ? (
+        <div className="agent-proposal__hint">提案已失效，请让助手重新生成。</div>
+      ) : proposal.status === 'failed' ? (
+        <div className="agent-proposal__hint">
+          该提案已提交过，不会重复扣费；请让助手重新生成。
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
 export function AgentPanel() {
   const visible = useAgentStore((state) => state.visible)
   const messages = useAgentStore((state) => state.messages)
@@ -51,6 +152,11 @@ export function AgentPanel() {
   const setPermissionMode = useAgentStore((state) => state.setPermissionMode)
   const loadSession = useAgentStore((state) => state.loadSession)
   const loadModelInfo = useAgentStore((state) => state.loadModelInfo)
+  const loadProposal = useAgentStore((state) => state.loadProposal)
+  const proposal = useAgentStore((state) => state.proposal)
+  const proposalBusy = useAgentStore((state) => state.proposalBusy)
+  const submitProposal = useAgentStore((state) => state.submitProposal)
+  const cancelProposal = useAgentStore((state) => state.cancelProposal)
   const undoLastTurn = useAgentStore((state) => state.undoLastTurn)
   const clearError = useAgentStore((state) => state.clearError)
 
@@ -60,7 +166,8 @@ export function AgentPanel() {
   useEffect(() => {
     void loadSession()
     void loadModelInfo()
-  }, [loadSession, loadModelInfo])
+    void loadProposal()
+  }, [loadSession, loadModelInfo, loadProposal])
 
   useEffect(() => {
     if (!visible) return
@@ -131,6 +238,15 @@ export function AgentPanel() {
               ))
             )}
           </div>
+
+          {proposal ? (
+            <ProposalCard
+              proposal={proposal}
+              busy={proposalBusy}
+              onSubmit={() => void submitProposal()}
+              onCancel={() => void cancelProposal()}
+            />
+          ) : null}
 
           {error ? (
             <div className="agent-error" role="status">

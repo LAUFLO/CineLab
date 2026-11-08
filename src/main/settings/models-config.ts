@@ -9,6 +9,7 @@ import {
   type Capability,
   type MediaInput,
   type ModelDef,
+  type ModelPricing,
   type ParamDef,
   type ProviderConfig,
   type ProviderType
@@ -37,6 +38,13 @@ const CAPABILITIES: Capability[] = [
 const MEDIA_INPUTS: MediaInput[] = ['text', 'image', 'video', 'audio']
 
 const PROVIDER_TYPES: ProviderType[] = ['openai-compat', 'kling']
+
+const PRICING_UNITS: ModelPricing['unit'][] = [
+  'request',
+  'image',
+  'second',
+  '1k-tokens'
+]
 
 const ADAPTERS = [
   'openai-compat',
@@ -204,6 +212,47 @@ function validateParams(
   return result
 }
 
+function validatePricing(
+  value: unknown,
+  path: string,
+  errors: string[]
+): ModelPricing | undefined {
+  if (value === undefined) return undefined
+  if (!isRecord(value)) {
+    errors.push(`${path} 必须是对象`)
+    return undefined
+  }
+
+  const unit = readString(value.unit)
+  if (!unit || !PRICING_UNITS.includes(unit as ModelPricing['unit'])) {
+    errors.push(
+      `${path}.unit 必须是 ${PRICING_UNITS.join(' / ')}`
+    )
+    return undefined
+  }
+
+  const amount = Number(value.amount)
+  if (!Number.isFinite(amount) || amount < 0) {
+    errors.push(`${path}.amount 必须是非负数字`)
+    return undefined
+  }
+
+  const currency = readString(value.currency)?.trim() || 'CNY'
+  if (currency.length > 8) {
+    errors.push(`${path}.currency 过长`)
+    return undefined
+  }
+
+  const note = readString(value.note)?.trim()
+
+  return {
+    currency,
+    unit: unit as ModelPricing['unit'],
+    amount,
+    ...(note ? { note } : {})
+  }
+}
+
 function validateModel(
   item: unknown,
   path: string,
@@ -272,6 +321,7 @@ function validateModel(
   const params = validateParams(item.params, path, errors)
   const inputs = validateInputs(item.inputs, path, errors)
   const operations = validateOperations(item.operations, path, errors)
+  const pricing = validatePricing(item.pricing, `${path}.pricing`, errors)
 
   return {
     id,
@@ -288,7 +338,8 @@ function validateModel(
     ...(adapter ? { adapter } : {}),
     ...(providerType ? { providerType } : {}),
     ...(isRecord(template) ? { template: template as unknown as HttpTemplate } : {}),
-    ...(params ? { params } : {})
+    ...(params ? { params } : {}),
+    ...(pricing ? { pricing } : {})
   }
 }
 
@@ -557,6 +608,9 @@ export function resolveModels(provider: ModelsFileProvider): ModelDef[] {
       inputs,
       operations,
       params: item.params ?? preset?.params ?? [],
+      ...(item.pricing ?? preset?.pricing
+        ? { pricing: item.pricing ?? preset?.pricing }
+        : {}),
       adapter,
       ...(item.providerType ?? preset?.providerType
         ? { providerType: item.providerType ?? preset?.providerType }

@@ -1,18 +1,18 @@
 # CineLab · Boot Packet
 
-> **下一会话优先**：生成提案 propose/submit —— Agent 只登记生成单，用户确认后才提交；含目标、模型、参数、数量、预估费用、失效规则、幂等与失败查单。
+> **下一会话优先**：StageCommand 骨架 —— 导演台场景、机位、运镜命令与 schema，先不接 UI。
 
 ## 状态
 
-2026-11-08：通用 AgentRuntime 已基于 main 重建；工具注册表、CanvasCommand、技能目录、创建/连接/删除/分组工具完成。真实 Agnes 文本/图片/流式/本地代理验证通过；159 测试通过。`feat/agent-runtime` 领先 `origin/main` 6 个提交、落后 1 个，未推送。
+2026-11-08：生成提案 propose/submit 已完成并真实 Agnes 验证：catalog → 提案卡 → 用户确认 → 图片生成完成写回节点；重复提交返回同一 runId；新消息使 pending 提案立即失效。29 文件 191 测试通过，`typecheck` / `build` 通过，主进程约 436KB。`feat/agent-runtime` 领先 `origin/main` 7 个提交、落后 1 个，未推送。
 
 ## Frontier
 
-1. 生成提案 propose/submit（下一项）
-2. StageCommand 骨架
-3. 剪辑助手 clip profile
-4. 技能管理 UI
-5. 整体验收；Agnes 视频补测
+1. StageCommand 骨架（下一项）
+2. 剪辑助手 clip profile 重建
+3. 技能管理 UI
+4. 删除 / 批量操作二次确认
+5. 整体验收；Agnes 视频提案补测
 
 ## Gates
 
@@ -21,16 +21,18 @@
 
 ## 证据
 
-`.opencode/handover/evidence/AGENT-{SPIKE,TOOLS,SKILLS,CANVAS-TOOLS,GROUP-TOOLS}-1.md`；方案见 `docs/agent-full-scope.md`、`docs/agent-architecture-plan.md`。
+`.opencode/handover/evidence/AGENT-{SPIKE,TOOLS,SKILLS,CANVAS-TOOLS,GROUP-TOOLS,PROPOSAL}-1.md`；方案见 `docs/agent-full-scope.md`、`docs/agent-architecture-plan.md`、`docs/agent-generation-proposal-plan.md`。
 
 ## 关键 lessons
 
-- 同一 turnId 只 pushHistory 一次。
-- 创建节点后把 createdNodeIds 加入本轮 scope。
-- 技能读取在主进程 realpath 校验，只允许 SKILL.md/references/assets。
+- 付费生成必须两段式：`generation_propose` 只登记，`generation_submit` 不注册给模型。
+- 提案提交前先原子写 `submitting`，拿到 runId 后写 `submitted`；重复提交返回原 runId。
+- 目标节点和参考节点必须在当前 turn scope；IPC 层要二次校验。
+- Agnes 视频参数名是 `seconds`，费用估算兼容 `duration` / `seconds`。
 
 ## 设计约定
 
-- Agent 会话存 `<project>/.cinelab/agent/sessions/`。
+- Agent 会话存 `<project>/.cinelab/agent/sessions/`，提案存 `<project>/.cinelab/agent/proposals/`。
 - 工具执行在渲染进程；主进程构造 scope 与回合事务。
 - 模型请求走现有 provider + httpFetch，保持代理生效。
+- 主题只通过 `styles/tokens.css` 的 CSS 变量。

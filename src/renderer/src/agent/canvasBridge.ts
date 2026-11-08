@@ -1,4 +1,5 @@
 import type {
+  AgentProposal,
   AgentToolCallRequest,
   AgentToolResultInput,
   AgentTurnChange
@@ -9,7 +10,12 @@ import {
   type CanvasCommandNode
 } from '@shared/canvas-commands'
 import { NODE_META, TITLE_HEIGHT } from '@shared/canvas-schema'
-import { isGroupNode, useCanvasStore } from '../stores/canvas'
+import type { ReferenceInput } from '@shared/generation'
+import {
+  isGroupNode,
+  selectedNodeOutput,
+  useCanvasStore
+} from '../stores/canvas'
 
 function selectedNodeSummary(): Array<{
   id: string
@@ -31,6 +37,86 @@ function selectedNodeSummary(): Array<{
 
 function nodeTitleOf(node: { data?: unknown }): string {
   return String((node.data as { title?: unknown } | undefined)?.title ?? '')
+}
+
+interface CollectedRefs {
+  refs: ReferenceInput[]
+  video?: ReferenceInput
+}
+
+function collectRefsFromNodes(nodeIds: string[]): CollectedRefs {
+  const { nodes } = useCanvasStore.getState()
+  const refs: ReferenceInput[] = []
+  let video: ReferenceInput | undefined
+  let imageIndex = 0
+
+  for (const nodeId of nodeIds) {
+    const node = nodes.find((item) => item.id === nodeId)
+    if (!node || isGroupNode(node)) continue
+    const output = selectedNodeOutput(node)
+    if (!output) continue
+
+    if (output.kind === 'video') {
+      if (!video) {
+        video = {
+          path: output.path,
+          role: 'reference',
+          scope: output.scope
+        }
+      }
+      continue
+    }
+
+    if (output.kind !== 'image' || imageIndex >= 3) continue
+    const role: ReferenceInput['role'] =
+      imageIndex === 0
+        ? 'firstFrame'
+        : imageIndex === 1
+          ? 'lastFrame'
+          : 'reference'
+    refs.push({ path: output.path, role, scope: output.scope })
+    imageIndex += 1
+  }
+
+  return { refs, ...(video ? { video } : {}) }
+}
+
+function collectUpstreamRefs(targetNodeId: string): CollectedRefs {
+  const { nodes, edges } = useCanvasStore.getState()
+  const sourceIds = edges
+    .filter((edge) => edge.target === targetNodeId)
+    .map((edge) => edge.source)
+
+  const expanded: string[] = []
+  for (const sourceId of sourceIds) {
+    const source = nodes.find((node) => node.id === sourceId)
+    if (!source) continue
+    if (isGroupNode(source)) {
+      expanded.push(
+        ...nodes
+          .filter((node) => node.parentId === source.id)
+          .map((node) => node.id)
+      )
+    } else {
+      expanded.push(sourceId)
+    }
+  }
+
+  return collectRefsFromNodes(expanded)
+}
+
+function proposalSummary(proposal: AgentProposal): Record<string, unknown> {
+  return {
+    proposalId: proposal.id,
+    status: proposal.status,
+    nodeId: proposal.request.nodeId,
+    nodeTitle: proposal.nodeTitle,
+    modelKey: proposal.request.modelKey,
+    modelName: proposal.modelName,
+    count: proposal.count,
+    estimatedCost: proposal.estimatedCost,
+    expiresAt: proposal.expiresAt
+  }
 }
 
 async function executeTool(call: AgentToolCallRequest): Promise<{
@@ -263,6 +349,69 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
       ok: true,
       result: { groupId, releasedNodeIds },
       change
+    }
+  }
+
+  if (call.name === 'generation_propose') {
+    const nodeId = String(call.args.nodeId ?? '')
+    const modelKey = String(call.args.modelKey ?? '')
+    const prompt = String(call.args.prompt ?? '').trim()
+    const target = state.nodes.find((node) => node.id === nodeId)
+
+    if (!target || target.type !== 'cine') {
+      return { ok: false, error: '找不到目标生成节点' }
+    }
+    if (!prompt) {
+      return { ok: false, error: '提示词不能为空' }
+    }
+
+    const explicitRefs = Array.isArray(call.args.refNodeIds)
+      ? call.args.refNodeIds.filter(
+          (id): id is string => typeof id === 'string' && Boolean(id)
+        )
+      : []
+    const collected =
+      explicitRefs.length > 0
+        ? collectRefsFromNodes(explicitRefs)
+        : collectUpstreamRefs(nodeId)
+
+    const baseParams =
+      call.args.params &&
+      typeof call.args.params === 'object' &&
+      !Array.isArray(call.args.params)
+        ? { ...(call.args.params as Record<string, unknown>) }
+        : {}
+    const negativePrompt =
+      typeof call.args.negativePrompt === 'string'
+        ? call.args.negativePrompt.trim()
+        : ''
+    if (negativePrompt) {
+      baseParams.negative_prompt = negativePrompt
+    }
+
+    const count =
+      typeof call.args.count === 'number' ? call.args.count : undefined
+
+    try {
+      const proposal = await window.api.agent.proposalCreate({
+        turnId: call.turnId,
+        request: {
+          nodeId,
+          modelKey,
+          prompt,
+          params: baseParams,
+          ...(collected.refs.length > 0 ? { refs: collected.refs } : {}),
+          ...(collected.video ? { video: collected.video } : {})
+        },
+        nodeTitle: nodeTitleOf(target),
+        ...(count !== undefined ? { count } : {})
+      })
+      return { ok: true, result: proposalSummary(proposal) }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : '登记生成提案失败'
+      }
     }
   }
 

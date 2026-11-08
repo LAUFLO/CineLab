@@ -1,3 +1,6 @@
+import type { GenerateRequest } from './generation'
+import type { Capability, ModelPricing } from './provider-schema'
+
 export type AgentProfileId = 'canvas' | 'clip' | 'film' | 'stage'
 
 export type AgentPermissionMode = 'read-only' | 'current' | 'full-access'
@@ -27,6 +30,51 @@ export interface AgentUsage {
   input: number
   output: number
   total: number
+}
+
+export type AgentProposalStatus =
+  | 'pending'
+  | 'submitting'
+  | 'submitted'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'expired'
+
+export interface AgentCostEstimate {
+  amount: number
+  currency: string
+  unit: ModelPricing['unit']
+  note?: string
+}
+
+export interface AgentProposal {
+  id: string
+  sessionId: string
+  turnId: string
+  status: AgentProposalStatus
+  /** 提交时直接交给 generationQueue 的完整请求 */
+  request: GenerateRequest
+  nodeTitle: string
+  modelName: string
+  capability: Capability
+  /** 本次请求会生成的媒体数量 */
+  count: number
+  estimatedCost: AgentCostEstimate | null
+  createdAt: string
+  expiresAt: string
+  submittedAt?: string
+  runId?: string
+  error?: string
+}
+
+/** 渲染进程登记提案时提交的草稿；模型名、能力与费用由主进程补全 */
+export interface AgentProposalDraft {
+  turnId: string
+  request: GenerateRequest
+  nodeTitle: string
+  /** 期望数量；只有模型声明了数量参数时才生效 */
+  count?: number
 }
 
 export interface AgentToolCall {
@@ -61,6 +109,8 @@ export interface AgentTurn {
   userText: string
   assistantText: string
   toolCalls: AgentToolCall[]
+  /** 本轮登记的生成提案 */
+  proposalIds: string[]
   change: AgentTurnChange
   usage?: AgentUsage
   error?: string
@@ -75,6 +125,7 @@ export type AgentEvent =
   | { type: 'tool_start'; turnId: string; call: AgentToolCall }
   | { type: 'tool_end'; turnId: string; result: AgentToolResult }
   | { type: 'turn_end'; turn: AgentTurn }
+  | { type: 'proposal'; proposal: AgentProposal }
   | { type: 'error'; turnId?: string; message: string }
 
 export interface AgentSessionMessage {

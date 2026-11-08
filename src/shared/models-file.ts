@@ -1,6 +1,7 @@
 import type {
   Capability,
   MediaInput,
+  ModelPricing,
   ParamDef,
   ProviderType
 } from './provider-schema'
@@ -19,6 +20,7 @@ export interface ModelsFileModel {
   providerType?: ProviderType
   template?: HttpTemplate
   params?: ParamDef[]
+  pricing?: ModelPricing
 }
 
 export interface ModelsFileProvider {

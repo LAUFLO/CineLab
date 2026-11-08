@@ -5,6 +5,7 @@ import {
   modelInputs,
   modelOperations,
   type ModelDef,
+  type ModelPricing,
   type ProviderConfig,
   type ProviderInput
 } from '@shared/provider-schema'
@@ -22,6 +23,7 @@ import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
 import { GeneralSettingsSection } from './GeneralSettingsSection'
 import { ModelParamsDialog } from '../canvas/nodes/ModelParamsDialog'
+import { ModelPricingDialog } from '../canvas/nodes/ModelPricingDialog'
 import {
   ModelInputsDialog,
   type ModelCapabilityValue
@@ -124,6 +126,7 @@ function ModelsSection() {
   >([])
   const [paramModel, setParamModel] = useState<ModelDef | null>(null)
   const [inputsModel, setInputsModel] = useState<ModelDef | null>(null)
+  const [pricingModel, setPricingModel] = useState<ModelDef | null>(null)
 
   useEffect(() => {
     void load()
@@ -508,6 +511,9 @@ function ModelsSection() {
                     {model.params.length > 0
                       ? ` · ${model.params.length} 个参数`
                       : ''}
+                    {model.pricing
+                      ? ` · ${model.pricing.currency} ${model.pricing.amount}/${model.pricing.unit}`
+                      : ''}
                   </div>
                 </div>
                 <div className="model-item__actions">
@@ -526,6 +532,14 @@ function ModelsSection() {
                     onClick={() => setParamModel(model)}
                   >
                     <Icon name="settings" size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    title="配置计费"
+                    onClick={() => setPricingModel(model)}
+                  >
+                    <Icon name="wallet" size={13} />
                   </button>
                   <button
                     type="button"
@@ -655,6 +669,27 @@ function ModelsSection() {
                 : current
             )
             setInputsModel(null)
+          }}
+        />
+
+        <ModelPricingDialog
+          model={pricingModel}
+          onCancel={() => setPricingModel(null)}
+          onSave={(pricing: ModelPricing | undefined) => {
+            if (!pricingModel) return
+            setDraft((current) =>
+              current
+                ? {
+                    ...current,
+                    models: current.models.map((item) => {
+                      if (item.id !== pricingModel.id) return item
+                      const { pricing: _removed, ...rest } = item
+                      return pricing ? { ...rest, pricing } : rest
+                    })
+                  }
+                : current
+            )
+            setPricingModel(null)
           }}
         />
       </div>

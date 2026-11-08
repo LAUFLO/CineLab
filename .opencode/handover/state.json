@@ -1,13 +1,13 @@
 {
-  "version": 49,
+  "version": 50,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
   "phase": "AGENT",
   "phaseStatus": "in_progress",
-  "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具；下一项生成提案 propose/submit",
+  "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "下一会话优先实现生成提案 propose/submit：Agent 只登记生成单，用户确认后再提交；包含目标节点、模型、参数、数量、预估费用、失效规则、幂等与失败查单。之后做 StageCommand 骨架与 clip profile。",
+  "next_focus": "生成提案 propose/submit 已完成并真实 Agnes 验证（catalog → 提案卡 → 用户确认 → 出图 → 幂等 → 新消息失效；191 测试通过，主进程约 436KB）。下一会话优先做 StageCommand 骨架：导演台场景/机位/运镜命令与 schema，先不接 UI；之后重建 clip profile、技能管理 UI、删除/批量二次确认。",
   "frontier": [
     {
       "id": "M2-1",
@@ -196,6 +196,20 @@
         "src/main/agent/__tests__/tools.test.ts",
         "src/renderer/src/stores/canvas.ts",
         "src/renderer/src/agent/canvasBridge.ts"
+      ]
+    },
+    {
+      "id": "AGENT-PROPOSAL-1",
+      "title": "Agent 生成提案 propose / submit",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 generation_catalog / generation_propose；提案写入 <project>/.cinelab/agent/proposals，用户点击确认后才进入 generationQueue；支持参数规范化、目标/参考节点 scope、模型单价与费用预估、提案卡、新消息失效、runId 幂等与生成状态回写。真实 Agnes 验证：catalog → 图片提案 ¥0.2 CNY → 确认 → 已完成并写回节点；重复提交返回同一 runId；新消息使 pending 提案立即失效。29 文件 191 测试通过；typecheck/build 通过，主进程约 436KB。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-PROPOSAL-1.md",
+        "docs/agent-generation-proposal-plan.md",
+        "src/main/agent/proposals.ts",
+        "src/main/engine/start-generation.ts",
+        "src/shared/agent-proposal.ts",
+        "src/renderer/src/agent/AgentPanel.tsx"
       ]
     },
     {
@@ -2098,6 +2112,18 @@
     {
       "category": "engineering",
       "content": "分组/解散工具要复用 store 的 groupSelection/ungroup 并传 turnId；canvas_get 的 selectedNodes 必须包含 group 节点，否则模型看不到选中分组，无法解散。"
+    },
+    {
+      "category": "engineering",
+      "content": "付费生成必须两段式：generation_propose 只登记本地提案，generation_submit 不注册给模型，只允许用户点击提案卡触发；提案提交前先原子写 submitting，拿到 runId 后写 submitted，重复提交返回原 runId。"
+    },
+    {
+      "category": "engineering",
+      "content": "生成提案的目标节点和参考节点必须在当前 turn scope；主进程无法读取画布，提案工具在渲染进程构造请求，IPC 层还要再校验一次目标节点。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agnes 视频参数名是 seconds 而不是 duration；费用按秒估算时要同时兼容两者。"
     }
   ],
   "designConventions": [
@@ -2113,10 +2139,11 @@
     "派生多节点自动成组：宫格/分离音视频/多文件上传；单结果功能不成组",
     "节点默认尺寸：图片 360、视频 480、宫格 240、分镜 480、文本/音频 348",
     "对齐线只保留同侧边与中心线",
-    "Agent 会话存储在 <project>/.cinelab/agent/sessions/<id>.jsonl；工具执行在渲染进程，主进程构造 scope 与回合事务"
+    "Agent 会话存储在 <project>/.cinelab/agent/sessions/<id>.jsonl；工具执行在渲染进程，主进程构造 scope 与回合事务",
+    "Agent 生成提案存储在 <project>/.cinelab/agent/proposals/<id>.json；提案提交前不产生网络请求"
   ],
   "stats": {
-    "sessions": 11,
+    "sessions": 12,
     "completedMilestones": [
       "M0",
       "M1",
@@ -2129,6 +2156,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "Agent 生成提案 propose/submit"
+    "nextMilestone": "StageCommand 骨架"
   }
 }

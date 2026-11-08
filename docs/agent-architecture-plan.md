@@ -321,7 +321,7 @@ interface AgentScope {
 - 批量修改超过阈值。
 - 任何生成。
 
-生成走两段式：
+生成走两段式（落地细节见 `docs/agent-generation-proposal-plan.md`）：
 
 ```text
 generation.propose  → 只登记，返回 proposalId、目标、模型、参数、预估费用

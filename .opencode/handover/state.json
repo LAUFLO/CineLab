@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "feat/clip-studio 已包含最新 main（d60479d）并通过 typecheck、140 测试、build、check:encryption。主仓库 Documents/CineLab 有另一会话的 47 个未提交改动且 Electron 正在运行，未自动快进 main；待该会话清理后执行 git merge --ff-only feat/clip-studio（本地 tag local-main-ready 指向合并提交）。远程 feat/clip-studio 与 PR #1 尚未更新。",
+  "next_focus": "剪辑室 M1-M3、Concat 第一/第二批已完成；feat/clip-studio（fa30ff5）已合并最新 main（ac3350a）并快进本地 main，工作区通过 typecheck、145 测试、build、check:encryption。下一步整体验收与 bug 修复；远程 feat/clip-studio 与 PR #1 尚未更新。",
   "frontier": [
     {
       "id": "M2-1",

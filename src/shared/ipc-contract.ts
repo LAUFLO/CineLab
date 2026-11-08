@@ -35,6 +35,8 @@ import type {
 import type { ModelsConfigStatus } from './models-file'
 import type { OperationBindings } from './operation-schema'
 import type { TimelineDoc } from './timeline-schema'
+import type { AgentChatRequest, AgentChatResult } from './agent'
+import type { ImportedSound, SoundAsset } from './sound-schema'
 import type { UpdateApi } from './update'
 import type {
   AudioPeaksRequest,
@@ -208,6 +210,8 @@ export interface MediaApi {
   thumbnail(path: string, atSeconds?: number, kind?: 'video' | 'audio'): Promise<string | null>
   proxy(path: string): Promise<string | null>
   audioPeaks(input: AudioPeaksRequest): Promise<number[]>
+  listSounds(): Promise<SoundAsset[]>
+  importSound(id: string): Promise<ImportedSound>
   cropImage(input: CropImageRequest): Promise<CropImageResult>
   cropImageRect(input: CropImageRectRequest): Promise<CropImageResult>
   trimVideo(input: TrimVideoRequest): Promise<TrimVideoResult>
@@ -239,6 +243,13 @@ export interface TimelineExportResult {
   ok: boolean
   path?: string
   canceled?: boolean
+}
+
+export type TimelineVideoCodec = 'h264' | 'hevc' | 'av1'
+
+export interface TimelineExportSettings {
+  codec?: TimelineVideoCodec
+  crf?: number
 }
 
 export type TimelineTranscribeRequest =
@@ -310,7 +321,7 @@ export interface TimelineApi {
   save(timelineId: string, doc: TimelineDoc): Promise<void>
   duplicate(timelineId: string): Promise<string>
   exportVtt(doc: TimelineDoc): Promise<string>
-  export(doc: TimelineDoc): Promise<TimelineExportResult>
+  export(doc: TimelineDoc, settings?: TimelineExportSettings): Promise<TimelineExportResult>
   cancelExport(): Promise<void>
   onExportProgress(callback: (progress: TimelineExportProgress) => void): () => void
   transcribe(input: TimelineTranscribeRequest): Promise<TimelineTranscribeResult>
@@ -320,6 +331,11 @@ export interface TimelineApi {
   ): () => void
   analyze(input: TimelineAnalysisRequest): Promise<TimelineAnalysisResult>
   importSubtitles(path?: string): Promise<TimelineSubtitleImportResult | null>
+}
+
+export interface AgentApi {
+  chat(input: AgentChatRequest): Promise<AgentChatResult>
+  cancel(): Promise<void>
 }
 
 export interface CineApi {
@@ -342,6 +358,7 @@ export interface CineApi {
   clipboard: ClipboardApi
   media: MediaApi
   timeline: TimelineApi
+  agent: AgentApi
   components: ComponentsApi
   export: ExportApi
   update: UpdateApi

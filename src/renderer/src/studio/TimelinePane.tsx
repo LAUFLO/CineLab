@@ -3,6 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import { docDurationMs, formatTimecode, rulerSteps } from '@shared/timeline-layout'
 import {
   MIN_CLIP_MS,
+  clipEnd,
   clipsOfTrack,
   createClip,
   createTrack,
@@ -10,6 +11,7 @@ import {
   type TimelineClip,
   type TimelineTrack
 } from '@shared/timeline-schema'
+import type { TimelineCommand } from '@shared/timeline-commands'
 import { snapTargets, snapValue } from '@shared/timeline-snap'
 import { Icon } from '../components/Icon'
 import { useTimelineStore } from '../stores/timeline'
@@ -358,6 +360,82 @@ export function TimelinePane() {
     }
   }
 
+  const freezingRef = useRef(false)
+
+  const freezeFrame = async (): Promise<void> => {
+    if (freezingRef.current) return
+    const state = useTimelineStore.getState()
+    const doc = state.doc
+    if (!doc) return
+    const playhead = state.playheadMs
+    const trackById = new Map(doc.tracks.map((track) => [track.id, track]))
+    const candidates = doc.clips.filter(
+      (clip) =>
+        clip.startMs < playhead &&
+        clipEnd(clip) > playhead &&
+        trackById.get(clip.trackId)?.locked !== true &&
+        (clip.kind === 'video' || clip.kind === 'image') &&
+        clip.media
+    )
+    const source =
+      candidates.find((clip) => state.selectedIds.includes(clip.id)) ??
+      candidates[0]
+    if (!source?.media) {
+      showToast('把播放头移到视频或图片片段上', 'error')
+      return
+    }
+    if (source.media.scope === 'global') {
+      showToast('冻结帧暂只支持项目内素材', 'error')
+      return
+    }
+
+    const atMs = Math.min(
+      clipEnd(source) - 1,
+      Math.max(source.startMs + 1, playhead)
+    )
+
+    freezingRef.current = true
+    try {
+      let media = source.media
+      if (source.kind === 'video') {
+        const seconds =
+          (source.sourceStartMs + (atMs - source.startMs) * source.speed) / 1000
+        const result = await window.api.media.extractFrame({
+          path: source.media.path,
+          mode: 'current',
+          time: seconds
+        })
+        media = {
+          path: result.asset.path,
+          kind: 'image',
+          scope: 'project'
+        }
+      }
+
+      const clip = createClip({
+        trackId: source.trackId,
+        kind: 'image',
+        name: '冻结帧',
+        startMs: atMs,
+        durationMs: 2000,
+        media
+      })
+      dispatch({
+        op: 'addClipsInSequence',
+        clips: [clip],
+        trackId: source.trackId,
+        atMs,
+        mode: 'insert'
+      })
+      state.select([clip.id])
+      showToast('已插入 2 秒冻结帧')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), 'error')
+    } finally {
+      freezingRef.current = false
+    }
+  }
+
   const beginDrag = (
     event: ReactPointerEvent<HTMLElement>,
     clip: TimelineClip,
@@ -557,35 +635,134 @@ export function TimelinePane() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       const target = event.target
-      if (target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(target.tagName)) {
+      if (
+        target instanceof HTMLElement &&
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+      ) {
         return
       }
+
       const state = useTimelineStore.getState()
+      const doc = state.doc
+      if (!doc) return
+      const targets = state.selectedIds.length
+        ? doc.clips.filter((clip) => state.selectedIds.includes(clip.id))
+        : doc.clips.filter(
+            (clip) =>
+              clip.startMs < state.playheadMs && clipEnd(clip) > state.playheadMs
+          )
+
       if (event.key === 'Delete' || event.key === 'Backspace') {
         if (state.selectedIds.length === 0) return
         event.preventDefault()
-        dispatch({ op: 'removeClips', clipIds: state.selectedIds })
+        dispatch({
+          op: 'removeClips',
+          clipIds: state.selectedIds,
+          ripple: event.shiftKey
+        })
         state.select([])
         return
       }
-      if (event.ctrlKey && event.key.toLowerCase() === 'z') {
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
         event.preventDefault()
         if (event.shiftKey) state.redo()
         else state.undo()
         return
       }
-      if (event.ctrlKey && event.key.toLowerCase() === 'k') {
-        if (!state.doc || state.selectedIds.length === 0) return
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+        if (targets.length === 0) return
         event.preventDefault()
-        dispatch({ op: 'splitClips', clipIds: state.selectedIds, atMs: state.playheadMs })
+        dispatch({
+          op: 'splitClips',
+          clipIds: targets.map((clip) => clip.id),
+          atMs: state.playheadMs
+        })
         return
       }
-      if (event.key.toLowerCase() === 'v') state.setTool('select')
-      if (event.key.toLowerCase() === 'c') state.setTool('cut')
+
+      if (event.ctrlKey && event.key.toLowerCase() === 'k') {
+        if (state.selectedIds.length === 0) return
+        event.preventDefault()
+        dispatch({
+          op: 'splitClips',
+          clipIds: state.selectedIds,
+          atMs: state.playheadMs
+        })
+        return
+      }
+
+      if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+        const key = event.key.toLowerCase()
+
+        if (key === 'q' || key === 'w') {
+          const commands: TimelineCommand[] = []
+          for (const clip of targets) {
+            const end = clipEnd(clip)
+            if (state.playheadMs <= clip.startMs || state.playheadMs >= end) {
+              continue
+            }
+            commands.push({
+              op: 'trimClip',
+              clipId: clip.id,
+              edge: key === 'q' ? 'start' : 'end',
+              deltaMs:
+                key === 'q'
+                  ? state.playheadMs - clip.startMs
+                  : state.playheadMs - end,
+              ripple: state.magnet || event.shiftKey
+            })
+          }
+          if (commands.length > 0) {
+            event.preventDefault()
+            dispatch({
+              op: 'batch',
+              commands,
+              label: key === 'q' ? '删除左侧' : '删除右侧'
+            })
+          }
+          return
+        }
+
+        if (key === 'f') {
+          event.preventDefault()
+          void freezeFrame()
+          return
+        }
+
+        if (key === 'm') {
+          const selected = targets.filter((clip) =>
+            state.selectedIds.includes(clip.id)
+          )
+          if (selected.length === 0) return
+          event.preventDefault()
+          const shouldMute = !selected.every((clip) => clip.muted)
+          dispatch({
+            op: 'batch',
+            label: '切换静音',
+            commands: selected.map((clip) => ({
+              op: 'updateClip',
+              clipId: clip.id,
+              patch: { muted: shouldMute }
+            }))
+          })
+          return
+        }
+
+        if (key === 'n') {
+          event.preventDefault()
+          state.toggleSnap()
+          return
+        }
+
+        if (key === 'v') state.setTool('select')
+        if (key === 'c') state.setTool('cut')
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [dispatch])
+  }, [dispatch, showToast])
 
   if (!doc) {
     return <section className="studio-timeline" />
@@ -868,7 +1045,15 @@ export function TimelinePane() {
                         ) : null}
                         {clip.transitionIn ? (
                           <span className="studio-clip__transition">
-                            {clip.transitionIn.type === 'fade' ? '淡' : '黑'}
+                            {{
+                              fade: '淡',
+                              'dip-black': '黑',
+                              'wipe-left': '擦',
+                              'wipe-right': '擦',
+                              'slide-left': '滑',
+                              'slide-right': '滑',
+                              'zoom-in': '缩'
+                            }[clip.transitionIn.type] ?? '转'}
                           </span>
                         ) : null}
                         <ClipMedia

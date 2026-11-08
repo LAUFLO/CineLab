@@ -6998,6 +6998,16 @@ body.is-picking .react-flow__node:hover .cnode__card {
   cursor: pointer;
 }
 
+.film-node__codec {
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-1);
+  font-size: 11px;
+}
+
 .studio-node__open:hover,
 .film-node__btn:hover {
   background: var(--surface-hover);

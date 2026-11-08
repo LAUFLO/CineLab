@@ -16,6 +16,7 @@ import type {
 } from '@shared/media'
 import { probeMedia } from '../media/ffmpeg'
 import { computeAudioPeaks } from '../media/audio-peaks'
+import { importSound, listSounds } from '../media/sound-library'
 import { captureDepth } from '../media/depth'
 import { cancelDepthTask, startDepthTask } from '../media/depth-tasks'
 import { extractFrame } from '../media/frames'
@@ -145,6 +146,14 @@ export function registerMediaIpc(): void {
       return computeAudioPeaks(requireProjectRoot(), input)
     }
   )
+
+  ipcMain.handle('media:list-sounds', async () => {
+    return listSounds()
+  })
+
+  ipcMain.handle('media:import-sound', async (_event, id: string) => {
+    return importSound(requireProjectRoot(), id)
+  })
 
   ipcMain.handle('media:crop-image', async (_event, input: CropImageRequest) => {
     return { asset: await cropImage(requireProjectRoot(), input) }

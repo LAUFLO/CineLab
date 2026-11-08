@@ -20,7 +20,7 @@ export function fastPathClips(doc: TimelineDoc): TimelineClip[] | null {
     if (clip.kind !== 'video') return null
     if (clip.startMs !== cursor) return null
     if (!clip.media) return null
-    if (clip.transform || clip.crop) return null
+    if (clip.transform || clip.crop || clip.filter) return null
     if (clip.opacity !== 1 || clip.blend !== 'normal') return null
     if (clip.speed !== 1 || clip.transitionIn) return null
     if (clip.text) return null

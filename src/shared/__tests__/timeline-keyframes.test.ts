@@ -96,4 +96,30 @@ describe('evaluateClipKeys', () => {
     expect(expression).toContain('(0+(1-0)*(t-0)/1)')
     expect(volumeExpression(makeClip())).toBeNull()
   })
+
+  it('supports cubic bezier easing', () => {
+    const clip = makeClip([
+      { property: 'opacity', at: 0, value: 0, ease: 'linear' },
+      {
+        property: 'opacity',
+        at: 1,
+        value: 1,
+        ease: 'bezier',
+        bezier: [0, 0, 1, 1]
+      }
+    ])
+
+    expect(evaluateClipKeys(clip, 500).opacity).toBeCloseTo(0.5, 2)
+  })
+
+  it('uses the default bezier curve when control points are missing', () => {
+    const clip = makeClip([
+      { property: 'opacity', at: 0, value: 0, ease: 'linear' },
+      { property: 'opacity', at: 1, value: 1, ease: 'bezier' }
+    ])
+
+    const value = evaluateClipKeys(clip, 500).opacity
+    expect(value).toBeGreaterThan(0.3)
+    expect(value).toBeLessThan(0.7)
+  })
 })

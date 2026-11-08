@@ -59,11 +59,14 @@ export function insertClips(
   incoming: TimelineClip[]
 ): void {
   if (incoming.length === 0 || lockedTrack(doc, trackId)) return
-  splitAt(doc, trackId, atMs)
+  // 切分和 ripple 必须使用同一个整数时间点；浮点 atMs 会让尾部起点取整后
+  // 小于 fromMs，ripple 就漏掉刚切出来的尾部片段。
+  const insertAt = Math.max(0, Math.round(atMs))
+  splitAt(doc, trackId, insertAt)
   const total = incoming.reduce((sum, clip) => sum + clip.durationMs, 0)
-  rippleShift(doc, trackId, atMs, total)
+  rippleShift(doc, trackId, insertAt, total)
 
-  let cursor = atMs
+  let cursor = insertAt
   for (const clip of incoming) {
     clip.trackId = trackId
     clip.startMs = cursor
@@ -130,6 +133,44 @@ export function cutRange(doc: TimelineDoc, trackId: string, fromMs: number, toMs
   }
 
   doc.clips = next
+}
+
+export interface TimeRange {
+  startMs: number
+  endMs: number
+}
+
+/**
+ * 删除若干时间区间，并默认闭合空隙。
+ * 按轨道独立处理，同一轨道从后往前删，避免前移影响尚未处理的区间坐标。
+ */
+export function removeRanges(
+  doc: TimelineDoc,
+  ranges: TimeRange[],
+  ripple = true,
+  trackIds?: string[]
+): void {
+  const normalized = ranges
+    .map((range) => ({
+      startMs: Math.max(0, Math.round(Math.min(range.startMs, range.endMs))),
+      endMs: Math.max(0, Math.round(Math.max(range.startMs, range.endMs)))
+    }))
+    .filter((range) => range.endMs > range.startMs)
+    .sort((a, b) => a.startMs - b.startMs)
+
+  if (normalized.length === 0) return
+
+  const targets = trackIds
+    ? doc.tracks.filter((track) => trackIds.includes(track.id) && !track.locked)
+    : doc.tracks.filter((track) => !track.locked)
+
+  for (const track of targets) {
+    for (let index = normalized.length - 1; index >= 0; index -= 1) {
+      const { startMs, endMs } = normalized[index]
+      cutRange(doc, track.id, startMs, endMs)
+      if (ripple) rippleShift(doc, track.id, endMs, -(endMs - startMs))
+    }
+  }
 }
 
 export interface ClipMove {

@@ -46,6 +46,42 @@ describe('applyCommand', () => {
     ])
   })
 
+  it('inserts at a cut point and pushes the tail', () => {
+    const { doc, v1 } = setup()
+    const source = createClip({
+      trackId: v1,
+      kind: 'video',
+      startMs: 8914,
+      durationMs: 5000
+    })
+    doc.clips.push(source)
+    const freeze = createClip({
+      trackId: v1,
+      kind: 'image',
+      startMs: 12244,
+      durationMs: 2000
+    })
+
+    const next = applyCommand(doc, {
+      op: 'addClipsInSequence',
+      clips: [freeze],
+      trackId: v1,
+      atMs: 12244,
+      mode: 'insert'
+    })
+
+    expect(
+      next.clips
+        .filter((clip) => clip.trackId === v1)
+        .sort((a, b) => a.startMs - b.startMs)
+        .map((clip) => [clip.startMs, clip.durationMs])
+    ).toEqual([
+      [8914, 3330],
+      [12244, 2000],
+      [14244, 1670]
+    ])
+  })
+
   it('applies a batch in order', () => {
     const { doc, v1 } = setup()
     const clip = createClip({ trackId: v1, kind: 'video', durationMs: 2000 })

@@ -1,5 +1,6 @@
 import type { TimelineClip, TimelineDoc } from '@shared/timeline-schema'
 import { volumeExpression } from '@shared/timeline-keyframes'
+import { audioFxFilters } from '@shared/audio-fx'
 import { probeMedia } from '../media/ffmpeg'
 import { resolveMediaPath } from '../media/paths'
 
@@ -133,6 +134,14 @@ export function buildAudioFilters(
           `asetrate=${Math.round(48000 * speed)}`,
           'aresample=48000'
         )
+      }
+    }
+
+    const fxFilters = audioFxFilters(clip.audioFx)
+    if (fxFilters.length > 0) {
+      parts.push(...fxFilters)
+      if (clip.audioFx?.loudness) {
+        parts.push(`atrim=duration=${outputDuration.toFixed(3)}`)
       }
     }
 

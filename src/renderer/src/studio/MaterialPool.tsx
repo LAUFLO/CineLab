@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { LibraryAsset } from '@shared/library-schema'
-import { mainTrackId } from '@shared/timeline-schema'
+import type { SoundAsset } from '@shared/sound-schema'
+import { createTrack, mainTrackId } from '@shared/timeline-schema'
 import { Icon } from '../components/Icon'
 import { assetUrl } from '../lib/asset-url'
 import { useCanvasStore, nodeOutputs } from '../stores/canvas'
@@ -19,6 +20,7 @@ import { uploadToStudio } from './nodes'
 const TABS: { id: StudioTab; label: string }[] = [
   { id: 'linked', label: '画布素材' },
   { id: 'library', label: '资产库' },
+  { id: 'sounds', label: '音效' },
   { id: 'upload', label: '上传' }
 ]
 
@@ -65,6 +67,8 @@ export function MaterialPool() {
   const dispatch = useTimelineStore((state) => state.dispatch)
   const showToast = useUIStore((state) => state.showToast)
   const [libraryAssets, setLibraryAssets] = useState<LibraryAsset[]>([])
+  const [sounds, setSounds] = useState<SoundAsset[]>([])
+  const [importingSound, setImportingSound] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
@@ -72,6 +76,14 @@ export function MaterialPool() {
     void window.api.library
       .listAllAssets()
       .then(setLibraryAssets)
+      .catch(() => undefined)
+  }, [tab])
+
+  useEffect(() => {
+    if (tab !== 'sounds') return
+    void window.api.media
+      .listSounds()
+      .then(setSounds)
       .catch(() => undefined)
   }, [tab])
 
@@ -122,6 +134,42 @@ export function MaterialPool() {
     dispatch({ op: 'addClip', clip: assetToClip(asset, main, end) })
   }
 
+  const addSound = async (sound: SoundAsset): Promise<void> => {
+    if (!doc || importingSound) return
+    setImportingSound(sound.id)
+    try {
+      const imported = await window.api.media.importSound(sound.id)
+      const state = useTimelineStore.getState()
+      const current = state.doc
+      if (!current) return
+
+      let track = current.tracks.find((item) => item.kind === 'audio')
+      if (!track) {
+        track = createTrack('audio', '音效')
+        state.dispatch({ op: 'addTrack', track })
+      }
+      const end = current.clips
+        .filter((clip) => clip.trackId === track.id)
+        .reduce((max, clip) => Math.max(max, clip.startMs + clip.durationMs), 0)
+      const asset: PoolAsset = {
+        id: `sfx:${sound.id}`,
+        name: imported.name,
+        kind: 'audio',
+        durationMs: imported.durationMs,
+        path: imported.path,
+        scope: 'project'
+      }
+      const clip = assetToClip(asset, track.id, end)
+      state.dispatch({ op: 'addClip', clip })
+      state.select([clip.id])
+      showToast(`已添加音效：${sound.name}`)
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), 'error')
+    } finally {
+      setImportingSound(null)
+    }
+  }
+
   const upload = async (): Promise<void> => {
     if (!studioNodeId || uploading) return
     setUploading(true)
@@ -167,6 +215,34 @@ export function MaterialPool() {
             选择文件
           </button>
         </div>
+      ) : tab === 'sounds' ? (
+        sounds.length === 0 ? (
+          <div className="studio-pool__empty">
+            <Icon name="audio" size={18} />
+            <span>音效库为空</span>
+            <small>安装包应包含 resources/sounds</small>
+          </div>
+        ) : (
+          <div className="studio-pool__grid">
+            {sounds.map((sound) => (
+              <div
+                key={sound.id}
+                className="studio-pool__card"
+                title={`${sound.name} · ${sound.category} · 双击添加到音效轨`}
+                onDoubleClick={() => void addSound(sound)}
+              >
+                <div className="studio-pool__thumb studio-pool__thumb--audio">
+                  <Icon name="audio" size={16} />
+                  <span className="studio-pool__duration">
+                    {formatDuration(Math.round(sound.duration * 1000))}
+                  </span>
+                </div>
+                <span className="studio-pool__name">{sound.name}</span>
+                <span className="studio-pool__category">{sound.category}</span>
+              </div>
+            ))}
+          </div>
+        )
       ) : assets.length === 0 ? (
         <div className="studio-pool__empty">
           <Icon name="library" size={18} />

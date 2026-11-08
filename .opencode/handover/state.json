@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "剪辑室 P3/P4 已完成并验证：关键帧、画中画、detachAudio、linkage、预览音高、整条时间线自动字幕、镜头/静音/节拍、SRT/VTT 导入、转场音频交叉淡化。下一步整体验收与修复；导演台待调研排期；剪辑台由其他会话完成后接入；剪辑室智能编排按 docs/agent-plan.md 推进。",
+  "next_focus": "Concat 第二批已完成：滤镜、7 种转场、贝塞尔曲线编辑器、内置音效库、HEVC/AV1 导出。下一步可选：逐词字幕样式、MCP/JSON-RPC 对外接口、Concat 第二批收尾（10-bit/硬件编码、更多滤镜与音效），或回到 M4 多轮助手与真实模型验收。当前改动尚未提交，PR #1 由其他会话负责推送与合并。",
   "frontier": [
     {
       "id": "M2-1",
@@ -897,6 +897,74 @@
         "src/main/timeline/analysis.ts",
         "src/main/timeline/transcribe.ts",
         "src/shared/subtitles.ts"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-M1-AUTOCUT",
+      "title": "剪辑室 M1：工具层 + 一键删静音",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 timeline-tools（计划生成、padding、过短过滤、区间合并、边界裁剪）与 removeRanges 时间线命令（按轨道从后往前删、ripple、锁定轨道跳过）；检查器新增自动粗剪，选中片段或整条时间线均可执行，确认框显示影响，一条 batch 撤销。实测测试视频删除 3 段静音 3.1 秒，13→10 秒、4→7 片段，撤销恢复。typecheck、105 测试、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-M1-AUTOCUT.md",
+        "src/shared/timeline-tools.ts",
+        "src/shared/timeline-edit.ts",
+        "src/shared/timeline-commands.ts",
+        "src/renderer/src/studio/InspectorPane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-M2-SHOTS-BEATS",
+      "title": "剪辑室 M2：按镜头切分 + 按节拍标记/切分",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 buildSplitByShotsPlan、buildBeatMarkerPlan、buildBeatSplitPlan 与 splitAt 命令；检查器自动粗剪区新增按镜头切分、节拍标记、节拍切分，统一确认框与一条 batch 撤销。实测节拍标记 7→11、节拍切分 V2 1→5 段、镜头切分 shot-test 1→2 段，撤销均恢复。typecheck、112 测试、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-M2-SHOTS-BEATS.md",
+        "src/shared/timeline-tools.ts",
+        "src/shared/timeline-commands.ts",
+        "src/renderer/src/studio/InspectorPane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-M3-AGENT",
+      "title": "剪辑室 M3：内置剪辑助手（单轮计划）",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 shared agent 协议与 parseAgentPlan、openai-compat chatCompletion（system + 多轮）、主进程 agent:chat/cancel、preload API、检查器属性/助手页签、AssistantPane 消息与方案卡片；模型未配置时明确引导。本地 mock provider 实测：发送「删掉所有静音」→ 模型 JSON 计划 → 方案卡片 3 段 3.1 秒 13→10 → 应用 4→7 片段 → 撤销恢复。typecheck、117 测试、build 通过；真实模型 Key 待验收。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-M3-AGENT.md",
+        "src/shared/agent.ts",
+        "src/main/agent/chat.ts",
+        "src/main/ipc/agent.ts",
+        "src/renderer/src/studio/AssistantPane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-CONCAT-1",
+      "title": "剪辑室：Concat 借鉴第一批（冻结帧/字幕预设/快捷键/音频清理）",
+      "status": "done",
+      "note": "2026-11-08 完成。调研 jub0t/Concat 0.2.9（AGPL，只借鉴功能）。实现冻结帧（F，抽帧插入 2 秒，修复 insertClips 浮点切分漏移）、5 套字幕预设、Q/W/Ctrl+B/Shift+Delete/F/M/N 快捷键、audioFx（降噪/人声增强/响度/变声）并接入 ffmpeg 导出。typecheck、125 测试、build、check:encryption 通过；端到端验证冻结帧无重叠、字幕预设持久化、快捷键生效、2 秒音频清理导出 mean −20dB/max −1.5dB。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-CONCAT-1.md",
+        "src/shared/audio-fx.ts",
+        "src/shared/subtitle-presets.ts",
+        "src/shared/timeline-edit.ts",
+        "src/main/timeline/audio-mix.ts",
+        "src/renderer/src/studio/TimelinePane.tsx",
+        "src/renderer/src/studio/InspectorPane.tsx"
+      ]
+    },
+    {
+      "id": "CLIP-STUDIO-CONCAT-2",
+      "title": "剪辑室：Concat 借鉴第二批（滤镜/转场/曲线/音效库/HEVC+AV1）",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 clip.filter 与 8 套预设、Canvas 滤镜/暗角、7 种转场（wipe/slide/zoom）、cubic-bezier 关键帧求值与 SVG 拖拽曲线编辑器、6 个自生成 CC0 音效与音效页签、HEVC/AV1 导出与成片节点编码选择。typecheck、133 测试、build、check:encryption 通过；端到端验证滤镜 YAVG 42、wipe 左蓝右红、HEVC/AV1 ffprobe、音效导入与添加、bezier 拖拽持久化。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-STUDIO-CONCAT-2.md",
+        "src/shared/filters.ts",
+        "src/shared/timeline-transition.ts",
+        "src/shared/timeline-keyframes.ts",
+        "src/renderer/src/studio/BezierEditor.tsx",
+        "src/main/media/sound-library.ts",
+        "resources/sounds/manifest.json"
       ]
     },
     {

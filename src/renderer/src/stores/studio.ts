@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { loadLayout, saveLayout } from '../studio/persist'
 
-export type StudioTab = 'linked' | 'library' | 'upload'
+export type StudioTab = 'linked' | 'library' | 'upload' | 'sounds'
 
 interface StudioStore {
   open: boolean

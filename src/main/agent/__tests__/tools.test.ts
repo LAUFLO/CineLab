@@ -74,4 +74,56 @@ describe('agent tool permissions', () => {
       )
     ).not.toThrow()
   })
+
+  it('requires at least two unique in-scope nodes for grouping', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_group', { nodeIds: ['node-a'] }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_group', { nodeIds: ['node-a', 'node-a'] }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_group', { nodeIds: ['node-a', 'node-b'] }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_group', { nodeIds: ['node-a', 'node-b'] }),
+        { ...scope, selectedNodeIds: ['node-a', 'node-b'] },
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('requires the group in scope for ungroup', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_ungroup', { groupId: 'group-a' }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_ungroup', { groupId: 'group-a' }),
+        { ...scope, selectedNodeIds: ['group-a'] },
+        'current'
+      )
+    ).not.toThrow()
+  })
 })

@@ -11,7 +11,8 @@ const ICONS: Record<CanvasNodeKind, IconName> = {
   video: 'video',
   audio: 'audio',
   studio: 'film',
-  film: 'film'
+  film: 'film',
+  study: 'film'
 }
 
 export function NodeSearch() {

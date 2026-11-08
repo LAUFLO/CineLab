@@ -1,6 +1,12 @@
 import { z } from 'zod'
 
-export const nodeKindSchema = z.enum(['text', 'image', 'video', 'audio'])
+export const nodeKindSchema = z.enum([
+  'text',
+  'image',
+  'video',
+  'audio',
+  'study'
+])
 
 export const outputRefSchema = z.object({
   id: z.string(),
@@ -42,6 +48,22 @@ export const cineNodeSchema = z.object({
     status: nodeStatusSchema,
     text: z.string().max(20000).optional(),
     prompt: z.string().max(20000).optional(),
+    studyId: z.string().max(120).optional(),
+    sourceNodeId: z.string().max(120).optional(),
+    sourcePath: z.string().max(500).optional(),
+    sourceScope: z.enum(['project', 'global']).optional(),
+    sourceName: z.string().max(200).optional(),
+    studyInterval: z.number().optional(),
+    studySummary: z
+      .object({
+        studyId: z.string().max(120),
+        frameCount: z.number(),
+        segmentCount: z.number(),
+        interval: z.number(),
+        duration: z.number(),
+        fps: z.number()
+      })
+      .optional(),
     outputUrl: z.string().max(2000).optional(),
     outputs: z.array(outputRefSchema).max(100).optional(),
     selectedOutputId: z.string().max(120).optional(),

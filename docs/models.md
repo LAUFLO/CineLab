@@ -60,8 +60,19 @@
 | `name` | 无 preset 时必填 | 显示名称 |
 | `capability` | 无 preset 时必填 | `image.t2i` / `image.i2i` / `text.chat` / `video.t2v` / `audio.tts` / `audio.music` |
 | `remoteModel` | 无 preset 时必填 | 请求里实际发送的模型 ID |
+| `inputs` | 否 | 模型实际可接收的输入：`text` / `image` / `video` / `audio`；省略时按能力、模型名和模板推断 |
 | `adapter` | 否 | 覆盖 provider 的 adapter |
 | `params` | 否 | 节点 PromptBar 里显示的参数，结构同 `ParamDef`；设置页模型卡片的「参数」按钮可编辑，支持下拉/数字/文本/开关 |
+
+`inputs` 用于 Prompt Bar 的模型置灰：当前节点已经引用了图片或视频时，缺少对应输入能力的模型会显示为不可用。设置页模型卡片上的「输入能力」按钮可以修改，旧配置不写 `inputs` 也能继续使用。
+
+默认推断规则：
+
+- `image.t2i`：`text`；Agnes 图像模型额外推断 `image`
+- `image.i2i`：`text`、`image`
+- `video.t2v`：非 http-template 默认 `text`、`image`；Agnes 2.5 Flash 为 `text`、`image`、`audio`，Agnes 2.5 标准版额外包含 `video`
+- `http-template`：按模板中的 `image` / `keyframe` / `reference` / `video` 模式推断
+- 文本、TTS、音乐：`text`
 
 参数编辑器按模型能力提供模板：图片（尺寸/画幅比例/数量/质量）、视频（画幅比例/时长/分辨率/生成音频）、音频（声音/语速/格式）、文本（温度/最大 token）。下拉选项在编辑器中按「值|显示名」每行一个填写。
 
@@ -211,7 +222,7 @@ corepack pnpm models:check
 node scripts/models-check.mjs models.example.json
 ```
 
-校验内容包括 JSON 结构、必填字段、capability、adapter、参数类型和重复 ID。`preset` 是否存在由应用启动时再次校验，设置面板会显示错误。
+校验内容包括 JSON 结构、必填字段、capability、inputs、adapter、参数类型和重复 ID。`preset` 是否存在由应用启动时再次校验，设置面板会显示错误。
 
 ## 修改后生效
 
@@ -222,6 +233,7 @@ node scripts/models-check.mjs models.example.json
 | 错误 | 原因 |
 |---|---|
 | `capability 必须是 ...` | capability 拼错或不在支持列表 |
+| `inputs 只能是 ...` | 输入能力写错，可用值为 `text` / `image` / `video` / `audio` |
 | `preset 不存在` | 引用了不存在的内置预设，改成完整模型字段或换一个 preset |
 | `adapter 不支持` | adapter 还没实现，先使用 `openai-compat` |
 | `apiKey` 被忽略 | 明文 Key 不安全，请改用设置页或 `apiKeyEnv` |

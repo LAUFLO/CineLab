@@ -1,5 +1,5 @@
 {
-  "version": 36,
+  "version": 37,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -604,6 +604,17 @@
       "note": "文本/图片/视频/音频节点失败时显示「重新生成」，复用 generation-history 的上次请求；完成徽标改为绿色，失败红色。",
       "evidence": [
         ".opencode/handover/evidence/NODE-RETRY-COLOR-1.md"
+      ]
+    },
+    {
+      "id": "MODEL-INPUT-CAPABILITY-1",
+      "title": "模型输入能力：Prompt Bar 按引用置灰、设置页可编辑、后端校验",
+      "status": "done",
+      "note": "2026-11-08 完成第一期：ModelDef 新增 inputs（text/image/video/audio），按能力、模型名和 http-template 模板推断；设置页模型卡片新增「输入能力」，模型列表显示输入类型；Prompt Bar 按当前图片/视频引用置灰不支持的模型并显示原因，当前模型不可用时 chip 警告且提交拦截；AiOperationDialog/SphereDialog 置灰不支持参考图的模型；主进程校验 inputs 并增加图片 MIME 白名单。typecheck、36 个测试与 build 通过，隔离实例 CDP 验证设置保存、视频/图片两种引用下的菜单置灰、toast 和警告均生效。Agnes Flash 仍不支持视频输入，需要 http-template 专用接口或 Agnes 2.5 标准版。操作模型页按用户要求保留。",
+      "evidence": [
+        ".opencode/handover/evidence/MODEL-INPUT-CAPABILITY-1.md",
+        "docs/models.md",
+        "docs/ui-spec.md"
       ]
     }
   ],

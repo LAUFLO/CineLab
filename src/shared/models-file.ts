@@ -1,4 +1,9 @@
-import type { Capability, ParamDef, ProviderType } from './provider-schema'
+import type {
+  Capability,
+  MediaInput,
+  ParamDef,
+  ProviderType
+} from './provider-schema'
 import type { HttpTemplate } from './http-template'
 
 export interface ModelsFileModel {
@@ -7,6 +12,7 @@ export interface ModelsFileModel {
   name?: string
   capability?: Capability
   remoteModel?: string
+  inputs?: MediaInput[]
   adapter?: string
   providerType?: ProviderType
   template?: HttpTemplate

@@ -25,6 +25,7 @@ import {
 import { generateVideoArk } from '../providers/volcengine'
 import { isRetryable, withRetry } from '../providers/retry'
 import { resolveProvider } from '../settings/store'
+import { modelInputs } from '@shared/provider-schema'
 import { getLibraryRoot } from '../library/config'
 import { resolveMediaPath } from '../media/paths'
 import { log } from '../logger'
@@ -109,9 +110,11 @@ async function loadRefs(
       continue
     }
 
+    const mime = REF_MIME[extname(absolute).toLowerCase()]
+    if (!mime) continue
+
     try {
       const data = await fs.readFile(absolute)
-      const mime = REF_MIME[extname(absolute).toLowerCase()] ?? 'image/png'
 
       loaded.push({
         dataUrl: `data:${mime};base64,${data.toString('base64')}`,
@@ -220,6 +223,17 @@ export function registerGenerateIpc(): void {
           throw new Error('参考素材缺失或不在当前项目中，请重新添加素材')
         }
         const video = await loadVideo(projectRoot, request.video)
+
+        const supportedInputs = modelInputs(model)
+        if (
+          (refs.length > 0 || request.mask) &&
+          !supportedInputs.includes('image')
+        ) {
+          throw new Error('该模型不支持图生图，请选择支持参考图的模型')
+        }
+        if (video && !supportedInputs.includes('video')) {
+          throw new Error('该模型不支持参考视频，请选择支持视频输入的模型')
+        }
         const runtime = {
           baseUrl: provider.baseUrl,
           apiKey: provider.apiKey,

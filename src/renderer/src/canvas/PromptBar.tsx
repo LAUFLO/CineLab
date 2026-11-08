@@ -9,7 +9,14 @@ import {
 import { createPortal } from 'react-dom'
 import { useReactFlow, useViewport } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
-import type { Capability, ModelDef, ParamDef } from '@shared/provider-schema'
+import {
+  MEDIA_INPUT_LABEL,
+  missingInputsFor,
+  type Capability,
+  type MediaInput,
+  type ModelDef,
+  type ParamDef
+} from '@shared/provider-schema'
 import type { ReferenceInput, ReferenceRole } from '@shared/generation'
 import { Icon } from '../components/Icon'
 import {
@@ -65,6 +72,12 @@ function ratioOf(label: string): string | null {
 
 type MentionGroupName = '已引用' | '画布' | '资产库' | '角色'
 
+type RefKind = 'image' | 'video'
+
+interface PickedRef extends ReferenceInput {
+  kind: RefKind
+}
+
 interface MentionItem {
   key: string
   name: string
@@ -73,6 +86,13 @@ interface MentionItem {
   scope?: ReferenceInput['scope']
   refs?: ReferenceInput[]
   thumb?: string
+  kind?: RefKind
+}
+
+const VIDEO_PATH = /\.(mp4|webm|mov|mkv)$/i
+
+function isVideoPath(path: string): boolean {
+  return VIDEO_PATH.test(path)
 }
 
 const MENTION_GROUPS: MentionGroupName[] = ['已引用', '画布', '资产库', '角色']
@@ -138,7 +158,7 @@ export function PromptBar() {
   const [customParamKeys, setCustomParamKeys] = useState<Set<string>>(new Set())
   const [promptText, setPromptText] = useState('')
   const [paramMenuKey, setParamMenuKey] = useState<string | null>(null)
-  const [pickedRefs, setPickedRefs] = useState<ReferenceInput[]>([])
+  const [pickedRefs, setPickedRefs] = useState<PickedRef[]>([])
   const [picking, setPicking] = useState(false)
   const [pickHint, setPickHint] = useState<string | null>(null)
   const [autoLink, setAutoLink] = useState(autoLinkPreference)
@@ -152,6 +172,7 @@ export function PromptBar() {
   const [mentionIndex, setMentionIndex] = useState(0)
   const [refPreview, setRefPreview] = useState<{
     path: string
+    kind: RefKind
     scope?: ReferenceInput['scope']
     x: number
     y: number
@@ -357,11 +378,16 @@ export function PromptBar() {
         setPickHint('该节点还没有输出')
         return
       }
-      if (output.kind !== 'image') {
-        setPickHint('只能引用图片输出')
+      if (output.kind !== 'image' && output.kind !== 'video') {
+        setPickHint('只能引用图片或视频输出')
+        return
+      }
+      if (output.kind === 'video' && kind !== 'video') {
+        setPickHint('只有视频节点可以引用视频输出')
         return
       }
 
+      const refKind: RefKind = output.kind === 'video' ? 'video' : 'image'
       onConnect({ source: sourceId, target: node.id })
       setPickedRefs((prev) =>
         prev.some(
@@ -374,7 +400,8 @@ export function PromptBar() {
               {
                 path: output.path,
                 role: 'reference',
-                scope: output.scope
+                scope: output.scope,
+                kind: refKind
               }
             ]
       )
@@ -391,7 +418,7 @@ export function PromptBar() {
       document.removeEventListener('pointerdown', onPointerDown, true)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [picking, nodes, node?.id, onConnect])
+  }, [picking, nodes, node?.id, kind, onConnect])
 
   const models = useMemo<ModelOption[]>(() => {
     const matches = (capability: Capability): boolean => {
@@ -580,7 +607,7 @@ export function PromptBar() {
     }
   }
 
-  const handleRefClick = (ref: ReferenceInput): void => {
+  const handleRefClick = (ref: PickedRef): void => {
     if (refClickTimer.current) return
     refClickTimer.current = window.setTimeout(() => {
       refClickTimer.current = null
@@ -588,7 +615,7 @@ export function PromptBar() {
     }, 220)
   }
 
-  const handleRefDoubleClick = (ref: ReferenceInput): void => {
+  const handleRefDoubleClick = (ref: PickedRef): void => {
     if (refClickTimer.current) {
       clearTimeout(refClickTimer.current)
       refClickTimer.current = null
@@ -607,7 +634,8 @@ export function PromptBar() {
 
   const refs = (() => {
     const incoming = edges.filter((edge) => edge.target === node.id)
-    const result: ReferenceInput[] = []
+    const images: PickedRef[] = []
+    const videos: PickedRef[] = []
     let imageIndex = 0
 
     for (const edge of incoming) {
@@ -619,14 +647,28 @@ export function PromptBar() {
         : [source]
 
       for (const entry of entries) {
-        if (imageIndex >= 3) break
         if (isGroupNode(entry)) continue
 
         const outputs = entry.data.outputs ?? []
         const output =
           outputs.find((item) => item.id === entry.data.selectedOutputId) ??
           outputs[0]
-        if (!output || output.kind !== 'image') continue
+        if (!output) continue
+
+        if (output.kind === 'video') {
+          if (kind === 'video' && videos.length === 0) {
+            videos.push({
+              path: output.path,
+              role: 'reference',
+              scope: output.scope,
+              kind: 'video'
+            })
+          }
+          continue
+        }
+
+        if (output.kind !== 'image') continue
+        if (imageIndex >= 3) continue
 
         const role: ReferenceRole =
           imageIndex === 0
@@ -634,12 +676,17 @@ export function PromptBar() {
             : imageIndex === 1
               ? 'lastFrame'
               : 'reference'
-        result.push({ path: output.path, role, scope: output.scope })
+        images.push({
+          path: output.path,
+          role,
+          scope: output.scope,
+          kind: 'image'
+        })
         imageIndex += 1
       }
     }
 
-    return result
+    return [...images, ...videos]
   })()
 
   const autoRefs = (() => {
@@ -647,7 +694,7 @@ export function PromptBar() {
     const text = promptText.trim()
     if (!text) return []
 
-    const result: ReferenceInput[] = []
+    const result: PickedRef[] = []
 
     for (const item of nodes) {
       if (item.id === node.id || isGroupNode(item)) continue
@@ -659,21 +706,35 @@ export function PromptBar() {
         result.push({
           path: output.path,
           role: 'reference',
-          scope: output.scope
+          scope: output.scope,
+          kind: 'image'
+        })
+      } else if (output?.kind === 'video' && kind === 'video') {
+        result.push({
+          path: output.path,
+          role: 'reference',
+          scope: output.scope,
+          kind: 'video'
         })
       }
     }
 
     for (const material of materials) {
-      if (material.kind !== 'image') continue
+      if (material.kind !== 'image' && material.kind !== 'video') continue
+      if (material.kind === 'video' && kind !== 'video') continue
       if (!text.includes(material.name)) continue
-      result.push({ path: material.path, role: 'reference', scope: 'global' })
+      result.push({
+        path: material.path,
+        role: 'reference',
+        scope: 'global',
+        kind: material.kind
+      })
     }
 
     for (const card of characters) {
       if (!text.includes(card.name)) continue
       for (const path of card.referencePaths) {
-        result.push({ path, role: 'reference', scope: 'global' })
+        result.push({ path, role: 'reference', scope: 'global', kind: 'image' })
       }
     }
 
@@ -682,16 +743,42 @@ export function PromptBar() {
 
   const mergedRefs = (() => {
     const seen = new Set<string>()
-    const result: ReferenceInput[] = []
+    const result: PickedRef[] = []
+    let imageCount = 0
+    let videoCount = 0
+
     for (const ref of [...pickedRefs, ...autoRefs, ...refs]) {
       const key = `${ref.scope ?? 'project'}:${ref.path}`
       if (seen.has(key)) continue
+
+      if (ref.kind === 'video') {
+        if (videoCount >= 1) continue
+        videoCount += 1
+      } else {
+        if (imageCount >= 4) continue
+        imageCount += 1
+      }
+
       seen.add(key)
       result.push(ref)
-      if (result.length >= 4) break
     }
+
     return result
   })()
+
+  const requiredInputs = (() => {
+    const inputs: MediaInput[] = ['text']
+    if (mergedRefs.some((ref) => ref.kind === 'image')) inputs.push('image')
+    if (mergedRefs.some((ref) => ref.kind === 'video')) inputs.push('video')
+    return inputs
+  })()
+
+  const activeMissing = active
+    ? missingInputsFor(active.model, requiredInputs)
+    : []
+
+  const inputLabel = (inputs: MediaInput[]): string =>
+    inputs.map((input) => MEDIA_INPUT_LABEL[input]).join('、')
 
   const updatePromptText = (value: string): void => {
     setPromptText(value)
@@ -727,7 +814,8 @@ export function PromptBar() {
       const outputs = entry.data.outputs ?? []
       const output =
         outputs.find((item) => item.id === entry.data.selectedOutputId) ?? outputs[0]
-      if (!output || output.kind !== 'image') continue
+      if (!output || (output.kind !== 'image' && output.kind !== 'video')) continue
+      if (output.kind === 'video' && kind !== 'video') continue
 
       push({
         key: `node:${entry.id}`,
@@ -735,12 +823,20 @@ export function PromptBar() {
         group: referenced.has(refKey(output)) ? '已引用' : '画布',
         path: output.path,
         scope: output.scope,
-        thumb: output.path
+        thumb: output.path,
+        kind: output.kind
       })
     }
 
     for (const material of materials) {
-      if (material.kind !== 'image' && material.kind !== 'template') continue
+      if (
+        material.kind !== 'image' &&
+        material.kind !== 'video' &&
+        material.kind !== 'template'
+      ) {
+        continue
+      }
+      if (material.kind === 'video' && kind !== 'video') continue
 
       const ref = { path: material.path, scope: 'global' as const }
       push({
@@ -749,7 +845,8 @@ export function PromptBar() {
         group: referenced.has(refKey(ref)) ? '已引用' : '资产库',
         path: material.path,
         scope: 'global',
-        thumb: material.thumbnail ?? material.path
+        thumb: material.thumbnail ?? material.path,
+        kind: material.kind === 'video' ? 'video' : 'image'
       })
     }
 
@@ -768,7 +865,8 @@ export function PromptBar() {
         path: card.referencePaths[0],
         scope: 'global',
         thumb: card.avatarPath ?? card.referencePaths[0],
-        refs
+        refs,
+        kind: 'image'
       })
     }
 
@@ -800,7 +898,7 @@ export function PromptBar() {
     )
   ].sort((a, b) => b.length - a.length)
 
-  const addRefs = (nextRefs: ReferenceInput[]): void => {
+  const addRefs = (nextRefs: PickedRef[]): void => {
     setPickedRefs((prev) => {
       const seen = new Set(prev.map(refKey))
       const added = nextRefs.filter((ref) => {
@@ -826,11 +924,18 @@ export function PromptBar() {
     setMentionStart(null)
     setMentionIndex(0)
 
-    const refsToAdd =
-      item.refs ??
-      (item.path
-        ? [{ path: item.path, role: 'reference' as const, scope: item.scope }]
-        : [])
+    const refsToAdd: PickedRef[] = item.refs
+      ? item.refs.map((ref) => ({ ...ref, kind: item.kind ?? 'image' }))
+      : item.path
+        ? [
+            {
+              path: item.path,
+              role: 'reference' as const,
+              scope: item.scope,
+              kind: item.kind ?? 'image'
+            }
+          ]
+        : []
     if (refsToAdd.length > 0) addRefs(refsToAdd)
 
     requestAnimationFrame(() => {
@@ -864,7 +969,7 @@ export function PromptBar() {
   const isRunning = Boolean(runningRunId)
   const canSend = Boolean(active) && promptText.trim().length > 0 && !isRunning
 
-  const removeRef = (ref: ReferenceInput): void => {
+  const removeRef = (ref: PickedRef): void => {
     setPickedRefs((prev) =>
       prev.filter(
         (item) =>
@@ -894,12 +999,56 @@ export function PromptBar() {
 
   const handleSend = (): void => {
     if (!active || !canSend) return
+
+    if (activeMissing.length > 0) {
+      showToast(
+        `当前模型不支持${inputLabel(activeMissing)}输入，请更换模型`,
+        'error'
+      )
+      return
+    }
+
+    const videoRef = mergedRefs.find((ref) => ref.kind === 'video')
+    if (videoRef && kind !== 'video') {
+      showToast('图片节点不能引用视频，请改用视频节点', 'error')
+      return
+    }
+    if (videoRef) {
+      const adapter =
+        active.model.adapter ??
+        (/^agnes-video/i.test(active.model.remoteModel) ? 'agnes-video' : '')
+      if (adapter !== 'http-template') {
+        showToast(
+          '当前模型不支持参考视频，请先在设置 → 操作模型绑定 http-template 专用接口',
+          'error'
+        )
+        return
+      }
+    }
+
+    const imageRefs: ReferenceInput[] = mergedRefs
+      .filter((ref) => ref.kind === 'image')
+      .map((ref) => ({
+        path: ref.path,
+        role: ref.role,
+        scope: ref.scope
+      }))
+
     void runGeneration({
       nodeId: node.id,
       modelKey: active.key,
       prompt: promptText.trim(),
       params: { ...values, watermark },
-      refs: mergedRefs.length > 0 ? mergedRefs : undefined
+      ...(imageRefs.length > 0 ? { refs: imageRefs } : {}),
+      ...(videoRef
+        ? {
+            video: {
+              path: videoRef.path,
+              role: videoRef.role,
+              scope: videoRef.scope
+            }
+          }
+        : {})
     })
   }
 
@@ -1003,6 +1152,7 @@ export function PromptBar() {
                     const rect = event.currentTarget.getBoundingClientRect()
                     setRefPreview({
                       path: ref.path,
+                      kind: ref.kind,
                       scope: ref.scope,
                       x: rect.left + rect.width / 2,
                       y: rect.top - 8
@@ -1016,7 +1166,16 @@ export function PromptBar() {
                     handleRefDoubleClick(ref)
                   }}
                 >
-                  <img src={assetUrl(ref.path, ref.scope)} alt="" />
+                  {ref.kind === 'video' ? (
+                    <video
+                      src={`${assetUrl(ref.path, ref.scope)}#t=0.1`}
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img src={assetUrl(ref.path, ref.scope)} alt="" />
+                  )}
                   <Icon name="close" size={10} />
                 </button>
               )
@@ -1135,17 +1294,33 @@ export function PromptBar() {
                       >
                         <span className="mention-menu__thumb">
                           {item.thumb ? (
-                            <img
-                              src={assetUrl(item.thumb, item.scope)}
-                              alt=""
-                            />
+                            item.kind === 'video' && isVideoPath(item.thumb) ? (
+                              <video
+                                src={`${assetUrl(item.thumb, item.scope)}#t=0.1`}
+                                muted
+                                playsInline
+                                preload="metadata"
+                              />
+                            ) : (
+                              <img
+                                src={assetUrl(item.thumb, item.scope)}
+                                alt=""
+                              />
+                            )
                           ) : (
-                            <Icon name="image" size={12} />
+                            <Icon
+                              name={item.kind === 'video' ? 'video' : 'image'}
+                              size={12}
+                            />
                           )}
                         </span>
                         <span className="mention-menu__name">{item.name}</span>
                         <span className="mention-menu__kind">
-                          {item.group === '角色' ? '角色卡' : '图片'}
+                          {item.group === '角色'
+                            ? '角色卡'
+                            : item.kind === 'video'
+                              ? '视频'
+                              : '图片'}
                         </span>
                       </button>
                     )
@@ -1171,33 +1346,75 @@ export function PromptBar() {
           <div className="model-picker">
             <button
               type="button"
-              className="promptbar__chip"
+              className={`promptbar__chip${
+                activeMissing.length > 0 ? ' is-warning' : ''
+              }`}
+              title={
+                activeMissing.length > 0
+                  ? `当前模型不支持${inputLabel(activeMissing)}输入`
+                  : undefined
+              }
               onClick={() => setMenuOpen((open) => !open)}
             >
               {active?.model.name ?? '选择模型'}
+              {activeMissing.length > 0 ? (
+                <span className="promptbar__model-warning">
+                  不支持{inputLabel(activeMissing)}
+                </span>
+              ) : null}
               <Icon name="chevron-down" size={11} />
             </button>
 
             {menuOpen ? (
               <div className="model-menu">
-                {models.map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    className={`model-menu__item ${
-                      item.key === active?.key ? 'is-active' : ''
-                    }`}
-                    onClick={() => {
-                      setModelKey(item.key)
-                      setParamValues({})
-                      setMenuOpen(false)
-                      void setDefaultModel(kind, item.key)
-                    }}
-                  >
-                    <span>{item.model.name}</span>
-                    <span className="model-menu__provider">{item.providerName}</span>
-                  </button>
-                ))}
+                {models.map((item) => {
+                  const missing = missingInputsFor(item.model, requiredInputs)
+                  const unavailable = missing.length > 0
+
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={`model-menu__item${
+                        item.key === active?.key ? ' is-active' : ''
+                      }${unavailable ? ' is-disabled' : ''}`}
+                      title={
+                        unavailable
+                          ? `该模型不支持${inputLabel(missing)}输入`
+                          : undefined
+                      }
+                      onClick={() => {
+                        if (unavailable) {
+                          showToast(
+                            `「${item.model.name}」不支持${inputLabel(missing)}输入`,
+                            'error'
+                          )
+                          return
+                        }
+
+                        setModelKey(item.key)
+                        setParamValues({})
+                        setMenuOpen(false)
+                        void setDefaultModel(kind, item.key)
+                      }}
+                    >
+                      <span className="model-menu__name">{item.model.name}</span>
+                      <span className="model-menu__meta">
+                        {unavailable ? (
+                          <span className="model-menu__reason">
+                            不支持
+                            {missing
+                              .map((input) => MEDIA_INPUT_LABEL[input])
+                              .join('·')}
+                          </span>
+                        ) : null}
+                        <span className="model-menu__provider">
+                          {item.providerName}
+                        </span>
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             ) : null}
           </div>
@@ -1493,10 +1710,21 @@ export function PromptBar() {
             className="ref-preview"
             style={{ left: refPreview.x, top: refPreview.y }}
           >
-            <img
-              src={assetUrl(refPreview.path, refPreview.scope)}
-              alt=""
-            />
+            {refPreview.kind === 'video' ? (
+              <video
+                src={`${assetUrl(refPreview.path, refPreview.scope)}#t=0.1`}
+                muted
+                playsInline
+                autoPlay
+                loop
+                preload="metadata"
+              />
+            ) : (
+              <img
+                src={assetUrl(refPreview.path, refPreview.scope)}
+                alt=""
+              />
+            )}
           </div>,
           document.body
         )

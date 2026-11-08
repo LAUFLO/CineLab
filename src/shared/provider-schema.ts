@@ -8,6 +8,18 @@ export type Capability =
   | 'audio.tts'
   | 'audio.music'
 
+/** 模型实际可接收的输入媒体类型 */
+export type MediaInput = 'text' | 'image' | 'video' | 'audio'
+
+export const MEDIA_INPUTS: MediaInput[] = ['text', 'image', 'video', 'audio']
+
+export const MEDIA_INPUT_LABEL: Record<MediaInput, string> = {
+  text: '文本',
+  image: '图片',
+  video: '视频',
+  audio: '音频'
+}
+
 export type ProviderType = 'openai-compat' | 'kling'
 
 export interface ParamOption {
@@ -35,12 +47,90 @@ export interface ModelDef {
   capability: Capability
   remoteModel: string
   params: ParamDef[]
+  /** 实际可接收的输入媒体；缺省按能力、适配器和模板推断 */
+  inputs?: MediaInput[]
   /** 该模型只出现在指定类型的供应商下；缺省为 openai-compat */
   providerType?: ProviderType
   /** 生成执行器，缺省按 remoteModel 推断 */
   adapter?: string
   /** http-template 执行器的请求/轮询模板 */
   template?: HttpTemplate
+}
+
+export interface ModelInferenceInput {
+  capability: Capability
+  remoteModel?: string
+  adapter?: string
+  template?: HttpTemplate
+}
+
+function templateHasMode(
+  template: HttpTemplate | undefined,
+  mode: 'text' | 'image' | 'keyframe' | 'reference' | 'video'
+): boolean {
+  if (!template) return false
+  if (template.mode === mode) return true
+  if (typeof template.submit.path === 'object' && mode in template.submit.path) {
+    return true
+  }
+  return Boolean(template.submit.bodyByMode && mode in template.submit.bodyByMode)
+}
+
+/**
+ * 根据能力、模型名和模板推断输入能力。
+ * 这里的默认值只用于旧配置和预设；用户可以在设置中覆盖。
+ */
+export function inferModelInputs(model: ModelInferenceInput): MediaInput[] {
+  const remote = model.remoteModel ?? ''
+
+  if (model.capability === 'image.i2i') return ['text', 'image']
+  if (model.capability === 'image.t2i') {
+    // Agnes 图像接口在请求体里支持参考图，但预设能力仍是 t2i
+    if (/^agnes-image/i.test(remote)) return ['text', 'image']
+    return ['text']
+  }
+
+  if (model.capability === 'video.t2v') {
+    if (/^agnes-video-2\.5-flash/i.test(remote)) {
+      return ['text', 'image', 'audio']
+    }
+    if (/^agnes-video-2\.5/i.test(remote)) {
+      return ['text', 'image', 'video', 'audio']
+    }
+
+    if (model.adapter === 'http-template' && model.template) {
+      const inputs: MediaInput[] = ['text']
+      if (
+        templateHasMode(model.template, 'image') ||
+        templateHasMode(model.template, 'keyframe') ||
+        templateHasMode(model.template, 'reference')
+      ) {
+        inputs.push('image')
+      }
+      if (templateHasMode(model.template, 'video')) inputs.push('video')
+      return inputs
+    }
+
+    return ['text', 'image']
+  }
+
+  return ['text']
+}
+
+/** 已配置值优先，缺省时按能力推断 */
+export function modelInputs(model: ModelDef): MediaInput[] {
+  return model.inputs && model.inputs.length > 0
+    ? model.inputs
+    : inferModelInputs(model)
+}
+
+/** 返回模型缺少的必需输入 */
+export function missingInputsFor(
+  model: ModelDef,
+  required: MediaInput[]
+): MediaInput[] {
+  const available = new Set(modelInputs(model))
+  return required.filter((input) => !available.has(input))
 }
 
 export interface ProviderConfig {
@@ -103,6 +193,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     name: 'GPT Image 1',
     capability: 'image.t2i',
     remoteModel: 'gpt-image-1',
+    inputs: ['text', 'image'],
     params: [
       {
         key: 'size',
@@ -135,6 +226,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     name: 'DALL·E 3',
     capability: 'image.t2i',
     remoteModel: 'dall-e-3',
+    inputs: ['text'],
     params: [
       {
         key: 'size',
@@ -164,6 +256,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     name: 'GPT-4o mini',
     capability: 'text.chat',
     remoteModel: 'gpt-4o-mini',
+    inputs: ['text'],
     params: [
       { key: 'temperature', label: '温度', type: 'number', defaultValue: 0.7, min: 0, max: 2 },
       { key: 'max_tokens', label: '最大输出', type: 'number', defaultValue: 2048, min: 64, max: 32768 }
@@ -174,6 +267,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     name: 'Seedance 2.5 视频',
     capability: 'video.t2v',
     remoteModel: 'doubao-seedance-2-5-260628',
+    inputs: ['text', 'image'],
     params: [
       {
         key: 'resolution',
@@ -214,6 +308,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     name: 'OpenAI TTS',
     capability: 'audio.tts',
     remoteModel: 'tts-1',
+    inputs: ['text'],
     params: [
       {
         key: 'voice',
@@ -260,6 +355,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     name: 'Suno Music',
     capability: 'audio.music',
     remoteModel: 'suno-music',
+    inputs: ['text'],
     params: [
       {
         key: 'mode',
@@ -290,6 +386,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     capability: 'video.t2v',
     remoteModel: 'cogvideox-flash',
     adapter: 'http-template',
+    inputs: ['text', 'image'],
     params: [
       {
         key: 'duration',
@@ -383,6 +480,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     capability: 'video.t2v',
     remoteModel: 'viduq2',
     adapter: 'http-template',
+    inputs: ['text', 'image'],
     params: [
       {
         key: 'duration',
@@ -485,6 +583,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     capability: 'video.t2v',
     remoteModel: 'MiniMax-H3',
     adapter: 'minimax-video',
+    inputs: ['text', 'image'],
     params: [
       {
         key: 'duration',
@@ -528,6 +627,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     capability: 'video.t2v',
     remoteModel: 'MiniMax-Hailuo-2.3',
     adapter: 'minimax-legacy',
+    inputs: ['text', 'image'],
     params: [
       {
         key: 'duration',
@@ -558,6 +658,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     remoteModel: 'kling-v2-5-turbo',
     adapter: 'kling-video',
     providerType: 'kling',
+    inputs: ['text', 'image'],
     params: [
       {
         key: 'mode',
@@ -613,6 +714,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     remoteModel: 'kling-v1-6',
     adapter: 'kling-video',
     providerType: 'kling',
+    inputs: ['text', 'image'],
     params: [
       {
         key: 'mode',
@@ -652,6 +754,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     name: 'Agnes 2.5 Flash 图像',
     capability: 'image.t2i',
     remoteModel: 'agnes-image-2.5-flash',
+    inputs: ['text', 'image'],
     params: [
       {
         key: 'size',
@@ -688,6 +791,7 @@ export const MODEL_PRESETS: ModelDef[] = [
     name: 'Agnes 2.5 Flash 视频',
     capability: 'video.t2v',
     remoteModel: 'agnes-video-2.5-flash',
+    inputs: ['text', 'image', 'audio'],
     params: [
       {
         key: 'duration',

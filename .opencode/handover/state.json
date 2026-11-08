@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "通用 AgentRuntime 已基于 main 重建，旧剪辑助手已删除；工具注册表、CanvasCommand、技能目录骨架均已完成（153 测试通过；真实 Agnes 验证改名+移动一次撤销、项目技能 skill_list/skill_read）。下一步：开放建节点/连线/删除/分组画布工具，然后 StageCommand 骨架与生成提案；技能管理 UI 与 Agnes 视频队列补测后续进行。",
+  "next_focus": "通用 AgentRuntime 已完成工具注册表、CanvasCommand、技能目录、创建/连接/删除节点工具（157 测试通过；真实 Agnes 验证改名+移动一次撤销、项目技能读取、创建+连接+删除）。下一步：分组/解组工具、StageCommand 骨架、生成提案 propose/submit；技能管理 UI 与 Agnes 视频队列补测后续进行。",
   "frontier": [
     {
       "id": "M2-1",
@@ -170,6 +170,19 @@
         "src/main/agent/runtime.ts",
         "resources/skills/canvas-basics/SKILL.md",
         "electron-builder.yml"
+      ]
+    },
+    {
+      "id": "AGENT-CANVAS-TOOLS-1",
+      "title": "Agent 画布工具：创建节点 / 连接 / 删除",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 canvas_add_node / canvas_connect / canvas_delete_node；创建节点不需要选中，改名/移动/连接/删除只操作 selectedNodeIds；runtime 把 createdNodeIds 加入本轮 scope，新建节点可继续连接或删除。真实 Agnes 验证：创建「开场镜头」并连接选中节点，一次撤销恢复 1 节点 0 连线；创建「临时节点」后删除，画布保持 1 节点。27 文件 157 测试通过；typecheck/build 通过，主进程约 410KB。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-CANVAS-TOOLS-1.md",
+        "src/main/agent/__tests__/tools.test.ts",
+        "src/main/agent/tools.ts",
+        "src/main/agent/runtime.ts",
+        "src/renderer/src/agent/canvasBridge.ts"
       ]
     },
     {
@@ -2049,6 +2062,10 @@
     {
       "category": "engineering",
       "content": "技能读取必须在主进程做 realpath 校验：只允许 SKILL.md/references/assets，拒绝 ..、绝对路径、盘符和符号链接逃逸；作用域优先级 project > global > builtin。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 创建节点后要把 toolResult.change.createdNodeIds 加入本轮 scope，否则同一轮无法继续连接、改名或删除新建节点。"
     }
   ],
   "designConventions": [

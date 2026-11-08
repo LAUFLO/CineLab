@@ -28,15 +28,15 @@ import { skillCatalogPrompt } from './skills'
 const MAX_STEPS = 8
 const TOOL_TIMEOUT_MS = 30_000
 
-const SYSTEM_PROMPT = `你是 CineLab 的画布助手。你可以调用工具读取当前画布、修改选中节点的标题。
+const SYSTEM_PROMPT = `你是 CineLab 的画布助手。你可以读取画布、创建文本/图片/视频/音频节点、修改标题、移动节点、连接节点和删除节点。
 
 规则：
 - 只操作当前画布。
-- 修改节点前先用 canvas_get 确认节点。
-- 只能修改 canvas_get 返回的 selectedNodes 中的节点。
-- 不要编造节点 ID。
+- 创建节点不需要选中；修改、移动、连接、删除只操作选中节点或本轮新建的节点。
+- 操作前先用 canvas_get 确认现有节点。
+- 不要编造节点 ID、坐标或连线。
 - 用中文回复，简洁说明你做了什么。
-- 如果用户没有选中节点，提示他先选中。`
+- 需要用户先选中节点时，明确提示。`
 
 export interface AgentTurnCallbacks {
   sendEvent(event: AgentEvent): void
@@ -303,6 +303,11 @@ async function runTurn(input: {
             )
           }
           mergeChange(turn.change, toolResult.change)
+          for (const id of toolResult.change?.createdNodeIds ?? []) {
+            if (!scope.selectedNodeIds.includes(id)) {
+              scope.selectedNodeIds.push(id)
+            }
+          }
         } catch (error) {
           const message =
             error instanceof AgentToolError || error instanceof Error

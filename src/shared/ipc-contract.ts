@@ -40,6 +40,14 @@ import type {
   ThumbCacheInfo
 } from './library-schema'
 import type { ModelsConfigStatus } from './models-file'
+import type {
+  AgentChatRequest,
+  AgentEvent,
+  AgentModelInfo,
+  AgentSessionSnapshot,
+  AgentToolCallRequest,
+  AgentToolResultInput
+} from './agent'
 import type { OperationBindings } from './operation-schema'
 import type { TimelineDoc } from './timeline-schema'
 import type { UpdateApi } from './update'
@@ -345,6 +353,16 @@ export interface FilmStudyApi {
   onProgress(callback: (progress: FilmStudyProgress) => void): () => void
 }
 
+export interface AgentApi {
+  chat(input: AgentChatRequest): Promise<{ turnId: string }>
+  cancel(turnId: string): Promise<void>
+  toolResult(input: AgentToolResultInput): Promise<void>
+  sessionLoad(): Promise<AgentSessionSnapshot>
+  modelInfo(): Promise<AgentModelInfo | null>
+  onEvent(callback: (event: AgentEvent) => void): () => void
+  onToolCall(callback: (call: AgentToolCallRequest) => void): () => void
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -369,4 +387,5 @@ export interface CineApi {
   components: ComponentsApi
   export: ExportApi
   update: UpdateApi
+  agent: AgentApi
 }

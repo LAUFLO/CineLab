@@ -386,6 +386,12 @@ const api: CineApi = {
     toolResult: (input) => ipcRenderer.invoke('agent:tool-result', input),
     sessionLoad: () => ipcRenderer.invoke('agent:session-load'),
     modelInfo: () => ipcRenderer.invoke('agent:model-info'),
+    proposalCreate: (input) => ipcRenderer.invoke('agent:proposal-create', input),
+    proposalActive: () => ipcRenderer.invoke('agent:proposal-active'),
+    proposalSubmit: (proposalId) =>
+      ipcRenderer.invoke('agent:proposal-submit', proposalId),
+    proposalCancel: (proposalId) =>
+      ipcRenderer.invoke('agent:proposal-cancel', proposalId),
     onEvent: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

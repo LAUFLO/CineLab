@@ -126,4 +126,137 @@ describe('agent tool permissions', () => {
       )
     ).not.toThrow()
   })
+
+  it('requires the generation target node in scope', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          nodeId: 'node-b',
+          modelKey: 'provider/model',
+          prompt: '一只猫'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          nodeId: 'node-a',
+          modelKey: 'provider/model',
+          prompt: '一只猫'
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('rejects invalid generation params', () => {
+    const base = {
+      nodeId: 'node-a',
+      modelKey: 'provider/model',
+      prompt: '一只猫'
+    }
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', { ...base, modelKey: 'model' }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', { ...base, prompt: ' ' }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', { ...base, count: 9 }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', { ...base, count: 2 }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('requires reference nodes in scope and unique', () => {
+    const base = {
+      nodeId: 'node-a',
+      modelKey: 'provider/model',
+      prompt: '一只猫'
+    }
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', { ...base, refNodeIds: ['node-b'] }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          ...base,
+          refNodeIds: ['node-a', 'node-a']
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', { ...base, refNodeIds: ['node-a'] }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('rejects generation in read-only mode', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          nodeId: 'node-a',
+          modelKey: 'provider/model',
+          prompt: '一只猫'
+        }),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+  })
+
+  it('validates catalog capability', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('generation_catalog', { capability: 'image' }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_catalog', { capability: 'unknown' }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+  })
 })

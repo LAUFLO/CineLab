@@ -23,18 +23,23 @@ import {
   toolDefinitionsForModel
 } from './tools'
 import { executeMainTool } from './main-tools'
+import { expireSessionProposals } from './proposals'
 import { skillCatalogPrompt } from './skills'
 
 const MAX_STEPS = 8
 const TOOL_TIMEOUT_MS = 30_000
 
-const SYSTEM_PROMPT = `你是 CineLab 的画布助手。你可以读取画布、创建文本/图片/视频/音频节点、修改标题、移动节点、连接节点、删除节点、分组和解散分组。
+const SYSTEM_PROMPT = `你是 CineLab 的画布助手。你可以读取画布、创建文本/图片/视频/音频节点、修改标题、移动节点、连接节点、删除节点、分组和解散分组，也可以登记生成提案。
 
 规则：
 - 只操作当前画布。
 - 创建节点不需要选中；修改、移动、连接、删除只操作选中节点或本轮新建的节点。
 - 操作前先用 canvas_get 确认现有节点。
 - 不要编造节点 ID、坐标或连线。
+- 需要生成图片、视频、音频或文本时，先调用 generation_catalog 确认模型和参数，再调用 generation_propose 登记提案。
+- generation_propose 不会立即生成，也不会扣费；必须告诉用户「已生成提案，请在面板中确认」，不要声称已经开始生成。
+- 用户确认后由界面提交生成；你不能自行提交提案。
+- 新消息会让旧提案失效，需要时重新登记。
 - 用中文回复，简洁说明你做了什么。
 - 需要用户先选中节点时，明确提示。`
 
@@ -45,6 +50,8 @@ export interface AgentTurnCallbacks {
 
 interface ActiveTurn {
   controller: AbortController
+  turn: AgentTurn
+  scope: AgentScope
   pending: Map<
     string,
     {
@@ -126,6 +133,7 @@ function createTurn(sessionId: string, userText: string): AgentTurn {
     userText,
     assistantText: '',
     toolCalls: [],
+    proposalIds: [],
     change: {
       createdNodeIds: [],
       updatedNodeIds: [],
@@ -155,6 +163,8 @@ export function startTurn(
   const turn = createTurn(sessionId, request.message)
   const active: ActiveTurn = {
     controller: new AbortController(),
+    turn,
+    scope,
     pending: new Map()
   }
   activeTurns.set(turn.id, active)
@@ -186,6 +196,7 @@ async function runTurn(input: {
 
   try {
     await ensureSession(root, turn.sessionId)
+    await expireSessionProposals(root, turn.sessionId)
     callbacks.sendEvent({ type: 'turn_start', turn })
     await appendMessage(root, turn.sessionId, {
       id: randomUUID(),
@@ -307,6 +318,15 @@ async function runTurn(input: {
             if (!scope.selectedNodeIds.includes(id)) {
               scope.selectedNodeIds.push(id)
             }
+          }
+          const proposalId =
+            toolResult.ok &&
+            toolResult.result &&
+            typeof toolResult.result === 'object'
+              ? (toolResult.result as { proposalId?: unknown }).proposalId
+              : undefined
+          if (typeof proposalId === 'string' && proposalId) {
+            turn.proposalIds.push(proposalId)
           }
         } catch (error) {
           const message =
@@ -451,4 +471,13 @@ export function cancelTurn(turnId: string): void {
   const active = activeTurns.get(turnId)
   if (!active) return
   active.controller.abort(new DOMException('已取消', 'AbortError'))
+}
+
+/** 供提案登记校验回合是否仍然活跃，并取得真实 sessionId */
+export function getActiveTurnInfo(
+  turnId: string
+): { sessionId: string; scope: AgentScope } | null {
+  const active = activeTurns.get(turnId)
+  if (!active) return null
+  return { sessionId: active.turn.sessionId, scope: active.scope }
 }

@@ -46,6 +46,8 @@ import type {
   AgentChatRequest,
   AgentEvent,
   AgentModelInfo,
+  AgentProposal,
+  AgentProposalDraft,
   AgentSessionSnapshot,
   AgentToolCallRequest,
   AgentToolResultInput
@@ -372,6 +374,10 @@ export interface AgentApi {
   toolResult(input: AgentToolResultInput): Promise<void>
   sessionLoad(): Promise<AgentSessionSnapshot>
   modelInfo(): Promise<AgentModelInfo | null>
+  proposalCreate(input: AgentProposalDraft): Promise<AgentProposal>
+  proposalActive(): Promise<AgentProposal | null>
+  proposalSubmit(proposalId: string): Promise<AgentProposal>
+  proposalCancel(proposalId: string): Promise<AgentProposal>
   onEvent(callback: (event: AgentEvent) => void): () => void
   onToolCall(callback: (call: AgentToolCallRequest) => void): () => void
 }

@@ -3,6 +3,7 @@ import type {
   AgentEvent,
   AgentModelInfo,
   AgentPermissionMode,
+  AgentProposal,
   AgentSessionMessage,
   AgentTurn
 } from '@shared/agent'
@@ -29,12 +30,17 @@ interface AgentState {
   modelInfo: AgentModelInfo | null
   error: string | null
   lastTurn: AgentTurn | null
+  proposal: AgentProposal | null
+  proposalBusy: boolean
   toggle: () => void
   open: () => void
   close: () => void
   setPermissionMode: (mode: AgentPermissionMode) => void
   loadSession: () => Promise<void>
   loadModelInfo: () => Promise<void>
+  loadProposal: () => Promise<void>
+  submitProposal: () => Promise<void>
+  cancelProposal: () => Promise<void>
   send: (text: string) => Promise<void>
   cancel: () => Promise<void>
   applyEvent: (event: AgentEvent) => void
@@ -111,6 +117,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   modelInfo: null,
   error: null,
   lastTurn: null,
+  proposal: null,
+  proposalBusy: false,
 
   toggle: () => set((state) => ({ visible: !state.visible })),
   open: () => set({ visible: true }),
@@ -137,6 +145,64 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       set({ modelInfo: info })
     } catch {
       set({ modelInfo: null })
+    }
+  },
+
+  loadProposal: async () => {
+    try {
+      const proposal = await window.api.agent.proposalActive()
+      set({ proposal })
+    } catch {
+      set({ proposal: null })
+    }
+  },
+
+  submitProposal: async () => {
+    const proposal = get().proposal
+    if (!proposal || get().proposalBusy) return
+    if (proposal.status !== 'pending') return
+
+    const nodeExists = useCanvasStore
+      .getState()
+      .nodes.some((node) => node.id === proposal.request.nodeId)
+    if (!nodeExists) {
+      set({ error: '目标节点已不在画布中，请让助手重新生成提案' })
+      try {
+        const next = await window.api.agent.proposalCancel(proposal.id)
+        set({ proposal: next })
+      } catch {
+        // 取消失败时保留原提案，等待主进程状态事件
+      }
+      return
+    }
+
+    set({ proposalBusy: true, error: null })
+    try {
+      const next = await window.api.agent.proposalSubmit(proposal.id)
+      set({ proposal: next })
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : '提交生成失败'
+      })
+      await get().loadProposal()
+    } finally {
+      set({ proposalBusy: false })
+    }
+  },
+
+  cancelProposal: async () => {
+    const proposal = get().proposal
+    if (!proposal || get().proposalBusy) return
+    set({ proposalBusy: true })
+    try {
+      const next = await window.api.agent.proposalCancel(proposal.id)
+      set({ proposal: next })
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : '取消提案失败'
+      })
+    } finally {
+      set({ proposalBusy: false })
     }
   },
 
@@ -264,6 +330,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
               ? event.turn.error ?? '本轮执行失败'
               : state.error
         }))
+        break
+      case 'proposal':
+        set({ proposal: event.proposal })
         break
       case 'error':
         set({ error: event.message })

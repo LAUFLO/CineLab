@@ -204,6 +204,80 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
+export const GENERATION_TOOLS: AgentToolDefinition[] = [
+  {
+    id: 'generation.catalog',
+    name: 'generation_catalog',
+    description:
+      '列出当前已配置、可用的生成模型，包括能力、输入、参数和单价。生成前先用它确认 modelKey 和参数。',
+    profiles: ['canvas'],
+    readOnly: true,
+    scope: 'generation',
+    modes: ['read-only', 'current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        capability: {
+          type: 'string',
+          enum: ['image', 'video', 'audio', 'text'],
+          description: '只看某一类生成模型；省略时返回全部'
+        }
+      },
+      additionalProperties: false
+    },
+    replay: 'safe',
+    executor: 'main'
+  },
+  {
+    id: 'generation.propose',
+    name: 'generation_propose',
+    description:
+      '登记一个生成提案，不会立即生成或扣费。用户确认提案后才会提交。目标节点必须是选中节点或本轮新建节点；未指定参考节点时自动使用直接上游节点的最新输出。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'generation',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: {
+          type: 'string',
+          description: '目标生成节点 ID，必须来自 canvas_get 的 selectedNodes'
+        },
+        modelKey: {
+          type: 'string',
+          description: '模型标识，格式 providerId/modelId，必须来自 generation_catalog'
+        },
+        prompt: {
+          type: 'string',
+          description: '生成提示词，最多 8000 个字符'
+        },
+        params: {
+          type: 'object',
+          description: '模型参数覆盖，键必须来自 generation_catalog'
+        },
+        count: {
+          type: 'number',
+          description: '生成数量 1-8；仅模型声明了数量参数时生效'
+        },
+        refNodeIds: {
+          type: 'array',
+          items: { type: 'string' },
+          maxItems: 4,
+          description: '参考节点 ID，可选；省略时使用直接上游节点的最新输出'
+        },
+        negativePrompt: {
+          type: 'string',
+          description: '负向提示词，可选'
+        }
+      },
+      required: ['nodeId', 'modelKey', 'prompt'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  }
+]
+
 export const SKILL_TOOLS: AgentToolDefinition[] = [
   {
     id: 'skill.list',
@@ -259,7 +333,11 @@ export const SKILL_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
-export const AGENT_TOOLS = [...CANVAS_TOOLS, ...SKILL_TOOLS]
+export const AGENT_TOOLS = [
+  ...CANVAS_TOOLS,
+  ...GENERATION_TOOLS,
+  ...SKILL_TOOLS
+]
 
 export function toolDefinitionsForModel(
   profile: AgentProfileId,
@@ -406,6 +484,94 @@ export function assertToolAllowed(
       throw new AgentToolError('invalid_params', 'groupId 必须是非空字符串')
     }
     assertSelectedNode(scope, groupId)
+  }
+
+  if (call.name === 'generation_propose') {
+    const nodeId = call.args.nodeId
+    const modelKey = call.args.modelKey
+    const prompt = call.args.prompt
+
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, nodeId)
+
+    if (
+      typeof modelKey !== 'string' ||
+      modelKey.indexOf('/') <= 0 ||
+      modelKey.length > 300
+    ) {
+      throw new AgentToolError('invalid_params', 'modelKey 格式无效')
+    }
+    if (
+      typeof prompt !== 'string' ||
+      !prompt.trim() ||
+      prompt.length > 8000
+    ) {
+      throw new AgentToolError(
+        'invalid_params',
+        'prompt 不能为空且不能超过 8000 个字符'
+      )
+    }
+    if (
+      call.args.params !== undefined &&
+      (typeof call.args.params !== 'object' ||
+        call.args.params === null ||
+        Array.isArray(call.args.params))
+    ) {
+      throw new AgentToolError('invalid_params', 'params 必须是对象')
+    }
+
+    if (call.args.count !== undefined) {
+      const count = call.args.count
+      if (
+        typeof count !== 'number' ||
+        !Number.isInteger(count) ||
+        count < 1 ||
+        count > 8
+      ) {
+        throw new AgentToolError('invalid_params', 'count 必须是 1-8 的整数')
+      }
+    }
+
+    if (call.args.refNodeIds !== undefined) {
+      const ids = call.args.refNodeIds
+      if (!Array.isArray(ids) || ids.length > 4) {
+        throw new AgentToolError('invalid_params', 'refNodeIds 最多 4 个')
+      }
+      const unique = new Set(ids)
+      if (unique.size !== ids.length) {
+        throw new AgentToolError('invalid_params', 'refNodeIds 不能重复')
+      }
+      for (const id of ids) {
+        if (typeof id !== 'string' || !id.trim()) {
+          throw new AgentToolError('invalid_params', 'refNodeIds 必须是非空字符串')
+        }
+        assertSelectedNode(scope, id)
+      }
+    }
+
+    if (
+      call.args.negativePrompt !== undefined &&
+      (typeof call.args.negativePrompt !== 'string' ||
+        call.args.negativePrompt.length > 4000)
+    ) {
+      throw new AgentToolError(
+        'invalid_params',
+        'negativePrompt 不能超过 4000 个字符'
+      )
+    }
+  }
+
+  if (call.name === 'generation_catalog') {
+    if (
+      call.args.capability !== undefined &&
+      !['image', 'video', 'audio', 'text'].includes(
+        String(call.args.capability)
+      )
+    ) {
+      throw new AgentToolError('invalid_params', 'capability 无效')
+    }
   }
 
   if (call.name === 'skill_read') {

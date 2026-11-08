@@ -3,9 +3,11 @@ import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type {
   FilmStudy,
+  FilmStudyAutoRequest,
   FilmStudyExtractRequest
 } from '@shared/film-study'
 import { getCurrentProjectRoot } from '../project/manager'
+import { autoFilmStudy, cancelAutoFilmStudy } from '../film-study/auto'
 import {
   analyzeFilmStudy,
   buildFilmStudyMarkdown,
@@ -43,7 +45,19 @@ export function registerFilmStudyIpc(): void {
     }
   )
 
+  ipcMain.handle(
+    'film-study:auto',
+    async (event, input: FilmStudyAutoRequest) => {
+      return autoFilmStudy(requireProjectRoot(), input, (progress) => {
+        if (!event.sender.isDestroyed()) {
+          event.sender.send('film-study:progress', progress)
+        }
+      })
+    }
+  )
+
   ipcMain.handle('film-study:cancel', (_event, nodeId: string) => {
+    cancelAutoFilmStudy(nodeId)
     cancelFilmStudy(nodeId)
   })
 

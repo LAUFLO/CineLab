@@ -24,6 +24,7 @@ import { AddNodeMenu } from './AddNodeMenu'
 import { AlignmentGuides, type AlignmentGuide } from './AlignmentGuides'
 import { computeAlignment } from './alignment'
 import { CanvasContextMenu } from './CanvasContextMenu'
+import { NodeContextMenu } from './NodeContextMenu'
 import { copySelection, pasteAt } from './context-actions'
 import { requestDeleteSelection } from './delete-actions'
 import { FlowEdge } from './edges/FlowEdge'
@@ -100,6 +101,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const closeMenu = useUIStore((state) => state.closeMenu)
   const openMenu = useUIStore((state) => state.openMenu)
   const openContextMenu = useUIStore((state) => state.openContextMenu)
+  const closeContextMenu = useUIStore((state) => state.closeContextMenu)
+  const openNodeContextMenu = useUIStore((state) => state.openNodeContextMenu)
   const snapToGrid = useUIStore((state) => state.snapToGrid)
   const edgesVisible = useUIStore((state) => state.edgesVisible)
   const minimapVisible = useUIStore((state) => state.minimapVisible)
@@ -300,6 +303,22 @@ function CanvasInner({ theme }: { theme: Theme }) {
     [closeMenu, openContextMenu, screenToFlowPosition]
   )
 
+  const handleNodeContextMenu = useCallback(
+    (event: MouseEvent | React.MouseEvent, node: CanvasNode) => {
+      event.preventDefault()
+      closeMenu()
+      closeContextMenu()
+      setNodes((nodes) =>
+        nodes.map((item) => ({ ...item, selected: item.id === node.id }))
+      )
+      openNodeContextMenu({
+        screen: { x: event.clientX, y: event.clientY },
+        nodeId: node.id
+      })
+    },
+    [closeContextMenu, closeMenu, openNodeContextMenu, setNodes]
+  )
+
   const handleNodeDragStart = useCallback(() => {
     useCanvasStore.getState().pushHistory()
     setGuides([])
@@ -458,7 +477,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
         onConnectEnd={handleConnectEnd}
         onPaneClick={closeMenu}
         onPaneContextMenu={handlePaneContextMenu}
-        onNodeContextMenu={(event) => event.preventDefault()}
+        onNodeContextMenu={handleNodeContextMenu}
         onNodeDragStart={handleNodeDragStart}
         onNodeDrag={handleNodeDrag}
         onNodeDragStop={handleNodeDragStop}
@@ -539,6 +558,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
       <StoryboardToolbar />
       <AddNodeMenu />
       <CanvasContextMenu />
+      <NodeContextMenu />
       <ShortcutPanel />
       <HistoryPanel />
       <NodeSearch />

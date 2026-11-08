@@ -1,5 +1,5 @@
 {
-  "version": 44,
+  "version": 48,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -1001,6 +1001,55 @@
       "evidence": [
         "docs/video-operations-plan.md",
         ".opencode/handover/evidence/VIDEO-OPERATIONS-1.md"
+      ]
+    },
+    {
+      "id": "MEDIA-STYLE-UNIFY-1",
+      "title": "视频控制条透明化与视频操作节点播放器统一",
+      "status": "done",
+      "note": "2026-11-08 完成：视频节点控制条去掉整条黑色胶囊背景与底部渐变压暗，改为独立圆形半透明按钮 + 浮动进度条；智能续写/片段重拍/元素替换节点原生 video controls 替换为统一 VideoPlayer，预览样式与视频节点一致；三个节点表单加 nodrag nopan，滑块拖动不再带动节点。typecheck、102 tests 通过；隔离实例 CDP 验证三节点播放器统一、控件透明，新增时长滑块 5→4 且节点位置不变。全屏预览仍用原生 controls。",
+      "evidence": [
+        ".opencode/handover/evidence/MEDIA-STYLE-UNIFY-1.md",
+        ".opencode/handover/evidence/MEDIA-STYLE-UNIFY-1-overview.png",
+        ".opencode/handover/evidence/MEDIA-STYLE-UNIFY-1-video.png",
+        ".opencode/handover/evidence/MEDIA-STYLE-UNIFY-1-extend.png"
+      ]
+    },
+    {
+      "id": "STUDIO-POLISH-1",
+      "title": "剪辑室五项体验修复：多选栏穿透、预览空状态、菜单层级、浅色按钮、节点居中",
+      "status": "done",
+      "note": "2026-11-08 完成：剪辑室打开时隐藏画布多选工具栏；预览空状态改为绝对定位居中，修复文字被 canvas 挤成竖排贴边；节点工具栏菜单打开期间提升 react-flow 到 z-index 60，关闭后恢复；窗口控制与剪辑室顶栏右侧按钮改用 text-1，提示文字 text-2 提升浅色主题可读性；剪辑室节点内容水平居中。typecheck、102 tests、build 通过；隔离实例 CDP 验证多选栏隐藏、空状态居中、菜单重叠层级与节点居中。",
+      "evidence": [
+        ".opencode/handover/evidence/STUDIO-POLISH-1.md",
+        ".opencode/handover/evidence/STUDIO-POLISH-1-multibar-before.png",
+        ".opencode/handover/evidence/STUDIO-POLISH-1-studio-light.png",
+        ".opencode/handover/evidence/STUDIO-POLISH-1-menu-priority.png",
+        ".opencode/handover/evidence/STUDIO-POLISH-1-node-centered.png"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-REDESIGN-1",
+      "title": "逐帧拉片重做：节点配置 + 自动分镜 + AI 描述 + 结果直接进画布",
+      "status": "done",
+      "note": "2026-11-08 完成。调研 LibTV / TapNow / 蝉妈妈 / 创一 / 瞬镜，确认拉片应为视频节点上的动作而非独立工作台。新增主进程 autoFilmStudy：ffmpeg scdet 自动镜头检测、每镜代表帧、最多 24 镜、AI 视觉模型补齐景别/机位/运镜/光线/画面描述/提示词/人声/音乐，AI 失败保留基础分镜。拉片节点改为配置面板（精度、模型、输出、开始/取消/重新拉片/查看分镜表），结果自动生成分镜组 + 分镜表并连线，源视频 → 拉片节点 → 输出。新增只读分镜表查看器；原拉片室降级为高级编辑。同时修复拉片节点不可拖动、工具栏更多菜单漏项、工具栏左侧灰线、全屏视频预览统一 VideoPlayer。typecheck、107 tests、build 通过；隔离实例 CDP 验证自动分镜、连线、拖动、AI mock 描述与分镜表。",
+      "evidence": [
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-1.md",
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-1-node-outputs.png",
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-1-sheet-basic.png",
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-1-sheet-ai.png",
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-1-video-preview.png"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-REDESIGN-2",
+      "title": "拉片后续：动态切片 / BGM、替换旧输出、标准分镜表、节点右键菜单",
+      "status": "done",
+      "note": "2026-11-08 完成。主进程自动拉片新增动态切片（ffmpeg 逐镜截取 libx264 ultrafast）与 BGM 提取（AAC）；拉片节点新增两个输出开关，自动生成动态切片视频组与 BGM 音频节点并连线。新增 studyOutputNodeIds，重新拉片倒序删除旧输出再创建，节点数不再翻倍；修复 project-schema 缺少 study 字段导致保存被剥离的问题。主进程导出与查看器复制整表改为标准分镜表格 Markdown。新增节点右键菜单：按类型提供通用/视频/图片/文本/拉片/剪辑室/视频操作/分组命令，通过 nodeCommand 桥复用 NodeToolbar 操作。typecheck、107 tests、build 通过；隔离实例验证右键菜单 15 项、动态切片与 BGM 文件生成、输出替换后节点数保持 32、复制整表标准表格。",
+      "evidence": [
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-2.md",
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-2-node-menu.png",
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-2-sheet.png"
       ]
     }
   ],

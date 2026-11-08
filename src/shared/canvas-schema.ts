@@ -51,6 +51,21 @@ export interface CineNodeData extends Record<string, unknown> {
   sourceScope?: AssetScope
   sourceName?: string
   studyInterval?: number
+  /** 拉片节点：自动分镜使用的分析模型 */
+  studyModelKey?: string
+  /** 拉片节点：输出选项 */
+  studyOutputs?: {
+    storyboard?: boolean
+    sheet?: boolean
+    motion?: boolean
+    music?: boolean
+  }
+  /** 拉片节点：AI 描述是否成功 */
+  studyAnalyzed?: boolean
+  /** 拉片节点：AI 描述失败原因（基础分镜仍会生成） */
+  studyAnalysisError?: string
+  /** 拉片节点：自动生成的输出节点 id，重新拉片时用于替换 */
+  studyOutputNodeIds?: string[]
   studySummary?: {
     studyId: string
     frameCount: number
@@ -239,8 +254,8 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
   },
   study: {
     label: '拉片',
-    width: 360,
-    height: 236,
+    width: 400,
+    height: 340,
     templates: []
   }
 }

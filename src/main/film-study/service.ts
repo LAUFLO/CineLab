@@ -457,7 +457,66 @@ function formatStudyTime(seconds: number): string {
   return `${String(minutes).padStart(2, '0')}:${rest.toFixed(1).padStart(4, '0')}`
 }
 
+function formatStudyClock(seconds: number): string {
+  const total = Math.max(0, seconds)
+  const minutes = Math.floor(total / 60)
+  const rest = total % 60
+  const whole = Math.floor(rest)
+  const tenth = Math.floor((rest - whole) * 10)
+  return `${String(minutes).padStart(2, '0')}:${String(whole).padStart(2, '0')}.${tenth}`
+}
+
+function escapeTableCell(value?: string): string {
+  return (value ?? '—')
+    .replace(/\|/g, '\\|')
+    .replace(/\r?\n/g, '<br>')
+    .trim()
+}
+
+function buildStoryboardTableMarkdown(study: FilmStudy): string {
+  const rows = [...study.segments]
+    .sort((a, b) => a.startTime - b.startTime)
+    .map((segment, index) => {
+      const sound = [
+        segment.voiceOver ? `人声：${segment.voiceOver}` : '',
+        segment.musicCue ? `音乐：${segment.musicCue}` : ''
+      ]
+        .filter(Boolean)
+        .join('；')
+      return [
+        `| ${String(index + 1).padStart(2, '0')}`,
+        `${formatStudyClock(segment.startTime)} – ${formatStudyClock(segment.endTime)}`,
+        `${Math.max(0, segment.endTime - segment.startTime).toFixed(1)}s`,
+        escapeTableCell(segment.shotSize),
+        escapeTableCell(segment.cameraAngle),
+        escapeTableCell(segment.cameraMove),
+        escapeTableCell(segment.lighting),
+        escapeTableCell(segment.visualDescription ?? segment.title),
+        escapeTableCell(segment.imagePrompt),
+        `${escapeTableCell(sound)} |`
+      ].join(' | ')
+    })
+
+  return [
+    `# ${study.sourceName} · 分镜表`,
+    '',
+    `片长 ${formatStudyClock(study.duration)} · ${study.segments.length} 个分镜 · ${study.frames.length} 张代表帧`,
+    ...(study.analysisModel ? [`分析模型 ${study.analysisModel}`] : []),
+    '',
+    '| 镜号 | 时间 | 时长 | 景别 | 机位 | 运镜 | 光线 | 画面 | 提示词 | 人声 / 音乐 |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+    ...rows
+  ].join('\n') + '\n'
+}
+
 export function buildFilmStudyMarkdown(study: FilmStudy): string {
+  if (
+    study.autoAnalyzedAt ||
+    study.segments.some((segment) => segment.shotSize || segment.imagePrompt)
+  ) {
+    return buildStoryboardTableMarkdown(study)
+  }
+
   const lines: string[] = [
     `# 拉片笔记：${study.sourceName}`,
     '',

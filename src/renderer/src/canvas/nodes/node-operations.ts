@@ -171,10 +171,10 @@ const FRAME_MENU: OperationMenuItem[] = [
 ]
 
 const STUDY_MENU: OperationMenuItem[] = [
-  { id: '0.5', label: '0.5 秒 / 帧', hint: 'AI 短片' },
-  { id: '1', label: '1 秒 / 帧', hint: '推荐' },
-  { id: '2', label: '2 秒 / 帧' },
-  { id: '5', label: '5 秒 / 帧' }
+  { id: 'auto', label: '自动分镜', hint: '推荐' },
+  { id: '0.5', label: '0.5 秒 / 镜', hint: 'AI 短片' },
+  { id: '1', label: '1 秒 / 镜' },
+  { id: '2', label: '2 秒 / 镜' }
 ]
 
 const VIDEO_CROP_MENU: OperationMenuItem[] = [

@@ -12,6 +12,7 @@ import {
 import type { ReferenceInput } from '@shared/generation'
 import { Icon, type IconName } from '../../components/Icon'
 import { assetUrl } from '../../lib/asset-url'
+import { VideoPlayer } from './VideoPlayer'
 import {
   absolutePosition,
   nodeSize,
@@ -408,21 +409,19 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
         </button>
 
         {data.expanded ? (
-          <div className="video-op-node__form">
+          <div className="video-op-node__form nodrag nopan">
             {sourceOutput ? (
-              <video
-                className="video-op-node__preview"
-                src={assetUrl(sourceOutput.path, sourceOutput.scope)}
-                controls
-                preload="metadata"
-                onLoadedMetadata={(event) => {
-                  const value = event.currentTarget.duration
-                  if (Number.isFinite(value) && value > 0 && duration <= 0) {
-                    setDuration(value)
-                    setEnd(value)
-                  }
-                }}
-              />
+              <div className="video-op-node__preview">
+                <VideoPlayer
+                  src={assetUrl(sourceOutput.path, sourceOutput.scope)}
+                  path={sourceOutput.path}
+                  onDurationChange={(value) => {
+                    if (value <= 0) return
+                    setDuration((current) => (current > 0 ? current : value))
+                    setEnd((current) => (current > 0 ? current : value))
+                  }}
+                />
+              </div>
             ) : (
               <div className="video-op-node__warn">源节点没有视频输出</div>
             )}

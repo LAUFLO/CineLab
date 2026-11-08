@@ -10,6 +10,7 @@ export type IconName =
   | 'help'
   | 'settings'
   | 'download'
+  | 'copy'
   | 'folder'
   | 'grid'
   | 'droplet'
@@ -94,6 +95,12 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   download: <path d="M12 3.5v11M7.5 10 12 14.5 16.5 10M4 20h16" />,
+  copy: (
+    <>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15V5a2 2 0 0 1 2-2h8" />
+    </>
+  ),
   folder: <path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4l2 2h8A1.5 1.5 0 0 1 20.5 9v8A1.5 1.5 0 0 1 19 18.5H5A1.5 1.5 0 0 1 3.5 17z" />,
   grid: <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />,
   droplet: <path d="M12 3.2s6 5.9 6 9.8a6 6 0 0 1-12 0c0-3.9 6-9.8 6-9.8z" />,

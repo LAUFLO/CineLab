@@ -16,6 +16,7 @@ export function MultiSelectBar() {
   const createStoryboard = useCanvasStore((state) => state.createStoryboard)
   const showToast = useUIStore((state) => state.showToast)
   const openStudio = useStudioStore((state) => state.openStudio)
+  const studioOpen = useStudioStore((state) => state.open)
   const viewport = useCanvasStore((state) => state.viewport)
 
   const selected = useMemo(
@@ -77,7 +78,7 @@ export function MultiSelectBar() {
     return () => window.removeEventListener('resize', update)
   }, [selectionKey, nodes, viewport])
 
-  if (selected.length < 2 || !position) return null
+  if (studioOpen || selected.length < 2 || !position) return null
 
   const paths = (): SaveAssetInput[] => {
     const unique = new Map<string, SaveAssetInput>()

@@ -1,5 +1,5 @@
 {
-  "version": 36,
+  "version": 37,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "整体验收与修复；导演台待调研排期；剪辑台等待其他会话完成后接入",
+  "next_focus": "逐帧拉片 P1：帧备注、段落、Markdown 导出与回画布",
   "frontier": [
     {
       "id": "M2-1",
@@ -591,8 +591,8 @@
     {
       "id": "FILM-STUDY-1",
       "title": "逐帧拉片方案（待确认）",
-      "status": "todo",
-      "note": "已调研 lapian-notes 并更新 docs/film-study-plan.md：视频工具栏创建 study 拉片节点，节点内「进入拉片室」打开浮窗；P0/P1 必须提供 Markdown 导出、当前帧/12帧拼图/段落摘要放回画布，避免拉片结果只读。",
+      "status": "done",
+      "note": "方案已确认：视频工具栏创建 study 拉片节点，节点内进入拉片室浮窗；结果需支持 Markdown、当前帧/拼图/段落回画布和 AI 分析包。",
       "evidence": [
         "docs/film-study-plan.md"
       ]
@@ -605,6 +605,22 @@
       "evidence": [
         ".opencode/handover/evidence/NODE-RETRY-COLOR-1.md"
       ]
+    },
+    {
+      "id": "FILM-STUDY-P0",
+      "title": "逐帧拉片 P0：study 节点、ffmpeg 抽帧、拉片室浮窗",
+      "status": "done",
+      "note": "film-study 分支完成：视频工具栏逐帧拉片、study 节点、0.5/1/2/5 秒抽帧、study.json、拉片室播放器与虚拟帧时间轴、点帧 seek、刷新后持久化。",
+      "evidence": [
+        "docs/film-study-plan.md",
+        ".opencode/handover/evidence/FILM-STUDY-P0.md"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-P1",
+      "title": "逐帧拉片 P1：帧备注、段落、Markdown 与回画布",
+      "status": "todo",
+      "note": "待开发：帧备注、段落创建/编辑、播放本段、Markdown 导出、当前帧/12 帧拼图/段落摘要放回画布。"
     }
   ],
   "knownIssues": [
@@ -1411,6 +1427,14 @@
     {
       "category": "preference",
       "content": "黑白灰不是绝对限制：成功、失败、警告等语义状态必须使用绿色/红色/黄色；仅装饰性颜色保持克制。"
+    },
+    {
+      "category": "lesson",
+      "content": "新增 NodeKind 是跨模块改动：NODE_META、项目 schema、PromptBar 过滤、节点图标、工具栏、搜索和导出都要同步，先由 typecheck 把遗漏的 Record 找出来。"
+    },
+    {
+      "category": "lesson",
+      "content": "worktree 新建后需要重新执行 electron 的 install.js 才能跑 dev；pnpm install 不会自动补 Electron 二进制。"
     }
   ],
   "designConventions": [

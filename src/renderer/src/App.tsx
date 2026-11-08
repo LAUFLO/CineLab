@@ -12,9 +12,11 @@ import { LibraryPanel } from './panels/LibraryPanel'
 import { ToolbarSettings } from './canvas/nodes/ToolbarSettings'
 import { ProjectCenter } from './panels/ProjectCenter'
 import { SettingsPanel } from './panels/SettingsPanel'
+import { FilmStudyRoom } from './canvas/nodes/FilmStudyRoom'
 import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
 import { useGenerationHistoryStore } from './stores/generation-history'
+import { useFilmStudyStore } from './stores/film-study'
 import { usePreferencesStore } from './stores/preferences'
 import { useProjectStore } from './stores/project'
 import { useSettingsStore } from './stores/settings'
@@ -39,6 +41,7 @@ export default function App() {
 
   const loadProviders = useSettingsStore((state) => state.load)
   const subscribeGeneration = useGenerationStore((state) => state.subscribe)
+  const subscribeFilmStudy = useFilmStudyStore((state) => state.subscribe)
   const initUpdate = useUpdateStore((state) => state.init)
   const loadPreferences = usePreferencesStore((state) => state.load)
   const historyLimit = usePreferencesStore(
@@ -100,6 +103,11 @@ export default function App() {
     const unsubscribe = subscribeGeneration()
     return unsubscribe
   }, [subscribeGeneration])
+
+  useEffect(() => {
+    const unsubscribe = subscribeFilmStudy()
+    return unsubscribe
+  }, [subscribeFilmStudy])
 
   useEffect(() => subscribeDepthTasks(), [])
 
@@ -178,6 +186,7 @@ export default function App() {
       {content}
       {phase === 'ready' ? null : <div className="window-drag-strip" />}
       <SettingsPanel />
+      <FilmStudyRoom />
       <WindowControls theme={resolved} onToggleTheme={toggle} />
       <Toast />
       <AppTooltip />

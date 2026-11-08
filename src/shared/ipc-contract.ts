@@ -22,6 +22,12 @@ import type {
 import type { ComponentEvent, ComponentKind, ComponentStatus } from './components'
 import type { Preferences } from './preferences'
 import type {
+  FilmStudy,
+  FilmStudyExtractRequest,
+  FilmStudyExtractResult,
+  FilmStudyProgress
+} from './film-study'
+import type {
   AddToLibraryInput,
   SaveAssetInput,
   CharacterCard,
@@ -222,6 +228,13 @@ export interface ComponentsApi {
   onEvent(callback: (event: ComponentEvent) => void): () => void
 }
 
+export interface FilmStudyApi {
+  extract(input: FilmStudyExtractRequest): Promise<FilmStudyExtractResult>
+  cancel(nodeId: string): Promise<void>
+  load(studyId: string): Promise<FilmStudy>
+  onProgress(callback: (progress: FilmStudyProgress) => void): () => void
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -241,6 +254,7 @@ export interface CineApi {
   library: LibraryApi
   clipboard: ClipboardApi
   media: MediaApi
+  filmStudy: FilmStudyApi
   components: ComponentsApi
   export: ExportApi
   update: UpdateApi

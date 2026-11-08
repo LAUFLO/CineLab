@@ -14,6 +14,10 @@ import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
 import type { Preferences } from '../shared/preferences'
 import type {
+  FilmStudyExtractRequest,
+  FilmStudyProgress
+} from '../shared/film-study'
+import type {
   AddToLibraryInput,
   SaveAssetInput,
   TemplateInput
@@ -256,6 +260,25 @@ const api: CineApi = {
       ipcRenderer.on('vision-task:event', listener)
       return () => {
         ipcRenderer.removeListener('vision-task:event', listener)
+      }
+    }
+  },
+  filmStudy: {
+    extract: (input: FilmStudyExtractRequest) =>
+      ipcRenderer.invoke('film-study:extract', input),
+    cancel: (nodeId: string) =>
+      ipcRenderer.invoke('film-study:cancel', nodeId),
+    load: (studyId: string) =>
+      ipcRenderer.invoke('film-study:load', studyId),
+    onProgress: (callback: (progress: FilmStudyProgress) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: FilmStudyProgress
+      ): void => callback(payload)
+
+      ipcRenderer.on('film-study:progress', listener)
+      return () => {
+        ipcRenderer.removeListener('film-study:progress', listener)
       }
     }
   },

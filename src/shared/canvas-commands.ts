@@ -3,6 +3,7 @@ import type {
   CineNodeData,
   FilmNodeData,
   GroupNodeData,
+  StageNodeData,
   StudioNodeData,
   VideoOpNodeData
 } from './canvas-schema'
@@ -10,6 +11,7 @@ import type {
 export type CanvasCommandNode =
   | Node<CineNodeData, 'cine'>
   | Node<StudioNodeData, 'studio'>
+  | Node<StageNodeData, 'stage'>
   | Node<FilmNodeData, 'film'>
   | Node<VideoOpNodeData, 'video-op'>
   | Node<GroupNodeData, 'group'>

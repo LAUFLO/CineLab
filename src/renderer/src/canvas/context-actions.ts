@@ -93,7 +93,21 @@ async function copyStudioTimelines(
   return map
 }
 
-/** 创建副本：剪辑室深拷贝时间线，成片不复制 */
+async function copyStageDocs(
+  nodes: { id: string; type: string; data: unknown }[]
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  for (const node of nodes) {
+    if (node.type !== 'stage') continue
+    const stageId = (node.data as { stageId?: string }).stageId
+    if (!stageId) continue
+    const doc = await window.api.stage.duplicate(stageId)
+    map.set(node.id, doc.stageId)
+  }
+  return map
+}
+
+/** 创建副本：剪辑室时间线与导演台场景深拷贝，成片不复制 */
 export async function duplicateSelectionDeep(): Promise<number> {
   const store = useCanvasStore.getState()
   const selected = store.nodes.filter((node) => node.selected)
@@ -108,18 +122,32 @@ export async function duplicateSelectionDeep(): Promise<number> {
   const studios = store.nodes.filter(
     (node) => ids.has(node.id) && isStudioNode(node)
   )
-  const studioTimelines = await copyStudioTimelines(studios)
-  return store.duplicateSelection(studioTimelines)
+  const stages = store.nodes.filter(
+    (node) => ids.has(node.id) && node.type === 'stage'
+  )
+  const [studioTimelines, stageDocs] = await Promise.all([
+    copyStudioTimelines(studios),
+    copyStageDocs(stages)
+  ])
+  return store.duplicateSelection(studioTimelines, stageDocs)
 }
 
 export async function pasteAt(position?: XYPosition): Promise<number> {
   const store = useCanvasStore.getState()
   const clipboard = store.clipboard
 
-  if (clipboard && clipboard.nodes.some((node) => node.type === 'studio')) {
+  if (
+    clipboard &&
+    clipboard.nodes.some(
+      (node) => node.type === 'studio' || node.type === 'stage'
+    )
+  ) {
     try {
-      const studioTimelines = await copyStudioTimelines(clipboard.nodes)
-      const count = store.pasteNodes(position, studioTimelines)
+      const [studioTimelines, stageDocs] = await Promise.all([
+        copyStudioTimelines(clipboard.nodes),
+        copyStageDocs(clipboard.nodes)
+      ])
+      const count = store.pasteNodes(position, studioTimelines, stageDocs)
       if (count > 0) {
         toast(`已粘贴 ${count} 个节点`)
         return count

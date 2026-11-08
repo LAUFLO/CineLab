@@ -10,6 +10,7 @@ import { registerMediaIpc } from './media'
 import { registerTimelineIpc } from './timeline'
 import { registerAgentIpc } from './agent'
 import { registerFilmStudyIpc } from './film-study'
+import { registerStageIpc } from './stage'
 import { registerComponentsIpc } from './components'
 import { registerUpdateIpc } from './update'
 import { log, logDirectory } from '../logger'
@@ -30,6 +31,7 @@ export function registerIpc(): void {
   registerTimelineIpc()
   registerAgentIpc()
   registerFilmStudyIpc()
+  registerStageIpc()
   registerComponentsIpc()
   registerUpdateIpc()
 

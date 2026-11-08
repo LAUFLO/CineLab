@@ -1068,7 +1068,7 @@ body.is-exporting .react-flow__minimap {
 
 .alignment-guides {
   position: fixed;
-  top: 40px;
+  top: 0;
   right: 0;
   bottom: 0;
   left: 0;
@@ -1124,6 +1124,153 @@ body.is-exporting .react-flow__minimap {
   object-fit: contain;
 }
 
+/* ===== 视频节点播放器 ===== */
+.video-node {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--media-bg);
+  overflow: hidden;
+}
+
+.video-node video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.video-node__shade {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 92px;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--media-bg) 58%, transparent),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.video-node__center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  border: 1px solid var(--media-control-border);
+  background: var(--media-control-bg);
+  color: var(--media-text);
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(10px);
+}
+
+.video-node__center:hover {
+  background: color-mix(
+    in srgb,
+    var(--media-control-bg) 75%,
+    var(--media-text)
+  );
+}
+
+.video-node__footer {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.video-node__progress {
+  width: 100%;
+  height: 3px;
+  margin: 0;
+  appearance: none;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--media-text) var(--video-progress),
+    color-mix(in srgb, var(--media-text) 24%, transparent) var(--video-progress)
+  );
+  cursor: pointer;
+}
+
+.video-node__progress::-webkit-slider-thumb {
+  width: 10px;
+  height: 10px;
+  appearance: none;
+  border-radius: 50%;
+  background: var(--media-text);
+}
+
+.video-node__controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 32px;
+  padding: 4px 7px;
+  border-radius: 9px;
+  border: 1px solid var(--media-control-border);
+  background: var(--media-control-bg);
+  color: var(--media-text);
+  backdrop-filter: blur(10px);
+}
+
+.video-node__btn {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--media-text);
+  opacity: 0.82;
+}
+
+.video-node__btn:hover {
+  background: color-mix(in srgb, var(--media-text) 12%, transparent);
+  opacity: 1;
+}
+
+.video-node__time {
+  margin-left: 3px;
+  font-size: 11px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.92;
+}
+
+.video-node__frame {
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0.58;
+}
+
+.video-node__spacer {
+  flex: 1;
+}
+
+.video-node:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  background: var(--media-bg);
+}
+
+.video-node:fullscreen video {
+  object-fit: contain;
+}
+
 .cnode__preview--audio {
   padding: 6px 10px 8px;
   align-items: stretch;
@@ -1150,21 +1297,18 @@ body.is-exporting .react-flow__minimap {
   min-height: 0;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background-color: var(--surface);
-  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
-  background-size: 9px 9px;
-  background-position: 4px 4px;
+  background: var(--surface);
   overflow: hidden;
   cursor: pointer;
 }
 
 .audio-node__wave {
   position: absolute;
-  inset: 12px 14px;
+  inset: 10px 12px;
   width: auto;
   height: auto;
-  fill: var(--text-3);
-  opacity: 0.9;
+  fill: var(--text-2);
+  opacity: 0.95;
   pointer-events: none;
 }
 

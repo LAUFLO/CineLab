@@ -8,7 +8,7 @@ interface AudioPlayerProps {
   onCancel?: () => void
 }
 
-const WAVE_BARS = 96
+const WAVE_BARS = 64
 const FLAT_BARS = Array.from({ length: WAVE_BARS }, () => 0.06)
 const waveformCache = new Map<string, number[]>()
 
@@ -181,15 +181,15 @@ export function AudioPlayer({
           aria-hidden="true"
         >
           {bars.map((peak, index) => {
-            const height = Math.max(6, peak * 92)
+            const height = Math.max(3, peak * 92)
             return (
               <rect
                 key={index}
-                x={index + 0.18}
+                x={index + 0.25}
                 y={(100 - height) / 2}
-                width={0.64}
+                width={0.5}
                 height={height}
-                rx={0.32}
+                rx={0.25}
               />
             )
           })}

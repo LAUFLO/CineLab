@@ -11,6 +11,7 @@ import { assetUrl } from '../../lib/asset-url'
 import { AudioPlayer, timeLabel } from './AudioPlayer'
 import { NodeToolbar } from './NodeToolbar'
 import { PanoramaViewer } from './PanoramaViewer'
+import { VideoPlayer } from './VideoPlayer'
 
 const NODE_ICON: Record<NodeKind, IconName> = {
   text: 'text',
@@ -197,7 +198,11 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           ) : assetSrc && current?.kind === 'text' ? (
             <p className="cnode__text">{data.text ?? '文本已生成'}</p>
           ) : assetSrc && (current?.kind === 'video' || data.kind === 'video') ? (
-            <video src={assetSrc} className="cnode__media" muted playsInline controls />
+            <VideoPlayer
+              src={assetSrc}
+              path={current?.path}
+              fps={current?.fps}
+            />
           ) : assetSrc ? (
             <img src={assetSrc} alt="" className="cnode__media" loading="lazy" />
           ) : (

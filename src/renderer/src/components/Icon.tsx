@@ -47,6 +47,13 @@ export type IconName =
   | 'pin'
   | 'keyboard'
   | 'robot'
+  | 'play'
+  | 'pause'
+  | 'volume'
+  | 'volume-mute'
+  | 'step-back'
+  | 'step-forward'
+  | 'fullscreen'
 const paths: Record<IconName, ReactNode> = {
   logo: (
     <>
@@ -252,6 +259,35 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M9 12.5h.01M15 12.5h.01" />
       <path d="M9 15.5h6" />
     </>
+  ),
+  play: <path d="M8 5v14l11-7z" fill="currentColor" stroke="none" />,
+  pause: <path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor" stroke="none" />,
+  volume: (
+    <>
+      <path d="M4 10v4h3l4 3V7l-4 3H4z" fill="currentColor" stroke="none" />
+      <path d="M15 9.5a3.5 3.5 0 0 1 0 5M17.5 7a7 7 0 0 1 0 10" />
+    </>
+  ),
+  'volume-mute': (
+    <>
+      <path d="M4 10v4h3l4 3V7l-4 3H4z" fill="currentColor" stroke="none" />
+      <path d="m15 10 4 4m0-4-4 4" />
+    </>
+  ),
+  'step-back': (
+    <>
+      <path d="M6 5v14" />
+      <path d="M18 6 9 12l9 6z" fill="currentColor" stroke="none" />
+    </>
+  ),
+  'step-forward': (
+    <>
+      <path d="M18 5v14" />
+      <path d="M6 6l9 6-9 6z" fill="currentColor" stroke="none" />
+    </>
+  ),
+  fullscreen: (
+    <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
   )
 }
 

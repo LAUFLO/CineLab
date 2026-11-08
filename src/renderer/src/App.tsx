@@ -14,6 +14,9 @@ import { ProjectCenter } from './panels/ProjectCenter'
 import { SettingsPanel } from './panels/SettingsPanel'
 import { StudioWindow } from './studio/StudioWindow'
 import { FilmStudyRoom } from './canvas/nodes/FilmStudyRoom'
+import { AgentPanel } from './agent/AgentPanel'
+import { initAgentCanvasBridge } from './agent/canvasBridge'
+import { useAgentStore } from './agent/agentStore'
 import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
 import { useGenerationHistoryStore } from './stores/generation-history'
@@ -115,6 +118,30 @@ export default function App() {
   useEffect(() => subscribeVisionTasks(), [])
 
   useEffect(() => {
+    const unsubscribeEvent = window.api.agent.onEvent((event) => {
+      useAgentStore.getState().applyEvent(event)
+    })
+    const unsubscribeBridge = initAgentCanvasBridge()
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (
+        event.ctrlKey &&
+        event.shiftKey &&
+        event.key.toLowerCase() === 'a'
+      ) {
+        event.preventDefault()
+        useAgentStore.getState().toggle()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      unsubscribeEvent()
+      unsubscribeBridge()
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [])
+
+  useEffect(() => {
     if (!hydrated || phase !== 'ready') return
     scheduleSave()
   }, [nodes, edges, hydrated, phase, scheduleSave])
@@ -189,6 +216,7 @@ export default function App() {
       <SettingsPanel />
       <StudioWindow />
       <FilmStudyRoom />
+      {phase === 'ready' ? <AgentPanel /> : null}
       <WindowControls theme={resolved} onToggleTheme={toggle} />
       <Toast />
       <AppTooltip />

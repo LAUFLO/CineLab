@@ -373,6 +373,33 @@ const api: CineApi = {
   },
   clipboard: {
     read: () => ipcRenderer.invoke('clipboard:read')
+  },
+  agent: {
+    chat: (input) => ipcRenderer.invoke('agent:chat', input),
+    cancel: (turnId) => ipcRenderer.invoke('agent:cancel', turnId),
+    toolResult: (input) => ipcRenderer.invoke('agent:tool-result', input),
+    sessionLoad: () => ipcRenderer.invoke('agent:session-load'),
+    modelInfo: () => ipcRenderer.invoke('agent:model-info'),
+    onEvent: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: import('../shared/agent').AgentEvent
+      ): void => callback(payload)
+      ipcRenderer.on('agent:event', listener)
+      return () => {
+        ipcRenderer.removeListener('agent:event', listener)
+      }
+    },
+    onToolCall: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: import('../shared/agent').AgentToolCallRequest
+      ): void => callback(payload)
+      ipcRenderer.on('agent:tool-call', listener)
+      return () => {
+        ipcRenderer.removeListener('agent:tool-call', listener)
+      }
+    }
   }
 }
 

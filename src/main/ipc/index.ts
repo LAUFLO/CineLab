@@ -11,6 +11,7 @@ import { registerTimelineIpc } from './timeline'
 import { registerFilmStudyIpc } from './film-study'
 import { registerComponentsIpc } from './components'
 import { registerUpdateIpc } from './update'
+import { registerAgentIpc } from './agent'
 import { log, logDirectory } from '../logger'
 import { allowWindowClose } from '../window'
 
@@ -30,6 +31,7 @@ export function registerIpc(): void {
   registerFilmStudyIpc()
   registerComponentsIpc()
   registerUpdateIpc()
+  registerAgentIpc()
 
   ipcMain.handle('app:get-info', () => ({
     version: app.getVersion(),

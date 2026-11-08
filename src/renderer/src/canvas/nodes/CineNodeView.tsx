@@ -5,6 +5,7 @@ import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
 import { nodeSize, useCanvasStore, type CineNode } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
+import { useGenerationHistoryStore } from '../../stores/generation-history'
 import { useUIStore } from '../../stores/ui'
 import { useLibraryStore } from '../../stores/library'
 import { assetUrl } from '../../lib/asset-url'
@@ -60,6 +61,18 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     const next = titleDraft.trim()
     setEditingTitle(false)
     if (next && next !== data.title) patchNodeData(id, { title: next })
+  }
+
+  const retryGeneration = (): void => {
+    const entry = useGenerationHistoryStore
+      .getState()
+      .entries.find((item) => item.nodeId === id)
+    if (!entry) {
+      showToast('找不到上次生成参数，请在提示词栏重新生成', 'error')
+      return
+    }
+    patchNodeData(id, { status: 'queued', progress: 0, error: undefined })
+    void useGenerationStore.getState().run(entry.request)
   }
 
   const outputs = data.outputs ?? []
@@ -235,9 +248,21 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             </div>
           ) : null}
 
-          {data.status === 'error' && data.error ? (
+          {data.status === 'error' ? (
             <div className="cnode__error" title={data.error}>
-              {data.error}
+              <span className="cnode__error-text">
+                {data.error ?? '生成失败'}
+              </span>
+              <button
+                type="button"
+                className="cnode__retry nodrag nopan"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  retryGeneration()
+                }}
+              >
+                重新生成
+              </button>
             </div>
           ) : null}
 

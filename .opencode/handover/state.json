@@ -1,5 +1,5 @@
 {
-  "version": 42,
+  "version": 43,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "film-study P0–P4 已合并进 main 并通过 CI 打包：study 节点、拉片室、笔记/段落、结构/情绪、AI 包、字幕、直连分析、拉片包。剪辑室 P3/P4 已完成并验证：关键帧、画中画、detachAudio、linkage、预览音高、整条时间线自动字幕、镜头/静音/节拍、SRT/VTT 导入、转场音频交叉淡化。下一步：main 整体验收与修复；导演台待调研排期；剪辑室智能编排按 docs/agent-plan.md 推进。",
+  "next_focus": "main 已合并 film-study 并完成 CI 打包（cinelab-732ad8b）：拉片 P0–P4 与剪辑室共存。下一步整体验收与 bug 修复；导演台待调研排期；剪辑室智能编排按 docs/agent-plan.md 推进。",
   "frontier": [
     {
       "id": "M2-1",
@@ -982,6 +982,15 @@
       "evidence": [
         "docs/film-study-plan.md",
         ".opencode/handover/evidence/FILM-STUDY-P4.md"
+      ]
+    },
+    {
+      "id": "PACKAGE-2026-11-08-FILM-STUDY",
+      "title": "打包：film-study 合并进 main",
+      "status": "done",
+      "note": "提交 190daed 合并 film-study，732ad8b 修复 PromptBar 类型收窄。CI run 42449888036 成功（typecheck / 102 tests / check:encryption / build / electron-builder，2m40s）。安装包 156.5MB、zip 199.2MB，已下载到 Downloads\\cinelab-732ad8b。合并后拉片室与剪辑室冒烟通过。",
+      "evidence": [
+        ".opencode/handover/evidence/PACKAGE-2026-11-08-film-study.md"
       ]
     }
   ],

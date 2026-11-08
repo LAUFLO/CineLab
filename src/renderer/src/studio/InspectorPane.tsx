@@ -22,7 +22,6 @@ import {
 } from '@shared/timeline-schema'
 import { useTimelineStore } from '../stores/timeline'
 import { useUIStore } from '../stores/ui'
-import { AssistantPane } from './AssistantPane'
 import { BezierEditor } from './BezierEditor'
 
 const BLEND_LABEL: Record<string, string> = {
@@ -588,7 +587,6 @@ export function InspectorPane() {
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   type AutoCutAction = 'silence' | 'shots' | 'beats' | 'beat-split'
   const [runningAction, setRunningAction] = useState<AutoCutAction | null>(null)
-  const [pane, setPane] = useState<'props' | 'assistant'>('props')
   const clip = doc?.clips.find((item) => item.id === selectedIds[0]) ?? null
 
   const confirmPlan = (
@@ -843,26 +841,7 @@ export function InspectorPane() {
 
   return (
     <aside className="studio-inspector">
-      <div className="studio-inspector__tabs">
-        <button
-          type="button"
-          className={`studio-inspector__tab ${pane === 'props' ? 'is-active' : ''}`}
-          onClick={() => setPane('props')}
-        >
-          属性
-        </button>
-        <button
-          type="button"
-          className={`studio-inspector__tab ${pane === 'assistant' ? 'is-active' : ''}`}
-          onClick={() => setPane('assistant')}
-        >
-          助手
-        </button>
-      </div>
-
-      {pane === 'assistant' ? (
-        <AssistantPane />
-      ) : clip ? (
+      {clip ? (
         <>
           <Section title="基础">
             <Field label="名称" value={clip.name || '—'} />

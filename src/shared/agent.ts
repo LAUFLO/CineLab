@@ -43,8 +43,13 @@ export interface AgentToolResult {
 }
 
 export interface AgentTurnChange {
+  createdNodeIds: string[]
   updatedNodeIds: string[]
+  deletedNodeIds: string[]
+  createdEdgeIds: string[]
+  deletedEdgeIds: string[]
   previousTitles: Record<string, string>
+  previousPositions: Record<string, { x: number; y: number }>
 }
 
 export type AgentTurnStatus = 'running' | 'completed' | 'cancelled' | 'error'

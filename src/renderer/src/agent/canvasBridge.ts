@@ -5,8 +5,6 @@ import type {
 } from '@shared/agent'
 import { useCanvasStore } from '../stores/canvas'
 
-const pushedTurns = new Set<string>()
-
 function selectedNodeSummary(): Array<{
   id: string
   title: string
@@ -20,6 +18,10 @@ function selectedNodeSummary(): Array<{
       title: String((node.data as { title?: unknown }).title ?? ''),
       kind: String((node.data as { kind?: unknown }).kind ?? 'unknown')
     }))
+}
+
+function nodeTitleOf(node: { data?: unknown }): string {
+  return String((node.data as { title?: unknown } | undefined)?.title ?? '')
 }
 
 async function executeTool(call: AgentToolCallRequest): Promise<{
@@ -53,15 +55,11 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
       return { ok: false, error: '标题不能为空' }
     }
 
-    const previousTitle = String(
-      (node.data as { title?: unknown }).title ?? ''
+    const previousTitle = nodeTitleOf(node)
+    const change = state.applyCommands(
+      [{ type: 'updateTitle', nodeId, title }],
+      call.turnId
     )
-
-    if (!pushedTurns.has(call.turnId)) {
-      state.pushHistory()
-      pushedTurns.add(call.turnId)
-    }
-    state.patchNodeData(nodeId, { title })
 
     return {
       ok: true,
@@ -70,10 +68,38 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
         title,
         previousTitle
       },
-      change: {
-        updatedNodeIds: [nodeId],
-        previousTitles: { [nodeId]: previousTitle }
-      }
+      change
+    }
+  }
+
+  if (call.name === 'canvas_move_node') {
+    const nodeId = String(call.args.nodeId ?? '')
+    const x = Number(call.args.x)
+    const y = Number(call.args.y)
+    const node = state.nodes.find((item) => item.id === nodeId)
+
+    if (!node || node.type !== 'cine') {
+      return { ok: false, error: '找不到这个画布节点' }
+    }
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      return { ok: false, error: '节点位置必须是有限数字' }
+    }
+
+    const previousPosition = { ...node.position }
+    const change = state.applyCommands(
+      [{ type: 'moveNode', nodeId, position: { x, y } }],
+      call.turnId
+    )
+
+    return {
+      ok: true,
+      result: {
+        nodeId,
+        x,
+        y,
+        previousPosition
+      },
+      change
     }
   }
 

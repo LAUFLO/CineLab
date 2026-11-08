@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useAgentStore, type AgentMessage } from './agentStore'
+import {
+  agentTurnChangeCount,
+  useAgentStore,
+  type AgentMessage
+} from './agentStore'
 import '../styles/agent.css'
 
 function MessageBubble({ message }: { message: AgentMessage }) {
@@ -71,7 +75,7 @@ export function AgentPanel() {
     void send(text)
   }
 
-  const changedCount = lastTurn?.change.updatedNodeIds.length ?? 0
+  const changedCount = agentTurnChangeCount(lastTurn)
 
   const panel = createPortal(
     <>

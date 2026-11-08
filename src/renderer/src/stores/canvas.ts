@@ -35,6 +35,11 @@ import {
 } from '@shared/canvas-schema'
 import { VIDEO_OPERATIONS, type VideoOperationId } from '@shared/operation-schema'
 import type { GeneratedAsset } from '@shared/generation'
+import {
+  applyCanvasBatch,
+  type CanvasCommand,
+  type CanvasCommandChange
+} from '@shared/canvas-commands'
 
 export type CineNode = Node<CineNodeData, 'cine'>
 export type StudioNode = Node<StudioNodeData, 'studio'>
@@ -48,6 +53,9 @@ export type CanvasNode =
   | VideoOpNode
   | GroupNode
 export type CineEdge = Edge
+
+/** 一轮 Agent 的多个画布命令只压入一条历史记录 */
+const commandTurns = new Set<string>()
 
 export function isGroupNode(node: CanvasNode): node is GroupNode {
   return node.type === 'group'
@@ -193,6 +201,11 @@ interface CanvasStore {
   ) => string | null
   applyOutput: (nodeId: string, asset: GeneratedAsset, op?: string) => void
   patchNodeData: (nodeId: string, patch: Partial<CineNodeData>) => void
+  applyCommands: (
+    commands: CanvasCommand[],
+    turnId?: string
+  ) => CanvasCommandChange
+  endCommandTurn: (turnId: string) => void
   resizeNode: (nodeId: string, height: number) => void
   removeNode: (id: string) => void
   clearSelection: () => void
@@ -1097,6 +1110,32 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         return { ...node, data: { ...node.data, ...patch } }
       })
     })
+  },
+
+  applyCommands: (commands, turnId) => {
+    const { nodes, edges } = get()
+    const result = applyCanvasBatch({ nodes, edges }, commands)
+    const change = result.change
+    const hasChange =
+      change.createdNodeIds.length > 0 ||
+      change.updatedNodeIds.length > 0 ||
+      change.deletedNodeIds.length > 0 ||
+      change.createdEdgeIds.length > 0 ||
+      change.deletedEdgeIds.length > 0
+
+    if (hasChange) {
+      if (!turnId || !commandTurns.has(turnId)) {
+        get().pushHistory()
+        if (turnId) commandTurns.add(turnId)
+      }
+      set({ nodes: result.nodes, edges: result.edges })
+    }
+
+    return change
+  },
+
+  endCommandTurn: (turnId) => {
+    commandTurns.delete(turnId)
   },
 
   resizeNode: (nodeId, height) => {

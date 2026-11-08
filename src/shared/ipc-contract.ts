@@ -52,6 +52,7 @@ import type {
   AgentToolCallRequest,
   AgentToolResultInput
 } from './agent'
+import type { DirectorStageDoc } from './stage-schema'
 import type { OperationBindings } from './operation-schema'
 import type { TimelineDoc } from './timeline-schema'
 import type { ImportedSound, SoundAsset } from './sound-schema'
@@ -382,6 +383,14 @@ export interface AgentApi {
   onToolCall(callback: (call: AgentToolCallRequest) => void): () => void
 }
 
+export interface StageApi {
+  create(name?: string): Promise<DirectorStageDoc>
+  load(stageId: string): Promise<DirectorStageDoc | null>
+  save(doc: DirectorStageDoc): Promise<void>
+  delete(stageId: string): Promise<void>
+  duplicate(stageId: string): Promise<DirectorStageDoc>
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -407,4 +416,5 @@ export interface CineApi {
   export: ExportApi
   update: UpdateApi
   agent: AgentApi
+  stage: StageApi
 }

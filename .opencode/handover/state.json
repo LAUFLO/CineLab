@@ -1,5 +1,5 @@
 {
-  "version": 52,
+  "version": 53,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "StageCommand 骨架已完成：stage-schema + stage-commands + 原子 batch + 撤销历史 + 202 测试通过；金额预估已整体移除。下一步做导演台场景文件存储与画布 stage 节点接入（P0），再接 three.js 视口与 stage.* Agent 工具；clip profile、技能管理 UI、删除/批量二次确认仍在队列。",
+  "next_focus": "stage 节点与场景存储已完成：画布 StageNodeView、<project>/stages 文件读写、复制/粘贴深拷贝、重开保留，211 测试通过。下一步做 three.js 3D 视口与机位切换（P0），随后 stage.* Agent 工具、运镜时间轴与本地白模预演；clip profile、技能管理 UI、删除/批量二次确认仍在队列。",
   "frontier": [
     {
       "id": "M2-1",
@@ -223,6 +223,21 @@
         "src/shared/stage-schema.ts",
         "src/shared/stage-commands.ts",
         "src/shared/__tests__/stage-commands.test.ts"
+      ]
+    },
+    {
+      "id": "STAGE-NODE-STORAGE-1",
+      "title": "导演台 stage 节点与场景存储",
+      "status": "done",
+      "note": "2026-11-09 完成。画布新增 StageNodeData / stageNodeSchema / NODE_META.stage / CanvasCommandNode stage；新增 StageNodeView 与添加菜单入口；主进程新增 stages/<stageId>.json 创建/读取/保存/复制/删除，保存前 validateStageDoc 校验，stageId 防路径穿越；preload/ipc-contract 增加 stage API；复制粘贴深拷贝场景并换 stageId；项目创建/打开确保 stages 目录，项目导出随 fs.cp 自动包含。31 文件 211 测试通过；typecheck/build 通过，主进程约 448KB。真实隔离实例验证创建、场景文件写入、Ctrl+C/V 副本文件、reload 保留。删除节点暂不清理场景文件；3D 视口与 stage.* 工具待接入。",
+      "evidence": [
+        ".opencode/handover/evidence/STAGE-NODE-STORAGE-1.md",
+        "docs/director-stage-plan.md",
+        "src/shared/canvas-schema.ts",
+        "src/shared/project-schema.ts",
+        "src/main/stage/storage.ts",
+        "src/main/ipc/stage.ts",
+        "src/renderer/src/canvas/nodes/StageNodeView.tsx"
       ]
     },
     {
@@ -2141,6 +2156,14 @@
     {
       "category": "engineering",
       "content": "StageCommand 必须原子批量执行：任意一条失败整批回滚；删除父对象要清理子对象 parentId 与动作轨，被镜头引用的机位拒绝删除。"
+    },
+    {
+      "category": "engineering",
+      "content": "导演台复制/粘贴必须深拷贝 stages 文件并替换 stageId，否则两个节点共享同一个场景。"
+    },
+    {
+      "category": "engineering",
+      "content": "删除导演台节点不要立即删除场景文件：画布撤销无法恢复文件；场景孤儿清理应独立于节点删除。"
     }
   ],
   "designConventions": [
@@ -2174,6 +2197,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "Stage 场景存储与画布节点接入"
+    "nextMilestone": "three.js 3D 视口与机位切换"
   }
 }

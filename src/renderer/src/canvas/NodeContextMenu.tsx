@@ -10,7 +10,11 @@ import { useFilmStudyStore } from '../stores/film-study'
 import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
 import { createStudioFromNode } from '../studio/nodes'
-import { copySelection, duplicateSelectionDeep } from './context-actions'
+import {
+  copySelection,
+  duplicateSelectionDeep,
+  pasteAt
+} from './context-actions'
 import { requestDeleteSelection } from './delete-actions'
 
 const MENU_WIDTH = 224
@@ -365,7 +369,7 @@ function buildSections(
       {
         label: '粘贴',
         hint: 'Ctrl+V',
-        run: () => useCanvasStore.getState().pasteNodes()
+        run: () => void pasteAt()
       },
       {
         label: '删除',

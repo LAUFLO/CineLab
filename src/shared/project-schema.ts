@@ -130,6 +130,37 @@ export const studioNodeSchema = z.object({
     .optional()
 })
 
+export const stageNodeSchema = z.object({
+  id: z.string().min(1).max(120),
+  type: z.literal('stage'),
+  parentId: z.string().min(1).max(120).optional(),
+  position: z.object({ x: z.number(), y: z.number() }),
+  data: z.object({
+    kind: z.literal('stage'),
+    title: z.string().max(200),
+    status: nodeStatusSchema,
+    stageId: z.string().min(1).max(120),
+    activeCameraId: z.string().max(120).optional(),
+    objectCount: z.number().int().min(0).optional(),
+    cameraCount: z.number().int().min(0).optional(),
+    shotCount: z.number().int().min(0).optional(),
+    templates: z.array(z.string().max(100)).max(20)
+  }),
+  style: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional()
+    })
+    .optional(),
+  selected: z.boolean().optional(),
+  measured: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional()
+    })
+    .optional()
+})
+
 export const filmNodeSchema = z.object({
   id: z.string().min(1).max(120),
   type: z.literal('film'),
@@ -231,6 +262,7 @@ export const groupNodeSchema = z.object({
 export const canvasNodeSchema = z.union([
   cineNodeSchema,
   studioNodeSchema,
+  stageNodeSchema,
   filmNodeSchema,
   videoOpNodeSchema,
   groupNodeSchema
@@ -281,10 +313,12 @@ export type ProjectMeta = z.infer<typeof projectMetaSchema>
 export type CanvasData = z.infer<typeof canvasDataSchema>
 export type PersistedCineNode = z.infer<typeof cineNodeSchema>
 export type PersistedStudioNode = z.infer<typeof studioNodeSchema>
+export type PersistedStageNode = z.infer<typeof stageNodeSchema>
 export type PersistedFilmNode = z.infer<typeof filmNodeSchema>
 export type PersistedNode =
   | PersistedCineNode
   | PersistedStudioNode
+  | PersistedStageNode
   | PersistedFilmNode
 export type PersistedEdge = z.infer<typeof cineEdgeSchema>
 

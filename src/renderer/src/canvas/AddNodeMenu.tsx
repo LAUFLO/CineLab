@@ -20,10 +20,12 @@ export function AddNodeMenu() {
   const menu = useUIStore((state) => state.menu)
   const closeMenu = useUIStore((state) => state.closeMenu)
   const addNode = useCanvasStore((state) => state.addNode)
+  const addStageNode = useCanvasStore((state) => state.addStageNode)
   const onConnect = useCanvasStore((state) => state.onConnect)
   const nodes = useCanvasStore((state) => state.nodes)
 
   const [query, setQuery] = useState('')
+  const [creatingStage, setCreatingStage] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -66,6 +68,29 @@ export function AddNodeMenu() {
       : 0
 
   const kinds = NODE_KINDS.filter((kind) => NODE_META[kind].label.includes(query))
+  const stageMatches = !query.trim() || '导演台'.includes(query.trim())
+
+  const addStage = async (): Promise<void> => {
+    if (creatingStage || menu.source) return
+    setCreatingStage(true)
+    const count = useCanvasStore
+      .getState()
+      .nodes.filter((node) => node.type === 'stage').length
+    try {
+      const doc = await window.api.stage.create(`导演台 ${count + 1}`)
+      addStageNode(doc, menu.flow)
+      closeMenu()
+    } catch (error) {
+      useUIStore
+        .getState()
+        .showToast(
+          error instanceof Error ? error.message : '创建导演台失败',
+          'error'
+        )
+    } finally {
+      setCreatingStage(false)
+    }
+  }
 
   const pick = (kind: NodeKind): void => {
     const id = addNode(kind, menu.flow)
@@ -166,8 +191,26 @@ export function AddNodeMenu() {
             <span>{NODE_META[kind].label}</span>
           </button>
         ))}
-        {kinds.length === 0 && <div className="add-menu__empty">没有匹配的节点</div>}
+        {kinds.length === 0 && !stageMatches && (
+          <div className="add-menu__empty">没有匹配的节点</div>
+        )}
       </div>
+
+      {!menu.source && stageMatches ? (
+        <>
+          <div className="add-menu__divider" />
+          <div className="add-menu__title">场景</div>
+          <button
+            type="button"
+            className="add-menu__item"
+            onClick={() => void addStage()}
+            disabled={creatingStage}
+          >
+            <Icon name="frame" size={16} />
+            <span>{creatingStage ? '创建中…' : '导演台'}</span>
+          </button>
+        </>
+      ) : null}
 
       {!menu.source && query.trim() === '' ? (
         <>

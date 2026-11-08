@@ -1,7 +1,7 @@
 # 导演台方案：3D 片场 + 本地白模预演
 
 日期：2026-11-09
-状态：**StageCommand 骨架已完成；3D 视口与 Agent 执行层待接入**
+状态：**stage 节点与场景存储已完成；3D 视口与 Agent 执行层待接入**
 关联：LibTV 3D 导演台 / 3D-BOX、TapNow CineMap
 关联文档：`docs/agent-full-scope.md`、`docs/clip-studio-plan.md`
 
@@ -463,3 +463,9 @@ DirectorStageDoc + StageShot
   - `src/shared/stage-commands.ts`：17 类命令、原子 batch、`StageChange`、`StageEffect`、撤销/重做历史。
   - `src/shared/__tests__/stage-commands.test.ts`：对象/机位/镜头/运镜/动作轨/原子回滚/历史覆盖。
   - 尚未接入画布 `stage` 节点、3D 视口、场景文件存储与 `stage.*` Agent 工具执行层。
+- 2026-11-09：完成画布 `stage` 节点与场景存储。
+  - `StageNodeData`、`stageNodeSchema`、`NODE_META.stage`、`CanvasCommandNode` 已支持 stage。
+  - 场景存 `<project>/stages/<stageId>.json`；主进程提供创建/读取/保存/复制/删除，保存前跑 `validateStageDoc`。
+  - 添加节点菜单可创建导演台；复制/粘贴会深拷贝场景文件；项目导出自动包含 `stages/`。
+  - 删除节点暂不清理场景文件，避免画布撤销后场景丢失。
+  - 3D 视口、机位切换、截图与 `stage.*` Agent 工具仍待接入。

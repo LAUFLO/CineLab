@@ -14,6 +14,7 @@ import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
 import type { Preferences } from '../shared/preferences'
 import type { TimelineDoc } from '../shared/timeline-schema'
+import type { DirectorStageDoc } from '../shared/stage-schema'
 import type {
   FilmStudy,
   FilmStudyAutoRequest,
@@ -412,6 +413,14 @@ const api: CineApi = {
         ipcRenderer.removeListener('agent:tool-call', listener)
       }
     }
+  },
+  stage: {
+    create: (name?: string) => ipcRenderer.invoke('stage:create', name),
+    load: (stageId: string) => ipcRenderer.invoke('stage:load', stageId),
+    save: (doc: DirectorStageDoc) => ipcRenderer.invoke('stage:save', doc),
+    delete: (stageId: string) => ipcRenderer.invoke('stage:delete', stageId),
+    duplicate: (stageId: string) =>
+      ipcRenderer.invoke('stage:duplicate', stageId)
   }
 }
 

@@ -27,8 +27,9 @@
 | `AGENT-GROUP-TOOLS-1` | 分组 / 解散分组 |
 | `AGENT-PROPOSAL-1` | 生成提案 propose/submit、提案卡、幂等、失效 |
 | `STAGE-COMMANDS-1` | 导演台场景 schema、17 类命令、原子 batch、撤销/重做历史 |
-| 验证 | 202 测试、`typecheck` 通过；真实 Agnes 图片提案生成完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 10 个提交、落后 1 个（a768e64），未推送；推送前先同步 |
+| `STAGE-NODE-STORAGE-1` | 画布导演台节点、`stages/` 场景读写、复制深拷贝、重开保留 |
+| 验证 | 211 测试、`typecheck`、`build` 通过；真实 Agnes 图片提案与导演台节点验证完成 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 11 个提交、落后 1 个（a768e64），未推送；推送前先同步 |
 
 ## 关键工件
 
@@ -43,11 +44,11 @@
 
 ## 下一步
 
-1. 导演台场景文件存储与画布 `stage` 节点接入
-2. three.js 3D 视口与机位切换
-3. `stage.*` Agent 工具执行层
-4. 运镜时间轴与本地白模预演
-5. 剪辑助手 `clip` profile、技能管理 UI、删除/批量二次确认
+1. three.js 3D 视口与机位切换
+2. `stage.*` Agent 工具执行层
+3. 运镜时间轴与本地白模预演
+4. 剪辑助手 `clip` profile、技能管理 UI
+5. 删除 / 批量二次确认；整体验收
 
 ## 设计约定
 

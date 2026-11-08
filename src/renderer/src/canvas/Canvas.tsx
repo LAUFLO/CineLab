@@ -35,6 +35,7 @@ import { CineNodeView } from './nodes/CineNodeView'
 import { FilmNodeView } from './nodes/FilmNodeView'
 import { GroupNodeView } from './nodes/GroupNodeView'
 import { StudioNodeView } from './nodes/StudioNodeView'
+import { StageNodeView } from './nodes/StageNodeView'
 import { VideoOpNodeView } from './nodes/VideoOpNodeView'
 import { PromptBar } from './PromptBar'
 import { UpstreamWatcher } from './UpstreamWatcher'
@@ -48,6 +49,7 @@ const nodeTypes = {
   cine: CineNodeView,
   group: GroupNodeView,
   studio: StudioNodeView,
+  stage: StageNodeView,
   film: FilmNodeView,
   'video-op': VideoOpNodeView
 }

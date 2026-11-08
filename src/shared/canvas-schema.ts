@@ -3,7 +3,7 @@ import type { VideoOperationId } from './operation-schema'
 
 export type NodeKind = 'text' | 'image' | 'video' | 'audio' | 'study'
 
-export type CanvasNodeKind = NodeKind | 'studio' | 'film' | 'video-op'
+export type CanvasNodeKind = NodeKind | 'studio' | 'film' | 'video-op' | 'stage'
 
 export type FilmStatus =
   | 'pending'
@@ -102,6 +102,19 @@ export interface FilmNodeData extends Record<string, unknown> {
   selectedOutputId?: string
   /** 上次导出时的上游输出签名，避免同一版本反复标 stale */
   upstreamAck?: string
+  templates: string[]
+}
+
+export interface StageNodeData extends Record<string, unknown> {
+  kind: 'stage'
+  title: string
+  status: NodeStatus
+  /** 关联的 stages/<stageId>.json */
+  stageId: string
+  activeCameraId?: string
+  objectCount?: number
+  cameraCount?: number
+  shotCount?: number
   templates: string[]
 }
 
@@ -250,6 +263,12 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
     label: '视频操作',
     width: 420,
     height: 200,
+    templates: []
+  },
+  stage: {
+    label: '导演台',
+    width: 420,
+    height: 280,
     templates: []
   },
   study: {

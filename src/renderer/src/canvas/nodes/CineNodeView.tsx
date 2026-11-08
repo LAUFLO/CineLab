@@ -189,6 +189,8 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           {data.kind === 'audio' ? (
             <AudioPlayer
               src={assetSrc ?? null}
+              path={current?.path}
+              scope={current?.scope}
               busy={isBusy}
               onCancel={() => void cancelGeneration(id)}
             />

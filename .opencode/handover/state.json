@@ -1,5 +1,5 @@
 {
-  "version": 32,
+  "version": 33,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -568,6 +568,15 @@
       "note": "提交 8016cc9 已推送，CI 42391299132 成功（2m33s），安装包位于 C:\\Users\\LAUFLO\\Downloads\\cinelab-8016cc9。",
       "evidence": [
         ".opencode/handover/evidence/PACKAGE-2026-11-08.md"
+      ]
+    },
+    {
+      "id": "AUDIO-WAVEFORM-1",
+      "title": "音频节点真实波形",
+      "status": "done",
+      "note": "主进程用 ffmpeg 解码音频并按 96 个桶计算峰值，渲染进程优先使用真实峰值；失败时回退 Web Audio，再失败显示平线，不再显示伪造正弦波形。",
+      "evidence": [
+        ".opencode/handover/evidence/AUDIO-WAVEFORM-1.md"
       ]
     }
   ],
@@ -1355,6 +1364,10 @@
     {
       "category": "lesson",
       "content": "设置页 Toggle 的 class 拼接必须保留空格（settings-toggle + \" is-on\"），否则 querySelector 和样式会同时失效。"
+    },
+    {
+      "category": "preference",
+      "content": "音频节点必须显示真实音频峰值；解析失败时显示平线或加载态，不能退回固定正弦图案冒充波形。"
     }
   ],
   "designConventions": [

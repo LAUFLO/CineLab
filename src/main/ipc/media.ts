@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import type {
+  AudioPeaksRequest,
   CropImageRectRequest,
   CropImageRequest,
   CropVideoRequest,
@@ -13,6 +14,7 @@ import type {
   VisionTaskRequest
 } from '@shared/media'
 import { probeMedia } from '../media/ffmpeg'
+import { computeAudioPeaks } from '../media/audio-peaks'
 import { captureDepth } from '../media/depth'
 import { cancelDepthTask, startDepthTask } from '../media/depth-tasks'
 import { extractFrame } from '../media/frames'
@@ -72,6 +74,13 @@ export function registerMediaIpc(): void {
   ipcMain.handle('media:probe', async (_event, path: string) => {
     return probeMedia(await resolveMediaPath(requireProjectRoot(), path))
   })
+
+  ipcMain.handle(
+    'media:audio-peaks',
+    async (_event, input: AudioPeaksRequest) => {
+      return computeAudioPeaks(requireProjectRoot(), input)
+    }
+  )
 
   ipcMain.handle('media:crop-image', async (_event, input: CropImageRequest) => {
     return { asset: await cropImage(requireProjectRoot(), input) }

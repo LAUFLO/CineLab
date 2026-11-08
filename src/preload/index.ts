@@ -19,6 +19,7 @@ import type {
   TemplateInput
 } from '../shared/library-schema'
 import type {
+  AudioPeaksRequest,
   CropImageRectRequest,
   CropImageRequest,
   CropVideoRequest,
@@ -213,6 +214,8 @@ const api: CineApi = {
     extractFrame: (input: ExtractFrameRequest) =>
       ipcRenderer.invoke('media:extract-frame', input),
     probe: (path: string) => ipcRenderer.invoke('media:probe', path),
+    audioPeaks: (input: AudioPeaksRequest) =>
+      ipcRenderer.invoke('media:audio-peaks', input),
     splitAv: (input: SplitAvRequest) => ipcRenderer.invoke('media:split-av', input),
     cropVideo: (input: CropVideoRequest) => ipcRenderer.invoke('media:crop-video', input),
     cropImage: (input: CropImageRequest) =>

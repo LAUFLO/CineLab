@@ -95,6 +95,7 @@ C:\Users\LAUFLO\Documents\CineLab
 | PROMPT-MENTION-1 | ✅ 完成 | 提示词按节点保留、@ 引用菜单与 token 高亮、AutoLink 反馈 |
 | GENERAL-SETTINGS-1 | ✅ 完成 | 通用设置：启动、自动保存、吸附、小地图、默认模型、并发、通知、历史、动效、重置 |
 | GENERAL-SETTINGS-2 | ✅ 完成 | 补齐关闭确认、画布行为、重试/水印、缓存、缩放、代理、导入导出 |
+| AUDIO-WAVEFORM-1 | ✅ 完成 | 音频节点用 ffmpeg 真实峰值渲染波形，失败不再伪造正弦 |
 
 **下一步**：整体验收与修复；导演台调研排期；剪辑台等待其他会话完成。
 

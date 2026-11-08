@@ -9,6 +9,7 @@ import { registerClipboardIpc } from './clipboard'
 import { registerMediaIpc } from './media'
 import { registerTimelineIpc } from './timeline'
 import { registerAgentIpc } from './agent'
+import { registerFilmStudyIpc } from './film-study'
 import { registerComponentsIpc } from './components'
 import { registerUpdateIpc } from './update'
 import { log, logDirectory } from '../logger'
@@ -28,6 +29,7 @@ export function registerIpc(): void {
   registerMediaIpc()
   registerTimelineIpc()
   registerAgentIpc()
+  registerFilmStudyIpc()
   registerComponentsIpc()
   registerUpdateIpc()
 

@@ -37,6 +37,11 @@
 | 深度 runtime 构建发布 | `docs/runtime-components-plan.md` |
 | 剩余本地增强方案 | `docs/remaining-features-plan.md` |
 | 导演台方案（待调研） | `docs/director-stage-plan.md` |
+| Agent 完整范围 | `docs/agent-full-scope.md` |
+| Agent 架构 | `docs/agent-architecture-plan.md` |
+| 剪辑室计划 | `docs/clip-studio-plan.md` |
+| 拉片室计划 | `docs/film-study-plan.md` |
+| 剪辑助手计划 | `docs/agent-plan.md` |
 
 ## 开发命令
 

@@ -34,8 +34,8 @@ import { CineNodeView } from './nodes/CineNodeView'
 import { FilmNodeView } from './nodes/FilmNodeView'
 import { GroupNodeView } from './nodes/GroupNodeView'
 import { StudioNodeView } from './nodes/StudioNodeView'
+import { VideoOpNodeView } from './nodes/VideoOpNodeView'
 import { PromptBar } from './PromptBar'
-import { VideoEditPanel } from './nodes/VideoEditPanel'
 import { UpstreamWatcher } from './UpstreamWatcher'
 import { HistoryPanel } from '../panels/HistoryPanel'
 import { NodeSearch } from '../panels/NodeSearch'
@@ -47,7 +47,8 @@ const nodeTypes = {
   cine: CineNodeView,
   group: GroupNodeView,
   studio: StudioNodeView,
-  film: FilmNodeView
+  film: FilmNodeView,
+  'video-op': VideoOpNodeView
 }
 const edgeTypes = { flow: FlowEdge }
 
@@ -533,7 +534,6 @@ function CanvasInner({ theme }: { theme: Theme }) {
       <AlignmentGuides guides={guides} />
       <UpstreamWatcher />
       <PromptBar />
-      <VideoEditPanel />
       <MultiSelectBar />
       <GroupToolbar />
       <StoryboardToolbar />

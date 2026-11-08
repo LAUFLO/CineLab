@@ -88,9 +88,9 @@ interface NodeOperation {
 
 | 功能 | 实现 |
 |---|---|
-| 片段重拍 | 内嵌面板选择时间区间，模型声明 `shot-retake`，模板收到 `{{video.start}}` / `{{video.end}}`；`videoResult: segment` 时自动拼回原视频 |
-| 元素替换 | 内嵌面板选择时间区间和参考图（上传/画布/资产库），模型声明 `element-replace`，模板收到 `{{refs.images}}` |
-| 智能续写 | 内嵌面板选择方向和时长，模型声明 `extend`，模板收到 `{{video.duration}}` / `{{video.direction}}`；片段自动拼接 |
+| 片段重拍 | 功能节点选择时间区间，模型声明 `shot-retake`，模板收到 `{{video.start}}` / `{{video.end}}`；`videoResult: segment` 时自动拼回原视频 |
+| 元素替换 | 功能节点选择时间区间和参考图（上传/画布/资产库），模型声明 `element-replace`，模板收到 `{{refs.images}}` |
+| 智能续写 | 功能节点选择方向和时长，模型声明 `extend`，模板收到 `{{video.duration}}` / `{{video.direction}}`；片段自动拼接 |
 | 视频输入 | `GenerateRequest.video`，HTTP 模板支持 `{{video.dataUrl}}` / `{{video.base64}}` / `{{video.mime}}` |
 | 视频操作参数 | `{{video.start}}` / `{{video.end}}` / `{{video.duration}}` / `{{video.direction}}` / `{{video.operation}}` |
 | multipart | `submit.contentType: 'multipart'` 时自动把 data URL 转成文件字段 |

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NODE_META, GRID_SPLIT_CELL_WIDTH, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
-import { modelSupportsOperation } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
 import { assetUrl } from '../../lib/asset-url'
 import { isGroupNode, useCanvasStore } from '../../stores/canvas'
@@ -10,7 +9,6 @@ import { useFilmStudyStore } from '../../stores/film-study'
 import { useToolbarStore } from '../../stores/toolbar'
 import { useUIStore } from '../../stores/ui'
 import { useSettingsStore } from '../../stores/settings'
-import { useVideoEditStore } from '../../stores/video-edit'
 import { useStudioStore } from '../../stores/studio'
 import { trackDepthTask } from '../../stores/depth-tasks'
 import { trackVisionTask } from '../../stores/vision-tasks'
@@ -71,7 +69,6 @@ export function NodeToolbar({
   const pinned = useToolbarStore((state) => state.pinned)
   const openSettings = useToolbarStore((state) => state.openSettings)
   const showToast = useUIStore((state) => state.showToast)
-  const providers = useSettingsStore((state) => state.providers)
 
   const [openId, setOpenId] = useState<string | null>(null)
   const [moreSubId, setMoreSubId] = useState<string | null>(null)
@@ -806,28 +803,7 @@ export function NodeToolbar({
 
   const executeDedicatedVideo = (op: NodeOperation): void => {
     if (!isVideoOperation(op.id)) return
-
-    const operationId = op.id as VideoOperationId
-    const supported = providers.some((provider) =>
-      provider.models.some(
-        (model) =>
-          model.capability === 'video.t2v' &&
-          model.adapter === 'http-template' &&
-          model.template &&
-          modelSupportsOperation(model, operationId)
-      )
-    )
-
-    if (!supported) {
-      showToast(
-        `还没有支持「${op.label}」的视频接口，请先在设置 → 模型服务中声明支持的操作`,
-        'error'
-      )
-      useSettingsStore.getState().openPanel('models')
-      return
-    }
-
-    useVideoEditStore.getState().openPanel(nodeId, operationId)
+    useCanvasStore.getState().addVideoOpNode(nodeId, op.id as VideoOperationId)
   }
 
   const handleSphereConfirm = (

@@ -14,6 +14,16 @@ import type { GeneratedAsset } from '@shared/generation'
 import { probeMedia, runFfmpeg } from '../media/ffmpeg'
 import { resolveInside, resolveMediaPath } from '../media/paths'
 import { ingestAsset } from '../assets/ingest'
+import {
+  AI_SCHEMA,
+  buildAiProject,
+  buildAiPrompt,
+  buildAiReadme,
+  normalizeFilmStudyAnalysis,
+  packageFrameName
+} from './analysis'
+import { zipDirectory } from '../export/zip'
+
 
 const DEFAULT_MAX_FRAMES = 3000
 const MIN_INTERVAL = 0.25
@@ -145,6 +155,65 @@ export async function createFilmStudyContactSheet(
   } finally {
     await fs.rm(tempDir, { recursive: true, force: true }).catch(() => undefined)
   }
+}
+
+export async function exportFilmStudyAnalysisPackage(
+  root: string,
+  studyId: string,
+  targetFile: string
+): Promise<void> {
+  const study = await loadFilmStudy(root, studyId)
+  const staging = await fs.mkdtemp(
+    join(app.getPath('temp'), 'cinelab-ai-study-')
+  )
+
+  try {
+    const framesDir = join(staging, 'frames')
+    await fs.mkdir(framesDir, { recursive: true })
+
+    for (const frame of study.frames) {
+      const source = resolveInside(root, frame.file)
+      await fs.copyFile(source, join(framesDir, packageFrameName(frame)))
+    }
+
+    await fs.writeFile(
+      join(staging, 'README.md'),
+      buildAiReadme(study),
+      'utf8'
+    )
+    await fs.writeFile(
+      join(staging, 'prompt.md'),
+      buildAiPrompt(study),
+      'utf8'
+    )
+    await fs.writeFile(
+      join(staging, 'schema.json'),
+      `${JSON.stringify(AI_SCHEMA, null, 2)}\n`,
+      'utf8'
+    )
+    await fs.writeFile(
+      join(staging, 'project.json'),
+      buildAiProject(study),
+      'utf8'
+    )
+
+    const safe = study.sourceName.replace(/[\\/:*?"<>|]/g, '_').trim()
+    await zipDirectory(staging, targetFile, {
+      rootName: `${safe || '拉片'}-AI分析包`
+    })
+  } finally {
+    await fs.rm(staging, { recursive: true, force: true }).catch(() => undefined)
+  }
+}
+
+export async function importFilmStudyAnalysis(
+  root: string,
+  studyId: string,
+  input: unknown
+): Promise<FilmStudy> {
+  const study = await loadFilmStudy(root, studyId)
+  const normalized = normalizeFilmStudyAnalysis(study, input)
+  return saveFilmStudy(root, normalized)
 }
 
 function formatStudyTime(seconds: number): string {

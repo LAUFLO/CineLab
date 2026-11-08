@@ -10,7 +10,9 @@ import {
   buildFilmStudyMarkdown,
   cancelFilmStudy,
   createFilmStudyContactSheet,
+  exportFilmStudyAnalysisPackage,
   extractFilmStudy,
+  importFilmStudyAnalysis,
   loadFilmStudy,
   saveFilmStudy
 } from '../film-study/service'
@@ -76,6 +78,64 @@ export function registerFilmStudyIpc(): void {
         'utf8'
       )
       return { path: result.filePath }
+    }
+  )
+
+  ipcMain.handle(
+    'film-study:export-analysis-package',
+    async (event, studyId: string) => {
+      const study = await loadFilmStudy(requireProjectRoot(), studyId)
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const options = {
+        title: '导出 AI 拉片分析包',
+        defaultPath: join(
+          app.getPath('documents'),
+          `${safeName(study.sourceName)}-AI分析包.zip`
+        ),
+        filters: [{ name: 'ZIP', extensions: ['zip'] }]
+      }
+      const result = win
+        ? await dialog.showSaveDialog(win, options)
+        : await dialog.showSaveDialog(options)
+
+      if (result.canceled || !result.filePath) return { canceled: true }
+
+      await exportFilmStudyAnalysisPackage(
+        requireProjectRoot(),
+        studyId,
+        result.filePath
+      )
+      return { path: result.filePath }
+    }
+  )
+
+  ipcMain.handle(
+    'film-study:import-analysis',
+    async (event, studyId: string) => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const options = {
+        title: '导入 AI 拉片结果',
+        properties: ['openFile' as const],
+        filters: [{ name: 'JSON', extensions: ['json'] }]
+      }
+      const result = win
+        ? await dialog.showOpenDialog(win, options)
+        : await dialog.showOpenDialog(options)
+
+      if (result.canceled || result.filePaths.length === 0) return null
+
+      const text = await fs.readFile(result.filePaths[0], 'utf8')
+      const cleaned = text
+        .replace(/^\uFEFF/, '')
+        .trim()
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/, '')
+      const raw = JSON.parse(cleaned) as unknown
+      return importFilmStudyAnalysis(
+        requireProjectRoot(),
+        studyId,
+        raw
+      )
     }
   )
 

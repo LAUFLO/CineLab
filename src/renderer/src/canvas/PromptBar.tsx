@@ -31,7 +31,8 @@ const PLACEHOLDER: Record<NodeKind, string> = {
   text: '写下你想讲的故事、场景或角色设定。例如：一个来自未来的机器人，在城市屋顶看星星。',
   image: '可直接文生图，或上传图片输入文字指令对图片进行编辑，如：将背景改为雪夜',
   video: '描述你想要生成的画面内容，@引用素材',
-  audio: '输入要朗读的文本，或描述想要的音乐'
+  audio: '输入要朗读的文本，或描述想要的音乐',
+  study: '拉片节点'
 }
 
 interface ModelOption {
@@ -183,7 +184,10 @@ export function PromptBar() {
   const selectedNodes = nodes.filter((item) => item.selected)
   const single = selectedNodes.length === 1 ? selectedNodes[0] : undefined
   const node =
-    single && !isGroupNode(single) && !single.data.assetOnly
+    single &&
+    !isGroupNode(single) &&
+    !single.data.assetOnly &&
+    single.data.kind !== 'study'
       ? single
       : undefined
   const kind: NodeKind = node?.data.kind ?? 'image'
@@ -395,6 +399,7 @@ export function PromptBar() {
 
   const models = useMemo<ModelOption[]>(() => {
     const matches = (capability: Capability): boolean => {
+      if (kind === 'study') return false
       if (kind === 'video') return capability === 'video.t2v'
       if (kind === 'image') return capability === 'image.t2i' || capability === 'image.i2i'
       if (kind === 'text') return capability === 'text.chat'
@@ -413,9 +418,10 @@ export function PromptBar() {
       .filter((item) => matches(item.model.capability))
   }, [providers, kind])
 
+  const capabilityGroup = kind === 'study' ? 'image' : kind
   const active =
     models.find((item) => item.key === modelKey) ??
-    models.find((item) => item.key === preferredModels[kind]) ??
+    models.find((item) => item.key === preferredModels[capabilityGroup]) ??
     models[0] ??
     null
   const values = active ? { ...defaultParams(active.model), ...paramValues } : {}
@@ -1191,7 +1197,7 @@ export function PromptBar() {
                       setModelKey(item.key)
                       setParamValues({})
                       setMenuOpen(false)
-                      void setDefaultModel(kind, item.key)
+                      void setDefaultModel(capabilityGroup, item.key)
                     }}
                   >
                     <span>{item.model.name}</span>

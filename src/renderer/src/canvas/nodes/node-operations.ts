@@ -173,6 +173,13 @@ const FRAME_MENU: OperationMenuItem[] = [
   { id: 'current', label: '当前帧', hint: '播放头位置' }
 ]
 
+const STUDY_MENU: OperationMenuItem[] = [
+  { id: '0.5', label: '0.5 秒 / 帧', hint: 'AI 短片' },
+  { id: '1', label: '1 秒 / 帧', hint: '推荐' },
+  { id: '2', label: '2 秒 / 帧' },
+  { id: '5', label: '5 秒 / 帧' }
+]
+
 const VIDEO_CROP_MENU: OperationMenuItem[] = [
   { id: '16:9', label: '16:9' },
   { id: '9:16', label: '9:16' },
@@ -247,6 +254,17 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     implemented: true,
     section: 'video',
     menu: FRAME_MENU
+  },
+  {
+    id: 'film-study',
+    label: '逐帧拉片',
+    icon: 'film',
+    kinds: ['video'],
+    defaultPrimary: true,
+    implemented: true,
+    section: 'video',
+    hint: '生成拉片节点',
+    menu: STUDY_MENU
   },
   {
     id: 'video-crop',

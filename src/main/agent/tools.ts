@@ -90,6 +90,74 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe'
+  },
+  {
+    id: 'canvas.addNode',
+    name: 'canvas_add_node',
+    description:
+      '在当前画布创建文本、图片、视频或音频节点。创建后返回 nodeId，可在同一轮继续连接或修改。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        kind: {
+          type: 'string',
+          enum: ['text', 'image', 'video', 'audio'],
+          description: '节点类型'
+        },
+        title: {
+          type: 'string',
+          description: '节点标题，1-200 个字符；省略时自动命名'
+        },
+        x: { type: 'number', description: '画布 X 坐标' },
+        y: { type: 'number', description: '画布 Y 坐标' }
+      },
+      required: ['kind', 'x', 'y'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'canvas.connect',
+    name: 'canvas_connect',
+    description:
+      '把两个选中或本轮新建的节点连接起来。sourceNodeId 是上游，targetNodeId 是下游。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        sourceNodeId: { type: 'string', description: '上游节点 ID' },
+        targetNodeId: { type: 'string', description: '下游节点 ID' }
+      },
+      required: ['sourceNodeId', 'targetNodeId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'canvas.deleteNode',
+    name: 'canvas_delete_node',
+    description:
+      '删除一个选中或本轮新建的节点，以及它的所有连线。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: { type: 'string', description: '要删除的节点 ID' }
+      },
+      required: ['nodeId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe'
   }
 ]
 
@@ -214,6 +282,56 @@ export function assertToolAllowed(
       !Number.isFinite(y)
     ) {
       throw new AgentToolError('invalid_params', 'x 和 y 必须是有限数字')
+    }
+    assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'canvas_add_node') {
+    const kind = call.args.kind
+    if (
+      typeof kind !== 'string' ||
+      !['text', 'image', 'video', 'audio'].includes(kind)
+    ) {
+      throw new AgentToolError('invalid_params', '节点类型无效')
+    }
+    const x = call.args.x
+    const y = call.args.y
+    if (
+      typeof x !== 'number' ||
+      !Number.isFinite(x) ||
+      typeof y !== 'number' ||
+      !Number.isFinite(y)
+    ) {
+      throw new AgentToolError('invalid_params', 'x 和 y 必须是有限数字')
+    }
+    if (
+      call.args.title !== undefined &&
+      (typeof call.args.title !== 'string' || call.args.title.length > 200)
+    ) {
+      throw new AgentToolError('invalid_params', 'title 不能超过 200 个字符')
+    }
+  }
+
+  if (call.name === 'canvas_connect') {
+    const source = call.args.sourceNodeId
+    const target = call.args.targetNodeId
+    if (typeof source !== 'string' || !source.trim()) {
+      throw new AgentToolError('invalid_params', 'sourceNodeId 必须是非空字符串')
+    }
+    if (typeof target !== 'string' || !target.trim()) {
+      throw new AgentToolError('invalid_params', 'targetNodeId 必须是非空字符串')
+    }
+    if (source === target) {
+      throw new AgentToolError('invalid_params', '不能把节点连接到自身')
+    }
+    assertSelectedNode(scope, source)
+    assertSelectedNode(scope, target)
+  }
+
+  if (call.name === 'canvas_delete_node') {
+    const nodeId = call.args.nodeId
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
     }
     assertSelectedNode(scope, nodeId)
   }

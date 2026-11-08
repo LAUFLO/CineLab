@@ -88,18 +88,18 @@ interface NodeOperation {
 
 | 功能 | 实现 |
 |---|---|
-| 片段重拍 | 绑定专用 HTTP 模板接口，提交当前视频，返回重拍后的视频 |
-| 元素替换 | 绑定专用 HTTP 模板接口，提交当前视频 |
-| 智能续写 | 绑定专用视频延长接口 |
-| 创意片头 | 绑定专用片头生成接口 |
+| 片段重拍 | 功能节点选择时间区间，模型声明 `shot-retake`，模板收到 `{{video.start}}` / `{{video.end}}`；`videoResult: segment` 时自动拼回原视频 |
+| 元素替换 | 功能节点选择时间区间和参考图（上传/画布/资产库），模型声明 `element-replace`，模板收到 `{{refs.images}}` |
+| 智能续写 | 功能节点选择方向和时长，模型声明 `extend`，模板收到 `{{video.duration}}` / `{{video.direction}}`；片段自动拼接 |
 | 视频输入 | `GenerateRequest.video`，HTTP 模板支持 `{{video.dataUrl}}` / `{{video.base64}}` / `{{video.mime}}` |
+| 视频操作参数 | `{{video.start}}` / `{{video.end}}` / `{{video.duration}}` / `{{video.direction}}` / `{{video.operation}}` |
 | multipart | `submit.contentType: 'multipart'` 时自动把 data URL 转成文件字段 |
-| 操作模型绑定 | 设置 → 操作模型，为四个操作分别绑定视频模型；未绑定不执行，不做 i2v 近似 |
+| 模型能力 | 模型卡片「模型能力」勾选支持的操作；操作时自动列出，未声明/非 http-template 置灰 |
 
 约束：
 
 - 只走专用接口，不提供首帧/尾帧 i2v 近似。
-- 绑定的模型必须是 `video.t2v` 能力且配置了 `http-template`。
+- 模型必须是 `video.t2v` 能力且配置了 `http-template`。
 - 4 秒 720P 视频以 data URL 提交约 8MB，接口需支持该体积；更大的视频后续增加分片/预上传。
 
 ### 批次 4：打包与验收
@@ -114,7 +114,7 @@ interface NodeOperation {
 - `GenerateRequest`：新增 `mask?: string`、`op?: string`。
 - `GeneratedAsset`：新增 `op?: string`，由主进程透传到 `OutputRef`。
 - `ReferenceInput`：批次 3 扩展 `video` / `audio` 类型。
-- 设置面板：新增 `components` 分区（已有），批次 3 新增操作模型绑定分区。
+- 设置面板：新增 `components` 分区（已有），批次 3 在模型卡片中新增「模型能力」。
 - 资产与画布数据结构保持向后兼容，旧项目无需迁移。
 
 ## 5. 验收标准
@@ -152,7 +152,7 @@ interface NodeOperation {
 
 批次 3：
 
-- 设置 → 操作模型可绑定四个视频操作；未绑定时工具栏提示去设置。
+- 设置 → 模型服务 → 模型能力可勾选三个视频操作；操作时未声明的模型置灰，不再需要单独绑定页。
 - 绑定的 HTTP 模板能收到 `video.dataUrl`，任务轮询完成后视频写入节点新版本。
 - multipart 模式能生成文件字段。
 - `pnpm typecheck` / `pnpm test` / `pnpm build` 通过。
@@ -173,7 +173,7 @@ interface NodeOperation {
 | 全景图比例不标准 | 查看器兼容任意比例，UI 提示可能拉伸 |
 | 视觉组件体积与 CPU 耗时 | 复用深度运行时，仅下载约 527MB 模型；视频限制 ≤10 秒、抠像 480P、显示进度与取消 |
 | InSPyReNet 逐帧抠像无时序记忆 | 视频增加 EMA 时序平滑；质量仍弱于专用视频抠像模型，后续可换 MatAnyone 等 |
-| 视频编辑 API 协议不统一 | 通过操作模型绑定 + HTTP 模板接入，不硬编码厂商 |
+| 视频编辑 API 协议不统一 | 通过模型能力 + HTTP 模板接入，不硬编码厂商 |
 | 视频 data URL 体积大 | 当前限制短片段；后续增加 multipart 分片或预上传，接口需支持对应体积 |
 
 ## 7. 变更记录
@@ -183,4 +183,4 @@ interface NodeOperation {
 | 2026-11-07 | 立项：13 个占位入口分四批补齐；批次 1 开工 |
 | 2026-11-07 | 批次 1 完成：蒙版编辑器、重绘/擦除/元素编辑、720 全景、状态改造 |
 | 2026-11-07 | 批次 2 完成：InSPyReNet + LaMa 视觉组件、抠图/图层分离/视频抠像/智能修复/本地扩图 |
-| 2026-11-07 | 批次 3 完成：专用视频 HTTP 模板、视频输入、multipart、操作模型绑定；不做 i2v 近似 |
+| 2026-11-07 | 批次 3 完成：专用视频 HTTP 模板、视频输入、multipart；2026-11-08 改为模型能力声明与内嵌面板，删除创意片头 |

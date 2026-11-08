@@ -20,12 +20,14 @@ import { AudioPlayer, timeLabel } from './AudioPlayer'
 import { NodeToolbar } from './NodeToolbar'
 import { PanoramaViewer } from './PanoramaViewer'
 import { VideoPlayer } from './VideoPlayer'
+import { StudyNodeCard } from './StudyNodeCard'
 
 const NODE_ICON: Record<NodeKind, IconName> = {
   text: 'text',
   image: 'image',
   video: 'video',
-  audio: 'audio'
+  audio: 'audio',
+  study: 'film'
 }
 
 export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
@@ -162,7 +164,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   return (
     <>
     <div className={`cnode ${selected ? 'is-selected' : ''}`}>
-      {selected && !multiSelected && current && !isBusy ? (
+      {selected && !multiSelected && current && !isBusy && data.kind !== 'study' ? (
         <NodeToolbar
           nodeId={id}
           kind={data.kind}
@@ -252,6 +254,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
       <div className="cnode__card">
         <div className={`cnode__preview cnode__preview--${data.kind}`}>
+          {data.kind === 'study' ? (
+            <StudyNodeCard nodeId={id} data={data} />
+          ) : (
+            <>
           {data.kind === 'audio' ? (
             <AudioPlayer
               src={assetSrc ?? null}
@@ -343,6 +349,8 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               </button>
             </div>
           ) : null}
+            </>
+          )}
         </div>
 
         {storyboardIndex > 0 ? (
@@ -352,24 +360,28 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         ) : null}
       </div>
 
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="cnode__handle cnode__handle--left"
-        title="接收上游连线"
-      >
-        <Icon name="plus" size={12} className="cnode__handle-icon" />
-      </Handle>
+      {data.kind !== 'study' ? (
+        <>
+          <Handle
+            type="target"
+            position={Position.Left}
+            className="cnode__handle cnode__handle--left"
+            title="接收上游连线"
+          >
+            <Icon name="plus" size={12} className="cnode__handle-icon" />
+          </Handle>
 
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="cnode__handle cnode__handle--right"
-        title="生成下游节点"
-        onClick={openFromHandle}
-      >
-        <Icon name="plus" size={12} className="cnode__handle-icon" />
-      </Handle>
+          <Handle
+            type="source"
+            position={Position.Right}
+            className="cnode__handle cnode__handle--right"
+            title="生成下游节点"
+            onClick={openFromHandle}
+          >
+            <Icon name="plus" size={12} className="cnode__handle-icon" />
+          </Handle>
+        </>
+      ) : null}
     </div>
     {previewOpen &&
     current &&

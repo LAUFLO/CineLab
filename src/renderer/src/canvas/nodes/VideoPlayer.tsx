@@ -1,5 +1,7 @@
 import {
+  forwardRef,
   useEffect,
+  useImperativeHandle,
   useRef,
   useState,
   type CSSProperties
@@ -11,9 +13,17 @@ interface VideoPlayerProps {
   src: string | null
   path?: string | null
   fps?: number
+  onTimeChange?: (time: number) => void
 }
 
-export function VideoPlayer({ src, path, fps }: VideoPlayerProps) {
+export interface VideoPlayerHandle {
+  seek: (time: number) => void
+  play: () => void
+  pause: () => void
+}
+
+export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
+  function VideoPlayer({ src, path, fps, onTimeChange }, ref) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -53,7 +63,10 @@ export function VideoPlayer({ src, path, fps }: VideoPlayerProps) {
     const video = videoRef.current
     if (!video) return
 
-    const onTime = (): void => setCurrentTime(video.currentTime)
+    const onTime = (): void => {
+      setCurrentTime(video.currentTime)
+      onTimeChange?.(video.currentTime)
+    }
     const onMeta = (): void => {
       const nextDuration = Number.isFinite(video.duration) ? video.duration : 0
       setDuration(nextDuration)
@@ -88,7 +101,7 @@ export function VideoPlayer({ src, path, fps }: VideoPlayerProps) {
       video.removeEventListener('ended', onEnded)
       video.removeEventListener('volumechange', onVolume)
     }
-  }, [src])
+  }, [src, onTimeChange])
 
   useEffect(() => {
     const onChange = (): void => {
@@ -138,6 +151,17 @@ export function VideoPlayer({ src, path, fps }: VideoPlayerProps) {
       void containerRef.current?.requestFullscreen()
     }
   }
+
+  useImperativeHandle(ref, () => ({
+    seek: (time: number) => {
+      seek(Math.max(0, Math.min(time, duration || time)))
+      onTimeChange?.(time)
+    },
+    play: () => {
+      void videoRef.current?.play()
+    },
+    pause: () => videoRef.current?.pause()
+  }))
 
   const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0
   const progressStyle = {
@@ -239,4 +263,4 @@ export function VideoPlayer({ src, path, fps }: VideoPlayerProps) {
       </div>
     </div>
   )
-}
+})

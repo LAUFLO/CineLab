@@ -1,8 +1,9 @@
 import type { AssetScope } from './asset-schema'
+import type { VideoOperationId } from './operation-schema'
 
-export type NodeKind = 'text' | 'image' | 'video' | 'audio'
+export type NodeKind = 'text' | 'image' | 'video' | 'audio' | 'study'
 
-export type CanvasNodeKind = NodeKind | 'studio' | 'film'
+export type CanvasNodeKind = NodeKind | 'studio' | 'film' | 'video-op'
 
 export type FilmStatus =
   | 'pending'
@@ -42,6 +43,22 @@ export interface CineNodeData extends Record<string, unknown> {
   error?: string
   /** Prompt Bar 中最近一次输入的提示词，按节点保留 */
   prompt?: string
+  /** 拉片节点：关联的 study.json */
+  studyId?: string
+  /** 拉片节点：来源视频节点 */
+  sourceNodeId?: string
+  sourcePath?: string
+  sourceScope?: AssetScope
+  sourceName?: string
+  studyInterval?: number
+  studySummary?: {
+    studyId: string
+    frameCount: number
+    segmentCount: number
+    interval: number
+    duration: number
+    fps: number
+  }
   templates: string[]
   /** 纯素材节点：由上传创建，不显示提示词输入框 */
   assetOnly?: boolean
@@ -70,6 +87,25 @@ export interface FilmNodeData extends Record<string, unknown> {
   selectedOutputId?: string
   /** 上次导出时的上游输出签名，避免同一版本反复标 stale */
   upstreamAck?: string
+  templates: string[]
+}
+
+export interface VideoOpNodeData extends Record<string, unknown> {
+  kind: 'video-op'
+  title: string
+  status: NodeStatus
+  operation: VideoOperationId
+  sourceNodeId: string
+  /** 最近一次生成创建的结果节点 */
+  resultNodeId?: string
+  range?: { start: number; end: number }
+  duration?: number
+  direction?: 'forward' | 'backward'
+  referencePath?: string
+  referenceScope?: AssetScope
+  modelKey?: string
+  prompt?: string
+  expanded?: boolean
   templates: string[]
 }
 
@@ -193,6 +229,18 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
     label: '成片',
     width: 480,
     height: 320,
+    templates: []
+  },
+  'video-op': {
+    label: '视频操作',
+    width: 420,
+    height: 200,
+    templates: []
+  },
+  study: {
+    label: '拉片',
+    width: 360,
+    height: 236,
     templates: []
   }
 }

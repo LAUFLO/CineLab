@@ -12,7 +12,10 @@ import type {
   ProviderType
 } from '@shared/provider-schema'
 import type { ModelsFileProvider } from '@shared/models-file'
-import type { OperationBindings } from '@shared/operation-schema'
+import {
+  isVideoOperation,
+  type OperationBindings
+} from '@shared/operation-schema'
 import { klingAuthorization } from '../providers/kling-auth'
 import { mergeHeaders } from '../providers/headers'
 import { httpFetch } from '../providers/http'
@@ -89,6 +92,7 @@ function readOperationBindings(value: unknown): OperationBindings {
 
   const result: OperationBindings = {}
   for (const [key, entry] of Object.entries(value)) {
+    if (!isVideoOperation(key)) continue
     if (typeof entry === 'string' && entry.trim()) {
       result[key] = entry.trim()
     }

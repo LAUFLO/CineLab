@@ -1,7 +1,7 @@
 # 逐帧拉片方案（调研）
 
 日期：2026-11-08
-状态：P0 + P1 已在 `film-study` 分支实现，P2（AI 分析包）待开发
+状态：P0 + P1 + P2 已在 `film-study` 分支实现，P3（结构/情绪）待开发
 参考项目：[bkingfilm/lapian-notes](https://github.com/bkingfilm/lapian-notes)（MIT）
 
 ## 1. 先说结论
@@ -532,7 +532,33 @@ P0 未包含：
 - Markdown 导出的保存对话框没有自动化，代码路径已编译通过
 - 12 帧拼图在 8 帧素材上验证为 4×2，1280×360
 
-## 10. 后续
+## 10. P2 实施记录（2026-11-08）
 
-P2：AI 分析包（prompt/schema/frames/subtitles ZIP）与导入 AI JSON。
+已实现：
+
+- 导出 AI 分析包 ZIP：
+  - `README.md`
+  - `prompt.md`
+  - `schema.json`
+  - `project.json`
+  - `frames/`
+- 帧文件名包含序号和时间码，例如 `frame_000002_00-01-0.jpg`
+- `prompt.md` 要求 AI 只输出 JSON
+- `schema.json` 包含 segments、macroAnalysis、storyLines、audienceCurvePoints
+- 导入 AI JSON：
+  - 支持对象 `{ segments }` 或直接数组
+  - 自动排序、裁剪到片长、过滤无效时间段
+  - 生成段落 id
+  - 可选导入宏观分析、剧情线、情绪点
+  - 保存到 study.json
+- 导入前确认，提示会替换当前段落
+- 导入后段落立即出现在拉片室列表
+
+当前限制：
+
+- 还没有字幕提取，所以分析包暂不包含 subtitles.srt
+- 结构树/情绪曲线只存数据，P3 再做可视化
+
+## 11. 后续
+
 P3：剧情泳道、结构树、情绪曲线、模型直连。

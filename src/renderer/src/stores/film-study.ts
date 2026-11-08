@@ -17,6 +17,7 @@ interface FilmStudyState {
   retry: (nodeId: string) => Promise<void>
   openRoom: (nodeId: string) => Promise<void>
   updateStudy: (updater: (study: FilmStudy) => FilmStudy) => void
+  replaceStudy: (study: FilmStudy) => void
   saveNow: () => Promise<void>
   closeRoom: () => void
 }
@@ -178,6 +179,12 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
       saveTimer = null
       void window.api.filmStudy.save(next).catch(() => undefined)
     }, 600)
+  },
+
+  replaceStudy: (study) => {
+    set({ study })
+    const nodeId = get().roomNodeId
+    if (nodeId) patchSummary(nodeId, study)
   },
 
   saveNow: async () => {

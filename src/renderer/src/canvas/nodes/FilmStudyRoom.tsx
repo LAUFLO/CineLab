@@ -40,8 +40,10 @@ export function FilmStudyRoom() {
   const study = useFilmStudyStore((state) => state.study)
   const closeRoom = useFilmStudyStore((state) => state.closeRoom)
   const updateStudy = useFilmStudyStore((state) => state.updateStudy)
+  const replaceStudy = useFilmStudyStore((state) => state.replaceStudy)
   const saveStudyNow = useFilmStudyStore((state) => state.saveNow)
   const showToast = useUIStore((state) => state.showToast)
+  const requestConfirm = useUIStore((state) => state.requestConfirm)
   const playerRef = useRef<VideoPlayerHandle>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -328,6 +330,44 @@ export function FilmStudyRoom() {
     }
   }
 
+  const exportAnalysisPackage = async (): Promise<void> => {
+    try {
+      await saveStudyNow()
+      const result = await window.api.filmStudy.exportAnalysisPackage(
+        study.id
+      )
+      if (result.path) showToast('AI 拉片分析包已导出')
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        'error'
+      )
+    }
+  }
+
+  const importAnalysis = (): void => {
+    requestConfirm({
+      title: '导入 AI 拉片结果',
+      message:
+        '导入会替换当前 study.json 里的段落、结构和情绪数据。建议先导出 AI 包或备份项目。',
+      confirmLabel: '选择 JSON 并导入',
+      onConfirm: async () => {
+        try {
+          const next = await window.api.filmStudy.importAnalysis(study.id)
+          if (!next) return
+          replaceStudy(next)
+          setSelectedSegmentId(next.segments[0]?.id ?? null)
+          showToast(`已导入 ${next.segments.length} 个段落`)
+        } catch (error) {
+          showToast(
+            error instanceof Error ? error.message : String(error),
+            'error'
+          )
+        }
+      }
+    })
+  }
+
   const segmentOptions = SEGMENT_TYPES.map((type) => ({
     value: type,
     label: type
@@ -357,6 +397,20 @@ export function FilmStudyRoom() {
               onClick={() => void exportMarkdown()}
             >
               导出 Markdown
+            </button>
+            <button
+              type="button"
+              className="btn-secondary btn-sm"
+              onClick={() => void exportAnalysisPackage()}
+            >
+              导出 AI 包
+            </button>
+            <button
+              type="button"
+              className="btn-secondary btn-sm"
+              onClick={importAnalysis}
+            >
+              导入 AI 结果
             </button>
           </div>
           <button

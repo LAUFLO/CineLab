@@ -235,6 +235,8 @@ export interface FilmStudyApi {
   load(studyId: string): Promise<FilmStudy>
   save(study: FilmStudy): Promise<FilmStudy>
   exportMarkdown(studyId: string): Promise<FilmStudyExportResult>
+  exportAnalysisPackage(studyId: string): Promise<FilmStudyExportResult>
+  importAnalysis(studyId: string): Promise<FilmStudy | null>
   contactSheet(studyId: string): Promise<GeneratedAsset>
   onProgress(callback: (progress: FilmStudyProgress) => void): () => void
 }

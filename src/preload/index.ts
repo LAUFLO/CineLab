@@ -276,6 +276,10 @@ const api: CineApi = {
       ipcRenderer.invoke('film-study:save', study),
     exportMarkdown: (studyId: string) =>
       ipcRenderer.invoke('film-study:export-markdown', studyId),
+    exportAnalysisPackage: (studyId: string) =>
+      ipcRenderer.invoke('film-study:export-analysis-package', studyId),
+    importAnalysis: (studyId: string) =>
+      ipcRenderer.invoke('film-study:import-analysis', studyId),
     contactSheet: (studyId: string) =>
       ipcRenderer.invoke('film-study:contact-sheet', studyId),
     onProgress: (callback: (progress: FilmStudyProgress) => void) => {

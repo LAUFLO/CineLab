@@ -22,6 +22,33 @@ export interface FilmStudySegment {
   notes?: string
 }
 
+export interface FilmStudyMacroAnalysis {
+  overallStructure?: string
+  narrativeStrategy?: string
+  rhythmPattern?: string
+  informationStrategy?: string
+  coreCreativeIntent?: string
+  writingLessons?: string[]
+}
+
+export interface FilmStudyStoryLine {
+  id: string
+  title: string
+  subtitle?: string
+  description?: string
+}
+
+export interface FilmStudyAudiencePoint {
+  id: string
+  time: number
+  intensity: number
+  valence?: number
+  emotionType: string
+  rhythmRole?: string
+  title: string
+  description?: string
+}
+
 export interface FilmStudySummary {
   studyId: string
   frameCount: number
@@ -43,6 +70,10 @@ export interface FilmStudy {
   frameInterval: number
   frames: FilmStudyFrame[]
   segments: FilmStudySegment[]
+  macroAnalysis?: FilmStudyMacroAnalysis
+  storyLines?: FilmStudyStoryLine[]
+  audienceCurvePoints?: FilmStudyAudiencePoint[]
+  aiImportedAt?: string
   createdAt: string
   updatedAt: string
 }

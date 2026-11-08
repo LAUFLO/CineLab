@@ -14,7 +14,7 @@ vi.mock('electron', () => ({
   }
 }))
 
-import { exportFilmStudyAnalysisPackage } from '../service'
+import { exportFilmStudyAnalysisPackage, exportFilmStudyBundle } from '../service'
 
 const roots: string[] = []
 
@@ -58,6 +58,9 @@ describe('exportFilmStudyAnalysisPackage', () => {
         }
       ],
       segments: [],
+      subtitles: [
+        { startTime: 0.5, endTime: 1.5, text: '测试字幕' }
+      ],
       createdAt: '2026-11-08T00:00:00.000Z',
       updatedAt: '2026-11-08T00:00:00.000Z'
     }
@@ -86,6 +89,10 @@ describe('exportFilmStudyAnalysisPackage', () => {
     const frame = await fs.readFile(
       join(base, 'frames', 'frame_000002_00-01-0.jpg')
     )
+    const subtitles = await fs.readFile(
+      join(base, 'subtitles.srt'),
+      'utf8'
+    )
 
     expect(prompt).toContain('测试影片')
     expect(project.frameCount).toBe(2)
@@ -93,6 +100,30 @@ describe('exportFilmStudyAnalysisPackage', () => {
       'frames/frame_000002_00-01-0.jpg'
     )
     expect(schema.required).toContain('segments')
+    expect(subtitles).toContain('测试字幕')
     expect([...frame]).toEqual([4, 5, 6])
+
+    const bundleTarget = join(root, 'bundle.zip')
+    await exportFilmStudyBundle(root, 'pack-test', bundleTarget)
+    const bundleOutput = join(root, 'bundle')
+    await fs.mkdir(bundleOutput, { recursive: true })
+    await extract(bundleTarget, { dir: bundleOutput })
+    const bundleBase = join(bundleOutput, '测试影片-拉片包')
+    const bundleStudy = JSON.parse(
+      await fs.readFile(join(bundleBase, 'study.json'), 'utf8')
+    ) as { id: string; subtitles: unknown[] }
+    const bundleNotes = await fs.readFile(
+      join(bundleBase, '拉片笔记.md'),
+      'utf8'
+    )
+    const bundleSubtitles = await fs.readFile(
+      join(bundleBase, 'subtitles.srt'),
+      'utf8'
+    )
+
+    expect(bundleStudy.id).toBe('pack-test')
+    expect(bundleStudy.subtitles).toHaveLength(1)
+    expect(bundleNotes).toContain('测试影片')
+    expect(bundleSubtitles).toContain('测试字幕')
   })
 })

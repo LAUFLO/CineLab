@@ -236,7 +236,11 @@ export interface FilmStudyApi {
   save(study: FilmStudy): Promise<FilmStudy>
   exportMarkdown(studyId: string): Promise<FilmStudyExportResult>
   exportAnalysisPackage(studyId: string): Promise<FilmStudyExportResult>
+  exportBundle(studyId: string): Promise<FilmStudyExportResult>
   importAnalysis(studyId: string): Promise<FilmStudy | null>
+  extractSubtitles(studyId: string): Promise<FilmStudy>
+  importSubtitles(studyId: string): Promise<FilmStudy | null>
+  analyze(studyId: string, modelKey: string): Promise<FilmStudy>
   contactSheet(studyId: string): Promise<GeneratedAsset>
   onProgress(callback: (progress: FilmStudyProgress) => void): () => void
 }

@@ -55,6 +55,12 @@ export interface FilmStudyAudiencePoint {
   description?: string
 }
 
+export interface FilmStudySubtitle {
+  startTime: number
+  endTime: number
+  text: string
+}
+
 export interface FilmStudySummary {
   studyId: string
   frameCount: number
@@ -79,6 +85,7 @@ export interface FilmStudy {
   macroAnalysis?: FilmStudyMacroAnalysis
   storyLines?: FilmStudyStoryLine[]
   audienceCurvePoints?: FilmStudyAudiencePoint[]
+  subtitles?: FilmStudySubtitle[]
   aiImportedAt?: string
   createdAt: string
   updatedAt: string

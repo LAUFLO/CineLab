@@ -1,5 +1,5 @@
 {
-  "version": 40,
+  "version": 41,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "逐帧拉片增强：直连多模态分析与字幕",
+  "next_focus": "film-study 分支整体验收与打包；main 分支保持 bug 修复，不合并功能改动",
   "frontier": [
     {
       "id": "M2-1",
@@ -649,8 +649,12 @@
     {
       "id": "FILM-STUDY-4",
       "title": "逐帧拉片增强：直连多模态分析与字幕",
-      "status": "todo",
-      "note": "待开发：CineLab 直连多模态模型分析（contact sheet + 分段发送），字幕提取与 srt 导出/分析包集成。"
+      "status": "done",
+      "note": "film-study 分支完成：字幕支持 SRT 解析/内嵌提取/导入/列表跳转并写入 AI 分析包；拉片室可直连 text.chat 多模态模型，最多 12 张代表帧，结果归一化写回 study；新增拉片包 ZIP（study.json、拉片笔记、README、frames、可选字幕）。本地 mock 模型、mov_text 字幕和包内容单元测试通过。",
+      "evidence": [
+        "docs/film-study-plan.md",
+        ".opencode/handover/evidence/FILM-STUDY-P4.md"
+      ]
     }
   ],
   "knownIssues": [

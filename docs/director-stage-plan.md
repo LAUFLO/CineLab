@@ -1,7 +1,7 @@
 # 导演台方案：3D 片场 + 本地白模预演
 
-日期：2026-11-08
-状态：**方案已更新，待排期**
+日期：2026-11-09
+状态：**StageCommand 骨架已完成；3D 视口与 Agent 执行层待接入**
 关联：LibTV 3D 导演台 / 3D-BOX、TapNow CineMap
 关联文档：`docs/agent-full-scope.md`、`docs/clip-studio-plan.md`
 
@@ -458,3 +458,8 @@ DirectorStageDoc + StageShot
 
 - 2026-11-07：立项为待调研大需求，不进入当前实现队列。
 - 2026-11-08：明确白模预演为本地 3D 渲染，不是白模风格视频；确定手动与 Agent 共用 `StageCommand`；方案更新为「3D 片场 + 镜头预演」，待排期。
+- 2026-11-09：完成 `StageCommand` 骨架。
+  - `src/shared/stage-schema.ts`：场景文档、对象、机位、镜头、运镜关键帧、动作轨、预览参数、限制、校验与默认文档。
+  - `src/shared/stage-commands.ts`：17 类命令、原子 batch、`StageChange`、`StageEffect`、撤销/重做历史。
+  - `src/shared/__tests__/stage-commands.test.ts`：对象/机位/镜头/运镜/动作轨/原子回滚/历史覆盖。
+  - 尚未接入画布 `stage` 节点、3D 视口、场景文件存储与 `stage.*` Agent 工具执行层。

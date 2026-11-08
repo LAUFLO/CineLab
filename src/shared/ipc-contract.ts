@@ -23,6 +23,7 @@ import type { ComponentEvent, ComponentKind, ComponentStatus } from './component
 import type { Preferences } from './preferences'
 import type {
   FilmStudy,
+  FilmStudyExportResult,
   FilmStudyExtractRequest,
   FilmStudyExtractResult,
   FilmStudyProgress
@@ -232,6 +233,9 @@ export interface FilmStudyApi {
   extract(input: FilmStudyExtractRequest): Promise<FilmStudyExtractResult>
   cancel(nodeId: string): Promise<void>
   load(studyId: string): Promise<FilmStudy>
+  save(study: FilmStudy): Promise<FilmStudy>
+  exportMarkdown(studyId: string): Promise<FilmStudyExportResult>
+  contactSheet(studyId: string): Promise<GeneratedAsset>
   onProgress(callback: (progress: FilmStudyProgress) => void): () => void
 }
 

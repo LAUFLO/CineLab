@@ -62,6 +62,11 @@ export interface FilmStudyExtractResult {
   summary?: FilmStudySummary
 }
 
+export interface FilmStudyExportResult {
+  path?: string
+  canceled?: boolean
+}
+
 export interface FilmStudyProgress {
   nodeId: string
   studyId?: string

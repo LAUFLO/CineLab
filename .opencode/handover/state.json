@@ -1,5 +1,5 @@
 {
-  "version": 37,
+  "version": 38,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "逐帧拉片 P1：帧备注、段落、Markdown 导出与回画布",
+  "next_focus": "逐帧拉片 P2：AI 分析包导出与导入",
   "frontier": [
     {
       "id": "M2-1",
@@ -619,8 +619,18 @@
     {
       "id": "FILM-STUDY-P1",
       "title": "逐帧拉片 P1：帧备注、段落、Markdown 与回画布",
+      "status": "done",
+      "note": "film-study 分支完成：帧备注、入点/出点段落、段落编辑/删除、播放本段自动暂停、Markdown 导出、当前帧/拉片拼图/段落摘要放入画布；study.json 自动保存并更新节点摘要。",
+      "evidence": [
+        "docs/film-study-plan.md",
+        ".opencode/handover/evidence/FILM-STUDY-P1.md"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-P2",
+      "title": "逐帧拉片 P2：AI 分析包与导入",
       "status": "todo",
-      "note": "待开发：帧备注、段落创建/编辑、播放本段、Markdown 导出、当前帧/12 帧拼图/段落摘要放回画布。"
+      "note": "待开发：导出 frames + prompt + schema + subtitles 的 ZIP，导入 AI 返回 JSON，生成段落/泳道/结构/情绪数据。"
     }
   ],
   "knownIssues": [
@@ -1435,6 +1445,14 @@
     {
       "category": "lesson",
       "content": "worktree 新建后需要重新执行 electron 的 install.js 才能跑 dev；pnpm install 不会自动补 Electron 二进制。"
+    },
+    {
+      "category": "lesson",
+      "content": "拉片帧备注和段落编辑需要防抖写 study.json，并在关闭拉片室时强制 flush，否则快速关闭会丢最后一次输入。"
+    },
+    {
+      "category": "lesson",
+      "content": "拉片拼图可以用 ffmpeg 多图片输入 + scale/pad + xstack 生成，不依赖额外的图像合成库；不足 12 帧时按实际帧数动态生成。"
     }
   ],
   "designConventions": [

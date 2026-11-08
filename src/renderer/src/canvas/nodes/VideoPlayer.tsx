@@ -14,6 +14,7 @@ interface VideoPlayerProps {
   path?: string | null
   fps?: number
   onTimeChange?: (time: number) => void
+  onDurationChange?: (duration: number) => void
 }
 
 export interface VideoPlayerHandle {
@@ -23,7 +24,10 @@ export interface VideoPlayerHandle {
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
-  function VideoPlayer({ src, path, fps, onTimeChange }, ref) {
+  function VideoPlayer(
+    { src, path, fps, onTimeChange, onDurationChange },
+    ref
+  ) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -70,6 +74,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const onMeta = (): void => {
       const nextDuration = Number.isFinite(video.duration) ? video.duration : 0
       setDuration(nextDuration)
+      onDurationChange?.(nextDuration)
       // 只加载 metadata 时部分编码不会绘制首帧，轻推一下让视频节点显示画面
       if (video.currentTime === 0 && nextDuration > 0) {
         try {
@@ -101,7 +106,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       video.removeEventListener('ended', onEnded)
       video.removeEventListener('volumechange', onVolume)
     }
-  }, [src, onTimeChange])
+  }, [src, onTimeChange, onDurationChange])
 
   useEffect(() => {
     const onChange = (): void => {
@@ -181,8 +186,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         muted={muted}
         onClick={toggle}
       />
-
-      <div className="video-node__shade" />
 
       {!playing && src ? (
         <button

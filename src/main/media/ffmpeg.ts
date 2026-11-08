@@ -102,6 +102,59 @@ export function runFfmpeg(
   })
 }
 
+/** 运行 ffmpeg 并收集 stderr（用于 scdet 等滤镜日志） */
+export function runFfmpegCapture(
+  args: string[],
+  options: { signal?: AbortSignal } = {}
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(ffmpegBinary(), args, {
+      windowsHide: true,
+      stdio: ['ignore', 'ignore', 'pipe']
+    })
+
+    let stderr = ''
+    let settled = false
+    let aborted = false
+
+    const finish = (error?: Error): void => {
+      if (settled) return
+      settled = true
+      options.signal?.removeEventListener('abort', onAbort)
+      if (error) reject(error)
+      else resolve(stderr)
+    }
+
+    const onAbort = (): void => {
+      if (aborted) return
+      aborted = true
+      child.kill('SIGKILL')
+    }
+
+    if (options.signal?.aborted) onAbort()
+    else options.signal?.addEventListener('abort', onAbort)
+
+    child.stderr?.setEncoding('utf8')
+    child.stderr?.on('data', (chunk: string) => {
+      stderr += chunk
+      if (stderr.length > 400_000) stderr = stderr.slice(-400_000)
+    })
+
+    child.on('error', (error) => finish(error))
+    child.on('close', (code) => {
+      if (aborted) {
+        finish(new Error('已取消'))
+        return
+      }
+      if (code !== 0) {
+        finish(new Error(`ffmpeg 失败（退出码 ${code}）：${stderr.slice(-600)}`))
+        return
+      }
+      finish()
+    })
+  })
+}
+
 interface FfprobeStream {
   codec_type?: string
   codec_name?: string

@@ -419,13 +419,16 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                 onPointerDown={(event) => event.stopPropagation()}
               />
             ) : (
-              <video
-                src={assetUrl(current.path, current.scope)}
-                controls
-                autoPlay
-                playsInline
+              <div
+                className="image-preview__player"
                 onPointerDown={(event) => event.stopPropagation()}
-              />
+              >
+                <VideoPlayer
+                  src={assetUrl(current.path, current.scope)}
+                  path={current.path}
+                  fps={current.fps}
+                />
+              </div>
             )}
           </div>,
           document.body

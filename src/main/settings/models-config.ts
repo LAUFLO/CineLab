@@ -4,7 +4,9 @@ import { randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import {
   MODEL_PRESETS,
+  inferModelInputs,
   type Capability,
+  type MediaInput,
   type ModelDef,
   type ParamDef,
   type ProviderConfig,
@@ -26,6 +28,8 @@ const CAPABILITIES: Capability[] = [
   'audio.tts',
   'audio.music'
 ]
+
+const MEDIA_INPUTS: MediaInput[] = ['text', 'image', 'video', 'audio']
 
 const PROVIDER_TYPES: ProviderType[] = ['openai-compat', 'kling']
 
@@ -53,6 +57,36 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function readString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined
+}
+
+function validateInputs(
+  inputs: unknown,
+  path: string,
+  errors: string[]
+): MediaInput[] | undefined {
+  if (inputs === undefined) return undefined
+  if (!Array.isArray(inputs)) {
+    errors.push(`${path}.inputs 必须是数组`)
+    return undefined
+  }
+
+  const result: MediaInput[] = []
+  for (const item of inputs) {
+    if (typeof item !== 'string' || !MEDIA_INPUTS.includes(item as MediaInput)) {
+      errors.push(`${path}.inputs 只能是 ${MEDIA_INPUTS.join(' / ')}`)
+      continue
+    }
+    if (!result.includes(item as MediaInput)) {
+      result.push(item as MediaInput)
+    }
+  }
+
+  if (result.length === 0) {
+    errors.push(`${path}.inputs 至少需要一项`)
+    return undefined
+  }
+
+  return result
 }
 
 function validateParams(
@@ -97,6 +131,7 @@ function validateParams(
     if (readString(item.group)) param.group = readString(item.group)
     if (item.min !== undefined) param.min = Number(item.min)
     if (item.max !== undefined) param.max = Number(item.max)
+    if (item.allowCustom === true) param.allowCustom = true
 
     if (type === 'select') {
       if (!Array.isArray(item.options) || item.options.length === 0) {
@@ -196,6 +231,7 @@ function validateModel(
   }
 
   const params = validateParams(item.params, path, errors)
+  const inputs = validateInputs(item.inputs, path, errors)
 
   return {
     id,
@@ -207,6 +243,7 @@ function validateModel(
     ...(readString(item.remoteModel)
       ? { remoteModel: readString(item.remoteModel) }
       : {}),
+    ...(inputs ? { inputs } : {}),
     ...(adapter ? { adapter } : {}),
     ...(providerType ? { providerType } : {}),
     ...(isRecord(template) ? { template: template as unknown as HttpTemplate } : {}),
@@ -455,24 +492,30 @@ export function resolveModels(provider: ModelsFileProvider): ModelDef[] {
       : undefined
 
     const remoteModel = item.remoteModel ?? preset?.remoteModel ?? item.id
+    const capability = item.capability ?? preset?.capability ?? 'image.t2i'
+    const adapter =
+      item.adapter ??
+      provider.adapter ??
+      preset?.adapter ??
+      inferAdapter(remoteModel)
+    const template = item.template ?? preset?.template
+    const inputs =
+      item.inputs ??
+      preset?.inputs ??
+      inferModelInputs({ capability, remoteModel, adapter, template })
 
     return {
       id: item.id,
       name: item.name ?? preset?.name ?? item.id,
-      capability: item.capability ?? preset?.capability ?? 'image.t2i',
+      capability,
       remoteModel,
+      inputs,
       params: item.params ?? preset?.params ?? [],
-      adapter:
-        item.adapter ??
-        provider.adapter ??
-        preset?.adapter ??
-        inferAdapter(remoteModel),
+      adapter,
       ...(item.providerType ?? preset?.providerType
         ? { providerType: item.providerType ?? preset?.providerType }
         : {}),
-      ...(item.template ?? preset?.template
-        ? { template: item.template ?? preset?.template }
-        : {})
+      ...(template ? { template } : {})
     }
   })
 }

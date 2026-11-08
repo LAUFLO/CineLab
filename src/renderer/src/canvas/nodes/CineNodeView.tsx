@@ -10,6 +10,7 @@ import {
   type CineNode
 } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
+import { useGenerationHistoryStore } from '../../stores/generation-history'
 import { useUIStore } from '../../stores/ui'
 import { useLibraryStore } from '../../stores/library'
 import { useStudioStore } from '../../stores/studio'
@@ -17,6 +18,8 @@ import { createStudioFromNode } from '../../studio/nodes'
 import { assetUrl } from '../../lib/asset-url'
 import { AudioPlayer, timeLabel } from './AudioPlayer'
 import { NodeToolbar } from './NodeToolbar'
+import { PanoramaViewer } from './PanoramaViewer'
+import { VideoPlayer } from './VideoPlayer'
 
 const NODE_ICON: Record<NodeKind, IconName> = {
   text: 'text',
@@ -74,11 +77,25 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [panoramaOpen, setPanoramaOpen] = useState(false)
+  const [previewRatio, setPreviewRatio] = useState<number | null>(null)
 
   const submitTitle = (): void => {
     const next = titleDraft.trim()
     setEditingTitle(false)
     if (next && next !== data.title) patchNodeData(id, { title: next })
+  }
+
+  const retryGeneration = (): void => {
+    const entry = useGenerationHistoryStore
+      .getState()
+      .entries.find((item) => item.nodeId === id)
+    if (!entry) {
+      showToast('找不到上次生成参数，请在提示词栏重新生成', 'error')
+      return
+    }
+    patchNodeData(id, { status: 'queued', progress: 0, error: undefined })
+    void useGenerationStore.getState().run(entry.request)
   }
 
   const outputs = data.outputs ?? []
@@ -88,6 +105,12 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
   const assetSrc = current ? assetUrl(current.path, current.scope) : data.outputUrl
   const isBusy = data.status === 'queued' || data.status === 'running'
+  const canPanorama = Boolean(
+    current &&
+      current.kind === 'image' &&
+      (current.op === 'panorama' ||
+        (previewRatio !== null && previewRatio >= 1.8))
+  )
 
   const shiftVersion = (delta: number): void => {
     const next = outputs[currentIndex + delta]
@@ -232,13 +255,19 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           {data.kind === 'audio' ? (
             <AudioPlayer
               src={assetSrc ?? null}
+              path={current?.path}
+              scope={current?.scope}
               busy={isBusy}
               onCancel={() => void cancelGeneration(id)}
             />
           ) : assetSrc && current?.kind === 'text' ? (
             <p className="cnode__text">{data.text ?? '文本已生成'}</p>
           ) : assetSrc && (current?.kind === 'video' || data.kind === 'video') ? (
-            <video src={assetSrc} className="cnode__media" muted playsInline controls />
+            <VideoPlayer
+              src={assetSrc}
+              path={current?.path}
+              fps={current?.fps}
+            />
           ) : assetSrc ? (
             <img src={assetSrc} alt="" className="cnode__media" loading="lazy" />
           ) : (
@@ -271,9 +300,21 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             </div>
           ) : null}
 
-          {data.status === 'error' && data.error ? (
+          {data.status === 'error' ? (
             <div className="cnode__error" title={data.error}>
-              {data.error}
+              <span className="cnode__error-text">
+                {data.error ?? '生成失败'}
+              </span>
+              <button
+                type="button"
+                className="cnode__retry nodrag nopan"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  retryGeneration()
+                }}
+              >
+                重新生成
+              </button>
             </div>
           ) : null}
 
@@ -338,10 +379,31 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             className="image-preview"
             onPointerDown={() => setPreviewOpen(false)}
           >
+            {canPanorama ? (
+              <button
+                type="button"
+                className="image-preview__panorama"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={() => {
+                  setPreviewOpen(false)
+                  setPanoramaOpen(true)
+                }}
+              >
+                全景查看
+              </button>
+            ) : null}
             {current.kind === 'image' ? (
               <img
                 src={assetUrl(current.path, current.scope)}
                 alt=""
+                onLoad={(event) => {
+                  const image = event.currentTarget
+                  setPreviewRatio(
+                    image.naturalHeight > 0
+                      ? image.naturalWidth / image.naturalHeight
+                      : null
+                  )
+                }}
                 onPointerDown={(event) => event.stopPropagation()}
               />
             ) : (
@@ -357,6 +419,12 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           document.body
         )
       : null}
+
+      <PanoramaViewer
+        open={panoramaOpen && Boolean(current)}
+        src={current ? assetUrl(current.path, current.scope) : ''}
+        onClose={() => setPanoramaOpen(false)}
+      />
     </>
   )
 }

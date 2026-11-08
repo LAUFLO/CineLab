@@ -1,5 +1,7 @@
 import { promises as fs, type Dirent } from 'node:fs'
 import { basename, dirname, extname, join, resolve, sep } from 'node:path'
+import { createHash } from 'node:crypto'
+import { nativeImage } from 'electron'
 import type {
   AddToLibraryInput,
   CharacterCard,
@@ -10,6 +12,13 @@ import type {
 import { CHARACTER_FOLDER, DEFAULT_LIBRARY_FOLDERS } from '@shared/library-schema'
 import { getCurrentProjectRoot } from '../project/manager'
 import { getLibraryRoot } from './config'
+import { runFfmpeg } from '../media/ffmpeg'
+import {
+  deleteAssetTags,
+  deleteFolderTags,
+  moveAssetTags,
+  readAssetTags
+} from './tags'
 
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'])
 const VIDEO_EXT = new Set(['.mp4', '.webm', '.mov', '.mkv'])
@@ -82,6 +91,68 @@ async function uniqueTarget(
   }
 }
 
+async function ensureThumbnail(
+  root: string,
+  relPath: string,
+  absolute: string,
+  kind: LibraryAssetKind,
+  mtimeMs: number,
+  size: number
+): Promise<string | undefined> {
+  if (kind !== 'image' && kind !== 'video') return undefined
+
+  const hash = createHash('sha256')
+    .update(`${relPath}:${mtimeMs}:${size}`)
+    .digest('hex')
+    .slice(0, 24)
+  const relative = `.thumbs/${hash}.jpg`
+  const target = join(root, '.thumbs', `${hash}.jpg`)
+
+  try {
+    await fs.access(target)
+    return relative
+  } catch {
+    // 首次访问时生成
+  }
+
+  await fs.mkdir(dirname(target), { recursive: true }).catch(() => undefined)
+
+  try {
+    if (kind === 'image') {
+      const image = nativeImage.createFromPath(absolute)
+      if (!image.isEmpty()) {
+        const { width } = image.getSize()
+        const resized = image.resize({
+          width: Math.min(320, Math.max(1, width)),
+          quality: 'good'
+        })
+        await fs.writeFile(target, resized.toJPEG(78))
+        return relative
+      }
+    }
+
+    await runFfmpeg([
+      '-y',
+      '-v',
+      'error',
+      '-ss',
+      '0.1',
+      '-i',
+      absolute,
+      '-frames:v',
+      '1',
+      '-vf',
+      'scale=320:-2',
+      '-q:v',
+      '4',
+      target
+    ])
+    return relative
+  } catch {
+    return undefined
+  }
+}
+
 async function pathToAsset(root: string, relPath: string): Promise<LibraryAsset> {
   const absolute = safeJoin(root, relPath)
   const info = await fs.stat(absolute)
@@ -90,13 +161,23 @@ async function pathToAsset(root: string, relPath: string): Promise<LibraryAsset>
 
   if (!kind) throw new Error(`不支持的素材格式：${ext || '未知'}`)
 
+  const thumbnail = await ensureThumbnail(
+    root,
+    toPosix(relPath),
+    absolute,
+    kind,
+    info.mtimeMs,
+    info.size
+  )
+
   return {
     path: toPosix(relPath),
     name: basename(absolute, extname(absolute)),
     fileName: basename(absolute),
     kind,
     size: info.size,
-    modifiedAt: info.mtime.toISOString()
+    modifiedAt: info.mtime.toISOString(),
+    ...(thumbnail ? { thumbnail } : {})
   }
 }
 
@@ -112,12 +193,16 @@ export async function listAssets(folder: string): Promise<LibraryAsset[]> {
   }
 
   const assets: LibraryAsset[] = []
+  const tags = await readAssetTags()
   for (const entry of entries) {
     if (!entry.isFile() || isIgnored(entry.name)) continue
     if (!kindFromExt(extname(entry.name).toLowerCase())) continue
 
     const relPath = toPosix(join(toNative(folder), entry.name))
-    assets.push(await pathToAsset(root, relPath))
+    assets.push({
+      ...(await pathToAsset(root, relPath)),
+      tags: tags[relPath] ?? []
+    })
   }
 
   return assets.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
@@ -208,7 +293,10 @@ export async function listAllAssets(): Promise<LibraryAsset[]> {
   }
 
   await walk('', 0)
-  return result.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+  const tags = await readAssetTags()
+  return result
+    .map((asset) => ({ ...asset, tags: tags[asset.path] ?? [] }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
 }
 
 export async function createFolder(
@@ -267,6 +355,7 @@ export async function deleteFolder(relPath: string): Promise<void> {
   }
 
   await fs.rmdir(target)
+  await deleteFolderTags(relPath)
 }
 
 export async function importFiles(
@@ -350,7 +439,9 @@ export async function moveAsset(
   const target = await uniqueTarget(targetDir, name, ext)
   await fs.rename(source, target.absolute)
 
-  return folder ? `${folder}/${target.fileName}` : target.fileName
+  const nextPath = folder ? `${folder}/${target.fileName}` : target.fileName
+  await moveAssetTags(relPath, nextPath)
+  return nextPath
 }
 
 export async function deleteAsset(relPath: string): Promise<void> {
@@ -359,6 +450,7 @@ export async function deleteAsset(relPath: string): Promise<void> {
   const info = await fs.stat(target)
   if (!info.isFile()) throw new Error('目标不是文件')
   await fs.rm(target, { force: true })
+  await deleteAssetTags(relPath)
 }
 
 export async function revealPath(relPath: string): Promise<void> {

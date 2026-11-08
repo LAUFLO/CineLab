@@ -3,6 +3,8 @@ import type { Capability, ParamDef } from './provider-schema'
 export interface ParamTemplate {
   id: string
   def: ParamDef
+  /** 给首次配置用户看的说明 */
+  description?: string
 }
 
 const IMAGE_SIZE: ParamDef = {
@@ -16,7 +18,8 @@ const IMAGE_SIZE: ParamDef = {
     { value: '1024x1536', label: '1024×1536' },
     { value: '512x512', label: '512×512' }
   ],
-  defaultValue: '1024x1024'
+  defaultValue: '1024x1024',
+  allowCustom: true
 }
 
 const IMAGE_RATIO: ParamDef = {
@@ -32,7 +35,8 @@ const IMAGE_RATIO: ParamDef = {
     { value: '3:4', label: '3:4' },
     { value: '21:9', label: '21:9' }
   ],
-  defaultValue: '1:1'
+  defaultValue: '1:1',
+  allowCustom: true
 }
 
 const IMAGE_COUNT: ParamDef = {
@@ -63,6 +67,16 @@ const IMAGE_QUALITY: ParamDef = {
   defaultValue: 'auto'
 }
 
+const IMAGE_SEED: ParamDef = {
+  key: 'seed',
+  label: '随机种子',
+  group: '随机种子',
+  type: 'number',
+  defaultValue: 0,
+  min: 0,
+  max: 2147483647
+}
+
 const VIDEO_RATIO: ParamDef = {
   key: 'ratio',
   label: '画幅比例',
@@ -76,7 +90,8 @@ const VIDEO_RATIO: ParamDef = {
     { value: '3:4', label: '3:4' },
     { value: '21:9', label: '21:9' }
   ],
-  defaultValue: '16:9'
+  defaultValue: '16:9',
+  allowCustom: true
 }
 
 const VIDEO_DURATION: ParamDef = {
@@ -99,7 +114,8 @@ const VIDEO_RESOLUTION: ParamDef = {
     { value: '720p', label: '720p' },
     { value: '1080p', label: '1080p' }
   ],
-  defaultValue: '720p'
+  defaultValue: '720p',
+  allowCustom: true
 }
 
 const VIDEO_AUDIO: ParamDef = {
@@ -108,6 +124,19 @@ const VIDEO_AUDIO: ParamDef = {
   group: '生成音频',
   type: 'boolean',
   defaultValue: false
+}
+
+const VIDEO_FPS: ParamDef = {
+  key: 'fps',
+  label: '帧率',
+  group: '帧率',
+  type: 'select',
+  options: [
+    { value: '24', label: '24 fps' },
+    { value: '30', label: '30 fps' },
+    { value: '60', label: '60 fps' }
+  ],
+  defaultValue: '24'
 }
 
 const AUDIO_VOICE: ParamDef = {
@@ -175,23 +204,77 @@ const TEXT_MAX_TOKENS: ParamDef = {
 }
 
 const IMAGE_TEMPLATES: ParamTemplate[] = [
-  { id: 'size', def: IMAGE_SIZE },
-  { id: 'ratio', def: IMAGE_RATIO },
-  { id: 'n', def: IMAGE_COUNT },
-  { id: 'quality', def: IMAGE_QUALITY }
+  {
+    id: 'size',
+    def: IMAGE_SIZE,
+    description: '生成图片的实际像素尺寸，常用 1024×1024、1536×1024'
+  },
+  {
+    id: 'ratio',
+    def: IMAGE_RATIO,
+    description: '画面宽高比，Prompt Bar 会显示为比例网格'
+  },
+  {
+    id: 'n',
+    def: IMAGE_COUNT,
+    description: '一次生成几张图，通常 1–4 张'
+  },
+  {
+    id: 'quality',
+    def: IMAGE_QUALITY,
+    description: '模型支持的画质档位，不确定时选「自动」'
+  },
+  {
+    id: 'seed',
+    def: IMAGE_SEED,
+    description: '固定种子可复现同一张图；0 表示随机'
+  }
 ]
 
 const VIDEO_TEMPLATES: ParamTemplate[] = [
-  { id: 'ratio', def: VIDEO_RATIO },
-  { id: 'duration', def: VIDEO_DURATION },
-  { id: 'resolution', def: VIDEO_RESOLUTION },
-  { id: 'generate_audio', def: VIDEO_AUDIO }
+  {
+    id: 'ratio',
+    def: VIDEO_RATIO,
+    description: '视频画幅，竖屏短剧选 9:16，横屏选 16:9'
+  },
+  {
+    id: 'duration',
+    def: VIDEO_DURATION,
+    description: '如果模型支持任意秒数，用数字范围（Prompt Bar 显示滑条）；只支持固定档位则用下拉'
+  },
+  {
+    id: 'resolution',
+    def: VIDEO_RESOLUTION,
+    description: '输出清晰度，CPU/额度有限时先用 720p'
+  },
+  {
+    id: 'generate_audio',
+    def: VIDEO_AUDIO,
+    description: '是否让模型同时生成声音，不需要就关闭'
+  },
+  {
+    id: 'fps',
+    def: VIDEO_FPS,
+    description: '视频帧率，常用 24 或 30 fps'
+  }
 ]
 
 const AUDIO_TEMPLATES: ParamTemplate[] = [
-  { id: 'voice', def: AUDIO_VOICE },
-  { id: 'speed', def: AUDIO_SPEED },
-  { id: 'format', def: AUDIO_FORMAT }
+  {
+    id: 'voice',
+    def: AUDIO_VOICE,
+    description: 'TTS 音色，按模型支持的音色名选择'
+  },
+  {
+    id: 'speed',
+    def: AUDIO_SPEED,
+    description: '语速倍率，1× 为正常速度'
+  },
+  {
+    id: 'format',
+    def: AUDIO_FORMAT,
+    description: '输出音频格式，MP3 兼容性最好'
+  }
 ]
 
 export const PARAM_TEMPLATES: Record<Capability, ParamTemplate[]> = {
@@ -201,8 +284,16 @@ export const PARAM_TEMPLATES: Record<Capability, ParamTemplate[]> = {
   'audio.tts': AUDIO_TEMPLATES,
   'audio.music': AUDIO_TEMPLATES,
   'text.chat': [
-    { id: 'temperature', def: TEXT_TEMPERATURE },
-    { id: 'max_tokens', def: TEXT_MAX_TOKENS }
+    {
+      id: 'temperature',
+      def: TEXT_TEMPERATURE,
+      description: '越低越稳定，越高越发散；常用 0.7'
+    },
+    {
+      id: 'max_tokens',
+      def: TEXT_MAX_TOKENS,
+      description: '单次回复的最大长度，常用 2048'
+    }
   ]
 }
 

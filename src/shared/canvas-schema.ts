@@ -40,6 +40,8 @@ export interface CineNodeData extends Record<string, unknown> {
   selectedOutputId?: string
   progress?: number
   error?: string
+  /** Prompt Bar 中最近一次输入的提示词，按节点保留 */
+  prompt?: string
   templates: string[]
   /** 纯素材节点：由上传创建，不显示提示词输入框 */
   assetOnly?: boolean

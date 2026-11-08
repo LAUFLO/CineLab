@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import { promises as fs } from 'node:fs'
 import type {
+  AudioPeaksRequest,
   CropImageRectRequest,
   CropImageRequest,
   CropVideoRequest,
@@ -10,9 +11,11 @@ import type {
   RemoveSubtitlesRequest,
   SplitAvRequest,
   StitchRequest,
-  TrimVideoRequest
+  TrimVideoRequest,
+  VisionTaskRequest
 } from '@shared/media'
 import { probeMedia } from '../media/ffmpeg'
+import { computeAudioPeaks } from '../media/audio-peaks'
 import { captureDepth } from '../media/depth'
 import { cancelDepthTask, startDepthTask } from '../media/depth-tasks'
 import { extractFrame } from '../media/frames'
@@ -23,6 +26,10 @@ import { resolveInside, resolveMediaPath } from '../media/paths'
 import { cropVideo, removeSubtitles, splitAv, trimVideo } from '../media/video'
 import { mediaThumbnail } from '../media/thumbnail'
 import { ensureProxy } from '../media/proxy'
+import {
+  cancelVisionTask,
+  startVisionTask
+} from '../media/vision-tasks'
 import { getCurrentProjectRoot } from '../project/manager'
 import { getLibraryRoot } from '../library/config'
 
@@ -132,6 +139,13 @@ export function registerMediaIpc(): void {
     return ensureProxy(requireProjectRoot(), path)
   })
 
+  ipcMain.handle(
+    'media:audio-peaks',
+    async (_event, input: AudioPeaksRequest) => {
+      return computeAudioPeaks(requireProjectRoot(), input)
+    }
+  )
+
   ipcMain.handle('media:crop-image', async (_event, input: CropImageRequest) => {
     return { asset: await cropImage(requireProjectRoot(), input) }
   })
@@ -153,4 +167,14 @@ export function registerMediaIpc(): void {
       return { asset: await removeSubtitles(requireProjectRoot(), input) }
     }
   )
+
+  ipcMain.handle(
+    'media:vision-start',
+    (_event, input: VisionTaskRequest) =>
+      startVisionTask(requireProjectRoot(), input)
+  )
+
+  ipcMain.handle('media:vision-cancel', (_event, taskId: string) => {
+    cancelVisionTask(taskId)
+  })
 }

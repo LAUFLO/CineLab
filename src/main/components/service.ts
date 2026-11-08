@@ -41,8 +41,18 @@ async function readInstalled(kind: ComponentKind): Promise<ComponentManifest | n
       ? join(dir, modelFile)
       : kind === 'whisper-runtime'
         ? join(dir, 'Release', 'whisper-cli.exe')
-        : join(dir, 'python', 'python.exe')
+        : kind === 'vision-models'
+          ? join(dir, 'models', 'big-lama.pt')
+          : join(dir, 'python', 'python.exe')
     await fs.stat(required)
+    if (kind === 'vision-models') {
+      await fs.stat(join(dir, 'worker.py'))
+      await fs.stat(join(dir, 'models', 'ckpt_fast.pth'))
+      await fs.stat(join(dir, 'models', 'big-lama.pt'))
+      await fs.stat(
+        join(dir, 'inspyrenet', 'transparent_background', '__init__.py')
+      )
+    }
     return raw
   } catch {
     return null

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ModelDef } from '@shared/provider-schema'
+import { modelInputs } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
 import { Select } from '../../components/Select'
 import { useSettingsStore } from '../../stores/settings'
@@ -70,13 +71,17 @@ export function SphereDialog({
           }))
       )
       .sort((a, b) => {
-        const rank = (capability: string): number =>
-          capability === 'image.i2i' ? 0 : 1
-        return rank(a.model.capability) - rank(b.model.capability)
+        const rank = (item: { model: ModelDef }): number =>
+          (modelInputs(item.model).includes('image') ? 0 : 10) +
+          (item.model.capability === 'image.i2i' ? 0 : 1)
+        return rank(a) - rank(b)
       })
   }, [providers])
 
-  const firstModelKey = models[0]?.key ?? ''
+  const firstModelKey =
+    models.find((item) => modelInputs(item.model).includes('image'))?.key ??
+    models[0]?.key ??
+    ''
 
   const [azimuth, setAzimuth] = useState(45)
   const [elevation, setElevation] = useState(30)
@@ -140,6 +145,9 @@ export function SphereDialog({
         )}，${cameraElevationLabel(elevation)}，景别${shotLabel}。输出单张画面，不要分屏、不要文字、不要水印。`
 
   const active = models.find((item) => item.key === modelKey)
+  const activeSupportsImage = active
+    ? modelInputs(active.model).includes('image')
+    : false
 
   return createPortal(
     <div
@@ -334,8 +342,11 @@ export function SphereDialog({
               options={models.map((item) => ({
                 value: item.key,
                 label: `${item.providerName} · ${item.model.name}${
-                  item.model.capability === 'image.i2i' ? '' : '（文生图）'
-                }`
+                  modelInputs(item.model).includes('image')
+                    ? ''
+                    : '（不支持参考图）'
+                }`,
+                disabled: !modelInputs(item.model).includes('image')
               }))}
               onChange={(next) => setModelKey(next)}
               disabled={busy}
@@ -357,9 +368,9 @@ export function SphereDialog({
           <button
             type="button"
             className="btn-primary"
-            disabled={!active || busy}
+            disabled={!active || !activeSupportsImage || busy}
             onClick={() => {
-              if (!active) return
+              if (!active || !activeSupportsImage) return
               onConfirm(prompt, modelKey, active.model)
             }}
           >

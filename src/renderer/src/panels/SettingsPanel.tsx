@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import {
   CAPABILITY_LABEL,
+  MEDIA_INPUT_LABEL,
+  modelInputs,
+  type MediaInput,
   type ModelDef,
   type ProviderConfig,
   type ProviderInput
@@ -16,10 +19,15 @@ import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
 import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
+import { GeneralSettingsSection } from './GeneralSettingsSection'
+import { OperationsSection } from './OperationsSection'
 import { ModelParamsDialog } from '../canvas/nodes/ModelParamsDialog'
+import { ModelInputsDialog } from '../canvas/nodes/ModelInputsDialog'
 
 type SectionId =
+  | 'general'
   | 'models'
+  | 'operations'
   | 'library'
   | 'components'
   | 'appearance'
@@ -33,7 +41,9 @@ interface SectionDef {
 }
 
 const SECTIONS: SectionDef[] = [
-  { id: 'models', label: '模型服务', icon: 'settings' },
+  { id: 'general', label: '通用', icon: 'settings' },
+  { id: 'models', label: '模型服务', icon: 'robot' },
+  { id: 'operations', label: '操作模型', icon: 'film' },
   { id: 'library', label: '资产库', icon: 'library' },
   { id: 'components', label: '组件', icon: 'layers' },
   { id: 'appearance', label: '外观', icon: 'sun' },
@@ -112,6 +122,7 @@ function ModelsSection() {
     Array<{ key: string; value: string }>
   >([])
   const [paramModel, setParamModel] = useState<ModelDef | null>(null)
+  const [inputsModel, setInputsModel] = useState<ModelDef | null>(null)
 
   useEffect(() => {
     void load()
@@ -479,13 +490,25 @@ function ModelsSection() {
                 <div>
                   <div className="model-item__name">{model.name}</div>
                   <div className="model-item__meta">
-                    {CAPABILITY_LABEL[model.capability]} · {model.remoteModel}
+                    {CAPABILITY_LABEL[model.capability]} · 输入{' '}
+                    {modelInputs(model)
+                      .map((input) => MEDIA_INPUT_LABEL[input])
+                      .join('/')}{' '}
+                    · {model.remoteModel}
                     {model.params.length > 0
                       ? ` · ${model.params.length} 个参数`
                       : ''}
                   </div>
                 </div>
                 <div className="model-item__actions">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    title="输入能力"
+                    onClick={() => setInputsModel(model)}
+                  >
+                    <Icon name="layers" size={13} />
+                  </button>
                   <button
                     type="button"
                     className="icon-btn"
@@ -597,6 +620,27 @@ function ModelsSection() {
                 : current
             )
             setParamModel(null)
+          }}
+        />
+
+        <ModelInputsDialog
+          model={inputsModel}
+          onCancel={() => setInputsModel(null)}
+          onSave={(inputs: MediaInput[]) => {
+            if (!inputsModel) return
+            setDraft((current) =>
+              current
+                ? {
+                    ...current,
+                    models: current.models.map((item) =>
+                      item.id === inputsModel.id
+                        ? { ...item, inputs }
+                        : item
+                    )
+                  }
+                : current
+            )
+            setInputsModel(null)
           }}
         />
       </div>
@@ -961,7 +1005,7 @@ function AboutSection() {
 export function SettingsPanel() {
   const open = useSettingsStore((state) => state.panelOpen)
   const close = useSettingsStore((state) => state.closePanel)
-  const [active, setActive] = useState<SectionId>('models')
+  const [active, setActive] = useState<SectionId>('general')
   const panelSection = useSettingsStore((state) => state.panelSection)
 
   useEffect(() => {
@@ -1021,7 +1065,9 @@ export function SettingsPanel() {
           </nav>
 
           <div className="settings-content">
+            {active === 'general' ? <GeneralSettingsSection /> : null}
             {active === 'models' ? <ModelsSection /> : null}
+            {active === 'operations' ? <OperationsSection /> : null}
             {active === 'library' ? <LibrarySection /> : null}
             {active === 'components' ? <ComponentsSection /> : null}
             {active === 'appearance' ? <AppearanceSection /> : null}

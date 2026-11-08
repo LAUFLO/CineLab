@@ -12,8 +12,10 @@ import type {
   ProviderType
 } from '@shared/provider-schema'
 import type { ModelsFileProvider } from '@shared/models-file'
+import type { OperationBindings } from '@shared/operation-schema'
 import { klingAuthorization } from '../providers/kling-auth'
 import { mergeHeaders } from '../providers/headers'
+import { httpFetch } from '../providers/http'
 import {
   enqueueModelsWrite,
   loadModelsConfig,
@@ -34,6 +36,7 @@ type ProviderKeys = Record<string, ProviderKeyEntry>
 interface SettingsFile {
   version: 2
   providerKeys: ProviderKeys
+  operationBindings?: OperationBindings
 }
 
 interface LegacyStoredProvider {
@@ -49,6 +52,7 @@ interface LegacyStoredProvider {
 interface RawSettings {
   version: number
   providerKeys: ProviderKeys
+  operationBindings: OperationBindings
   legacyProviders: LegacyStoredProvider[]
 }
 
@@ -80,16 +84,38 @@ function readProviderKeys(value: unknown): ProviderKeys {
   return result
 }
 
+function readOperationBindings(value: unknown): OperationBindings {
+  if (!isRecord(value)) return {}
+
+  const result: OperationBindings = {}
+  for (const [key, entry] of Object.entries(value)) {
+    if (typeof entry === 'string' && entry.trim()) {
+      result[key] = entry.trim()
+    }
+  }
+  return result
+}
+
 async function readRawSettings(): Promise<RawSettings> {
   let raw: unknown
   try {
     raw = JSON.parse(await fs.readFile(settingsFile(), 'utf8')) as unknown
   } catch {
-    return { version: 2, providerKeys: {}, legacyProviders: [] }
+    return {
+      version: 2,
+      providerKeys: {},
+      operationBindings: {},
+      legacyProviders: []
+    }
   }
 
   if (!isRecord(raw)) {
-    return { version: 2, providerKeys: {}, legacyProviders: [] }
+    return {
+      version: 2,
+      providerKeys: {},
+      operationBindings: {},
+      legacyProviders: []
+    }
   }
 
   if (Array.isArray(raw.providers)) {
@@ -111,12 +137,18 @@ async function readRawSettings(): Promise<RawSettings> {
         }
       }
     }
-    return { version: 1, providerKeys, legacyProviders }
+    return {
+      version: 1,
+      providerKeys,
+      operationBindings: readOperationBindings(raw.operationBindings),
+      legacyProviders
+    }
   }
 
   return {
     version: 2,
     providerKeys: readProviderKeys(raw.providerKeys),
+    operationBindings: readOperationBindings(raw.operationBindings),
     legacyProviders: []
   }
 }
@@ -185,7 +217,11 @@ async function migrateLegacySettings(): Promise<void> {
   }
 
   await enqueueModelsWrite(() => saveModelsConfig(providers))
-  await writeSettings({ version: 2, providerKeys })
+  await writeSettings({
+    version: 2,
+    providerKeys,
+    operationBindings: raw.operationBindings
+  })
 }
 
 export async function listProviders(): Promise<ProviderConfig[]> {
@@ -286,7 +322,11 @@ export async function saveProvider(input: ProviderInput): Promise<ProviderConfig
       delete providerKeys[id]
     }
 
-    await writeSettings({ version: 2, providerKeys })
+    await writeSettings({
+      version: 2,
+      providerKeys,
+      operationBindings: raw.operationBindings
+    })
     return toModelsProvider(provider, entry)
   })
 }
@@ -305,7 +345,32 @@ export async function deleteProvider(id: string): Promise<void> {
     const raw = await readRawSettings()
     const providerKeys: ProviderKeys = { ...raw.providerKeys }
     delete providerKeys[id]
-    await writeSettings({ version: 2, providerKeys })
+    await writeSettings({
+      version: 2,
+      providerKeys,
+      operationBindings: raw.operationBindings
+    })
+  })
+}
+
+export async function getOperationBindings(): Promise<OperationBindings> {
+  await ensureMigrated()
+  const raw = await readRawSettings()
+  return raw.operationBindings
+}
+
+export async function saveOperationBindings(
+  bindings: OperationBindings
+): Promise<void> {
+  await ensureMigrated()
+
+  await enqueueProviderWrite(async () => {
+    const raw = await readRawSettings()
+    await writeSettings({
+      version: 2,
+      providerKeys: raw.providerKeys,
+      operationBindings: readOperationBindings(bindings)
+    })
   })
 }
 
@@ -371,7 +436,7 @@ export async function testConnection(
     const timer = setTimeout(() => controller.abort(), 15000)
 
     if (type === 'kling') {
-      const response = await fetch(`${baseUrl}/v1/videos/text2video/0`, {
+      const response = await httpFetch(`${baseUrl}/v1/videos/text2video/0`, {
         headers: mergeHeaders(
           { Authorization: klingAuthorization(apiKey, secretKey) },
           customHeaders
@@ -391,7 +456,7 @@ export async function testConnection(
       return { ok: true, message: '连接成功（鉴权通过）' }
     }
 
-    const response = await fetch(`${baseUrl}/models`, {
+    const response = await httpFetch(`${baseUrl}/models`, {
       headers: mergeHeaders({ Authorization: `Bearer ${apiKey}` }, customHeaders),
       signal: controller.signal
     })
@@ -454,7 +519,7 @@ export async function fetchModels(
 
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 20000)
-    const response = await fetch(`${baseUrl}/models`, {
+    const response = await httpFetch(`${baseUrl}/models`, {
       headers: mergeHeaders({ Authorization: `Bearer ${apiKey}` }, customHeaders),
       signal: controller.signal
     })

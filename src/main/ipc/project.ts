@@ -9,6 +9,7 @@ import {
 import { promises as fs } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import type { CanvasData } from '@shared/project-schema'
+import type { ProjectTemplateId } from '@shared/project-templates'
 import {
   bootstrap,
   bootstrapOnce,
@@ -33,8 +34,8 @@ import {
 export function registerProjectIpc(): void {
   ipcMain.handle('project:bootstrap', () => bootstrapOnce())
 
-  ipcMain.handle('project:create', (_event, name: string, parentDir?: string) =>
-    createProject(name, parentDir)
+  ipcMain.handle('project:create', (_event, name: string, parentDir?: string, templateId?: ProjectTemplateId) =>
+    createProject(name, parentDir, templateId)
   )
 
   ipcMain.handle('project:open', (_event, path: string) => openProject(path))
@@ -84,11 +85,11 @@ export function registerProjectIpc(): void {
 
 
 
-  ipcMain.handle('project:pick-create', async (event) => {
+  ipcMain.handle('project:pick-create', async (event, templateId?: ProjectTemplateId) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     const options: SaveDialogOptions = {
       title: '新建 CineLab 项目',
-      defaultPath: join(defaultProjectsDir(), '未命名项目.cinelab'),
+      defaultPath: join(await defaultProjectsDir(), '未命名项目.cinelab'),
       buttonLabel: '创建',
       filters: [{ name: 'CineLab 项目', extensions: ['cinelab'] }]
     }
@@ -100,14 +101,14 @@ export function registerProjectIpc(): void {
     if (result.canceled || !result.filePath) return null
 
     const name = basename(result.filePath).replace(/\.cinelab$/i, '')
-    return createProject(name, dirname(result.filePath))
+    return createProject(name, dirname(result.filePath), templateId)
   })
 
   ipcMain.handle('project:pick-open', async (event) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     const options: OpenDialogOptions = {
       title: '打开 CineLab 项目',
-      defaultPath: defaultProjectsDir(),
+      defaultPath: await defaultProjectsDir(),
       properties: ['openDirectory']
     }
 

@@ -22,6 +22,14 @@ class GenerationQueue extends EventEmitter {
     this.pump()
   }
 
+  setConcurrency(value: number): void {
+    const next = Math.floor(value)
+    this.concurrency = Number.isFinite(next)
+      ? Math.max(1, Math.min(4, next))
+      : 2
+    this.pump()
+  }
+
   cancel(jobId: string): void {
     const index = this.pending.findIndex((job) => job.id === jobId)
     if (index >= 0) {

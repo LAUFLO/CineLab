@@ -1,3 +1,4 @@
+import { httpFetch } from './http'
 import type { ModelDef } from '@shared/provider-schema'
 import { mergeHeaders } from './headers'
 import { sleep } from './retry'
@@ -67,7 +68,7 @@ export async function generateVideoArk(
 
   ctx.onProgress(5, '提交任务')
 
-  const submit = await fetch(`${baseUrl}/contents/generations/tasks`, {
+  const submit = await httpFetch(`${baseUrl}/contents/generations/tasks`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -93,7 +94,7 @@ export async function generateVideoArk(
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     await sleep(interval, ctx.signal)
 
-    const response = await fetch(`${baseUrl}/contents/generations/tasks/${taskId}`, {
+    const response = await httpFetch(`${baseUrl}/contents/generations/tasks/${taskId}`, {
       headers,
       signal: ctx.signal
     })
@@ -115,7 +116,7 @@ export async function generateVideoArk(
 
       ctx.onProgress(92, '下载视频')
 
-      const download = await fetch(videoUrl, { signal: ctx.signal })
+      const download = await httpFetch(videoUrl, { signal: ctx.signal })
       if (!download.ok) {
         throw new Error(`下载视频失败：HTTP ${download.status}`)
       }

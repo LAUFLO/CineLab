@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 37,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "剪辑室 P3/P4 已知限制已全部清零：关键帧、画中画、detachAudio、linkage、预览音高、整条时间线自动字幕、镜头/静音/节拍、SRT/VTT 导入、转场音频交叉淡化均已完成并验证。下一步按 backlog 处理次优先级项（字幕重叠截短、颜色撤销合并）或进入发布前体验完善。",
+  "next_focus": "剪辑室 P3/P4 已完成并验证：关键帧、画中画、detachAudio、linkage、预览音高、整条时间线自动字幕、镜头/静音/节拍、SRT/VTT 导入、转场音频交叉淡化。下一步整体验收与修复；导演台待调研排期；剪辑台由其他会话完成后接入；剪辑室智能编排按 docs/agent-plan.md 推进。",
   "frontier": [
     {
       "id": "M2-1",
@@ -118,7 +118,7 @@
       "id": "AGENT-1",
       "title": "Agent 与画布协作",
       "status": "pending",
-      "note": "用户明确延后，等 K5 完成后再单独设计"
+      "note": "用户明确延后；下一阶段与 P4 一起做立项讨论，先确定优先级、交互形态和方案文档，不直接进入实现。"
     },
     {
       "id": "K3-1",
@@ -374,6 +374,247 @@
       "evidence": [
         "docs/logging-plan.md",
         ".opencode/handover/evidence/P2-2-logging.md"
+      ]
+    },
+    {
+      "id": "P3-2",
+      "title": "项目模板与示例项目",
+      "status": "done",
+      "note": "空白/分镜/产品广告/角色短片四套模板；欢迎页模板选择器；分镜组 2×2、产品/角色模板含文本、图片、视频节点与连线。提交 a926fdc。",
+      "evidence": [
+        "docs/project-templates-plan.md",
+        ".opencode/handover/evidence/P3-2-project-templates.md"
+      ]
+    },
+    {
+      "id": "P3-3",
+      "title": "资产库与导出增强",
+      "status": "done",
+      "note": "资产多选、批量移动/删除、标签（.tags.json + 搜索）、视频合成（720p/1080p、标准/高画质）、SRT 字幕烧录、BGM 循环混音。多轨独立控制留作后续。",
+      "evidence": [
+        "docs/library-export-enhancements-plan.md",
+        ".opencode/handover/evidence/P3-3-library-export.md"
+      ]
+    },
+    {
+      "id": "PACKAGE-2026-11-07",
+      "title": "整体打包：P1-P3 全量功能",
+      "status": "done",
+      "note": "推送 2deea46，CI 42348036406 成功（typecheck/test/check:encryption/build/electron-builder）。安装包 162MB、zip 206MB，已下载到 Downloads\\cinelab-2deea46。",
+      "evidence": [
+        ".opencode/handover/evidence/PACKAGE-2026-11-07.md"
+      ]
+    },
+    {
+      "id": "BATCH-1",
+      "title": "工具栏占位功能批次 1：图片编辑与全景",
+      "status": "done",
+      "note": "蒙版编辑器（画笔/矩形/橡皮/撤销）、重绘/擦除/元素编辑、扩图提示词版、720 全景生成与 three 查看器、未完成入口改为明确依赖。mask 端到端用本地 mock 验证，生成结果写入版本栈。",
+      "evidence": [
+        "docs/placeholder-operations-plan.md",
+        ".opencode/handover/evidence/BATCH-1-image-editing.md"
+      ]
+    },
+    {
+      "id": "BATCH-2",
+      "title": "工具栏占位功能批次 2：本地视觉 runtime",
+      "status": "done",
+      "note": "InSPyReNet + LaMa 视觉组件（复用 depth-runtime Python/PyTorch），组件 527MB。抠图、图层分离、视频抠像、智能去字幕、主体消除、本地扩图接入；任务进度/取消/节点回写已验证。InSPyReNet MIT、LaMa Apache-2.0。Release vision-components-v1 已发布。",
+      "evidence": [
+        "docs/placeholder-operations-plan.md",
+        ".opencode/handover/evidence/BATCH-2-vision-runtime.md"
+      ]
+    },
+    {
+      "id": "BATCH-3",
+      "title": "工具栏占位功能批次 3：专用视频操作",
+      "status": "done",
+      "note": "HttpTemplate 支持 video 模式、video.dataUrl/base64/mime、multipart；设置页操作模型绑定四个视频操作；GenRequest.video 透传。本地 mock 专用接口端到端验证：8MB 视频提交、轮询、节点版本 2/2。不做 i2v 近似。",
+      "evidence": [
+        "docs/placeholder-operations-plan.md",
+        ".opencode/handover/evidence/BATCH-3-video-operations.md"
+      ]
+    },
+    {
+      "id": "PACKAGE-2026-11-07-BATCHES",
+      "title": "整体打包：批次 1-3",
+      "status": "done",
+      "note": "提交 02d921b，CI 42364183939 成功（3m53s）。安装包 156MB、zip 199MB，已下载到 Downloads\\cinelab-02d921b。视觉组件 Release vision-components-v1 已发布。",
+      "evidence": [
+        ".opencode/handover/evidence/PACKAGE-2026-11-07-batches.md"
+      ]
+    },
+    {
+      "id": "P4-PLAN",
+      "title": "AGENT-1 / P4 大功能立项讨论与方案文档",
+      "status": "pending",
+      "note": "范围：AGENT-1、剪辑台、Agent 集成、智能剪辑、超分。每项先落 docs/<feature>-plan.md，明确交互、技术选型、数据结构和验收标准后再排期。"
+    },
+    {
+      "id": "REMAINING-1",
+      "title": "剩余已知限制：K9 全局资产导出、K11 缩略图、K24 多轨音频",
+      "status": "done",
+      "note": "K9 导出 staging 复制全局资产并改写路径；K11 .thumbs 缓存（图片 nativeImage / 视频 ffmpeg）；K24 原声/BGM/旁白三路音量混合。K2 文本流式/多轮按用户要求移除，等 Agent 阶段再做。",
+      "evidence": [
+        "docs/remaining-features-plan.md",
+        ".opencode/handover/evidence/REMAINING-1-local-enhancements.md"
+      ]
+    },
+    {
+      "id": "PACKAGE-2026-11-07-REMAINING",
+      "title": "打包：K9/K11/K24 剩余本地增强",
+      "status": "done",
+      "note": "提交 144ac61，CI 42368040739 成功（3m11s，18 tests）。安装包 156MB，已下载到 Downloads\\cinelab-144ac61。",
+      "evidence": [
+        ".opencode/handover/evidence/PACKAGE-2026-11-07-remaining.md"
+      ]
+    },
+    {
+      "id": "EDITOR-1",
+      "title": "剪辑台（其他会话开发中）",
+      "status": "pending",
+      "note": "剪辑台正在其他会话开发中；当前会话不要改动相关文件或分支，接入前先与对方同步进度和接口。"
+    },
+    {
+      "id": "DIRECTOR-STAGE-1",
+      "title": "导演台：轻量级 3D 构图节点",
+      "status": "pending",
+      "note": "参考 LibTV 3D 导演台/3D-BOX 与 TapNow CineMap：人物素模、道具、多机位、机位截图回传画布、720° 全景背景。方案见 docs/director-stage-plan.md；待调研，不进入当前实现队列。"
+    },
+    {
+      "id": "MODEL-PARAMS-2",
+      "title": "模型参数编辑器：常用参数卡片 + 结构化选项编辑",
+      "status": "done",
+      "note": "常用参数改为带说明的卡片，支持全部添加；select 选项改为逐行显示名/接口值编辑；number 支持 min/max；保留自定义参数。保存/重开验证通过。",
+      "evidence": [
+        "docs/model-params-plan.md",
+        ".opencode/handover/evidence/MODEL-PARAMS-2-friendly-editor.md"
+      ]
+    },
+    {
+      "id": "MODEL-PARAMS-3",
+      "title": "模型参数自定义值：Prompt Bar 自定义比例/尺寸",
+      "status": "done",
+      "note": "ParamDef 增加 allowCustom；模型参数编辑器增加「允许自定义值」；Prompt Bar 的比例/尺寸/分辨率可选「自定义」并输入 2:1、2048x1152 等。保存/摘要显示/退出自定义已验证。",
+      "evidence": [
+        "docs/model-params-plan.md",
+        ".opencode/handover/evidence/MODEL-PARAMS-3-custom-values.md"
+      ]
+    },
+    {
+      "id": "MODEL-PARAMS-4",
+      "title": "视频时长滑条：模型配置 min/max",
+      "status": "done",
+      "note": "时长下拉可一键「改为时长滑条」，自动取选项 min/max 并切为数字参数；Prompt Bar 对 duration 数字参数渲染 1 秒步进滑块。固定档位模型仍保留下拉，避免发送不支持的值。",
+      "evidence": [
+        "docs/model-params-plan.md",
+        ".opencode/handover/evidence/MODEL-PARAMS-4-duration-slider.md"
+      ]
+    },
+    {
+      "id": "MODEL-PARAMS-5",
+      "title": "模型参数页简化：接口字段名收进高级",
+      "status": "done",
+      "note": "参数主区域只保留显示名、控件类型、分组、选项和默认值；接口字段名移到「高级」折叠项，常用参数卡片自动填好。",
+      "evidence": [
+        "docs/model-params-plan.md",
+        ".opencode/handover/evidence/MODEL-PARAMS-5-simple.md"
+      ]
+    },
+    {
+      "id": "PROMPT-MENTION-1",
+      "title": "Prompt Bar：提示词持久化、@ 引用、AutoLink 反馈",
+      "status": "done",
+      "note": "提示词写入 node.data.prompt，切换节点/生成/重开项目都保留；@ 弹出已引用/画布/资产库/角色菜单，选择后插入 @名称 并高亮；AutoLink 显示数量与虚线缩略图；删除角色按钮；修复画布参考取消按钮。",
+      "evidence": [
+        "docs/prompt-mention-plan.md",
+        "docs/ui-spec.md",
+        ".opencode/handover/evidence/PROMPT-MENTION-1-at-reference.md"
+      ]
+    },
+    {
+      "id": "PACKAGE-a26157d",
+      "title": "打包：提示词持久化与 @ 引用",
+      "status": "done",
+      "note": "提交 a26157d 已推送，CI 42385621365 成功（3m15s），安装包位于 C:\\Users\\LAUFLO\\Downloads\\cinelab-a26157d。",
+      "evidence": [
+        ".opencode/handover/evidence/PACKAGE-2026-11-07-prompt-mention.md"
+      ]
+    },
+    {
+      "id": "GENERAL-SETTINGS-1",
+      "title": "设置页通用分区：启动、画布、生成、通知、存储",
+      "status": "done",
+      "note": "新增 preferences.json + IPC + preferencesStore；实现启动打开最近项目、自动保存间隔、网格吸附、小地图、默认模型、并发数、完成通知、AutoLink、历史保留、减少动效、数据目录与重置。主题保留独立外观分区。",
+      "evidence": [
+        "docs/general-settings-plan.md",
+        ".opencode/handover/evidence/GENERAL-SETTINGS-1.md"
+      ]
+    },
+    {
+      "id": "GENERAL-SETTINGS-2",
+      "title": "通用设置第二批：关闭确认、画布行为、缓存、缩放、代理、导入导出",
+      "status": "done",
+      "note": "补齐关闭前确认、默认项目目录、连线/滚轮/双击/网格、自动重试、默认水印、更新检查与通道、缓存清理、界面缩放、代理与超时、导入导出。模型请求统一切到 net.fetch；语言因需要全量 i18n 暂缓。",
+      "evidence": [
+        "docs/general-settings-plan.md",
+        ".opencode/handover/evidence/GENERAL-SETTINGS-2.md"
+      ]
+    },
+    {
+      "id": "PACKAGE-8016cc9",
+      "title": "打包：完整通用设置",
+      "status": "done",
+      "note": "提交 8016cc9 已推送，CI 42391299132 成功（2m33s），安装包位于 C:\\Users\\LAUFLO\\Downloads\\cinelab-8016cc9。",
+      "evidence": [
+        ".opencode/handover/evidence/PACKAGE-2026-11-08.md"
+      ]
+    },
+    {
+      "id": "AUDIO-WAVEFORM-1",
+      "title": "音频节点真实波形",
+      "status": "done",
+      "note": "主进程用 ffmpeg 解码音频并按 96 个桶计算峰值，渲染进程优先使用真实峰值；失败时回退 Web Audio，再失败显示平线，不再显示伪造正弦波形。",
+      "evidence": [
+        ".opencode/handover/evidence/AUDIO-WAVEFORM-1.md"
+      ]
+    },
+    {
+      "id": "MEDIA-NODE-POLISH-1",
+      "title": "视频控件、对齐虚线、音频波形样式",
+      "status": "done",
+      "note": "视频节点改用自定义播放器（播放/逐帧/时间/帧号/静音/全屏）；对齐引导层修正 40px 偏移；音频波形改为 64 柱居中对称样式。",
+      "evidence": [
+        ".opencode/handover/evidence/MEDIA-NODE-POLISH-1.md"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-1",
+      "title": "逐帧拉片方案（待确认）",
+      "status": "todo",
+      "note": "已调研 lapian-notes 并更新 docs/film-study-plan.md：视频工具栏创建 study 拉片节点，节点内「进入拉片室」打开浮窗；P0/P1 必须提供 Markdown 导出、当前帧/12帧拼图/段落摘要放回画布，避免拉片结果只读。",
+      "evidence": [
+        "docs/film-study-plan.md"
+      ]
+    },
+    {
+      "id": "NODE-RETRY-COLOR-1",
+      "title": "失败节点手动重试与状态颜色",
+      "status": "done",
+      "note": "文本/图片/视频/音频节点失败时显示「重新生成」，复用 generation-history 的上次请求；完成徽标改为绿色，失败红色。",
+      "evidence": [
+        ".opencode/handover/evidence/NODE-RETRY-COLOR-1.md"
+      ]
+    },
+    {
+      "id": "MODEL-INPUT-CAPABILITY-1",
+      "title": "模型输入能力：Prompt Bar 按引用置灰、设置页可编辑、后端校验",
+      "status": "done",
+      "note": "2026-11-08 完成第一期：ModelDef 新增 inputs（text/image/video/audio），按能力、模型名和 http-template 模板推断；设置页模型卡片新增「输入能力」，模型列表显示输入类型；Prompt Bar 按当前图片/视频引用置灰不支持的模型并显示原因，当前模型不可用时 chip 警告且提交拦截；AiOperationDialog/SphereDialog 置灰不支持参考图的模型；主进程校验 inputs 并增加图片 MIME 白名单。typecheck、36 个测试与 build 通过，隔离实例 CDP 验证设置保存、视频/图片两种引用下的菜单置灰、toast 和警告均生效。Agnes Flash 仍不支持视频输入，需要 http-template 专用接口或 Agnes 2.5 标准版。操作模型页按用户要求保留。",
+      "evidence": [
+        ".opencode/handover/evidence/MODEL-INPUT-CAPABILITY-1.md",
+        "docs/models.md",
+        "docs/ui-spec.md"
       ]
     },
     {
@@ -701,11 +942,6 @@
       "content": "图生图支持多图 image[]；字段被中转站拒绝时自动回退单图 image。仍待真实 i2i provider 端到端验证。"
     },
     {
-      "id": "K2",
-      "area": "generation",
-      "content": "文本生成已接通标准 /chat/completions；流式输出、多轮上下文未实现。"
-    },
-    {
       "id": "K5",
       "area": "ui",
       "content": "导出（项目 zip / 画布 PNG / 选中素材）与画布参考已完成；标记取消；AI 助手延后单独做 agent 与画布协作。"
@@ -726,19 +962,9 @@
       "content": "删除最后一个项目后停在欢迎页未端到端验证，需要真实删除唯一项目。"
     },
     {
-      "id": "K9",
-      "area": "library",
-      "content": "导出项目 zip 尚未打包全局资产引用，画布中的 global scope 路径换机器后会断图；二期需复制被引用资产进包并改写路径。"
-    },
-    {
       "id": "K10",
       "area": "library",
       "content": "旧项目内 library/ 数据不再读取，未做迁移；当前无真实用户，暂不处理。"
-    },
-    {
-      "id": "K11",
-      "area": "library",
-      "content": "资产网格直接加载原图，未生成缩略图缓存；大库滚动可能卡顿。"
     },
     {
       "id": "K12",
@@ -778,7 +1004,42 @@
     {
       "id": "K22",
       "area": "repo",
-      "content": "本地有多项未推送提交（音频节点、模型配置引导、错误反馈、请求头、参数编辑器、测试、日志）。下一次打包前需要统一推送并触发 build-win。"
+      "content": "本地有多项未推送提交（音频节点、模型配置引导、错误反馈、请求头、参数编辑器、测试、日志、模板、资产导出）。下一次打包前需要统一推送并触发 build-win。"
+    },
+    {
+      "id": "K23",
+      "area": "export",
+      "content": "视频合成的系统保存对话框、字幕文件选择、背景音乐选择未在 UI 中完整人工走通；ffmpeg 步骤已独立验证。"
+    },
+    {
+      "id": "K25",
+      "area": "operations",
+      "content": "专用视频接口的 multipart 上传代码已实现，但只用 JSON data URL 做了端到端验证；真实接口需按供应商字段联调。"
+    },
+    {
+      "id": "K26",
+      "area": "operations",
+      "content": "扩图在视觉组件安装后使用 LaMa；未安装时回退到图片模型提示词版，效果由模型决定。"
+    },
+    {
+      "id": "K27",
+      "area": "operations",
+      "content": "蒙版编辑依赖模型支持 /images/edits mask；不支持的服务会返回明确错误。真实 i2i provider 的 mask 兼容性待更多验证。"
+    },
+    {
+      "id": "K2",
+      "area": "generation",
+      "content": "文本生成已接通标准 /chat/completions；流式输出、多轮上下文未实现。"
+    },
+    {
+      "id": "K9",
+      "area": "library",
+      "content": "导出项目 zip 尚未打包全局资产引用，画布中的 global scope 路径换机器后会断图；二期需复制被引用资产进包并改写路径。"
+    },
+    {
+      "id": "K11",
+      "area": "library",
+      "content": "资产网格直接加载原图，未生成缩略图缓存；大库滚动可能卡顿。"
     }
   ],
   "gates": [],
@@ -1373,6 +1634,126 @@
     {
       "category": "engineering",
       "content": "音频节点用 fetch(cinelab-asset://) + AudioContext.decodeAudioData 计算峰值绘制真实波形，隐藏原生 audio controls；生成中显示胶囊取消，不显示右上角循环/时钟按钮。"
+    },
+    {
+      "category": "engineering",
+      "content": "视觉组件优先复用 depth-runtime 的 Python/PyTorch 环境，只单独下载模型与 worker；InSPyReNet（MIT）+ LaMa（Apache-2.0）替代 GPL 的 RVM，组件约 527MB。"
+    },
+    {
+      "category": "engineering",
+      "content": "蒙版编辑器输出 PNG，透明区域表示需要编辑；OpenAI 兼容 /images/edits 的 mask 按此语义提交。全局资产作为参考图必须带 scope，否则会按项目路径找不到而退化成文生图。"
+    },
+    {
+      "category": "engineering",
+      "content": "专用视频操作统一走 http-template 的 video 模式：GenerateRequest.video 透传，模板支持 video.dataUrl / video.base64 / video.mime 与 multipart；通过设置 → 操作模型绑定，不做首帧 i2v 近似。"
+    },
+    {
+      "category": "engineering",
+      "content": "自定义 cinelab-asset 协议需要 corsEnabled 和 Access-Control-Allow-Origin，否则 three.js 的纹理加载会失败；资产协议同时要支持 Range。"
+    },
+    {
+      "category": "procedure",
+      "content": "Windows 组件 zip 使用 Compress-Archive 生成；不要用 tar -C stage . 打包，tar 会写入 ./ 根条目，extract-zip 会以 out of bound path 拒绝安装。"
+    },
+    {
+      "category": "procedure",
+      "content": "dev:isolated 的 CDP 端口以脚本打印为准；9222 被其他会话占用时使用打印的端口，测试前先确认归属，禁止复用或关闭其他会话的 Electron 实例。"
+    },
+    {
+      "category": "preference",
+      "content": "文本节点不做流式输出和多轮对话；后续画布集成 Agent 时再统一实现流式能力。"
+    },
+    {
+      "category": "engineering",
+      "content": "项目导出包含全局资产时先在 staging 复制项目、复制全局素材到 assets/global、改写画布 outputs 的 scope 和 path，再压缩；缺失素材必须中止导出。"
+    },
+    {
+      "category": "engineering",
+      "content": "资产缩略图缓存在库根 .thumbs/，键包含相对路径 + mtime + size；图片用 nativeImage，视频用 ffmpeg 抽 0.1 秒帧，AssetGrid 优先加载缩略图。"
+    },
+    {
+      "category": "engineering",
+      "content": "视频合成多轨音频用 [0:a]/[1:a]/[2:a] 分别 volume 后 amix duration=first:normalize=0；原声、BGM、旁白各自独立音量，BGM 循环、旁白不循环。"
+    },
+    {
+      "category": "repo",
+      "content": "剪辑台由其他会话开发中，当前会话不要改动剪辑台相关文件/分支；接入前先同步接口与进度。"
+    },
+    {
+      "category": "preference",
+      "content": "导演台作为独立大需求立项：优先做轻量 3D 构图节点（素模/道具/多机位/截图回传），不做 Blender 级建模；先落 docs/director-stage-plan.md 再实施。"
+    },
+    {
+      "category": "preference",
+      "content": "模型参数编辑器面向首次配置用户：常用参数用带说明的卡片一键添加，选项用显示名/接口值逐行编辑，不要求手写「值|显示名」；接口字段名保留但作为次要信息，仍支持自定义参数。"
+    },
+    {
+      "category": "preference",
+      "content": "模型的下拉参数需要支持 allowCustom：比例/尺寸/分辨率在 Prompt Bar 预设旁提供「自定义」输入，不能假设模型只支持预设选项。"
+    },
+    {
+      "category": "preference",
+      "content": "视频时长是否连续由模型能力决定：固定档位用下拉；支持连续秒数的模型在参数配置里填 min/max，Prompt Bar 用 1 秒步进滑块，不能默认所有模型都能滑。"
+    },
+    {
+      "category": "preference",
+      "content": "模型参数配置页默认只展示用户能理解的显示名、类型、分组、选项和默认值；接口字段名等开发者信息收进「高级」折叠项，常用参数由卡片自动填好。"
+    },
+    {
+      "category": "preference",
+      "content": "Prompt Bar 的提示词必须按节点持久化到 node.data.prompt，生成完成、切换节点、重开项目都不能清空。"
+    },
+    {
+      "category": "preference",
+      "content": "提示词里的 @ 引用需要显式菜单（已引用/画布/资产库/角色）和输入框内 token 高亮；AutoLink 是文本自动匹配，必须给出数量或描边等可见反馈，不能静默生效。"
+    },
+    {
+      "category": "lesson",
+      "content": "项目节点的持久化 schema 是 zod 严格对象，新增 CineNodeData 字段时必须同步 cineNodeSchema，否则保存时会被剥离。"
+    },
+    {
+      "category": "environment",
+      "content": "本机访问 github.com:443 需要代理。Clash Verge 的内核可能与 UDP 7897 冲突导致 TCP 代理未监听；可用临时配置改 mixed-port 为 7890 启动 verge-mihomo，再通过 HTTPS_PROXY 推送和 gh 下载 artifact。"
+    },
+    {
+      "category": "preference",
+      "content": "设置页需要独立的「通用」分区承载启动、画布、生成、通知和存储偏好；主题保留独立「外观」，后续在「外观」扩展连线颜色、节点边框和画布背景。"
+    },
+    {
+      "category": "lesson",
+      "content": "多个偏好开关连续修改时，渲染层必须先同步合并到最新状态再串行写盘，不能并行读取同一个旧快照，否则后写的旧值会覆盖前一个开关。"
+    },
+    {
+      "category": "lesson",
+      "content": "模型请求需要通过 Electron net.fetch 走会话网络栈，才能让代理设置生效；Node 全局 fetch 不读取会话代理。localhost 请求会被 Chromium 默认绕过代理。"
+    },
+    {
+      "category": "lesson",
+      "content": "窗口关闭确认不能用渲染进程 window.close() 验证，它可能绕过 close 拦截；标题栏关闭走 win.close() 才会经过主进程 close 事件。"
+    },
+    {
+      "category": "lesson",
+      "content": "设置页 Toggle 的 class 拼接必须保留空格（settings-toggle + \" is-on\"），否则 querySelector 和样式会同时失效。"
+    },
+    {
+      "category": "preference",
+      "content": "音频节点必须显示真实音频峰值；解析失败时显示平线或加载态，不能退回固定正弦图案冒充波形。"
+    },
+    {
+      "category": "preference",
+      "content": "视频节点不要使用浏览器原生 controls；使用应用内自定义播放器，保证节点控件与整体设计一致，并提供逐帧步进。"
+    },
+    {
+      "category": "lesson",
+      "content": "对齐引导层使用 fixed 定位时不要额外加 top 偏移；React Flow 的 flowToScreenPosition 已经返回窗口坐标，额外偏移会把虚线推进节点内部。"
+    },
+    {
+      "category": "preference",
+      "content": "逐帧拉片应做成独立拉片台，用 ffmpeg 抽帧和虚拟滚动时间轴；不要把成千上万帧铺成画布节点。"
+    },
+    {
+      "category": "preference",
+      "content": "黑白灰不是绝对限制：成功、失败、警告等语义状态必须使用绿色/红色/黄色；仅装饰性颜色保持克制。"
     }
   ],
   "designConventions": [

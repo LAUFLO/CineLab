@@ -10,6 +10,11 @@ import {
   type ProjectSnapshot,
   type RecentProject
 } from '@shared/project-schema'
+import {
+  buildTemplateCanvas,
+  type ProjectTemplateId
+} from '@shared/project-templates'
+import { getPreferences } from '../settings/preferences'
 
 const PROJECT_EXT = '.cinelab'
 
@@ -23,8 +28,10 @@ export function getCurrentProjectRoot(): string | null {
   return currentProjectRoot
 }
 
-export function defaultProjectsDir(): string {
-  return join(app.getPath('documents'), 'CineLab')
+export async function defaultProjectsDir(): Promise<string> {
+  const preferences = await getPreferences()
+  const custom = preferences.project.defaultDir.trim()
+  return custom ? resolve(custom) : join(app.getPath('documents'), 'CineLab')
 }
 
 function recentFile(): string {
@@ -171,10 +178,11 @@ export async function removeProjectCover(path: string): Promise<void> {
 
 export async function createProject(
   name: string,
-  parentDir?: string
+  parentDir?: string,
+  templateId: ProjectTemplateId = 'blank'
 ): Promise<ProjectSnapshot> {
   const safeName = sanitizeName(name)
-  const parent = parentDir ? resolve(parentDir) : defaultProjectsDir()
+  const parent = parentDir ? resolve(parentDir) : await defaultProjectsDir()
   await fs.mkdir(parent, { recursive: true })
 
   const folder = safeName.endsWith(PROJECT_EXT) ? safeName : `${safeName}${PROJECT_EXT}`
@@ -203,14 +211,7 @@ export async function createProject(
     activeCanvasId: canvasId
   }
 
-  const canvas: CanvasData = {
-    schemaVersion: 1,
-    id: canvasId,
-    name: '画布 1',
-    viewport: { x: 0, y: 0, zoom: 1 },
-    nodes: [],
-    edges: []
-  }
+  const canvas: CanvasData = buildTemplateCanvas(templateId, canvasId)
 
   for (const dir of [
     'assets/img',
@@ -263,6 +264,9 @@ export async function saveCanvas(projectPath: string, canvas: CanvasData): Promi
 }
 
 export async function bootstrap(): Promise<ProjectSnapshot | null> {
+  const preferences = await getPreferences()
+  if (!preferences.startup.openRecentProject) return null
+
   const recents = await readRecent()
 
   for (const recent of recents) {

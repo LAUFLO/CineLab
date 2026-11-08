@@ -25,7 +25,9 @@ import {
 import { generateVideoArk } from '../providers/volcengine'
 import { isRetryable, withRetry } from '../providers/retry'
 import { resolveProvider } from '../settings/store'
+import { modelInputs } from '@shared/provider-schema'
 import { getLibraryRoot } from '../library/config'
+import { resolveMediaPath } from '../media/paths'
 import { log } from '../logger'
 
 function broadcast(event: GenerationEvent): void {
@@ -71,6 +73,13 @@ const REF_MIME: Record<string, string> = {
   '.webp': 'image/webp'
 }
 
+const VIDEO_MIME: Record<string, string> = {
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mov': 'video/quicktime',
+  '.mkv': 'video/x-matroska'
+}
+
 const VIDEO_SIZE: Record<string, [number, number]> = {
   '16:9': [1280, 720],
   '9:16': [720, 1280],
@@ -101,9 +110,11 @@ async function loadRefs(
       continue
     }
 
+    const mime = REF_MIME[extname(absolute).toLowerCase()]
+    if (!mime) continue
+
     try {
       const data = await fs.readFile(absolute)
-      const mime = REF_MIME[extname(absolute).toLowerCase()] ?? 'image/png'
 
       loaded.push({
         dataUrl: `data:${mime};base64,${data.toString('base64')}`,
@@ -115,6 +126,21 @@ async function loadRefs(
   }
 
   return loaded
+}
+
+async function loadVideo(
+  projectRoot: string,
+  video: ReferenceInput | undefined
+): Promise<{ dataUrl: string; mime: string } | undefined> {
+  if (!video) return undefined
+
+  const absolute = await resolveMediaPath(projectRoot, video.path, video.scope)
+  const data = await fs.readFile(absolute)
+  const mime = VIDEO_MIME[extname(absolute).toLowerCase()] ?? 'video/mp4'
+  return {
+    dataUrl: `data:${mime};base64,${data.toString('base64')}`,
+    mime
+  }
 }
 
 export function registerGenerateIpc(): void {
@@ -193,6 +219,21 @@ export function registerGenerateIpc(): void {
       nodeId: request.nodeId,
       run: async (signal, onProgress) => {
         const refs = await loadRefs(projectRoot, request.refs)
+        if (request.refs && request.refs.length > 0 && refs.length === 0) {
+          throw new Error('参考素材缺失或不在当前项目中，请重新添加素材')
+        }
+        const video = await loadVideo(projectRoot, request.video)
+
+        const supportedInputs = modelInputs(model)
+        if (
+          (refs.length > 0 || request.mask) &&
+          !supportedInputs.includes('image')
+        ) {
+          throw new Error('该模型不支持图生图，请选择支持参考图的模型')
+        }
+        if (video && !supportedInputs.includes('video')) {
+          throw new Error('该模型不支持参考视频，请选择支持视频输入的模型')
+        }
         const runtime = {
           baseUrl: provider.baseUrl,
           apiKey: provider.apiKey,
@@ -203,6 +244,9 @@ export function registerGenerateIpc(): void {
 
         const generate = (): Promise<ProviderOutput[]> => {
           if (isVideo) {
+            if (video && adapter !== 'http-template') {
+              throw new Error('当前视频模型不支持视频输入，请在设置 → 操作模型中绑定 http-template 专用接口')
+            }
             if (adapter === 'agnes-video') {
               return generateVideoAgnes(
                 model,
@@ -220,6 +264,7 @@ export function registerGenerateIpc(): void {
                 request.prompt,
                 request.params,
                 refs,
+                video,
                 context
               )
             }
@@ -288,7 +333,8 @@ export function registerGenerateIpc(): void {
             request.prompt,
             request.params,
             refs,
-            context
+            context,
+            request.mask
           )
         }
 
@@ -306,18 +352,17 @@ export function registerGenerateIpc(): void {
           : undefined
 
         for (const output of outputs) {
-          assets.push(
-            await ingestAsset({
-              projectPath: projectRoot,
-              data: output.data,
-              kind,
-              mime: output.mime,
-              model: model.name,
-              text: output.text,
-              width: videoSize?.[0],
-              height: videoSize?.[1]
-            })
-          )
+          const asset = await ingestAsset({
+            projectPath: projectRoot,
+            data: output.data,
+            kind,
+            mime: output.mime,
+            model: model.name,
+            text: output.text,
+            width: videoSize?.[0],
+            height: videoSize?.[1]
+          })
+          assets.push(request.op ? { ...asset, op: request.op } : asset)
         }
 
         return assets

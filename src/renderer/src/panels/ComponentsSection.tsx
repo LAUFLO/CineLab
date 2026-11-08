@@ -5,6 +5,7 @@ import { useUIStore } from '../stores/ui'
 const KIND_ORDER: ComponentKind[] = [
   'depth-runtime',
   'depth-model',
+  'vision-models',
   'whisper-runtime',
   'whisper-model'
 ]
@@ -40,6 +41,13 @@ const COMPONENT_META: Record<
       'OpenAI Whisper base 多语言模型（MIT）。约 148MB，CPU 转写中文和英文，首次转写会比后续慢。',
     uninstallHint:
       '卸载后，本地转写缺少模型权重，「自动字幕」将无法使用。已生成的字幕轨不受影响，可随时重新下载。'
+  },
+  'vision-models': {
+    name: '视觉模型（InSPyReNet + LaMa）',
+    description:
+      'InSPyReNet 抠像与 LaMa 修复模型，约 570MB。复用深度运行时的 Python/PyTorch 环境，请先安装「深度动作捕捉运行时」。安装后可解锁抠图、图层分离、视频抠像、智能去字幕、主体消除和本地扩图。',
+    uninstallHint:
+      '卸载后，抠图、图层分离、视频抠像、智能修复和本地扩图将无法使用。已生成的素材节点不受影响，可随时重新下载。'
   }
 }
 

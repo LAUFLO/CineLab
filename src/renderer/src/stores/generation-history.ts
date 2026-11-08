@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { GenerateRequest } from '@shared/generation'
 import { isGroupNode, useCanvasStore } from './canvas'
+import { usePreferencesStore } from './preferences'
 
 export type GenerationHistoryStatus = 'running' | 'done' | 'error' | 'cancelled'
 
@@ -24,17 +25,28 @@ interface GenerationHistoryState {
   fail: (nodeId: string, error: string, retryable?: boolean) => void
   remove: (nodeId: string) => void
   clear: () => void
+  trim: () => void
 }
 
 const STORAGE_KEY = 'cinelab.generation-history'
-const LIMIT = 50
+const FALLBACK_LIMIT = 50
+
+function persistLimit(): number {
+  const value = usePreferencesStore.getState().preferences.generation.historyLimit
+  return Number.isFinite(value) ? value : FALLBACK_LIMIT
+}
+
+function memoryLimit(): number {
+  const limit = persistLimit()
+  return limit === 0 ? FALLBACK_LIMIT : limit
+}
 
 function loadEntries(): GenerationHistoryEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as GenerationHistoryEntry[]
-    return Array.isArray(parsed) ? parsed.slice(0, LIMIT) : []
+    return Array.isArray(parsed) ? parsed.slice(0, memoryLimit()) : []
   } catch {
     return []
   }
@@ -42,7 +54,15 @@ function loadEntries(): GenerationHistoryEntry[] {
 
 function saveEntries(entries: GenerationHistoryEntry[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
+    const limit = persistLimit()
+    if (limit === 0) {
+      localStorage.removeItem(STORAGE_KEY)
+      return
+    }
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(entries.slice(0, limit))
+    )
   } catch {
     // 历史记录持久化失败不影响生成流程
   }
@@ -59,7 +79,7 @@ function titleFor(nodeId: string): string {
 export const useGenerationHistoryStore = create<GenerationHistoryState>(
   (set, get) => {
     const commit = (entries: GenerationHistoryEntry[]): void => {
-      const next = entries.slice(0, LIMIT)
+      const next = entries.slice(0, memoryLimit())
       saveEntries(next)
       set({ entries: next })
     }
@@ -115,7 +135,16 @@ export const useGenerationHistoryStore = create<GenerationHistoryState>(
       remove: (nodeId) =>
         commit(get().entries.filter((entry) => entry.nodeId !== nodeId)),
 
-      clear: () => commit([])
+      clear: () => commit([]),
+
+      trim: () => {
+        if (persistLimit() === 0) {
+          saveEntries([])
+          set({ entries: [] })
+          return
+        }
+        commit(get().entries)
+      }
     }
   }
 )

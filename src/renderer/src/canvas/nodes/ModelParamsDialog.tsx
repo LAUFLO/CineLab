@@ -49,6 +49,12 @@ function optionSummary(def: ParamDef): string {
   return `默认 ${def.defaultValue || '空'}`
 }
 
+function chipSummary(def: ParamDef): string {
+  if (def.type === 'select') return `${def.options?.length ?? 0} 项`
+  if (def.type === 'boolean') return def.defaultValue ? '默认开' : '默认关'
+  return `默认 ${def.defaultValue ?? '—'}`
+}
+
 export function ModelParamsDialog({
   model,
   onCancel,
@@ -56,6 +62,7 @@ export function ModelParamsDialog({
 }: ModelParamsDialogProps) {
   const [rows, setRows] = useState<ParamRow[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [templatesOpen, setTemplatesOpen] = useState(true)
 
   useEffect(() => {
     if (!model) {
@@ -64,6 +71,7 @@ export function ModelParamsDialog({
     }
     setError(null)
     setRows(model.params.map(cloneDef))
+    setTemplatesOpen(model.params.length === 0)
   }, [model])
 
   const templates = model ? paramTemplatesFor(model.capability) : []
@@ -71,6 +79,9 @@ export function ModelParamsDialog({
     () => new Set(rows.map((row) => row.key.trim()).filter(Boolean)),
     [rows]
   )
+  const addedCount = templates.filter((template) =>
+    existingKeys.has(template.def.key)
+  ).length
 
   if (!model) return null
 
@@ -344,54 +355,69 @@ export function ModelParamsDialog({
           这些参数会显示在 Prompt Bar 的「生成设置」里。第一次配置可以直接添加常用参数，不需要了解接口字段名。
         </div>
 
-        <div className="model-params__templates-head">
-          <div>
-            <div className="model-params__templates-title">常用参数</div>
-            <div className="model-params__templates-desc">
-              点击卡片添加；已添加的不会重复
-            </div>
-          </div>
-          <button
-            type="button"
-            className="btn-secondary btn-small"
-            disabled={templates.every((template) =>
-              existingKeys.has(template.def.key)
-            )}
-            onClick={addAllTemplates}
-          >
-            全部添加
-          </button>
-        </div>
-
-        <div className="model-params__template-grid">
-          {templates.map((template) => {
-            const added = existingKeys.has(template.def.key)
-            return (
+        {templates.length > 0 ? (
+          <>
+            <div className="model-params__templates-head">
               <button
-                key={template.id}
                 type="button"
-                className={`model-params__template${added ? ' is-added' : ''}`}
-                disabled={added}
-                onClick={() => addTemplate(template)}
+                className="model-params__templates-toggle"
+                onClick={() => setTemplatesOpen((value) => !value)}
               >
-                <div className="model-params__template-head">
-                  <span className="model-params__template-name">
-                    {template.def.label}
-                  </span>
-                  <span className="model-params__template-action">
-                    {added ? '已添加' : '+ 添加'}
-                  </span>
-                </div>
-                <div className="model-params__template-desc">
-                  {template.description}
-                </div>
-                <div className="model-params__template-preview">
-                  {optionSummary(template.def)}
-                </div>
+                <Icon
+                  name={templatesOpen ? 'chevron-down' : 'chevron-right'}
+                  size={12}
+                />
+                <span className="model-params__templates-title">常用参数</span>
+                <span className="model-params__templates-count">
+                  {addedCount}/{templates.length}
+                </span>
               </button>
-            )
-          })}
-        </div>
+              <div className="model-params__templates-actions">
+                <span className="model-params__templates-desc">
+                  点击标签添加
+                </span>
+                <button
+                  type="button"
+                  className="btn-secondary btn-small"
+                  disabled={addedCount === templates.length}
+                  onClick={addAllTemplates}
+                >
+                  全部添加
+                </button>
+              </div>
+            </div>
+
+            {templatesOpen ? (
+              <div className="model-params__template-chips">
+                {templates.map((template) => {
+                  const added = existingKeys.has(template.def.key)
+                  return (
+                    <button
+                      key={template.id}
+                      type="button"
+                      className={`model-params__chip${
+                        added ? ' is-added' : ''
+                      }`}
+                      disabled={added}
+                      title={`${template.description}\n${optionSummary(
+                        template.def
+                      )}`}
+                      onClick={() => addTemplate(template)}
+                    >
+                      <span>{template.def.label}</span>
+                      <span className="model-params__chip-meta">
+                        {chipSummary(template.def)}
+                      </span>
+                      <span className="model-params__chip-action">
+                        {added ? '✓' : '+'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null}
+          </>
+        ) : null}
 
         <div className="model-params__list">
           {rows.length === 0 ? (

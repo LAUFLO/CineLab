@@ -85,7 +85,7 @@ export function nodeSize(node: CanvasNode): { width: number; height: number } {
 }
 
 export function nodeOutputs(node: CanvasNode): OutputRef[] {
-  return node.type === 'cine' || node.type === 'film'
+  return node.type === 'cine' || node.type === 'film' || node.type === 'studio'
     ? node.data.outputs ?? []
     : []
 }
@@ -93,7 +93,7 @@ export function nodeOutputs(node: CanvasNode): OutputRef[] {
 export function selectedNodeOutput(node: CanvasNode): OutputRef | null {
   const outputs = nodeOutputs(node)
   const selectedOutputId =
-    node.type === 'cine' || node.type === 'film'
+    node.type === 'cine' || node.type === 'film' || node.type === 'studio'
       ? node.data.selectedOutputId
       : undefined
   return (
@@ -158,7 +158,6 @@ interface CanvasStore {
   onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string
   addStudioNode: (position: XYPosition, title?: string) => string
-  addFilmNode: (studioNodeId: string, position: XYPosition, title: string) => string
   addVideoOpNode: (
     sourceNodeId: string,
     operation: VideoOperationId,
@@ -166,11 +165,10 @@ interface CanvasStore {
     title?: string
   ) => string
   patchStudioNode: (nodeId: string, patch: Partial<StudioNodeData>) => void
-  patchFilmNode: (nodeId: string, patch: Partial<FilmNodeData>) => void
   patchVideoOpNode: (nodeId: string, patch: Partial<VideoOpNodeData>) => void
-  linkStudioFilm: (studioNodeId: string, filmNodeId: string) => void
-  setFilmStatus: (nodeId: string, filmStatus: FilmStatus) => void
-  applyFilmOutput: (nodeId: string, output: OutputRef) => void
+  setStudioFilmStatus: (studioNodeId: string, filmStatus: FilmStatus) => void
+  applyStudioOutput: (studioNodeId: string, output: OutputRef) => void
+  detachStudioOutput: (studioNodeId: string) => string | null
   addAssetNodes: (
     kind: NodeKind,
     origin: XYPosition,
@@ -354,8 +352,120 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
   loadCanvas: (nodes, edges, viewport) => {
     const groupIds = new Set<string>()
-    const migrated = nodes.map((node) => {
+
+    // ===== 旧项目迁移：独立成片节点合并回剪辑室节点 =====
+    const filmToStudio = new Map<string, string>()
+    for (const node of nodes) {
+      if (!isFilmNode(node)) continue
+      const studioId = node.data.studioNodeId
+      if (!studioId) continue
+      const studio = nodes.find(
+        (entry) => entry.id === studioId && isStudioNode(entry)
+      )
+      if (!studio || !isStudioNode(studio)) continue
+      filmToStudio.set(node.id, studioId)
+    }
+
+    const mergedNodes = nodes
+      .map((node): CanvasNode | null => {
+        if (isFilmNode(node)) {
+          const studioId = filmToStudio.get(node.id)
+          if (studioId) return null
+
+          // 找不到剪辑室的孤儿成片：降级为普通视频素材，避免数据丢失
+          const outputs = node.data.outputs ?? []
+          return {
+            id: node.id,
+            type: 'cine',
+            parentId: node.parentId,
+            position: node.position,
+            selected: node.selected,
+            zIndex: node.zIndex,
+            measured: node.measured,
+            data: {
+              kind: 'video',
+              title: node.data.title,
+              status: outputs.length > 0 ? 'done' : 'idle',
+              outputs,
+              selectedOutputId: node.data.selectedOutputId,
+              templates: NODE_META.video.templates
+            },
+            style: node.style
+          }
+        }
+
+        if (!isStudioNode(node)) return node
+
+        const film = nodes.find(
+          (entry): entry is FilmNode =>
+            isFilmNode(entry) && filmToStudio.get(entry.id) === node.id
+        )
+        if (!film) {
+          const outputs = node.data.outputs ?? []
+          const filmStatus =
+            node.data.filmStatus === 'rendering'
+              ? outputs.length > 0
+                ? 'ready'
+                : 'pending'
+              : node.data.filmStatus ??
+                (outputs.length > 0 ? 'ready' : 'pending')
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              filmStatus
+            }
+          }
+        }
+
+        const outputs = film.data.outputs ?? []
+        const filmStatus =
+          film.data.filmStatus === 'rendering'
+            ? outputs.length > 0
+              ? 'ready'
+              : 'pending'
+            : film.data.filmStatus ??
+              (outputs.length > 0 ? 'ready' : 'pending')
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            filmNodeId: undefined,
+            filmStatus,
+            outputs,
+            selectedOutputId: film.data.selectedOutputId,
+            upstreamAck: film.data.upstreamAck
+          }
+        }
+      })
+      .filter((node): node is CanvasNode => node !== null)
+
+    const mergedEdges = edges
+      .filter((edge) => {
+        const studioId = filmToStudio.get(edge.target)
+        return !(studioId && edge.source === studioId)
+      })
+      .map((edge) => {
+        const studioId = filmToStudio.get(edge.source)
+        return studioId ? { ...edge, source: studioId } : edge
+      })
+      .filter((edge) => edge.source !== edge.target)
+
+    const migrated = mergedNodes.map((node) => {
       if (isGroupNode(node)) return node
+      if (isStudioNode(node)) {
+        const width = Number(node.style?.width ?? 0)
+        if (width === NODE_META.studio.width) return node
+        return {
+          ...node,
+          style: {
+            ...node.style,
+            width: NODE_META.studio.width,
+            height: NODE_META.studio.height + TITLE_HEIGHT
+          }
+        }
+      }
       if (node.type !== 'cine') return node
       if (node.data.kind === 'study') {
         const height = Number(node.style?.height ?? 0)
@@ -399,19 +509,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
 
     set({
-      nodes: migrated.map((node) =>
-        node.type === 'film' && node.data.filmStatus === 'rendering'
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                filmStatus:
-                  (node.data.outputs?.length ?? 0) > 0 ? 'ready' : 'pending'
-              }
-            }
-          : node
-      ),
-      edges,
+      nodes: migrated,
+      edges: mergedEdges,
       viewport,
       hydrated: true,
       past: [],
@@ -538,9 +637,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         title: title ?? `剪辑室 ${count + 1}`,
         status: 'idle',
         timelineId: nextId('timeline'),
+        filmStatus: 'pending',
+        outputs: [],
         templates: []
       },
-      style: { width: meta.width, height: meta.height }
+      style: { width: meta.width, height: meta.height + TITLE_HEIGHT }
     }
 
     set({
@@ -550,33 +651,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       ]
     })
 
-    return id
-  },
-
-  addFilmNode: (studioNodeId, position, title) => {
-    get().pushHistory()
-
-    const meta = NODE_META.film
-    const id = nextId('film')
-
-    const node: FilmNode = {
-      id,
-      type: 'film',
-      position,
-      selected: false,
-      data: {
-        kind: 'film',
-        title,
-        status: 'idle',
-        studioNodeId,
-        filmStatus: 'pending',
-        outputs: [],
-        templates: []
-      },
-      style: { width: meta.width, height: meta.height }
-    }
-
-    set({ nodes: [...get().nodes, node] })
     return id
   },
 
@@ -652,16 +726,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
   },
 
-  patchFilmNode: (nodeId, patch) => {
-    set({
-      nodes: get().nodes.map((node) =>
-        node.id === nodeId && isFilmNode(node)
-          ? { ...node, data: { ...node.data, ...patch } }
-          : node
-      )
-    })
-  },
-
   patchVideoOpNode: (nodeId, patch) => {
     set({
       nodes: get().nodes.map((node) =>
@@ -672,21 +736,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
   },
 
-  linkStudioFilm: (studioNodeId, filmNodeId) => {
-    set({
-      nodes: get().nodes.map((node) => {
-        if (node.id === studioNodeId && isStudioNode(node)) {
-          return { ...node, data: { ...node.data, filmNodeId } }
-        }
-        if (node.id === filmNodeId && isFilmNode(node)) {
-          return { ...node, data: { ...node.data, studioNodeId } }
-        }
-        return node
-      })
-    })
-  },
-
-  setFilmStatus: (nodeId, filmStatus) => {
+  setStudioFilmStatus: (studioNodeId, filmStatus) => {
     const status =
       filmStatus === 'rendering'
         ? 'running'
@@ -696,19 +746,19 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
     set({
       nodes: get().nodes.map((node) =>
-        node.id === nodeId && isFilmNode(node)
+        node.id === studioNodeId && isStudioNode(node)
           ? { ...node, data: { ...node.data, filmStatus, status } }
           : node
       )
     })
   },
 
-  applyFilmOutput: (nodeId, output) => {
+  applyStudioOutput: (studioNodeId, output) => {
     get().pushHistory()
 
     set({
       nodes: get().nodes.map((node) => {
-        if (node.id !== nodeId || !isFilmNode(node)) return node
+        if (node.id !== studioNodeId || !isStudioNode(node)) return node
         const outputs = [output, ...(node.data.outputs ?? [])].slice(0, 20)
         return {
           ...node,
@@ -722,6 +772,51 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         }
       })
     })
+  },
+
+  detachStudioOutput: (studioNodeId) => {
+    const state = get()
+    const studio = state.nodes.find((node) => node.id === studioNodeId)
+    if (!studio || !isStudioNode(studio)) return null
+
+    const output = selectedNodeOutput(studio)
+    if (!output) return null
+
+    state.pushHistory()
+
+    const meta = NODE_META.video
+    const id = nextId('video')
+    const node: CineNode = {
+      id,
+      type: 'cine',
+      position: absolutePosition(studio, state.nodes),
+      selected: true,
+      data: {
+        kind: 'video',
+        title: `${studio.data.title} · 成片`,
+        status: 'done',
+        outputs: studio.data.outputs ?? [],
+        selectedOutputId: output.id,
+        templates: NODE_META.video.templates
+      },
+      style: {
+        width: meta.width,
+        height:
+          output.width && output.height
+            ? Math.round((meta.width * output.height) / output.width) +
+              TITLE_HEIGHT
+            : meta.height + TITLE_HEIGHT
+      }
+    }
+
+    set({
+      nodes: [
+        ...get().nodes.map((entry) => ({ ...entry, selected: false })),
+        node
+      ]
+    })
+
+    return id
   },
 
   addAssetNodes: (kind, origin, assets, titlePrefix, sourceNodeId, layout) => {

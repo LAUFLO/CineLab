@@ -168,7 +168,15 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           current={current}
           align={toolbarAlign}
           onDownload={() => void exportCurrent()}
-          onExpand={() => setPreviewOpen(true)}
+          onExpand={() => {
+            if (data.kind === 'text') setTextEditorOpen(true)
+            else setPreviewOpen(true)
+          }}
+          onEdit={
+            data.kind === 'text'
+              ? () => setTextEditorOpen(true)
+              : undefined
+          }
           libraryAction={
             current.kind !== 'text'
               ? {
@@ -192,6 +200,20 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
       {selected && !multiSelected && !current && !isBusy ? (
         <div className="cnode__toolbar cnode__toolbar--minimal nodrag nopan">
+          {data.kind === 'text' ? (
+            <button
+              type="button"
+              className="cnode__toolbar-btn"
+              title="编辑文本（支持 Markdown）"
+              onClick={(event) => {
+                event.stopPropagation()
+                setTextEditorOpen(true)
+              }}
+            >
+              <Icon name="edit" size={14} />
+              <span>编辑</span>
+            </button>
+          ) : null}
           <button
             type="button"
             className="cnode__toolbar-btn"

@@ -3,12 +3,13 @@ import type {
   AgentToolResultInput,
   AgentTurnChange
 } from '@shared/agent'
-import type {
-  CanvasCommandEdge,
-  CanvasCommandNode
+import {
+  emptyCanvasChange,
+  type CanvasCommandEdge,
+  type CanvasCommandNode
 } from '@shared/canvas-commands'
 import { NODE_META, TITLE_HEIGHT } from '@shared/canvas-schema'
-import { useCanvasStore } from '../stores/canvas'
+import { isGroupNode, useCanvasStore } from '../stores/canvas'
 
 function selectedNodeSummary(): Array<{
   id: string
@@ -17,11 +18,14 @@ function selectedNodeSummary(): Array<{
 }> {
   const { nodes } = useCanvasStore.getState()
   return nodes
-    .filter((node) => node.selected && node.type === 'cine')
+    .filter((node) => node.selected)
     .map((node) => ({
       id: node.id,
       title: String((node.data as { title?: unknown }).title ?? ''),
-      kind: String((node.data as { kind?: unknown }).kind ?? 'unknown')
+      kind:
+        node.type === 'cine'
+          ? String((node.data as { kind?: unknown }).kind ?? 'unknown')
+          : node.type
     }))
 }
 
@@ -197,6 +201,67 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
         nodeId,
         deletedEdgeIds: change.deletedEdgeIds
       },
+      change
+    }
+  }
+
+  if (call.name === 'canvas_group') {
+    const nodeIds = Array.isArray(call.args.nodeIds)
+      ? call.args.nodeIds.filter(
+          (id): id is string => typeof id === 'string'
+        )
+      : []
+    if (nodeIds.length < 2) {
+      return { ok: false, error: '至少需要两个节点才能分组' }
+    }
+
+    const targets = state.nodes.filter((node) => nodeIds.includes(node.id))
+    if (targets.length !== nodeIds.length) {
+      return { ok: false, error: '部分节点不存在' }
+    }
+    if (targets.some((node) => node.type === 'group' || node.parentId)) {
+      return { ok: false, error: '只能把顶层非分组节点打组' }
+    }
+
+    useCanvasStore.setState({
+      nodes: state.nodes.map((node) => ({
+        ...node,
+        selected: nodeIds.includes(node.id)
+      }))
+    })
+    const groupId = useCanvasStore.getState().groupSelection(call.turnId)
+    if (!groupId) {
+      return { ok: false, error: '打组失败，至少需要两个顶层节点' }
+    }
+
+    const change = emptyCanvasChange()
+    change.createdNodeIds.push(groupId)
+    change.updatedNodeIds.push(...nodeIds)
+    return {
+      ok: true,
+      result: { groupId, nodeIds },
+      change
+    }
+  }
+
+  if (call.name === 'canvas_ungroup') {
+    const groupId = String(call.args.groupId ?? '')
+    const group = state.nodes.find((node) => node.id === groupId)
+    if (!group || !isGroupNode(group)) {
+      return { ok: false, error: '找不到这个分组' }
+    }
+
+    const releasedNodeIds = state.nodes
+      .filter((node) => node.parentId === groupId)
+      .map((node) => node.id)
+    useCanvasStore.getState().ungroup(groupId, call.turnId)
+
+    const change = emptyCanvasChange()
+    change.deletedNodeIds.push(groupId)
+    change.updatedNodeIds.push(...releasedNodeIds)
+    return {
+      ok: true,
+      result: { groupId, releasedNodeIds },
       change
     }
   }

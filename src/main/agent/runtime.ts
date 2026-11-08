@@ -28,7 +28,7 @@ import { skillCatalogPrompt } from './skills'
 const MAX_STEPS = 8
 const TOOL_TIMEOUT_MS = 30_000
 
-const SYSTEM_PROMPT = `你是 CineLab 的画布助手。你可以读取画布、创建文本/图片/视频/音频节点、修改标题、移动节点、连接节点和删除节点。
+const SYSTEM_PROMPT = `你是 CineLab 的画布助手。你可以读取画布、创建文本/图片/视频/音频节点、修改标题、移动节点、连接节点、删除节点、分组和解散分组。
 
 规则：
 - 只操作当前画布。

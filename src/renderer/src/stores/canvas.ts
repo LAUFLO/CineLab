@@ -222,7 +222,7 @@ interface CanvasStore {
   removeSelection: () => number
   removeNodesByIds: (ids: string[]) => number
   convertFilmToMedia: (filmId: string, detach?: boolean) => boolean
-  groupSelection: () => string | null
+  groupSelection: (turnId?: string) => string | null
   mergeSelection: () => string | null
   createStoryboard: () => string | null
   arrangeStoryboard: (groupId: string) => void
@@ -231,7 +231,7 @@ interface CanvasStore {
   setStoryboardRatio: (groupId: string, ratio: GroupRatio) => void
   toggleStoryboardIndex: (groupId: string) => void
   clearGroupChildren: (groupId: string) => number
-  ungroup: (groupId: string) => void
+  ungroup: (groupId: string, turnId?: string) => void
   deleteGroupWithChildren: (groupId: string) => number
   renameGroup: (groupId: string, title: string) => void
   setGroupColor: (groupId: string, color: GroupColor) => void
@@ -1510,14 +1510,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return true
   },
 
-  groupSelection: () => {
+  groupSelection: (turnId) => {
     const all = get().nodes
     const selected = all.filter(
       (node) => node.selected && !isGroupNode(node) && !node.parentId
     )
     if (selected.length < 2) return null
 
-    get().pushHistory()
+    if (!turnId || !commandTurns.has(turnId)) {
+      get().pushHistory()
+      if (turnId) commandTurns.add(turnId)
+    }
 
     const absolute = selected.map((node) => {
       const size = nodeSize(node)
@@ -1948,12 +1951,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return removed.size
   },
 
-  ungroup: (groupId) => {
+  ungroup: (groupId, turnId) => {
     const all = get().nodes
     const group = all.find((node) => node.id === groupId)
     if (!group || !isGroupNode(group)) return
 
-    get().pushHistory()
+    if (!turnId || !commandTurns.has(turnId)) {
+      get().pushHistory()
+      if (turnId) commandTurns.add(turnId)
+    }
 
     const nodes: CanvasNode[] = all
       .filter((node) => node.id !== groupId)

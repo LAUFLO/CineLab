@@ -158,6 +158,49 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe'
+  },
+  {
+    id: 'canvas.group',
+    name: 'canvas_group',
+    description:
+      '把两个或更多选中或本轮新建的顶层节点分到同一个组里。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeIds: {
+          type: 'array',
+          items: { type: 'string' },
+          minItems: 2,
+          maxItems: 20,
+          description: '要分组的节点 ID'
+        }
+      },
+      required: ['nodeIds'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'canvas.ungroup',
+    name: 'canvas_ungroup',
+    description: '解散一个分组，子节点恢复为顶层节点。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        groupId: { type: 'string', description: '要解散的分组节点 ID' }
+      },
+      required: ['groupId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
   }
 ]
 
@@ -334,6 +377,35 @@ export function assertToolAllowed(
       throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
     }
     assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'canvas_group') {
+    const nodeIds = call.args.nodeIds
+    if (
+      !Array.isArray(nodeIds) ||
+      nodeIds.length < 2 ||
+      nodeIds.length > 20
+    ) {
+      throw new AgentToolError('invalid_params', 'nodeIds 需要 2-20 个节点')
+    }
+    const unique = new Set(nodeIds)
+    if (unique.size !== nodeIds.length) {
+      throw new AgentToolError('invalid_params', 'nodeIds 不能重复')
+    }
+    for (const id of nodeIds) {
+      if (typeof id !== 'string' || !id.trim()) {
+        throw new AgentToolError('invalid_params', 'nodeIds 必须是非空字符串')
+      }
+      assertSelectedNode(scope, id)
+    }
+  }
+
+  if (call.name === 'canvas_ungroup') {
+    const groupId = call.args.groupId
+    if (typeof groupId !== 'string' || !groupId.trim()) {
+      throw new AgentToolError('invalid_params', 'groupId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, groupId)
   }
 
   if (call.name === 'skill_read') {

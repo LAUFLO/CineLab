@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "通用 AgentRuntime 已完成工具注册表、CanvasCommand、技能目录、创建/连接/删除节点工具（157 测试通过；真实 Agnes 验证改名+移动一次撤销、项目技能读取、创建+连接+删除）。下一步：分组/解组工具、StageCommand 骨架、生成提案 propose/submit；技能管理 UI 与 Agnes 视频队列补测后续进行。",
+  "next_focus": "通用 AgentRuntime 已完成工具注册表、CanvasCommand、技能目录、创建/连接/删除/分组/解散工具（159 测试通过；真实 Agnes 验证改名+移动、项目技能读取、创建+连接+删除、打组+解散+一次撤销）。下一步：StageCommand 骨架、生成提案 propose/submit、删除/批量操作二次确认；剪辑助手 clip profile、技能管理 UI 与 Agnes 视频队列补测后续进行。",
   "frontier": [
     {
       "id": "M2-1",
@@ -182,6 +182,19 @@
         "src/main/agent/__tests__/tools.test.ts",
         "src/main/agent/tools.ts",
         "src/main/agent/runtime.ts",
+        "src/renderer/src/agent/canvasBridge.ts"
+      ]
+    },
+    {
+      "id": "AGENT-GROUP-TOOLS-1",
+      "title": "Agent 分组 / 解散分组工具",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 canvas_group / canvas_ungroup；复用 store 的 groupSelection/ungroup，并增加可选 turnId 以加入回合级历史；canvas_get selectedNodes 现在包含 group 节点。真实 Agnes 验证：A/B 打组得到 4 节点 1 分组，解散恢复 3 节点 0 分组；C/D 打组后一次撤销恢复 3 节点 0 分组。27 文件 159 测试通过；typecheck/build 通过，主进程约 412KB。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-GROUP-TOOLS-1.md",
+        "src/main/agent/tools.ts",
+        "src/main/agent/__tests__/tools.test.ts",
+        "src/renderer/src/stores/canvas.ts",
         "src/renderer/src/agent/canvasBridge.ts"
       ]
     },
@@ -2066,6 +2079,10 @@
     {
       "category": "engineering",
       "content": "Agent 创建节点后要把 toolResult.change.createdNodeIds 加入本轮 scope，否则同一轮无法继续连接、改名或删除新建节点。"
+    },
+    {
+      "category": "engineering",
+      "content": "分组/解散工具要复用 store 的 groupSelection/ungroup 并传 turnId；canvas_get 的 selectedNodes 必须包含 group 节点，否则模型看不到选中分组，无法解散。"
     }
   ],
   "designConventions": [

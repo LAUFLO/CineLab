@@ -1,7 +1,7 @@
 # 逐帧拉片方案（调研）
 
 日期：2026-11-08
-状态：P0 + P1 + P2 已在 `film-study` 分支实现，P3（结构/情绪）待开发
+状态：P0–P3 可视化已在 `film-study` 分支实现；模型直连分析待后续
 参考项目：[bkingfilm/lapian-notes](https://github.com/bkingfilm/lapian-notes)（MIT）
 
 ## 1. 先说结论
@@ -559,6 +559,42 @@ P0 未包含：
 - 还没有字幕提取，所以分析包暂不包含 subtitles.srt
 - 结构树/情绪曲线只存数据，P3 再做可视化
 
-## 11. 后续
+## 11. P3 实施记录（2026-11-08）
 
-P3：剧情泳道、结构树、情绪曲线、模型直连。
+已实现：
+
+- 拉片室右侧新增「笔记 / 结构 / 情绪」标签页
+- 剧情泳道：
+  - 使用 study.storyLines
+  - 段落按 primaryLine / sharedLines 归入多条线
+  - 没有 storyLines 时按 primaryLine 或 type 自动分组
+- 结构树：
+  - 按 structureRole 分组，缺省使用 type
+  - 可折叠，点击段落跳转视频
+- 情绪曲线：
+  - SVG 折线 + 面积
+  - 点按强度着色
+  - 下方情绪点列表，点击跳到对应时间
+- 段落编辑器新增：
+  - 剧情线
+  - 共用剧情线（逗号分隔）
+  - 结构角色
+- AI schema/prompt/归一化支持 primaryLine、sharedLines、structureRole
+
+实测：
+
+- 主线 2 个段落、情感线 1 个段落
+- 结构树显示「铺垫 1」「冲突 1」
+- 情绪曲线显示好奇 / 压力上升 / 冲突爆发 / 余波四个点
+- 点击「压力上升」视频跳到 1.5 秒
+
+未实现：
+
+- CineLab 直连多模态模型分析（当前仍通过导出 AI 包 + 导入 JSON）
+- 字幕提取
+
+## 12. 后续
+
+- CineLab 直连多模态分析：contact sheet + 分段发送 + 直接写回 study.json
+- 字幕提取与 srt 导出
+- 拉片项目分享/导出增强

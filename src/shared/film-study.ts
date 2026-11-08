@@ -20,6 +20,12 @@ export interface FilmStudySegment {
   techniques?: string
   audienceExperience?: string
   notes?: string
+  /** 主要剧情线 id 或名称 */
+  primaryLine?: string
+  /** 共用该段落的其它剧情线 */
+  sharedLines?: string[]
+  /** 结构角色，例如 铺垫 / 冲突 / 高潮 / 解决 */
+  structureRole?: string
 }
 
 export interface FilmStudyMacroAnalysis {

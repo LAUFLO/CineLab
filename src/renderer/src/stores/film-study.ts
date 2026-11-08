@@ -16,11 +16,28 @@ interface FilmStudyState {
   cancel: (nodeId: string) => Promise<void>
   retry: (nodeId: string) => Promise<void>
   openRoom: (nodeId: string) => Promise<void>
+  updateStudy: (updater: (study: FilmStudy) => FilmStudy) => void
+  saveNow: () => Promise<void>
   closeRoom: () => void
 }
 
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+
 function patchNode(nodeId: string, patch: Partial<CineNodeData>): void {
   useCanvasStore.getState().patchNodeData(nodeId, patch)
+}
+
+function patchSummary(nodeId: string, study: FilmStudy): void {
+  patchNode(nodeId, {
+    studySummary: {
+      studyId: study.id,
+      frameCount: study.frames.length,
+      segmentCount: study.segments.length,
+      interval: study.frameInterval,
+      duration: study.duration,
+      fps: study.fps
+    }
+  })
 }
 
 function applyProgress(progress: FilmStudyProgress): void {
@@ -144,5 +161,45 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
     }
   },
 
-  closeRoom: () => set({ roomNodeId: null, study: null })
+  updateStudy: (updater) => {
+    const current = get().study
+    if (!current) return
+
+    const next: FilmStudy = {
+      ...updater(current),
+      updatedAt: new Date().toISOString()
+    }
+    set({ study: next })
+    const nodeId = get().roomNodeId
+    if (nodeId) patchSummary(nodeId, next)
+
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => {
+      saveTimer = null
+      void window.api.filmStudy.save(next).catch(() => undefined)
+    }, 600)
+  },
+
+  saveNow: async () => {
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    const current = get().study
+    if (!current) return
+
+    try {
+      const saved = await window.api.filmStudy.save(current)
+      if (get().study?.id === saved.id) set({ study: saved })
+      const nodeId = get().roomNodeId
+      if (nodeId) patchSummary(nodeId, saved)
+    } catch {
+      // 本地编辑保留，下一次保存重试
+    }
+  },
+
+  closeRoom: () => {
+    void get().saveNow()
+    set({ roomNodeId: null, study: null })
+  }
 }))

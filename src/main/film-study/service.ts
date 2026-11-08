@@ -1,3 +1,4 @@
+import { app } from 'electron'
 import { promises as fs } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
@@ -9,8 +10,10 @@ import type {
   FilmStudyProgress,
   FilmStudySummary
 } from '@shared/film-study'
+import type { GeneratedAsset } from '@shared/generation'
 import { probeMedia, runFfmpeg } from '../media/ffmpeg'
-import { resolveMediaPath } from '../media/paths'
+import { resolveInside, resolveMediaPath } from '../media/paths'
+import { ingestAsset } from '../assets/ingest'
 
 const DEFAULT_MAX_FRAMES = 3000
 const MIN_INTERVAL = 0.25
@@ -49,6 +52,156 @@ export async function loadFilmStudy(
   }
 
   return raw
+}
+
+export async function saveFilmStudy(
+  root: string,
+  study: FilmStudy
+): Promise<FilmStudy> {
+  if (
+    study.schemaVersion !== 1 ||
+    !study.id ||
+    !Array.isArray(study.frames) ||
+    !Array.isArray(study.segments)
+  ) {
+    throw new Error('拉片数据格式不正确')
+  }
+
+  const next: FilmStudy = {
+    ...study,
+    updatedAt: new Date().toISOString()
+  }
+  const target = studyFile(root, next.id)
+  await fs.mkdir(dirname(target), { recursive: true })
+  const temp = `${target}.tmp`
+  await fs.writeFile(temp, `${JSON.stringify(next, null, 2)}\n`, 'utf8')
+  await fs.rename(temp, target)
+  return next
+}
+
+export async function createFilmStudyContactSheet(
+  root: string,
+  studyId: string
+): Promise<GeneratedAsset> {
+  const study = await loadFilmStudy(root, studyId)
+  const frames = study.frames
+  if (frames.length === 0) throw new Error('拉片还没有帧')
+
+  const count = Math.min(12, frames.length)
+  const picks: FilmStudyFrame[] =
+    count === frames.length
+      ? frames
+      : Array.from({ length: count }, (_, index) => {
+          const sourceIndex = Math.round(
+            (index * (frames.length - 1)) / Math.max(1, count - 1)
+          )
+          return frames[sourceIndex]
+        })
+
+  const tempDir = join(app.getPath('temp'), `cinelab-study-sheet-${randomUUID()}`)
+  await fs.mkdir(tempDir, { recursive: true })
+  const output = join(tempDir, 'sheet.png')
+
+  try {
+    const inputs = picks.map((frame) => resolveInside(root, frame.file))
+    const cols = 4
+    const rows = Math.ceil(picks.length / cols)
+    const filters = picks.map(
+      (_frame, index) =>
+        `[${index}:v]scale=320:180:force_original_aspect_ratio=decrease,pad=320:180:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[v${index}]`
+    )
+    const layout = picks
+      .map((_frame, index) => {
+        const column = index % cols
+        const row = Math.floor(index / cols)
+        return `${column * 320}_${row * 180}`
+      })
+      .join('|')
+    const stack =
+      picks.length === 1
+        ? `[v0]null[out]`
+        : `${picks.map((_frame, index) => `[v${index}]`).join('')}xstack=inputs=${picks.length}:layout=${layout}:fill=black[out]`
+
+    await runFfmpeg([
+      '-y',
+      ...inputs.flatMap((input) => ['-i', input]),
+      '-filter_complex',
+      `${filters.join(';')};${stack}`,
+      '-map',
+      '[out]',
+      '-frames:v',
+      '1',
+      output
+    ])
+
+    const data = await fs.readFile(output)
+    return await ingestAsset({
+      projectPath: root,
+      data,
+      kind: 'image',
+      mime: 'image/png',
+      model: `逐帧拉片拼图（${picks.length} 帧）`
+    })
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => undefined)
+  }
+}
+
+function formatStudyTime(seconds: number): string {
+  const minutes = Math.floor(seconds / 60)
+  const rest = Math.max(0, seconds - minutes * 60)
+  return `${String(minutes).padStart(2, '0')}:${rest.toFixed(1).padStart(4, '0')}`
+}
+
+export function buildFilmStudyMarkdown(study: FilmStudy): string {
+  const lines: string[] = [
+    `# 拉片笔记：${study.sourceName}`,
+    '',
+    `- 片长：${formatStudyTime(study.duration)}`,
+    `- 抽帧间隔：${study.frameInterval}s`,
+    `- 帧数：${study.frames.length}`,
+    `- 段落数：${study.segments.length}`,
+    ''
+  ]
+
+  const notes = study.frames.filter((frame) => frame.note?.trim())
+  if (notes.length > 0) {
+    lines.push('## 帧备注', '')
+    for (const frame of notes) {
+      lines.push(
+        `- ${formatStudyTime(frame.time)}（第 ${frame.index} 帧）：${frame.note}`
+      )
+    }
+    lines.push('')
+  }
+
+  if (study.segments.length > 0) {
+    lines.push('## 段落', '')
+    for (const segment of [...study.segments].sort(
+      (a, b) => a.startTime - b.startTime
+    )) {
+      lines.push(
+        `### ${formatStudyTime(segment.startTime)} - ${formatStudyTime(segment.endTime)} · ${segment.title || '未命名段落'}`,
+        ''
+      )
+      lines.push(`- 类型：${segment.type || '未填写'}`)
+      if (segment.segmentFunction) {
+        lines.push(`- 段落功能：${segment.segmentFunction}`)
+      }
+      if (segment.keyBeats) lines.push(`- 关键节拍：${segment.keyBeats}`)
+      if (segment.creativeIntent) {
+        lines.push(`- 创作意图：${segment.creativeIntent}`)
+      }
+      if (segment.techniques) lines.push(`- 视听手法：${segment.techniques}`)
+      if (segment.audienceExperience) {
+        lines.push(`- 观众体验：${segment.audienceExperience}`)
+      }
+      if (segment.notes) lines.push(`- 备注：${segment.notes}`)
+      lines.push('')
+    }
+  }
+
+  return `${lines.join('\n').trimEnd()}\n`
 }
 
 export async function extractFilmStudy(

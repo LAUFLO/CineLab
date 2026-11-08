@@ -14,6 +14,8 @@ import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
 import type { Preferences } from '../shared/preferences'
 import type {
+  FilmStudy,
+  FilmStudyExportResult,
   FilmStudyExtractRequest,
   FilmStudyProgress
 } from '../shared/film-study'
@@ -270,6 +272,12 @@ const api: CineApi = {
       ipcRenderer.invoke('film-study:cancel', nodeId),
     load: (studyId: string) =>
       ipcRenderer.invoke('film-study:load', studyId),
+    save: (study: FilmStudy) =>
+      ipcRenderer.invoke('film-study:save', study),
+    exportMarkdown: (studyId: string) =>
+      ipcRenderer.invoke('film-study:export-markdown', studyId),
+    contactSheet: (studyId: string) =>
+      ipcRenderer.invoke('film-study:contact-sheet', studyId),
     onProgress: (callback: (progress: FilmStudyProgress) => void) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

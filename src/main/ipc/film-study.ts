@@ -7,12 +7,16 @@ import type {
 } from '@shared/film-study'
 import { getCurrentProjectRoot } from '../project/manager'
 import {
+  analyzeFilmStudy,
   buildFilmStudyMarkdown,
   cancelFilmStudy,
   createFilmStudyContactSheet,
   exportFilmStudyAnalysisPackage,
+  exportFilmStudyBundle,
   extractFilmStudy,
+  extractFilmStudySubtitles,
   importFilmStudyAnalysis,
+  importFilmStudySubtitles,
   loadFilmStudy,
   saveFilmStudy
 } from '../film-study/service'
@@ -110,6 +114,34 @@ export function registerFilmStudyIpc(): void {
   )
 
   ipcMain.handle(
+    'film-study:export-bundle',
+    async (event, studyId: string) => {
+      const study = await loadFilmStudy(requireProjectRoot(), studyId)
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const options = {
+        title: '导出拉片包',
+        defaultPath: join(
+          app.getPath('documents'),
+          `${safeName(study.sourceName)}-拉片包.zip`
+        ),
+        filters: [{ name: 'ZIP', extensions: ['zip'] }]
+      }
+      const result = win
+        ? await dialog.showSaveDialog(win, options)
+        : await dialog.showSaveDialog(options)
+
+      if (result.canceled || !result.filePath) return { canceled: true }
+
+      await exportFilmStudyBundle(
+        requireProjectRoot(),
+        studyId,
+        result.filePath
+      )
+      return { path: result.filePath }
+    }
+  )
+
+  ipcMain.handle(
     'film-study:import-analysis',
     async (event, studyId: string) => {
       const win = BrowserWindow.fromWebContents(event.sender)
@@ -137,6 +169,42 @@ export function registerFilmStudyIpc(): void {
         raw
       )
     }
+  )
+
+  ipcMain.handle(
+    'film-study:extract-subtitles',
+    (_event, studyId: string) =>
+      extractFilmStudySubtitles(requireProjectRoot(), studyId)
+  )
+
+  ipcMain.handle(
+    'film-study:import-subtitles',
+    async (event, studyId: string) => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const options = {
+        title: '导入 SRT 字幕',
+        properties: ['openFile' as const],
+        filters: [{ name: '字幕', extensions: ['srt'] }]
+      }
+      const result = win
+        ? await dialog.showOpenDialog(win, options)
+        : await dialog.showOpenDialog(options)
+
+      if (result.canceled || result.filePaths.length === 0) return null
+
+      const text = await fs.readFile(result.filePaths[0], 'utf8')
+      return importFilmStudySubtitles(
+        requireProjectRoot(),
+        studyId,
+        text
+      )
+    }
+  )
+
+  ipcMain.handle(
+    'film-study:analyze',
+    (_event, studyId: string, modelKey: string) =>
+      analyzeFilmStudy(requireProjectRoot(), studyId, modelKey)
   )
 
   ipcMain.handle(

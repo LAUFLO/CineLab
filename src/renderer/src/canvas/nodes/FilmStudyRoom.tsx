@@ -5,6 +5,8 @@ import { Icon } from '../../components/Icon'
 import { assetUrl } from '../../lib/asset-url'
 import { useCanvasStore } from '../../stores/canvas'
 import { useFilmStudyStore } from '../../stores/film-study'
+import { usePreferencesStore } from '../../stores/preferences'
+import { useSettingsStore } from '../../stores/settings'
 import { useUIStore } from '../../stores/ui'
 import { VideoPlayer, type VideoPlayerHandle } from './VideoPlayer'
 import {
@@ -48,6 +50,10 @@ export function FilmStudyRoom() {
   const saveStudyNow = useFilmStudyStore((state) => state.saveNow)
   const showToast = useUIStore((state) => state.showToast)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
+  const providers = useSettingsStore((state) => state.providers)
+  const defaultTextModel = usePreferencesStore(
+    (state) => state.preferences.generation.defaultModels.text
+  )
   const playerRef = useRef<VideoPlayerHandle>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -62,6 +68,9 @@ export function FilmStudyRoom() {
     endTime: number
   } | null>(null)
   const [contactBusy, setContactBusy] = useState(false)
+  const [analysisOpen, setAnalysisOpen] = useState(false)
+  const [analysisModel, setAnalysisModel] = useState('')
+  const [analysisBusy, setAnalysisBusy] = useState(false)
   const [scrollLeft, setScrollLeft] = useState(0)
   const [viewportWidth, setViewportWidth] = useState(900)
 
@@ -116,6 +125,30 @@ export function FilmStudyRoom() {
         : null,
     [study]
   )
+
+  const textModels = useMemo(
+    () =>
+      providers.flatMap((provider) =>
+        provider.models
+          .filter((model) => model.capability === 'text.chat')
+          .map((model) => ({
+            value: `${provider.id}/${model.id}`,
+            label: `${provider.name} / ${model.name}`
+          }))
+      ),
+    [providers]
+  )
+
+  useEffect(() => {
+    if (!analysisOpen) return
+    setAnalysisModel(
+      (current) =>
+        current ||
+        defaultTextModel ||
+        textModels[0]?.value ||
+        ''
+    )
+  }, [analysisOpen, defaultTextModel, textModels])
 
   if (!study) return null
 
@@ -356,6 +389,19 @@ export function FilmStudyRoom() {
     }
   }
 
+  const exportBundle = async (): Promise<void> => {
+    try {
+      await saveStudyNow()
+      const result = await window.api.filmStudy.exportBundle(study.id)
+      if (result.path) showToast('拉片包已导出')
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        'error'
+      )
+    }
+  }
+
   const importAnalysis = (): void => {
     requestConfirm({
       title: '导入 AI 拉片结果',
@@ -377,6 +423,59 @@ export function FilmStudyRoom() {
         }
       }
     })
+  }
+
+  const extractSubtitles = async (): Promise<void> => {
+    try {
+      const next = await window.api.filmStudy.extractSubtitles(study.id)
+      replaceStudy(next)
+      showToast(`已提取 ${next.subtitles?.length ?? 0} 条字幕`)
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        'error'
+      )
+    }
+  }
+
+  const importSubtitles = async (): Promise<void> => {
+    try {
+      const next = await window.api.filmStudy.importSubtitles(study.id)
+      if (!next) return
+      replaceStudy(next)
+      showToast(`已导入 ${next.subtitles?.length ?? 0} 条字幕`)
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        'error'
+      )
+    }
+  }
+
+  const runDirectAnalysis = async (): Promise<void> => {
+    if (!analysisModel) {
+      showToast('请先选择支持图片输入的文本模型', 'error')
+      return
+    }
+    setAnalysisBusy(true)
+    try {
+      await saveStudyNow()
+      const next = await window.api.filmStudy.analyze(
+        study.id,
+        analysisModel
+      )
+      replaceStudy(next)
+      setSelectedSegmentId(next.segments[0]?.id ?? null)
+      setAnalysisOpen(false)
+      showToast(`直连分析完成：${next.segments.length} 个段落`)
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        'error'
+      )
+    } finally {
+      setAnalysisBusy(false)
+    }
   }
 
   const segmentOptions = SEGMENT_TYPES.map((type) => ({
@@ -412,6 +511,13 @@ export function FilmStudyRoom() {
             <button
               type="button"
               className="btn-secondary btn-sm"
+              onClick={() => void exportBundle()}
+            >
+              导出拉片包
+            </button>
+            <button
+              type="button"
+              className="btn-secondary btn-sm"
               onClick={() => void exportAnalysisPackage()}
             >
               导出 AI 包
@@ -422,6 +528,13 @@ export function FilmStudyRoom() {
               onClick={importAnalysis}
             >
               导入 AI 结果
+            </button>
+            <button
+              type="button"
+              className="btn-secondary btn-sm"
+              onClick={() => setAnalysisOpen(true)}
+            >
+              直连分析
             </button>
           </div>
           <button
@@ -492,6 +605,52 @@ export function FilmStudyRoom() {
               placeholder="记录这一帧的画面、表演、构图或声音…"
               onChange={(event) => updateFrameNote(event.target.value)}
             />
+
+            <div className="film-study-subtitles">
+              <div className="film-study-subtitles__head">
+                <span>
+                  字幕 {study.subtitles?.length ?? 0} 条
+                </span>
+                <div>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    onClick={() => void extractSubtitles()}
+                  >
+                    提取
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    onClick={() => void importSubtitles()}
+                  >
+                    导入 SRT
+                  </button>
+                </div>
+              </div>
+              {study.subtitles?.length ? (
+                <details className="film-study-subtitles__details">
+                  <summary>查看字幕</summary>
+                  <div className="film-study-subtitles__list">
+                    {(study.subtitles ?? []).map((subtitle, index) => (
+                      <button
+                        key={`${subtitle.startTime}-${index}`}
+                        type="button"
+                        className="film-study-subtitle-row"
+                        onClick={() => seekToTime(subtitle.startTime)}
+                      >
+                        <span>{studyTime(subtitle.startTime)}</span>
+                        <strong>{subtitle.text}</strong>
+                      </button>
+                    ))}
+                  </div>
+                </details>
+              ) : (
+                <div className="film-study-subtitles__empty">
+                  暂无字幕，可提取内嵌字幕或导入 SRT
+                </div>
+              )}
+            </div>
 
             <div className="film-study-room__side-title">段落搭建</div>
             <div className="film-study-range">
@@ -767,6 +926,52 @@ export function FilmStudyRoom() {
           </div>
         </div>
       </div>
+
+      {analysisOpen ? (
+        <div
+          className="film-study-analysis"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <div className="film-study-analysis__panel">
+            <div className="film-study-analysis__title">直连多模态分析</div>
+            <div className="film-study-analysis__hint">
+              选择支持图片输入的文本模型。会抽取最多 12 张代表帧发送，
+              结果将替换当前段落。
+            </div>
+            {textModels.length === 0 ? (
+              <div className="film-study-analysis__empty">
+                还没有 text.chat 模型，请先在设置中配置。
+              </div>
+            ) : (
+              <Select
+                value={analysisModel}
+                options={textModels}
+                onChange={setAnalysisModel}
+              />
+            )}
+            <div className="film-study-analysis__actions">
+              <button
+                type="button"
+                className="btn-secondary btn-sm"
+                disabled={analysisBusy}
+                onClick={() => setAnalysisOpen(false)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="btn-primary btn-sm"
+                disabled={
+                  analysisBusy || textModels.length === 0 || !analysisModel
+                }
+                onClick={() => void runDirectAnalysis()}
+              >
+                {analysisBusy ? '分析中…' : '开始分析'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

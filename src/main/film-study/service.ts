@@ -14,13 +14,17 @@ import type { GeneratedAsset } from '@shared/generation'
 import { probeMedia, runFfmpeg } from '../media/ffmpeg'
 import { resolveInside, resolveMediaPath } from '../media/paths'
 import { ingestAsset } from '../assets/ingest'
+import { httpFetch } from '../providers/http'
+import { resolveProvider } from '../settings/store'
 import {
   AI_SCHEMA,
   buildAiProject,
   buildAiPrompt,
   buildAiReadme,
+  buildSrt,
   normalizeFilmStudyAnalysis,
-  packageFrameName
+  packageFrameName,
+  parseSrt
 } from './analysis'
 import { zipDirectory } from '../export/zip'
 
@@ -196,6 +200,13 @@ export async function exportFilmStudyAnalysisPackage(
       buildAiProject(study),
       'utf8'
     )
+    if (study.subtitles?.length) {
+      await fs.writeFile(
+        join(staging, 'subtitles.srt'),
+        buildSrt(study.subtitles),
+        'utf8'
+      )
+    }
 
     const safe = study.sourceName.replace(/[\\/:*?"<>|]/g, '_').trim()
     await zipDirectory(staging, targetFile, {
@@ -216,6 +227,230 @@ export async function importFilmStudyAnalysis(
   return saveFilmStudy(root, normalized)
 }
 
+export async function extractFilmStudySubtitles(
+  root: string,
+  studyId: string
+): Promise<FilmStudy> {
+  const study = await loadFilmStudy(root, studyId)
+  const absolute = await resolveMediaPath(
+    root,
+    study.sourcePath,
+    study.sourceScope
+  )
+  const tempDir = join(
+    app.getPath('temp'),
+    `cinelab-study-subs-${randomUUID()}`
+  )
+  await fs.mkdir(tempDir, { recursive: true })
+  const output = join(tempDir, 'subtitles.srt')
+
+  try {
+    await runFfmpeg([
+      '-y',
+      '-i',
+      absolute,
+      '-map',
+      '0:s:0',
+      '-c:s',
+      'srt',
+      output
+    ])
+    const text = await fs.readFile(output, 'utf8')
+    const subtitles = parseSrt(text)
+    if (subtitles.length === 0) {
+      throw new Error('没有解析到字幕内容')
+    }
+    return saveFilmStudy(root, { ...study, subtitles })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      message.includes('ffmpeg 失败') || message.includes('字幕')
+        ? `未能提取内嵌字幕：${message.slice(0, 200)}`
+        : message
+    )
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => undefined)
+  }
+}
+
+export async function importFilmStudySubtitles(
+  root: string,
+  studyId: string,
+  text: string
+): Promise<FilmStudy> {
+  const study = await loadFilmStudy(root, studyId)
+  const subtitles = parseSrt(text)
+  if (subtitles.length === 0) {
+    throw new Error('SRT 文件里没有解析到字幕')
+  }
+  return saveFilmStudy(root, { ...study, subtitles })
+}
+
+export async function analyzeFilmStudy(
+  root: string,
+  studyId: string,
+  modelKey: string
+): Promise<FilmStudy> {
+  const study = await loadFilmStudy(root, studyId)
+  const slash = modelKey.indexOf('/')
+  if (slash <= 0) throw new Error('模型标识无效')
+  const provider = await resolveProvider(modelKey.slice(0, slash))
+  if (!provider) throw new Error('找不到模型供应商，请先在设置中配置')
+  if (!provider.apiKey) throw new Error('该供应商没有配置 API Key')
+
+  const model = provider.models.find(
+    (item) => item.id === modelKey.slice(slash + 1)
+  )
+  if (!model) throw new Error('找不到该模型')
+  if (model.capability !== 'text.chat') {
+    throw new Error('直连拉片分析需要文本模型')
+  }
+
+  const limit = 12
+  const picks =
+    study.frames.length <= limit
+      ? study.frames
+      : Array.from({ length: limit }, (_, index) => {
+          const sourceIndex = Math.round(
+            (index * (study.frames.length - 1)) / Math.max(1, limit - 1)
+          )
+          return study.frames[sourceIndex]
+        })
+
+  if (picks.length === 0) throw new Error('拉片还没有帧')
+
+  const content: Array<Record<string, unknown>> = []
+  const timeList: string[] = []
+  for (let index = 0; index < picks.length; index += 1) {
+    const frame = picks[index]
+    const data = await fs.readFile(resolveInside(root, frame.file))
+    timeList.push(
+      `图 ${index + 1}：${frame.time.toFixed(1)} 秒（第 ${frame.index} 帧）`
+    )
+    content.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:image/jpeg;base64,${data.toString('base64')}`
+      }
+    })
+  }
+
+  const prompt = [
+    `你是电影拉片助手。请分析《${study.sourceName}》。`,
+    `片长 ${study.duration.toFixed(1)} 秒，抽帧间隔 ${study.frameInterval} 秒。`,
+    `下面附上 ${picks.length} 张按时间顺序排列的图片：`,
+    ...timeList,
+    '请按以下 JSON Schema 返回分析结果，只输出 JSON，不要 Markdown、解释或代码块：',
+    JSON.stringify(AI_SCHEMA),
+    'segments 的 startTime/endTime 使用全片秒数，覆盖全片，尽量连续不重叠。',
+    '如果能判断，请同时给出 storyLines、macroAnalysis 和 audienceCurvePoints。'
+  ].join('\n')
+
+  const response = await httpFetch(
+    `${provider.baseUrl.replace(/\/+$/, '')}/chat/completions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${provider.apiKey}`,
+        ...(provider.headers ?? {})
+      },
+      body: JSON.stringify({
+        model: model.remoteModel,
+        temperature: 0.2,
+        max_tokens: 4096,
+        messages: [
+          {
+            role: 'user',
+            content: [{ type: 'text', text: prompt }, ...content]
+          }
+        ]
+      })
+    }
+  )
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '')
+    throw new Error(`模型返回 HTTP ${response.status}：${text.slice(0, 300)}`)
+  }
+
+  const json = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string } }>
+  }
+  const raw = json.choices?.[0]?.message?.content?.trim()
+  if (!raw) throw new Error('模型没有返回分析内容')
+
+  const cleaned = raw
+    .replace(/^\uFEFF/, '')
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
+  const parsed = JSON.parse(cleaned) as unknown
+  const normalized = normalizeFilmStudyAnalysis(study, parsed)
+  return saveFilmStudy(root, normalized)
+}
+
+export async function exportFilmStudyBundle(
+  root: string,
+  studyId: string,
+  targetFile: string
+): Promise<void> {
+  const study = await loadFilmStudy(root, studyId)
+  const staging = await fs.mkdtemp(
+    join(app.getPath('temp'), 'cinelab-study-bundle-')
+  )
+
+  try {
+    const framesDir = join(staging, 'frames')
+    await fs.mkdir(framesDir, { recursive: true })
+    for (const frame of study.frames) {
+      await fs.copyFile(
+        resolveInside(root, frame.file),
+        join(framesDir, packageFrameName(frame))
+      )
+    }
+
+    await fs.writeFile(
+      join(staging, 'study.json'),
+      `${JSON.stringify(study, null, 2)}\n`,
+      'utf8'
+    )
+    await fs.writeFile(
+      join(staging, '拉片笔记.md'),
+      buildFilmStudyMarkdown(study),
+      'utf8'
+    )
+    await fs.writeFile(
+      join(staging, 'README.md'),
+      [
+        `# ${study.sourceName} · 拉片包`,
+        '',
+        '- `study.json`：完整拉片数据，可被 CineLab 重新导入',
+        '- `拉片笔记.md`：可读笔记',
+        '- `frames/`：抽帧截图',
+        ...(study.subtitles?.length
+          ? ['- `subtitles.srt`：字幕']
+          : [])
+      ].join('\n'),
+      'utf8'
+    )
+    if (study.subtitles?.length) {
+      await fs.writeFile(
+        join(staging, 'subtitles.srt'),
+        buildSrt(study.subtitles),
+        'utf8'
+      )
+    }
+
+    const safe = study.sourceName.replace(/[\\/:*?"<>|]/g, '_').trim()
+    await zipDirectory(staging, targetFile, {
+      rootName: `${safe || '拉片'}-拉片包`
+    })
+  } finally {
+    await fs.rm(staging, { recursive: true, force: true }).catch(() => undefined)
+  }
+}
+
 function formatStudyTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60)
   const rest = Math.max(0, seconds - minutes * 60)
@@ -230,6 +465,9 @@ export function buildFilmStudyMarkdown(study: FilmStudy): string {
     `- 抽帧间隔：${study.frameInterval}s`,
     `- 帧数：${study.frames.length}`,
     `- 段落数：${study.segments.length}`,
+    ...(study.subtitles?.length
+      ? [`- 字幕：${study.subtitles.length} 条`]
+      : []),
     ''
   ]
 

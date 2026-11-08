@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import type { FilmStudy } from '@shared/film-study'
 import {
   buildAiProject,
+  buildSrt,
   normalizeFilmStudyAnalysis,
-  packageFrameName
+  packageFrameName,
+  parseSrt
 } from '../analysis'
 
 const study: FilmStudy = {
@@ -108,5 +110,32 @@ describe('AI package helpers', () => {
       time: 1,
       file: 'frames/frame_000003_00-01-0.jpg'
     })
+  })
+})
+
+describe('SRT helpers', () => {
+  it('parses and rebuilds subtitles', () => {
+    const srt = `1
+00:00:01,500 --> 00:00:03,000
+第一句对白
+
+2
+00:00:04.000 --> 00:00:05.250
+第二句
+跨行对白
+`
+    const subtitles = parseSrt(srt)
+    expect(subtitles).toEqual([
+      { startTime: 1.5, endTime: 3, text: '第一句对白' },
+      { startTime: 4, endTime: 5.25, text: '第二句\n跨行对白' }
+    ])
+    expect(parseSrt(buildSrt(subtitles))).toEqual(subtitles)
+  })
+
+  it('rejects malformed blocks', () => {
+    expect(parseSrt('not a subtitle')).toEqual([])
+    expect(
+      parseSrt('1\n00:00:03,000 --> 00:00:01,000\n时间倒置')
+    ).toEqual([])
   })
 })

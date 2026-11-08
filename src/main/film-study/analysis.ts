@@ -5,7 +5,8 @@ import type {
   FilmStudyFrame,
   FilmStudyMacroAnalysis,
   FilmStudySegment,
-  FilmStudyStoryLine
+  FilmStudyStoryLine,
+  FilmStudySubtitle
 } from '@shared/film-study'
 
 export const AI_SCHEMA = {
@@ -94,6 +95,9 @@ export function buildAiPrompt(study: FilmStudy): string {
     `- 抽帧间隔：${study.frameInterval} 秒`,
     `- 帧数：${study.frames.length}`,
     '- frames/ 文件名包含帧序号和时间，project.json 里有精确映射。',
+    study.subtitles?.length
+      ? `- 字幕：subtitles.srt，共 ${study.subtitles.length} 条；对白以字幕为准。`
+      : '- 字幕：本包没有字幕文件，不要虚构对白。',
     '',
     '## 输出要求',
     '',
@@ -107,7 +111,9 @@ export function buildAiPrompt(study: FilmStudy): string {
     '6. 如果能判断，请同时输出 macroAnalysis、storyLines、audienceCurvePoints。',
     '7. audienceCurvePoints 的 time 使用全片秒数，intensity 使用 0-100。',
     '',
-    '不要虚构字幕；本包没有字幕文件。'
+    study.subtitles?.length
+      ? '字幕时间为全片时间轴，引用对白时请使用字幕原文。'
+      : '不要虚构字幕；本包没有字幕文件。'
   ].join('\n')
 }
 
@@ -121,6 +127,9 @@ export function buildAiReadme(study: FilmStudy): string {
     '- `schema.json`：返回 JSON 的结构',
     '- `project.json`：影片、帧数与时间映射',
     '- `frames/`：按抽帧间隔生成的截图',
+    ...(study.subtitles?.length
+      ? ['- `subtitles.srt`：影片字幕，时间为全片时间轴']
+      : []),
     '',
     '不需要 API Key，模型和平台任意；返回 JSON 后回到 CineLab 拉片室导入即可。'
   ].join('\n')
@@ -134,6 +143,7 @@ export function buildAiProject(study: FilmStudy): string {
       fps: study.fps,
       frameInterval: study.frameInterval,
       frameCount: study.frames.length,
+      subtitleCount: study.subtitles?.length ?? 0,
       frames: study.frames.map((frame) => ({
         index: frame.index,
         time: frame.time,
@@ -274,4 +284,78 @@ export function normalizeFilmStudyAnalysis(
     ...(audienceCurvePoints ? { audienceCurvePoints } : {}),
     aiImportedAt: new Date().toISOString()
   }
+}
+
+function parseSrtTime(value: string): number | null {
+  const match = /(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})/.exec(value)
+  if (!match) return null
+  const hours = Number(match[1])
+  const minutes = Number(match[2])
+  const seconds = Number(match[3])
+  const millis = Number(match[4].padEnd(3, '0'))
+  return hours * 3600 + minutes * 60 + seconds + millis / 1000
+}
+
+export function parseSrt(text: string): FilmStudySubtitle[] {
+  const normalized = text
+    .replace(/^\uFEFF/, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+  const blocks = normalized.split(/\n{2,}/)
+  const subtitles: FilmStudySubtitle[] = []
+
+  for (const block of blocks) {
+    const lines = block
+      .split('\n')
+      .map((line) => line.trimEnd())
+      .filter((line) => line.length > 0)
+    if (lines.length === 0) continue
+
+    const timeIndex = lines.findIndex((line) => line.includes('-->'))
+    if (timeIndex < 0) continue
+
+    const [startRaw, endRaw] = lines[timeIndex].split('-->')
+    const startTime = parseSrtTime(startRaw)
+    const endTime = parseSrtTime(endRaw)
+    if (
+      startTime === null ||
+      endTime === null ||
+      endTime <= startTime
+    ) {
+      continue
+    }
+
+    const content = lines
+      .slice(timeIndex + 1)
+      .join('\n')
+      .replace(/<[^>]+>/g, '')
+      .trim()
+    if (!content) continue
+
+    subtitles.push({ startTime, endTime, text: content })
+  }
+
+  return subtitles.sort((a, b) => a.startTime - b.startTime)
+}
+
+function formatSrtTime(seconds: number): string {
+  const total = Math.max(0, Math.round(seconds * 1000))
+  const hours = Math.floor(total / 3_600_000)
+  const minutes = Math.floor((total % 3_600_000) / 60_000)
+  const secs = Math.floor((total % 60_000) / 1000)
+  const millis = total % 1000
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(millis).padStart(3, '0')}`
+}
+
+export function buildSrt(subtitles: FilmStudySubtitle[]): string {
+  return (
+    subtitles
+      .slice()
+      .sort((a, b) => a.startTime - b.startTime)
+      .map(
+        (subtitle, index) =>
+          `${index + 1}\n${formatSrtTime(subtitle.startTime)} --> ${formatSrtTime(subtitle.endTime)}\n${subtitle.text}`
+      )
+      .join('\n\n') + '\n'
+  )
 }

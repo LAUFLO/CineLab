@@ -278,8 +278,16 @@ const api: CineApi = {
       ipcRenderer.invoke('film-study:export-markdown', studyId),
     exportAnalysisPackage: (studyId: string) =>
       ipcRenderer.invoke('film-study:export-analysis-package', studyId),
+    exportBundle: (studyId: string) =>
+      ipcRenderer.invoke('film-study:export-bundle', studyId),
     importAnalysis: (studyId: string) =>
       ipcRenderer.invoke('film-study:import-analysis', studyId),
+    extractSubtitles: (studyId: string) =>
+      ipcRenderer.invoke('film-study:extract-subtitles', studyId),
+    importSubtitles: (studyId: string) =>
+      ipcRenderer.invoke('film-study:import-subtitles', studyId),
+    analyze: (studyId: string, modelKey: string) =>
+      ipcRenderer.invoke('film-study:analyze', studyId, modelKey),
     contactSheet: (studyId: string) =>
       ipcRenderer.invoke('film-study:contact-sheet', studyId),
     onProgress: (callback: (progress: FilmStudyProgress) => void) => {

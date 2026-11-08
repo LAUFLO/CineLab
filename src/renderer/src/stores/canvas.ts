@@ -127,6 +127,10 @@ export interface AddAssetLayout {
   groupTitle?: string
   groupColor?: GroupColor
   scope?: 'project' | 'global'
+  /** 有分组时只连一条线到分组，而不是逐个连子节点 */
+  connectGroup?: boolean
+  /** 分组创建后的回调，用于记录分组 id */
+  onGroupCreated?: (groupId: string) => void
 }
 
 export interface CreateGroupOptions {
@@ -812,13 +816,23 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         : null
 
     const createdEdges: CineEdge[] = sourceNodeId
-      ? created.map((node) => ({
-          id: nextId('edge'),
-          source: sourceNodeId,
-          target: node.id,
-          type: 'flow',
-          data: { role: 'auto' }
-        }))
+      ? grouped && layout?.connectGroup && groupId
+        ? [
+            {
+              id: nextId('edge'),
+              source: sourceNodeId,
+              target: groupId,
+              type: 'flow',
+              data: { role: 'auto' }
+            }
+          ]
+        : created.map((node) => ({
+            id: nextId('edge'),
+            source: sourceNodeId,
+            target: node.id,
+            type: 'flow',
+            data: { role: 'auto' }
+          }))
       : []
 
     set({
@@ -831,6 +845,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       ],
       edges: [...get().edges, ...createdEdges]
     })
+    if (group) layout?.onGroupCreated?.(group.id)
     return ids
   },
   addPendingNodes: (kind, origin, count, titlePrefix, sourceNodeId, layout) => {

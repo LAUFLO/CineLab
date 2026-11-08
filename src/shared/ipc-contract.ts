@@ -23,6 +23,8 @@ import type { ComponentEvent, ComponentKind, ComponentStatus } from './component
 import type { Preferences } from './preferences'
 import type {
   FilmStudy,
+  FilmStudyAutoRequest,
+  FilmStudyAutoResult,
   FilmStudyExportResult,
   FilmStudyExtractRequest,
   FilmStudyExtractResult,
@@ -331,6 +333,7 @@ export interface TimelineApi {
 
 export interface FilmStudyApi {
   extract(input: FilmStudyExtractRequest): Promise<FilmStudyExtractResult>
+  auto(input: FilmStudyAutoRequest): Promise<FilmStudyAutoResult>
   cancel(nodeId: string): Promise<void>
   load(studyId: string): Promise<FilmStudy>
   save(study: FilmStudy): Promise<FilmStudy>

@@ -373,6 +373,10 @@ textarea {
   -webkit-app-region: no-drag;
 }
 
+.window-controls .icon-btn {
+  color: var(--text-1);
+}
+
 .window-controls__divider {
   width: 1px;
   height: 16px;
@@ -1119,6 +1123,20 @@ body.is-exporting .react-flow__minimap {
   box-shadow: var(--shadow-float);
 }
 
+.image-preview__player {
+  width: min(1280px, calc(100vw - 96px));
+  max-height: calc(100vh - 96px);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--media-bg);
+  box-shadow: var(--shadow-float);
+}
+
+.image-preview__player .video-node {
+  height: 100%;
+}
+
 .cnode__placeholder {
   color: var(--text-3);
   flex-shrink: 0;
@@ -1145,20 +1163,6 @@ body.is-exporting .react-flow__minimap {
   height: 100%;
   display: block;
   object-fit: contain;
-}
-
-.video-node__shade {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 92px;
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--media-bg) 58%, transparent),
-    transparent
-  );
-  pointer-events: none;
 }
 
 .video-node__center {
@@ -1222,45 +1226,45 @@ body.is-exporting .react-flow__minimap {
 .video-node__controls {
   display: flex;
   align-items: center;
-  gap: 3px;
-  min-height: 32px;
-  padding: 4px 7px;
-  border-radius: 9px;
-  border: 1px solid var(--media-control-border);
-  background: var(--media-control-bg);
+  gap: 5px;
+  min-height: 28px;
   color: var(--media-text);
-  backdrop-filter: blur(10px);
 }
 
 .video-node__btn {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--media-control-bg) 62%, transparent);
   color: var(--media-text);
-  opacity: 0.82;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.32);
+  opacity: 0.94;
 }
 
 .video-node__btn:hover {
-  background: color-mix(in srgb, var(--media-text) 12%, transparent);
+  background: color-mix(in srgb, var(--media-control-bg) 92%, transparent);
   opacity: 1;
 }
 
 .video-node__time {
-  margin-left: 3px;
+  margin-left: 4px;
   font-size: 11px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-  opacity: 0.92;
+  opacity: 0.94;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 .video-node__frame {
   font-size: 10px;
   white-space: nowrap;
-  opacity: 0.58;
+  opacity: 0.7;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 .video-node__spacer {
@@ -1330,6 +1334,50 @@ body.is-exporting .react-flow__minimap {
   color: var(--text-3);
 }
 
+.study-node-card__field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.study-node-card__field > span {
+  width: 52px;
+  flex-shrink: 0;
+}
+
+.study-node-card__field .app-select {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+}
+
+.study-node-card__chips {
+  display: flex;
+  gap: 6px;
+}
+
+.study-node-card__chip {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: var(--surface-hover);
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.study-node-card__chip.is-active {
+  background: color-mix(in srgb, var(--link) 16%, transparent);
+  color: var(--text-1);
+}
+
+.study-node-card__warn {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--warning);
+}
+
 .study-node-card__progress {
   height: 4px;
   overflow: hidden;
@@ -1358,6 +1406,8 @@ body.is-exporting .react-flow__minimap {
   margin-top: auto;
   display: flex;
   justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .study-node-card__enter {
@@ -1381,6 +1431,162 @@ body.is-exporting .react-flow__minimap {
 .study-node-card__enter:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* ===== 拉片分镜表 ===== */
+.film-study-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--canvas-bg) 72%, transparent);
+}
+
+.film-study-sheet__panel {
+  width: min(1440px, calc(100vw - 48px));
+  height: min(900px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+}
+
+.film-study-sheet__head {
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px 0 18px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.film-study-sheet__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-1);
+}
+
+.film-study-sheet__source {
+  max-width: 320px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.film-study-sheet__meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-3);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.film-study-sheet__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 16px 16px;
+}
+
+.film-study-sheet__warn {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--warning);
+}
+
+.film-study-sheet__empty {
+  padding: 40px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.film-study-sheet__table-wrap {
+  min-width: 1080px;
+}
+
+.film-study-sheet__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.film-study-sheet__table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-3);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.film-study-sheet__table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--divider);
+  color: var(--text-2);
+  line-height: 1.55;
+  vertical-align: top;
+}
+
+.film-study-sheet__table tr:hover td {
+  background: var(--surface-hover);
+}
+
+.film-study-sheet__index {
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.film-study-sheet__time {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.film-study-sheet__time span {
+  color: var(--text-3);
+  opacity: 0.72;
+}
+
+.film-study-sheet__text {
+  min-width: 180px;
+  max-width: 340px;
+}
+
+.film-study-sheet__text strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.film-study-sheet__text p {
+  margin: 0 0 3px;
+  color: var(--text-2);
 }
 
 /* ===== 拉片室浮窗 ===== */
@@ -1508,11 +1714,18 @@ body.is-exporting .react-flow__minimap {
   flex: 1;
   min-width: 0;
   min-height: 0;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--media-bg);
 }
 
 .film-study-room__player .video-node {
+  width: min(100%, 760px);
   height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .film-study-room__side {
@@ -2614,6 +2827,30 @@ body.is-exporting .react-flow__minimap {
   height: 1px;
   margin: 5px 8px;
   background: var(--divider);
+}
+
+.ctx-menu--node {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.ctx-menu--node .ctx-menu__item {
+  height: 32px;
+  font-size: 12.5px;
+}
+
+.ctx-menu__section {
+  padding: 6px 10px 3px;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.ctx-menu--node .ctx-menu__item.is-danger {
+  color: var(--danger);
+}
+
+.ctx-menu--node .ctx-menu__item.is-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
 /* ===== Prompt Bar ===== */
@@ -6073,6 +6310,11 @@ body.is-picking .react-flow__node:hover .cnode__card {
   background: var(--divider);
 }
 
+/* 节点工具栏菜单打开时，让节点层优先于底部提示词栏 */
+body.is-node-menu-open .react-flow {
+  z-index: 60 !important;
+}
+
 .cnode__toolbar-menu {
   position: absolute;
   top: calc(100% + 8px);
@@ -7710,9 +7952,11 @@ body.is-picking .react-flow__node:hover .cnode__card {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
   gap: 14px;
   padding: 18px;
+  text-align: center;
 }
 
 .studio-node__stats {
@@ -7749,7 +7993,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .studio-node__open {
-  align-self: flex-start;
+  align-self: center;
 }
 
 .film-node__card {
@@ -8750,11 +8994,16 @@ body.is-picking .react-flow__node:hover .cnode__card {
 }
 
 .video-op-node__preview {
+  position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: 8px;
-  background: #000;
-  object-fit: contain;
+  overflow: hidden;
+  background: var(--media-bg);
+}
+
+.video-op-node__preview .video-node {
+  height: 100%;
 }
 
 .video-op-node__section {

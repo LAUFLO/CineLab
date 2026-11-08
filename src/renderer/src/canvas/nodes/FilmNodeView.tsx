@@ -14,6 +14,7 @@ import { useStudioStore } from '../../stores/studio'
 import { useTimelineStore } from '../../stores/timeline'
 import { useUIStore } from '../../stores/ui'
 import { referencesFromDoc, upstreamSignature } from '../../studio/references'
+import { VideoPlayer } from './VideoPlayer'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: '待生成',
@@ -432,12 +433,16 @@ export function FilmNodeView({ id, data, selected }: NodeProps<FilmNode>) {
           className="image-preview"
           onPointerDown={() => setPreviewOpen(false)}
         >
-          <video
-            src={assetUrl(current.path, current.scope)}
-            controls
-            autoPlay
+          <div
+            className="image-preview__player"
             onPointerDown={(event) => event.stopPropagation()}
-          />
+          >
+            <VideoPlayer
+              src={assetUrl(current.path, current.scope)}
+              path={current.path}
+              fps={current.fps}
+            />
+          </div>
         </div>,
         document.body
       ) : null}

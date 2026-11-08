@@ -14,6 +14,7 @@ import { ProjectCenter } from './panels/ProjectCenter'
 import { SettingsPanel } from './panels/SettingsPanel'
 import { StudioWindow } from './studio/StudioWindow'
 import { FilmStudyRoom } from './canvas/nodes/FilmStudyRoom'
+import { FilmStudySheet } from './canvas/nodes/FilmStudySheet'
 import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
 import { useGenerationHistoryStore } from './stores/generation-history'
@@ -189,6 +190,7 @@ export default function App() {
       <SettingsPanel />
       <StudioWindow />
       <FilmStudyRoom />
+      <FilmStudySheet />
       <WindowControls theme={resolved} onToggleTheme={toggle} />
       <Toast />
       <AppTooltip />

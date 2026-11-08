@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import {
   CAPABILITY_LABEL,
+  MEDIA_INPUT_LABEL,
+  modelInputs,
+  type MediaInput,
   type ModelDef,
   type ProviderConfig,
   type ProviderInput
@@ -19,6 +22,7 @@ import { ComponentsSection } from './ComponentsSection'
 import { GeneralSettingsSection } from './GeneralSettingsSection'
 import { OperationsSection } from './OperationsSection'
 import { ModelParamsDialog } from '../canvas/nodes/ModelParamsDialog'
+import { ModelInputsDialog } from '../canvas/nodes/ModelInputsDialog'
 
 type SectionId =
   | 'general'
@@ -118,6 +122,7 @@ function ModelsSection() {
     Array<{ key: string; value: string }>
   >([])
   const [paramModel, setParamModel] = useState<ModelDef | null>(null)
+  const [inputsModel, setInputsModel] = useState<ModelDef | null>(null)
 
   useEffect(() => {
     void load()
@@ -485,13 +490,25 @@ function ModelsSection() {
                 <div>
                   <div className="model-item__name">{model.name}</div>
                   <div className="model-item__meta">
-                    {CAPABILITY_LABEL[model.capability]} · {model.remoteModel}
+                    {CAPABILITY_LABEL[model.capability]} · 输入{' '}
+                    {modelInputs(model)
+                      .map((input) => MEDIA_INPUT_LABEL[input])
+                      .join('/')}{' '}
+                    · {model.remoteModel}
                     {model.params.length > 0
                       ? ` · ${model.params.length} 个参数`
                       : ''}
                   </div>
                 </div>
                 <div className="model-item__actions">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    title="输入能力"
+                    onClick={() => setInputsModel(model)}
+                  >
+                    <Icon name="layers" size={13} />
+                  </button>
                   <button
                     type="button"
                     className="icon-btn"
@@ -603,6 +620,27 @@ function ModelsSection() {
                 : current
             )
             setParamModel(null)
+          }}
+        />
+
+        <ModelInputsDialog
+          model={inputsModel}
+          onCancel={() => setInputsModel(null)}
+          onSave={(inputs: MediaInput[]) => {
+            if (!inputsModel) return
+            setDraft((current) =>
+              current
+                ? {
+                    ...current,
+                    models: current.models.map((item) =>
+                      item.id === inputsModel.id
+                        ? { ...item, inputs }
+                        : item
+                    )
+                  }
+                : current
+            )
+            setInputsModel(null)
           }}
         />
       </div>

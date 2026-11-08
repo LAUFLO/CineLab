@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { ModelsFileModel, ModelsFileProvider } from '@shared/models-file'
 
 vi.mock('electron', () => ({
   app: {
@@ -6,9 +7,9 @@ vi.mock('electron', () => ({
   }
 }))
 
-import { parseModelsFile } from '../models-config'
+import { parseModelsFile, resolveModels } from '../models-config'
 
-const validModel = {
+const validModel: ModelsFileModel = {
   id: 'm1',
   name: 'Model 1',
   capability: 'image.t2i',
@@ -16,7 +17,7 @@ const validModel = {
   params: []
 }
 
-const validProvider = {
+const validProvider: ModelsFileProvider = {
   id: 'p1',
   name: 'Provider 1',
   baseUrl: 'https://api.example.com/v1',
@@ -83,5 +84,58 @@ describe('parseModelsFile', () => {
     expect(
       parsed.errors.some((error) => error.includes('必须是字符串'))
     ).toBe(true)
+  })
+
+  it('accepts model input capabilities', () => {
+    const parsed = parseModelsFile(
+      {
+        version: 1,
+        providers: [
+          {
+            ...validProvider,
+            models: [{ ...validModel, inputs: ['text', 'image'] }]
+          }
+        ]
+      },
+      'models.json'
+    )
+
+    expect(parsed.errors).toEqual([])
+    expect(parsed.providers[0].models[0].inputs).toEqual(['text', 'image'])
+  })
+
+  it('rejects unknown model input capabilities', () => {
+    const parsed = parseModelsFile(
+      {
+        version: 1,
+        providers: [
+          {
+            ...validProvider,
+            models: [{ ...validModel, inputs: ['text', 'hologram'] }]
+          }
+        ]
+      },
+      'models.json'
+    )
+
+    expect(parsed.errors.some((error) => error.includes('inputs'))).toBe(true)
+  })
+
+  it('infers inputs for models without an explicit declaration', () => {
+    const models = resolveModels({
+      ...validProvider,
+      models: [{ ...validModel, remoteModel: 'moss-image-sft-1.0' }]
+    })
+
+    expect(models[0].inputs).toEqual(['text'])
+  })
+
+  it('keeps explicit inputs when resolving models', () => {
+    const models = resolveModels({
+      ...validProvider,
+      models: [{ ...validModel, inputs: ['text', 'image'] }]
+    })
+
+    expect(models[0].inputs).toEqual(['text', 'image'])
   })
 })

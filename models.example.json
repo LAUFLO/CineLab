@@ -82,6 +82,7 @@
           "name": "My Image V1",
           "capability": "image.t2i",
           "remoteModel": "my-image-v1",
+          "inputs": ["text", "image"],
           "params": [
             {
               "key": "size",

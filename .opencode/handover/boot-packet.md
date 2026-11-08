@@ -1,35 +1,36 @@
 # CineLab · Boot Packet
 
-> **下一会话优先**：整体验收与修复。剪辑台由其他会话开发中；导演台作为待调研大需求，先看 `docs/director-stage-plan.md`。
+> **下一会话优先**：生成提案 propose/submit —— Agent 只登记生成单，用户确认后才提交；含目标、模型、参数、数量、预估费用、失效规则、幂等与失败查单。
 
 ## 状态
 
-2026-11-07：K9/K11/K24 已完成并打包（`144ac61`，CI 42368040739，安装包 156MB）。K2 文本流式按用户要求移除；K5/AGENT-1 后续讨论。新增待调研大需求「导演台」。
+2026-11-08：通用 AgentRuntime 已基于 main 重建；工具注册表、CanvasCommand、技能目录、创建/连接/删除/分组工具完成。真实 Agnes 文本/图片/流式/本地代理验证通过；159 测试通过。`feat/agent-runtime` 领先 `origin/main` 6 个提交、落后 1 个，未推送。
 
 ## Frontier
 
-1. 整体验收与修复
-2. 导演台调研与方案确认
-3. 剪辑台（其他会话开发中，等待接入）
-4. K5 / Agent 后续单独讨论
-5. P4 大功能立项（智能剪辑 / 超分等）
+1. 生成提案 propose/submit（下一项）
+2. StageCommand 骨架
+3. 剪辑助手 clip profile
+4. 技能管理 UI
+5. 整体验收；Agnes 视频补测
 
-## 缺口
+## Gates
 
-K5 / AGENT-1 未实施；K10 旧库迁移暂不处理；K22 已过时；K25 专用视频 multipart 未联调；K18 自动更新未验；K21 音频波形未实测；K23 合成对话框未人工走通。
+- G-AGENT-VIDEO：Agnes Video 2.5 Flash 队列 503，待恢复重试。
+- G-AGENT-MAIN：origin/main 新增 a768e64；推送前先同步，重点检查 canvas store / CineNodeView / preload / ipc-contract 冲突。
 
-## 导演台
+## 证据
 
-参考 LibTV 3D 导演台/3D-BOX、TapNow CineMap：轻量 3D 构图节点，素模/道具/多机位/截图回传/全景背景。方案：`docs/director-stage-plan.md`。待调研，不进入当前实现。
+`.opencode/handover/evidence/AGENT-{SPIKE,TOOLS,SKILLS,CANVAS-TOOLS,GROUP-TOOLS}-1.md`；方案见 `docs/agent-full-scope.md`、`docs/agent-architecture-plan.md`。
 
-## 关键约定
+## 关键 lessons
 
-- 剪辑台由其他会话负责，当前会话不要改相关文件。
-- 文本节点不做流式/多轮，Agent 阶段再做。
-- 项目导出先 staging 复制全局资产并改写路径。
-- 资产缩略图缓存到库根 `.thumbs/`。
-- 视频多轨音频三路独立 volume 后 amix。
+- 同一 turnId 只 pushHistory 一次。
+- 创建节点后把 createdNodeIds 加入本轮 scope。
+- 技能读取在主进程 realpath 校验，只允许 SKILL.md/references/assets。
 
-## 验证
+## 设计约定
 
-`corepack pnpm typecheck && corepack pnpm test && corepack pnpm build`
+- Agent 会话存 `<project>/.cinelab/agent/sessions/`。
+- 工具执行在渲染进程；主进程构造 scope 与回合事务。
+- 模型请求走现有 provider + httpFetch，保持代理生效。

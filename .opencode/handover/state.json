@@ -1,13 +1,13 @@
 {
-  "version": 48,
+  "version": 49,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
-  "phase": "M7",
-  "phaseStatus": "completed",
-  "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
+  "phase": "AGENT",
+  "phaseStatus": "in_progress",
+  "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具；下一项生成提案 propose/submit",
   "nextPhase": "发布前体验完善",
-  "next_focus": "通用 AgentRuntime 已完成工具注册表、CanvasCommand、技能目录、创建/连接/删除/分组/解散工具（159 测试通过；真实 Agnes 验证改名+移动、项目技能读取、创建+连接+删除、打组+解散+一次撤销）。下一步：StageCommand 骨架、生成提案 propose/submit、删除/批量操作二次确认；剪辑助手 clip profile、技能管理 UI 与 Agnes 视频队列补测后续进行。",
+  "next_focus": "下一会话优先实现生成提案 propose/submit：Agent 只登记生成单，用户确认后再提交；包含目标节点、模型、参数、数量、预估费用、失效规则、幂等与失败查单。之后做 StageCommand 骨架与 clip profile。",
   "frontier": [
     {
       "id": "M2-1",
@@ -1311,7 +1311,22 @@
       "content": "通用 AgentRuntime 已验证 mock、Agnes 3.0 Flash、Image 2.5 Flash、本地代理和 SSE 流式；Agnes Video 2.5 Flash 因 503 video_queue_full 未完成真实生成；外网代理、上下文预算、生成提案、技能、多 profile、导演台尚未实现。旧剪辑助手已删除，待用通用运行时重新编码。"
     }
   ],
-  "gates": [],
+  "gates": [
+    {
+      "id": "G-AGENT-VIDEO",
+      "scope": "agent",
+      "status": "blocked",
+      "reason": "Agnes Video 2.5 Flash 队列返回 503 video_queue_full",
+      "resolve": "队列恢复后重试真实视频生成"
+    },
+    {
+      "id": "G-AGENT-MAIN",
+      "scope": "repo",
+      "status": "blocked",
+      "reason": "origin/main 新增 a768e64（Markdown 文本编辑 / 工作区增强），当前 feat/agent-runtime 落后 1 个提交",
+      "resolve": "推送前先同步 origin/main，重点检查 canvas store / CineNodeView / preload / ipc-contract 冲突"
+    }
+  ],
   "completed": [
     {
       "id": "T1",
@@ -2101,16 +2116,19 @@
     "Agent 会话存储在 <project>/.cinelab/agent/sessions/<id>.jsonl；工具执行在渲染进程，主进程构造 scope 与回合事务"
   ],
   "stats": {
-    "sessions": 10,
+    "sessions": 11,
     "completedMilestones": [
       "M0",
       "M1",
       "M2",
       "M3",
       "M4",
-      "M6"
+      "M6",
+      "M7"
     ],
-    "partialMilestones": [],
-    "nextMilestone": "P1-1 模型配置引导"
+    "partialMilestones": [
+      "AGENT"
+    ],
+    "nextMilestone": "Agent 生成提案 propose/submit"
   }
 }

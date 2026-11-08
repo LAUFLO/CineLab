@@ -1,5 +1,5 @@
 {
-  "version": 43,
+  "version": 44,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -991,6 +991,16 @@
       "note": "提交 190daed 合并 film-study，732ad8b 修复 PromptBar 类型收窄。CI run 42449888036 成功（typecheck / 102 tests / check:encryption / build / electron-builder，2m40s）。安装包 156.5MB、zip 199.2MB，已下载到 Downloads\\cinelab-732ad8b。合并后拉片室与剪辑室冒烟通过。",
       "evidence": [
         ".opencode/handover/evidence/PACKAGE-2026-11-08-film-study.md"
+      ]
+    },
+    {
+      "id": "VIDEO-OPERATIONS-1",
+      "title": "视频专用操作：模型能力 + 内嵌面板 + 片段拼接",
+      "status": "done",
+      "note": "2026-11-08 完成：删除创意片头和设置页「操作模型」；ModelDef 增加 operations（片段重拍/元素替换/智能续写），模型卡片「模型能力」可勾选；视频节点工具栏打开右侧内嵌面板，按操作列出视频模型，不是 http-template、缺模板或未声明操作时置灰并显示原因；片段重拍/元素替换支持缩略帧条 + 时间区间，元素替换支持上传/画布/资产库；智能续写支持方向和时长；http-template 新增 video.start/end/duration/direction/operation 变量和 videoResult，片段返回时由主进程拼回源视频。typecheck、102 tests、build 通过；隔离实例 CDP 已验证面板、置灰、时间区间、替换素材和续写方向。时间区间仍为轻量版，真实视频编辑接口和 videoResult 模板待联调。",
+      "evidence": [
+        "docs/video-operations-plan.md",
+        ".opencode/handover/evidence/VIDEO-OPERATIONS-1.md"
       ]
     }
   ],

@@ -28,6 +28,7 @@ import { resolveProvider } from '../settings/store'
 import { modelInputs } from '@shared/provider-schema'
 import { getLibraryRoot } from '../library/config'
 import { resolveMediaPath } from '../media/paths'
+import { applyVideoSegmentResult } from '../media/video-ops'
 import { log } from '../logger'
 
 function broadcast(event: GenerationEvent): void {
@@ -131,7 +132,7 @@ async function loadRefs(
 async function loadVideo(
   projectRoot: string,
   video: ReferenceInput | undefined
-): Promise<{ dataUrl: string; mime: string } | undefined> {
+): Promise<{ dataUrl: string; mime: string; absolutePath: string } | undefined> {
   if (!video) return undefined
 
   const absolute = await resolveMediaPath(projectRoot, video.path, video.scope)
@@ -139,7 +140,8 @@ async function loadVideo(
   const mime = VIDEO_MIME[extname(absolute).toLowerCase()] ?? 'video/mp4'
   return {
     dataUrl: `data:${mime};base64,${data.toString('base64')}`,
-    mime
+    mime,
+    absolutePath: absolute
   }
 }
 
@@ -265,6 +267,7 @@ export function registerGenerateIpc(): void {
                 request.params,
                 refs,
                 video,
+                request.videoOptions,
                 context
               )
             }
@@ -352,9 +355,28 @@ export function registerGenerateIpc(): void {
           : undefined
 
         for (const output of outputs) {
+          let data = output.data
+
+          if (
+            isVideo &&
+            request.videoOptions &&
+            video?.absolutePath &&
+            model.template?.videoResult === 'segment' &&
+            output.data.length > 0 &&
+            output.mime.startsWith('video/')
+          ) {
+            onProgress(96, '拼接视频片段')
+            data = await applyVideoSegmentResult(
+              video.absolutePath,
+              output.data,
+              request.videoOptions,
+              signal
+            )
+          }
+
           const asset = await ingestAsset({
             projectPath: projectRoot,
-            data: output.data,
+            data,
             kind,
             mime: output.mime,
             model: model.name,

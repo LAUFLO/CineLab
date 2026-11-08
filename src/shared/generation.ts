@@ -4,6 +4,21 @@ export type OutputKind = 'image' | 'video' | 'audio' | 'text'
 
 export type ReferenceRole = 'firstFrame' | 'lastFrame' | 'reference'
 
+export interface VideoRange {
+  start: number
+  end: number
+}
+
+export interface VideoOperationOptions {
+  operation: 'shot-retake' | 'element-replace' | 'extend'
+  /** 片段重拍 / 元素替换的时间区间 */
+  range?: VideoRange
+  /** 续写新增时长（秒） */
+  duration?: number
+  /** 续写方向 */
+  direction?: 'forward' | 'backward'
+}
+
 export interface ReferenceInput {
   path: string
   role: ReferenceRole
@@ -36,6 +51,8 @@ export interface GenerateRequest {
   refs?: ReferenceInput[]
   /** 专用视频接口输入；仅 http-template / 视频编辑适配器使用 */
   video?: ReferenceInput
+  /** 视频专用操作的区间、时长和方向 */
+  videoOptions?: VideoOperationOptions
   /** PNG data URL，透明区域表示需要编辑；仅图片模型使用 */
   mask?: string
   /** 操作标识，随生成结果写回 OutputRef.op */

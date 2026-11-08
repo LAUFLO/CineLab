@@ -35,6 +35,7 @@ import { FilmNodeView } from './nodes/FilmNodeView'
 import { GroupNodeView } from './nodes/GroupNodeView'
 import { StudioNodeView } from './nodes/StudioNodeView'
 import { PromptBar } from './PromptBar'
+import { VideoEditPanel } from './nodes/VideoEditPanel'
 import { UpstreamWatcher } from './UpstreamWatcher'
 import { HistoryPanel } from '../panels/HistoryPanel'
 import { NodeSearch } from '../panels/NodeSearch'
@@ -532,6 +533,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
       <AlignmentGuides guides={guides} />
       <UpstreamWatcher />
       <PromptBar />
+      <VideoEditPanel />
       <MultiSelectBar />
       <GroupToolbar />
       <StoryboardToolbar />

@@ -1,6 +1,7 @@
 import { httpFetch } from './http'
 import type { HttpTemplateMode } from '@shared/http-template'
 import type { ModelDef } from '@shared/provider-schema'
+import type { VideoOperationOptions } from '@shared/generation'
 import type {
   AdapterContext,
   ProviderOutput,
@@ -25,6 +26,7 @@ interface TemplateContext {
   params: Record<string, unknown>
   refs: ImageRef[]
   video?: VideoRef
+  videoOptions?: VideoOperationOptions
   mode: HttpTemplateMode
   baseUrl: string
   taskId?: string
@@ -79,6 +81,11 @@ function tokenValue(token: string, context: TemplateContext): unknown {
   if (token === 'video.base64') {
     return context.video?.dataUrl.replace(/^data:[^;]+;base64,/, '')
   }
+  if (token === 'video.start') return context.videoOptions?.range?.start
+  if (token === 'video.end') return context.videoOptions?.range?.end
+  if (token === 'video.duration') return context.videoOptions?.duration
+  if (token === 'video.direction') return context.videoOptions?.direction
+  if (token === 'video.operation') return context.videoOptions?.operation
   if (token.startsWith('params.')) {
     return context.params[token.slice('params.'.length)]
   }
@@ -274,6 +281,7 @@ export async function generateVideoHttpTemplate(
   params: Record<string, unknown>,
   refs: ImageRef[],
   video: VideoRef | undefined,
+  videoOptions: VideoOperationOptions | undefined,
   ctx: AdapterContext
 ): Promise<ProviderOutput[]> {
   const template = model.template
@@ -287,6 +295,7 @@ export async function generateVideoHttpTemplate(
     params,
     refs,
     ...(video ? { video } : {}),
+    ...(videoOptions ? { videoOptions } : {}),
     mode,
     baseUrl
   }

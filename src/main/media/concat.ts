@@ -28,6 +28,138 @@ function escapeSubtitlePath(path: string): string {
     .replace(/'/g, "\\'")
 }
 
+async function buildSegments(
+  inputs: string[],
+  tempDir: string,
+  width: number,
+  height: number,
+  quality: ConcatQuality,
+  signal?: AbortSignal
+): Promise<string[]> {
+  const crf = quality === 'high' ? 18 : 23
+  const segments: string[] = []
+
+  for (let index = 0; index < inputs.length; index += 1) {
+    const input = inputs[index]
+    const probe = await probeMedia(input)
+    if (!probe.duration) {
+      throw new Error(`无法读取视频时长：${basename(input)}`)
+    }
+
+    const segment = join(tempDir, `segment-${index}.mp4`)
+    const args = ['-y', '-i', input]
+
+    if (!probe.hasAudio) {
+      args.push(
+        '-f',
+        'lavfi',
+        '-i',
+        'anullsrc=channel_layout=stereo:sample_rate=48000'
+      )
+    }
+
+    args.push(
+      '-vf',
+      `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30`,
+      '-c:v',
+      'libx264',
+      '-preset',
+      'medium',
+      '-crf',
+      String(crf),
+      '-pix_fmt',
+      'yuv420p',
+      '-c:a',
+      'aac',
+      '-b:a',
+      '192k',
+      '-ar',
+      '48000',
+      '-ac',
+      '2',
+      ...(probe.hasAudio
+        ? []
+        : ['-map', '0:v:0', '-map', '1:a:0', '-shortest']),
+      segment
+    )
+
+    await runFfmpeg(args, { signal })
+    segments.push(segment)
+  }
+
+  return segments
+}
+
+async function concatSegments(
+  segments: string[],
+  outputPath: string,
+  tempDir: string,
+  signal?: AbortSignal
+): Promise<void> {
+  const listPath = join(tempDir, 'list.txt')
+  const list = segments
+    .map((segment) => `file '${segment.replace(/'/g, "'\\''")}'`)
+    .join('\n')
+  await fs.writeFile(listPath, list, 'utf8')
+
+  await runFfmpeg(
+    [
+      '-y',
+      '-f',
+      'concat',
+      '-safe',
+      '0',
+      '-i',
+      listPath,
+      '-c',
+      'copy',
+      '-movflags',
+      '+faststart',
+      outputPath
+    ],
+    { signal }
+  )
+}
+
+/**
+ * 用绝对路径拼接视频，供生成结果的片段拼接使用。
+ * 会先把每段统一到 720p/1080p、30fps、AAC 音频，再无损 concat。
+ */
+export async function concatVideoFiles(
+  inputs: string[],
+  outputPath: string,
+  options: {
+    width?: number
+    height?: number
+    quality?: ConcatQuality
+    signal?: AbortSignal
+  } = {}
+): Promise<void> {
+  if (inputs.length < 2) {
+    throw new Error('至少需要两个视频')
+  }
+
+  const probe = await probeMedia(inputs[0])
+  const width = Math.max(2, (options.width ?? probe.width ?? 1280) & ~1)
+  const height = Math.max(2, (options.height ?? probe.height ?? 720) & ~1)
+  const tempDir = join(app.getPath('temp'), `cinelab-concat-${randomUUID()}`)
+  await fs.mkdir(tempDir, { recursive: true })
+
+  try {
+    const segments = await buildSegments(
+      inputs,
+      tempDir,
+      width,
+      height,
+      options.quality ?? 'standard',
+      options.signal
+    )
+    await concatSegments(segments, outputPath, tempDir, options.signal)
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => undefined)
+  }
+}
+
 /**
  * 将多个全局库视频按顺序拼接为一个 MP4。
  * 每个片段先统一分辨率/帧率/编码，再用 concat demuxer 无损拼接，
@@ -46,86 +178,23 @@ export async function concatVideos(
   const inputs = relativePaths.map((path) => resolveInside(root, path))
   const resolution = options.resolution ?? '720p'
   const [width, height] = resolution === '1080p' ? [1920, 1080] : [1280, 720]
-  const crf = options.quality === 'high' ? 18 : 23
+  const quality = options.quality ?? 'standard'
+  const crf = quality === 'high' ? 18 : 23
   const tempDir = join(app.getPath('temp'), `cinelab-concat-${randomUUID()}`)
 
   await fs.mkdir(tempDir, { recursive: true })
 
   try {
-    const segments: string[] = []
-
-    for (let index = 0; index < inputs.length; index += 1) {
-      const input = inputs[index]
-      const probe = await probeMedia(input)
-      if (!probe.duration) {
-        throw new Error(`无法读取视频时长：${basename(input)}`)
-      }
-
-      const segment = join(tempDir, `segment-${index}.mp4`)
-      const args = ['-y', '-i', input]
-
-      if (!probe.hasAudio) {
-        args.push(
-          '-f',
-          'lavfi',
-          '-i',
-          'anullsrc=channel_layout=stereo:sample_rate=48000'
-        )
-      }
-
-      args.push(
-        '-vf',
-        `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30`,
-        '-c:v',
-        'libx264',
-        '-preset',
-        'medium',
-        '-crf',
-        String(crf),
-        '-pix_fmt',
-        'yuv420p',
-        '-c:a',
-        'aac',
-        '-b:a',
-        '192k',
-        '-ar',
-        '48000',
-        '-ac',
-        '2',
-        ...(probe.hasAudio
-          ? []
-          : ['-map', '0:v:0', '-map', '1:a:0', '-shortest']),
-        segment
-      )
-
-      await runFfmpeg(args, { signal: options.signal })
-      segments.push(segment)
-    }
-
-    const listPath = join(tempDir, 'list.txt')
-    const list = segments
-      .map((segment) => `file '${segment.replace(/'/g, "'\\''")}'`)
-      .join('\n')
-    await fs.writeFile(listPath, list, 'utf8')
-
-    const concatenated = join(tempDir, 'concatenated.mp4')
-    await runFfmpeg(
-      [
-        '-y',
-        '-f',
-        'concat',
-        '-safe',
-        '0',
-        '-i',
-        listPath,
-        '-c',
-        'copy',
-        '-movflags',
-        '+faststart',
-        concatenated
-      ],
-      { signal: options.signal }
+    const segments = await buildSegments(
+      inputs,
+      tempDir,
+      width,
+      height,
+      quality,
+      options.signal
     )
+    const concatenated = join(tempDir, 'concatenated.mp4')
+    await concatSegments(segments, concatenated, tempDir, options.signal)
 
     let current = concatenated
 

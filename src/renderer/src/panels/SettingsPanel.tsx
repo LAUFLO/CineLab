@@ -3,12 +3,13 @@ import {
   CAPABILITY_LABEL,
   MEDIA_INPUT_LABEL,
   modelInputs,
-  type MediaInput,
+  modelOperations,
   type ModelDef,
   type ProviderConfig,
   type ProviderInput
 } from '@shared/provider-schema'
 import type { ModelsConfigStatus } from '@shared/models-file'
+import { VIDEO_OPERATIONS } from '@shared/operation-schema'
 import { PROVIDER_PRESETS, providerPresetModels } from '@shared/provider-presets'
 import type { UpdateStatus } from '@shared/update'
 import { BrandIcon, BrandWordmark } from '../components/Brand'
@@ -20,14 +21,15 @@ import { useUIStore } from '../stores/ui'
 import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
 import { GeneralSettingsSection } from './GeneralSettingsSection'
-import { OperationsSection } from './OperationsSection'
 import { ModelParamsDialog } from '../canvas/nodes/ModelParamsDialog'
-import { ModelInputsDialog } from '../canvas/nodes/ModelInputsDialog'
+import {
+  ModelInputsDialog,
+  type ModelCapabilityValue
+} from '../canvas/nodes/ModelInputsDialog'
 
 type SectionId =
   | 'general'
   | 'models'
-  | 'operations'
   | 'library'
   | 'components'
   | 'appearance'
@@ -43,7 +45,6 @@ interface SectionDef {
 const SECTIONS: SectionDef[] = [
   { id: 'general', label: '通用', icon: 'settings' },
   { id: 'models', label: '模型服务', icon: 'robot' },
-  { id: 'operations', label: '操作模型', icon: 'film' },
   { id: 'library', label: '资产库', icon: 'library' },
   { id: 'components', label: '组件', icon: 'layers' },
   { id: 'appearance', label: '外观', icon: 'sun' },
@@ -495,6 +496,15 @@ function ModelsSection() {
                       .map((input) => MEDIA_INPUT_LABEL[input])
                       .join('/')}{' '}
                     · {model.remoteModel}
+                    {modelOperations(model).length > 0
+                      ? ` · 操作 ${modelOperations(model)
+                          .map(
+                            (id) =>
+                              VIDEO_OPERATIONS.find((op) => op.id === id)?.label ??
+                              id
+                          )
+                          .join('/')}`
+                      : ''}
                     {model.params.length > 0
                       ? ` · ${model.params.length} 个参数`
                       : ''}
@@ -626,7 +636,7 @@ function ModelsSection() {
         <ModelInputsDialog
           model={inputsModel}
           onCancel={() => setInputsModel(null)}
-          onSave={(inputs: MediaInput[]) => {
+          onSave={(value: ModelCapabilityValue) => {
             if (!inputsModel) return
             setDraft((current) =>
               current
@@ -634,7 +644,11 @@ function ModelsSection() {
                     ...current,
                     models: current.models.map((item) =>
                       item.id === inputsModel.id
-                        ? { ...item, inputs }
+                        ? {
+                            ...item,
+                            inputs: value.inputs,
+                            operations: value.operations
+                          }
                         : item
                     )
                   }
@@ -1067,7 +1081,6 @@ export function SettingsPanel() {
           <div className="settings-content">
             {active === 'general' ? <GeneralSettingsSection /> : null}
             {active === 'models' ? <ModelsSection /> : null}
-            {active === 'operations' ? <OperationsSection /> : null}
             {active === 'library' ? <LibrarySection /> : null}
             {active === 'components' ? <ComponentsSection /> : null}
             {active === 'appearance' ? <AppearanceSection /> : null}

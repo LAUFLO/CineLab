@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path'
 import {
   MODEL_PRESETS,
   inferModelInputs,
+  inferModelOperations,
   type Capability,
   type MediaInput,
   type ModelDef,
@@ -12,6 +13,10 @@ import {
   type ProviderConfig,
   type ProviderType
 } from '@shared/provider-schema'
+import {
+  VIDEO_OPERATIONS,
+  type VideoOperationId
+} from '@shared/operation-schema'
 import type {
   ModelsConfigStatus,
   ModelsFile,
@@ -84,6 +89,40 @@ function validateInputs(
   if (result.length === 0) {
     errors.push(`${path}.inputs 至少需要一项`)
     return undefined
+  }
+
+  return result
+}
+
+const VIDEO_OPERATION_IDS: VideoOperationId[] = VIDEO_OPERATIONS.map(
+  (operation) => operation.id
+)
+
+function validateOperations(
+  operations: unknown,
+  path: string,
+  errors: string[]
+): VideoOperationId[] | undefined {
+  if (operations === undefined) return undefined
+  if (!Array.isArray(operations)) {
+    errors.push(`${path}.operations 必须是数组`)
+    return undefined
+  }
+
+  const result: VideoOperationId[] = []
+  for (const item of operations) {
+    if (
+      typeof item !== 'string' ||
+      !VIDEO_OPERATION_IDS.includes(item as VideoOperationId)
+    ) {
+      errors.push(
+        `${path}.operations 只能是 ${VIDEO_OPERATION_IDS.join(' / ')}`
+      )
+      continue
+    }
+    if (!result.includes(item as VideoOperationId)) {
+      result.push(item as VideoOperationId)
+    }
   }
 
   return result
@@ -232,6 +271,7 @@ function validateModel(
 
   const params = validateParams(item.params, path, errors)
   const inputs = validateInputs(item.inputs, path, errors)
+  const operations = validateOperations(item.operations, path, errors)
 
   return {
     id,
@@ -244,6 +284,7 @@ function validateModel(
       ? { remoteModel: readString(item.remoteModel) }
       : {}),
     ...(inputs ? { inputs } : {}),
+    ...(operations ? { operations } : {}),
     ...(adapter ? { adapter } : {}),
     ...(providerType ? { providerType } : {}),
     ...(isRecord(template) ? { template: template as unknown as HttpTemplate } : {}),
@@ -503,6 +544,10 @@ export function resolveModels(provider: ModelsFileProvider): ModelDef[] {
       item.inputs ??
       preset?.inputs ??
       inferModelInputs({ capability, remoteModel, adapter, template })
+    const operations =
+      item.operations ??
+      preset?.operations ??
+      inferModelOperations({ capability, remoteModel, adapter, template })
 
     return {
       id: item.id,
@@ -510,6 +555,7 @@ export function resolveModels(provider: ModelsFileProvider): ModelDef[] {
       capability,
       remoteModel,
       inputs,
+      operations,
       params: item.params ?? preset?.params ?? [],
       adapter,
       ...(item.providerType ?? preset?.providerType

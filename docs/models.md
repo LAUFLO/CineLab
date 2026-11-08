@@ -61,10 +61,13 @@
 | `capability` | 无 preset 时必填 | `image.t2i` / `image.i2i` / `text.chat` / `video.t2v` / `audio.tts` / `audio.music` |
 | `remoteModel` | 无 preset 时必填 | 请求里实际发送的模型 ID |
 | `inputs` | 否 | 模型实际可接收的输入：`text` / `image` / `video` / `audio`；省略时按能力、模型名和模板推断 |
+| `operations` | 否 | 模型支持的视频操作：`shot-retake` / `element-replace` / `extend`；省略时按 http-template 变量推断 |
 | `adapter` | 否 | 覆盖 provider 的 adapter |
 | `params` | 否 | 节点 PromptBar 里显示的参数，结构同 `ParamDef`；设置页模型卡片的「参数」按钮可编辑，支持下拉/数字/文本/开关 |
 
-`inputs` 用于 Prompt Bar 的模型置灰：当前节点已经引用了图片或视频时，缺少对应输入能力的模型会显示为不可用。设置页模型卡片上的「输入能力」按钮可以修改，旧配置不写 `inputs` 也能继续使用。
+`inputs` 用于 Prompt Bar 的模型置灰：当前节点已经引用了图片或视频时，缺少对应输入能力的模型会显示为不可用。设置页模型卡片上的「模型能力」按钮可以修改，旧配置不写 `inputs` 也能继续使用。
+
+`operations` 用于视频节点的片段重拍/元素替换/智能续写：操作时列出所有视频模型，未声明对应操作或不是 http-template 的模型会置灰。设置页模型卡片上的「模型能力」按钮可以勾选，旧配置不写 `operations` 时按模板变量推断。
 
 默认推断规则：
 
@@ -120,7 +123,7 @@
 - `submit.contentType`：`json`（默认）或 `multipart`
 - `submit.omitEmpty`：删除模板里的空字段
 - `poll.path` / `taskIdPath` / `statusPath` / `resultPath`
-- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`、`{{refs.lastFrame}}`、`{{refs.frames}}`、`{{refs.images}}`、`{{video.dataUrl}}`、`{{video.base64}}`、`{{video.mime}}`、`{{taskId}}`
+- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`、`{{refs.lastFrame}}`、`{{refs.frames}}`、`{{refs.images}}`、`{{video.dataUrl}}`、`{{video.base64}}`、`{{video.mime}}`、`{{video.start}}`、`{{video.end}}`、`{{video.duration}}`、`{{video.direction}}`、`{{video.operation}}`、`{{taskId}}`
 
 视频编辑/续写接口使用 `mode: "video"`。当请求带 `video` 输入时，模板自动进入 video 模式：
 
@@ -171,9 +174,24 @@
 }
 ```
 
-绑定到节点操作：
+为模型声明操作：
 
-设置 → 操作模型，为「片段重拍 / 元素替换 / 智能续写 / 创意片头」选择对应的视频模型。绑定后节点工具栏会把当前视频作为 `video` 输入提交给该模型；未绑定时会提示去设置，不会使用首帧 i2v 近似。
+设置 → 模型服务 → 模型卡片「模型能力」，勾选「片段重拍 / 元素替换 / 智能续写」。操作时视频节点会列出所有视频模型，未声明对应操作、不是 http-template 或缺少模板的模型会置灰，并显示原因。
+
+模板需要声明 `videoResult`：
+
+- `full`：接口返回完整视频，直接作为结果。
+- `segment`：接口返回新增片段，由 CineLab 拼回源视频。
+
+变量：
+
+| 变量 | 说明 |
+|---|---|
+| `{{video.start}}` | 区间开始秒数 |
+| `{{video.end}}` | 区间结束秒数 |
+| `{{video.duration}}` | 续写新增时长 |
+| `{{video.direction}}` | `forward` / `backward` |
+| `{{video.operation}}` | `shot-retake` / `element-replace` / `extend` |
 
 智谱示例：
 

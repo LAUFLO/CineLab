@@ -1,5 +1,5 @@
 {
-  "version": 39,
+  "version": 40,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "逐帧拉片 P3：剧情泳道、结构树、情绪曲线",
+  "next_focus": "逐帧拉片增强：直连多模态分析与字幕",
   "frontier": [
     {
       "id": "M2-1",
@@ -639,8 +639,18 @@
     {
       "id": "FILM-STUDY-P3",
       "title": "逐帧拉片 P3：泳道、结构树、情绪曲线",
+      "status": "done",
+      "note": "film-study 分支完成：笔记/结构/情绪标签页、剧情泳道、结构树、情绪曲线；段落支持 primaryLine/sharedLines/structureRole，AI schema/prompt/归一化同步支持。",
+      "evidence": [
+        "docs/film-study-plan.md",
+        ".opencode/handover/evidence/FILM-STUDY-P3.md"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-4",
+      "title": "逐帧拉片增强：直连多模态分析与字幕",
       "status": "todo",
-      "note": "待开发：剧情泳道、结构树、观众情绪曲线可视化，以及 CineLab 直连多模态分析。数据字段已在 P2 写入 study.json。"
+      "note": "待开发：CineLab 直连多模态模型分析（contact sheet + 分段发送），字幕提取与 srt 导出/分析包集成。"
     }
   ],
   "knownIssues": [
@@ -1471,6 +1481,14 @@
     {
       "category": "lesson",
       "content": "AI JSON 导入要兼容对象、数组和 Markdown code fence，纯归一化逻辑拆出 Electron 依赖后可以直接单元测试。"
+    },
+    {
+      "category": "lesson",
+      "content": "拉片结构视图优先使用 storyLines + primaryLine/sharedLines 归组，没有 AI 数据时用 type/primaryLine 自动兜底，保证手动拉片也能看到结构。"
+    },
+    {
+      "category": "preference",
+      "content": "拉片结果的可视化要能反向驱动播放器：点击泳道段落、结构树节点、情绪点都应 seek 到对应时间。"
     }
   ],
   "designConventions": [

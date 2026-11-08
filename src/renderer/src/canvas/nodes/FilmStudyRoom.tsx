@@ -7,6 +7,10 @@ import { useCanvasStore } from '../../stores/canvas'
 import { useFilmStudyStore } from '../../stores/film-study'
 import { useUIStore } from '../../stores/ui'
 import { VideoPlayer, type VideoPlayerHandle } from './VideoPlayer'
+import {
+  EmotionPanel,
+  StructurePanel
+} from './FilmStudyInsights'
 
 const ITEM_WIDTH = 104
 const ITEM_GAP = 6
@@ -52,6 +56,7 @@ export function FilmStudyRoom() {
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(
     null
   )
+  const [tab, setTab] = useState<'notes' | 'structure' | 'emotion'>('notes')
   const [playingSegment, setPlayingSegment] = useState<{
     id: string
     endTime: number
@@ -67,6 +72,7 @@ export function FilmStudyRoom() {
     setSelectedSegmentId(null)
     setPlayingSegment(null)
     setScrollLeft(0)
+    setTab('notes')
   }, [study?.id])
 
   useEffect(() => {
@@ -127,6 +133,11 @@ export function FilmStudyRoom() {
     if (!frame) return
     setSelectedIndex(index)
     playerRef.current?.seek(frame.time)
+  }
+
+  const seekToTime = (time: number): void => {
+    setSelectedIndex(indexAt(time))
+    playerRef.current?.seek(time)
   }
 
   const onTimeChange = (time: number): void => {
@@ -435,6 +446,29 @@ export function FilmStudyRoom() {
           </div>
 
           <aside className="film-study-room__side">
+            <div className="film-study-tabs">
+              {(
+                [
+                  ['notes', '笔记'],
+                  ['structure', '结构'],
+                  ['emotion', '情绪']
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`film-study-tab${
+                    tab === id ? ' is-active' : ''
+                  }`}
+                  onClick={() => setTab(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {tab === 'notes' ? (
+              <>
             <div className="film-study-room__side-title">当前帧</div>
             <div className="film-study-room__time">
               {selected ? studyTime(selected.time) : '00:00.0'}
@@ -556,6 +590,41 @@ export function FilmStudyRoom() {
                   />
                 </label>
                 <label>
+                  <span>剧情线（id 或名称）</span>
+                  <input
+                    value={selectedSegment.primaryLine ?? ''}
+                    placeholder="例如 main / 主线"
+                    onChange={(event) =>
+                      updateSegment({ primaryLine: event.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  <span>共用剧情线（逗号分隔）</span>
+                  <input
+                    value={(selectedSegment.sharedLines ?? []).join(', ')}
+                    placeholder="例如 romance, information"
+                    onChange={(event) =>
+                      updateSegment({
+                        sharedLines: event.target.value
+                          .split(',')
+                          .map((item) => item.trim())
+                          .filter(Boolean)
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  <span>结构角色</span>
+                  <input
+                    value={selectedSegment.structureRole ?? ''}
+                    placeholder="例如 铺垫 / 冲突 / 高潮"
+                    onChange={(event) =>
+                      updateSegment({ structureRole: event.target.value })
+                    }
+                  />
+                </label>
+                <label>
                   <span>段落功能</span>
                   <textarea
                     value={selectedSegment.segmentFunction ?? ''}
@@ -647,6 +716,20 @@ export function FilmStudyRoom() {
             >
               {contactBusy ? '正在生成拼图…' : '拉片拼图放入画布'}
             </button>
+              </>
+            ) : tab === 'structure' ? (
+              <StructurePanel
+                study={study}
+                selectedSegmentId={selectedSegmentId}
+                onSelectSegment={selectSegment}
+              />
+            ) : (
+              <EmotionPanel
+                points={study.audienceCurvePoints ?? []}
+                duration={study.duration}
+                onSeek={seekToTime}
+              />
+            )}
           </aside>
         </div>
 

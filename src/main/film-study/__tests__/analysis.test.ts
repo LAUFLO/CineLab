@@ -50,7 +50,10 @@ describe('normalizeFilmStudyAnalysis', () => {
           type: '起',
           segmentFunction: '交代目标',
           keyBeats: '目标 → 阻力',
-          techniques: '手持跟拍'
+          techniques: '手持跟拍',
+          primaryLine: 'main',
+          sharedLines: ['emotion'],
+          structureRole: '铺垫'
         }
       ],
       macroAnalysis: {
@@ -69,6 +72,9 @@ describe('normalizeFilmStudyAnalysis', () => {
     })
 
     expect(next.segments[0].segmentFunction).toBe('交代目标')
+    expect(next.segments[0].primaryLine).toBe('main')
+    expect(next.segments[0].sharedLines).toEqual(['emotion'])
+    expect(next.segments[0].structureRole).toBe('铺垫')
     expect(next.macroAnalysis?.overallStructure).toBe('三幕')
     expect(next.storyLines?.[0].title).toBe('主线')
     expect(next.audienceCurvePoints?.[0].intensity).toBe(100)

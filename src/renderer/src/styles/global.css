@@ -1669,6 +1669,166 @@ body.is-exporting .react-flow__minimap {
   margin-top: 6px;
 }
 
+.film-study-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 14px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--surface-hover);
+}
+
+.film-study-tab {
+  flex: 1;
+  height: 26px;
+  border-radius: 6px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.film-study-tab:hover {
+  color: var(--text-2);
+}
+
+.film-study-tab.is-active {
+  background: var(--surface);
+  color: var(--text-1);
+}
+
+.film-study-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.film-study-insights__gap {
+  margin-top: 16px;
+}
+
+.film-study-lane {
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+}
+
+.film-study-lane__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 1px 2px 5px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.film-study-lane__head span:last-child {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.film-study-lane__empty {
+  padding: 3px 2px;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.film-study-insight-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  color: var(--text-2);
+  text-align: left;
+}
+
+.film-study-insight-row:hover {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
+.film-study-insight-row.is-active {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
+.film-study-insight-row span:first-child {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.film-study-insight-row strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.film-study-tree {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+}
+
+.film-study-tree summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-2);
+  user-select: none;
+}
+
+.film-study-tree summary::-webkit-details-marker {
+  display: none;
+}
+
+.film-study-tree summary span:last-child {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.film-study-tree[open] summary {
+  margin-bottom: 3px;
+}
+
+.film-study-emotion {
+  padding: 7px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+}
+
+.film-study-emotion svg {
+  width: 100%;
+  height: 140px;
+  display: block;
+}
+
+.film-study-emotion__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.film-study-emotion__value {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
 .film-study-timeline {
   height: 142px;
   flex-shrink: 0;

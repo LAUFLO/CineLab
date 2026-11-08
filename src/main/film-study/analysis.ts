@@ -38,7 +38,10 @@ export const AI_SCHEMA = {
           creativeIntent: { type: 'string' },
           techniques: { type: 'string' },
           audienceExperience: { type: 'string' },
-          notes: { type: 'string' }
+          notes: { type: 'string' },
+          primaryLine: { type: 'string' },
+          sharedLines: { type: 'array', items: { type: 'string' } },
+          structureRole: { type: 'string' }
         }
       }
     },
@@ -98,10 +101,11 @@ export function buildAiPrompt(study: FilmStudy): string {
     '',
     '1. segments 必填：按时间顺序覆盖全片，尽量连续、不重叠。',
     '2. 每个 segment 至少包含 startTime、endTime、title、type。',
-    '3. 可选字段：segmentFunction、keyBeats、creativeIntent、techniques、audienceExperience、notes。',
+    '3. 可选字段：segmentFunction、keyBeats、creativeIntent、techniques、audienceExperience、notes、primaryLine、sharedLines、structureRole。',
     '4. type 建议使用：开场、起、承、转、合、冲突、推进、转折、升级、低谷、高潮、结尾、支线、过渡。',
-    '5. 如果能判断，请同时输出 macroAnalysis、storyLines、audienceCurvePoints。',
-    '6. audienceCurvePoints 的 time 使用全片秒数，intensity 使用 0-100。',
+    '5. primaryLine 填 storyLines 里的剧情线 id 或名称；sharedLines 填同时承载该段落的其它剧情线；structureRole 填该段的结构角色。',
+    '6. 如果能判断，请同时输出 macroAnalysis、storyLines、audienceCurvePoints。',
+    '7. audienceCurvePoints 的 time 使用全片秒数，intensity 使用 0-100。',
     '',
     '不要虚构字幕；本包没有字幕文件。'
   ].join('\n')
@@ -182,7 +186,14 @@ function normalizeSegments(
         creativeIntent: readText(item.creativeIntent),
         techniques: readText(item.techniques),
         audienceExperience: readText(item.audienceExperience),
-        notes: readText(item.notes)
+        notes: readText(item.notes),
+        primaryLine: readText(item.primaryLine),
+        sharedLines: Array.isArray(item.sharedLines)
+          ? item.sharedLines
+              .map(readText)
+              .filter((value): value is string => Boolean(value))
+          : undefined,
+        structureRole: readText(item.structureRole)
       }
     })
     .filter((item): item is FilmStudySegment => item !== null)

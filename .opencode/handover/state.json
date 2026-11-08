@@ -997,7 +997,7 @@
       "id": "VIDEO-OPERATIONS-1",
       "title": "视频专用操作：模型能力 + 内嵌面板 + 片段拼接",
       "status": "done",
-      "note": "2026-11-08 完成：删除创意片头和设置页「操作模型」；ModelDef 增加 operations（片段重拍/元素替换/智能续写），模型卡片「模型能力」可勾选；视频节点工具栏打开右侧内嵌面板，按操作列出视频模型，不是 http-template、缺模板或未声明操作时置灰并显示原因；片段重拍/元素替换支持缩略帧条 + 时间区间，元素替换支持上传/画布/资产库；智能续写支持方向和时长；http-template 新增 video.start/end/duration/direction/operation 变量和 videoResult，片段返回时由主进程拼回源视频。typecheck、102 tests、build 通过；隔离实例 CDP 已验证面板、置灰、时间区间、替换素材和续写方向。时间区间仍为轻量版，真实视频编辑接口和 videoResult 模板待联调。",
+      "note": "2026-11-08 完成：删除创意片头和设置页「操作模型」；ModelDef 增加 operations（片段重拍/元素替换/智能续写），模型卡片「模型能力」可勾选；点击视频节点工具栏操作按钮创建对应的 video-op 功能节点并连线，参数在节点卡片内展开，同源同操作已存在时选中并展开；功能节点不能切换操作；开始生成创建普通视频结果节点并连线，功能节点保留；片段重拍/元素替换支持缩略帧条 + 时间区间，元素替换支持上传/画布/资产库；智能续写支持方向和时长；http-template 新增 video.start/end/duration/direction/operation 变量和 videoResult，片段返回时由主进程拼回源视频。typecheck、102 tests、build 通过；隔离实例 CDP 已验证功能节点、置灰、时间区间、替换素材、续写方向、结果节点创建与画布持久化。时间区间仍为轻量版，真实视频编辑接口和 videoResult 模板待联调。",
       "evidence": [
         "docs/video-operations-plan.md",
         ".opencode/handover/evidence/VIDEO-OPERATIONS-1.md"

@@ -151,6 +151,45 @@ export const filmNodeSchema = z.object({
     .optional()
 })
 
+export const videoOpNodeSchema = z.object({
+  id: z.string().min(1).max(120),
+  type: z.literal('video-op'),
+  parentId: z.string().min(1).max(120).optional(),
+  position: z.object({ x: z.number(), y: z.number() }),
+  data: z.object({
+    kind: z.literal('video-op'),
+    title: z.string().max(200),
+    status: nodeStatusSchema,
+    operation: z.enum(['shot-retake', 'element-replace', 'extend']),
+    sourceNodeId: z.string().min(1).max(120),
+    resultNodeId: z.string().max(120).optional(),
+    range: z
+      .object({ start: z.number(), end: z.number() })
+      .optional(),
+    duration: z.number().optional(),
+    direction: z.enum(['forward', 'backward']).optional(),
+    referencePath: z.string().max(500).optional(),
+    referenceScope: z.enum(['project', 'global']).optional(),
+    modelKey: z.string().max(300).optional(),
+    prompt: z.string().max(20000).optional(),
+    expanded: z.boolean().optional(),
+    templates: z.array(z.string().max(100)).max(20)
+  }),
+  style: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional()
+    })
+    .optional(),
+  selected: z.boolean().optional(),
+  measured: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional()
+    })
+    .optional()
+})
+
 export const groupNodeSchema = z.object({
   id: z.string().min(1).max(120),
   type: z.literal('group'),
@@ -181,6 +220,7 @@ export const canvasNodeSchema = z.union([
   cineNodeSchema,
   studioNodeSchema,
   filmNodeSchema,
+  videoOpNodeSchema,
   groupNodeSchema
 ])
 

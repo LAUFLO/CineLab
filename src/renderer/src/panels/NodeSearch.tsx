@@ -12,6 +12,7 @@ const ICONS: Record<CanvasNodeKind, IconName> = {
   audio: 'audio',
   studio: 'film',
   film: 'film',
+  'video-op': 'history',
   study: 'film'
 }
 

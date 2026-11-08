@@ -30,15 +30,23 @@ import {
   type GroupRatio,
   type NodeKind,
   type OutputRef,
-  type StudioNodeData
+  type StudioNodeData,
+  type VideoOpNodeData
 } from '@shared/canvas-schema'
+import { VIDEO_OPERATIONS, type VideoOperationId } from '@shared/operation-schema'
 import type { GeneratedAsset } from '@shared/generation'
 
 export type CineNode = Node<CineNodeData, 'cine'>
 export type StudioNode = Node<StudioNodeData, 'studio'>
 export type FilmNode = Node<FilmNodeData, 'film'>
+export type VideoOpNode = Node<VideoOpNodeData, 'video-op'>
 export type GroupNode = Node<GroupNodeData, 'group'>
-export type CanvasNode = CineNode | StudioNode | FilmNode | GroupNode
+export type CanvasNode =
+  | CineNode
+  | StudioNode
+  | FilmNode
+  | VideoOpNode
+  | GroupNode
 export type CineEdge = Edge
 
 export function isGroupNode(node: CanvasNode): node is GroupNode {
@@ -55,6 +63,10 @@ export function isStudioNode(node: CanvasNode): node is StudioNode {
 
 export function isFilmNode(node: CanvasNode): node is FilmNode {
   return node.type === 'film'
+}
+
+export function isVideoOpNode(node: CanvasNode): node is VideoOpNode {
+  return node.type === 'video-op'
 }
 
 export function nodeSize(node: CanvasNode): { width: number; height: number } {
@@ -143,8 +155,15 @@ interface CanvasStore {
   addNode: (kind: NodeKind, position: XYPosition) => string
   addStudioNode: (position: XYPosition, title?: string) => string
   addFilmNode: (studioNodeId: string, position: XYPosition, title: string) => string
+  addVideoOpNode: (
+    sourceNodeId: string,
+    operation: VideoOperationId,
+    position?: XYPosition,
+    title?: string
+  ) => string
   patchStudioNode: (nodeId: string, patch: Partial<StudioNodeData>) => void
   patchFilmNode: (nodeId: string, patch: Partial<FilmNodeData>) => void
+  patchVideoOpNode: (nodeId: string, patch: Partial<VideoOpNodeData>) => void
   linkStudioFilm: (studioNodeId: string, filmNodeId: string) => void
   setFilmStatus: (nodeId: string, filmStatus: FilmStatus) => void
   applyFilmOutput: (nodeId: string, output: OutputRef) => void
@@ -544,6 +563,68 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return id
   },
 
+  addVideoOpNode: (sourceNodeId, operation, position, title) => {
+    const state = get()
+    const existing = state.nodes.find(
+      (node): node is VideoOpNode =>
+        isVideoOpNode(node) &&
+        node.data.sourceNodeId === sourceNodeId &&
+        node.data.operation === operation
+    )
+
+    if (existing) {
+      set({
+        nodes: state.nodes.map((node) => ({
+          ...node,
+          selected: node.id === existing.id
+        }))
+      })
+      get().patchVideoOpNode(existing.id, { expanded: true })
+      return existing.id
+    }
+
+    get().pushHistory()
+    const source = state.nodes.find((node) => node.id === sourceNodeId)
+    const absolute = source
+      ? absolutePosition(source, state.nodes)
+      : { x: 0, y: 0 }
+    const meta = NODE_META['video-op']
+    const operationDef = VIDEO_OPERATIONS.find((item) => item.id === operation)
+    const id = nextId('video-op')
+    const sourceTitle = source ? source.data.title : '视频'
+
+    const node: VideoOpNode = {
+      id,
+      type: 'video-op',
+      position:
+        position ??
+        {
+          x: absolute.x + (source ? nodeSize(source).width : meta.width) + 80,
+          y: absolute.y
+        },
+      selected: true,
+      data: {
+        kind: 'video-op',
+        title: title ?? `${operationDef?.label ?? operation} · ${sourceTitle}`,
+        status: 'idle',
+        operation,
+        sourceNodeId,
+        expanded: true,
+        templates: []
+      },
+      style: { width: meta.width }
+    }
+
+    set({
+      nodes: [
+        ...state.nodes.map((entry) => ({ ...entry, selected: false })),
+        node
+      ]
+    })
+    get().onConnect({ source: sourceNodeId, target: id })
+    return id
+  },
+
   patchStudioNode: (nodeId, patch) => {
     set({
       nodes: get().nodes.map((node) =>
@@ -558,6 +639,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     set({
       nodes: get().nodes.map((node) =>
         node.id === nodeId && isFilmNode(node)
+          ? { ...node, data: { ...node.data, ...patch } }
+          : node
+      )
+    })
+  },
+
+  patchVideoOpNode: (nodeId, patch) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId && isVideoOpNode(node)
           ? { ...node, data: { ...node.data, ...patch } }
           : node
       )

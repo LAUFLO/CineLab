@@ -209,7 +209,7 @@ export function PromptBar() {
   const single = selectedNodes.length === 1 ? selectedNodes[0] : undefined
   const node =
     single &&
-    !isGroupNode(single) &&
+    single.type === 'cine' &&
     !single.data.assetOnly &&
     single.data.kind !== 'study'
       ? single
@@ -1395,7 +1395,7 @@ export function PromptBar() {
                         setModelKey(item.key)
                         setParamValues({})
                         setMenuOpen(false)
-                        void setDefaultModel(kind, item.key)
+                        void setDefaultModel(capabilityGroup, item.key)
                       }}
                     >
                       <span className="model-menu__name">{item.model.name}</span>

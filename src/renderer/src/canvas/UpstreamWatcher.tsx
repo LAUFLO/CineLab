@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import {
-  isFilmNode,
   isStudioNode,
   useCanvasStore
 } from '../stores/canvas'
@@ -19,18 +18,12 @@ export function UpstreamWatcher() {
     for (const studio of state.nodes.filter(isStudioNode)) {
       const references = studio.data.references
       if (!references || Object.keys(references).length === 0) continue
-      if (!studio.data.filmNodeId) continue
-
-      const film = state.nodes.find(
-        (node) => node.id === studio.data.filmNodeId
-      )
-      if (!film || !isFilmNode(film)) continue
-      if (film.data.filmStatus !== 'ready') continue
-      if (!film.data.upstreamAck) continue
+      if (studio.data.filmStatus !== 'ready') continue
+      if (!studio.data.upstreamAck) continue
 
       const signature = upstreamSignature(references, state.nodes)
-      if (signature !== film.data.upstreamAck) {
-        state.setFilmStatus(film.id, 'stale')
+      if (signature !== studio.data.upstreamAck) {
+        state.setStudioFilmStatus(studio.id, 'stale')
       }
     }
   }, [nodes])

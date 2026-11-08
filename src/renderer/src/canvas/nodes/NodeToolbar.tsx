@@ -39,6 +39,7 @@ interface NodeToolbarProps {
   align?: 'left' | 'center' | 'right'
   onDownload: () => void
   onExpand: () => void
+  onEdit?: () => void
   libraryAction?: {
     label: string
     title: string
@@ -64,6 +65,7 @@ export function NodeToolbar({
   align = 'center',
   onDownload,
   onExpand,
+  onEdit,
   libraryAction
 }: NodeToolbarProps) {
   const pinned = useToolbarStore((state) => state.pinned)
@@ -1294,6 +1296,24 @@ export function NodeToolbar({
         <span className="cnode__toolbar-divider" />
       ) : null}
 
+      {onEdit ? (
+        <>
+          <button
+            type="button"
+            className="cnode__toolbar-btn"
+            title="编辑文本（支持 Markdown）"
+            onClick={(event) => {
+              event.stopPropagation()
+              onEdit()
+            }}
+          >
+            <Icon name="edit" size={14} />
+            <span>编辑</span>
+          </button>
+          <span className="cnode__toolbar-divider" />
+        </>
+      ) : null}
+
       <button
         type="button"
         className="cnode__toolbar-btn"
@@ -1323,8 +1343,8 @@ export function NodeToolbar({
       <button
         type="button"
         className="cnode__toolbar-btn"
-        title="查看大图"
-        aria-label="查看大图"
+        title={kind === 'text' ? '放大编辑' : '查看大图'}
+        aria-label={kind === 'text' ? '放大编辑' : '查看大图'}
         onClick={(event) => {
           event.stopPropagation()
           onExpand()

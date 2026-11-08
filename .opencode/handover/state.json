@@ -1,8 +1,8 @@
 {
-  "version": 50,
+  "version": 51,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-08",
+  "updatedAt": "2026-11-08T16:23:38.290Z",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
@@ -1141,6 +1141,19 @@
         ".opencode/handover/evidence/WORKSPACE-ENHANCE-1-text-editor.png",
         ".opencode/handover/evidence/WORKSPACE-ENHANCE-1-audio-wave.png",
         ".opencode/handover/evidence/WORKSPACE-ENHANCE-1-arrange.png"
+      ]
+    },
+    {
+      "id": "STUDIO-FILM-MERGE-1",
+      "title": "剪辑室合并成片、文本编辑入口、模型参数卡片压缩",
+      "status": "done",
+      "note": "2026-11-09 完成。剪辑室与成片节点合并：StudioNodeData 增加 filmStatus/outputs/selectedOutputId/upstreamAck，节点改为 480×368 的成片卡片（预览、摘要、VCS 版本、剪辑室/VTT/编码/生成成片），双击进入剪辑室，右侧 source 输出成片。loadCanvas 幂等迁移旧 film 节点：数据并入剪辑室、下游边改写、删除旧节点与边、孤儿 film 降级为视频素材；实测 33 节点 20 边 → 32 节点 19 边，edge_film_down source 改写正确。syncStudioAfterSave、UpstreamWatcher、StudioWindow stale 检测改读剪辑室自身；删除剪辑室保留成片为视频节点；右键菜单加下载成片。文本节点放大按钮改为打开 Markdown 编辑弹窗，工具栏与 minimal 工具栏增加编辑按钮。模型参数常用卡片改为紧凑 chips 并默认折叠，区域高度 320px → 36px。排查并修复 dev 模式边不渲染：node_modules/.vite 预打包缓存损坏，清理后恢复。typecheck、145 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/STUDIO-FILM-MERGE-1.md",
+        ".opencode/handover/evidence/STUDIO-FILM-MERGE-1-studio.png",
+        ".opencode/handover/evidence/STUDIO-FILM-MERGE-1-params-collapsed.png",
+        ".opencode/handover/evidence/STUDIO-FILM-MERGE-1-params-open.png",
+        "docs/studio-film-merge-plan.md"
       ]
     }
   ],

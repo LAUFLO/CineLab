@@ -98,7 +98,7 @@ C:\Users\LAUFLO\Documents\CineLab
 | AUDIO-WAVEFORM-1 | ✅ 完成 | 音频节点用 ffmpeg 真实峰值渲染波形，失败不再伪造正弦 |
 | MEDIA-NODE-POLISH-1 | ✅ 完成 | 视频自定义播放器/逐帧步进、对齐虚线贴边、音频波形居中样式 |
 | NODE-RETRY-COLOR-1 | ✅ 完成 | 失败节点手动重新生成，复用上次请求；完成绿色、失败红色 |
-| FILM-STUDY-1 | 📋 方案待确认 | 逐帧拉片：视频工具栏创建 study 节点，节点进入拉片室浮窗 |
+| FILM-STUDY-1 | 📋 方案待确认 | 逐帧拉片：study 节点 + 拉片室浮窗，结果导出 Markdown / 回画布 |
 
 **下一步**：整体验收与修复；导演台调研排期；剪辑台等待其他会话完成。
 

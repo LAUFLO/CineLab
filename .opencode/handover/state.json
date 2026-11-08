@@ -1,5 +1,5 @@
 {
-  "version": 35,
+  "version": 36,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -592,7 +592,7 @@
       "id": "FILM-STUDY-1",
       "title": "逐帧拉片方案（待确认）",
       "status": "todo",
-      "note": "已调研 lapian-notes 并更新 docs/film-study-plan.md：视频工具栏创建 study 拉片节点，节点内「进入拉片室」打开浮窗；ffmpeg 抽帧、帧时间轴、段落笔记、AI 分析包分阶段落地。等待确认后实施 P0。",
+      "note": "已调研 lapian-notes 并更新 docs/film-study-plan.md：视频工具栏创建 study 拉片节点，节点内「进入拉片室」打开浮窗；P0/P1 必须提供 Markdown 导出、当前帧/12帧拼图/段落摘要放回画布，避免拉片结果只读。",
       "evidence": [
         "docs/film-study-plan.md"
       ]

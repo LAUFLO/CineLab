@@ -1,4 +1,5 @@
 import type { HttpTemplate } from './http-template'
+import type { VideoOperationId } from './operation-schema'
 
 export type Capability =
   | 'image.t2i'
@@ -49,6 +50,8 @@ export interface ModelDef {
   params: ParamDef[]
   /** 实际可接收的输入媒体；缺省按能力、适配器和模板推断 */
   inputs?: MediaInput[]
+  /** 该模型支持的视频专用操作；缺省按 http-template 模板推断 */
+  operations?: VideoOperationId[]
   /** 该模型只出现在指定类型的供应商下；缺省为 openai-compat */
   providerType?: ProviderType
   /** 生成执行器，缺省按 remoteModel 推断 */
@@ -62,6 +65,8 @@ export interface ModelInferenceInput {
   remoteModel?: string
   adapter?: string
   template?: HttpTemplate
+  inputs?: MediaInput[]
+  operations?: VideoOperationId[]
 }
 
 function templateHasMode(
@@ -131,6 +136,48 @@ export function missingInputsFor(
 ): MediaInput[] {
   const available = new Set(modelInputs(model))
   return required.filter((input) => !available.has(input))
+}
+
+function templateContains(
+  template: HttpTemplate | undefined,
+  token: string
+): boolean {
+  if (!template) return false
+  return JSON.stringify(template).includes(token)
+}
+
+/** 用户显式声明优先；否则按 http-template 中使用的变量推断 */
+export function inferModelOperations(
+  model: ModelInferenceInput
+): VideoOperationId[] {
+  if (model.operations !== undefined) return model.operations
+  if (model.capability !== 'video.t2v') return []
+  if (model.adapter !== 'http-template' || !model.template) return []
+
+  const result: VideoOperationId[] = []
+  const hasRange =
+    templateContains(model.template, 'video.start') ||
+    templateContains(model.template, 'video.end')
+  const hasExtend =
+    templateContains(model.template, 'video.duration') ||
+    templateContains(model.template, 'video.direction')
+
+  if (hasRange) result.push('shot-retake', 'element-replace')
+  if (hasExtend) result.push('extend')
+  return result
+}
+
+export function modelOperations(model: ModelDef): VideoOperationId[] {
+  return model.operations !== undefined
+    ? model.operations
+    : inferModelOperations(model)
+}
+
+export function modelSupportsOperation(
+  model: ModelDef,
+  operation: VideoOperationId
+): boolean {
+  return modelOperations(model).includes(operation)
 }
 
 export interface ProviderConfig {

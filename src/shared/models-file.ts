@@ -5,6 +5,7 @@ import type {
   ProviderType
 } from './provider-schema'
 import type { HttpTemplate } from './http-template'
+import type { VideoOperationId } from './operation-schema'
 
 export interface ModelsFileModel {
   id: string
@@ -13,6 +14,7 @@ export interface ModelsFileModel {
   capability?: Capability
   remoteModel?: string
   inputs?: MediaInput[]
+  operations?: VideoOperationId[]
   adapter?: string
   providerType?: ProviderType
   template?: HttpTemplate

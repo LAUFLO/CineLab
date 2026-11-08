@@ -102,9 +102,6 @@ const PROMPT_ELEMENT_REPLACE =
 const PROMPT_EXTEND =
   '延续当前视频的镜头运动、人物动作、节奏和光线，向后自然延长一段。保持同一场景、同一角色和同一画风，不要出现跳切、重复帧、文字或水印。'
 
-const PROMPT_INTRO =
-  '为当前视频生成一个简洁的片头。保持素材的人物、场景和画风一致，片头节奏干净，突出主题氛围，不要出现无关文字、logo 或水印。'
-
 const PROMPT_PORTRAIT: Record<string, string> = {
   natural:
     '在保持人物身份、五官、发型和构图完全不变的前提下，提升人像质感：真实皮肤纹理、自然毛孔和细微瑕疵，减少塑料感和过度磨皮，改善人物与背景的光影融合，输出写实摄影质感，不要文字、不要水印。',
@@ -520,16 +517,6 @@ export const NODE_OPERATIONS: NodeOperation[] = [
       label: '需要安装视觉组件（批次 2）',
       panel: 'components'
     }
-  },
-  {
-    id: 'intro',
-    label: '创意片头',
-    icon: 'film',
-    kinds: ['video'],
-    implemented: true,
-    section: 'generate',
-    prompt: PROMPT_INTRO,
-    hint: '专用接口'
   },
   {
     id: 'extend',

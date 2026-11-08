@@ -49,6 +49,18 @@ function nextMessageId(): string {
   return `agent-message-${Date.now()}-${messageSeq}`
 }
 
+export function agentTurnChangeCount(turn: AgentTurn | null): number {
+  if (!turn) return 0
+  const change = turn.change
+  return (
+    (change.createdNodeIds?.length ?? 0) +
+    (change.updatedNodeIds?.length ?? 0) +
+    (change.deletedNodeIds?.length ?? 0) +
+    (change.createdEdgeIds?.length ?? 0) +
+    (change.deletedEdgeIds?.length ?? 0)
+  )
+}
+
 function toAgentMessage(message: AgentSessionMessage): AgentMessage {
   return {
     id: message.id,
@@ -230,6 +242,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         })
         break
       case 'turn_end':
+        useCanvasStore.getState().endCommandTurn(event.turn.id)
         set((state) => ({
           running: false,
           currentTurnId: null,
@@ -262,7 +275,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   undoLastTurn: () => {
     const turn = get().lastTurn
-    if (!turn || turn.change.updatedNodeIds.length === 0) return
+    if (!turn || agentTurnChangeCount(turn) === 0) return
     useCanvasStore.getState().undo()
     set((state) => ({
       lastTurn: null,

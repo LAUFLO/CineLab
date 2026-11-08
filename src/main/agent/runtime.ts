@@ -86,10 +86,29 @@ function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
 
 function mergeChange(target: AgentTurnChange, next?: AgentTurnChange): void {
   if (!next) return
+  for (const id of next.createdNodeIds) {
+    if (!target.createdNodeIds.includes(id)) target.createdNodeIds.push(id)
+  }
   for (const id of next.updatedNodeIds) {
     if (!target.updatedNodeIds.includes(id)) target.updatedNodeIds.push(id)
   }
-  Object.assign(target.previousTitles, next.previousTitles)
+  for (const id of next.deletedNodeIds) {
+    if (!target.deletedNodeIds.includes(id)) target.deletedNodeIds.push(id)
+  }
+  for (const id of next.createdEdgeIds) {
+    if (!target.createdEdgeIds.includes(id)) target.createdEdgeIds.push(id)
+  }
+  for (const id of next.deletedEdgeIds) {
+    if (!target.deletedEdgeIds.includes(id)) target.deletedEdgeIds.push(id)
+  }
+  for (const [id, title] of Object.entries(next.previousTitles)) {
+    if (!(id in target.previousTitles)) target.previousTitles[id] = title
+  }
+  for (const [id, position] of Object.entries(next.previousPositions)) {
+    if (!(id in target.previousPositions)) {
+      target.previousPositions[id] = position
+    }
+  }
 }
 
 function createTurn(sessionId: string, userText: string): AgentTurn {
@@ -101,8 +120,13 @@ function createTurn(sessionId: string, userText: string): AgentTurn {
     assistantText: '',
     toolCalls: [],
     change: {
+      createdNodeIds: [],
       updatedNodeIds: [],
-      previousTitles: {}
+      deletedNodeIds: [],
+      createdEdgeIds: [],
+      deletedEdgeIds: [],
+      previousTitles: {},
+      previousPositions: {}
     },
     startedAt: new Date().toISOString()
   }
@@ -183,7 +207,7 @@ async function runTurn(input: {
         chatWithTools({
           runtime,
           messages,
-          tools: toolDefinitionsForModel(),
+          tools: toolDefinitionsForModel(request.profileId, permissionMode),
           signal: active.controller.signal,
           onTextDelta: (text) => {
             turn.assistantText += text

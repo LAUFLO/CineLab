@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "剪辑室 M1-M3、Concat、拉片改版等已合并到 main。旧剪辑助手已按用户要求删除，改由自研通用 AgentRuntime 重新编码；spike 已通过（工具调用/回合撤销/会话恢复/SSE/Agnes 文本与图片/本地代理），视频队列待重试。下一步：基于 main 重建 agent-runtime 接线，进入批次 1（工具注册表/CanvasCommand/StageCommand 骨架/技能目录）。",
+  "next_focus": "通用 AgentRuntime 已基于 main 重建，旧剪辑助手已删除；工具注册表与 CanvasCommand 任务包 A 完成（148 测试通过，真实 Agnes 改名+移动一次撤销）。下一步：技能目录骨架（三级目录/SKILL.md/skill.list+read），再开放建节点/连线/删除工具与 StageCommand；Agnes 视频队列恢复后补测。",
   "frontier": [
     {
       "id": "M2-1",
@@ -137,6 +137,22 @@
         "src/main/ipc/agent.ts",
         "src/renderer/src/agent/",
         "src/shared/agent.ts"
+      ]
+    },
+    {
+      "id": "AGENT-TOOLS-1",
+      "title": "Agent 工具注册表与 CanvasCommand 画布命令层",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 shared/agent-tools.ts（profile/mode 过滤、模型工具转换）与 shared/canvas-commands.ts（updateTitle/moveNode/addNode/removeNode/connect/removeEdge 纯函数 + batch + 变更记录）；main/agent/tools.ts 改为注册表并新增 canvas_move_node；canvas store 增加 applyCommands(turnId) 与 endCommandTurn，一轮多个工具只 pushHistory 一次；真实 Agnes 验证改名+移动，一次撤销同时恢复。新增 8 个测试，25 文件 148 用例通过；typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-TOOLS-1.md",
+        "src/shared/agent-tools.ts",
+        "src/shared/canvas-commands.ts",
+        "src/shared/__tests__/canvas-commands.test.ts",
+        "src/shared/__tests__/agent-tools.test.ts",
+        "src/main/agent/tools.ts",
+        "src/renderer/src/stores/canvas.ts",
+        "src/renderer/src/agent/canvasBridge.ts"
       ]
     },
     {
@@ -2008,6 +2024,10 @@
     {
       "category": "engineering",
       "content": "OpenAI 兼容流式：请求加 stream:true，按 data: 行解析 delta.content 与 delta.tool_calls（按 index 累积 id/name/arguments）；content-type 不是 text/event-stream 时回退整段 JSON。"
+    },
+    {
+      "category": "engineering",
+      "content": "CanvasCommand 与回合级撤销：同一 turnId 的多个工具命令只 pushHistory 一次，endCommandTurn 清理；否则一次撤销只能回退最后一个命令。"
     }
   ],
   "designConventions": [

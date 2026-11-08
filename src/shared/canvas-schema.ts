@@ -1,6 +1,6 @@
 import type { AssetScope } from './asset-schema'
 
-export type NodeKind = 'text' | 'image' | 'video' | 'audio'
+export type NodeKind = 'text' | 'image' | 'video' | 'audio' | 'study'
 
 export type CanvasNodeKind = NodeKind | 'studio' | 'film'
 
@@ -42,6 +42,22 @@ export interface CineNodeData extends Record<string, unknown> {
   error?: string
   /** Prompt Bar 中最近一次输入的提示词，按节点保留 */
   prompt?: string
+  /** 拉片节点：关联的 study.json */
+  studyId?: string
+  /** 拉片节点：来源视频节点 */
+  sourceNodeId?: string
+  sourcePath?: string
+  sourceScope?: AssetScope
+  sourceName?: string
+  studyInterval?: number
+  studySummary?: {
+    studyId: string
+    frameCount: number
+    segmentCount: number
+    interval: number
+    duration: number
+    fps: number
+  }
   templates: string[]
   /** 纯素材节点：由上传创建，不显示提示词输入框 */
   assetOnly?: boolean
@@ -193,6 +209,12 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
     label: '成片',
     width: 480,
     height: 320,
+    templates: []
+  },
+  study: {
+    label: '拉片',
+    width: 360,
+    height: 236,
     templates: []
   }
 }

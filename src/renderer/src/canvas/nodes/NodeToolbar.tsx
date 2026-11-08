@@ -5,6 +5,7 @@ import { Icon } from '../../components/Icon'
 import { assetUrl } from '../../lib/asset-url'
 import { isGroupNode, useCanvasStore } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
+import { useFilmStudyStore } from '../../stores/film-study'
 import { useToolbarStore } from '../../stores/toolbar'
 import { useUIStore } from '../../stores/ui'
 import { useSettingsStore } from '../../stores/settings'
@@ -404,6 +405,34 @@ export function NodeToolbar({
     } finally {
       setRunning(false)
     }
+  }
+
+  const startFilmStudy = (interval: number): void => {
+    const source = sourceNode()
+    if (!source) return
+
+    const studyNodeId = useCanvasStore.getState().addNode('study', source.origin)
+    useCanvasStore.getState().patchNodeData(studyNodeId, {
+      title: `${source.title} · 拉片`,
+      status: 'queued',
+      progress: 0,
+      error: undefined,
+      sourceNodeId: nodeId,
+      sourcePath: current.path,
+      sourceScope: current.scope,
+      sourceName: source.title,
+      studyInterval: interval
+    })
+
+    showToast('已创建拉片节点，正在抽帧…')
+    void useFilmStudyStore.getState().start({
+      nodeId: studyNodeId,
+      path: current.path,
+      scope: current.scope,
+      interval,
+      sourceName: source.title,
+      sourceNodeId: nodeId
+    })
   }
 
   const executeFrame = async (item: OperationMenuItem): Promise<void> => {
@@ -976,6 +1005,11 @@ export function NodeToolbar({
 
     if (op.id === 'grid-split' && item) {
       void executeGridSplit(item)
+      return
+    }
+
+    if (op.id === 'film-study' && item) {
+      startFilmStudy(Number(item.id))
       return
     }
 

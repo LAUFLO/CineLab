@@ -9,7 +9,8 @@ const ICONS: Record<NodeKind, IconName> = {
   text: 'text',
   image: 'image',
   video: 'video',
-  audio: 'audio'
+  audio: 'audio',
+  study: 'film'
 }
 
 const MENU_WIDTH = 220

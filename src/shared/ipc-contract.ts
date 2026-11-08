@@ -22,6 +22,13 @@ import type {
 import type { ComponentEvent, ComponentKind, ComponentStatus } from './components'
 import type { Preferences } from './preferences'
 import type {
+  FilmStudy,
+  FilmStudyExportResult,
+  FilmStudyExtractRequest,
+  FilmStudyExtractResult,
+  FilmStudyProgress
+} from './film-study'
+import type {
   AddToLibraryInput,
   SaveAssetInput,
   CharacterCard,
@@ -322,6 +329,22 @@ export interface TimelineApi {
   importSubtitles(path?: string): Promise<TimelineSubtitleImportResult | null>
 }
 
+export interface FilmStudyApi {
+  extract(input: FilmStudyExtractRequest): Promise<FilmStudyExtractResult>
+  cancel(nodeId: string): Promise<void>
+  load(studyId: string): Promise<FilmStudy>
+  save(study: FilmStudy): Promise<FilmStudy>
+  exportMarkdown(studyId: string): Promise<FilmStudyExportResult>
+  exportAnalysisPackage(studyId: string): Promise<FilmStudyExportResult>
+  exportBundle(studyId: string): Promise<FilmStudyExportResult>
+  importAnalysis(studyId: string): Promise<FilmStudy | null>
+  extractSubtitles(studyId: string): Promise<FilmStudy>
+  importSubtitles(studyId: string): Promise<FilmStudy | null>
+  analyze(studyId: string, modelKey: string): Promise<FilmStudy>
+  contactSheet(studyId: string): Promise<GeneratedAsset>
+  onProgress(callback: (progress: FilmStudyProgress) => void): () => void
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -342,6 +365,7 @@ export interface CineApi {
   clipboard: ClipboardApi
   media: MediaApi
   timeline: TimelineApi
+  filmStudy: FilmStudyApi
   components: ComponentsApi
   export: ExportApi
   update: UpdateApi

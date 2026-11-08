@@ -1,5 +1,5 @@
 {
-  "version": 33,
+  "version": 34,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -577,6 +577,24 @@
       "note": "主进程用 ffmpeg 解码音频并按 96 个桶计算峰值，渲染进程优先使用真实峰值；失败时回退 Web Audio，再失败显示平线，不再显示伪造正弦波形。",
       "evidence": [
         ".opencode/handover/evidence/AUDIO-WAVEFORM-1.md"
+      ]
+    },
+    {
+      "id": "MEDIA-NODE-POLISH-1",
+      "title": "视频控件、对齐虚线、音频波形样式",
+      "status": "done",
+      "note": "视频节点改用自定义播放器（播放/逐帧/时间/帧号/静音/全屏）；对齐引导层修正 40px 偏移；音频波形改为 64 柱居中对称样式。",
+      "evidence": [
+        ".opencode/handover/evidence/MEDIA-NODE-POLISH-1.md"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-1",
+      "title": "逐帧拉片方案（待确认）",
+      "status": "todo",
+      "note": "已调研 lapian-notes 并输出 docs/film-study-plan.md：独立拉片台、ffmpeg 抽帧、帧时间轴、段落笔记、AI 分析包分阶段落地。等待确认后实施 P0。",
+      "evidence": [
+        "docs/film-study-plan.md"
       ]
     }
   ],
@@ -1368,6 +1386,18 @@
     {
       "category": "preference",
       "content": "音频节点必须显示真实音频峰值；解析失败时显示平线或加载态，不能退回固定正弦图案冒充波形。"
+    },
+    {
+      "category": "preference",
+      "content": "视频节点不要使用浏览器原生 controls；使用应用内自定义播放器，保证节点控件与整体设计一致，并提供逐帧步进。"
+    },
+    {
+      "category": "lesson",
+      "content": "对齐引导层使用 fixed 定位时不要额外加 top 偏移；React Flow 的 flowToScreenPosition 已经返回窗口坐标，额外偏移会把虚线推进节点内部。"
+    },
+    {
+      "category": "preference",
+      "content": "逐帧拉片应做成独立拉片台，用 ffmpeg 抽帧和虚拟滚动时间轴；不要把成千上万帧铺成画布节点。"
     }
   ],
   "designConventions": [

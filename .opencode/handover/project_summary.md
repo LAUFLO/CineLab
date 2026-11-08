@@ -25,8 +25,8 @@
 | `AGENT-SKILLS-1` | 内置/全局/项目三级技能目录；`SKILL.md` 解析、`skill_list` / `skill_read` |
 | `AGENT-CANVAS-TOOLS-1` | 创建 / 连接 / 删除节点 |
 | `AGENT-GROUP-TOOLS-1` | 分组 / 解散分组 |
-| `AGENT-PROPOSAL-1` | 生成提案 propose/submit、提案卡、费用预估、幂等、失效 |
-| 验证 | 191 测试、`typecheck`、`build` 通过；真实 Agnes 图片提案生成完成 |
+| `AGENT-PROPOSAL-1` | 生成提案 propose/submit、提案卡、幂等、失效 |
+| 验证 | 185 测试、`typecheck`、`build` 通过；真实 Agnes 图片提案生成完成 |
 | 分支 | `feat/agent-runtime` 领先 `origin/main` 7 个提交、落后 1 个（a768e64），未推送；推送前先同步 |
 
 ## 关键工件

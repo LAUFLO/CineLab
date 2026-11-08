@@ -1,5 +1,5 @@
 {
-  "version": 50,
+  "version": 51,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "生成提案 propose/submit 已完成并真实 Agnes 验证（catalog → 提案卡 → 用户确认 → 出图 → 幂等 → 新消息失效；191 测试通过，主进程约 436KB）。下一会话优先做 StageCommand 骨架：导演台场景/机位/运镜命令与 schema，先不接 UI；之后重建 clip profile、技能管理 UI、删除/批量二次确认。",
+  "next_focus": "生成提案 propose/submit 已完成并真实 Agnes 验证（catalog → 提案卡 → 用户确认 → 出图 → 幂等 → 新消息失效；185 测试通过，主进程约 436KB）；金额预估已按用户要求整体移除。下一步做 StageCommand 骨架：导演台场景/机位/运镜命令与 schema，先不接 UI；之后重建 clip profile、技能管理 UI、删除/批量二次确认。",
   "frontier": [
     {
       "id": "M2-1",
@@ -202,7 +202,7 @@
       "id": "AGENT-PROPOSAL-1",
       "title": "Agent 生成提案 propose / submit",
       "status": "done",
-      "note": "2026-11-08 完成。新增 generation_catalog / generation_propose；提案写入 <project>/.cinelab/agent/proposals，用户点击确认后才进入 generationQueue；支持参数规范化、目标/参考节点 scope、模型单价与费用预估、提案卡、新消息失效、runId 幂等与生成状态回写。真实 Agnes 验证：catalog → 图片提案 ¥0.2 CNY → 确认 → 已完成并写回节点；重复提交返回同一 runId；新消息使 pending 提案立即失效。29 文件 191 测试通过；typecheck/build 通过，主进程约 436KB。",
+      "note": "2026-11-09 完成。新增 generation_catalog / generation_propose；提案写入 <project>/.cinelab/agent/proposals，用户点击确认后才进入 generationQueue；支持参数规范化、目标/参考节点 scope、提案卡、新消息失效、runId 幂等与生成状态回写。真实 Agnes 验证：catalog → 图片提案 → 确认 → 已完成并写回节点；重复提交返回同一 runId；新消息使 pending 提案立即失效。29 文件 185 测试通过；typecheck/build 通过，主进程约 436KB。金额预估因供应商计费差异且 Agnes 免费，已整体移除。",
       "evidence": [
         ".opencode/handover/evidence/AGENT-PROPOSAL-1.md",
         "docs/agent-generation-proposal-plan.md",
@@ -2123,7 +2123,7 @@
     },
     {
       "category": "engineering",
-      "content": "Agnes 视频参数名是 seconds 而不是 duration；费用按秒估算时要同时兼容两者。"
+      "content": "不要做金额预估：不同供应商计费差异大，部分模型免费，本地无法可靠推算；生成提案只展示目标、模型、参数和数量。"
     }
   ],
   "designConventions": [

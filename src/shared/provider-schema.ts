@@ -42,17 +42,6 @@ export interface ParamDef {
   allowCustom?: boolean
 }
 
-/** 模型计费方式；只用于生成前的费用预估，不参与实际扣费 */
-export interface ModelPricing {
-  /** 币种代码，例如 CNY / USD */
-  currency: string
-  /** 计费单位 */
-  unit: 'request' | 'image' | 'second' | '1k-tokens'
-  /** 单价 */
-  amount: number
-  note?: string
-}
-
 export interface ModelDef {
   id: string
   name: string
@@ -69,8 +58,6 @@ export interface ModelDef {
   adapter?: string
   /** http-template 执行器的请求/轮询模板 */
   template?: HttpTemplate
-  /** 用户配置的单价，用于生成提案预估 */
-  pricing?: ModelPricing
 }
 
 export interface ModelInferenceInput {

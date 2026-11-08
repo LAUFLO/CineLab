@@ -4,7 +4,7 @@
 
 ## 状态
 
-2026-11-08：生成提案 propose/submit 已完成并真实 Agnes 验证：catalog → 提案卡 → 用户确认 → 图片生成完成写回节点；重复提交返回同一 runId；新消息使 pending 提案立即失效。29 文件 191 测试通过，`typecheck` / `build` 通过，主进程约 436KB。`feat/agent-runtime` 领先 `origin/main` 7 个提交、落后 1 个，未推送。
+2026-11-09：生成提案 propose/submit 已完成并真实 Agnes 验证：catalog → 提案卡 → 用户确认 → 图片生成完成写回节点；重复提交返回同一 runId；新消息使 pending 提案立即失效；金额预估已整体移除。29 文件 185 测试通过，`typecheck` / `build` 通过，主进程约 436KB。`feat/agent-runtime` 领先 `origin/main` 9 个提交、落后 1 个，未推送。
 
 ## Frontier
 
@@ -28,7 +28,7 @@
 - 付费生成必须两段式：`generation_propose` 只登记，`generation_submit` 不注册给模型。
 - 提案提交前先原子写 `submitting`，拿到 runId 后写 `submitted`；重复提交返回原 runId。
 - 目标节点和参考节点必须在当前 turn scope；IPC 层要二次校验。
-- Agnes 视频参数名是 `seconds`，费用估算兼容 `duration` / `seconds`。
+- 生成提案不展示金额预估：供应商计费差异大，部分模型免费。
 
 ## 设计约定
 

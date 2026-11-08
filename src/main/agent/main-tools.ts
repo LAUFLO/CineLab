@@ -48,8 +48,7 @@ async function generationCatalog(capability?: string): Promise<MainToolResult> {
           ...(param.min !== undefined ? { min: param.min } : {}),
           ...(param.max !== undefined ? { max: param.max } : {}),
           ...(param.allowCustom ? { allowCustom: true } : {})
-        })),
-        pricing: model.pricing ?? null
+        }))
       })
     }
   }

@@ -22,9 +22,7 @@ generation_propose  → 只登记本地提案，不请求模型
 - `src/shared/agent-proposal.ts`：
   - `normalizeGenerationParams`：按模型参数定义补齐默认值、校验枚举/范围/类型、拒绝未声明参数。
   - `proposalCount`：图片模型读取 `n`，视频/音频固定 1。
-  - `estimateProposalCost`：支持 request / image / second / 1k-tokens；视频时长兼容 `duration` 与 `seconds`。
   - 过期判定与状态标签。
-- `-provider-schema.ts` / `models-file.ts`：模型新增可选 `pricing`。
 
 ### 2.2 主进程
 
@@ -37,7 +35,7 @@ generation_propose  → 只登记本地提案，不请求模型
   - 幂等：同一提案重复提交返回原 `runId`，不再入队；已提交且失败的提案禁止重复购买。
   - `runId` 索引回写生成事件。
 - `agent/tools.ts`：新增 `generation_catalog`（主进程只读）与 `generation_propose`（渲染进程写）。
-- `agent/main-tools.ts`：`generation_catalog` 列出有 Key 的生成模型、能力、输入、参数、单价。
+- `agent/main-tools.ts`：`generation_catalog` 列出有 Key 的生成模型、能力、输入和参数。
 - `agent/runtime.ts`：回合开始使旧提案失效；记录 `proposalIds`；系统提示要求先登记提案并提示用户确认。
 - `ipc/generate.ts`：队列事件同步提案状态。
 - `ipc/agent.ts`：新增提案 IPC 与 `proposal` 事件广播。
@@ -46,9 +44,7 @@ generation_propose  → 只登记本地提案，不请求模型
 
 - `canvasBridge.ts`：执行 `generation_propose`，解析显式参考节点或直接上游输出；图片角色按 firstFrame / lastFrame / reference 分配，视频单独作为 `video` 输入。
 - `agentStore.ts`：提案状态、恢复、提交、取消；提交前检查目标节点仍在画布。
-- `AgentPanel.tsx` / `agent.css`：提案卡展示节点、模型、参数、数量、预估费用、提示词和状态。
-- `ModelPricingDialog.tsx` + `SettingsPanel.tsx`：模型列表新增「配置计费」，支持币种、单位、单价、备注与清除。
-- `Icon.tsx`：新增 `wallet` 图标。
+- `AgentPanel.tsx` / `agent.css`：提案卡展示节点、模型、参数、数量、提示词和状态。
 
 ### 2.4 安全边界
 
@@ -70,14 +66,13 @@ generation_propose  → 只登记本地提案，不请求模型
 
 - 参数默认值、布尔字符串、未知参数、枚举、数值范围。
 - 图片/视频/音频数量。
-- 按次、按张、按秒（duration / seconds）、按 token 无法预估。
 - 过期时间与状态标签。
 - 提案创建、缺失 Key、未知参数、过期、会话失效。
 - 提交幂等、提交失败可重试、已提交失败禁止重复购买、run 状态回写、取消。
 
 ### 3.2 真实 Agnes 端到端
 
-测试配置：Agnes 3.0 Flash 文本、Agnes Image 2.5 Flash 图片；测试模型配置添加了 `pricing`（仓库外）。
+测试配置：Agnes 3.0 Flash 文本、Agnes Image 2.5 Flash 图片。
 
 流程：
 
@@ -95,7 +90,6 @@ generation_propose → proposal-55e716c1...
 模型：Agnes Image 2.5 Flash
 参数：size=2K · ratio=1:1
 数量：1
-预估费用：¥0.2 CNY
 [确认生成] [取消]
 ```
 
@@ -126,7 +120,7 @@ generation_propose → proposal-55e716c1...
 ### 3.3 构建
 
 - `typecheck` 通过
-- `test` 通过：29 文件、191 用例
+- `test` 通过：29 文件、185 用例
 - `build` 通过，主进程约 436KB
 
 ## 4. 已知限制
@@ -135,7 +129,7 @@ generation_propose → proposal-55e716c1...
 - `generation_propose` 暂不支持蒙版编辑和视频重拍/续写。
 - 重启后 `submitting` 提案会转为 `failed`；已记录 `runId` 的提案禁止重复提交，需要新建提案。
 - Agnes 文本模型在测试期间偶发 `503 queue full`，不影响提案工具本身。
-- 设置计费弹窗只写入 `models.json`，不校验真实价格。
+- 不展示金额预估：不同供应商计费方式差异大，部分模型免费，本地无法可靠推算。
 
 ## 5. 下一步
 

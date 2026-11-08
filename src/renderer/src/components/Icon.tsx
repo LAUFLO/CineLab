@@ -45,7 +45,6 @@ export type IconName =
   | 'film'
   | 'layers'
   | 'sparkles'
-  | 'wallet'
   | 'pin'
   | 'keyboard'
   | 'robot'
@@ -244,13 +243,6 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
       <path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z" />
-    </>
-  ),
-  wallet: (
-    <>
-      <rect x="3" y="6" width="18" height="13" rx="2" />
-      <path d="M3 9.5h18" />
-      <path d="M16 13.5h2" />
     </>
   ),
   pin: (

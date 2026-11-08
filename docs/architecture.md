@@ -325,7 +325,6 @@ interface ModelDef {
   name: string               // 显示名
   capability: Capability
   params: ParamDef[]
-  pricing?: { unit: string; amount: number }   // 用于估算消耗
 }
 
 interface ParamDef {

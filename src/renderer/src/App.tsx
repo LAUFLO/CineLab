@@ -12,6 +12,7 @@ import { LibraryPanel } from './panels/LibraryPanel'
 import { ToolbarSettings } from './canvas/nodes/ToolbarSettings'
 import { ProjectCenter } from './panels/ProjectCenter'
 import { SettingsPanel } from './panels/SettingsPanel'
+import { StudioWindow } from './studio/StudioWindow'
 import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
 import { useProjectStore } from './stores/project'
@@ -129,6 +130,7 @@ export default function App() {
       {content}
       {phase === 'ready' ? null : <div className="window-drag-strip" />}
       <SettingsPanel />
+      <StudioWindow />
       <WindowControls theme={resolved} onToggleTheme={toggle} />
       <Toast />
       <AppTooltip />

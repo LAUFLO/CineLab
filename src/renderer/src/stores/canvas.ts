@@ -22,22 +22,39 @@ import {
   STORYBOARD_MAX_NODES,
   TITLE_HEIGHT,
   type CineNodeData,
+  type FilmNodeData,
+  type FilmStatus,
   type GroupColor,
   type GroupMode,
   type GroupNodeData,
   type GroupRatio,
   type NodeKind,
-  type OutputRef
+  type OutputRef,
+  type StudioNodeData
 } from '@shared/canvas-schema'
 import type { GeneratedAsset } from '@shared/generation'
 
 export type CineNode = Node<CineNodeData, 'cine'>
+export type StudioNode = Node<StudioNodeData, 'studio'>
+export type FilmNode = Node<FilmNodeData, 'film'>
 export type GroupNode = Node<GroupNodeData, 'group'>
-export type CanvasNode = CineNode | GroupNode
+export type CanvasNode = CineNode | StudioNode | FilmNode | GroupNode
 export type CineEdge = Edge
 
 export function isGroupNode(node: CanvasNode): node is GroupNode {
   return node.type === 'group'
+}
+
+export function isMediaNode(node: CanvasNode): node is CineNode {
+  return node.type === 'cine'
+}
+
+export function isStudioNode(node: CanvasNode): node is StudioNode {
+  return node.type === 'studio'
+}
+
+export function isFilmNode(node: CanvasNode): node is FilmNode {
+  return node.type === 'film'
 }
 
 export function nodeSize(node: CanvasNode): { width: number; height: number } {
@@ -53,6 +70,25 @@ export function nodeSize(node: CanvasNode): { width: number; height: number } {
     width: node.measured?.width ?? meta.width,
     height: node.measured?.height ?? meta.height + TITLE_HEIGHT
   }
+}
+
+export function nodeOutputs(node: CanvasNode): OutputRef[] {
+  return node.type === 'cine' || node.type === 'film'
+    ? node.data.outputs ?? []
+    : []
+}
+
+export function selectedNodeOutput(node: CanvasNode): OutputRef | null {
+  const outputs = nodeOutputs(node)
+  const selectedOutputId =
+    node.type === 'cine' || node.type === 'film'
+      ? node.data.selectedOutputId
+      : undefined
+  return (
+    outputs.find((output) => output.id === selectedOutputId) ??
+    outputs[0] ??
+    null
+  )
 }
 
 interface Snapshot {
@@ -78,12 +114,14 @@ export interface AddAssetLayout {
   cellWidth?: number
   groupTitle?: string
   groupColor?: GroupColor
+  scope?: 'project' | 'global'
 }
 
 export interface CreateGroupOptions {
   title?: string
   color?: GroupColor
   columns?: number
+  allowSingle?: boolean
 }
 
 interface CanvasStore {
@@ -103,6 +141,13 @@ interface CanvasStore {
   onEdgesChange: (changes: EdgeChange<CineEdge>[]) => void
   onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string
+  addStudioNode: (position: XYPosition, title?: string) => string
+  addFilmNode: (studioNodeId: string, position: XYPosition, title: string) => string
+  patchStudioNode: (nodeId: string, patch: Partial<StudioNodeData>) => void
+  patchFilmNode: (nodeId: string, patch: Partial<FilmNodeData>) => void
+  linkStudioFilm: (studioNodeId: string, filmNodeId: string) => void
+  setFilmStatus: (nodeId: string, filmStatus: FilmStatus) => void
+  applyFilmOutput: (nodeId: string, output: OutputRef) => void
   addAssetNodes: (
     kind: NodeKind,
     origin: XYPosition,
@@ -133,9 +178,14 @@ interface CanvasStore {
   undo: () => void
   redo: () => void
   copySelection: () => number
-  pasteNodes: (position?: XYPosition) => number
-  duplicateSelection: () => number
+  pasteNodes: (
+    position?: XYPosition,
+    studioTimelines?: Map<string, string>
+  ) => number
+  duplicateSelection: (studioTimelines?: Map<string, string>) => number
   removeSelection: () => number
+  removeNodesByIds: (ids: string[]) => number
+  convertFilmToMedia: (filmId: string, detach?: boolean) => boolean
   groupSelection: () => string | null
   mergeSelection: () => string | null
   createStoryboard: () => string | null
@@ -283,6 +333,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const groupIds = new Set<string>()
     const migrated = nodes.map((node) => {
       if (isGroupNode(node)) return node
+      if (node.type !== 'cine') return node
       if (node.data.kind !== 'image' && node.data.kind !== 'video') return node
 
       const width = Number(node.style?.width ?? 0)
@@ -312,7 +363,18 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
 
     set({
-      nodes: migrated,
+      nodes: migrated.map((node) =>
+        node.type === 'film' && node.data.filmStatus === 'rendering'
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                filmStatus:
+                  (node.data.outputs?.length ?? 0) > 0 ? 'ready' : 'pending'
+              }
+            }
+          : node
+      ),
       edges,
       viewport,
       hydrated: true,
@@ -423,6 +485,137 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return id
   },
 
+  addStudioNode: (position, title) => {
+    get().pushHistory()
+
+    const meta = NODE_META.studio
+    const count = get().nodes.filter(isStudioNode).length
+    const id = nextId('studio')
+
+    const node: StudioNode = {
+      id,
+      type: 'studio',
+      position,
+      selected: true,
+      data: {
+        kind: 'studio',
+        title: title ?? `剪辑室 ${count + 1}`,
+        status: 'idle',
+        timelineId: nextId('timeline'),
+        templates: []
+      },
+      style: { width: meta.width, height: meta.height }
+    }
+
+    set({
+      nodes: [
+        ...get().nodes.map((entry) => ({ ...entry, selected: false })),
+        node
+      ]
+    })
+
+    return id
+  },
+
+  addFilmNode: (studioNodeId, position, title) => {
+    get().pushHistory()
+
+    const meta = NODE_META.film
+    const id = nextId('film')
+
+    const node: FilmNode = {
+      id,
+      type: 'film',
+      position,
+      selected: false,
+      data: {
+        kind: 'film',
+        title,
+        status: 'idle',
+        studioNodeId,
+        filmStatus: 'pending',
+        outputs: [],
+        templates: []
+      },
+      style: { width: meta.width, height: meta.height }
+    }
+
+    set({ nodes: [...get().nodes, node] })
+    return id
+  },
+
+  patchStudioNode: (nodeId, patch) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId && isStudioNode(node)
+          ? { ...node, data: { ...node.data, ...patch } }
+          : node
+      )
+    })
+  },
+
+  patchFilmNode: (nodeId, patch) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId && isFilmNode(node)
+          ? { ...node, data: { ...node.data, ...patch } }
+          : node
+      )
+    })
+  },
+
+  linkStudioFilm: (studioNodeId, filmNodeId) => {
+    set({
+      nodes: get().nodes.map((node) => {
+        if (node.id === studioNodeId && isStudioNode(node)) {
+          return { ...node, data: { ...node.data, filmNodeId } }
+        }
+        if (node.id === filmNodeId && isFilmNode(node)) {
+          return { ...node, data: { ...node.data, studioNodeId } }
+        }
+        return node
+      })
+    })
+  },
+
+  setFilmStatus: (nodeId, filmStatus) => {
+    const status =
+      filmStatus === 'rendering'
+        ? 'running'
+        : filmStatus === 'ready'
+          ? 'done'
+          : 'idle'
+
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId && isFilmNode(node)
+          ? { ...node, data: { ...node.data, filmStatus, status } }
+          : node
+      )
+    })
+  },
+
+  applyFilmOutput: (nodeId, output) => {
+    get().pushHistory()
+
+    set({
+      nodes: get().nodes.map((node) => {
+        if (node.id !== nodeId || !isFilmNode(node)) return node
+        const outputs = [output, ...(node.data.outputs ?? [])].slice(0, 20)
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            outputs,
+            selectedOutputId: output.id,
+            filmStatus: 'ready',
+            status: 'done'
+          }
+        }
+      })
+    })
+  },
+
   addAssetNodes: (kind, origin, assets, titlePrefix, sourceNodeId, layout) => {
     if (assets.length === 0) return []
 
@@ -466,6 +659,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       const output: OutputRef = {
         id: asset.id,
         path: asset.path,
+        scope: layout?.scope,
         kind: asset.kind,
         createdAt: asset.createdAt,
         model: asset.model,
@@ -654,7 +848,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const targets = all.filter(
       (node) => wanted.has(node.id) && !isGroupNode(node) && !node.parentId
     )
-    if (targets.length < 2) return null
+    if (targets.length < 2 && !options?.allowSingle) return null
+    if (targets.length === 0) return null
 
     get().pushHistory()
 
@@ -745,7 +940,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
   applyOutput: (nodeId, asset, op) => {
     const node = get().nodes.find((entry) => entry.id === nodeId)
-    if (!node || isGroupNode(node)) return
+    if (!node || node.type !== 'cine') return
 
     get().pushHistory()
 
@@ -773,7 +968,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
     set({
       nodes: get().nodes.map((entry) => {
-        if (entry.id !== nodeId || isGroupNode(entry)) return entry
+        if (entry.id !== nodeId || entry.type !== 'cine') return entry
         return {
           ...entry,
           data: {
@@ -792,7 +987,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   patchNodeData: (nodeId, patch) => {
     set({
       nodes: get().nodes.map((node) => {
-        if (node.id !== nodeId || isGroupNode(node)) return node
+        if (node.id !== nodeId || node.type !== 'cine') return node
         return { ...node, data: { ...node.data, ...patch } }
       })
     })
@@ -883,10 +1078,21 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   copySelection: () => {
-    const selected = get().nodes.filter((node) => node.selected)
-    if (selected.length === 0) return 0
+    const baseSelected = get().nodes.filter(
+      (node) => node.selected && node.type !== 'film'
+    )
+    if (baseSelected.length === 0) return 0
 
-    const ids = new Set(selected.map((node) => node.id))
+    const selected = [...baseSelected]
+    const ids = new Set(baseSelected.map((node) => node.id))
+    for (const group of baseSelected.filter(isGroupNode)) {
+      for (const child of childrenOf(get().nodes, group.id)) {
+        if (child.type === 'film' || ids.has(child.id)) continue
+        ids.add(child.id)
+        selected.push(child)
+      }
+    }
+
     const edges = get().edges.filter(
       (edge) => ids.has(edge.source) && ids.has(edge.target)
     )
@@ -895,15 +1101,22 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return selected.length
   },
 
-  pasteNodes: (position) => {
+  pasteNodes: (position, studioTimelines) => {
     const clipboard = get().clipboard
     if (!clipboard || clipboard.nodes.length === 0) return 0
+
+    const nodesToPaste = clipboard.nodes.filter(
+      (node) =>
+        node.type !== 'film' &&
+        (node.type !== 'studio' || studioTimelines?.has(node.id))
+    )
+    if (nodesToPaste.length === 0) return 0
 
     get().pushHistory()
 
     const stamp = Date.now().toString(36)
     const idMap = new Map<string, string>()
-    const bounds = clipboard.nodes.map((node) => {
+    const bounds = nodesToPaste.map((node) => {
       const size = nodeSize(node)
       return {
         x: node.position.x,
@@ -923,17 +1136,24 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         }
       : { x: 24, y: 24 }
 
-    clipboard.nodes.forEach((node, index) => {
+    nodesToPaste.forEach((node, index) => {
       const prefix = isGroupNode(node) ? 'group' : node.data.kind
       idMap.set(node.id, `${prefix}_${stamp}_${index + 1}`)
     })
 
-    const pastedNodes = clipboard.nodes.map((node) => {
+    const pastedNodes: CanvasNode[] = nodesToPaste.map((node) => {
       const id = idMap.get(node.id) as string
       const copiedParent = node.parentId ? idMap.has(node.parentId) : false
+      const clone = structuredClone(node)
+
+      if (clone.type === 'studio') {
+        clone.data.timelineId = studioTimelines?.get(node.id) as string
+        clone.data.filmNodeId = undefined
+        clone.data.title = `${clone.data.title} 副本`
+      }
 
       return {
-        ...structuredClone(node),
+        ...clone,
         id,
         parentId: node.parentId ? idMap.get(node.parentId) : undefined,
         position: copiedParent
@@ -947,13 +1167,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
     })
 
-    const pastedEdges = clipboard.edges.map((edge, index) => ({
-      ...structuredClone(edge),
-      id: `edge_${stamp}_${index + 1}`,
-      source: idMap.get(edge.source) ?? edge.source,
-      target: idMap.get(edge.target) ?? edge.target,
-      selected: false
-    }))
+    const pastedEdges = clipboard.edges
+      .filter((edge) => idMap.has(edge.source) && idMap.has(edge.target))
+      .map((edge, index) => ({
+        ...structuredClone(edge),
+        id: `edge_${stamp}_${index + 1}`,
+        source: idMap.get(edge.source) as string,
+        target: idMap.get(edge.target) as string,
+        selected: false
+      }))
 
     set({
       nodes: [
@@ -966,20 +1188,35 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return pastedNodes.length
   },
 
-  duplicateSelection: () => {
+  duplicateSelection: (studioTimelines) => {
     const allNodes = get().nodes
-    const selected = allNodes.filter((node) => node.selected)
+    const selected = allNodes.filter(
+      (node) =>
+        node.selected &&
+        node.type !== 'film' &&
+        (node.type !== 'studio' || studioTimelines?.has(node.id))
+    )
     if (selected.length === 0) return 0
 
     const ids = new Set(selected.map((node) => node.id))
     for (const node of selected) {
       if (!isGroupNode(node)) continue
-      for (const child of childrenOf(allNodes, node.id)) ids.add(child.id)
+      for (const child of childrenOf(allNodes, node.id)) {
+        if (child.type === 'film') continue
+        if (child.type === 'studio' && !studioTimelines?.has(child.id)) continue
+        ids.add(child.id)
+      }
     }
 
-    const expanded = allNodes.filter((node) => ids.has(node.id))
+    const expanded = allNodes.filter(
+      (node) =>
+        ids.has(node.id) &&
+        node.type !== 'film' &&
+        (node.type !== 'studio' || studioTimelines?.has(node.id))
+    )
+    const expandedIds = new Set(expanded.map((node) => node.id))
     const internalEdges = get().edges.filter(
-      (edge) => ids.has(edge.source) && ids.has(edge.target)
+      (edge) => expandedIds.has(edge.source) && expandedIds.has(edge.target)
     )
 
     get().pushHistory()
@@ -992,15 +1229,22 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       idMap.set(node.id, `${prefix}_${stamp}_${index + 1}`)
     })
 
-    const clones = expanded.map((node) => {
+    const clones: CanvasNode[] = expanded.map((node) => {
       const id = idMap.get(node.id) as string
       const copiedParent = node.parentId ? idMap.has(node.parentId) : false
       const parentId = node.parentId
         ? idMap.get(node.parentId) ?? node.parentId
         : undefined
+      const clone = structuredClone(node)
+
+      if (clone.type === 'studio') {
+        clone.data.timelineId = studioTimelines?.get(node.id) as string
+        clone.data.filmNodeId = undefined
+        clone.data.title = `${clone.data.title} 副本`
+      }
 
       return {
-        ...structuredClone(node),
+        ...clone,
         id,
         parentId,
         position: copiedParent
@@ -1017,8 +1261,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const clonedEdges = internalEdges.map((edge, index) => ({
       ...structuredClone(edge),
       id: `edge_${stamp}_${index + 1}`,
-      source: idMap.get(edge.source) ?? edge.source,
-      target: idMap.get(edge.target) ?? edge.target,
+      source: idMap.get(edge.source) as string,
+      target: idMap.get(edge.target) as string,
       selected: false
     }))
 
@@ -1062,6 +1306,63 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
 
     return ids.size
+  },
+
+  removeNodesByIds: (nodeIds) => {
+    if (nodeIds.length === 0) return 0
+    const ids = new Set(nodeIds)
+
+    for (const node of get().nodes) {
+      if (!ids.has(node.id) || !isGroupNode(node)) continue
+      for (const child of childrenOf(get().nodes, node.id)) ids.add(child.id)
+    }
+
+    get().pushHistory()
+
+    set({
+      nodes: get().nodes.filter((node) => !ids.has(node.id)),
+      edges: get().edges.filter(
+        (edge) => !ids.has(edge.source) && !ids.has(edge.target)
+      )
+    })
+
+    return ids.size
+  },
+
+  convertFilmToMedia: (filmId, detach = false) => {
+    const film = get().nodes.find((node) => node.id === filmId)
+    if (!film || !isFilmNode(film)) return false
+
+    get().pushHistory()
+
+    const absolute = film.parentId
+      ? absolutePosition(film, get().nodes)
+      : film.position
+
+    const media: CineNode = {
+      id: film.id,
+      type: 'cine',
+      parentId: detach ? undefined : film.parentId,
+      position: detach ? absolute : film.position,
+      selected: film.selected,
+      zIndex: detach ? undefined : film.zIndex,
+      measured: film.measured,
+      data: {
+        kind: 'video',
+        title: film.data.title,
+        status: (film.data.outputs?.length ?? 0) > 0 ? 'done' : 'idle',
+        outputs: film.data.outputs ?? [],
+        selectedOutputId: film.data.selectedOutputId,
+        templates: NODE_META.video.templates
+      },
+      style: film.style
+    }
+
+    set({
+      nodes: get().nodes.map((node) => (node.id === filmId ? media : node))
+    })
+
+    return true
   },
 
   groupSelection: () => {

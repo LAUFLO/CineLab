@@ -24,6 +24,9 @@ export interface ConfirmState {
   confirmLabel?: string
   danger?: boolean
   onConfirm: () => void | Promise<void>
+  secondaryLabel?: string
+  secondaryDanger?: boolean
+  onSecondary?: () => void | Promise<void>
 }
 
 export interface ToastState {

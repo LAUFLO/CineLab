@@ -6,7 +6,7 @@ import {
   type OutputRef
 } from '@shared/canvas-schema'
 import type { LibraryAsset } from '@shared/library-schema'
-import { useCanvasStore } from '../stores/canvas'
+import { useCanvasStore, isGroupNode, isStudioNode } from '../stores/canvas'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
 
@@ -80,8 +80,56 @@ export function copySelection(): number {
   return count
 }
 
+async function copyStudioTimelines(
+  nodes: { id: string; type: string; data: unknown }[]
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  for (const node of nodes) {
+    if (node.type !== 'studio') continue
+    const timelineId = (node.data as { timelineId?: string }).timelineId
+    if (!timelineId) continue
+    map.set(node.id, await window.api.timeline.duplicate(timelineId))
+  }
+  return map
+}
+
+/** 创建副本：剪辑室深拷贝时间线，成片不复制 */
+export async function duplicateSelectionDeep(): Promise<number> {
+  const store = useCanvasStore.getState()
+  const selected = store.nodes.filter((node) => node.selected)
+  const ids = new Set(selected.map((node) => node.id))
+  for (const group of selected.filter(isGroupNode)) {
+    for (const child of store.nodes.filter(
+      (node) => node.parentId === group.id
+    )) {
+      ids.add(child.id)
+    }
+  }
+  const studios = store.nodes.filter(
+    (node) => ids.has(node.id) && isStudioNode(node)
+  )
+  const studioTimelines = await copyStudioTimelines(studios)
+  return store.duplicateSelection(studioTimelines)
+}
+
 export async function pasteAt(position?: XYPosition): Promise<number> {
   const store = useCanvasStore.getState()
+  const clipboard = store.clipboard
+
+  if (clipboard && clipboard.nodes.some((node) => node.type === 'studio')) {
+    try {
+      const studioTimelines = await copyStudioTimelines(clipboard.nodes)
+      const count = store.pasteNodes(position, studioTimelines)
+      if (count > 0) {
+        toast(`已粘贴 ${count} 个节点`)
+        return count
+      }
+    } catch (error) {
+      toast(error instanceof Error ? error.message : String(error), 'error')
+      return 0
+    }
+  }
+
   const count = store.pasteNodes(position)
   if (count > 0) {
     toast(`已粘贴 ${count} 个节点`)

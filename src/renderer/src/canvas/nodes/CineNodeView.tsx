@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
+import { Handle, Position, useReactFlow, useViewport, type NodeProps } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
-import { nodeSize, useCanvasStore, type CineNode } from '../../stores/canvas'
+import {
+  absolutePosition,
+  nodeSize,
+  useCanvasStore,
+  type CineNode
+} from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useUIStore } from '../../stores/ui'
 import { useLibraryStore } from '../../stores/library'
+import { useStudioStore } from '../../stores/studio'
+import { createStudioFromNode } from '../../studio/nodes'
 import { assetUrl } from '../../lib/asset-url'
 import { AudioPlayer, timeLabel } from './AudioPlayer'
 import { NodeToolbar } from './NodeToolbar'
@@ -48,6 +55,22 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     const found = state.nodes.find((entry) => entry.id === id)
     return found ? nodeSize(found).width : meta.width
   })
+  const viewport = useViewport()
+  const node = useCanvasStore((state) =>
+    state.nodes.find((entry) => entry.id === id)
+  )
+  const absolute = node
+    ? absolutePosition(node, useCanvasStore.getState().nodes)
+    : null
+  const screenCenter = absolute
+    ? (absolute.x + nodeWidth / 2) * viewport.zoom + viewport.x
+    : window.innerWidth / 2
+  const toolbarAlign: 'left' | 'center' | 'right' =
+    screenCenter > window.innerWidth * 0.62
+      ? 'right'
+      : screenCenter < window.innerWidth * 0.38
+        ? 'left'
+        : 'center'
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -98,6 +121,12 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     })
   }
 
+  const createStudio = (event: React.MouseEvent): void => {
+    event.stopPropagation()
+    const studioId = createStudioFromNode(id)
+    if (studioId) useStudioStore.getState().openStudio(studioId)
+  }
+
   useEffect(() => {
     if (!previewOpen) return
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -115,6 +144,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           nodeId={id}
           kind={data.kind}
           current={current}
+          align={toolbarAlign}
           onDownload={() => void exportCurrent()}
           onExpand={() => setPreviewOpen(true)}
           libraryAction={
@@ -137,6 +167,28 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               : undefined
           }
         />      ) : null}
+
+      {selected && !multiSelected && !current && !isBusy ? (
+        <div
+          className={`cnode__toolbar cnode__toolbar--minimal nodrag nopan ${
+            toolbarAlign === 'left'
+              ? 'is-left'
+              : toolbarAlign === 'right'
+                ? 'is-right'
+                : ''
+          }`}
+        >
+          <button
+            type="button"
+            className="cnode__toolbar-btn"
+            title="用当前节点创建剪辑室"
+            onClick={createStudio}
+          >
+            <Icon name="film" size={14} />
+            <span>剪辑室</span>
+          </button>
+        </div>
+      ) : null}
 
       <div
         className="cnode__title"

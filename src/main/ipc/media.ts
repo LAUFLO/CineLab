@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import { promises as fs } from 'node:fs'
 import type {
   CropImageRectRequest,
   CropImageRequest,
@@ -18,14 +19,47 @@ import { extractFrame } from '../media/frames'
 import { splitGrid } from '../media/grid'
 import { stitchGrid } from '../media/stitch'
 import { cropImage, cropImageRect } from '../media/image'
-import { resolveMediaPath } from '../media/paths'
+import { resolveInside, resolveMediaPath } from '../media/paths'
 import { cropVideo, removeSubtitles, splitAv, trimVideo } from '../media/video'
+import { mediaThumbnail } from '../media/thumbnail'
+import { ensureProxy } from '../media/proxy'
 import { getCurrentProjectRoot } from '../project/manager'
+import { getLibraryRoot } from '../library/config'
 
 function requireProjectRoot(): string {
   const root = getCurrentProjectRoot()
   if (!root) throw new Error('没有打开的项目')
   return root
+}
+
+async function mediaExists(
+  path: string,
+  scope?: 'project' | 'global'
+): Promise<boolean> {
+  try {
+    if (scope === 'global') {
+      const root = await getLibraryRoot()
+      await fs.access(resolveInside(root, path))
+      return true
+    }
+
+    const projectRoot = getCurrentProjectRoot()
+    if (scope === 'project' || projectRoot) {
+      if (!projectRoot) return false
+      try {
+        await fs.access(resolveInside(projectRoot, path))
+        return true
+      } catch {
+        if (scope === 'project') return false
+      }
+    }
+
+    const libraryRoot = await getLibraryRoot()
+    await fs.access(resolveInside(libraryRoot, path))
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function registerMediaIpc(): void {
@@ -66,6 +100,36 @@ export function registerMediaIpc(): void {
 
   ipcMain.handle('media:probe', async (_event, path: string) => {
     return probeMedia(await resolveMediaPath(requireProjectRoot(), path))
+  })
+
+  ipcMain.handle(
+    'media:exists',
+    async (_event, path: string, scope?: 'project' | 'global') => {
+      return mediaExists(path, scope)
+    }
+  )
+
+  ipcMain.handle(
+    'media:exists-many',
+    async (
+      _event,
+      entries: { path: string; scope: 'project' | 'global' }[]
+    ) => {
+      return Promise.all(
+        entries.map((entry) => mediaExists(entry.path, entry.scope))
+      )
+    }
+  )
+
+  ipcMain.handle(
+    'media:thumbnail',
+    async (_event, path: string, atSeconds?: number, kind?: 'video' | 'audio') => {
+      return mediaThumbnail(requireProjectRoot(), path, atSeconds, kind)
+    }
+  )
+
+  ipcMain.handle('media:proxy', async (_event, path: string) => {
+    return ensureProxy(requireProjectRoot(), path)
   })
 
   ipcMain.handle('media:crop-image', async (_event, input: CropImageRequest) => {

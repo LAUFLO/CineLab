@@ -9,7 +9,7 @@ import type {
 } from '@shared/components'
 import { COMPONENTS, COMPONENT_KINDS, fetchManifest } from './manifest'
 import { downloadFile } from './downloader'
-import { installComponentFiles, MODEL_FILE } from './installer'
+import { installComponentFiles, MODEL_FILES } from './installer'
 
 interface RuntimeState {
   state: ComponentStatus['state']
@@ -36,9 +36,11 @@ async function readInstalled(kind: ComponentKind): Promise<ComponentManifest | n
     const raw = JSON.parse(
       await fs.readFile(join(dir, 'manifest.json'), 'utf8')
     ) as ComponentManifest
-    const required =
-      kind === 'depth-model'
-        ? join(dir, MODEL_FILE)
+    const modelFile = MODEL_FILES[kind]
+    const required = modelFile
+      ? join(dir, modelFile)
+      : kind === 'whisper-runtime'
+        ? join(dir, 'Release', 'whisper-cli.exe')
         : join(dir, 'python', 'python.exe')
     await fs.stat(required)
     return raw
@@ -112,10 +114,9 @@ export async function installComponent(kind: ComponentKind): Promise<void> {
     })
 
     const downloadDir = join(componentsRoot(), '.downloads')
+    const modelFile = MODEL_FILES[kind]
     const fileName =
-      kind === 'depth-model'
-        ? MODEL_FILE
-        : `${definition.directory}-${manifest.version}.zip`
+      modelFile ?? `${definition.directory}-${manifest.version}.zip`
     const downloadPath = join(downloadDir, fileName)
 
     await downloadFile({

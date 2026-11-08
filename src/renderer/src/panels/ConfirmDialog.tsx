@@ -18,6 +18,17 @@ export function ConfirmDialog() {
     }
   }
 
+  const handleSecondary = async (): Promise<void> => {
+    if (!confirm.onSecondary) return
+    setBusy(true)
+    try {
+      await confirm.onSecondary()
+    } finally {
+      setBusy(false)
+      closeConfirm()
+    }
+  }
+
   return (
     <div className="confirm-overlay" onPointerDown={closeConfirm}>
       <div
@@ -35,6 +46,18 @@ export function ConfirmDialog() {
           >
             取消
           </button>
+          {confirm.onSecondary ? (
+            <button
+              type="button"
+              className={`btn-primary ${
+                confirm.secondaryDanger ? 'is-danger' : ''
+              }`}
+              onClick={() => void handleSecondary()}
+              disabled={busy}
+            >
+              {busy ? '处理中…' : confirm.secondaryLabel ?? '其他操作'}
+            </button>
+          ) : null}
           <button
             type="button"
             className={`btn-primary ${confirm.danger ? 'is-danger' : ''}`}

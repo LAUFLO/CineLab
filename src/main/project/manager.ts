@@ -212,7 +212,14 @@ export async function createProject(
     edges: []
   }
 
-  for (const dir of ['assets/img', 'assets/vid', 'assets/aud', 'assets/thumb', 'exports']) {
+  for (const dir of [
+    'assets/img',
+    'assets/vid',
+    'assets/aud',
+    'assets/thumb',
+    'exports',
+    'timelines'
+  ]) {
     await fs.mkdir(join(path, dir), { recursive: true })
   }
 
@@ -232,6 +239,7 @@ export async function openProject(path: string): Promise<ProjectSnapshot> {
     meta.canvases.find((canvas) => canvas.id === meta.activeCanvasId) ?? meta.canvases[0]
 
   const canvas = canvasDataSchema.parse(await readJson(join(projectPath, active.file)))
+  await fs.mkdir(join(projectPath, 'timelines'), { recursive: true })
   await addRecent(projectPath, meta.name)
   setCurrentProjectRoot(projectPath)
 

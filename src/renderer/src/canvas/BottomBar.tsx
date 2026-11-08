@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Icon } from '../components/Icon'
 import { useUIStore } from '../stores/ui'
+import { studioOpen } from '../studio/scope'
 
 export function BottomBar() {
   const tool = useUIStore((state) => state.tool)
@@ -26,6 +27,7 @@ export function BottomBar() {
       }
     }
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (studioOpen()) return
       if (event.key === 'Escape') setToolMenuOpen(false)
     }
 

@@ -74,6 +74,7 @@ function syncCanvasAssetPath(oldPath: string, nextPath: string): void {
 
   for (const node of store.nodes) {
     if (isGroupNode(node)) continue
+    if (node.type !== 'cine' && node.type !== 'film') continue
     const outputs = node.data.outputs
     if (!outputs) continue
 
@@ -84,7 +85,10 @@ function syncCanvasAssetPath(oldPath: string, nextPath: string): void {
       return { ...output, path: nextPath }
     })
 
-    if (changed) store.patchNodeData(node.id, { outputs: nextOutputs })
+    if (changed) {
+      if (node.type === 'cine') store.patchNodeData(node.id, { outputs: nextOutputs })
+      else store.patchFilmNode(node.id, { outputs: nextOutputs })
+    }
   }
 }
 

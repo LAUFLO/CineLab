@@ -2,18 +2,20 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { SaveAssetInput } from '@shared/library-schema'
 import { Icon } from '../components/Icon'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
+import { useStudioStore } from '../stores/studio'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
+import { duplicateSelectionDeep } from './context-actions'
+import { requestDeleteSelection } from './delete-actions'
+import { createStudioFromNodes } from '../studio/nodes'
 
 export function MultiSelectBar() {
   const nodes = useCanvasStore((state) => state.nodes)
-  const duplicateSelection = useCanvasStore((state) => state.duplicateSelection)
-  const removeSelection = useCanvasStore((state) => state.removeSelection)
   const groupSelection = useCanvasStore((state) => state.groupSelection)
   const mergeSelection = useCanvasStore((state) => state.mergeSelection)
   const createStoryboard = useCanvasStore((state) => state.createStoryboard)
   const showToast = useUIStore((state) => state.showToast)
-  const requestConfirm = useUIStore((state) => state.requestConfirm)
+  const openStudio = useStudioStore((state) => state.openStudio)
   const viewport = useCanvasStore((state) => state.viewport)
 
   const selected = useMemo(
@@ -82,6 +84,7 @@ export function MultiSelectBar() {
 
     for (const node of selected) {
       if (isGroupNode(node)) continue
+      if (node.type !== 'cine' && node.type !== 'film') continue
       const outputs = node.data.outputs ?? []
       const current =
         outputs.find((item) => item.id === node.data.selectedOutputId) ??
@@ -118,8 +121,27 @@ export function MultiSelectBar() {
   }
 
   const duplicate = (): void => {
-    const count = duplicateSelection()
-    if (count > 0) showToast(`已创建 ${count} 个副本`)
+    void duplicateSelectionDeep()
+      .then((count) => {
+        if (count > 0) showToast(`已创建 ${count} 个副本`)
+        else showToast('选中的节点不支持创建副本', 'error')
+      })
+      .catch((error: unknown) => {
+        showToast(
+          error instanceof Error ? error.message : String(error),
+          'error'
+        )
+      })
+  }
+
+  const makeStudio = (): void => {
+    const studioId = createStudioFromNodes(selected.map((node) => node.id))
+    if (!studioId) {
+      showToast('选中的节点没有可送入剪辑室的素材', 'error')
+      return
+    }
+    openStudio(studioId)
+    showToast('已创建剪辑室并送入素材')
   }
 
   const exportAssets = async (): Promise<void> => {
@@ -153,6 +175,17 @@ export function MultiSelectBar() {
         node.data.kind === 'image'
     )
 
+  const canStudio = selected.some((node) => {
+    if (isGroupNode(node)) {
+      return nodes.some(
+        (child) =>
+          child.parentId === node.id &&
+          (child.type === 'cine' || child.type === 'film')
+      )
+    }
+    return node.type === 'cine' || node.type === 'film'
+  })
+
   const group = (): void => {
     const id = groupSelection()
     if (id) showToast('已创建分组')
@@ -170,23 +203,7 @@ export function MultiSelectBar() {
   }
 
   const remove = (): void => {
-    const hasGroup = groupCount > 0
-    const groupIds = selected.filter(isGroupNode).map((node) => node.id)
-    const childCount = nodes.filter(
-      (node) => node.parentId && groupIds.includes(node.parentId)
-    ).length
-    requestConfirm({
-      title: hasGroup ? '删除组及组内节点' : '删除节点',
-      message: hasGroup
-        ? `确定删除选中的 ${groupCount} 个分组及其 ${childCount} 个子节点吗？此操作不可撤销。`
-        : `确定删除选中的 ${selected.length} 个节点吗？此操作不可撤销。`,
-      confirmLabel: '删除',
-      danger: true,
-      onConfirm: () => {
-        const count = removeSelection()
-        if (count > 0) showToast(`已删除 ${count} 个节点`)
-      }
-    })
+    requestDeleteSelection()
   }
 
   return (
@@ -248,6 +265,13 @@ export function MultiSelectBar() {
       ) : null}
 
       {canGroup || canMerge ? <div className="multi-bar__divider" /> : null}
+
+      {canStudio ? (
+        <button type="button" className="multi-bar__btn" onClick={makeStudio}>
+          <Icon name="film" size={14} />
+          <span>剪辑室</span>
+        </button>
+      ) : null}
 
       <button
         type="button"

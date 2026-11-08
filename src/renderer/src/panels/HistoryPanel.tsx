@@ -4,7 +4,7 @@ import type { NodeKind, OutputRef } from '@shared/canvas-schema'
 import type { GeneratedAsset } from '@shared/generation'
 import { Icon } from '../components/Icon'
 import { assetUrl } from '../lib/asset-url'
-import { isGroupNode, useCanvasStore } from '../stores/canvas'
+import { isGroupNode, nodeOutputs, useCanvasStore } from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'
 import {
   useGenerationHistoryStore,
@@ -58,7 +58,7 @@ export function HistoryPanel() {
     return nodes
       .filter((node) => !isGroupNode(node))
       .flatMap((node) =>
-        (node.data.outputs ?? []).map((output) => ({
+        nodeOutputs(node).map((output) => ({
           key: `${node.id}:${output.id}`,
           nodeId: node.id,
           title: node.data.title,

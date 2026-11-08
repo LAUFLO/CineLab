@@ -34,7 +34,8 @@ export function registerAssetScheme(): void {
       privileges: {
         standard: true,
         secure: true,
-        supportFetchAPI: true
+        supportFetchAPI: true,
+        corsEnabled: true
       }
     }
   ])
@@ -42,6 +43,16 @@ export function registerAssetScheme(): void {
 
 export function registerAssetProtocol(): void {
   protocol.handle(ASSET_SCHEME, async (request) => {
+    const cors = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'Access-Control-Allow-Headers': '*'
+    }
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: cors })
+    }
+
     const url = new URL(request.url)
     const host = url.hostname || 'local'
     const root =
@@ -81,6 +92,7 @@ export function registerAssetProtocol(): void {
           return new Response(new Uint8Array(chunk), {
             status: 206,
             headers: {
+              ...cors,
               'Content-Type': mime,
               'Content-Range': `bytes ${start}-${end}/${stat.size}`,
               'Accept-Ranges': 'bytes',
@@ -95,6 +107,7 @@ export function registerAssetProtocol(): void {
 
       return new Response(new Uint8Array(data), {
         headers: {
+          ...cors,
           'Content-Type': mime,
           'Content-Length': String(stat.size),
           'Accept-Ranges': 'bytes',

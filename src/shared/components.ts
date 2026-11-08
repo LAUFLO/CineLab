@@ -1,4 +1,8 @@
-export type ComponentKind = 'depth-runtime' | 'depth-model'
+export type ComponentKind =
+  | 'depth-runtime'
+  | 'depth-model'
+  | 'whisper-runtime'
+  | 'whisper-model'
 
 export type ComponentState =
   | 'not-installed'

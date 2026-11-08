@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import type { DepthCaptureRequest, DepthCaptureResult } from '@shared/media'
 import { ingestAsset } from '../assets/ingest'
 import { componentDirectory, isComponentInstalled } from '../components/service'
-import { MODEL_FILE } from '../components/installer'
+import { MODEL_FILES } from '../components/installer'
 import { log } from '../logger'
 import { ffmpegBinary, probeMedia } from './ffmpeg'
 import { resolveMediaPath } from './paths'
@@ -59,7 +59,7 @@ export async function captureDepth(
   const worker =
     process.env.CINELAB_DEPTH_WORKER ?? join(runtimeDir, 'worker.py')
   const vdaDir = runtimeDir
-  const checkpoint = join(modelDir, MODEL_FILE)
+  const checkpoint = join(modelDir, MODEL_FILES['depth-model'] as string)
 
   const output = join(app.getPath('temp'), `cinelab-depth-${randomUUID()}.mp4`)
 

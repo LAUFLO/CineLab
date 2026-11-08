@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import type { ComponentKind, ComponentStatus } from '@shared/components'
 import { useUIStore } from '../stores/ui'
 
-const KIND_ORDER: ComponentKind[] = ['depth-runtime', 'depth-model']
+const KIND_ORDER: ComponentKind[] = [
+  'depth-runtime',
+  'depth-model',
+  'whisper-runtime',
+  'whisper-model'
+]
 
 const COMPONENT_META: Record<
   ComponentKind,
@@ -21,6 +26,20 @@ const COMPONENT_META: Record<
       'ByteDance 开源的视频深度模型权重（Apache-2.0）。负责逐帧估计深度并保持全片时序一致，输出近白远黑的控制视频。',
     uninstallHint:
       '卸载后，深度推理缺少模型权重，「深度动作捕捉」将无法使用。已生成的深度视频节点不受影响，可随时重新下载。'
+  },
+  'whisper-runtime': {
+    name: '本地字幕运行时',
+    description:
+      'whisper.cpp v1.7.6 Windows x64 运行时，用于本地语音转写。安装后「自动字幕」才能离线运行，不上传音频。',
+    uninstallHint:
+      '卸载后，「自动字幕」将无法使用。已生成的字幕轨不受影响，可随时重新下载。'
+  },
+  'whisper-model': {
+    name: 'Whisper Base 模型',
+    description:
+      'OpenAI Whisper base 多语言模型（MIT）。约 148MB，CPU 转写中文和英文，首次转写会比后续慢。',
+    uninstallHint:
+      '卸载后，本地转写缺少模型权重，「自动字幕」将无法使用。已生成的字幕轨不受影响，可随时重新下载。'
   }
 }
 

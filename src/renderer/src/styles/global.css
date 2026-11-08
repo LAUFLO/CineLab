@@ -693,14 +693,15 @@ body.is-exporting .react-flow__minimap {
 
 .cnode__toolbar {
   position: absolute;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   bottom: calc(100% + 10px);
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 4px;
-  height: 42px;
-  padding: 0 8px;
+  gap: 1px;
+  height: 36px;
+  padding: 0 6px;
   border-radius: 12px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -709,20 +710,25 @@ body.is-exporting .react-flow__minimap {
   white-space: nowrap;
 }
 
-.cnode__toolbar-size {
-  padding: 0 10px;
-  font-size: 12px;
-  color: var(--text-3);
+.cnode__toolbar.is-left {
+  left: 0;
+  transform: none;
+}
+
+.cnode__toolbar.is-right {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 .cnode__toolbar-btn {
-  height: 32px;
-  padding: 0 8px;
+  height: 28px;
+  padding: 0 5px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 7px;
+  font-size: 12px;
   color: var(--text-2);
 }
 
@@ -4512,10 +4518,10 @@ body.is-picking .react-flow__node:hover .cnode__card {
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 2px;
-  height: 40px;
-  padding: 0 6px;
-  border-radius: 12px;
+  gap: 1px;
+  height: 36px;
+  padding: 0 5px;
+  border-radius: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-float);
@@ -4523,20 +4529,14 @@ body.is-picking .react-flow__node:hover .cnode__card {
   white-space: nowrap;
 }
 
-.cnode__toolbar-size {
-  padding: 0 10px;
-  font-size: 12px;
-  color: var(--text-3);
-}
-
 .cnode__toolbar-btn {
-  height: 32px;
-  padding: 0 8px;
+  height: 28px;
+  padding: 0 5px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  border-radius: 8px;
-  font-size: 13px;
+  gap: 3px;
+  border-radius: 7px;
+  font-size: 12px;
   color: var(--text-2);
 }
 
@@ -5925,4 +5925,283 @@ body.is-picking .react-flow__node:hover .cnode__card {
 
 .model-params__spacer {
   flex: 1;
+}
+
+/* 剪辑室 / 成片节点 */
+.studio-node__badge,
+.film-node__badge {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 16px;
+  color: var(--text-2);
+  background: var(--surface-hover);
+  white-space: nowrap;
+}
+
+.studio-node__badge.is-ready,
+.film-node__badge.is-ready {
+  color: var(--text-1);
+}
+
+.studio-node__badge.is-stale,
+.film-node__badge.is-stale {
+  color: var(--text-2);
+  border: 1px solid var(--border-strong);
+}
+
+.studio-node__badge.is-rendering,
+.film-node__badge.is-rendering {
+  color: var(--text-1);
+}
+
+.studio-node__badge.is-empty,
+.studio-node__badge.is-missing,
+.film-node__badge.is-empty,
+.film-node__badge.is-missing {
+  color: var(--text-3);
+}
+
+.studio-node__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  padding: 18px;
+}
+
+.studio-node__stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.studio-node__dot {
+  color: var(--text-3);
+}
+
+.studio-node__open,
+.film-node__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-1);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.studio-node__open:hover,
+.film-node__btn:hover {
+  background: var(--surface-hover);
+}
+
+.studio-node__open {
+  align-self: flex-start;
+}
+
+.film-node__card {
+  border-radius: 12px;
+}
+
+.film-node__preview {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  overflow: hidden;
+}
+
+.film-node__media {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.film-node__play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.film-node__play:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.film-node__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.film-node__progress {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  font-size: 11px;
+}
+
+.film-node__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.film-node__meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.film-node__versions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.film-node__actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.film-node__btn.is-primary {
+  background: var(--pick-bar);
+  color: var(--text-inverse);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.film-node__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.studio-top__hint {
+  margin: 0 6px;
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.studio-pool__update {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pick-bar) 80%, transparent);
+  color: var(--text-inverse);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.studio-clip__issue {
+  position: absolute;
+  right: 6px;
+  top: 4px;
+  max-width: calc(100% - 12px);
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  background: var(--surface);
+  color: var(--text-1);
+  border: 1px solid var(--border-strong);
+}
+
+.studio-clip__issue.is-missing {
+  border-style: dashed;
+}
+
+.studio-clip__speed,
+.studio-clip__transition {
+  position: absolute;
+  bottom: 4px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 15px;
+  color: var(--text-1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  pointer-events: none;
+}
+
+.studio-clip__speed {
+  left: 6px;
+}
+
+.studio-clip__transition {
+  right: 6px;
+}
+
+.studio-clip.is-missing {
+  opacity: 0.55;
+}
+
+.studio-clip.is-missing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px dashed var(--border-strong);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.studio-clip.has-update {
+  outline: 1px solid var(--border-strong);
+  outline-offset: -1px;
+}
+
+.cnode__toolbar--minimal {
+  height: 36px;
+  padding: 0 6px;
+}
+
+.cnode .react-flow__handle.cnode__handle.studio-node__handle--derived,
+.cnode .react-flow__handle.cnode__handle.film-node__handle--passive {
+  opacity: 0;
+  pointer-events: none;
 }

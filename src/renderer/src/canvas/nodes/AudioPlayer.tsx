@@ -185,11 +185,11 @@ export function AudioPlayer({
             return (
               <rect
                 key={index}
-                x={index + 0.25}
-                y={(100 - height) / 2}
-                width={0.5}
+                x={index + 0.23}
+                y={100 - height}
+                width={0.54}
                 height={height}
-                rx={0.25}
+                rx={0.27}
               />
             )
           })}

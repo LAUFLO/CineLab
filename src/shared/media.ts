@@ -73,6 +73,13 @@ export interface MediaProbe {
   audioChannels?: number
 }
 
+export interface SubtitleRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export interface CropImageRequest {
   path: string
   ratio: string

@@ -966,8 +966,8 @@ export function NodeToolbar({
       return
     }
 
-    if (op.id === 'film-study' && item) {
-      startFilmStudy(item.id === 'auto' ? 0 : Number(item.id))
+    if (op.id === 'film-study') {
+      startFilmStudy(0)
       return
     }
 
@@ -1007,8 +1007,31 @@ export function NodeToolbar({
         return
       }
       void (async () => {
-        if (await ensureVision()) {
+        if (!(await ensureVision())) return
+        setRunning(true)
+        try {
+          showToast('正在检测字幕区域…')
+          const rect = await window.api.media.detectSubtitleRect(
+            current.path,
+            current.scope
+          )
+          if (rect) {
+            showToast(
+              `已检测到字幕区域，开始智能去字幕`
+            )
+            void executeVisionRepair(rect, '智能去字幕')
+          } else {
+            showToast('未检测到字幕区域，请手动框选', 'error')
+            await openSubtitleBox('vision', '智能去字幕')
+          }
+        } catch (error) {
+          showToast(
+            error instanceof Error ? error.message : String(error),
+            'error'
+          )
           await openSubtitleBox('vision', '智能去字幕')
+        } finally {
+          setRunning(false)
         }
       })()
       return

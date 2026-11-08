@@ -255,7 +255,7 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
   study: {
     label: '拉片',
     width: 400,
-    height: 340,
+    height: 250,
     templates: []
   }
 }

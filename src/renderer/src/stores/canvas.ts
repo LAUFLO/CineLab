@@ -357,6 +357,19 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const migrated = nodes.map((node) => {
       if (isGroupNode(node)) return node
       if (node.type !== 'cine') return node
+      if (node.data.kind === 'study') {
+        const height = Number(node.style?.height ?? 0)
+        if (height === 368 || height === 308) {
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              height: NODE_META.study.height + TITLE_HEIGHT
+            }
+          }
+        }
+        return node
+      }
       if (node.data.kind !== 'image' && node.data.kind !== 'video') return node
 
       const width = Number(node.style?.width ?? 0)
@@ -1122,28 +1135,158 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   arrangeNodes: () => {
+    const all = get().nodes
+    const edges = get().edges
+    if (all.length === 0) return
     get().pushHistory()
 
-    const gap = 48
-    const maxWidth = 1400
-    let x = 0
-    let y = 0
-    let rowHeight = 0
+    const layoutSize = (node: CanvasNode): { width: number; height: number } => {
+      if (isGroupNode(node)) {
+        return {
+          width:
+            node.measured?.width ??
+            Number(node.style?.width ?? 0) ??
+            320,
+          height:
+            node.measured?.height ??
+            Number(node.style?.height ?? 0) ??
+            200
+        }
+      }
+      const meta = NODE_META[node.data.kind]
+      return {
+        width:
+          node.measured?.width ??
+          Number(node.style?.width ?? 0) ??
+          meta.width,
+        height:
+          node.measured?.height ??
+          Number(node.style?.height ?? 0) ??
+          meta.height + TITLE_HEIGHT
+      }
+    }
 
-    const nodes = get().nodes.map((node) => {
-      if (isGroupNode(node) || node.parentId) return node
+    // 顶层节点作为布局块；分组把组内节点视为一个整体
+    const topNodes = all.filter((node) => !node.parentId)
+    const blockNodes = new Map<string, Set<string>>()
+    for (const node of topNodes) {
+      const ids = new Set<string>([node.id])
+      if (isGroupNode(node)) {
+        for (const child of all) {
+          if (child.parentId === node.id) ids.add(child.id)
+        }
+      }
+      blockNodes.set(node.id, ids)
+    }
 
-      const { width, height } = nodeSize(node)
+    const blockOf = new Map<string, string>()
+    for (const [blockId, ids] of blockNodes) {
+      for (const id of ids) blockOf.set(id, blockId)
+    }
 
-      if (x > 0 && x + width > maxWidth) {
-        x = 0
-        y += rowHeight + gap
-        rowHeight = 0
+    const incoming = new Map<string, Set<string>>()
+    const outgoing = new Map<string, Set<string>>()
+    for (const blockId of blockNodes.keys()) {
+      incoming.set(blockId, new Set())
+      outgoing.set(blockId, new Set())
+    }
+
+    for (const edge of edges) {
+      const from = blockOf.get(edge.source)
+      const to = blockOf.get(edge.target)
+      if (!from || !to || from === to) continue
+      incoming.get(to)?.add(from)
+      outgoing.get(from)?.add(to)
+    }
+
+    const isolated = new Set(
+      [...blockNodes.keys()].filter(
+        (blockId) =>
+          (incoming.get(blockId)?.size ?? 0) === 0 &&
+          (outgoing.get(blockId)?.size ?? 0) === 0
+      )
+    )
+
+    // 按连线拓扑分层；孤立节点放到最后一列
+    const levels = new Map<string, number>()
+    for (const blockId of blockNodes.keys()) {
+      if (!isolated.has(blockId)) levels.set(blockId, 0)
+    }
+
+    let changed = true
+    let guard = 0
+    while (changed && guard < blockNodes.size + 2) {
+      changed = false
+      guard += 1
+      for (const blockId of levels.keys()) {
+        const sources = [...(incoming.get(blockId) ?? [])].filter(
+          (source) => !isolated.has(source)
+        )
+        if (sources.length === 0) continue
+        const next = Math.max(
+          ...sources.map((source) => (levels.get(source) ?? 0) + 1)
+        )
+        if ((levels.get(blockId) ?? 0) < next) {
+          levels.set(blockId, next)
+          changed = true
+        }
+      }
+    }
+
+    // 循环依赖导致层数异常时，退化为同层排列
+    const maxLevel = Math.max(0, ...levels.values())
+    if (maxLevel > blockNodes.size) {
+      for (const key of levels.keys()) levels.set(key, 0)
+    }
+
+    const isolatedLevel =
+      Math.max(0, ...levels.values()) + (isolated.size > 0 ? 1 : 0)
+    for (const blockId of isolated) levels.set(blockId, isolatedLevel)
+
+    const columns = new Map<number, string[]>()
+    for (const blockId of blockNodes.keys()) {
+      const level = levels.get(blockId) ?? 0
+      const list = columns.get(level) ?? []
+      list.push(blockId)
+      columns.set(level, list)
+    }
+
+    const sortedLevels = [...columns.keys()].sort((a, b) => a - b)
+    for (const level of sortedLevels) {
+      const list = columns.get(level) ?? []
+      list.sort((a, b) => {
+        const nodeA = all.find((node) => node.id === a)
+        const nodeB = all.find((node) => node.id === b)
+        return (nodeA?.position.y ?? 0) - (nodeB?.position.y ?? 0)
+      })
+    }
+
+    const GAP_X = 80
+    const GAP_Y = 60
+    const positions = new Map<string, { x: number; y: number }>()
+    let cursorX = 0
+
+    for (const level of sortedLevels) {
+      const list = columns.get(level) ?? []
+      let columnWidth = 0
+      let cursorY = 0
+
+      for (const blockId of list) {
+        const node = all.find((item) => item.id === blockId)
+        if (!node) continue
+        const size = layoutSize(node)
+        positions.set(blockId, { x: cursorX, y: cursorY })
+        cursorY += size.height + GAP_Y
+        columnWidth = Math.max(columnWidth, size.width)
       }
 
-      const position = { x, y }
-      x += width + gap
-      rowHeight = Math.max(rowHeight, height)
+      cursorX += columnWidth + GAP_X
+    }
+
+    const nodes = all.map((node) => {
+      if (node.parentId) return node
+      const position = positions.get(node.id)
+      if (!position) return node
       return { ...node, position }
     })
 

@@ -155,6 +155,61 @@ export function runFfmpegCapture(
   })
 }
 
+/** 运行 ffmpeg 并收集 stdout（用于 rawvideo / 图像分析） */
+export function runFfmpegBuffer(
+  args: string[],
+  options: { signal?: AbortSignal } = {}
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(ffmpegBinary(), args, {
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+
+    const chunks: Buffer[] = []
+    let stderr = ''
+    let settled = false
+    let aborted = false
+
+    const finish = (error?: Error): void => {
+      if (settled) return
+      settled = true
+      options.signal?.removeEventListener('abort', onAbort)
+      if (error) reject(error)
+      else resolve(Buffer.concat(chunks))
+    }
+
+    const onAbort = (): void => {
+      if (aborted) return
+      aborted = true
+      child.kill('SIGKILL')
+    }
+
+    if (options.signal?.aborted) onAbort()
+    else options.signal?.addEventListener('abort', onAbort)
+
+    child.stdout?.on('data', (chunk: Buffer) => chunks.push(chunk))
+    child.stderr?.setEncoding('utf8')
+    child.stderr?.on('data', (chunk: string) => {
+      stderr += chunk
+      if (stderr.length > 20_000) stderr = stderr.slice(-20_000)
+    })
+
+    child.on('error', (error) => finish(error))
+    child.on('close', (code) => {
+      if (aborted) {
+        finish(new Error('已取消'))
+        return
+      }
+      if (code === 0) {
+        finish()
+        return
+      }
+      finish(new Error(`ffmpeg 失败（退出码 ${code}）：${stderr.slice(-600)}`))
+    })
+  })
+}
+
 interface FfprobeStream {
   codec_type?: string
   codec_name?: string

@@ -65,6 +65,7 @@ import type {
   RemoveSubtitlesRequest,
   RemoveSubtitlesResult,
   MediaProbe,
+  SubtitleRect,
   SplitAvRequest,
   SplitAvResult,
   StitchRequest,
@@ -225,6 +226,10 @@ export interface MediaApi {
   cropImageRect(input: CropImageRectRequest): Promise<CropImageResult>
   trimVideo(input: TrimVideoRequest): Promise<TrimVideoResult>
   removeSubtitles(input: RemoveSubtitlesRequest): Promise<RemoveSubtitlesResult>
+  detectSubtitleRect(
+    path: string,
+    scope?: 'project' | 'global'
+  ): Promise<SubtitleRect | null>
   captureDepth(input: DepthCaptureRequest): Promise<DepthCaptureResult>
   startDepthCapture(input: DepthCaptureRequest): Promise<DepthTaskStartResult>
   cancelDepthCapture(taskId: string): Promise<void>

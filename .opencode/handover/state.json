@@ -1,5 +1,5 @@
 {
-  "version": 48,
+  "version": 50,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -1118,6 +1118,29 @@
         ".opencode/handover/evidence/FILM-STUDY-REDESIGN-2.md",
         ".opencode/handover/evidence/FILM-STUDY-REDESIGN-2-node-menu.png",
         ".opencode/handover/evidence/FILM-STUDY-REDESIGN-2-sheet.png"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-REDESIGN-3",
+      "title": "拉片连线修复、工具栏去精度菜单、节点布局与切片尺寸",
+      "status": "done",
+      "note": "2026-11-08 完成。根因：CineNodeView 对 study 节点不渲染 Handle，导致拉片节点与源视频/结果节点的边无法绘制；移除条件后所有 study 节点渲染左右 Handle，测试项目 16 条边全部显示。工具栏「逐帧拉片」移除精度下拉，点击直接自动分镜，精度在节点内调整。NODE_META study 高度 340→280，卡片间距/按钮位置收紧，旧节点加载时 368→308 迁移。动态切片改为 3×320，video-node 增加 min-width:0 和容器查询：≤360px 隐藏帧号/缩小按钮，≤250px 隐藏时间，旧 240px 切片控制条不再溢出。typecheck、145 tests、build 通过；隔离实例验证 Handle 数量、边渲染、节点高度迁移和切片控制条尺寸。",
+      "evidence": [
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-3.md",
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-3-links.png",
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-3-layout.png"
+      ]
+    },
+    {
+      "id": "WORKSPACE-ENHANCE-1",
+      "title": "文本 Markdown 编辑、工具栏居中、拓扑整理、音频波形、智能去字幕、AI 分镜",
+      "status": "done",
+      "note": "2026-11-08 完成。文本节点新增 1100×720 Markdown 编辑弹窗（marked 18.1.3，左编辑右预览、快捷插入、Ctrl+Enter），节点内按 Markdown 渲染，双击或编辑按钮打开。CineNodeView 删除视口边缘 left/right 切换，工具栏固定相对节点居中，实测中心差 0。整理画布改为按连线拓扑分层：分组为整体块、孤立节点末列、循环依赖退化。音频波形改底部对齐，播放头与波形同 10px inset。新增主进程字幕区域检测（底部灰度帧行/列边缘统计），智能去字幕自动检测并直接修复，失败回退框选；640×360 测试视频检测结果 x197 y296 w245 h31。拉片删除分镜精度选择，scdet 候选镜头 + 多模态模型 from/to 语义合并，mock 验证 2→1 个分镜；节点高度 250 并迁移旧 278。typecheck、145 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/WORKSPACE-ENHANCE-1.md",
+        ".opencode/handover/evidence/WORKSPACE-ENHANCE-1-text-editor.png",
+        ".opencode/handover/evidence/WORKSPACE-ENHANCE-1-audio-wave.png",
+        ".opencode/handover/evidence/WORKSPACE-ENHANCE-1-arrange.png"
       ]
     }
   ],

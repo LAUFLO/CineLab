@@ -221,8 +221,8 @@ function createStudyOutputs(
       {
         groupTitle: `${sourceName} · 动态切片`,
         groupColor: 'violet',
-        columns: 4,
-        cellWidth: 240,
+        columns: 3,
+        cellWidth: 320,
         scope: 'project',
         connectGroup: true,
         onGroupCreated: (groupId) => created.push(groupId)

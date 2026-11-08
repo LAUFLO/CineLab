@@ -39,12 +39,6 @@ interface AgentProposal {
   modelName: string
   capability: Capability
   count: number
-  estimatedCost: {
-    amount: number
-    currency: string
-    unit: ModelPricing['unit']
-    note?: string
-  } | null
   createdAt: string
   expiresAt: string
   submittedAt?: string
@@ -53,35 +47,13 @@ interface AgentProposal {
 }
 ```
 
-### 2.2 模型单价
-
-```ts
-interface ModelPricing {
-  currency: string // 默认 CNY
-  unit: 'request' | 'image' | 'second' | '1k-tokens'
-  amount: number
-  note?: string
-}
-```
-
-配置位置：`models.json` 的模型条目，或设置 → 供应商 → 模型列表的「计费」弹窗。
-
-估算规则：
-
-| 单位 | 估算方式 |
-|---|---|
-| `request` | 单价 × 1 |
-| `image` | 单价 × 生成数量 |
-| `second` | 单价 × `params.duration` |
-| `1k-tokens` | 无法预估，返回 null |
-
-未配置单价时 `estimatedCost = null`，界面显示「未配置单价」，不阻止提交。
+> 不展示金额预估：不同供应商的计费方式差异很大，部分模型免费，本地无法可靠推算，错误预估会误导用户。
 
 ## 3. 工具
 
 | 工具 | 执行位置 | 权限 | 说明 |
 |---|---|---|---|
-| `generation_catalog` | 主进程 | 只读 | 列出已配置的生成模型、能力、输入、参数、单价 |
+| `generation_catalog` | 主进程 | 只读 | 列出已配置的生成模型、能力、输入和参数 |
 | `generation_propose` | 渲染进程 | 写 | 校验目标节点与参考节点，登记提案 |
 
 `generation_submit` 不注册给模型。只有用户点击提案卡才能提交，避免模型绕过确认。
@@ -112,7 +84,7 @@ interface ModelPricing {
    - 供应商存在、有 API Key、模型存在。
    - 参数按模型 `params` 规范化，未知参数报错。
    - 参考路径必须相对、最多 4 张图；视频输入仅 http-template 适配器。
-   - 计算数量与预估费用。
+   - 计算本次生成数量。
 3. 写入 `<project>/.cinelab/agent/proposals/<id>.json`。
 4. 广播 `proposal` 事件，Agent 面板显示提案卡。
 
@@ -153,7 +125,6 @@ Agent 面板底部显示当前提案卡：
 模型：Agnes 2.5 Flash 图像
 参数：size=1K · ratio=16:9
 数量：1
-预估：¥0.20
 [确认生成] [取消]
 ```
 
@@ -175,7 +146,6 @@ Agent 面板底部显示当前提案卡：
 | `src/shared/agent-proposal.ts` | 参数规范化、数量、费用估算、过期判定纯函数 |
 | `src/main/agent/proposals.ts` | 提案文件存储、状态机、提交、runId 索引 |
 | `src/main/engine/start-generation.ts` | 从 `ipc/generate.ts` 抽出的生成入队逻辑 |
-| `src/renderer/src/canvas/nodes/ModelPricingDialog.tsx` | 模型单价配置弹窗 |
 | `src/shared/__tests__/agent-proposal.test.ts` | 纯函数测试 |
 | `src/main/agent/__tests__/proposals.test.ts` | 提案服务测试 |
 

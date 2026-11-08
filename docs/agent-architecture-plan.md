@@ -324,7 +324,7 @@ interface AgentScope {
 生成走两段式（落地细节见 `docs/agent-generation-proposal-plan.md`）：
 
 ```text
-generation.propose  → 只登记，返回 proposalId、目标、模型、参数、预估费用
+generation.propose  → 只登记，返回 proposalId、目标、模型、参数、数量
 用户点击「生成」    → generation.submit
 ```
 

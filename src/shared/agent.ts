@@ -1,5 +1,5 @@
 import type { GenerateRequest } from './generation'
-import type { Capability, ModelPricing } from './provider-schema'
+import type { Capability } from './provider-schema'
 
 export type AgentProfileId = 'canvas' | 'clip' | 'film' | 'stage'
 
@@ -41,13 +41,6 @@ export type AgentProposalStatus =
   | 'cancelled'
   | 'expired'
 
-export interface AgentCostEstimate {
-  amount: number
-  currency: string
-  unit: ModelPricing['unit']
-  note?: string
-}
-
 export interface AgentProposal {
   id: string
   sessionId: string
@@ -60,7 +53,6 @@ export interface AgentProposal {
   capability: Capability
   /** 本次请求会生成的媒体数量 */
   count: number
-  estimatedCost: AgentCostEstimate | null
   createdAt: string
   expiresAt: string
   submittedAt?: string
@@ -68,7 +60,7 @@ export interface AgentProposal {
   error?: string
 }
 
-/** 渲染进程登记提案时提交的草稿；模型名、能力与费用由主进程补全 */
+/** 渲染进程登记提案时提交的草稿；模型名与能力由主进程补全 */
 export interface AgentProposalDraft {
   turnId: string
   request: GenerateRequest

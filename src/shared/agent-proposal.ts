@@ -1,10 +1,5 @@
-import type {
-  AgentCostEstimate,
-  AgentProposal,
-  AgentProposalStatus
-} from './agent'
-import type { GenerateRequest } from './generation'
-import type { Capability, ModelDef, ParamDef } from './provider-schema'
+import type { AgentProposal, AgentProposalStatus } from './agent'
+import type { Capability, ParamDef } from './provider-schema'
 
 export const PROPOSAL_TTL_MS = 10 * 60 * 1000
 
@@ -127,46 +122,6 @@ export function proposalCount(
   const value = Number(params.n)
   if (!Number.isFinite(value)) return 1
   return Math.min(8, Math.max(1, Math.round(value)))
-}
-
-/** 预估费用；无法可靠估算时返回 null，不猜测 */
-export function estimateProposalCost(
-  model: ModelDef,
-  request: GenerateRequest,
-  count: number
-): AgentCostEstimate | null {
-  const pricing = model.pricing
-  if (!pricing) return null
-  if (!Number.isFinite(pricing.amount) || pricing.amount < 0) return null
-
-  let multiplier: number | null = null
-  if (pricing.unit === 'request') {
-    multiplier = 1
-  } else if (pricing.unit === 'image') {
-    multiplier = count
-  } else if (pricing.unit === 'second') {
-    const duration = Number(
-      request.params.seconds ?? request.params.duration
-    )
-    multiplier = Number.isFinite(duration) && duration > 0 ? duration : null
-  }
-
-  if (multiplier === null) return null
-
-  return {
-    amount: Math.round(pricing.amount * multiplier * 10000) / 10000,
-    currency: pricing.currency || 'CNY',
-    unit: pricing.unit,
-    ...(pricing.note ? { note: pricing.note } : {})
-  }
-}
-
-export function formatProposalCost(
-  estimate: AgentCostEstimate | null
-): string {
-  if (!estimate) return '未配置单价'
-  const symbol = estimate.currency === 'CNY' ? '¥' : ''
-  return `${symbol}${estimate.amount} ${estimate.currency}`
 }
 
 const STATUS_LABEL: Record<AgentProposalStatus, string> = {

@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { AgentProposal } from '../agent'
 import {
-  estimateProposalCost,
-  formatProposalCost,
   isProposalExpired,
   normalizeGenerationParams,
   proposalCount,
   proposalExpiresAt,
   proposalStatusLabel
 } from '../agent-proposal'
-import type { ModelDef, ParamDef } from '../provider-schema'
+import type { ParamDef } from '../provider-schema'
 
 const params: ParamDef[] = [
   {
@@ -47,17 +45,6 @@ const params: ParamDef[] = [
     defaultValue: '5'
   }
 ]
-
-function model(overrides: Partial<ModelDef> = {}): ModelDef {
-  return {
-    id: 'model-1',
-    name: '测试模型',
-    capability: 'image.t2i',
-    remoteModel: 'model-1',
-    params,
-    ...overrides
-  }
-}
 
 describe('normalizeGenerationParams', () => {
   it('fills defaults and converts boolean strings', () => {
@@ -114,85 +101,6 @@ describe('proposalCount', () => {
   it('always returns one for video and audio', () => {
     expect(proposalCount('video.t2v', { n: 3 })).toBe(1)
     expect(proposalCount('audio.tts', {})).toBe(1)
-  })
-})
-
-describe('estimateProposalCost', () => {
-  const request = {
-    nodeId: 'node-1',
-    modelKey: 'p/m',
-    prompt: 'cat',
-    params: { duration: '10', n: 2 }
-  }
-
-  it('returns null when pricing is missing', () => {
-    expect(estimateProposalCost(model(), request, 2)).toBeNull()
-  })
-
-  it('charges per request', () => {
-    expect(
-      estimateProposalCost(
-        model({ pricing: { currency: 'CNY', unit: 'request', amount: 0.2 } }),
-        request,
-        2
-      )
-    ).toEqual({ amount: 0.2, currency: 'CNY', unit: 'request' })
-  })
-
-  it('charges per image using count', () => {
-    expect(
-      estimateProposalCost(
-        model({ pricing: { currency: 'USD', unit: 'image', amount: 0.1 } }),
-        request,
-        3
-      )
-    ).toEqual({ amount: 0.3, currency: 'USD', unit: 'image' })
-  })
-
-  it('charges per second using duration', () => {
-    expect(
-      estimateProposalCost(
-        model({
-          capability: 'video.t2v',
-          pricing: { currency: 'CNY', unit: 'second', amount: 0.05 }
-        }),
-        request,
-        1
-      )
-    ).toEqual({ amount: 0.5, currency: 'CNY', unit: 'second' })
-  })
-
-  it('supports seconds as the duration param name', () => {
-    expect(
-      estimateProposalCost(
-        model({
-          capability: 'video.t2v',
-          pricing: { currency: 'CNY', unit: 'second', amount: 0.05 }
-        }),
-        { ...request, params: { seconds: '6' } },
-        1
-      )
-    ).toEqual({ amount: 0.3, currency: 'CNY', unit: 'second' })
-  })
-
-  it('cannot estimate token pricing', () => {
-    expect(
-      estimateProposalCost(
-        model({
-          capability: 'text.chat',
-          pricing: { currency: 'CNY', unit: '1k-tokens', amount: 0.01 }
-        }),
-        request,
-        1
-      )
-    ).toBeNull()
-  })
-
-  it('formats known and unknown costs', () => {
-    expect(formatProposalCost(null)).toBe('未配置单价')
-    expect(
-      formatProposalCost({ amount: 0.2, currency: 'CNY', unit: 'request' })
-    ).toBe('¥0.2 CNY')
   })
 })
 

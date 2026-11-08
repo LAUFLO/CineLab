@@ -209,7 +209,7 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
     id: 'generation.catalog',
     name: 'generation_catalog',
     description:
-      '列出当前已配置、可用的生成模型，包括能力、输入、参数和单价。生成前先用它确认 modelKey 和参数。',
+      '列出当前已配置、可用的生成模型，包括能力、输入和参数。生成前先用它确认 modelKey 和参数。',
     profiles: ['canvas'],
     readOnly: true,
     scope: 'generation',

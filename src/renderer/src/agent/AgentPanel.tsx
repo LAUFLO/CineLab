@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { AgentProposal } from '@shared/agent'
-import {
-  formatProposalCost,
-  proposalStatusLabel
-} from '@shared/agent-proposal'
+import { proposalStatusLabel } from '@shared/agent-proposal'
 import {
   agentTurnChangeCount,
   useAgentStore,
@@ -93,10 +90,6 @@ function ProposalCard({
       <div className="agent-proposal__row">
         <span>数量</span>
         <strong>{proposal.count}</strong>
-      </div>
-      <div className="agent-proposal__row">
-        <span>预估费用</span>
-        <strong>{formatProposalCost(proposal.estimatedCost)}</strong>
       </div>
 
       <div className="agent-proposal__prompt">{proposal.request.prompt}</div>

@@ -114,7 +114,6 @@ function proposalSummary(proposal: AgentProposal): Record<string, unknown> {
     modelKey: proposal.request.modelKey,
     modelName: proposal.modelName,
     count: proposal.count,
-    estimatedCost: proposal.estimatedCost,
     expiresAt: proposal.expiresAt
   }
 }

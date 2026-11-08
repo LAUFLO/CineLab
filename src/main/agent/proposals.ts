@@ -7,7 +7,6 @@ import type {
   AgentProposalStatus
 } from '@shared/agent'
 import {
-  estimateProposalCost,
   isProposalExpired,
   normalizeGenerationParams,
   proposalCount,
@@ -190,7 +189,6 @@ async function resolveModel(
   capability: Capability
   params: Record<string, unknown>
   count: number
-  estimatedCost: AgentProposal['estimatedCost']
 }> {
   const slash = request.modelKey.indexOf('/')
   const providerId = request.modelKey.slice(0, slash)
@@ -226,18 +224,12 @@ async function resolveModel(
   }
 
   const count = proposalCount(model.capability, normalized.params)
-  const estimatedCost = estimateProposalCost(
-    model,
-    { ...request, params: normalized.params },
-    count
-  )
 
   return {
     modelName: model.name,
     capability: model.capability,
     params: normalized.params,
-    count,
-    estimatedCost
+    count
   }
 }
 
@@ -271,7 +263,6 @@ export async function createProposal(
     modelName: model.modelName,
     capability: model.capability,
     count: model.count,
-    estimatedCost: model.estimatedCost,
     createdAt: new Date().toISOString(),
     expiresAt: proposalExpiresAt()
   }

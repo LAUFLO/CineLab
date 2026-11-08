@@ -53,8 +53,7 @@ const model: ModelDef = {
       ],
       defaultValue: '1:1'
     }
-  ],
-  pricing: { currency: 'CNY', unit: 'image', amount: 0.5 }
+  ]
 }
 
 function draft(overrides: Partial<AgentProposalDraft> = {}): AgentProposalDraft {
@@ -100,16 +99,11 @@ describe('agent generation proposals', () => {
     await fs.rm(root, { recursive: true, force: true })
   })
 
-  it('creates a pending proposal with count and cost', async () => {
+  it('creates a pending proposal with count', async () => {
     const proposal = await createProposal(root, 'main', draft())
 
     expect(proposal.status).toBe('pending')
     expect(proposal.count).toBe(2)
-    expect(proposal.estimatedCost).toEqual({
-      amount: 1,
-      currency: 'CNY',
-      unit: 'image'
-    })
     expect(proposal.capability).toBe('image.t2i')
     await expect(readFile(root, proposal.id)).resolves.toMatchObject({
       id: proposal.id,

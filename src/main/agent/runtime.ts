@@ -16,7 +16,14 @@ import {
   ensureSession,
   requireProjectRoot
 } from './session'
-import { AgentToolError, assertToolAllowed, toolDefinitionsForModel } from './tools'
+import {
+  AgentToolError,
+  assertToolAllowed,
+  getTool,
+  toolDefinitionsForModel
+} from './tools'
+import { executeMainTool } from './main-tools'
+import { skillCatalogPrompt } from './skills'
 
 const MAX_STEPS = 8
 const TOOL_TIMEOUT_MS = 30_000
@@ -192,8 +199,12 @@ async function runTurn(input: {
       throw new Error('还没有配置文本模型，请先在设置中配置 text.chat 模型')
     }
 
+    const catalog = await skillCatalogPrompt(root)
     const messages: AgentChatMessage[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      {
+        role: 'system',
+        content: catalog ? `${SYSTEM_PROMPT}\n\n${catalog}` : SYSTEM_PROMPT
+      },
       { role: 'user', content: request.message }
     ]
 
@@ -266,17 +277,31 @@ async function runTurn(input: {
         let toolResult: AgentToolResultInput
         try {
           assertToolAllowed(toolCall, scope, permissionMode)
-          callbacks.sendToolCall({
-            ...toolCall,
-            turnId: turn.id,
-            permissionMode,
-            scope
-          })
-          toolResult = await waitForToolResult(
-            turn.id,
-            call.callId,
-            active.controller.signal
-          )
+          const tool = getTool(toolCall.name)
+          if (tool?.executor === 'main') {
+            const mainResult = await executeMainTool(toolCall, scope)
+            toolResult = {
+              turnId: turn.id,
+              callId: call.callId,
+              ok: mainResult.ok,
+              ...(mainResult.result !== undefined
+                ? { result: mainResult.result }
+                : {}),
+              ...(mainResult.error ? { error: mainResult.error } : {})
+            }
+          } else {
+            callbacks.sendToolCall({
+              ...toolCall,
+              turnId: turn.id,
+              permissionMode,
+              scope
+            })
+            toolResult = await waitForToolResult(
+              turn.id,
+              call.callId,
+              active.controller.signal
+            )
+          }
           mergeChange(turn.change, toolResult.change)
         } catch (error) {
           const message =

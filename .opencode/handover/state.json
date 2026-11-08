@@ -7,7 +7,7 @@
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
   "nextPhase": "发布前体验完善",
-  "next_focus": "通用 AgentRuntime 已基于 main 重建，旧剪辑助手已删除；工具注册表与 CanvasCommand 任务包 A 完成（148 测试通过，真实 Agnes 改名+移动一次撤销）。下一步：技能目录骨架（三级目录/SKILL.md/skill.list+read），再开放建节点/连线/删除工具与 StageCommand；Agnes 视频队列恢复后补测。",
+  "next_focus": "通用 AgentRuntime 已基于 main 重建，旧剪辑助手已删除；工具注册表、CanvasCommand、技能目录骨架均已完成（153 测试通过；真实 Agnes 验证改名+移动一次撤销、项目技能 skill_list/skill_read）。下一步：开放建节点/连线/删除/分组画布工具，然后 StageCommand 骨架与生成提案；技能管理 UI 与 Agnes 视频队列补测后续进行。",
   "frontier": [
     {
       "id": "M2-1",
@@ -153,6 +153,23 @@
         "src/main/agent/tools.ts",
         "src/renderer/src/stores/canvas.ts",
         "src/renderer/src/agent/canvasBridge.ts"
+      ]
+    },
+    {
+      "id": "AGENT-SKILLS-1",
+      "title": "技能目录骨架：三级目录 / SKILL.md / skill.list / skill.read",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 shared/skills.ts（frontmatter 解析、名称校验、路径规范化）、main/agent/skills.ts（内置/全局/项目三级扫描，project > global > builtin，realpath 防逃逸、大小限制、分页读取）、main/agent/main-tools.ts 与 executor: main 分流；skill_list/skill_read 已接真实 Agnes，项目技能 test-director 成功列出并读取；内置 canvas-basics 同时可见。新增 5 个技能测试，26 文件 153 用例通过；typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-SKILLS-1.md",
+        "src/shared/skills.ts",
+        "src/shared/__tests__/skills.test.ts",
+        "src/main/agent/skills.ts",
+        "src/main/agent/main-tools.ts",
+        "src/main/agent/tools.ts",
+        "src/main/agent/runtime.ts",
+        "resources/skills/canvas-basics/SKILL.md",
+        "electron-builder.yml"
       ]
     },
     {
@@ -2028,6 +2045,10 @@
     {
       "category": "engineering",
       "content": "CanvasCommand 与回合级撤销：同一 turnId 的多个工具命令只 pushHistory 一次，endCommandTurn 清理；否则一次撤销只能回退最后一个命令。"
+    },
+    {
+      "category": "engineering",
+      "content": "技能读取必须在主进程做 realpath 校验：只允许 SKILL.md/references/assets，拒绝 ..、绝对路径、盘符和符号链接逃逸；作用域优先级 project > global > builtin。"
     }
   ],
   "designConventions": [

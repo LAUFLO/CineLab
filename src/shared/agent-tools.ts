@@ -22,6 +22,8 @@ export interface AgentToolDefinition {
   parameters: Record<string, unknown>
   replay: 'safe' | 'unsafe'
   requiresConfirm?: boolean
+  /** 默认 renderer；技能等主进程可直接执行 */
+  executor?: 'main' | 'renderer'
 }
 
 export function filterAgentTools(

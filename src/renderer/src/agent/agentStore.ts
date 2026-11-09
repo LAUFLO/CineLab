@@ -298,7 +298,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       .getState()
       .nodes.some((node) => node.id === proposal.request.nodeId)
     if (!nodeExists) {
-      set({ error: '目标节点已不在画布中，请让助手重新生成提案' })
+      set({ error: '目标节点已不在画布中，请让 CineBot 重新生成提案' })
       try {
         const next = await window.api.agent.proposalCancel(proposal.id)
         set({ proposal: next })
@@ -362,7 +362,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     const state = get()
     if (state.running || !text.trim()) return
     if (!state.sessionId) {
-      set({ error: '助手会话还没有准备好，请稍后重试' })
+      set({ error: 'CineBot 会话还没有准备好，请稍后重试' })
       return
     }
     const project = useProjectStore.getState()
@@ -478,11 +478,17 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         break
       case 'tool_end':
         set((state) => {
-          const index = state.messages.findIndex(
-            (message) =>
+          let index = -1
+          for (let cursor = state.messages.length - 1; cursor >= 0; cursor -= 1) {
+            const message = state.messages[cursor]
+            if (
               message.role === 'tool' &&
               message.callId === event.result.callId
-          )
+            ) {
+              index = cursor
+              break
+            }
+          }
           const next = [...state.messages]
           if (index >= 0) {
             next[index] = {
@@ -513,29 +519,48 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       case 'turn_end': {
         useCanvasStore.getState().endCommandTurn(event.turn.id)
         useTimelineStore.getState().endCommandTurn(event.turn.id)
-        set((state) => ({
-          running: false,
-          currentTurnId: null,
-          lastTurn: event.turn,
-          pendingConfirm: null,
-          confirming: false,
-          turns: [...state.turns, event.turn],
-          messages:
-            event.turn.status === 'cancelled'
-              ? [
-                  ...state.messages,
-                  {
-                    id: nextMessageId(),
-                    role: 'assistant',
-                    content: '已停止本轮。'
-                  }
-                ]
-              : state.messages,
-          error:
-            event.turn.status === 'error'
-              ? event.turn.error ?? '本轮执行失败'
-              : state.error
-        }))
+        set((state) => {
+          const messages = state.messages.map((message) =>
+            message.role === 'tool' &&
+            message.turnId === event.turn.id &&
+            message.toolStatus === 'running'
+              ? {
+                  ...message,
+                  toolStatus:
+                    event.turn.status === 'completed'
+                      ? ('ok' as const)
+                      : ('error' as const),
+                  content:
+                    event.turn.status === 'completed'
+                      ? message.content
+                      : '本轮已结束'
+                }
+              : message
+          )
+          return {
+            running: false,
+            currentTurnId: null,
+            lastTurn: event.turn,
+            pendingConfirm: null,
+            confirming: false,
+            turns: [...state.turns, event.turn],
+            messages:
+              event.turn.status === 'cancelled'
+                ? [
+                    ...messages,
+                    {
+                      id: nextMessageId(),
+                      role: 'assistant' as const,
+                      content: '已停止本轮。'
+                    }
+                  ]
+                : messages,
+            error:
+              event.turn.status === 'error'
+                ? event.turn.error ?? '本轮执行失败'
+                : state.error
+          }
+        })
         void window.api.agent.sessionList().then((sessions) => {
           const current = sessions.find(
             (session) => session.sessionId === get().sessionId

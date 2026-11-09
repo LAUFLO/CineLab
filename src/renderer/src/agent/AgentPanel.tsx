@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode
+} from 'react'
 import { createPortal } from 'react-dom'
 import type { AgentModelInfo, AgentProposal } from '@shared/agent'
 import type { SkillAdminEntry } from '@shared/skills'
@@ -40,6 +46,10 @@ const TOOL_LABELS: Record<string, string> = {
   timeline_update_clip: '调整片段',
   timeline_set_track: '调整轨道',
   timeline_add_marker: '添加标记',
+  timeline_auto_subtitles: '自动字幕',
+  timeline_remove_silence: '删除静音',
+  timeline_set_transition: '设置转场',
+  timeline_export: '导出成片',
   skill_list: '查看技能',
   skill_read: '读取技能'
 }
@@ -91,13 +101,38 @@ function MessageActions({
   )
 }
 
+function renderInline(text: string): ReactNode[] {
+  const parts: ReactNode[] = []
+  const pattern = /(\*\*[^*]+\*\*|`[^`]+`)/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index))
+    }
+    const token = match[0]
+    const key = `${match.index}-${token.slice(0, 8)}`
+    if (token.startsWith('**')) {
+      parts.push(<strong key={key}>{token.slice(2, -2)}</strong>)
+    } else {
+      parts.push(<code key={key}>{token.slice(1, -1)}</code>)
+    }
+    lastIndex = pattern.lastIndex
+  }
+
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+  return parts
+}
+
 function MessageBubble({ message }: { message: AgentMessage }) {
   return (
     <div className={`agent-message agent-message--${message.role}`}>
-      <div className="agent-message__role">
-        {message.role === 'user' ? '你' : '助手'}
+      <div className="agent-message__content">
+        {message.role === 'assistant'
+          ? renderInline(message.content)
+          : message.content}
       </div>
-      <div className="agent-message__content">{message.content}</div>
       {message.role === 'assistant' && message.content.trim() ? (
         <MessageActions content={message.content} />
       ) : null}
@@ -262,11 +297,11 @@ function ProposalCard({
         </div>
       ) : proposal.status === 'failed' ? (
         <div className="agent-proposal__hint">
-          该提案已提交过，不会重复扣费；请让助手重新生成。
+          该提案已提交过，不会重复扣费；请让 CineBot 重新生成。
         </div>
       ) : proposal.status === 'expired' ? (
         <div className="agent-proposal__hint">
-          提案已失效，请让助手重新生成。
+          提案已失效，请让 CineBot 重新生成。
         </div>
       ) : null}
     </section>
@@ -425,15 +460,19 @@ export function AgentPanel() {
   const panel = createPortal(
     <>
       {visible ? (
-        <section className="agent-panel" aria-label="CineLab 助手" ref={panelRef}>
+        <section className="agent-panel" aria-label="CineBot" ref={panelRef}>
           <header className="agent-panel__head">
             <button
               type="button"
               className="agent-session-trigger"
               onClick={() => setSessionMenuOpen((open) => !open)}
-              title="历史对话"
+              title="CineBot 历史对话"
             >
-              <span>{sessionTitle || '新对话'}</span>
+              <span className="agent-session-brand">CineBot</span>
+              <span className="agent-session-divider">·</span>
+              <span className="agent-session-title">
+                {sessionTitle || '新对话'}
+              </span>
               <Icon name="chevron-down" size={12} />
             </button>
             <div className="agent-panel__head-actions">
@@ -458,7 +497,7 @@ export function AgentPanel() {
               <button
                 type="button"
                 className="agent-icon-button"
-                title="收起助手"
+                title="收起 CineBot"
                 onClick={close}
               >
                 <Icon name="chevron-down" size={15} />
@@ -520,10 +559,10 @@ export function AgentPanel() {
             {messages.length === 0 ? (
               <div className="agent-empty">
                 <img className="agent-empty__icon" src={agentIcon} alt="" />
-                <div className="agent-empty__title">有什么可以帮你？</div>
+                <div className="agent-empty__title">我是 CineBot</div>
                 <div className="agent-empty__desc">
                   {clipMode
-                    ? '我可以读取时间线、移动片段、裁剪、切分或删除片段。'
+                    ? '我可以读取时间线、移动片段、自动字幕、删静音、设置转场或导出成片。'
                     : '我可以整理画布、搭导演台、登记生成提案，或读取你的技能。'}
                 </div>
                 <button
@@ -719,7 +758,7 @@ export function AgentPanel() {
                   <div>
                     <div className="agent-modal__title">选择文本模型</div>
                     <div className="agent-modal__desc">
-                      用于助手对话和工具调用
+                      用于 CineBot 对话和工具调用
                     </div>
                   </div>
                   <button
@@ -845,8 +884,8 @@ export function AgentPanel() {
           type="button"
           className="agent-fab"
           onClick={toggle}
-          aria-label="打开 CineLab 助手"
-          title="CineLab 助手（Ctrl+Shift+A）"
+          aria-label="打开 CineBot"
+          title="CineBot（Ctrl+Shift+A）"
         >
           <img className="agent-fab__icon" src={agentIcon} alt="" />
         </button>

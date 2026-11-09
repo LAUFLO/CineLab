@@ -13,6 +13,7 @@ import {
   STAGE_LIMITS,
   STAGE_OBJECT_TYPES
 } from '@shared/stage-schema'
+import { TIMELINE_TRANSITION_TYPES } from '@shared/timeline-schema'
 
 export class AgentToolError extends Error {
   readonly code: string
@@ -649,8 +650,135 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe'
+  },
+  {
+    id: 'timeline.autoSubtitles',
+    name: 'timeline_auto_subtitles',
+    description:
+      '对指定片段或整条时间线做语音转写，自动生成字幕片段。省略 clipId 时优先使用当前选中片段；没有选中则转写整条时间线。需要先安装本地字幕运行时和 Whisper Base 模型。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipId: {
+          type: 'string',
+          description: '可选，视频或音频片段 ID；省略时使用当前选中片段或整条时间线'
+        }
+      },
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.removeSilence',
+    name: 'timeline_remove_silence',
+    description:
+      '检测并删除静音区间。省略 clipIds 时优先处理当前选中片段，没有选中则处理全部未锁定轨道上的视频和音频片段。会缩短成片时长，执行前需要用户确认。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipIds: {
+          type: 'array',
+          items: { type: 'string' },
+          minItems: 1,
+          maxItems: 100,
+          description: '可选，要检测的片段 ID 列表；省略时按选中或全部片段处理'
+        },
+        paddingMs: {
+          type: 'number',
+          description: '静音两端保留的缓冲毫秒，默认 120'
+        },
+        minDurationMs: {
+          type: 'number',
+          description: '短于该值的静音不处理，默认 400'
+        },
+        ripple: {
+          type: 'boolean',
+          description: '删除后是否闭合空隙，默认 true'
+        }
+      },
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
+  },
+  {
+    id: 'timeline.setTransition',
+    name: 'timeline_set_transition',
+    description:
+      '给单个视觉片段设置片头转场，或传 type=none 移除转场。音频片段不支持转场。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipId: { type: 'string', description: '片段 ID' },
+        type: {
+          type: 'string',
+          enum: ['none', ...TIMELINE_TRANSITION_TYPES],
+          description: '转场类型；none 表示移除'
+        },
+        durationMs: {
+          type: 'number',
+          description: '转场时长毫秒，默认 500，范围 100-10000'
+        }
+      },
+      required: ['clipId', 'type'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.export',
+    name: 'timeline_export',
+    description:
+      '把当前时间线渲染导出为视频文件。任务可能耗时较长，执行前需要用户确认；导出完成后会尽量写回画布上的成片节点。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        codec: {
+          type: 'string',
+          enum: ['h264', 'hevc', 'av1'],
+          description: '视频编码，默认 h264'
+        }
+      },
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
   }
 ]
+
+/** 真正修改时间线文档的工具；只读、选择和导出不计入回合撤销 */
+const TIMELINE_WRITE_TOOL_NAMES = new Set([
+  'timeline_move_clips',
+  'timeline_trim_clip',
+  'timeline_split_clips',
+  'timeline_remove_clips',
+  'timeline_update_clip',
+  'timeline_set_track',
+  'timeline_add_marker',
+  'timeline_auto_subtitles',
+  'timeline_remove_silence',
+  'timeline_set_transition'
+])
+
+export function isTimelineWriteTool(name: string): boolean {
+  return TIMELINE_WRITE_TOOL_NAMES.has(name)
+}
 
 export const SKILL_TOOLS: AgentToolDefinition[] = [
   {
@@ -739,6 +867,14 @@ export function toolConfirmationReason(
 
   if (call.name === 'timeline_remove_clips') {
     return `将删除 ${clipIds.length} 个时间线片段，成片时长会改变。`
+  }
+  if (call.name === 'timeline_remove_silence') {
+    return clipIds.length > 0
+      ? `将检测并删除 ${clipIds.length} 个片段所在轨道的静音，成片时长会缩短。`
+      : '将检测并删除时间线中的静音区间，成片时长会缩短。'
+  }
+  if (call.name === 'timeline_export') {
+    return '将渲染并导出成片，时间取决于时间线长度。'
   }
   if (call.name === 'canvas_delete_node') {
     return '将删除画布节点及其所有连线。'
@@ -1354,6 +1490,80 @@ export function assertToolAllowed(
           call.args.color.length > 50)
       ) {
         throw new AgentToolError('invalid_params', 'color 无效')
+      }
+    }
+
+    if (call.name === 'timeline_auto_subtitles') {
+      if (
+        call.args.clipId !== undefined &&
+        (typeof call.args.clipId !== 'string' ||
+          !call.args.clipId.trim())
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+    }
+
+    if (call.name === 'timeline_remove_silence') {
+      if (call.args.clipIds !== undefined) {
+        assertClipIds(call.args.clipIds)
+      }
+      for (const key of ['paddingMs', 'minDurationMs'] as const) {
+        const value = call.args[key]
+        if (
+          value !== undefined &&
+          (typeof value !== 'number' ||
+            !Number.isFinite(value) ||
+            value < 0 ||
+            value > 10_000)
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `${key} 必须是 0-10000 的数字`
+          )
+        }
+      }
+      if (
+        call.args.ripple !== undefined &&
+        typeof call.args.ripple !== 'boolean'
+      ) {
+        throw new AgentToolError('invalid_params', 'ripple 必须是布尔值')
+      }
+    }
+
+    if (call.name === 'timeline_set_transition') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      if (
+        ![...TIMELINE_TRANSITION_TYPES, 'none'].includes(
+          String(call.args.type)
+        )
+      ) {
+        throw new AgentToolError('invalid_params', '转场类型无效')
+      }
+      if (
+        call.args.durationMs !== undefined &&
+        (typeof call.args.durationMs !== 'number' ||
+          !Number.isFinite(call.args.durationMs) ||
+          call.args.durationMs < 100 ||
+          call.args.durationMs > 10_000)
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          'durationMs 必须在 100-10000 之间'
+        )
+      }
+    }
+
+    if (call.name === 'timeline_export') {
+      if (
+        call.args.codec !== undefined &&
+        !['h264', 'hevc', 'av1'].includes(String(call.args.codec))
+      ) {
+        throw new AgentToolError('invalid_params', 'codec 无效')
       }
     }
   }

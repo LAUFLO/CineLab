@@ -9,7 +9,7 @@ export interface AgentScope {
   projectPath: string
   canvasId: string
   selectedNodeIds: string[]
-  /** 剪辑助手作用域：当前打开的时间线 */
+  /** CineBot 剪辑作用域：当前打开的时间线 */
   timelineId?: string
   studioNodeId?: string
   selectedClipIds?: string[]

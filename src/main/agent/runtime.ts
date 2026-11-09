@@ -16,6 +16,7 @@ import {
   appendMessage,
   appendTurn,
   ensureSession,
+  ensureSessionTitle,
   requireProjectRoot
 } from './session'
 import {
@@ -237,8 +238,9 @@ async function runTurn(input: {
       content: request.message,
       turnId: turn.id
     })
+    await ensureSessionTitle(root, turn.sessionId, request.message)
 
-    const runtime = await resolveTextModel()
+    const runtime = await resolveTextModel(request.modelKey)
     if (!runtime) {
       throw new Error('还没有配置文本模型，请先在设置中配置 text.chat 模型')
     }

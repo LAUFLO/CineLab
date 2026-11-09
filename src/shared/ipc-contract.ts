@@ -49,6 +49,7 @@ import type {
   AgentModelInfo,
   AgentProposal,
   AgentProposalDraft,
+  AgentSessionInfo,
   AgentSessionSnapshot,
   AgentToolCallRequest,
   AgentToolResultInput
@@ -383,10 +384,17 @@ export interface AgentApi {
   cancel(turnId: string): Promise<void>
   toolResult(input: AgentToolResultInput): Promise<void>
   confirm(input: AgentConfirmInput): Promise<void>
-  sessionLoad(): Promise<AgentSessionSnapshot>
-  modelInfo(): Promise<AgentModelInfo | null>
+  sessionLoad(sessionId: string): Promise<AgentSessionSnapshot>
+  sessionList(): Promise<AgentSessionInfo[]>
+  sessionCreate(title?: string): Promise<AgentSessionInfo>
+  sessionRename(
+    sessionId: string,
+    title: string
+  ): Promise<AgentSessionInfo>
+  modelInfo(modelKey?: string): Promise<AgentModelInfo | null>
+  textModels(): Promise<AgentModelInfo[]>
   proposalCreate(input: AgentProposalDraft): Promise<AgentProposal>
-  proposalActive(): Promise<AgentProposal | null>
+  proposalActive(sessionId?: string): Promise<AgentProposal | null>
   proposalSubmit(proposalId: string): Promise<AgentProposal>
   proposalCancel(proposalId: string): Promise<AgentProposal>
   onEvent(callback: (event: AgentEvent) => void): () => void

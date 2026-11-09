@@ -4,6 +4,7 @@ import type {
   AgentModelInfo,
   AgentPermissionMode,
   AgentProposal,
+  AgentSessionInfo,
   AgentSessionMessage,
   AgentToolCall,
   AgentTurn
@@ -25,12 +26,17 @@ export interface AgentMessage {
 
 interface AgentState {
   visible: boolean
+  sessionId: string
+  sessionTitle: string
+  sessions: AgentSessionInfo[]
   messages: AgentMessage[]
   turns: AgentTurn[]
   running: boolean
   currentTurnId: string | null
   permissionMode: AgentPermissionMode
+  modelKey: string | null
   modelInfo: AgentModelInfo | null
+  textModels: AgentModelInfo[]
   error: string | null
   lastTurn: AgentTurn | null
   proposal: AgentProposal | null
@@ -45,8 +51,13 @@ interface AgentState {
   open: () => void
   close: () => void
   setPermissionMode: (mode: AgentPermissionMode) => void
-  loadSession: () => Promise<void>
+  loadSessions: () => Promise<void>
+  loadSession: (sessionId?: string) => Promise<void>
+  newSession: () => Promise<void>
+  selectSession: (sessionId: string) => Promise<void>
   loadModelInfo: () => Promise<void>
+  loadTextModels: () => Promise<void>
+  setModelKey: (modelKey: string | null) => Promise<void>
   loadProposal: () => Promise<void>
   submitProposal: () => Promise<void>
   cancelProposal: () => Promise<void>
@@ -118,14 +129,43 @@ function appendText(
   ]
 }
 
+function readStored(key: string): string | null {
+  try {
+    return typeof localStorage !== 'undefined'
+      ? localStorage.getItem(key)
+      : null
+  } catch {
+    return null
+  }
+}
+
+function writeStored(key: string, value: string | null): void {
+  try {
+    if (typeof localStorage === 'undefined') return
+    if (value) localStorage.setItem(key, value)
+    else localStorage.removeItem(key)
+  } catch {
+    // 无痕模式或存储被禁用时忽略
+  }
+}
+
+function modelKeyOf(model: AgentModelInfo): string {
+  return `${model.providerId}/${model.modelId}`
+}
+
 export const useAgentStore = create<AgentState>((set, get) => ({
   visible: false,
+  sessionId: '',
+  sessionTitle: '新对话',
+  sessions: [],
   messages: [],
   turns: [],
   running: false,
   currentTurnId: null,
   permissionMode: 'current',
+  modelKey: readStored('cinelab.agent.modelKey'),
   modelInfo: null,
+  textModels: [],
   error: null,
   lastTurn: null,
   proposal: null,
@@ -139,31 +179,110 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   setPermissionMode: (mode) => set({ permissionMode: mode }),
   clearError: () => set({ error: null }),
 
-  loadSession: async () => {
+  loadSessions: async () => {
     try {
-      const session = await window.api.agent.sessionLoad()
+      let sessions = await window.api.agent.sessionList()
+      const stored = readStored('cinelab.agent.sessionId')
+      let target =
+        sessions.find((session) => session.sessionId === stored) ??
+        sessions[0]
+      if (!target) {
+        target = await window.api.agent.sessionCreate('新对话')
+        sessions = [target, ...sessions]
+      }
+      set({ sessions })
+      await get().loadSession(target.sessionId)
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : '读取会话失败' })
+    }
+  },
+
+  loadSession: async (sessionId) => {
+    const id = sessionId ?? get().sessionId
+    if (!id) {
+      await get().loadSessions()
+      return
+    }
+    try {
+      const session = await window.api.agent.sessionLoad(id)
+      const info = get().sessions.find((item) => item.sessionId === id)
+      writeStored('cinelab.agent.sessionId', id)
       set({
+        sessionId: id,
+        sessionTitle: session.title ?? info?.title ?? '新对话',
         messages: session.messages.map(toAgentMessage),
         turns: session.turns,
-        lastTurn: session.turns[session.turns.length - 1] ?? null
+        lastTurn: session.turns[session.turns.length - 1] ?? null,
+        running: false,
+        currentTurnId: null,
+        proposal: null,
+        pendingConfirm: null,
+        confirming: false,
+        error: null
       })
     } catch (error) {
       set({ error: error instanceof Error ? error.message : '读取会话失败' })
     }
   },
 
+  newSession: async () => {
+    if (get().running) return
+    try {
+      const info = await window.api.agent.sessionCreate('新对话')
+      set((state) => ({
+        sessions: [info, ...state.sessions.filter(
+          (session) => session.sessionId !== info.sessionId
+        )],
+        error: null
+      }))
+      await get().loadSession(info.sessionId)
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : '新建会话失败' })
+    }
+  },
+
+  selectSession: async (sessionId) => {
+    if (get().running || sessionId === get().sessionId) return
+    await get().loadSession(sessionId)
+  },
+
   loadModelInfo: async () => {
     try {
-      const info = await window.api.agent.modelInfo()
+      const info = await window.api.agent.modelInfo(
+        get().modelKey ?? undefined
+      )
       set({ modelInfo: info })
     } catch {
       set({ modelInfo: null })
     }
   },
 
+  loadTextModels: async () => {
+    try {
+      const models = await window.api.agent.textModels()
+      const current = get().modelKey
+      if (current && !models.some((model) => modelKeyOf(model) === current)) {
+        writeStored('cinelab.agent.modelKey', null)
+        set({ modelKey: null, textModels: models })
+        return
+      }
+      set({ textModels: models })
+    } catch {
+      set({ textModels: [] })
+    }
+  },
+
+  setModelKey: async (modelKey) => {
+    writeStored('cinelab.agent.modelKey', modelKey)
+    set({ modelKey })
+    await get().loadModelInfo()
+  },
+
   loadProposal: async () => {
     try {
-      const proposal = await window.api.agent.proposalActive()
+      const proposal = await window.api.agent.proposalActive(
+        get().sessionId || undefined
+      )
       set({ proposal })
     } catch {
       set({ proposal: null })
@@ -242,6 +361,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   send: async (text) => {
     const state = get()
     if (state.running || !text.trim()) return
+    if (!state.sessionId) {
+      set({ error: '助手会话还没有准备好，请稍后重试' })
+      return
+    }
     const project = useProjectStore.getState()
     const canvas = useCanvasStore.getState()
     if (!project.canvasId) {
@@ -289,6 +412,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         message: text.trim(),
         canvasId: project.canvasId,
         selectedNodeIds,
+        sessionId: state.sessionId,
+        ...(state.modelKey ? { modelKey: state.modelKey } : {}),
         ...(profileId === 'clip' && timelineId ? { timelineId } : {}),
         ...(profileId === 'clip' && studioNode
           ? { studioNodeId: studioNode.id }
@@ -319,11 +444,15 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   applyEvent: (event) => {
     switch (event.type) {
       case 'turn_start':
-        set({
+        set((state) => ({
           running: true,
           currentTurnId: event.turn.id,
-          lastTurn: event.turn
-        })
+          lastTurn: event.turn,
+          sessionTitle:
+            state.sessionTitle === '新对话' && event.turn.userText.trim()
+              ? event.turn.userText.trim().slice(0, 40)
+              : state.sessionTitle
+        }))
         break
       case 'text':
       case 'text_delta':
@@ -381,7 +510,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           }
         })
         break
-      case 'turn_end':
+      case 'turn_end': {
         useCanvasStore.getState().endCommandTurn(event.turn.id)
         useTimelineStore.getState().endCommandTurn(event.turn.id)
         set((state) => ({
@@ -407,7 +536,17 @@ export const useAgentStore = create<AgentState>((set, get) => ({
               ? event.turn.error ?? '本轮执行失败'
               : state.error
         }))
+        void window.api.agent.sessionList().then((sessions) => {
+          const current = sessions.find(
+            (session) => session.sessionId === get().sessionId
+          )
+          set({
+            sessions,
+            ...(current ? { sessionTitle: current.title } : {})
+          })
+        })
         break
+      }
       case 'proposal':
         set({ proposal: event.proposal })
         break

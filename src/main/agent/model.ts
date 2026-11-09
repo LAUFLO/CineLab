@@ -37,7 +37,55 @@ export interface AgentChatResult {
   usage?: AgentUsage
 }
 
-export async function resolveTextModel(): Promise<AgentRuntimeModel | null> {
+export async function listTextModels(): Promise<AgentModelInfo[]> {
+  const providers = await listProviders()
+  const models: AgentModelInfo[] = []
+
+  for (const provider of providers) {
+    if (!provider.hasKey) continue
+    for (const model of provider.models) {
+      if (model.capability !== 'text.chat') continue
+      models.push({
+        providerId: provider.id,
+        modelId: model.id,
+        name: model.name,
+        providerName: provider.name
+      })
+    }
+  }
+
+  return models
+}
+
+export async function resolveTextModel(
+  modelKey?: string
+): Promise<AgentRuntimeModel | null> {
+  if (modelKey) {
+    const slash = modelKey.indexOf('/')
+    if (slash <= 0) return null
+    const providerId = modelKey.slice(0, slash)
+    const modelId = modelKey.slice(slash + 1)
+    const runtime = await resolveProvider(providerId)
+    if (!runtime || !runtime.apiKey) return null
+    const model = runtime.models.find(
+      (item) => item.id === modelId && item.capability === 'text.chat'
+    )
+    if (!model) return null
+    return {
+      info: {
+        providerId,
+        modelId,
+        name: model.name
+      },
+      model,
+      provider: {
+        baseUrl: runtime.baseUrl,
+        apiKey: runtime.apiKey,
+        ...(runtime.headers ? { headers: runtime.headers } : {})
+      }
+    }
+  }
+
   const providers = await listProviders()
 
   for (const provider of providers) {
@@ -45,7 +93,7 @@ export async function resolveTextModel(): Promise<AgentRuntimeModel | null> {
     if (!model) continue
 
     const runtime = await resolveProvider(provider.id)
-    if (!runtime) continue
+    if (!runtime || !runtime.apiKey) continue
 
     return {
       info: {

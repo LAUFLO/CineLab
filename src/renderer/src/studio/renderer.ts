@@ -307,8 +307,24 @@ function drawClipFrame(
   if (source instanceof HTMLVideoElement) {
     if (source.readyState < 2) return
     const target = sourceTime(clip, timeMs)
-    if (Math.abs(source.currentTime - target) > 0.04) {
-      source.currentTime = Math.max(0, target)
+
+    if (pools.playing) {
+      // 播放时让视频自己解码播放，避免每帧 seek 造成闪烁
+      const rate = Math.max(0.25, Math.min(4, clip.speed || 1))
+      if (Math.abs(source.playbackRate - rate) > 0.001) {
+        source.playbackRate = rate
+      }
+      if (source.paused) {
+        source.currentTime = Math.max(0, target)
+        void source.play().catch(() => undefined)
+      } else if (Math.abs(source.currentTime - target) > 0.3) {
+        source.currentTime = Math.max(0, target)
+      }
+    } else {
+      if (!source.paused) source.pause()
+      if (Math.abs(source.currentTime - target) > 0.04) {
+        source.currentTime = Math.max(0, target)
+      }
     }
   } else if (!source.complete || !source.naturalWidth) {
     return
@@ -323,6 +339,18 @@ export function renderTimeline({ ctx, doc, timeMs, pools, playing }: RenderInput
   const height = ctx.canvas.height
 
   pools.playing = Boolean(playing)
+
+  const activeIds = new Set(
+    doc.clips
+      .filter(
+        (clip) =>
+          clip.startMs <= timeMs && clip.startMs + clip.durationMs > timeMs
+      )
+      .map((clip) => clip.id)
+  )
+  for (const [clipId, video] of pools.videos) {
+    if (!activeIds.has(clipId) && !video.paused) video.pause()
+  }
 
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, width, height)

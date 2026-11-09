@@ -22,6 +22,7 @@ import {
 } from '@shared/timeline-schema'
 import { useTimelineStore } from '../stores/timeline'
 import { useUIStore } from '../stores/ui'
+import { Select } from '../components/Select'
 import { AssistantPane } from './AssistantPane'
 import { BezierEditor } from './BezierEditor'
 
@@ -588,7 +589,9 @@ export function InspectorPane() {
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   type AutoCutAction = 'silence' | 'shots' | 'beats' | 'beat-split'
   const [runningAction, setRunningAction] = useState<AutoCutAction | null>(null)
-  const [pane, setPane] = useState<'props' | 'assistant'>('props')
+  const [pane, setPane] = useState<
+    'props' | 'visual' | 'audio' | 'assistant'
+  >('props')
   const clip = doc?.clips.find((item) => item.id === selectedIds[0]) ?? null
 
   const confirmPlan = (
@@ -853,6 +856,20 @@ export function InspectorPane() {
         </button>
         <button
           type="button"
+          className={`studio-inspector__tab ${pane === 'visual' ? 'is-active' : ''}`}
+          onClick={() => setPane('visual')}
+        >
+          画面
+        </button>
+        <button
+          type="button"
+          className={`studio-inspector__tab ${pane === 'audio' ? 'is-active' : ''}`}
+          onClick={() => setPane('audio')}
+        >
+          音频
+        </button>
+        <button
+          type="button"
           className={`studio-inspector__tab ${pane === 'assistant' ? 'is-active' : ''}`}
           onClick={() => setPane('assistant')}
         >
@@ -864,6 +881,7 @@ export function InspectorPane() {
         <AssistantPane />
       ) : clip ? (
         <>
+          {pane === 'props' ? (
           <Section title="基础">
             <Field label="名称" value={clip.name || '—'} />
             <Field label="起点" value={formatTimecode(clip.startMs)} />
@@ -871,22 +889,22 @@ export function InspectorPane() {
             {clip.kind !== 'text' ? (
               <label className="studio-field">
                 <span>速度</span>
-                <select
-                  value={clip.speed}
-                  onChange={(event) => changeSpeed(Number(event.target.value))}
-                >
-                  {[0.25, 0.5, 1, 1.5, 2, 4].map((speed) => (
-                    <option key={speed} value={speed}>
-                      {speed}×
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  value={String(clip.speed)}
+                  options={[0.25, 0.5, 1, 1.5, 2, 4].map((speed) => ({
+                    value: String(speed),
+                    label: `${speed}×`
+                  }))}
+                  onChange={(value) => changeSpeed(Number(value))}
+                />
               </label>
             ) : (
               <Field label="速度" value={`${clip.speed.toFixed(1)}×`} />
             )}
           </Section>
+          ) : null}
 
+          {pane === 'visual' ? (
           <Section title="画面">
             <label className="studio-field">
               <span>缩放</span>
@@ -983,16 +1001,24 @@ export function InspectorPane() {
               </button>
             ) : null}
           </Section>
+          ) : null}
 
-          {clip.kind === 'video' || clip.kind === 'image' ? (
+          {pane === 'visual' && (clip.kind === 'video' || clip.kind === 'image') ? (
             <Section title="滤镜">
               <label className="studio-field">
                 <span>预设</span>
-                <select
+                <Select
                   value=""
-                  onChange={(event) => {
+                  options={[
+                    { value: '', label: '选择滤镜' },
+                    ...FILTER_PRESETS.map((preset) => ({
+                      value: preset.id,
+                      label: preset.name
+                    }))
+                  ]}
+                  onChange={(value) => {
                     const preset = FILTER_PRESETS.find(
-                      (item) => item.id === event.target.value
+                      (item) => item.id === value
                     )
                     if (!preset) return
                     dispatch({
@@ -1001,14 +1027,7 @@ export function InspectorPane() {
                       patch: { filter: { ...preset.value } }
                     })
                   }}
-                >
-                  <option value="">选择滤镜</option>
-                  {FILTER_PRESETS.map((preset) => (
-                    <option key={preset.id} value={preset.id}>
-                      {preset.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
               <label className="studio-field">
                 <span>亮度</span>
@@ -1098,29 +1117,31 @@ export function InspectorPane() {
             </Section>
           ) : null}
 
-          {clip.kind === 'video' || clip.kind === 'image' ? (
+          {pane === 'visual' && (clip.kind === 'video' || clip.kind === 'image') ? (
             <Section title="转场">
               <label className="studio-field">
                 <span>类型</span>
-                <select
+                <Select
                   value={clip.transitionIn?.type ?? 'none'}
-                  onChange={(event) =>
+                  options={[
+                    { value: 'none', label: '无' },
+                    { value: 'fade', label: '交叉淡化' },
+                    { value: 'dip-black', label: '黑场' },
+                    { value: 'wipe-left', label: '左擦除' },
+                    { value: 'wipe-right', label: '右擦除' },
+                    { value: 'slide-left', label: '左滑入' },
+                    { value: 'slide-right', label: '右滑入' },
+                    { value: 'zoom-in', label: '缩放进入' }
+                  ]}
+                  onChange={(value) =>
                     changeTransition(
-                      event.target
-                        .value as 'none' | NonNullable<TimelineClip['transitionIn']>['type'],
+                      value as
+                        | 'none'
+                        | NonNullable<TimelineClip['transitionIn']>['type'],
                       clip.transitionIn?.durationMs ?? 500
                     )
                   }
-                >
-                  <option value="none">无</option>
-                  <option value="fade">交叉淡化</option>
-                  <option value="dip-black">黑场</option>
-                  <option value="wipe-left">左擦除</option>
-                  <option value="wipe-right">右擦除</option>
-                  <option value="slide-left">左滑入</option>
-                  <option value="slide-right">右滑入</option>
-                  <option value="zoom-in">缩放进入</option>
-                </select>
+                />
               </label>
               <label className="studio-field">
                 <span>时长</span>
@@ -1142,6 +1163,7 @@ export function InspectorPane() {
             </Section>
           ) : null}
 
+          {pane === 'audio' ? (
           <Section title="声音">
             <Field label="音量" value={`${Math.round(clip.volume * 100)}%`} />
             <Field label="淡入" value={`${clip.fadeInMs} ms`} />
@@ -1196,20 +1218,20 @@ export function InspectorPane() {
                 </label>
                 <label className="studio-field">
                   <span>变声</span>
-                  <select
+                  <Select
                     value={clip.audioFx?.voiceEffect ?? 'none'}
-                    onChange={(event) =>
+                    options={[
+                      { value: 'none', label: '无' },
+                      { value: 'chipmunk', label: '花栗鼠' },
+                      { value: 'robot', label: '机器人' },
+                      { value: 'telephone', label: '电话' }
+                    ]}
+                    onChange={(value) =>
                       updateAudioFx({
-                        voiceEffect: event.target
-                          .value as AudioFxSettings['voiceEffect']
+                        voiceEffect: value as AudioFxSettings['voiceEffect']
                       })
                     }
-                  >
-                    <option value="none">无</option>
-                    <option value="chipmunk">花栗鼠</option>
-                    <option value="robot">机器人</option>
-                    <option value="telephone">电话</option>
-                  </select>
+                  />
                 </label>
                 <small className="studio-field-hint">
                   音频清理在导出时生效
@@ -1226,12 +1248,15 @@ export function InspectorPane() {
               </button>
             ) : null}
           </Section>
+          ) : null}
 
-          {clip.kind !== 'text' ? (
+          {pane === 'props' && clip.kind !== 'text' ? (
             <AnalysisSection clip={clip} />
           ) : null}
 
-          {(clip.kind === 'video' || clip.kind === 'audio') && clip.media ? (
+          {pane === 'audio' &&
+          (clip.kind === 'video' || clip.kind === 'audio') &&
+          clip.media ? (
             <Section title="自动粗剪">
               <button
                 type="button"
@@ -1273,19 +1298,21 @@ export function InspectorPane() {
             </Section>
           ) : null}
 
-          {clip.kind !== 'text' ? (
+          {pane === 'visual' && clip.kind !== 'text' ? (
             <KeyframeSection clip={clip} playheadMs={playheadMs} />
           ) : null}
 
-          {clip.kind === 'text' ? (
-            <SubtitleSection clip={clip} />
-          ) : (
-            <Section title="文字">
-              <Field label="内容" value={clip.text?.content ?? '—'} />
-              <Field label="字号" value={`${clip.text?.fontSize ?? 64} px`} />
-              <Field label="颜色" value={clip.text?.color ?? '—'} />
-            </Section>
-          )}
+          {pane === 'props' ? (
+            clip.kind === 'text' ? (
+              <SubtitleSection clip={clip} />
+            ) : (
+              <Section title="文字">
+                <Field label="内容" value={clip.text?.content ?? '—'} />
+                <Field label="字号" value={`${clip.text?.fontSize ?? 64} px`} />
+                <Field label="颜色" value={clip.text?.color ?? '—'} />
+              </Section>
+            )
+          ) : null}
         </>
       ) : (
         <Section title="时间线">

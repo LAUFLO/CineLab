@@ -111,6 +111,8 @@ interface Snapshot {
 interface NodeClipboard {
   nodes: CanvasNode[]
   edges: CineEdge[]
+  /** 一端在复制集合内、一端在外部的连线，粘贴时按需重建 */
+  boundaryEdges?: CineEdge[]
 }
 
 const HISTORY_LIMIT = 60
@@ -138,6 +140,71 @@ export interface CreateGroupOptions {
   color?: GroupColor
   columns?: number
   allowSingle?: boolean
+}
+
+/** 复制/粘贴时把节点内部引用的画布节点 id 映射到新节点 */
+function remapNodeReferences(
+  node: CanvasNode,
+  idMap: Map<string, string>
+): void {
+  const mapRef = (id: string): string => idMap.get(id) ?? id
+
+  if (node.type === 'cine') {
+    if (node.data.sourceNodeId) {
+      node.data.sourceNodeId = mapRef(node.data.sourceNodeId)
+    }
+    if (node.data.studyOutputNodeIds) {
+      node.data.studyOutputNodeIds = node.data.studyOutputNodeIds
+        .map((id) => idMap.get(id))
+        .filter((id): id is string => Boolean(id))
+    }
+  }
+
+  if (node.type === 'video-op') {
+    node.data.sourceNodeId = mapRef(node.data.sourceNodeId)
+    if (node.data.resultNodeId) {
+      node.data.resultNodeId = mapRef(node.data.resultNodeId)
+    }
+  }
+
+  if (node.type === 'studio' && node.data.references) {
+    const next: Record<string, string> = {}
+    for (const [key, value] of Object.entries(node.data.references)) {
+      next[mapRef(key)] = value
+    }
+    node.data.references = next
+  }
+}
+
+/**
+ * 重建粘贴/复制后的连线：
+ * - 两端都在复制集合内：映射到新节点
+ * - 只有一端在集合内：另一端保留原节点，前提是它仍存在
+ */
+function remapEdges(
+  edges: CineEdge[],
+  idMap: Map<string, string>,
+  liveIds: Set<string>,
+  stamp: string
+): CineEdge[] {
+  const result: CineEdge[] = []
+
+  edges.forEach((edge, index) => {
+    const source = idMap.get(edge.source) ?? edge.source
+    const target = idMap.get(edge.target) ?? edge.target
+    if (source === target) return
+    if (!liveIds.has(source) || !liveIds.has(target)) return
+
+    result.push({
+      ...structuredClone(edge),
+      id: `edge_${stamp}_${index + 1}`,
+      source,
+      target,
+      selected: false
+    })
+  })
+
+  return result
 }
 
 interface CanvasStore {
@@ -1440,8 +1507,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const edges = get().edges.filter(
       (edge) => ids.has(edge.source) && ids.has(edge.target)
     )
+    const boundaryEdges = get().edges.filter((edge) => {
+      const sourceInside = ids.has(edge.source)
+      const targetInside = ids.has(edge.target)
+      return sourceInside !== targetInside
+    })
 
-    set({ clipboard: structuredClone({ nodes: selected, edges }) })
+    set({
+      clipboard: structuredClone({ nodes: selected, edges, boundaryEdges })
+    })
     return selected.length
   },
 
@@ -1489,6 +1563,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       const id = idMap.get(node.id) as string
       const copiedParent = node.parentId ? idMap.has(node.parentId) : false
       const clone = structuredClone(node)
+      remapNodeReferences(clone, idMap)
 
       if (clone.type === 'studio') {
         clone.data.timelineId = studioTimelines?.get(node.id) as string
@@ -1511,15 +1586,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
     })
 
-    const pastedEdges = clipboard.edges
-      .filter((edge) => idMap.has(edge.source) && idMap.has(edge.target))
-      .map((edge, index) => ({
-        ...structuredClone(edge),
-        id: `edge_${stamp}_${index + 1}`,
-        source: idMap.get(edge.source) as string,
-        target: idMap.get(edge.target) as string,
-        selected: false
-      }))
+    const liveIds = new Set([
+      ...get().nodes.map((node) => node.id),
+      ...pastedNodes.map((node) => node.id)
+    ])
+    const pastedEdges = remapEdges(
+      [...clipboard.edges, ...(clipboard.boundaryEdges ?? [])],
+      idMap,
+      liveIds,
+      stamp
+    )
 
     set({
       nodes: [
@@ -1562,6 +1638,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const internalEdges = get().edges.filter(
       (edge) => expandedIds.has(edge.source) && expandedIds.has(edge.target)
     )
+    const boundaryEdges = get().edges.filter((edge) => {
+      const sourceInside = expandedIds.has(edge.source)
+      const targetInside = expandedIds.has(edge.target)
+      return sourceInside !== targetInside
+    })
 
     get().pushHistory()
 
@@ -1580,6 +1661,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         ? idMap.get(node.parentId) ?? node.parentId
         : undefined
       const clone = structuredClone(node)
+      remapNodeReferences(clone, idMap)
 
       if (clone.type === 'studio') {
         clone.data.timelineId = studioTimelines?.get(node.id) as string
@@ -1602,13 +1684,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
     })
 
-    const clonedEdges = internalEdges.map((edge, index) => ({
-      ...structuredClone(edge),
-      id: `edge_${stamp}_${index + 1}`,
-      source: idMap.get(edge.source) as string,
-      target: idMap.get(edge.target) as string,
-      selected: false
-    }))
+    const liveIds = new Set([
+      ...get().nodes.map((node) => node.id),
+      ...clones.map((node) => node.id)
+    ])
+    const clonedEdges = remapEdges(
+      [...internalEdges, ...boundaryEdges],
+      idMap,
+      liveIds,
+      stamp
+    )
 
     set({
       nodes: [

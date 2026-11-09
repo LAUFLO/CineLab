@@ -18,6 +18,7 @@ import { renderMarkdown } from './text-markdown'
 import { createStudioFromNode } from '../../studio/nodes'
 import { assetUrl } from '../../lib/asset-url'
 import { AudioPlayer, timeLabel } from './AudioPlayer'
+import { AudioActionBar, type AudioActionMode } from './AudioActionBar'
 import { NodeToolbar } from './NodeToolbar'
 import { PanoramaViewer } from './PanoramaViewer'
 import { VideoPlayer } from './VideoPlayer'
@@ -37,6 +38,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const openMenu = useUIStore((state) => state.openMenu)
   const showToast = useUIStore((state) => state.showToast)
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
+  const applyOutput = useCanvasStore((state) => state.applyOutput)
   const resizeNode = useCanvasStore((state) => state.resizeNode)
   const multiSelected = useCanvasStore(
     (state) => state.nodes.filter((node) => node.selected).length > 1
@@ -68,6 +70,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const [panoramaOpen, setPanoramaOpen] = useState(false)
   const [textEditorOpen, setTextEditorOpen] = useState(false)
   const [previewRatio, setPreviewRatio] = useState<number | null>(null)
+  const [audioMode, setAudioMode] = useState<AudioActionMode | null>(null)
+  const [audioSelection, setAudioSelection] = useState({ start: 0, end: 0 })
+  const [audioRate, setAudioRate] = useState(1)
+  const [audioBusy, setAudioBusy] = useState(false)
 
   const submitTitle = (): void => {
     const next = titleDraft.trim()
@@ -123,11 +129,75 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
   const exportCurrent = async (): Promise<void> => {
     if (!current) return
-    const result = await window.api.export.asset(current.path, data.title)
+    const result = await window.api.export.asset(
+      current.path,
+      data.title,
+      current.scope
+    )
     if (result.ok) {
       showToast(`已导出：${result.path ?? ''}`)
     } else if (!result.canceled) {
       showToast(result.error ?? '导出失败', 'error')
+    }
+  }
+
+  const openAudioTrim = (): void => {
+    if (!current) return
+    const duration = current.duration ?? 0
+    if (!duration) {
+      showToast('无法读取音频时长', 'error')
+      return
+    }
+    setAudioSelection({ start: 0, end: duration })
+    setAudioRate(1)
+    setAudioBusy(false)
+    setAudioMode('trim')
+  }
+
+  const openAudioSpeed = (): void => {
+    if (!current) return
+    setAudioRate(1)
+    setAudioBusy(false)
+    setAudioMode('speed')
+  }
+
+  const submitAudio = async (): Promise<void> => {
+    if (!current || !audioMode || audioBusy) return
+
+    if (audioMode === 'trim' && audioSelection.end - audioSelection.start < 0.1) {
+      showToast('截取区间太短', 'error')
+      return
+    }
+
+    setAudioBusy(true)
+
+    try {
+      if (audioMode === 'trim') {
+        const { asset } = await window.api.media.trimAudio({
+          path: current.path,
+          ...(current.scope ? { scope: current.scope } : {}),
+          start: audioSelection.start,
+          end: audioSelection.end
+        })
+        applyOutput(id, asset, 'audio-trim')
+        showToast(
+          `已截取 ${timeLabel(audioSelection.end - audioSelection.start)} 音频`
+        )
+      } else {
+        const { asset } = await window.api.media.audioSpeed({
+          path: current.path,
+          ...(current.scope ? { scope: current.scope } : {}),
+          rate: audioRate
+        })
+        applyOutput(id, asset, 'audio-speed')
+        showToast(`已变速 ${audioRate.toFixed(2)}x`)
+      }
+      setAudioMode(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      showToast(message, 'error')
+    } finally {
+      setAudioBusy(false)
     }
   }
 
@@ -148,6 +218,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     const studioId = createStudioFromNode(id)
     if (studioId) useStudioStore.getState().openStudio(studioId)
   }
+
+  useEffect(() => {
+    if (!selected) setAudioMode(null)
+  }, [selected])
 
   useEffect(() => {
     if (!previewOpen) return
@@ -177,6 +251,8 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               ? () => setTextEditorOpen(true)
               : undefined
           }
+          onAudioTrim={data.kind === 'audio' ? openAudioTrim : undefined}
+          onAudioSpeed={data.kind === 'audio' ? openAudioSpeed : undefined}
           libraryAction={
             current.kind !== 'text'
               ? {
@@ -276,6 +352,9 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               scope={current?.scope}
               busy={isBusy}
               onCancel={() => void cancelGeneration(id)}
+              selecting={audioMode === 'trim'}
+              selection={audioMode === 'trim' ? audioSelection : null}
+              onSelect={(start, end) => setAudioSelection({ start, end })}
             />
           ) : assetSrc && current?.kind === 'text' ? (
             <div
@@ -394,6 +473,22 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           </span>
         ) : null}
       </div>
+
+      {data.kind === 'audio' && audioMode && selected ? (
+        <AudioActionBar
+          mode={audioMode}
+          duration={current?.duration ?? 0}
+          selection={audioSelection}
+          rate={audioRate}
+          busy={audioBusy}
+          onSelectionChange={(start, end) =>
+            setAudioSelection({ start, end })
+          }
+          onRateChange={setAudioRate}
+          onClose={() => setAudioMode(null)}
+          onSubmit={() => void submitAudio()}
+        />
+      ) : null}
 
       <Handle
         type="target"

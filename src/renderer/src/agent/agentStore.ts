@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type {
+  AgentAttachment,
   AgentEvent,
   AgentModelInfo,
   AgentPermissionMode,
@@ -9,6 +10,11 @@ import type {
   AgentToolCall,
   AgentTurn
 } from '@shared/agent'
+import {
+  NODE_META,
+  TITLE_HEIGHT,
+  type OutputRef
+} from '@shared/canvas-schema'
 import { isStudioNode, useCanvasStore } from '../stores/canvas'
 import { useProjectStore } from '../stores/project'
 import { useStudioStore } from '../stores/studio'
@@ -31,6 +37,7 @@ interface AgentState {
   sessions: AgentSessionInfo[]
   messages: AgentMessage[]
   turns: AgentTurn[]
+  attachments: AgentAttachment[]
   running: boolean
   currentTurnId: string | null
   permissionMode: AgentPermissionMode
@@ -51,6 +58,8 @@ interface AgentState {
   open: () => void
   close: () => void
   setPermissionMode: (mode: AgentPermissionMode) => void
+  attachLocalAssets: () => Promise<void>
+  removeAttachment: (nodeId: string) => void
   loadSessions: () => Promise<void>
   loadSession: (sessionId?: string) => Promise<void>
   newSession: () => Promise<void>
@@ -160,6 +169,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   sessions: [],
   messages: [],
   turns: [],
+  attachments: [],
   running: false,
   currentTurnId: null,
   permissionMode: 'current',
@@ -177,6 +187,90 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   open: () => set({ visible: true }),
   close: () => set({ visible: false }),
   setPermissionMode: (mode) => set({ permissionMode: mode }),
+
+  attachLocalAssets: async () => {
+    if (get().running) return
+    try {
+      const available = 8 - get().attachments.length
+      if (available <= 0) {
+        set({ error: '每轮最多附加 8 个素材' })
+        return
+      }
+
+      const assets = await window.api.library.importAssets('场景')
+      if (assets.length === 0) return
+      const selectedAssets = assets.slice(0, available)
+      const created: AgentAttachment[] = []
+      const canvas = useCanvasStore.getState()
+      const center = {
+        x: (window.innerWidth / 2 - canvas.viewport.x) / canvas.viewport.zoom,
+        y: (window.innerHeight / 2 - canvas.viewport.y) / canvas.viewport.zoom
+      }
+      let offsetY = 0
+
+      for (const asset of selectedAssets) {
+        const kind: AgentAttachment['kind'] =
+          asset.kind === 'video'
+            ? 'video'
+            : asset.kind === 'audio'
+              ? 'audio'
+              : 'image'
+        const meta = NODE_META[kind]
+        const nodeId = useCanvasStore.getState().addNode(kind, {
+          x: center.x,
+          y: center.y + offsetY
+        })
+        const output: OutputRef = {
+          id: asset.path,
+          path: asset.path,
+          scope: 'global',
+          kind,
+          createdAt: asset.modifiedAt ?? new Date().toISOString(),
+          model: '本地上传'
+        }
+        useCanvasStore.getState().patchNodeData(nodeId, {
+          title: asset.name,
+          status: 'done',
+          assetOnly: true,
+          outputs: [output],
+          selectedOutputId: asset.path
+        })
+        created.push({
+          nodeId,
+          name: asset.name,
+          path: asset.path,
+          scope: 'global',
+          kind
+        })
+        offsetY += meta.height + TITLE_HEIGHT + 24
+      }
+
+      const createdIds = new Set(created.map((item) => item.nodeId))
+      useCanvasStore.setState({
+        nodes: useCanvasStore.getState().nodes.map((node) => ({
+          ...node,
+          selected: createdIds.has(node.id)
+        }))
+      })
+
+      set((state) => ({
+        attachments: [...state.attachments, ...created].slice(0, 8),
+        error:
+          assets.length > selectedAssets.length
+            ? '每轮最多附加 8 个素材，超出的文件未添加'
+            : null
+      }))
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : '上传素材失败'
+      })
+    }
+  },
+
+  removeAttachment: (nodeId) =>
+    set((state) => ({
+      attachments: state.attachments.filter((item) => item.nodeId !== nodeId)
+    })),
   clearError: () => set({ error: null }),
 
   loadSessions: async () => {
@@ -212,6 +306,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         sessionTitle: session.title ?? info?.title ?? '新对话',
         messages: session.messages.map(toAgentMessage),
         turns: session.turns,
+        attachments: [],
         lastTurn: session.turns[session.turns.length - 1] ?? null,
         running: false,
         currentTurnId: null,
@@ -414,6 +509,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         selectedNodeIds,
         sessionId: state.sessionId,
         ...(state.modelKey ? { modelKey: state.modelKey } : {}),
+        ...(state.attachments.length > 0
+          ? { attachments: state.attachments }
+          : {}),
         ...(profileId === 'clip' && timelineId ? { timelineId } : {}),
         ...(profileId === 'clip' && studioNode
           ? { studioNodeId: studioNode.id }
@@ -425,7 +523,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           ? { playheadMs: timelineState.playheadMs }
           : {})
       })
-      set({ currentTurnId: result.turnId })
+      set({ currentTurnId: result.turnId, attachments: [] })
     } catch (error) {
       set({
         running: false,
@@ -613,3 +711,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     }))
   }
 }))
+
+if (import.meta.env.DEV) {
+  ;(
+    window as unknown as { __agentStore?: typeof useAgentStore }
+  ).__agentStore = useAgentStore
+}

@@ -199,7 +199,7 @@ describe('agent tool permissions', () => {
     ).not.toThrow()
   })
 
-  it('requires reference nodes in scope and unique', () => {
+  it('validates reference nodes and library refs', () => {
     const base = {
       nodeId: 'node-a',
       modelKey: 'provider/model',
@@ -212,7 +212,7 @@ describe('agent tool permissions', () => {
         scope,
         'current'
       )
-    ).toThrow(AgentToolError)
+    ).not.toThrow()
 
     expect(() =>
       assertToolAllowed(
@@ -232,6 +232,91 @@ describe('agent tool permissions', () => {
         'current'
       )
     ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          ...base,
+          libraryRefs: [{ path: '场景/街景.png', kind: 'image' }]
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          ...base,
+          libraryRefs: [{ path: 'C:/secret.png', kind: 'image' }]
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          ...base,
+          libraryRefs: [{ path: '场景/街景.png', kind: 'audio' }]
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+  })
+
+  it('supports placing a new node near a reference node', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_add_node', { kind: 'video', nearNodeId: 'node-a' }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_add_node', { kind: 'video' }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_add_node', { kind: 'video', x: 10, y: 20 }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('validates library search params', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('library_search', { query: '街景', kind: 'image', limit: 10 }),
+        scope,
+        'read-only'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('library_search', { kind: 'template' }),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('library_search', { limit: 31 }),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
   })
 
   it('rejects generation in read-only mode', () => {

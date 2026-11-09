@@ -14,6 +14,8 @@ import {
 } from '@shared/agent-proposal'
 import { modelInputs, type Capability } from '@shared/provider-schema'
 import { startGeneration } from '../engine/start-generation'
+import { getLibraryRoot } from '../library/config'
+import { resolveInside } from '../media/paths'
 import { resolveProvider } from '../settings/store'
 
 const PROPOSAL_ID_PATTERN = /^[a-zA-Z0-9_-]{8,80}$/
@@ -181,6 +183,25 @@ function assertDraft(draft: AgentProposalDraft): void {
   }
 }
 
+async function assertReferenceExists(
+  root: string,
+  ref: { path: string; scope?: 'project' | 'global' },
+  label: string
+): Promise<void> {
+  const base = ref.scope === 'global' ? await getLibraryRoot() : root
+  let absolute: string
+  try {
+    absolute = resolveInside(base, ref.path)
+  } catch {
+    throw new Error(`${label}路径无效：${ref.path}`)
+  }
+  try {
+    await fs.access(absolute)
+  } catch {
+    throw new Error(`${label}不存在：${ref.path}`)
+  }
+}
+
 async function resolveModel(
   request: AgentProposalDraft['request'],
   requestedCount?: number
@@ -245,6 +266,12 @@ export async function createProposal(
       : undefined
   if (requestedCount !== undefined && (requestedCount < 1 || requestedCount > 8)) {
     throw new Error('生成数量需要在 1-8 之间')
+  }
+  for (const ref of draft.request.refs ?? []) {
+    await assertReferenceExists(root, ref, '参考图片')
+  }
+  if (draft.request.video) {
+    await assertReferenceExists(root, draft.request.video, '参考视频')
   }
   const model = await resolveModel(draft.request, requestedCount)
 

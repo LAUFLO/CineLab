@@ -44,6 +44,46 @@ describe('canvas commands', () => {
     expect(result.change.previousTitles.a).toBe('原始')
   })
 
+  it('updates prompt on a generation node', () => {
+    const start = { nodes: [node('a', '视频')], edges: [] }
+    const result = applyCanvasBatch(start, [
+      { type: 'updatePrompt', nodeId: 'a', prompt: '雨夜霓虹街道' }
+    ])
+
+    expect((result.nodes[0].data as { prompt?: string }).prompt).toBe(
+      '雨夜霓虹街道'
+    )
+    expect(result.change.updatedNodeIds).toEqual(['a'])
+  })
+
+  it('warns when updatePrompt targets a non-cine node', () => {
+    const group: CanvasCommandNode = {
+      id: 'g',
+      type: 'group',
+      position: { x: 0, y: 0 },
+      data: { title: '分组', color: 'blue' }
+    }
+    const result = applyCanvasBatch(
+      { nodes: [group], edges: [] },
+      [{ type: 'updatePrompt', nodeId: 'g', prompt: 'X' }]
+    )
+
+    expect(result.warnings[0]).toContain('找不到生成节点')
+  })
+
+  it('deselects previous nodes when adding a selected node', () => {
+    const start = {
+      nodes: [{ ...node('a', 'A'), selected: true }],
+      edges: []
+    }
+    const result = applyCanvasBatch(start, [
+      { type: 'addNode', node: { ...node('b', 'B', 200, 0), selected: true } }
+    ])
+
+    expect(result.nodes.find((item) => item.id === 'a')?.selected).toBe(false)
+    expect(result.nodes.find((item) => item.id === 'b')?.selected).toBe(true)
+  })
+
   it('removes a node and its connected edges', () => {
     const start = {
       nodes: [node('a', 'A'), node('b', 'B')],

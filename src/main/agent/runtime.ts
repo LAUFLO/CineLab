@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type {
+  AgentAttachment,
   AgentChatRequest,
   AgentConfirmInput,
   AgentEvent,
@@ -48,15 +49,36 @@ const CANVAS_SYSTEM_PROMPT = `你是 CineBot，CineLab 的画布助手。你可�
 规则：
 - 只操作当前画布。
 - 创建节点不需要选中；修改、移动、连接、删除只操作选中节点或本轮新建的节点。
-- 操作前先用 canvas_get 确认现有节点。
+- 操作前先用 canvas_get 确认现有节点；它会返回所有节点 ID、标题、类型和坐标，可按标题寻找素材。
 - 不要编造节点 ID、坐标或连线。
 - 需要生成图片、视频、音频或文本时，先调用 generation_catalog 确认模型和参数，再调用 generation_propose 登记提案。
+- 目标生成节点用 canvas_add_node 创建；建议传 nearNodeId，把新节点放在参考素材右侧。
+- 引用画布素材用 generation_propose.refNodeIds；引用资产库素材先用 library_search 搜索，再用 generation_propose.libraryRefs。
+- 用户附件已经创建为画布节点，系统提示会给出 nodeId；引用附件时直接放进 refNodeIds。
+- generation_propose 会自动把参考素材连到目标节点，并把提示词写回目标节点的提示词输入框；不需要额外调用 canvas_connect。
 - generation_propose 不会立即生成，也不会扣费；必须告诉用户「已生成提案，请在面板中确认」，不要声称已经开始生成。
 - 用户确认后由界面提交生成；你不能自行提交提案。
 - 新消息会让旧提案失效，需要时重新登记。
 - 用中文回复，简洁说明你做了什么。
 - 工具返回错误或用户取消时，如实说明没有完成，不要声称已经完成。
 - 需要用户先选中节点时，明确提示。`
+
+function attachmentContext(attachments?: AgentAttachment[]): string {
+  if (!attachments || attachments.length === 0) return ''
+  const kindLabel: Record<AgentAttachment['kind'], string> = {
+    image: '图片',
+    video: '视频',
+    audio: '音频'
+  }
+  return `\n\n用户本轮附件（已创建为画布节点）：\n${attachments
+    .map(
+      (item) =>
+        `- ${kindLabel[item.kind]}「${item.name}」nodeId=${item.nodeId} path=${item.path} scope=${item.scope}`
+    )
+    .join(
+      '\n'
+    )}\n引用这些附件时，把 nodeId 放进 generation_propose.refNodeIds；工具会自动建立附件到目标节点的连线，并把提示词写回目标节点。`
+}
 
 const CLIP_SYSTEM_PROMPT = `你是 CineBot，CineLab 的剪辑助手。你只操作当前打开的剪辑室时间线。
 
@@ -202,7 +224,12 @@ export function startTurn(
   const scope: AgentScope = {
     projectPath: root,
     canvasId: request.canvasId,
-    selectedNodeIds: [...new Set(request.selectedNodeIds)],
+    selectedNodeIds: [
+      ...new Set([
+        ...request.selectedNodeIds,
+        ...(request.attachments?.map((item) => item.nodeId) ?? [])
+      ])
+    ],
     ...(request.timelineId ? { timelineId: request.timelineId } : {}),
     ...(request.studioNodeId ? { studioNodeId: request.studioNodeId } : {}),
     selectedClipIds: [...new Set(request.selectedClipIds ?? [])],
@@ -263,7 +290,9 @@ async function runTurn(input: {
     }
 
     const catalog = await skillCatalogPrompt(root)
-    const systemPrompt = systemPromptFor(request.profileId)
+    const systemPrompt = `${systemPromptFor(request.profileId)}${attachmentContext(
+      request.attachments
+    )}`
     const messages: AgentChatMessage[] = [
       {
         role: 'system',

@@ -8,6 +8,7 @@ import {
   STAGE_OBJECT_TYPES,
   STAGE_POSE_PRESETS
 } from '@shared/stage-schema'
+import { listAllAssets } from '../library/store'
 import { listProviders } from '../settings/store'
 import { listSkills, readSkill } from './skills'
 
@@ -72,6 +73,38 @@ async function generationCatalog(capability?: string): Promise<MainToolResult> {
   }
 }
 
+async function librarySearch(
+  query?: string,
+  kind?: string,
+  limit = 20
+): Promise<MainToolResult> {
+  const assets = await listAllAssets()
+  const keyword = query?.trim().toLowerCase() ?? ''
+  const filtered = assets.filter((asset) => {
+    if (asset.kind === 'template') return false
+    if (kind && asset.kind !== kind) return false
+    if (!keyword) return true
+    return (
+      asset.name.toLowerCase().includes(keyword) ||
+      asset.path.toLowerCase().includes(keyword)
+    )
+  })
+
+  return {
+    ok: true,
+    result: {
+      assets: filtered.slice(0, Math.max(1, Math.min(30, limit))).map((asset) => ({
+        path: asset.path,
+        name: asset.name,
+        kind: asset.kind,
+        size: asset.size,
+        modifiedAt: asset.modifiedAt
+      })),
+      total: filtered.length
+    }
+  }
+}
+
 export async function executeMainTool(
   call: AgentToolCall,
   scope: AgentScope
@@ -95,6 +128,14 @@ export async function executeMainTool(
       typeof call.args.capability === 'string'
         ? call.args.capability
         : undefined
+    )
+  }
+
+  if (call.name === 'library_search') {
+    return librarySearch(
+      typeof call.args.query === 'string' ? call.args.query : undefined,
+      typeof call.args.kind === 'string' ? call.args.kind : undefined,
+      typeof call.args.limit === 'number' ? call.args.limit : 20
     )
   }
 

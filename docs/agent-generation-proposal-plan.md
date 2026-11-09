@@ -54,7 +54,9 @@ interface AgentProposal {
 | 工具 | 执行位置 | 权限 | 说明 |
 |---|---|---|---|
 | `generation_catalog` | 主进程 | 只读 | 列出已配置的生成模型、能力、输入和参数 |
-| `generation_propose` | 渲染进程 | 写 | 校验目标节点与参考节点，登记提案 |
+| `library_search` | 主进程 | 只读 | 搜索全局资产库的图片、视频、音频，返回相对路径 |
+| `generation_propose` | 渲染进程 | 写 | 校验目标节点与参考素材，登记提案，必要时补建素材节点和连线 |
+| `canvas_add_node` | 渲染进程 | 写 | 创建节点；支持 `nearNodeId`，把新节点放在参考素材右侧 |
 
 `generation_submit` 不注册给模型。只有用户点击提案卡才能提交，避免模型绕过确认。
 
@@ -67,12 +69,47 @@ interface AgentProposal {
   "prompt": "生成提示词",
   "params": { "ratio": "16:9" },
   "count": 1,
-  "refNodeIds": ["参考节点，可选"],
+  "refNodeIds": ["画布参考节点，可选"],
+  "libraryRefs": [
+    { "path": "场景/街景.png", "kind": "image", "role": "firstFrame" }
+  ],
   "negativePrompt": "负向提示词，可选"
 }
 ```
 
-未传 `refNodeIds` 时，渲染进程自动收集目标节点的直接上游节点最新输出。
+未传任何参考时，渲染进程自动收集目标节点的直接上游节点最新输出。
+
+### 3.2 素材引用与自动连线
+
+三类素材统一进入 `GenerateRequest.refs` / `video`：
+
+| 来源 | 入口 | 画布行为 |
+|---|---|---|
+| 画布已有素材 | `refNodeIds` | 不复制节点；如参考节点尚未连到目标节点，自动补一条 `source → target` 连线 |
+| 资产库素材 | `library_search` + `libraryRefs` | 在目标节点左侧创建素材节点（`scope: global`），自动连线到目标节点 |
+| 本地文件 | Agent 输入框「上传」 | 复用 `library.importAssets` 导入全局库并创建素材节点；作为附件传给 CineBot，模型用 `refNodeIds` 引用 |
+
+规则：
+
+- 参考图片最多 3 张：第 1 张 `firstFrame`、第 2 张 `lastFrame`、其余 `reference`；显式角色重复时降级为 `reference`。
+- 参考视频最多 1 个；音频输入暂不进入生成参考。
+- 引用素材与目标节点的连线在 `generation_propose` 登记提案时创建，和目标节点提示词回填一起进入本轮画布撤销。
+- `generation_propose` 先登记提案，成功后再创建素材节点、连线和提示词；提案校验失败不修改画布。
+
+### 3.3 提示词回填
+
+- `generation_propose` 通过新的 `CanvasCommand.updatePrompt` 把提示词写入目标节点 `data.prompt`。
+- `PromptBar` 监听外部 `data.prompt` 变化；当 Agent 设置提示词时，已打开的提示词输入框会立即更新。
+- 生成完成后，成片仍由现有 `generation.done` 事件写回目标节点 `outputs`。
+
+### 3.4 本地附件
+
+- Agent 输入框新增「上传」按钮，调用现有 `library.importAssets('场景')`。
+- 导入后立即在当前视口中心创建素材节点，并选中这些节点。
+- 附件以 `AgentAttachment` 随 `agent:chat` 请求传给主进程，包含 `nodeId / name / path / scope / kind`。
+- 运行时把附件列表追加到系统提示，模型直接使用附件 `nodeId` 作为 `refNodeIds`。
+- 发送后清空附件 chip，素材节点保留在画布。
+
 
 ## 4. 生命周期
 
@@ -162,8 +199,8 @@ Agent 面板底部显示当前提案卡：
 ## 7. 安全边界
 
 - 目标节点必须在当前 scope（选中或本轮新建）。
-- 参考节点也必须在 scope。
-- 路径不能是绝对路径，不能包含 `..`。
+- 参考节点不要求选中，但必须真实存在且有输出；渲染进程校验后才会写入提案。
+- 资产库引用路径必须来自 `library_search` 或用户附件，不能是绝对路径，不能包含 `..`。
 - 模型必须存在于用户配置，且有 Key。
 - 参数必须来自模型声明的参数定义。
 - 提交只能由用户操作触发。
@@ -171,7 +208,7 @@ Agent 面板底部显示当前提案卡：
 
 ## 8. 验证
 
-1. 单元测试：参数默认值、非法参数、数量、费用、过期、状态机、幂等。
+1. 单元测试：参数默认值、非法参数、数量、过期、状态机、幂等、`updatePrompt` 命令、素材引用参数。
 2. `typecheck` / `test` / `build`。
 3. 真实 Agnes：
    - `generation_catalog` 返回图片和视频模型。
@@ -179,4 +216,9 @@ Agent 面板底部显示当前提案卡：
    - 点击确认后出图并写回节点。
    - 重复点击确认不产生第二个 runId。
    - 发送新消息后旧提案变为 expired。
-4. 不推送。
+4. 素材链路：
+   - 引用画布节点：缺连线时自动补线，已有连线不重复。
+   - 引用资产库图片：自动创建素材节点、连线并写入提示词。
+   - 本地附件：上传后创建节点，CineBot 用附件 nodeId 引用，视频节点自动连接到图片节点。
+   - `PromptBar` 已打开时，Agent 回填提示词能同步更新输入框。
+5. 不推送。

@@ -6,6 +6,7 @@ export type AgentToolScope =
   | 'stage'
   | 'film'
   | 'project'
+  | 'library'
   | 'generation'
   | 'skill'
 

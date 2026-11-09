@@ -34,7 +34,7 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     id: 'canvas.get',
     name: 'canvas_get',
     description:
-      '读取当前画布的节点摘要和当前选中节点。修改节点前先调用它确认节点 ID。',
+      '读取当前画布的节点摘要、所有节点 ID/标题/类型/坐标和当前选中节点。修改节点或选择生成目标前先调用它确认节点 ID。',
     profiles: ['canvas'],
     readOnly: true,
     scope: 'canvas',
@@ -100,7 +100,7 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     id: 'canvas.addNode',
     name: 'canvas_add_node',
     description:
-      '在当前画布创建文本、图片、视频或音频节点。创建后返回 nodeId，可在同一轮继续连接或修改。',
+      '在当前画布创建文本、图片、视频或音频节点。创建后返回 nodeId，可在同一轮继续连接或修改。传 nearNodeId 时把新节点放在该节点右侧，适合在参考素材后面创建生成节点。',
     profiles: ['canvas'],
     readOnly: false,
     scope: 'canvas',
@@ -117,10 +117,14 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
           type: 'string',
           description: '节点标题，1-200 个字符；省略时自动命名'
         },
-        x: { type: 'number', description: '画布 X 坐标' },
-        y: { type: 'number', description: '画布 Y 坐标' }
+        x: { type: 'number', description: '画布 X 坐标；与 y 一起使用' },
+        y: { type: 'number', description: '画布 Y 坐标；与 x 一起使用' },
+        nearNodeId: {
+          type: 'string',
+          description: '可选，放在该节点右侧；提供后忽略 x/y'
+        }
       },
-      required: ['kind', 'x', 'y'],
+      required: ['kind'],
       additionalProperties: false
     },
     replay: 'safe'
@@ -235,10 +239,41 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
     executor: 'main'
   },
   {
+    id: 'library.search',
+    name: 'library_search',
+    description:
+      '搜索全局资产库中的图片、视频和音频。返回相对路径、名称和类型；把图片/视频 path 放进 generation_propose 的 libraryRefs，即可在生成时自动创建素材节点并连线。',
+    profiles: ['canvas'],
+    readOnly: true,
+    scope: 'library',
+    modes: ['read-only', 'current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: '按名称或路径搜索，最多 100 字；省略时返回最近素材'
+        },
+        kind: {
+          type: 'string',
+          enum: ['image', 'video', 'audio'],
+          description: '只看某一类素材'
+        },
+        limit: {
+          type: 'number',
+          description: '返回数量，默认 20，最大 30'
+        }
+      },
+      additionalProperties: false
+    },
+    replay: 'safe',
+    executor: 'main'
+  },
+  {
     id: 'generation.propose',
     name: 'generation_propose',
     description:
-      '登记一个生成提案，不会立即生成或扣费。用户确认提案后才会提交。目标节点必须是选中节点或本轮新建节点；未指定参考节点时自动使用直接上游节点的最新输出。',
+      '登记一个生成提案，不会立即生成或扣费。用户确认提案后才会提交。目标节点必须是选中节点或本轮新建节点。可用 refNodeIds 引用画布节点，或用 libraryRefs 引用资产库素材；引用素材会自动补建素材节点并连接到目标节点，同时把提示词写回目标节点。未指定参考时自动使用直接上游节点的最新输出。',
     profiles: ['canvas'],
     readOnly: false,
     scope: 'generation',
@@ -270,7 +305,33 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
           type: 'array',
           items: { type: 'string' },
           maxItems: 4,
-          description: '参考节点 ID，可选；省略时使用直接上游节点的最新输出'
+          description: '画布参考节点 ID，可选；引用附件时直接使用附件 nodeId'
+        },
+        libraryRefs: {
+          type: 'array',
+          maxItems: 4,
+          description: '资产库参考素材，可选；路径必须来自 library_search',
+          items: {
+            type: 'object',
+            properties: {
+              path: {
+                type: 'string',
+                description: '资产库相对路径，例如 场景/街景.png'
+              },
+              kind: {
+                type: 'string',
+                enum: ['image', 'video'],
+                description: '素材类型'
+              },
+              role: {
+                type: 'string',
+                enum: ['firstFrame', 'lastFrame', 'reference'],
+                description: '图片角色，默认 reference'
+              }
+            },
+            required: ['path', 'kind'],
+            additionalProperties: false
+          }
         },
         negativePrompt: {
           type: 'string',
@@ -979,15 +1040,25 @@ export function assertToolAllowed(
     ) {
       throw new AgentToolError('invalid_params', '节点类型无效')
     }
-    const x = call.args.x
-    const y = call.args.y
-    if (
-      typeof x !== 'number' ||
-      !Number.isFinite(x) ||
-      typeof y !== 'number' ||
-      !Number.isFinite(y)
-    ) {
-      throw new AgentToolError('invalid_params', 'x 和 y 必须是有限数字')
+    const nearNodeId = call.args.nearNodeId
+    if (nearNodeId !== undefined) {
+      if (typeof nearNodeId !== 'string' || !nearNodeId.trim()) {
+        throw new AgentToolError('invalid_params', 'nearNodeId 必须是非空字符串')
+      }
+    } else {
+      const x = call.args.x
+      const y = call.args.y
+      if (
+        typeof x !== 'number' ||
+        !Number.isFinite(x) ||
+        typeof y !== 'number' ||
+        !Number.isFinite(y)
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '需要 nearNodeId，或同时提供 x 和 y'
+        )
+      }
     }
     if (
       call.args.title !== undefined &&
@@ -1048,6 +1119,32 @@ export function assertToolAllowed(
       throw new AgentToolError('invalid_params', 'groupId 必须是非空字符串')
     }
     assertSelectedNode(scope, groupId)
+  }
+
+  if (call.name === 'library_search') {
+    if (
+      call.args.query !== undefined &&
+      (typeof call.args.query !== 'string' || call.args.query.length > 100)
+    ) {
+      throw new AgentToolError('invalid_params', 'query 不能超过 100 个字符')
+    }
+    if (
+      call.args.kind !== undefined &&
+      !['image', 'video', 'audio'].includes(String(call.args.kind))
+    ) {
+      throw new AgentToolError('invalid_params', 'kind 无效')
+    }
+    if (call.args.limit !== undefined) {
+      const limit = call.args.limit
+      if (
+        typeof limit !== 'number' ||
+        !Number.isInteger(limit) ||
+        limit < 1 ||
+        limit > 30
+      ) {
+        throw new AgentToolError('invalid_params', 'limit 必须是 1-30 的整数')
+      }
+    }
   }
 
   if (call.name === 'generation_propose') {
@@ -1111,7 +1208,52 @@ export function assertToolAllowed(
         if (typeof id !== 'string' || !id.trim()) {
           throw new AgentToolError('invalid_params', 'refNodeIds 必须是非空字符串')
         }
-        assertSelectedNode(scope, id)
+      }
+    }
+
+    if (call.args.libraryRefs !== undefined) {
+      const refs = call.args.libraryRefs
+      if (!Array.isArray(refs) || refs.length > 4) {
+        throw new AgentToolError('invalid_params', 'libraryRefs 最多 4 个')
+      }
+      const seen = new Set<string>()
+      for (const ref of refs) {
+        if (!ref || typeof ref !== 'object' || Array.isArray(ref)) {
+          throw new AgentToolError('invalid_params', 'libraryRefs 格式无效')
+        }
+        const item = ref as Record<string, unknown>
+        if (
+          typeof item.path !== 'string' ||
+          !item.path.trim() ||
+          item.path.length > 2000
+        ) {
+          throw new AgentToolError('invalid_params', 'libraryRefs.path 无效')
+        }
+        if (
+          item.path.includes('..') ||
+          item.path.startsWith('/') ||
+          item.path.startsWith('\\') ||
+          /^[a-zA-Z]:/.test(item.path)
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            'libraryRefs.path 必须是资产库相对路径'
+          )
+        }
+        if (!['image', 'video'].includes(String(item.kind))) {
+          throw new AgentToolError('invalid_params', 'libraryRefs.kind 无效')
+        }
+        if (
+          item.role !== undefined &&
+          !['firstFrame', 'lastFrame', 'reference'].includes(String(item.role))
+        ) {
+          throw new AgentToolError('invalid_params', 'libraryRefs.role 无效')
+        }
+        const key = `${item.kind}:${item.path}`
+        if (seen.has(key)) {
+          throw new AgentToolError('invalid_params', 'libraryRefs 不能重复')
+        }
+        seen.add(key)
       }
     }
 

@@ -30,6 +30,7 @@ const TOOL_LABELS: Record<string, string> = {
   canvas_ungroup: '解散分组',
   generation_catalog: '查看生成模型',
   generation_propose: '登记生成提案',
+  library_search: '搜索资产库',
   stage_get: '读取导演台',
   stage_capabilities: '读取导演台能力',
   stage_add_object: '添加场景对象',
@@ -241,6 +242,14 @@ function ProposalCard({
     )
     .slice(0, 5)
     .map(([key, value]) => `${key}=${String(value)}`)
+  const refNames = [
+    ...(proposal.request.refs ?? []).map(
+      (ref) => ref.path.split('/').pop() ?? ref.path
+    ),
+    ...(proposal.request.video
+      ? [proposal.request.video.path.split('/').pop() ?? proposal.request.video.path]
+      : [])
+  ]
 
   return (
     <section className={`agent-proposal agent-proposal--${proposal.status}`}>
@@ -258,6 +267,15 @@ function ProposalCard({
         <span>模型</span>
         <strong>{proposal.modelName}</strong>
       </div>
+      {refNames.length > 0 ? (
+        <div className="agent-proposal__row">
+          <span>引用</span>
+          <strong title={refNames.join('、')}>
+            {refNames.length} 个 · {refNames.slice(0, 2).join('、')}
+            {refNames.length > 2 ? ' …' : ''}
+          </strong>
+        </div>
+      ) : null}
       {params.length > 0 ? (
         <div className="agent-proposal__row">
           <span>参数</span>
@@ -314,6 +332,7 @@ export function AgentPanel() {
   const sessionTitle = useAgentStore((state) => state.sessionTitle)
   const sessions = useAgentStore((state) => state.sessions)
   const messages = useAgentStore((state) => state.messages)
+  const attachments = useAgentStore((state) => state.attachments)
   const running = useAgentStore((state) => state.running)
   const error = useAgentStore((state) => state.error)
   const modelInfo = useAgentStore((state) => state.modelInfo)
@@ -331,6 +350,8 @@ export function AgentPanel() {
   const send = useAgentStore((state) => state.send)
   const cancel = useAgentStore((state) => state.cancel)
   const setPermissionMode = useAgentStore((state) => state.setPermissionMode)
+  const attachLocalAssets = useAgentStore((state) => state.attachLocalAssets)
+  const removeAttachment = useAgentStore((state) => state.removeAttachment)
   const loadSessions = useAgentStore((state) => state.loadSessions)
   const newSession = useAgentStore((state) => state.newSession)
   const selectSession = useAgentStore((state) => state.selectSession)
@@ -416,7 +437,9 @@ export function AgentPanel() {
 
   const suggestion = clipMode
     ? '把选中片段整体前移 1 秒'
-    : '帮我整理一下当前选中的节点'
+    : attachments.length > 0
+      ? '用这张图生成一段视频'
+      : '帮我整理一下当前选中的节点'
   const changedCount = agentTurnChangeCount(lastTurn)
   const renderItems = useMemo(() => buildRenderItems(messages), [messages])
   const visibleSessions = sessions.filter(
@@ -563,7 +586,7 @@ export function AgentPanel() {
                 <div className="agent-empty__desc">
                   {clipMode
                     ? '我可以读取时间线、移动片段、自动字幕、删静音、设置转场或导出成片。'
-                    : '我可以整理画布、搭导演台、登记生成提案，或读取你的技能。'}
+                    : '我可以整理画布、引用画布或资产库素材、登记生成提案，也可以读取你的技能。先点下方「上传」添加本地素材。'}
                 </div>
                 <button
                   type="button"
@@ -647,6 +670,33 @@ export function AgentPanel() {
           ) : null}
 
           <div className="agent-composer">
+            {attachments.length > 0 ? (
+              <div className="agent-attachments">
+                {attachments.map((item) => (
+                  <span className="agent-attachment" key={item.nodeId}>
+                    <Icon
+                      name={
+                        item.kind === 'video'
+                          ? 'video'
+                          : item.kind === 'audio'
+                            ? 'audio'
+                            : 'image'
+                      }
+                      size={11}
+                    />
+                    <span className="agent-attachment__name">{item.name}</span>
+                    <button
+                      type="button"
+                      title="移除附件"
+                      disabled={running}
+                      onClick={() => removeAttachment(item.nodeId)}
+                    >
+                      <Icon name="close" size={10} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
             <textarea
               ref={textareaRef}
               value={draft}
@@ -660,13 +710,25 @@ export function AgentPanel() {
               placeholder={
                 clipMode
                   ? '描述你想怎么剪，例如：把选中片段前移 1 秒'
-                  : '描述你想做什么，例如：给选中节点改名并移动'
+                  : attachments.length > 0
+                    ? '描述你想用附件做什么，例如：用这张图生成视频'
+                    : '描述你想做什么，例如：用这张图生成视频'
               }
               disabled={running}
               rows={2}
             />
             <div className="agent-composer__bar">
               <div className="agent-composer__chips">
+                <button
+                  type="button"
+                  className="agent-chip"
+                  onClick={() => void attachLocalAssets()}
+                  disabled={running}
+                  title="上传本地素材到画布"
+                >
+                  <Icon name="paperclip" size={12} />
+                  上传
+                </button>
                 <button
                   type="button"
                   className="agent-chip"

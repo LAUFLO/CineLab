@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import type { StageObjectType } from '@shared/stage-schema'
 import { Icon } from '../components/Icon'
 import {
   isStageNode,
@@ -12,6 +13,20 @@ import { StageViewport } from './StageViewport'
 import { useStageStore } from './stageStore'
 import '../styles/stage.css'
 
+const OBJECT_OPTIONS: Array<{ type: StageObjectType; label: string }> = [
+  { type: 'human', label: '人物' },
+  { type: 'box', label: '立方体' },
+  { type: 'sphere', label: '球体' },
+  { type: 'plane', label: '平面' },
+  { type: 'crowd', label: '群众' }
+]
+
+const TRANSFORM_OPTIONS = [
+  { mode: 'translate' as const, label: '移动' },
+  { mode: 'rotate' as const, label: '旋转' },
+  { mode: 'scale' as const, label: '缩放' }
+]
+
 export function StageWindow() {
   const open = useStageStore((state) => state.open)
   const nodeId = useStageStore((state) => state.nodeId)
@@ -19,6 +34,7 @@ export function StageWindow() {
   const viewMode = useStageStore((state) => state.viewMode)
   const selectedCameraId = useStageStore((state) => state.selectedCameraId)
   const selectedObjectId = useStageStore((state) => state.selectedObjectId)
+  const transformMode = useStageStore((state) => state.transformMode)
   const loading = useStageStore((state) => state.loading)
   const saving = useStageStore((state) => state.saving)
   const dirty = useStageStore((state) => state.dirty)
@@ -31,8 +47,12 @@ export function StageWindow() {
   const redo = useStageStore((state) => state.redo)
   const clearError = useStageStore((state) => state.clearError)
   const capture = useStageStore((state) => state.capture)
+  const addObject = useStageStore((state) => state.addObject)
+  const addCamera = useStageStore((state) => state.addCamera)
+  const setTransformMode = useStageStore((state) => state.setTransformMode)
 
   const [capturing, setCapturing] = useState(false)
+  const [addObjectOpen, setAddObjectOpen] = useState(false)
 
   useEffect(() => {
     if (!open || !doc || !dirty) return
@@ -213,8 +233,34 @@ export function StageWindow() {
           <div className="stage-sidebar__section">
             <div className="stage-sidebar__title">
               <span>对象</span>
-              <small>{doc?.objects.length ?? 0}</small>
+              <div className="stage-sidebar__title-actions">
+                <small>{doc?.objects.length ?? 0}</small>
+                <button
+                  type="button"
+                  className="stage-mini-button"
+                  title="添加对象"
+                  onClick={() => setAddObjectOpen((open) => !open)}
+                >
+                  +
+                </button>
+              </div>
             </div>
+            {addObjectOpen ? (
+              <div className="stage-add-menu">
+                {OBJECT_OPTIONS.map((option) => (
+                  <button
+                    key={option.type}
+                    type="button"
+                    onClick={() => {
+                      addObject(option.type)
+                      setAddObjectOpen(false)
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <div className="stage-sidebar__list">
               {doc?.objects.length ? (
                 doc.objects.map((object) => (
@@ -240,7 +286,17 @@ export function StageWindow() {
           <div className="stage-sidebar__section">
             <div className="stage-sidebar__title">
               <span>机位</span>
-              <small>{doc?.cameras.length ?? 0}</small>
+              <div className="stage-sidebar__title-actions">
+                <small>{doc?.cameras.length ?? 0}</small>
+                <button
+                  type="button"
+                  className="stage-mini-button"
+                  title="添加机位"
+                  onClick={() => addCamera()}
+                >
+                  +
+                </button>
+              </div>
             </div>
             <div className="stage-sidebar__list">
               {doc?.cameras.length ? (
@@ -287,6 +343,20 @@ export function StageWindow() {
 
         <main className="stage-viewport-wrap">
           <StageViewport />
+          {viewMode === 'director' && selectedObjectId ? (
+            <div className="stage-transform-tools" role="group" aria-label="变换工具">
+              {TRANSFORM_OPTIONS.map((option) => (
+                <button
+                  key={option.mode}
+                  type="button"
+                  className={transformMode === option.mode ? 'is-active' : ''}
+                  onClick={() => setTransformMode(option.mode)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
           {loading ? (
             <div className="stage-viewport__status">正在加载场景…</div>
           ) : null}

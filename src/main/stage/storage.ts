@@ -82,10 +82,35 @@ export async function saveStageFile(
     throw new Error(`场景文档无效：${errors[0]}`)
   }
 
+  const file = stageFile(projectRoot, doc.stageId)
+  const updatedAt = Number.isFinite(Date.parse(doc.updatedAt))
+    ? doc.updatedAt
+    : new Date().toISOString()
+
+  // 拒绝旧快照覆盖新场景：关闭窗口时的延迟保存、并发工具保存都可能晚到
+  try {
+    const raw = await fs.readFile(file, 'utf8')
+    const previous = JSON.parse(raw) as { updatedAt?: unknown }
+    const previousTime =
+      typeof previous.updatedAt === 'string'
+        ? Date.parse(previous.updatedAt)
+        : Number.NaN
+    const nextTime = Date.parse(updatedAt)
+    if (
+      Number.isFinite(previousTime) &&
+      Number.isFinite(nextTime) &&
+      nextTime < previousTime
+    ) {
+      return
+    }
+  } catch {
+    // 文件不存在或旧文件不可读时正常写入
+  }
+
   await ensureStageDir(projectRoot)
-  await writeJsonAtomic(stageFile(projectRoot, doc.stageId), {
+  await writeJsonAtomic(file, {
     ...doc,
-    updatedAt: new Date().toISOString()
+    updatedAt
   })
 }
 

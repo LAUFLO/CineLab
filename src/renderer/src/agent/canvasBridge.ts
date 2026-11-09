@@ -16,6 +16,7 @@ import {
   selectedNodeOutput,
   useCanvasStore
 } from '../stores/canvas'
+import { executeStageTool } from './stageBridge'
 
 function selectedNodeSummary(): Array<{
   id: string
@@ -124,6 +125,10 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
   error?: string
   change?: AgentTurnChange
 }> {
+  if (call.name.startsWith('stage_')) {
+    return executeStageTool(call)
+  }
+
   const state = useCanvasStore.getState()
 
   if (call.name === 'canvas_get') {

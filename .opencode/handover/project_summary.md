@@ -29,8 +29,9 @@
 | `STAGE-COMMANDS-1` | 导演台场景 schema、17 类命令、原子 batch、撤销/重做历史 |
 | `STAGE-NODE-STORAGE-1` | 画布导演台节点、`stages/` 场景读写、复制深拷贝、重开保留 |
 | `STAGE-VIEWPORT-1` | 原生 three.js 3D 视口、机位切换、选中、截图回画布、自动保存 |
-| 验证 | 211 测试、`typecheck`、`build` 通过；真实 Agnes 图片提案与导演台视口验证完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 12 个提交、落后 2 个（a768e64、6abef3d），未推送；推送前先同步 |
+| `STAGE-AGENT-EDITING-1` | stage Agent 工具、TransformControls、属性编辑、增删对象/机位、落盘保护 |
+| 验证 | 219 测试、`typecheck`、`build` 通过；真实 Agnes 提案、视口与 stage 工具验证完成 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 14 个提交、落后 3 个（a768e64、6abef3d、3a406a7），未推送；推送前先同步 |
 
 ## 关键工件
 
@@ -46,9 +47,9 @@
 
 ## 下一步
 
-1. `stage.*` Agent 工具与 A2 手动编辑
-2. 运镜时间轴与本地白模预演
-3. 剪辑助手 `clip` profile、技能管理 UI
+1. 运镜时间轴与本地白模预演
+2. 剪辑助手 `clip` profile
+3. 技能管理 UI
 4. 删除 / 批量二次确认
 5. 整体验收；Agnes 视频补测
 
@@ -61,6 +62,7 @@
 - 生成提案存 `<project>/.cinelab/agent/proposals/<id>.json`。
 - 导演台场景存 `<project>/stages/<stageId>.json`；手动编辑与 Agent 共用 `StageCommand`。
 - 导演台 3D 视口用原生 three.js 渲染内核 + React 外壳，不引入 R3F。
+- stage Agent 工具执行后立即保存场景；保存拒绝更旧 `updatedAt`。
 - 工具执行在渲染进程；主进程构造 scope、权限和回合事务。
 - 生成必须走提案确认，不直接执行；`generation_submit` 不暴露给模型。
 

@@ -1,7 +1,7 @@
 # 导演台方案：3D 片场 + 本地白模预演
 
 日期：2026-11-09
-状态：**stage 节点、场景存储与 A1 3D 视口已完成；Agent 工具与编辑能力待接入**
+状态：**stage 节点、场景存储、A1 3D 视口与 A2 编辑/Agent 工具已完成；运镜与白模预演待接入**
 关联：LibTV 3D 导演台 / 3D-BOX、TapNow CineMap
 关联文档：`docs/agent-full-scope.md`、`docs/clip-studio-plan.md`
 
@@ -477,3 +477,10 @@ DirectorStageDoc + StageShot
   - 截图经 `stage:capture` 写入资产，并自动创建图片节点连线。
   - 自动保存与关闭补存；重开恢复 activeCameraId。
   - 拖拽变换、属性编辑、添加/删除对象与机位、运镜时间轴、白模预演仍待接入。
+- 2026-11-09：完成 A2 手动编辑与 `stage.*` Agent 工具。
+  - `stage_get`、`stage_capabilities`、`stage_add_object`、`stage_transform_object`、`stage_add_camera`、`stage_set_active_camera`、`stage_remove_object`。
+  - 导演台未打开时，Agent 工具直接读写场景文件并同步画布节点摘要。
+  - TransformControls 支持移动/旋转/缩放，拖拽结束写回 StageCommand。
+  - 属性面板可编辑对象变换、姿势、颜色、可见性，以及机位名称、位置、注视点、FOV、画幅。
+  - 左栏可添加/删除对象与机位；所有操作可撤销/重做。
+  - 修复旧快照覆盖新场景的落盘 bug：工具执行后立即保存，场景保存拒绝更旧的 updatedAt。

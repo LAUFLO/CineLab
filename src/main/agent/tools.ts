@@ -9,6 +9,10 @@ import {
   toModelTools,
   type AgentToolDefinition
 } from '@shared/agent-tools'
+import {
+  STAGE_LIMITS,
+  STAGE_OBJECT_TYPES
+} from '@shared/stage-schema'
 
 export class AgentToolError extends Error {
   readonly code: string
@@ -278,6 +282,173 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
+const stageNodeIdParameter = {
+  type: 'string',
+  description: '导演台画布节点 ID，必须来自 canvas_get 的 selectedNodes'
+}
+
+const stageVec3Parameter = {
+  type: 'array',
+  items: { type: 'number' },
+  minItems: 3,
+  maxItems: 3,
+  description: '3 个有限数字：[x, y, z]'
+}
+
+export const STAGE_TOOLS: AgentToolDefinition[] = [
+  {
+    id: 'stage.get',
+    name: 'stage_get',
+    description:
+      '读取导演台场景的对象、机位、镜头和当前激活机位。所有 stage 工具都需要先确认 nodeId。',
+    profiles: ['canvas', 'stage'],
+    readOnly: true,
+    scope: 'stage',
+    modes: ['read-only', 'current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter
+      },
+      required: ['nodeId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.capabilities',
+    name: 'stage_capabilities',
+    description:
+      '返回导演台支持的对象类型、姿势预设、关键帧缓动、数量限制和预览参数。',
+    profiles: ['canvas', 'stage'],
+    readOnly: true,
+    scope: 'stage',
+    modes: ['read-only', 'current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false
+    },
+    replay: 'safe',
+    executor: 'main'
+  },
+  {
+    id: 'stage.addObject',
+    name: 'stage_add_object',
+    description:
+      '向导演台场景添加人物、立方体、球体、平面或群众。坐标单位为米，y 轴向上；不传坐标时放在原点。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        type: { type: 'string', enum: STAGE_OBJECT_TYPES },
+        name: { type: 'string', description: '对象名称；省略时自动命名' },
+        position: stageVec3Parameter,
+        rotation: stageVec3Parameter,
+        scale: stageVec3Parameter,
+        pose: { type: 'string', description: '姿势预设名称，可选' },
+        color: { type: 'string', description: '十六进制颜色，例如 #60a5fa' },
+        count: {
+          type: 'number',
+          description: '群众数量 1-100；仅 type=crowd 时使用'
+        }
+      },
+      required: ['nodeId', 'type'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.transformObject',
+    name: 'stage_transform_object',
+    description:
+      '修改导演台对象的位置、旋转或缩放，支持只传其中一部分。旋转使用弧度。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        objectId: { type: 'string', description: '对象 ID，来自 stage_get' },
+        position: stageVec3Parameter,
+        rotation: stageVec3Parameter,
+        scale: stageVec3Parameter
+      },
+      required: ['nodeId', 'objectId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.addCamera',
+    name: 'stage_add_camera',
+    description:
+      '向导演台场景添加机位。坐标单位为米；不传时使用默认正面机位。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        name: { type: 'string', description: '机位名称；省略时自动命名' },
+        position: stageVec3Parameter,
+        target: stageVec3Parameter,
+        fov: { type: 'number', description: '视场角 10-120，默认 50' },
+        aspect: { type: 'string', enum: ['16:9', '9:16', '1:1'] }
+      },
+      required: ['nodeId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.setActiveCamera',
+    name: 'stage_set_active_camera',
+    description: '切换导演台当前机位。cameraId 必须来自 stage_get。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        cameraId: { type: 'string', description: '机位 ID' }
+      },
+      required: ['nodeId', 'cameraId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.removeObject',
+    name: 'stage_remove_object',
+    description: '删除导演台场景中的一个对象及其动作轨。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        objectId: { type: 'string', description: '对象 ID' }
+      },
+      required: ['nodeId', 'objectId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe'
+  }
+]
+
 export const SKILL_TOOLS: AgentToolDefinition[] = [
   {
     id: 'skill.list',
@@ -336,6 +507,7 @@ export const SKILL_TOOLS: AgentToolDefinition[] = [
 export const AGENT_TOOLS = [
   ...CANVAS_TOOLS,
   ...GENERATION_TOOLS,
+  ...STAGE_TOOLS,
   ...SKILL_TOOLS
 ]
 
@@ -353,6 +525,25 @@ export function getTool(name: string): AgentToolDefinition | undefined {
 function assertSelectedNode(scope: AgentScope, nodeId: string): void {
   if (!scope.selectedNodeIds.includes(nodeId)) {
     throw new AgentToolError('scope_denied', '只能修改当前选中的节点')
+  }
+}
+
+function isStageVec3(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length === 3 &&
+    value.every(
+      (item) => typeof item === 'number' && Number.isFinite(item)
+    )
+  )
+}
+
+function assertStageVec3(value: unknown, label: string): void {
+  if (value !== undefined && !isStageVec3(value)) {
+    throw new AgentToolError(
+      'invalid_params',
+      `${label} 必须是 3 个有限数字`
+    )
   }
 }
 
@@ -571,6 +762,129 @@ export function assertToolAllowed(
       )
     ) {
       throw new AgentToolError('invalid_params', 'capability 无效')
+    }
+  }
+
+  if (call.name === 'stage_capabilities') {
+    return
+  }
+
+  if (call.name.startsWith('stage_')) {
+    const nodeId = call.args.nodeId
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, nodeId)
+
+    if (call.name === 'stage_add_object') {
+      if (
+        typeof call.args.type !== 'string' ||
+        !STAGE_OBJECT_TYPES.includes(
+          call.args.type as (typeof STAGE_OBJECT_TYPES)[number]
+        )
+      ) {
+        throw new AgentToolError('invalid_params', '对象类型无效')
+      }
+      if (
+        call.args.name !== undefined &&
+        (typeof call.args.name !== 'string' ||
+          !call.args.name.trim() ||
+          call.args.name.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'name 无效')
+      }
+      assertStageVec3(call.args.position, 'position')
+      assertStageVec3(call.args.rotation, 'rotation')
+      assertStageVec3(call.args.scale, 'scale')
+      if (
+        call.args.pose !== undefined &&
+        (typeof call.args.pose !== 'string' ||
+          call.args.pose.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'pose 无效')
+      }
+      if (
+        call.args.color !== undefined &&
+        (typeof call.args.color !== 'string' ||
+          call.args.color.length > 40)
+      ) {
+        throw new AgentToolError('invalid_params', 'color 无效')
+      }
+      if (call.args.count !== undefined) {
+        const count = call.args.count
+        if (
+          typeof count !== 'number' ||
+          !Number.isInteger(count) ||
+          count < 1 ||
+          count > 100
+        ) {
+          throw new AgentToolError('invalid_params', 'count 必须是 1-100 的整数')
+        }
+      }
+    }
+
+    if (call.name === 'stage_transform_object') {
+      if (typeof call.args.objectId !== 'string' || !call.args.objectId.trim()) {
+        throw new AgentToolError('invalid_params', 'objectId 必须是非空字符串')
+      }
+      if (
+        call.args.position === undefined &&
+        call.args.rotation === undefined &&
+        call.args.scale === undefined
+      ) {
+        throw new AgentToolError('invalid_params', '至少需要 position、rotation 或 scale')
+      }
+      assertStageVec3(call.args.position, 'position')
+      assertStageVec3(call.args.rotation, 'rotation')
+      assertStageVec3(call.args.scale, 'scale')
+    }
+
+    if (call.name === 'stage_add_camera') {
+      if (
+        call.args.name !== undefined &&
+        (typeof call.args.name !== 'string' ||
+          !call.args.name.trim() ||
+          call.args.name.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'name 无效')
+      }
+      assertStageVec3(call.args.position, 'position')
+      assertStageVec3(call.args.target, 'target')
+      if (call.args.fov !== undefined) {
+        const fov = call.args.fov
+        if (
+          typeof fov !== 'number' ||
+          !Number.isFinite(fov) ||
+          fov < 10 ||
+          fov > 120
+        ) {
+          throw new AgentToolError('invalid_params', 'fov 必须在 10-120 之间')
+        }
+      }
+      if (
+        call.args.aspect !== undefined &&
+        !['16:9', '9:16', '1:1'].includes(String(call.args.aspect))
+      ) {
+        throw new AgentToolError('invalid_params', 'aspect 无效')
+      }
+    }
+
+    if (call.name === 'stage_set_active_camera') {
+      if (
+        typeof call.args.cameraId !== 'string' ||
+        !call.args.cameraId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'cameraId 必须是非空字符串')
+      }
+    }
+
+    if (call.name === 'stage_remove_object') {
+      if (
+        typeof call.args.objectId !== 'string' ||
+        !call.args.objectId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'objectId 必须是非空字符串')
+      }
     }
   }
 

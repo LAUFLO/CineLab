@@ -95,6 +95,34 @@ describe('stage file storage', () => {
     ).rejects.toThrow('场景文档无效')
   })
 
+  it('ignores stale snapshots so delayed saves cannot overwrite newer data', async () => {
+    const doc = await createStageFile(root, '初始')
+    const newer = {
+      ...doc,
+      name: '新版本',
+      updatedAt: new Date(Date.now() + 2000).toISOString()
+    }
+    await saveStageFile(root, newer)
+
+    const older = {
+      ...doc,
+      name: '旧版本',
+      updatedAt: new Date(Date.now() - 2000).toISOString()
+    }
+    await saveStageFile(root, older)
+
+    const loaded = await loadStageFile(root, doc.stageId)
+    expect(loaded?.name).toBe('新版本')
+  })
+
+  it('keeps the provided updatedAt timestamp', async () => {
+    const doc = await createStageFile(root)
+    const updatedAt = new Date(Date.now() + 5000).toISOString()
+    await saveStageFile(root, { ...doc, updatedAt })
+    const loaded = await loadStageFile(root, doc.stageId)
+    expect(loaded?.updatedAt).toBe(updatedAt)
+  })
+
   it('returns null for a missing stage file', async () => {
     await expect(loadStageFile(root, 'stage_missing')).resolves.toBeNull()
   })

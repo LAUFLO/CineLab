@@ -1,5 +1,5 @@
 {
-  "version": 54,
+  "version": 55,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "A1 导演台 3D 视口已完成：原生 three.js 全屏视口、对象素模/几何、机位标记、导演/机位视角、Raycaster 选中、截图回画布、自动保存与重开恢复，211 测试通过。下一步做 stage.* Agent 工具（get / capabilities / addObject / transformObject / addCamera）与 A2 手动编辑（拖拽变换、属性面板、增删对象/机位）；之后运镜时间轴与本地白模预演。",
+  "next_focus": "A2 导演台编辑与 stage.* Agent 工具已完成：stage_get/capabilities/add_object/transform_object/add_camera/set_active_camera/remove_object、TransformControls 移动/旋转/缩放、属性面板编辑、增删对象/机位、撤销/重做；修复旧快照覆盖新场景的落盘 bug，219 测试通过。下一步做运镜时间轴（镜头列表、关键帧、播放预演），再接本地白模预演视频导出；之后剪辑助手 clip profile 与技能管理 UI。",
   "frontier": [
     {
       "id": "M2-1",
@@ -252,6 +252,21 @@
         "src/renderer/src/stage/StageWindow.tsx",
         "src/renderer/src/stage/StageViewport.tsx",
         "src/renderer/src/stage/stageStore.ts"
+      ]
+    },
+    {
+      "id": "STAGE-AGENT-EDITING-1",
+      "title": "stage Agent 工具与 A2 手动编辑",
+      "status": "done",
+      "note": "2026-11-09 完成。新增 stage_get / stage_capabilities / stage_add_object / stage_transform_object / stage_add_camera / stage_set_active_camera / stage_remove_object；渲染桥在导演台打开时走 store，未打开时直接读写场景文件并同步节点摘要。A2 加入 three TransformControls（移动/旋转/缩放）、对象与机位属性面板编辑、左栏添加/删除、撤销/重做。真实 UI 验证属性位置写回、添加对象/机位、删除与撤销；真实 Agent 验证 capabilities/add_object/add_camera/stage_get。发现并修复 Agent 工具只改内存、不落盘、旧快照覆盖新场景的问题：工具执行后立即保存，saveStageFile 拒绝更旧 updatedAt。31 文件 219 测试通过；typecheck/build 通过，主进程约 458KB。",
+      "evidence": [
+        ".opencode/handover/evidence/STAGE-AGENT-EDITING-1.md",
+        ".opencode/handover/evidence/STAGE-EDITING-1.png",
+        "docs/director-stage-viewport-plan.md",
+        "src/renderer/src/agent/stageBridge.ts",
+        "src/main/agent/tools.ts",
+        "src/renderer/src/stage/StageViewport.tsx",
+        "src/renderer/src/stage/StageInspector.tsx"
       ]
     },
     {
@@ -1379,8 +1394,8 @@
       "id": "G-AGENT-MAIN",
       "scope": "repo",
       "status": "blocked",
-      "reason": "origin/main 新增 a768e64（Markdown 文本编辑 / 工作区增强）与 6abef3d（成片合并进剪辑室节点 / 节点 UI 调整），当前 feat/agent-runtime 落后 2 个提交",
-      "resolve": "推送前先同步 origin/main，重点检查 StudioNodeView / CineNodeView / canvas store / preload / ipc-contract 冲突"
+      "reason": "origin/main 新增 a768e64（Markdown 文本编辑 / 工作区增强）、6abef3d（成片合并进剪辑室节点 / 节点 UI 调整）、3a406a7（音频波形与裁剪/变速），当前 feat/agent-runtime 落后 3 个提交",
+      "resolve": "推送前先同步 origin/main，重点检查 StudioNodeView / CineNodeView / AudioPlayer / canvas store / preload / ipc-contract 冲突"
     }
   ],
   "completed": [
@@ -2186,6 +2201,14 @@
     {
       "category": "engineering",
       "content": "导演台与剪辑室都是全屏工作区，画布快捷键让位要同时检查 .studio-window 和 .stage-window。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 的 stage 工具必须立即保存场景文件，不能只依赖导演台窗口的 500ms 防抖保存，否则窗口关闭时的旧快照会覆盖工具结果。"
+    },
+    {
+      "category": "engineering",
+      "content": "场景文件保存要保留调用方 updatedAt 并拒绝更旧快照，防止延迟保存或并发工具保存覆盖新数据。"
     }
   ],
   "designConventions": [
@@ -2219,6 +2242,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "stage.* Agent 工具与 A2 手动编辑"
+    "nextMilestone": "运镜时间轴与本地白模预演"
   }
 }

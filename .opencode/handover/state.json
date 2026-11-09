@@ -1,5 +1,5 @@
 {
-  "version": 53,
+  "version": 54,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "stage 节点与场景存储已完成：画布 StageNodeView、<project>/stages 文件读写、复制/粘贴深拷贝、重开保留，211 测试通过。下一步做 three.js 3D 视口与机位切换（P0），随后 stage.* Agent 工具、运镜时间轴与本地白模预演；clip profile、技能管理 UI、删除/批量二次确认仍在队列。",
+  "next_focus": "A1 导演台 3D 视口已完成：原生 three.js 全屏视口、对象素模/几何、机位标记、导演/机位视角、Raycaster 选中、截图回画布、自动保存与重开恢复，211 测试通过。下一步做 stage.* Agent 工具（get / capabilities / addObject / transformObject / addCamera）与 A2 手动编辑（拖拽变换、属性面板、增删对象/机位）；之后运镜时间轴与本地白模预演。",
   "frontier": [
     {
       "id": "M2-1",
@@ -238,6 +238,20 @@
         "src/main/stage/storage.ts",
         "src/main/ipc/stage.ts",
         "src/renderer/src/canvas/nodes/StageNodeView.tsx"
+      ]
+    },
+    {
+      "id": "STAGE-VIEWPORT-1",
+      "title": "导演台 A1 3D 视口：原生 three.js、机位切换、截图",
+      "status": "done",
+      "note": "2026-11-09 完成。新增 StageWindow / StageViewport / StageInspector / stageStore / stage.css；原生 three.js 渲染背景、网格、灯光、人体素模、box/sphere/plane/crowd、机位标记；OrbitControls 导演视角，机位视角按 position/target/fov 切换；Raycaster 选中对象/机位，BoxHelper 高亮；stage:capture 把 PNG 写入资产并自动创建图片节点连线；doc 变化 500ms 防抖保存，关闭补存，重开恢复 activeCameraId。31 文件 211 测试通过；typecheck/build 通过，主进程约 449KB。真实隔离实例验证 4 对象/2 机位/1 镜头、对象属性、机位切换画面变化、截图节点与资产、关闭摘要与重开恢复。A2 拖拽编辑、stage.* Agent 工具、运镜与白模预演待接入。",
+      "evidence": [
+        ".opencode/handover/evidence/STAGE-VIEWPORT-1.md",
+        ".opencode/handover/evidence/STAGE-VIEWPORT-1.png",
+        "docs/director-stage-viewport-plan.md",
+        "src/renderer/src/stage/StageWindow.tsx",
+        "src/renderer/src/stage/StageViewport.tsx",
+        "src/renderer/src/stage/stageStore.ts"
       ]
     },
     {
@@ -2164,6 +2178,14 @@
     {
       "category": "engineering",
       "content": "删除导演台节点不要立即删除场景文件：画布撤销无法恢复文件；场景孤儿清理应独立于节点删除。"
+    },
+    {
+      "category": "engineering",
+      "content": "导演台用原生 three.js 渲染内核 + React 外壳；WebGLRenderer 必须开启 preserveDrawingBuffer，截图前先渲染一帧再 toDataURL。"
+    },
+    {
+      "category": "engineering",
+      "content": "导演台与剪辑室都是全屏工作区，画布快捷键让位要同时检查 .studio-window 和 .stage-window。"
     }
   ],
   "designConventions": [
@@ -2197,6 +2219,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "three.js 3D 视口与机位切换"
+    "nextMilestone": "stage.* Agent 工具与 A2 手动编辑"
   }
 }

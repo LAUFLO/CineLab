@@ -28,8 +28,9 @@
 | `AGENT-PROPOSAL-1` | 生成提案 propose/submit、提案卡、幂等、失效 |
 | `STAGE-COMMANDS-1` | 导演台场景 schema、17 类命令、原子 batch、撤销/重做历史 |
 | `STAGE-NODE-STORAGE-1` | 画布导演台节点、`stages/` 场景读写、复制深拷贝、重开保留 |
-| 验证 | 211 测试、`typecheck`、`build` 通过；真实 Agnes 图片提案与导演台节点验证完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 11 个提交、落后 1 个（a768e64），未推送；推送前先同步 |
+| `STAGE-VIEWPORT-1` | 原生 three.js 3D 视口、机位切换、选中、截图回画布、自动保存 |
+| 验证 | 211 测试、`typecheck`、`build` 通过；真实 Agnes 图片提案与导演台视口验证完成 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 12 个提交、落后 1 个（a768e64），未推送；推送前先同步 |
 
 ## 关键工件
 
@@ -37,6 +38,7 @@
 - `docs/agent-architecture-plan.md`：运行时、工具协议、权限、回合、上下文、技能
 - `docs/agent-generation-proposal-plan.md`：生成提案字段、状态机、幂等与失效规则
 - `docs/director-stage-plan.md`：3D 片场 + 本地白模预演
+- `docs/director-stage-viewport-plan.md`：原生 three.js 视口与 A1/A2/A3 范围
 - `docs/clip-studio-plan.md`：剪辑室
 - `docs/film-study-plan.md`：拉片室
 - `.opencode/handover/state.json`：唯一状态真相源
@@ -44,11 +46,11 @@
 
 ## 下一步
 
-1. three.js 3D 视口与机位切换
-2. `stage.*` Agent 工具执行层
-3. 运镜时间轴与本地白模预演
-4. 剪辑助手 `clip` profile、技能管理 UI
-5. 删除 / 批量二次确认；整体验收
+1. `stage.*` Agent 工具与 A2 手动编辑
+2. 运镜时间轴与本地白模预演
+3. 剪辑助手 `clip` profile、技能管理 UI
+4. 删除 / 批量二次确认
+5. 整体验收；Agnes 视频补测
 
 ## 设计约定
 
@@ -58,6 +60,7 @@
 - Agent 会话存 `<project>/.cinelab/agent/sessions/<id>.jsonl`。
 - 生成提案存 `<project>/.cinelab/agent/proposals/<id>.json`。
 - 导演台场景存 `<project>/stages/<stageId>.json`；手动编辑与 Agent 共用 `StageCommand`。
+- 导演台 3D 视口用原生 three.js 渲染内核 + React 外壳，不引入 R3F。
 - 工具执行在渲染进程；主进程构造 scope、权限和回合事务。
 - 生成必须走提案确认，不直接执行；`generation_submit` 不暴露给模型。
 

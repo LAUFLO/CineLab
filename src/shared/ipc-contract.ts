@@ -389,6 +389,7 @@ export interface StageApi {
   save(doc: DirectorStageDoc): Promise<void>
   delete(stageId: string): Promise<void>
   duplicate(stageId: string): Promise<DirectorStageDoc>
+  capture(input: { stageId: string; dataUrl: string }): Promise<GeneratedAsset>
 }
 
 export interface CineApi {

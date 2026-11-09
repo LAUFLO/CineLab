@@ -1,7 +1,7 @@
 # 导演台方案：3D 片场 + 本地白模预演
 
 日期：2026-11-09
-状态：**stage 节点与场景存储已完成；3D 视口与 Agent 执行层待接入**
+状态：**stage 节点、场景存储与 A1 3D 视口已完成；Agent 工具与编辑能力待接入**
 关联：LibTV 3D 导演台 / 3D-BOX、TapNow CineMap
 关联文档：`docs/agent-full-scope.md`、`docs/clip-studio-plan.md`
 
@@ -469,3 +469,11 @@ DirectorStageDoc + StageShot
   - 添加节点菜单可创建导演台；复制/粘贴会深拷贝场景文件；项目导出自动包含 `stages/`。
   - 删除节点暂不清理场景文件，避免画布撤销后场景丢失。
   - 3D 视口、机位切换、截图与 `stage.*` Agent 工具仍待接入。
+- 2026-11-09：完成 A1 3D 视口（原生 three.js）。
+  - 全屏 `StageWindow`、左侧对象/机位/镜头列表、右侧只读属性、顶栏视角切换。
+  - 原生 three 渲染内核：背景、网格、灯光、人体素模、box/sphere/plane/crowd、机位标记。
+  - 导演视角 OrbitControls；机位视角按 position/target/fov 切换。
+  - Raycaster 选中对象/机位；BoxHelper 高亮。
+  - 截图经 `stage:capture` 写入资产，并自动创建图片节点连线。
+  - 自动保存与关闭补存；重开恢复 activeCameraId。
+  - 拖拽变换、属性编辑、添加/删除对象与机位、运镜时间轴、白模预演仍待接入。

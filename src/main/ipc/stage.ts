@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import type { DirectorStageDoc } from '@shared/stage-schema'
+import { ingestAsset } from '../assets/ingest'
 import { getCurrentProjectRoot } from '../project/manager'
 import {
   createStageFile,
@@ -51,5 +52,36 @@ export function registerStageIpc(): void {
   ipcMain.handle('stage:duplicate', async (_event, stageId: unknown) => {
     const root = requireProjectRoot()
     return duplicateStageFile(root, readStageId(stageId))
+  })
+
+  ipcMain.handle('stage:capture', async (_event, input: unknown) => {
+    if (!input || typeof input !== 'object') {
+      throw new Error('截图参数无效')
+    }
+    const { stageId, dataUrl } = input as {
+      stageId?: unknown
+      dataUrl?: unknown
+    }
+    const id = readStageId(stageId)
+    if (typeof dataUrl !== 'string') throw new Error('截图数据无效')
+
+    const match = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl)
+    if (!match) throw new Error('只支持 PNG 截图')
+    const data = Buffer.from(match[1], 'base64')
+    if (data.length > 20 * 1024 * 1024) {
+      throw new Error('截图不能超过 20MB')
+    }
+
+    const root = requireProjectRoot()
+    const doc = await loadStageFile(root, id)
+    if (!doc) throw new Error('场景文件不存在')
+
+    return ingestAsset({
+      projectPath: root,
+      data,
+      kind: 'image',
+      mime: 'image/png',
+      model: '导演台'
+    })
   })
 }

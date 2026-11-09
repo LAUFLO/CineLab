@@ -1,5 +1,5 @@
 {
-  "version": 59,
+  "version": 60,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "删除/批量确认与 AI 入口调整已完成：requiresConfirm + confirm_request 确认卡覆盖节点/片段/导演台对象删除，时间线超 10 片段批量操作需确认；真实验证取消、允许与撤销；底部工具栏 robot 按钮删除，AI 悬浮按钮下移左移并换成用户 SVG。243 测试通过。下一步补剪辑高级工具（自动字幕/删静音/转场/导出）、技能文件上传与覆盖快捷操作，再做整体验收；推送前先同步 origin/main。",
+  "next_focus": "助手 UI 重做已完成：LibTV 风格面板、对话历史/新建/自动标题、文本模型选择、技能插入、权限菜单、工具过程折叠且不再展示 JSON；会话与模型选择已接后端，247 测试通过。下一步补剪辑高级工具（自动字幕/删静音/转场/导出）与技能文件上传/覆盖快捷操作，再做整体验收；推送前先同步 origin/main。",
   "frontier": [
     {
       "id": "M2-1",
@@ -338,6 +338,22 @@
         "src/renderer/src/agent/AgentPanel.tsx",
         "src/renderer/src/canvas/BottomBar.tsx",
         "src/renderer/src/styles/agent.css"
+      ]
+    },
+    {
+      "id": "AGENT-UI-2",
+      "title": "助手 UI 重做、会话与文本模型选择",
+      "status": "done",
+      "note": "2026-11-09 完成。AgentPanel 重做为 LibTV 风格圆角面板；新增历史会话下拉（搜索/新建/切换/自动标题）、文本模型选择器（自动或指定 provider/model）、技能选择插入、权限菜单；工具调用折叠为「思考过程」，只显示友好名称与状态，不再展示参数/结果 JSON，错误才显示错误文本；助手消息支持复制。后端新增 AgentSessionInfo、list/create/rename session、session meta 自动标题、listTextModels、resolveTextModel(modelKey)，提案按 session 读取。36 文件 247 测试通过；typecheck/build 通过。真实 UI 验证历史会话、新建对话、模型选择 Agnes、发送后自动标题、技能插入与权限菜单。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-UI-2.md",
+        ".opencode/handover/evidence/AGENT-UI-1.png",
+        ".opencode/handover/evidence/AGENT-UI-2.png",
+        ".opencode/handover/evidence/AGENT-UI-MODEL-1.png",
+        ".opencode/handover/evidence/AGENT-UI-SESSIONS-2.png",
+        "src/renderer/src/agent/AgentPanel.tsx",
+        "src/main/agent/session.ts",
+        "src/main/agent/model.ts"
       ]
     },
     {
@@ -2308,6 +2324,14 @@
     {
       "category": "engineering",
       "content": "画布 AI 入口使用 assets/agent-icon.svg，底部工具栏不再重复放 robot 按钮。"
+    },
+    {
+      "category": "engineering",
+      "content": "助手工具过程不要直接展示 JSON；按工具名映射中文标签，折叠为「思考过程」，错误才展示错误文本。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 会话按项目存 JSONL，meta 条目保存标题；首条用户消息自动命名；会话与文本模型选择存本地偏好，请求带 sessionId 与 modelKey。"
     }
   ],
   "designConventions": [

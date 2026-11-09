@@ -387,10 +387,19 @@ const api: CineApi = {
     cancel: (turnId) => ipcRenderer.invoke('agent:cancel', turnId),
     toolResult: (input) => ipcRenderer.invoke('agent:tool-result', input),
     confirm: (input) => ipcRenderer.invoke('agent:confirm', input),
-    sessionLoad: () => ipcRenderer.invoke('agent:session-load'),
-    modelInfo: () => ipcRenderer.invoke('agent:model-info'),
+    sessionLoad: (sessionId) =>
+      ipcRenderer.invoke('agent:session-load', sessionId),
+    sessionList: () => ipcRenderer.invoke('agent:session-list'),
+    sessionCreate: (title) =>
+      ipcRenderer.invoke('agent:session-create', title),
+    sessionRename: (sessionId, title) =>
+      ipcRenderer.invoke('agent:session-rename', sessionId, title),
+    modelInfo: (modelKey) =>
+      ipcRenderer.invoke('agent:model-info', modelKey),
+    textModels: () => ipcRenderer.invoke('agent:text-models'),
     proposalCreate: (input) => ipcRenderer.invoke('agent:proposal-create', input),
-    proposalActive: () => ipcRenderer.invoke('agent:proposal-active'),
+    proposalActive: (sessionId) =>
+      ipcRenderer.invoke('agent:proposal-active', sessionId),
     proposalSubmit: (proposalId) =>
       ipcRenderer.invoke('agent:proposal-submit', proposalId),
     proposalCancel: (proposalId) =>

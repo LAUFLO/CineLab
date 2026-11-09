@@ -27,12 +27,23 @@ export interface AgentChatRequest {
   selectedClipIds?: string[]
   playheadMs?: number
   sessionId?: string
+  /** 用户选择的文本模型；省略时自动选择第一个可用模型 */
+  modelKey?: string
 }
 
 export interface AgentModelInfo {
   providerId: string
   modelId: string
   name: string
+  providerName?: string
+}
+
+export interface AgentSessionInfo {
+  sessionId: string
+  title: string
+  updatedAt: string
+  messageCount: number
+  preview?: string
 }
 
 export interface AgentUsage {
@@ -149,6 +160,7 @@ export interface AgentSessionMessage {
 
 export interface AgentSessionSnapshot {
   sessionId: string
+  title?: string
   messages: AgentSessionMessage[]
   turns: AgentTurn[]
 }
@@ -188,4 +200,8 @@ export type AgentSessionEntry =
   | (AgentSessionEntryBase & {
       type: 'turn'
       turn: AgentTurn
+    })
+  | (AgentSessionEntryBase & {
+      type: 'meta'
+      title: string
     })

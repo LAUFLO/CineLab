@@ -8,7 +8,7 @@ import type {
   AgentToolCallRequest,
   AgentToolResultInput
 } from '@shared/agent'
-import { resolveTextModel } from '../agent/model'
+import { listTextModels, resolveTextModel } from '../agent/model'
 import {
   activeProposal,
   cancelProposal,
@@ -23,7 +23,13 @@ import {
   resolveToolResult,
   startTurn
 } from '../agent/runtime'
-import { loadSession, requireProjectRoot } from '../agent/session'
+import {
+  createSession,
+  listSessions,
+  loadSession,
+  renameSession,
+  requireProjectRoot
+} from '../agent/session'
 
 function broadcastProposal(proposal: AgentProposal): void {
   const event: AgentEvent = { type: 'proposal', proposal }
@@ -106,6 +112,11 @@ function assertChatRequest(input: unknown): AgentChatRequest {
       : {}),
     ...(typeof request.sessionId === 'string'
       ? { sessionId: request.sessionId }
+      : {}),
+    ...(typeof request.modelKey === 'string' &&
+    request.modelKey.includes('/') &&
+    request.modelKey.length <= 300
+      ? { modelKey: request.modelKey }
       : {})
   }
 }
@@ -165,13 +176,41 @@ export function registerAgentIpc(): void {
     })
   })
 
-  ipcMain.handle('agent:session-load', async () => {
+  ipcMain.handle('agent:session-load', async (_event, sessionId: unknown) => {
+    if (typeof sessionId !== 'string' || !sessionId.trim()) {
+      throw new Error('缺少会话 ID')
+    }
     const root = requireProjectRoot()
-    return loadSession(root, 'main')
+    return loadSession(root, sessionId.trim())
   })
 
-  ipcMain.handle('agent:model-info', async () => {
-    const runtime = await resolveTextModel()
+  ipcMain.handle('agent:session-list', async () => {
+    return listSessions(requireProjectRoot())
+  })
+
+  ipcMain.handle('agent:session-create', async (_event, title: unknown) => {
+    return createSession(
+      requireProjectRoot(),
+      typeof title === 'string' ? title : '新对话'
+    )
+  })
+
+  ipcMain.handle(
+    'agent:session-rename',
+    async (_event, sessionId: unknown, title: unknown) => {
+      if (typeof sessionId !== 'string' || typeof title !== 'string') {
+        throw new Error('会话参数无效')
+      }
+      return renameSession(requireProjectRoot(), sessionId, title)
+    }
+  )
+
+  ipcMain.handle('agent:text-models', async () => listTextModels())
+
+  ipcMain.handle('agent:model-info', async (_event, modelKey: unknown) => {
+    const runtime = await resolveTextModel(
+      typeof modelKey === 'string' ? modelKey : undefined
+    )
     return runtime?.info ?? null
   })
 
@@ -199,10 +238,18 @@ export function registerAgentIpc(): void {
     return createProposal(root, info.sessionId, draft)
   })
 
-  ipcMain.handle('agent:proposal-active', async () => {
-    const root = requireProjectRoot()
-    return activeProposal(root, 'main')
-  })
+  ipcMain.handle(
+    'agent:proposal-active',
+    async (_event, sessionId: unknown) => {
+      const root = requireProjectRoot()
+      return activeProposal(
+        root,
+        typeof sessionId === 'string' && sessionId.trim()
+          ? sessionId.trim()
+          : 'main'
+      )
+    }
+  )
 
   ipcMain.handle('agent:proposal-submit', async (_event, proposalId: unknown) => {
     if (typeof proposalId !== 'string' || !proposalId.trim()) {

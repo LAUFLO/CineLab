@@ -45,6 +45,26 @@ describe('timeline canvas ratio', () => {
     expect(next.video.height).toBe(1080)
   })
 
+  it('matches a 4:3 first clip', () => {
+    const doc = createTimeline({ id: 't', name: 't' })
+    const next = applyCommand(doc, {
+      op: 'addClip',
+      clip: videoClip(doc, 1440, 1080)
+    })
+    expect(next.video.width).toBe(1440)
+    expect(next.video.height).toBe(1080)
+  })
+
+  it('matches a 21:9 first clip', () => {
+    const doc = createTimeline({ id: 't', name: 't' })
+    const next = applyCommand(doc, {
+      op: 'addClip',
+      clip: videoClip(doc, 2560, 1080)
+    })
+    expect(next.video.width).toBe(2560)
+    expect(next.video.height).toBe(1080)
+  })
+
   it('keeps 16:9 for landscape clips', () => {
     const doc = createTimeline({ id: 't', name: 't' })
     const next = applyCommand(doc, {

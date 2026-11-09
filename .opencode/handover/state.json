@@ -1,8 +1,8 @@
 {
-  "version": 57,
+  "version": 58,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-09T14:58:29.307Z",
+  "updatedAt": "2026-11-09T15:30:59.377Z",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
@@ -1218,6 +1218,16 @@
       "note": "2026-11-09 完成。时间线首个视频/图片素材自动匹配画幅（竖屏 1080x1920、方形 1080x1080、横屏保持 1920x1080），仅在时间线为空且仍是默认 16:9 时生效；timelineMediaRef 增加 width/height，画布素材 PoolAsset 带上输出尺寸；预览渲染从 cover 改为 contain，不再裁剪；属性面板新增 16:9/9:16/1:1 画幅快捷按钮。新增 timeline-canvas 测试 5 例；typecheck、160 tests、build 通过。",
       "evidence": [
         ".opencode/handover/evidence/STUDIO-RATIO-1.md"
+      ]
+    },
+    {
+      "id": "STUDIO-RATIO-2",
+      "title": "六种画幅、时间线缩略图不裁剪",
+      "status": "done",
+      "note": "2026-11-09 完成。画幅扩展为 9:16/16:9/21:9/3:4/4:3/1:1 六种，属性面板 3 列布局；首个素材自动匹配比例同步扩展到 21:9 和 4:3/3:4。竖屏素材时间线缩略图改为按原始比例 repeat-x 平铺，普通素材和多处缩略图从 cover 改为 contain，不再裁剪。typecheck、162 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/STUDIO-RATIO-2.md",
+        ".opencode/handover/evidence/STUDIO-RATIO-2-portrait.png"
       ]
     }
   ],

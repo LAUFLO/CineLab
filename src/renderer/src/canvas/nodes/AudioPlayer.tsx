@@ -213,6 +213,38 @@ export function AudioPlayer({
     <div className={`audio-node${busy ? ' is-busy' : ''}`}>
       <audio ref={audioRef} src={src ?? undefined} preload="metadata" />
 
+      <div className="audio-node__controls">
+        <span className="audio-node__time">{timeLabel(currentTime)}</span>
+        <button
+          type="button"
+          className="audio-node__play nodrag nopan"
+          onClick={toggle}
+          disabled={busy || !src}
+          title={playing ? '暂停' : '播放'}
+        >
+          {playing ? (
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <path
+                d="M7 5h4v14H7zM13 5h4v14h-4z"
+                fill="currentColor"
+                stroke="none"
+              />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <path
+                d="M8 5v14l11-7z"
+                fill="currentColor"
+                stroke="none"
+              />
+            </svg>
+          )}
+        </button>
+        <span className="audio-node__time">
+          {timeLabel(Math.round(duration || 0))}
+        </span>
+      </div>
+
       <div
         className={`audio-node__wave-wrap nodrag nopan${
           selecting ? ' is-selecting' : ''
@@ -290,38 +322,6 @@ export function AudioPlayer({
           </div>
         </div>
       ) : null}
-
-      <div className="audio-node__controls">
-        <span className="audio-node__time">{timeLabel(currentTime)}</span>
-        <button
-          type="button"
-          className="audio-node__play nodrag nopan"
-          onClick={toggle}
-          disabled={busy || !src}
-          title={playing ? '暂停' : '播放'}
-        >
-          {playing ? (
-            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-              <path
-                d="M7 5h4v14H7zM13 5h4v14h-4z"
-                fill="currentColor"
-                stroke="none"
-              />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-              <path
-                d="M8 5v14l11-7z"
-                fill="currentColor"
-                stroke="none"
-              />
-            </svg>
-          )}
-        </button>
-        <span className="audio-node__time">
-          {timeLabel(Math.round(duration || 0))}
-        </span>
-      </div>
     </div>
   )
 }

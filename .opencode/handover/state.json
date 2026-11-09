@@ -1,8 +1,8 @@
 {
-  "version": 54,
+  "version": 55,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-09T12:42:00.263Z",
+  "updatedAt": "2026-11-09T13:52:46.203Z",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
@@ -1189,6 +1189,17 @@
         ".opencode/handover/evidence/FILM-STUDY-REA-1.md",
         ".opencode/handover/evidence/FILM-STUDY-REA-1-edge-menu.png",
         ".opencode/handover/evidence/FILM-STUDY-REA-1-codec.png"
+      ]
+    },
+    {
+      "id": "NODE-POLISH-2",
+      "title": "音频控制条上移、文本节点占位图标移除",
+      "status": "done",
+      "note": "2026-11-09 完成。音频节点的播放/时间控制条从卡片底部移到波形上方，避免被底部 Prompt Bar 遮挡；文本节点有内容时不再渲染三条杠占位图标（此前占位图标与绝对定位文本叠加）。typecheck 通过，截图确认。",
+      "evidence": [
+        ".opencode/handover/evidence/NODE-POLISH-2.md",
+        ".opencode/handover/evidence/NODE-POLISH-2-audio.png",
+        ".opencode/handover/evidence/NODE-POLISH-2-text.png"
       ]
     }
   ],

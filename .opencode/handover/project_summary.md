@@ -37,7 +37,7 @@
 | `AGENT-FAB-1` | 底部工具栏 robot 按钮移除，AI 悬浮按钮位置与 SVG 图标调整 |
 | `AGENT-UI-2` | LibTV 风格助手、会话历史、文本模型/技能选择、工具过程隐藏 JSON |
 | 验证 | 247 测试、`typecheck`、`build` 通过；真实 Agnes 提案、视口、stage、白模导出、剪辑助手、技能 UI、确认流程与助手新 UI 验证完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 20 个提交、落后 5 个（a768e64、6abef3d、3a406a7、436768d、91b16b4），未推送；推送前先同步 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 20 个提交、落后 6 个（a768e64、6abef3d、3a406a7、436768d、91b16b4、71c8b48），未推送；推送前先同步 |
 
 ## 关键工件
 

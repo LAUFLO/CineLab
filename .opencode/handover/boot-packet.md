@@ -4,7 +4,7 @@
 
 ## 状态
 
-2026-11-09：生成提案、导演台全链路、剪辑助手 `clip`、技能管理 UI、删除/批量确认、AI 入口调整、助手 UI 重做均已完成。新助手支持历史会话、文本模型选择、技能插入、权限菜单，工具过程不展示 JSON。36 文件 247 测试通过，`typecheck` / `build` 通过。`feat/agent-runtime` 领先 `origin/main` 20 个提交、落后 5 个，未推送。
+2026-11-09：生成提案、导演台全链路、剪辑助手 `clip`、技能管理 UI、删除/批量确认、AI 入口调整、助手 UI 重做均已完成。新助手支持历史会话、文本模型选择、技能插入、权限菜单，工具过程不展示 JSON。36 文件 247 测试通过，`typecheck` / `build` 通过。`feat/agent-runtime` 领先 `origin/main` 20 个提交、落后 6 个，未推送。
 
 ## Frontier
 
@@ -17,7 +17,7 @@
 ## Gates
 
 - G-AGENT-VIDEO：Agnes Video 2.5 Flash 队列 503，待恢复重试。
-- G-AGENT-MAIN：origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4；推送前先同步，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract 冲突。
+- G-AGENT-MAIN：origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4、71c8b48；推送前先同步，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract 冲突。
 
 ## 证据
 

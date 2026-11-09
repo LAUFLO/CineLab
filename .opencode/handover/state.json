@@ -1481,7 +1481,7 @@
       "id": "G-AGENT-MAIN",
       "scope": "repo",
       "status": "blocked",
-      "reason": "origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4（连线删除 / 拉片镜头检测重做），当前 feat/agent-runtime 落后 5 个提交",
+      "reason": "origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4（连线删除 / 拉片镜头检测重做）、71c8b48（音频控件与文本占位），当前 feat/agent-runtime 落后 6 个提交",
       "resolve": "推送前先同步 origin/main，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract 冲突"
     }
   ],

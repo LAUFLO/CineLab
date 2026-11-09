@@ -1,8 +1,8 @@
 {
-  "version": 52,
+  "version": 53,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-09T11:09:45.137Z",
+  "updatedAt": "2026-11-09T11:40:20.898Z",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
@@ -1166,6 +1166,18 @@
         ".opencode/handover/evidence/AUDIO-LIBTV-1-waveform.png",
         ".opencode/handover/evidence/AUDIO-LIBTV-1-trim.png",
         ".opencode/handover/evidence/AUDIO-LIBTV-1-speed.png"
+      ]
+    },
+    {
+      "id": "NODE-POLISH-1",
+      "title": "音频波形铺满、双击菜单剪辑室、时间线提亮、文本编辑入口与换行、拉片布局、分镜表间距",
+      "status": "done",
+      "note": "2026-11-09 完成。音频波形柱数 96→60，波形区去掉 padding 铺满卡片圆角，消除上下/右侧白条；播放按钮改无边框 28px；版本切换移到波形右上角。画布双击添加菜单新增剪辑室。剪辑室时间线缩略图透明度 0.55/0.6→0.92/0.95，去掉青色蒙层。文本节点双击只聚焦不编辑，移除节点内编辑按钮，编辑统一到工具栏/右键；新增 UI store global textEditorNodeId，右键菜单可直接打开；长串 anywhere 换行；滚动条 7px 圆角 thumb。拉片节点按钮统一 30px、右下角对齐，下拉框/chips 间距优化。分镜表浮窗顶部间距 24→48。typecheck、145 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/NODE-POLISH-1.md",
+        ".opencode/handover/evidence/NODE-POLISH-1-audio.png",
+        ".opencode/handover/evidence/NODE-POLISH-1-study.png",
+        ".opencode/handover/evidence/NODE-POLISH-1-sheet.png"
       ]
     }
   ],

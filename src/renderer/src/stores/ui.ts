@@ -69,6 +69,7 @@ interface UIStore {
   shortcutsOpen: boolean
   historyOpen: boolean
   searchOpen: boolean
+  textEditorNodeId: string | null
   setTool: (tool: CanvasTool) => void
   requestAddMenu: (anchor?: XYPosition) => void
   openShortcuts: () => void
@@ -89,6 +90,8 @@ interface UIStore {
     command: Omit<NodeCommandState, 'nonce'>
   ) => void
   consumeNodeCommand: () => void
+  openTextEditor: (nodeId: string) => void
+  closeTextEditor: () => void
   applyPrompt: (prompt: string) => void
   clearPendingPrompt: () => void
   requestConfirm: (confirm: ConfirmState) => void
@@ -119,6 +122,7 @@ export const useUIStore = create<UIStore>((set) => ({
   shortcutsOpen: false,
   historyOpen: false,
   searchOpen: false,
+  textEditorNodeId: null,
   setTool: (tool) => set({ tool }),
   requestAddMenu: (anchor) =>
     set((state) => ({
@@ -148,6 +152,8 @@ export const useUIStore = create<UIStore>((set) => ({
       nodeCommand: { ...command, nonce: (state.nodeCommand?.nonce ?? 0) + 1 }
     })),
   consumeNodeCommand: () => set({ nodeCommand: null }),
+  openTextEditor: (nodeId) => set({ textEditorNodeId: nodeId }),
+  closeTextEditor: () => set({ textEditorNodeId: null }),
   applyPrompt: (prompt) => set({ pendingPrompt: prompt }),
   clearPendingPrompt: () => set({ pendingPrompt: null }),
   requestConfirm: (confirm) => set({ confirm }),

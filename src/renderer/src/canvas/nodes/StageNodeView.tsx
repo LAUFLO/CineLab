@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { Icon } from '../../components/Icon'
 import { useCanvasStore, type StageNode } from '../../stores/canvas'
+import { useStageStore } from '../../stage/stageStore'
 
 export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
   const patchStageNode = useCanvasStore((state) => state.patchStageNode)
+  const openStage = useStageStore((state) => state.openStage)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
 
@@ -44,7 +46,13 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
         <span className="stage-node__badge">场景</span>
       </div>
 
-      <div className="cnode__card stage-node__card">
+      <div
+        className="cnode__card stage-node__card"
+        onDoubleClick={(event) => {
+          event.stopPropagation()
+          void openStage(id)
+        }}
+      >
         <div className="stage-node__preview">
           <Icon name="grid" size={32} />
           <span>3D 片场</span>
@@ -61,8 +69,10 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
         <button
           type="button"
           className="stage-node__open nodrag nopan"
-          disabled
-          title="3D 视口将在下一阶段接入"
+          onClick={(event) => {
+            event.stopPropagation()
+            void openStage(id)
+          }}
         >
           <Icon name="frame" size={13} />
           打开导演台

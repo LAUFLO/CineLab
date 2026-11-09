@@ -420,7 +420,9 @@ const api: CineApi = {
     save: (doc: DirectorStageDoc) => ipcRenderer.invoke('stage:save', doc),
     delete: (stageId: string) => ipcRenderer.invoke('stage:delete', stageId),
     duplicate: (stageId: string) =>
-      ipcRenderer.invoke('stage:duplicate', stageId)
+      ipcRenderer.invoke('stage:duplicate', stageId),
+    capture: (input: { stageId: string; dataUrl: string }) =>
+      ipcRenderer.invoke('stage:capture', input)
   }
 }
 

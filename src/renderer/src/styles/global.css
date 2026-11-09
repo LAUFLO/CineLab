@@ -8060,10 +8060,13 @@ body.is-node-menu-open .react-flow {
   border: 1px solid var(--border);
   border-radius: 7px;
   background: var(--surface);
-  color: var(--text-2);
+  color: var(--text-1);
   font-size: 12px;
-  cursor: default;
-  opacity: 0.6;
+  cursor: pointer;
+}
+
+.stage-node__open:hover {
+  background: var(--surface-hover);
 }
 
 .film-node__card {

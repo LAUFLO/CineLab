@@ -7,8 +7,10 @@ import type {
   AgentSessionMessage,
   AgentTurn
 } from '@shared/agent'
-import { useCanvasStore } from '../stores/canvas'
+import { isStudioNode, useCanvasStore } from '../stores/canvas'
 import { useProjectStore } from '../stores/project'
+import { useStudioStore } from '../stores/studio'
+import { useTimelineStore } from '../stores/timeline'
 
 export interface AgentMessage {
   id: string
@@ -63,7 +65,8 @@ export function agentTurnChangeCount(turn: AgentTurn | null): number {
     (change.updatedNodeIds?.length ?? 0) +
     (change.deletedNodeIds?.length ?? 0) +
     (change.createdEdgeIds?.length ?? 0) +
-    (change.deletedEdgeIds?.length ?? 0)
+    (change.deletedEdgeIds?.length ?? 0) +
+    (change.timelineUpdated ? 1 : 0)
   )
 }
 
@@ -220,6 +223,22 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       .filter((node) => node.selected)
       .map((node) => node.id)
 
+    const studio = useStudioStore.getState()
+    const timelineState = useTimelineStore.getState()
+    const studioNode =
+      studio.open && studio.nodeId
+        ? canvas.nodes.find((node) => node.id === studio.nodeId)
+        : undefined
+    const timelineId =
+      studioNode && isStudioNode(studioNode)
+        ? studioNode.data.timelineId
+        : undefined
+    if (studio.open && !timelineId) {
+      set({ error: '剪辑室时间线还没有加载' })
+      return
+    }
+    const profileId = studio.open ? 'clip' : 'canvas'
+
     set({
       error: null,
       running: true,
@@ -235,11 +254,21 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
     try {
       const result = await window.api.agent.chat({
-        profileId: 'canvas',
+        profileId,
         permissionMode: state.permissionMode,
         message: text.trim(),
         canvasId: project.canvasId,
-        selectedNodeIds
+        selectedNodeIds,
+        ...(profileId === 'clip' && timelineId ? { timelineId } : {}),
+        ...(profileId === 'clip' && studioNode
+          ? { studioNodeId: studioNode.id }
+          : {}),
+        ...(profileId === 'clip' && timelineState.selectedIds.length > 0
+          ? { selectedClipIds: timelineState.selectedIds }
+          : {}),
+        ...(profileId === 'clip'
+          ? { playheadMs: timelineState.playheadMs }
+          : {})
       })
       set({ currentTurnId: result.turnId })
     } catch (error) {
@@ -309,6 +338,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         break
       case 'turn_end':
         useCanvasStore.getState().endCommandTurn(event.turn.id)
+        useTimelineStore.getState().endCommandTurn(event.turn.id)
         set((state) => ({
           running: false,
           currentTurnId: null,
@@ -345,7 +375,18 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   undoLastTurn: () => {
     const turn = get().lastTurn
     if (!turn || agentTurnChangeCount(turn) === 0) return
-    useCanvasStore.getState().undo()
+
+    const change = turn.change
+    const canvasChanges =
+      (change.createdNodeIds?.length ?? 0) +
+      (change.updatedNodeIds?.length ?? 0) +
+      (change.deletedNodeIds?.length ?? 0) +
+      (change.createdEdgeIds?.length ?? 0) +
+      (change.deletedEdgeIds?.length ?? 0)
+
+    if (canvasChanges > 0) useCanvasStore.getState().undo()
+    if (change.timelineUpdated) useTimelineStore.getState().undo()
+
     set((state) => ({
       lastTurn: null,
       messages: [
@@ -353,7 +394,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         {
           id: nextMessageId(),
           role: 'assistant',
-          content: '已撤销本轮画布修改。'
+          content: change.timelineUpdated
+            ? '已撤销本轮修改。'
+            : '已撤销本轮画布修改。'
         }
       ]
     }))

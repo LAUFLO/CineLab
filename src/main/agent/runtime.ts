@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type {
   AgentChatRequest,
   AgentEvent,
+  AgentProfileId,
   AgentScope,
   AgentToolCall,
   AgentToolCallRequest,
@@ -29,7 +30,7 @@ import { skillCatalogPrompt } from './skills'
 const MAX_STEPS = 8
 const TOOL_TIMEOUT_MS = 30_000
 
-const SYSTEM_PROMPT = `你是 CineLab 的画布助手。你可以读取画布、创建文本/图片/视频/音频节点、修改标题、移动节点、连接节点、删除节点、分组和解散分组，也可以登记生成提案。
+const CANVAS_SYSTEM_PROMPT = `你是 CineLab 的画布助手。你可以读取画布、创建文本/图片/视频/音频节点、修改标题、移动节点、连接节点、删除节点、分组和解散分组，也可以登记生成提案。
 
 规则：
 - 只操作当前画布。
@@ -42,6 +43,23 @@ const SYSTEM_PROMPT = `你是 CineLab 的画布助手。你可以读取画布、
 - 新消息会让旧提案失效，需要时重新登记。
 - 用中文回复，简洁说明你做了什么。
 - 需要用户先选中节点时，明确提示。`
+
+const CLIP_SYSTEM_PROMPT = `你是 CineLab 的剪辑助手。你只操作当前打开的剪辑室时间线。
+
+规则：
+- 修改前先用 timeline_get 读取轨道、片段、选中片段和播放头。
+- 不要编造 clipId、trackId 或时间码。
+- 片段 ID 必须来自 timeline_get；未指定片段时，默认使用当前选中片段。
+- 时间单位统一为毫秒；移动、裁剪、切分、删除会改变成片时长，操作前先说明影响。
+- 删除片段、批量移动等破坏性操作，如果用户没有明确要求，先提出方案再执行。
+- 轨道锁定、不可见或静音状态会影响操作，先检查再修改。
+- 生成图片/视频仍走 canvas 的生成提案工具；剪辑阶段不直接发起付费生成。
+- 所有修改都进入时间线撤销历史，同一轮操作只产生一条撤销记录。
+- 用中文回复，简洁说明你改了什么。`
+
+function systemPromptFor(profile: AgentProfileId): string {
+  return profile === 'clip' ? CLIP_SYSTEM_PROMPT : CANVAS_SYSTEM_PROMPT
+}
 
 export interface AgentTurnCallbacks {
   sendEvent(event: AgentEvent): void
@@ -123,6 +141,7 @@ function mergeChange(target: AgentTurnChange, next?: AgentTurnChange): void {
       target.previousPositions[id] = position
     }
   }
+  if (next.timelineUpdated) target.timelineUpdated = true
 }
 
 function createTurn(sessionId: string, userText: string): AgentTurn {
@@ -156,7 +175,11 @@ export function startTurn(
   const scope: AgentScope = {
     projectPath: root,
     canvasId: request.canvasId,
-    selectedNodeIds: [...new Set(request.selectedNodeIds)]
+    selectedNodeIds: [...new Set(request.selectedNodeIds)],
+    ...(request.timelineId ? { timelineId: request.timelineId } : {}),
+    ...(request.studioNodeId ? { studioNodeId: request.studioNodeId } : {}),
+    selectedClipIds: [...new Set(request.selectedClipIds ?? [])],
+    playheadMs: Math.max(0, request.playheadMs ?? 0)
   }
   const permissionMode =
     request.permissionMode === 'read-only' ? 'read-only' : 'current'
@@ -211,10 +234,11 @@ async function runTurn(input: {
     }
 
     const catalog = await skillCatalogPrompt(root)
+    const systemPrompt = systemPromptFor(request.profileId)
     const messages: AgentChatMessage[] = [
       {
         role: 'system',
-        content: catalog ? `${SYSTEM_PROMPT}\n\n${catalog}` : SYSTEM_PROMPT
+        content: catalog ? `${systemPrompt}\n\n${catalog}` : systemPrompt
       },
       { role: 'user', content: request.message }
     ]
@@ -314,6 +338,9 @@ async function runTurn(input: {
             )
           }
           mergeChange(turn.change, toolResult.change)
+          if (toolResult.ok && call.name.startsWith('timeline_')) {
+            turn.change.timelineUpdated = true
+          }
           for (const id of toolResult.change?.createdNodeIds ?? []) {
             if (!scope.selectedNodeIds.includes(id)) {
               scope.selectedNodeIds.push(id)

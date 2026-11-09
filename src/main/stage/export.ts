@@ -117,7 +117,7 @@ export async function exportStagePreview(
     await fs.mkdir(exportsDir, { recursive: true })
     await win.loadURL(url)
     await win.webContents.executeJavaScript(
-      `window.__setStage(${JSON.stringify({
+      `window.__setStagePreview(${JSON.stringify({
         doc,
         shotId: shot.id,
         width: size.width,
@@ -153,7 +153,7 @@ export async function exportStagePreview(
       for (let index = 0; index < total; index += 1) {
         const timeMs = (index * 1000) / fps
         const dataUrl = await win.webContents.executeJavaScript(
-          `window.__renderFrame(${timeMs})`
+          `window.__renderStageFrame(${timeMs})`
         )
         const base64 = String(dataUrl).split(',')[1] ?? ''
         if (!base64) throw new Error('渲染帧为空')

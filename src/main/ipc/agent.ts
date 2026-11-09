@@ -54,6 +54,30 @@ function assertChatRequest(input: unknown): AgentChatRequest {
   if (selectedNodeIds.length > 50) {
     throw new Error('选中节点过多')
   }
+
+  const selectedClipIds = Array.isArray(request.selectedClipIds)
+    ? request.selectedClipIds.filter(
+        (id): id is string => typeof id === 'string'
+      )
+    : []
+  if (selectedClipIds.length > 200) {
+    throw new Error('选中片段过多')
+  }
+  if (
+    request.timelineId !== undefined &&
+    (typeof request.timelineId !== 'string' ||
+      request.timelineId.length > 120)
+  ) {
+    throw new Error('时间线 ID 无效')
+  }
+  if (
+    request.studioNodeId !== undefined &&
+    (typeof request.studioNodeId !== 'string' ||
+      request.studioNodeId.length > 120)
+  ) {
+    throw new Error('剪辑室节点 ID 无效')
+  }
+
   const permissionMode =
     request.permissionMode === 'read-only' ? 'read-only' : 'current'
   const profileId = request.profileId === 'clip' ||
@@ -67,6 +91,17 @@ function assertChatRequest(input: unknown): AgentChatRequest {
     message: request.message.trim(),
     canvasId: request.canvasId,
     selectedNodeIds,
+    ...(typeof request.timelineId === 'string'
+      ? { timelineId: request.timelineId }
+      : {}),
+    ...(typeof request.studioNodeId === 'string'
+      ? { studioNodeId: request.studioNodeId }
+      : {}),
+    ...(selectedClipIds.length > 0 ? { selectedClipIds } : {}),
+    ...(typeof request.playheadMs === 'number' &&
+    Number.isFinite(request.playheadMs)
+      ? { playheadMs: Math.max(0, request.playheadMs) }
+      : {}),
     ...(typeof request.sessionId === 'string'
       ? { sessionId: request.sessionId }
       : {})

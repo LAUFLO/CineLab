@@ -449,6 +449,206 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
+const timelineClipIdsParameter = {
+  type: 'array',
+  items: { type: 'string' },
+  minItems: 1,
+  maxItems: 100,
+  description: '片段 ID 列表，必须来自 timeline_get'
+}
+
+export const TIMELINE_TOOLS: AgentToolDefinition[] = [
+  {
+    id: 'timeline.get',
+    name: 'timeline_get',
+    description:
+      '读取当前剪辑室时间线：视频设置、轨道、片段、标记、选中片段和播放头。修改前先调用。',
+    profiles: ['clip'],
+    readOnly: true,
+    scope: 'timeline',
+    modes: ['read-only', 'current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.selectClips',
+    name: 'timeline_select_clips',
+    description: '设置时间线当前选中的片段；传空数组清空选择。',
+    profiles: ['clip'],
+    readOnly: true,
+    scope: 'timeline',
+    modes: ['read-only', 'current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipIds: {
+          type: 'array',
+          items: { type: 'string' },
+          maxItems: 200,
+          description: '要选中的片段 ID；空数组表示清空'
+        }
+      },
+      required: ['clipIds'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.moveClips',
+    name: 'timeline_move_clips',
+    description:
+      '移动一个或多个片段。deltaMs 表示相对移动；startMs 表示把最靠前的片段移到该时间，其他片段保持相对间距。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipIds: timelineClipIdsParameter,
+        deltaMs: { type: 'number', description: '相对移动毫秒，可为负数' },
+        startMs: { type: 'number', description: '目标起始时间（毫秒）' },
+        mode: {
+          type: 'string',
+          enum: ['insert', 'overwrite'],
+          description: '插入或覆盖模式，默认 insert'
+        }
+      },
+      required: ['clipIds'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.trimClip',
+    name: 'timeline_trim_clip',
+    description:
+      '从片段头或尾裁剪/延长指定毫秒。deltaMs 为正表示延长，为负表示缩短。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipId: { type: 'string', description: '片段 ID' },
+        edge: { type: 'string', enum: ['start', 'end'] },
+        deltaMs: { type: 'number', description: '裁剪毫秒，可为负数' },
+        ripple: { type: 'boolean', description: '是否闭合空隙，默认 false' }
+      },
+      required: ['clipId', 'edge', 'deltaMs'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.splitClips',
+    name: 'timeline_split_clips',
+    description: '在时间线的指定绝对时间切分一个或多个片段。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipIds: timelineClipIdsParameter,
+        atMs: { type: 'number', description: '时间线绝对时间（毫秒）' }
+      },
+      required: ['clipIds', 'atMs'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.removeClips',
+    name: 'timeline_remove_clips',
+    description: '删除一个或多个片段，可选择是否闭合空隙。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipIds: timelineClipIdsParameter,
+        ripple: { type: 'boolean', description: '是否闭合空隙，默认 false' }
+      },
+      required: ['clipIds'],
+      additionalProperties: false
+    },
+    replay: 'unsafe'
+  },
+  {
+    id: 'timeline.updateClip',
+    name: 'timeline_update_clip',
+    description:
+      '修改片段属性：名称、音量、静音、透明度、淡入淡出、速度。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipId: { type: 'string', description: '片段 ID' },
+        patch: {
+          type: 'object',
+          description:
+            '可修改 name / volume(0-4) / muted / opacity(0-1) / fadeInMs / fadeOutMs / speed(0.1-10)'
+        }
+      },
+      required: ['clipId', 'patch'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.setTrack',
+    name: 'timeline_set_track',
+    description: '设置轨道可见、静音或锁定状态。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        trackId: { type: 'string', description: '轨道 ID' },
+        flag: { type: 'string', enum: ['visible', 'muted', 'locked'] },
+        value: { type: 'boolean' }
+      },
+      required: ['trackId', 'flag', 'value'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.addMarker',
+    name: 'timeline_add_marker',
+    description: '在时间线指定时间添加标记。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        atMs: { type: 'number', description: '时间线绝对时间（毫秒）' },
+        label: { type: 'string', description: '标记名称，最多 200 字' },
+        color: { type: 'string', description: '标记颜色，例如 #7bd88f' }
+      },
+      required: ['atMs'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  }
+]
+
 export const SKILL_TOOLS: AgentToolDefinition[] = [
   {
     id: 'skill.list',
@@ -508,6 +708,7 @@ export const AGENT_TOOLS = [
   ...CANVAS_TOOLS,
   ...GENERATION_TOOLS,
   ...STAGE_TOOLS,
+  ...TIMELINE_TOOLS,
   ...SKILL_TOOLS
 ]
 
@@ -884,6 +1085,239 @@ export function assertToolAllowed(
         !call.args.objectId.trim()
       ) {
         throw new AgentToolError('invalid_params', 'objectId 必须是非空字符串')
+      }
+    }
+  }
+
+  if (call.name.startsWith('timeline_')) {
+    if (!scope.timelineId) {
+      throw new AgentToolError('scope_denied', '请先打开剪辑室')
+    }
+
+    const assertClipIds = (value: unknown, allowEmpty = false): void => {
+      if (!Array.isArray(value)) {
+        throw new AgentToolError('invalid_params', 'clipIds 必须是数组')
+      }
+      if (allowEmpty && value.length === 0) return
+      if (
+        value.length < 1 ||
+        value.length > 100 ||
+        value.some(
+          (id) => typeof id !== 'string' || !id.trim()
+        ) ||
+        new Set(value).size !== value.length
+      ) {
+        throw new AgentToolError('invalid_params', 'clipIds 无效')
+      }
+    }
+
+    if (call.name === 'timeline_select_clips') {
+      assertClipIds(call.args.clipIds, true)
+      if (
+        Array.isArray(call.args.clipIds) &&
+        call.args.clipIds.length > 200
+      ) {
+        throw new AgentToolError('invalid_params', '一次最多选择 200 个片段')
+      }
+    }
+
+    if (call.name === 'timeline_move_clips') {
+      assertClipIds(call.args.clipIds)
+      if (
+        call.args.deltaMs === undefined &&
+        call.args.startMs === undefined
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '需要 deltaMs 或 startMs'
+        )
+      }
+      if (
+        call.args.deltaMs !== undefined &&
+        (typeof call.args.deltaMs !== 'number' ||
+          !Number.isFinite(call.args.deltaMs))
+      ) {
+        throw new AgentToolError('invalid_params', 'deltaMs 必须是有限数字')
+      }
+      if (
+        call.args.startMs !== undefined &&
+        (typeof call.args.startMs !== 'number' ||
+          !Number.isFinite(call.args.startMs) ||
+          call.args.startMs < 0)
+      ) {
+        throw new AgentToolError('invalid_params', 'startMs 必须是非负数字')
+      }
+      if (
+        call.args.mode !== undefined &&
+        !['insert', 'overwrite'].includes(String(call.args.mode))
+      ) {
+        throw new AgentToolError('invalid_params', 'mode 无效')
+      }
+    }
+
+    if (call.name === 'timeline_trim_clip') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      if (!['start', 'end'].includes(String(call.args.edge))) {
+        throw new AgentToolError('invalid_params', 'edge 必须是 start 或 end')
+      }
+      if (
+        typeof call.args.deltaMs !== 'number' ||
+        !Number.isFinite(call.args.deltaMs)
+      ) {
+        throw new AgentToolError('invalid_params', 'deltaMs 必须是有限数字')
+      }
+      if (
+        call.args.ripple !== undefined &&
+        typeof call.args.ripple !== 'boolean'
+      ) {
+        throw new AgentToolError('invalid_params', 'ripple 必须是布尔值')
+      }
+    }
+
+    if (call.name === 'timeline_split_clips') {
+      assertClipIds(call.args.clipIds)
+      if (
+        typeof call.args.atMs !== 'number' ||
+        !Number.isFinite(call.args.atMs) ||
+        call.args.atMs < 0
+      ) {
+        throw new AgentToolError('invalid_params', 'atMs 必须是非负数字')
+      }
+    }
+
+    if (call.name === 'timeline_remove_clips') {
+      assertClipIds(call.args.clipIds)
+      if (
+        call.args.ripple !== undefined &&
+        typeof call.args.ripple !== 'boolean'
+      ) {
+        throw new AgentToolError('invalid_params', 'ripple 必须是布尔值')
+      }
+    }
+
+    if (call.name === 'timeline_update_clip') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      const patch = call.args.patch
+      if (
+        typeof patch !== 'object' ||
+        patch === null ||
+        Array.isArray(patch)
+      ) {
+        throw new AgentToolError('invalid_params', 'patch 必须是对象')
+      }
+
+      const allowed = new Set([
+        'name',
+        'volume',
+        'muted',
+        'opacity',
+        'fadeInMs',
+        'fadeOutMs',
+        'speed'
+      ])
+      const entries = Object.entries(patch)
+      if (entries.length === 0) {
+        throw new AgentToolError('invalid_params', 'patch 不能为空')
+      }
+      for (const [key, value] of entries) {
+        if (!allowed.has(key)) {
+          throw new AgentToolError('invalid_params', `不支持修改 ${key}`)
+        }
+        if (key === 'name' && (typeof value !== 'string' || value.length > 200)) {
+          throw new AgentToolError('invalid_params', 'name 无效')
+        }
+        if (key === 'muted' && typeof value !== 'boolean') {
+          throw new AgentToolError('invalid_params', 'muted 必须是布尔值')
+        }
+        if (
+          (key === 'volume' ||
+            key === 'opacity' ||
+            key === 'fadeInMs' ||
+            key === 'fadeOutMs' ||
+            key === 'speed') &&
+          (typeof value !== 'number' || !Number.isFinite(value))
+        ) {
+          throw new AgentToolError('invalid_params', `${key} 必须是数字`)
+        }
+        if (
+          key === 'volume' &&
+          typeof value === 'number' &&
+          (value < 0 || value > 4)
+        ) {
+          throw new AgentToolError('invalid_params', 'volume 必须在 0-4 之间')
+        }
+        if (
+          key === 'opacity' &&
+          typeof value === 'number' &&
+          (value < 0 || value > 1)
+        ) {
+          throw new AgentToolError('invalid_params', 'opacity 必须在 0-1 之间')
+        }
+        if (
+          (key === 'fadeInMs' || key === 'fadeOutMs') &&
+          typeof value === 'number' &&
+          value < 0
+        ) {
+          throw new AgentToolError('invalid_params', `${key} 不能为负`)
+        }
+        if (
+          key === 'speed' &&
+          typeof value === 'number' &&
+          (value < 0.1 || value > 10)
+        ) {
+          throw new AgentToolError('invalid_params', 'speed 必须在 0.1-10 之间')
+        }
+      }
+    }
+
+    if (call.name === 'timeline_set_track') {
+      if (
+        typeof call.args.trackId !== 'string' ||
+        !call.args.trackId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'trackId 必须是非空字符串')
+      }
+      if (
+        !['visible', 'muted', 'locked'].includes(String(call.args.flag))
+      ) {
+        throw new AgentToolError('invalid_params', 'track flag 无效')
+      }
+      if (typeof call.args.value !== 'boolean') {
+        throw new AgentToolError('invalid_params', 'value 必须是布尔值')
+      }
+    }
+
+    if (call.name === 'timeline_add_marker') {
+      if (
+        typeof call.args.atMs !== 'number' ||
+        !Number.isFinite(call.args.atMs) ||
+        call.args.atMs < 0
+      ) {
+        throw new AgentToolError('invalid_params', 'atMs 必须是非负数字')
+      }
+      if (
+        call.args.label !== undefined &&
+        (typeof call.args.label !== 'string' ||
+          call.args.label.length > 200)
+      ) {
+        throw new AgentToolError('invalid_params', 'label 过长')
+      }
+      if (
+        call.args.color !== undefined &&
+        (typeof call.args.color !== 'string' ||
+          call.args.color.length > 50)
+      ) {
+        throw new AgentToolError('invalid_params', 'color 无效')
       }
     }
   }

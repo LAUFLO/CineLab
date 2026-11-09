@@ -382,6 +382,183 @@ describe('agent tool permissions', () => {
     ).toThrow(AgentToolError)
   })
 
+  it('requires an open timeline for clip tools', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_get', {}),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_get', {}),
+        { ...scope, timelineId: 'timeline-1' },
+        'read-only'
+      )
+    ).not.toThrow()
+  })
+
+  it('rejects timeline writes in read-only mode', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_move_clips', {
+          clipIds: ['clip-1'],
+          deltaMs: 1000
+        }),
+        { ...scope, timelineId: 'timeline-1' },
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+  })
+
+  it('validates clip move parameters', () => {
+    const clipScope = { ...scope, timelineId: 'timeline-1' }
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_move_clips', { clipIds: ['clip-1'] }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_move_clips', {
+          clipIds: ['clip-1'],
+          deltaMs: Number.NaN
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_move_clips', {
+          clipIds: ['clip-1', 'clip-1'],
+          deltaMs: 1000
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_move_clips', {
+          clipIds: ['clip-1', 'clip-2'],
+          startMs: 2000,
+          mode: 'overwrite'
+        }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('validates trim, split and marker parameters', () => {
+    const clipScope = { ...scope, timelineId: 'timeline-1' }
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_trim_clip', {
+          clipId: 'clip-1',
+          edge: 'middle',
+          deltaMs: 100
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_split_clips', {
+          clipIds: ['clip-1'],
+          atMs: -1
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_add_marker', { atMs: 1000, label: '开场' }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('validates clip property patches', () => {
+    const clipScope = { ...scope, timelineId: 'timeline-1' }
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_update_clip', {
+          clipId: 'clip-1',
+          patch: { volume: 5 }
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_update_clip', {
+          clipId: 'clip-1',
+          patch: { unknown: true }
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_update_clip', {
+          clipId: 'clip-1',
+          patch: { volume: 0.8, speed: 1.5, name: '开场' }
+        }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('validates track flags', () => {
+    const clipScope = { ...scope, timelineId: 'timeline-1' }
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_track', {
+          trackId: 'track-1',
+          flag: 'color',
+          value: true
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_track', {
+          trackId: 'track-1',
+          flag: 'locked',
+          value: true
+        }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
   it('validates catalog capability', () => {
     expect(() =>
       assertToolAllowed(

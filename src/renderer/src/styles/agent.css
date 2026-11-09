@@ -1,6 +1,6 @@
 .agent-panel {
   position: fixed;
-  z-index: 60;
+  z-index: 95;
   top: 48px;
   right: 12px;
   bottom: 40px;
@@ -444,7 +444,7 @@
 
 .agent-fab {
   position: fixed;
-  z-index: 60;
+  z-index: 95;
   right: 16px;
   bottom: 48px;
   width: 42px;

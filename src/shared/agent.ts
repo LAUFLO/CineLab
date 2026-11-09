@@ -9,6 +9,11 @@ export interface AgentScope {
   projectPath: string
   canvasId: string
   selectedNodeIds: string[]
+  /** 剪辑助手作用域：当前打开的时间线 */
+  timelineId?: string
+  studioNodeId?: string
+  selectedClipIds?: string[]
+  playheadMs?: number
 }
 
 export interface AgentChatRequest {
@@ -17,6 +22,10 @@ export interface AgentChatRequest {
   message: string
   canvasId: string
   selectedNodeIds: string[]
+  timelineId?: string
+  studioNodeId?: string
+  selectedClipIds?: string[]
+  playheadMs?: number
   sessionId?: string
 }
 
@@ -90,6 +99,8 @@ export interface AgentTurnChange {
   deletedEdgeIds: string[]
   previousTitles: Record<string, string>
   previousPositions: Record<string, { x: number; y: number }>
+  /** 本轮是否修改了剪辑室时间线 */
+  timelineUpdated?: boolean
 }
 
 export type AgentTurnStatus = 'running' | 'completed' | 'cancelled' | 'error'

@@ -7,6 +7,7 @@ import {
   useAgentStore,
   type AgentMessage
 } from './agentStore'
+import { useStudioStore } from '../stores/studio'
 import '../styles/agent.css'
 
 function MessageBubble({ message }: { message: AgentMessage }) {
@@ -152,6 +153,7 @@ export function AgentPanel() {
   const cancelProposal = useAgentStore((state) => state.cancelProposal)
   const undoLastTurn = useAgentStore((state) => state.undoLastTurn)
   const clearError = useAgentStore((state) => state.clearError)
+  const clipMode = useStudioStore((state) => state.open)
 
   const [draft, setDraft] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
@@ -183,7 +185,9 @@ export function AgentPanel() {
         <section className="agent-panel" aria-label="CineLab 助手">
           <header className="agent-panel__head">
             <div>
-              <div className="agent-panel__title">CineLab 助手</div>
+              <div className="agent-panel__title">
+                {clipMode ? '剪辑助手' : '画布助手'}
+              </div>
               <div className="agent-panel__model">
                 {modelInfo
                   ? `${modelInfo.name}`
@@ -223,7 +227,9 @@ export function AgentPanel() {
           <div className="agent-panel__messages" ref={listRef}>
             {messages.length === 0 ? (
               <div className="agent-empty">
-                选中一个节点，然后让助手帮你修改标题。
+                {clipMode
+                  ? '告诉我怎么剪：移动、裁剪、切分、删除片段，或调整音量与速度。'
+                  : '选中一个节点，然后让助手帮你修改标题。'}
               </div>
             ) : (
               messages.map((message) => (
@@ -252,7 +258,7 @@ export function AgentPanel() {
 
           {changedCount > 0 ? (
             <div className="agent-change">
-              <span>本轮修改了 {changedCount} 个节点</span>
+              <span>本轮修改了 {changedCount} 处</span>
               <button type="button" onClick={undoLastTurn} disabled={running}>
                 撤销这一轮
               </button>
@@ -271,7 +277,9 @@ export function AgentPanel() {
               }}
               placeholder={
                 modelInfo
-                  ? '例如：把选中节点改名为 开场镜头'
+                  ? clipMode
+                    ? '例如：把选中片段整体前移 1 秒'
+                    : '例如：把选中节点改名为 开场镜头'
                   : '请先在设置中配置文本模型'
               }
               disabled={!modelInfo}

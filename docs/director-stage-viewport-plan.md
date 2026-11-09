@@ -1,7 +1,7 @@
 # 导演台 3D 视口实施文档（A 路线）
 
 日期：2026-11-09
-状态：A1 已完成；A2 已完成（TransformControls、属性编辑、增删对象/机位、stage Agent 工具）
+状态：A1 / A2 / A3 已完成（3D 视口、编辑与 Agent 工具、运镜时间轴、本地白模预演导出）
 关联：`docs/director-stage-plan.md`、`STAGE-COMMANDS-1`、`STAGE-NODE-STORAGE-1`
 
 ## 1. 技术路线
@@ -86,9 +86,9 @@ StageViewport.capture()
 | 属性面板编辑 | A2 已完成 |
 | 添加/删除对象与机位 UI | A2 已完成 |
 | stage Agent 工具 | A2 已完成 |
-| 运镜时间轴 | A3 |
-| 本地白模预演 | A3 |
-| glTF 加载、全景背景 | A4 |
+| 运镜时间轴 | A3 已完成 |
+| 本地白模预演 | A3 已完成 |
+| glTF 加载、全景背景、动作轨预演 | A4 |
 
 ## 4. 新增文件
 

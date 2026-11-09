@@ -1,7 +1,7 @@
 # 导演台方案：3D 片场 + 本地白模预演
 
 日期：2026-11-09
-状态：**stage 节点、场景存储、A1 3D 视口与 A2 编辑/Agent 工具已完成；运镜与白模预演待接入**
+状态：**stage 节点、场景存储、A1 视口、A2 编辑/Agent、A3 运镜与白模预演已完成**
 关联：LibTV 3D 导演台 / 3D-BOX、TapNow CineMap
 关联文档：`docs/agent-full-scope.md`、`docs/clip-studio-plan.md`
 
@@ -484,3 +484,11 @@ DirectorStageDoc + StageShot
   - 属性面板可编辑对象变换、姿势、颜色、可见性，以及机位名称、位置、注视点、FOV、画幅。
   - 左栏可添加/删除对象与机位；所有操作可撤销/重做。
   - 修复旧快照覆盖新场景的落盘 bug：工具执行后立即保存，场景保存拒绝更旧的 updatedAt。
+- 2026-11-09：完成 A3 运镜时间轴与本地白模预演。
+  - `src/shared/stage-timeline.ts`：相机关键帧线性插值与四种缓动。
+  - 时间轴 UI：镜头切换、添加/删除镜头、时长编辑、关键帧捕获/删除、播放头、播放/暂停。
+  - 关键帧在缩短镜头时自动裁剪；删除镜头后自动选中剩余镜头。
+  - 新增 `stage-render.html` 隐藏窗口渲染页，复用场景对象构建，不含网格与机位标记。
+  - `src/main/stage/export.ts`：逐帧 JPEG → ffmpeg H.264 MP4 → `ingestAsset` → 自动创建视频节点。
+  - 导出验证：1280×720、5 秒、24fps、H.264 yuv420p，0s/3s 抽帧不同。
+  - 隔离测试实例增加禁用后台节流开关，避免窗口被遮挡时 rAF 暂停。

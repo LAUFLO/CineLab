@@ -111,7 +111,8 @@ const child = spawn('corepack pnpm dev', {
     ...process.env,
     CINELAB_ISOLATED: '1',
     CINELAB_DEBUG_PORT: String(debugPort),
-    CINELAB_USER_DATA: userData
+    CINELAB_USER_DATA: userData,
+    CINELAB_DISABLE_THROTTLE: '1'
   }
 })
 

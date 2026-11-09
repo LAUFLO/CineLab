@@ -15,6 +15,7 @@ import type { AssetRef } from '../shared/asset-schema'
 import type { Preferences } from '../shared/preferences'
 import type { TimelineDoc } from '../shared/timeline-schema'
 import type { DirectorStageDoc } from '../shared/stage-schema'
+import type { StageExportProgress } from '../shared/ipc-contract'
 import type {
   FilmStudy,
   FilmStudyAutoRequest,
@@ -422,7 +423,19 @@ const api: CineApi = {
     duplicate: (stageId: string) =>
       ipcRenderer.invoke('stage:duplicate', stageId),
     capture: (input: { stageId: string; dataUrl: string }) =>
-      ipcRenderer.invoke('stage:capture', input)
+      ipcRenderer.invoke('stage:capture', input),
+    exportPreview: (input: import('../shared/ipc-contract').StageExportInput) =>
+      ipcRenderer.invoke('stage:export-preview', input),
+    onExportProgress: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: StageExportProgress
+      ): void => callback(payload)
+      ipcRenderer.on('stage:export-progress', listener)
+      return () => {
+        ipcRenderer.removeListener('stage:export-progress', listener)
+      }
+    }
   }
 }
 

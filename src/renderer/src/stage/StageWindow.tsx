@@ -9,6 +9,7 @@ import {
 } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 import { StageInspector } from './StageInspector'
+import { StageTimeline } from './StageTimeline'
 import { StageViewport } from './StageViewport'
 import { useStageStore } from './stageStore'
 import '../styles/stage.css'
@@ -34,7 +35,9 @@ export function StageWindow() {
   const viewMode = useStageStore((state) => state.viewMode)
   const selectedCameraId = useStageStore((state) => state.selectedCameraId)
   const selectedObjectId = useStageStore((state) => state.selectedObjectId)
+  const selectedShotId = useStageStore((state) => state.selectedShotId)
   const transformMode = useStageStore((state) => state.transformMode)
+  const playing = useStageStore((state) => state.playing)
   const loading = useStageStore((state) => state.loading)
   const saving = useStageStore((state) => state.saving)
   const dirty = useStageStore((state) => state.dirty)
@@ -43,6 +46,7 @@ export function StageWindow() {
   const setViewMode = useStageStore((state) => state.setViewMode)
   const selectObject = useStageStore((state) => state.selectObject)
   const selectCamera = useStageStore((state) => state.selectCamera)
+  const selectShot = useStageStore((state) => state.selectShot)
   const undo = useStageStore((state) => state.undo)
   const redo = useStageStore((state) => state.redo)
   const clearError = useStageStore((state) => state.clearError)
@@ -52,7 +56,39 @@ export function StageWindow() {
   const setTransformMode = useStageStore((state) => state.setTransformMode)
 
   const [capturing, setCapturing] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportProgress, setExportProgress] = useState(0)
   const [addObjectOpen, setAddObjectOpen] = useState(false)
+
+  useEffect(() => {
+    if (!playing) return
+    let last = performance.now()
+    let raf = 0
+
+    const tick = (now: number): void => {
+      const state = useStageStore.getState()
+      const shot = state.doc?.shots.find(
+        (item) => item.id === state.selectedShotId
+      )
+      if (!shot) {
+        state.pause()
+        return
+      }
+
+      const next = state.playbackMs + (now - last)
+      last = now
+      if (next >= shot.durationMs) {
+        state.seek(shot.durationMs)
+        state.pause()
+        return
+      }
+      state.seek(next)
+      raf = requestAnimationFrame(tick)
+    }
+
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [playing])
 
   useEffect(() => {
     if (!open || !doc || !dirty) return
@@ -78,6 +114,16 @@ export function StageWindow() {
     }, 500)
     return () => window.clearTimeout(timer)
   }, [open, doc, dirty])
+
+  useEffect(() => {
+    return window.api.stage.onExportProgress((progress) => {
+      const current = useStageStore.getState()
+      if (current.doc?.stageId !== progress.stageId) return
+      setExportProgress(
+        progress.total > 0 ? progress.frame / progress.total : 0
+      )
+    })
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -109,6 +155,59 @@ export function StageWindow() {
 
   const activeCameraId = selectedCameraId ?? doc?.activeCameraId ?? null
   const activeCamera = doc?.cameras.find((camera) => camera.id === activeCameraId)
+
+  const handleExportPreview = async (): Promise<void> => {
+    if (exporting) return
+    const state = useStageStore.getState()
+    if (!state.doc || !state.selectedShotId || !state.nodeId) {
+      useStageStore.setState({ error: '请先选择一个镜头' })
+      return
+    }
+
+    const stageNode = useCanvasStore
+      .getState()
+      .nodes.find((node) => node.id === state.nodeId)
+    if (!stageNode || !isStageNode(stageNode)) return
+
+    setExporting(true)
+    setExportProgress(0)
+    try {
+      const result = await window.api.stage.exportPreview({
+        stageId: state.doc.stageId,
+        shotId: state.selectedShotId,
+        resolution: '720p',
+        fps: 24
+      })
+
+      const size = nodeSize(stageNode)
+      const ids = useCanvasStore.getState().addAssetNodes(
+        'video',
+        {
+          x: stageNode.position.x + size.width + 80,
+          y: stageNode.position.y + size.height + 40
+        },
+        [result.asset],
+        '白模预演',
+        stageNode.id
+      )
+      useUIStore
+        .getState()
+        .showToast(
+          ids.length > 0
+            ? '白模预演已导出并添加到画布'
+            : '白模预演已导出'
+        )
+    } catch (exportError) {
+      useStageStore.setState({
+        error:
+          exportError instanceof Error
+            ? exportError.message
+            : '导出白模预演失败'
+      })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const handleCapture = async (): Promise<void> => {
     if (capturing) return
@@ -209,6 +308,17 @@ export function StageWindow() {
           </div>
 
           <div className="stage-topbar__right">
+            <button
+              type="button"
+              className="stage-text-button"
+              onClick={() => void handleExportPreview()}
+              disabled={!doc || !selectedShotId || exporting}
+            >
+              <Icon name="video" size={14} />
+              {exporting
+                ? `导出中 ${Math.round(exportProgress * 100)}%`
+                : '导出预演'}
+            </button>
             <button
               type="button"
               className="stage-text-button"
@@ -328,11 +438,18 @@ export function StageWindow() {
             <div className="stage-sidebar__list">
               {doc?.shots.length ? (
                 doc.shots.map((shot) => (
-                  <div key={shot.id} className="stage-list-item is-static">
+                  <button
+                    key={shot.id}
+                    type="button"
+                    className={`stage-list-item ${
+                      shot.id === selectedShotId ? 'is-selected' : ''
+                    }`}
+                    onClick={() => selectShot(shot.id)}
+                  >
                     <Icon name="video" size={13} />
                     <span>{shot.name ?? shot.id}</span>
                     <small>{Math.round(shot.durationMs / 1000)}s</small>
-                  </div>
+                  </button>
                 ))
               ) : (
                 <div className="stage-sidebar__empty">还没有镜头</div>
@@ -373,6 +490,8 @@ export function StageWindow() {
         <aside className="stage-inspector-wrap">
           <StageInspector />
         </aside>
+
+        <StageTimeline />
 
         {error ? (
           <div className="stage-error" role="status">

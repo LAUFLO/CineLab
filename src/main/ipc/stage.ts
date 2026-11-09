@@ -1,7 +1,12 @@
-import { ipcMain } from 'electron'
+import { BrowserWindow, ipcMain } from 'electron'
+import type {
+  StageExportInput,
+  StageExportProgress
+} from '@shared/ipc-contract'
 import type { DirectorStageDoc } from '@shared/stage-schema'
 import { ingestAsset } from '../assets/ingest'
 import { getCurrentProjectRoot } from '../project/manager'
+import { exportStagePreview } from '../stage/export'
 import {
   createStageFile,
   deleteStageFile,
@@ -52,6 +57,36 @@ export function registerStageIpc(): void {
   ipcMain.handle('stage:duplicate', async (_event, stageId: unknown) => {
     const root = requireProjectRoot()
     return duplicateStageFile(root, readStageId(stageId))
+  })
+
+  ipcMain.handle('stage:export-preview', async (event, input: unknown) => {
+    if (!input || typeof input !== 'object') {
+      throw new Error('导出参数无效')
+    }
+    const value = input as Partial<StageExportInput>
+    if (
+      typeof value.stageId !== 'string' ||
+      typeof value.shotId !== 'string'
+    ) {
+      throw new Error('缺少场景或镜头 ID')
+    }
+
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const send = (progress: StageExportProgress): void => {
+      if (!win || win.isDestroyed()) return
+      win.webContents.send('stage:export-progress', progress)
+    }
+
+    return exportStagePreview(
+      requireProjectRoot(),
+      {
+        stageId: value.stageId,
+        shotId: value.shotId,
+        resolution: value.resolution === '1080p' ? '1080p' : '720p',
+        fps: value.fps === 30 ? 30 : 24
+      },
+      send
+    )
   })
 
   ipcMain.handle('stage:capture', async (_event, input: unknown) => {

@@ -83,6 +83,20 @@ export function ClipMedia({ clip, widthPx }: { clip: TimelineClip; widthPx: numb
     )
   }, [pool, frameCount])
 
+  const portrait =
+    clip.media?.width && clip.media?.height
+      ? clip.media.width / clip.media.height < 0.9
+      : false
+
+  if (frames.length > 0 && portrait) {
+    return (
+      <div
+        className="studio-clip__frames is-repeat"
+        style={{ backgroundImage: `url(${frames[0]})` }}
+      />
+    )
+  }
+
   if (frames.length > 0) {
     return (
       <div className="studio-clip__frames">

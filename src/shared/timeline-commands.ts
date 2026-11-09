@@ -120,12 +120,24 @@ function matchCanvasToFirstClip(doc: TimelineDoc, wasEmpty: boolean): void {
   if (!clip?.media?.width || !clip.media.height) return
 
   const ratio = clip.media.width / clip.media.height
-  if (ratio < 0.85) {
-    doc.video.width = 1080
-    doc.video.height = 1920
-  } else if (ratio <= 1.2) {
+  if (ratio >= 1.9) {
+    doc.video.width = 2560
+    doc.video.height = 1080
+  } else if (ratio >= 1.45) {
+    doc.video.width = 1920
+    doc.video.height = 1080
+  } else if (ratio >= 1.15) {
+    doc.video.width = 1440
+    doc.video.height = 1080
+  } else if (ratio >= 0.88) {
     doc.video.width = 1080
     doc.video.height = 1080
+  } else if (ratio >= 0.72) {
+    doc.video.width = 1080
+    doc.video.height = 1440
+  } else {
+    doc.video.width = 1080
+    doc.video.height = 1920
   }
 }
 

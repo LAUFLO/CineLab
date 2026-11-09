@@ -1294,8 +1294,11 @@ export function InspectorPane() {
             <span>画幅</span>
             <div className="studio-ratio-row">
               {[
-                { label: '16:9', width: 1920, height: 1080 },
                 { label: '9:16', width: 1080, height: 1920 },
+                { label: '16:9', width: 1920, height: 1080 },
+                { label: '21:9', width: 2560, height: 1080 },
+                { label: '3:4', width: 1080, height: 1440 },
+                { label: '4:3', width: 1440, height: 1080 },
                 { label: '1:1', width: 1080, height: 1080 }
               ].map((item) => (
                 <button

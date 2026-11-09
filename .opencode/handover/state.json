@@ -1379,8 +1379,8 @@
       "id": "G-AGENT-MAIN",
       "scope": "repo",
       "status": "blocked",
-      "reason": "origin/main 新增 a768e64（Markdown 文本编辑 / 工作区增强），当前 feat/agent-runtime 落后 1 个提交",
-      "resolve": "推送前先同步 origin/main，重点检查 canvas store / CineNodeView / preload / ipc-contract 冲突"
+      "reason": "origin/main 新增 a768e64（Markdown 文本编辑 / 工作区增强）与 6abef3d（成片合并进剪辑室节点 / 节点 UI 调整），当前 feat/agent-runtime 落后 2 个提交",
+      "resolve": "推送前先同步 origin/main，重点检查 StudioNodeView / CineNodeView / canvas store / preload / ipc-contract 冲突"
     }
   ],
   "completed": [

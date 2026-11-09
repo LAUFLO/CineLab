@@ -30,7 +30,7 @@
 | `STAGE-NODE-STORAGE-1` | 画布导演台节点、`stages/` 场景读写、复制深拷贝、重开保留 |
 | `STAGE-VIEWPORT-1` | 原生 three.js 3D 视口、机位切换、选中、截图回画布、自动保存 |
 | 验证 | 211 测试、`typecheck`、`build` 通过；真实 Agnes 图片提案与导演台视口验证完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 12 个提交、落后 1 个（a768e64），未推送；推送前先同步 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 12 个提交、落后 2 个（a768e64、6abef3d），未推送；推送前先同步 |
 
 ## 关键工件
 

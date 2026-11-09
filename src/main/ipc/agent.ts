@@ -4,16 +4,19 @@ import type {
   AgentChatRequest,
   AgentConfirmInput,
   AgentEvent,
+  AgentGenerationModels,
   AgentProposal,
   AgentProposalDraft,
+  AgentReference,
   AgentToolCallRequest,
   AgentToolResultInput
 } from '@shared/agent'
-import { listTextModels, resolveTextModel } from '../agent/model'
+import { listAgentModels, listTextModels, resolveTextModel } from '../agent/model'
 import {
   activeProposal,
   cancelProposal,
   createProposal,
+  deleteSessionProposals,
   setProposalChangeListener,
   submitProposal
 } from '../agent/proposals'
@@ -26,6 +29,7 @@ import {
 } from '../agent/runtime'
 import {
   createSession,
+  deleteSession,
   listSessions,
   loadSession,
   renameSession,
@@ -128,6 +132,86 @@ function assertChatRequest(input: unknown): AgentChatRequest {
       })
     }
   }
+
+  const generationModels: AgentGenerationModels = {}
+  if (request.generationModels !== undefined) {
+    if (
+      typeof request.generationModels !== 'object' ||
+      request.generationModels === null ||
+      Array.isArray(request.generationModels)
+    ) {
+      throw new Error('生成模型选择无效')
+    }
+    for (const output of ['image', 'video', 'audio'] as const) {
+      const value = request.generationModels[output]
+      if (value === undefined) continue
+      if (
+        typeof value !== 'string' ||
+        !value.includes('/') ||
+        value.length > 300
+      ) {
+        throw new Error(`${output} 模型标识无效`)
+      }
+      generationModels[output] = value
+    }
+  }
+
+  const references: AgentReference[] = []
+  if (request.references !== undefined) {
+    if (!Array.isArray(request.references) || request.references.length > 8) {
+      throw new Error('引用素材最多 8 个')
+    }
+    for (const item of request.references) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        throw new Error('引用素材格式无效')
+      }
+      const reference = item as Partial<AgentReference>
+      if (
+        reference.nodeId !== undefined &&
+        (typeof reference.nodeId !== 'string' ||
+          !reference.nodeId.trim() ||
+          reference.nodeId.length > 120)
+      ) {
+        throw new Error('引用素材节点 ID 无效')
+      }
+      if (
+        typeof reference.name !== 'string' ||
+        !reference.name.trim() ||
+        reference.name.length > 200
+      ) {
+        throw new Error('引用素材名称无效')
+      }
+      const path = reference.path
+      if (
+        typeof path !== 'string' ||
+        !path.trim() ||
+        path.length > 2000 ||
+        path.includes('..') ||
+        path.startsWith('/') ||
+        path.startsWith('\\') ||
+        /^[a-zA-Z]:/.test(path)
+      ) {
+        throw new Error('引用素材路径必须是相对路径')
+      }
+      if (reference.scope !== 'project' && reference.scope !== 'global') {
+        throw new Error('引用素材作用域无效')
+      }
+      if (
+        reference.kind !== 'image' &&
+        reference.kind !== 'video' &&
+        reference.kind !== 'audio'
+      ) {
+        throw new Error('引用素材类型无效')
+      }
+      references.push({
+        ...(reference.nodeId ? { nodeId: reference.nodeId.trim() } : {}),
+        name: reference.name.trim(),
+        path,
+        scope: reference.scope,
+        kind: reference.kind
+      })
+    }
+  }
   if (
     request.timelineId !== undefined &&
     (typeof request.timelineId !== 'string' ||
@@ -175,7 +259,11 @@ function assertChatRequest(input: unknown): AgentChatRequest {
     request.modelKey.length <= 300
       ? { modelKey: request.modelKey }
       : {}),
-    ...(attachments.length > 0 ? { attachments } : {})
+    ...(attachments.length > 0 ? { attachments } : {}),
+    ...(references.length > 0 ? { references } : {}),
+    ...(Object.keys(generationModels).length > 0
+      ? { generationModels }
+      : {})
   }
 }
 
@@ -263,7 +351,20 @@ export function registerAgentIpc(): void {
     }
   )
 
+  ipcMain.handle(
+    'agent:session-delete',
+    async (_event, sessionId: unknown) => {
+      if (typeof sessionId !== 'string' || !sessionId.trim()) {
+        throw new Error('缺少会话 ID')
+      }
+      const root = requireProjectRoot()
+      await deleteSession(root, sessionId.trim())
+      await deleteSessionProposals(root, sessionId.trim())
+    }
+  )
+
   ipcMain.handle('agent:text-models', async () => listTextModels())
+  ipcMain.handle('agent:models', async () => listAgentModels())
 
   ipcMain.handle('agent:model-info', async (_event, modelKey: unknown) => {
     const runtime = await resolveTextModel(

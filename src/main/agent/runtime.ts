@@ -4,7 +4,9 @@ import type {
   AgentChatRequest,
   AgentConfirmInput,
   AgentEvent,
+  AgentGenerationModels,
   AgentProfileId,
+  AgentReference,
   AgentScope,
   AgentToolCall,
   AgentToolCallRequest,
@@ -18,6 +20,7 @@ import {
   appendTurn,
   ensureSession,
   ensureSessionTitle,
+  loadSession,
   requireProjectRoot
 } from './session'
 import {
@@ -34,6 +37,7 @@ import { skillCatalogPrompt } from './skills'
 
 const MAX_STEPS = 8
 const TOOL_TIMEOUT_MS = 30_000
+const MAX_HISTORY_CHARS = 12_000
 const LONG_TOOL_TIMEOUTS: Record<string, number> = {
   timeline_auto_subtitles: 15 * 60_000,
   timeline_remove_silence: 10 * 60_000,
@@ -54,6 +58,8 @@ const CANVAS_SYSTEM_PROMPT = `你是 CineBot，CineLab 的画布助手。你可�
 - 需要生成图片、视频、音频或文本时，先调用 generation_catalog 确认模型和参数，再调用 generation_propose 登记提案。
 - 目标生成节点用 canvas_add_node 创建；建议传 nearNodeId，把新节点放在参考素材右侧。
 - 引用画布素材用 generation_propose.refNodeIds；引用资产库素材先用 library_search 搜索，再用 generation_propose.libraryRefs。
+- 用户用 @ 引用的素材会附在系统提示中：画布节点用 refNodeIds，资产库路径用 libraryRefs。
+- 用户选择的生图/生视频/音频模型会附在系统提示中；生成时优先使用对应能力的已选模型。
 - 用户附件已经创建为画布节点，系统提示会给出 nodeId；引用附件时直接放进 refNodeIds。
 - generation_propose 会自动把参考素材连到目标节点，并把提示词写回目标节点的提示词输入框；不需要额外调用 canvas_connect。
 - generation_propose 不会立即生成，也不会扣费；必须告诉用户「已生成提案，请在面板中确认」，不要声称已经开始生成。
@@ -78,6 +84,37 @@ function attachmentContext(attachments?: AgentAttachment[]): string {
     .join(
       '\n'
     )}\n引用这些附件时，把 nodeId 放进 generation_propose.refNodeIds；工具会自动建立附件到目标节点的连线，并把提示词写回目标节点。`
+}
+
+function referenceContext(references?: AgentReference[]): string {
+  if (!references || references.length === 0) return ''
+  const kindLabel: Record<AgentReference['kind'], string> = {
+    image: '图片',
+    video: '视频',
+    audio: '音频'
+  }
+  return `\n\n用户用 @ 引用的素材：\n${references
+    .map(
+      (item) =>
+        `- ${kindLabel[item.kind]}「${item.name}」${
+          item.nodeId ? `nodeId=${item.nodeId} ` : ''
+        }path=${item.path} scope=${item.scope}`
+    )
+    .join(
+      '\n'
+    )}\n引用画布节点时放进 refNodeIds；引用资产库路径时放进 libraryRefs。`
+}
+
+function generationModelsContext(models?: AgentGenerationModels): string {
+  if (!models) return ''
+  const parts: string[] = []
+  if (models.image) parts.push(`生图=${models.image}`)
+  if (models.video) parts.push(`生视频=${models.video}`)
+  if (models.audio) parts.push(`音频=${models.audio}`)
+  if (parts.length === 0) return ''
+  return `\n\n用户选择的生成模型：${parts.join(
+    '；'
+  )}。生成时优先使用对应能力的已选模型；generation_catalog 会标记这些模型。`
 }
 
 const CLIP_SYSTEM_PROMPT = `你是 CineBot，CineLab 的剪辑助手。你只操作当前打开的剪辑室时间线。
@@ -230,6 +267,9 @@ export function startTurn(
         ...(request.attachments?.map((item) => item.nodeId) ?? [])
       ])
     ],
+    ...(request.generationModels
+      ? { generationModels: request.generationModels }
+      : {}),
     ...(request.timelineId ? { timelineId: request.timelineId } : {}),
     ...(request.studioNodeId ? { studioNodeId: request.studioNodeId } : {}),
     selectedClipIds: [...new Set(request.selectedClipIds ?? [])],
@@ -258,6 +298,47 @@ export function startTurn(
   })
 
   return { turnId: turn.id }
+}
+
+async function buildHistoryMessages(
+  root: string,
+  sessionId: string,
+  currentTurnId: string
+): Promise<AgentChatMessage[]> {
+  const snapshot = await loadSession(root, sessionId)
+  const dialogue = snapshot.messages.filter(
+    (message) =>
+      (message.role === 'user' || message.role === 'assistant') &&
+      message.turnId !== currentTurnId &&
+      message.content.trim()
+  )
+  const remaining = dialogue.slice(snapshot.summary?.coveredMessages ?? 0)
+  const picked: AgentChatMessage[] = []
+  let totalChars = 0
+
+  for (let index = remaining.length - 1; index >= 0; index -= 1) {
+    const message = remaining[index]
+    if (
+      picked.length > 0 &&
+      totalChars + message.content.length > MAX_HISTORY_CHARS
+    ) {
+      break
+    }
+    picked.unshift({ role: message.role, content: message.content })
+    totalChars += message.content.length
+  }
+
+  return [
+    ...(snapshot.summary
+      ? [
+          {
+            role: 'system' as const,
+            content: `[之前对话摘要]\n${snapshot.summary.content}`
+          }
+        ]
+      : []),
+    ...picked
+  ]
 }
 
 async function runTurn(input: {
@@ -292,12 +373,20 @@ async function runTurn(input: {
     const catalog = await skillCatalogPrompt(root)
     const systemPrompt = `${systemPromptFor(request.profileId)}${attachmentContext(
       request.attachments
+    )}${referenceContext(request.references)}${generationModelsContext(
+      request.generationModels
     )}`
+    const history = await buildHistoryMessages(
+      root,
+      turn.sessionId,
+      turn.id
+    )
     const messages: AgentChatMessage[] = [
       {
         role: 'system',
         content: catalog ? `${systemPrompt}\n\n${catalog}` : systemPrompt
       },
+      ...history,
       { role: 'user', content: request.message }
     ]
 

@@ -421,6 +421,17 @@ export async function cancelProposal(
   })
 }
 
+export async function deleteSessionProposals(
+  root: string,
+  sessionId: string
+): Promise<void> {
+  const proposals = await listProposals(root)
+  for (const proposal of proposals) {
+    if (proposal.sessionId !== sessionId) continue
+    await fs.rm(proposalFile(root, proposal.id), { force: true })
+  }
+}
+
 export async function updateProposalFromRun(
   runId: string,
   status: Extract<

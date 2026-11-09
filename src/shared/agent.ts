@@ -9,6 +9,8 @@ export interface AgentScope {
   projectPath: string
   canvasId: string
   selectedNodeIds: string[]
+  /** 用户在模型选择器里选定的生图/生视频/音频模型 */
+  generationModels?: AgentGenerationModels
   /** CineBot 剪辑作用域：当前打开的时间线 */
   timelineId?: string
   studioNodeId?: string
@@ -19,6 +21,15 @@ export interface AgentScope {
 export interface AgentAttachment {
   /** 已上传到画布的素材节点 */
   nodeId: string
+  name: string
+  path: string
+  scope: 'project' | 'global'
+  kind: 'image' | 'video' | 'audio'
+}
+
+export interface AgentReference {
+  /** 画布素材节点；资产库素材可省略 */
+  nodeId?: string
   name: string
   path: string
   scope: 'project' | 'global'
@@ -38,8 +49,12 @@ export interface AgentChatRequest {
   sessionId?: string
   /** 用户选择的文本模型；省略时自动选择第一个可用模型 */
   modelKey?: string
+  /** 用户选择的生图/生视频/音频模型 */
+  generationModels?: AgentGenerationModels
   /** 用户本轮附带的本地素材，已经创建为画布节点 */
   attachments?: AgentAttachment[]
+  /** 用户用 @ 引用的画布或资产库素材 */
+  references?: AgentReference[]
 }
 
 export interface AgentModelInfo {
@@ -47,6 +62,13 @@ export interface AgentModelInfo {
   modelId: string
   name: string
   providerName?: string
+  output: 'text' | 'image' | 'video' | 'audio'
+}
+
+export interface AgentGenerationModels {
+  image?: string
+  video?: string
+  audio?: string
 }
 
 export interface AgentSessionInfo {
@@ -172,6 +194,10 @@ export interface AgentSessionMessage {
 export interface AgentSessionSnapshot {
   sessionId: string
   title?: string
+  summary?: {
+    content: string
+    coveredMessages: number
+  }
   messages: AgentSessionMessage[]
   turns: AgentTurn[]
 }
@@ -215,4 +241,10 @@ export type AgentSessionEntry =
   | (AgentSessionEntryBase & {
       type: 'meta'
       title: string
+    })
+  | (AgentSessionEntryBase & {
+      type: 'summary'
+      content: string
+      /** 摘要覆盖的前 N 条 user/assistant 消息 */
+      coveredMessages: number
     })

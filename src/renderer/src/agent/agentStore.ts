@@ -2,9 +2,11 @@ import { create } from 'zustand'
 import type {
   AgentAttachment,
   AgentEvent,
+  AgentGenerationModels,
   AgentModelInfo,
   AgentPermissionMode,
   AgentProposal,
+  AgentReference,
   AgentSessionInfo,
   AgentSessionMessage,
   AgentToolCall,
@@ -38,12 +40,15 @@ interface AgentState {
   messages: AgentMessage[]
   turns: AgentTurn[]
   attachments: AgentAttachment[]
+  references: AgentReference[]
   running: boolean
   currentTurnId: string | null
   permissionMode: AgentPermissionMode
   modelKey: string | null
+  generationModels: AgentGenerationModels
   modelInfo: AgentModelInfo | null
   textModels: AgentModelInfo[]
+  allModels: AgentModelInfo[]
   error: string | null
   lastTurn: AgentTurn | null
   proposal: AgentProposal | null
@@ -60,13 +65,21 @@ interface AgentState {
   setPermissionMode: (mode: AgentPermissionMode) => void
   attachLocalAssets: () => Promise<void>
   removeAttachment: (nodeId: string) => void
+  addReference: (reference: AgentReference) => void
+  removeReference: (reference: AgentReference) => void
   loadSessions: () => Promise<void>
   loadSession: (sessionId?: string) => Promise<void>
   newSession: () => Promise<void>
   selectSession: (sessionId: string) => Promise<void>
+  deleteSession: (sessionId: string) => Promise<void>
   loadModelInfo: () => Promise<void>
   loadTextModels: () => Promise<void>
+  loadModels: () => Promise<void>
   setModelKey: (modelKey: string | null) => Promise<void>
+  setGenerationModel: (
+    output: 'image' | 'video' | 'audio',
+    modelKey: string | null
+  ) => Promise<void>
   loadProposal: () => Promise<void>
   submitProposal: () => Promise<void>
   cancelProposal: () => Promise<void>
@@ -162,6 +175,33 @@ function modelKeyOf(model: AgentModelInfo): string {
   return `${model.providerId}/${model.modelId}`
 }
 
+const GENERATION_MODELS_KEY = 'cinelab.agent.generationModels'
+
+function readGenerationModels(): AgentGenerationModels {
+  const raw = readStored(GENERATION_MODELS_KEY)
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw) as AgentGenerationModels
+    const result: AgentGenerationModels = {}
+    for (const output of ['image', 'video', 'audio'] as const) {
+      const value = parsed[output]
+      if (typeof value === 'string' && value.includes('/')) {
+        result[output] = value
+      }
+    }
+    return result
+  } catch {
+    return {}
+  }
+}
+
+function writeGenerationModels(models: AgentGenerationModels): void {
+  writeStored(
+    GENERATION_MODELS_KEY,
+    Object.keys(models).length > 0 ? JSON.stringify(models) : null
+  )
+}
+
 export const useAgentStore = create<AgentState>((set, get) => ({
   visible: false,
   sessionId: '',
@@ -170,12 +210,15 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   messages: [],
   turns: [],
   attachments: [],
+  references: [],
   running: false,
   currentTurnId: null,
   permissionMode: 'current',
   modelKey: readStored('cinelab.agent.modelKey'),
+  generationModels: readGenerationModels(),
   modelInfo: null,
   textModels: [],
+  allModels: [],
   error: null,
   lastTurn: null,
   proposal: null,
@@ -271,6 +314,28 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     set((state) => ({
       attachments: state.attachments.filter((item) => item.nodeId !== nodeId)
     })),
+
+  addReference: (reference) =>
+    set((state) => {
+      const exists = state.references.some(
+        (item) =>
+          (reference.nodeId && item.nodeId === reference.nodeId) ||
+          (item.scope === reference.scope && item.path === reference.path)
+      )
+      if (exists) return state
+      return { references: [...state.references, reference].slice(0, 8) }
+    }),
+
+  removeReference: (reference) =>
+    set((state) => ({
+      references: state.references.filter(
+        (item) =>
+          !(
+            (reference.nodeId && item.nodeId === reference.nodeId) ||
+            (item.scope === reference.scope && item.path === reference.path)
+          )
+      )
+    })),
   clearError: () => set({ error: null }),
 
   loadSessions: async () => {
@@ -307,6 +372,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         messages: session.messages.map(toAgentMessage),
         turns: session.turns,
         attachments: [],
+        references: [],
         lastTurn: session.turns[session.turns.length - 1] ?? null,
         running: false,
         currentTurnId: null,
@@ -341,6 +407,32 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     await get().loadSession(sessionId)
   },
 
+  deleteSession: async (sessionId) => {
+    if (get().running) return
+    try {
+      await window.api.agent.sessionDelete(sessionId)
+      let sessions = get().sessions.filter(
+        (session) => session.sessionId !== sessionId
+      )
+
+      if (sessionId === get().sessionId) {
+        let next = sessions[0]
+        if (!next) {
+          next = await window.api.agent.sessionCreate('新对话')
+          sessions = [next]
+        }
+        set({ sessions, error: null })
+        await get().loadSession(next.sessionId)
+      } else {
+        set({ sessions, error: null })
+      }
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : '删除会话失败'
+      })
+    }
+  },
+
   loadModelInfo: async () => {
     try {
       const info = await window.api.agent.modelInfo(
@@ -353,17 +445,42 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   },
 
   loadTextModels: async () => {
+    await get().loadModels()
+  },
+
+  loadModels: async () => {
     try {
-      const models = await window.api.agent.textModels()
+      const models = await window.api.agent.models()
+      const textModels = models.filter((model) => model.output === 'text')
       const current = get().modelKey
-      if (current && !models.some((model) => modelKeyOf(model) === current)) {
+      if (
+        current &&
+        !textModels.some((model) => modelKeyOf(model) === current)
+      ) {
         writeStored('cinelab.agent.modelKey', null)
-        set({ modelKey: null, textModels: models })
-        return
+        set({ modelKey: null })
       }
-      set({ textModels: models })
+
+      const generationModels = { ...get().generationModels }
+      let changed = false
+      for (const output of ['image', 'video', 'audio'] as const) {
+        const key = generationModels[output]
+        if (!key) continue
+        if (
+          !models.some(
+            (model) => model.output === output && modelKeyOf(model) === key
+          )
+        ) {
+          delete generationModels[output]
+          changed = true
+        }
+      }
+      if (changed) writeGenerationModels(generationModels)
+
+      set({ allModels: models, textModels, generationModels })
+      await get().loadModelInfo()
     } catch {
-      set({ textModels: [] })
+      set({ allModels: [], textModels: [] })
     }
   },
 
@@ -371,6 +488,14 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     writeStored('cinelab.agent.modelKey', modelKey)
     set({ modelKey })
     await get().loadModelInfo()
+  },
+
+  setGenerationModel: async (output, modelKey) => {
+    const generationModels = { ...get().generationModels }
+    if (modelKey) generationModels[output] = modelKey
+    else delete generationModels[output]
+    writeGenerationModels(generationModels)
+    set({ generationModels })
   },
 
   loadProposal: async () => {
@@ -509,8 +634,14 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         selectedNodeIds,
         sessionId: state.sessionId,
         ...(state.modelKey ? { modelKey: state.modelKey } : {}),
+        ...(Object.keys(state.generationModels).length > 0
+          ? { generationModels: state.generationModels }
+          : {}),
         ...(state.attachments.length > 0
           ? { attachments: state.attachments }
+          : {}),
+        ...(state.references.length > 0
+          ? { references: state.references }
           : {}),
         ...(profileId === 'clip' && timelineId ? { timelineId } : {}),
         ...(profileId === 'clip' && studioNode
@@ -523,7 +654,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           ? { playheadMs: timelineState.playheadMs }
           : {})
       })
-      set({ currentTurnId: result.turnId, attachments: [] })
+      set({
+        currentTurnId: result.turnId,
+        attachments: [],
+        references: []
+      })
     } catch (error) {
       set({
         running: false,

@@ -505,6 +505,19 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
       return { ok: false, error: '提示词不能为空' }
     }
 
+    const targetOutput =
+      target.data.kind === 'image'
+        ? 'image'
+        : target.data.kind === 'video'
+          ? 'video'
+          : target.data.kind === 'audio'
+            ? 'audio'
+            : undefined
+    const selectedModel = targetOutput
+      ? call.scope.generationModels?.[targetOutput]
+      : undefined
+    const effectiveModelKey = selectedModel ?? modelKey
+
     const explicitRefs = Array.isArray(call.args.refNodeIds)
       ? call.args.refNodeIds.filter(
           (id): id is string => typeof id === 'string' && Boolean(id)
@@ -595,7 +608,7 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
         turnId: call.turnId,
         request: {
           nodeId,
-          modelKey,
+          modelKey: effectiveModelKey,
           prompt,
           params: baseParams,
           ...(collected.refs.length > 0 ? { refs: collected.refs } : {}),

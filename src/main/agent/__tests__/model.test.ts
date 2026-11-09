@@ -62,7 +62,8 @@ describe('agent text models', () => {
         providerId: 'p1',
         modelId: 'chat-1',
         name: '模型 chat-1',
-        providerName: '供应商 p1'
+        providerName: '供应商 p1',
+        output: 'text'
       }
     ])
 

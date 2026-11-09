@@ -1,4 +1,8 @@
-import type { AgentScope, AgentToolCall } from '@shared/agent'
+import type {
+  AgentGenerationModels,
+  AgentScope,
+  AgentToolCall
+} from '@shared/agent'
 import type { Capability } from '@shared/provider-schema'
 import {
   DEFAULT_PREVIEW_OPTIONS,
@@ -25,7 +29,10 @@ function outputKindOf(capability: Capability): string {
   return 'text'
 }
 
-async function generationCatalog(capability?: string): Promise<MainToolResult> {
+async function generationCatalog(
+  capability?: string,
+  selectedModels?: AgentGenerationModels
+): Promise<MainToolResult> {
   const providers = await listProviders()
   const models: Array<Record<string, unknown>> = []
 
@@ -34,14 +41,19 @@ async function generationCatalog(capability?: string): Promise<MainToolResult> {
     for (const model of provider.models) {
       const output = outputKindOf(model.capability)
       if (capability && output !== capability) continue
+      const modelKey = `${provider.id}/${model.id}`
       models.push({
-        modelKey: `${provider.id}/${model.id}`,
+        modelKey,
         providerId: provider.id,
         providerName: provider.name,
         modelId: model.id,
         name: model.name,
         capability: model.capability,
         output,
+        selected:
+          selectedModels?.[
+            output as keyof AgentGenerationModels
+          ] === modelKey,
         inputs: model.inputs ?? [],
         operations: model.operations ?? [],
         params: model.params.map((param) => ({
@@ -127,7 +139,8 @@ export async function executeMainTool(
     return generationCatalog(
       typeof call.args.capability === 'string'
         ? call.args.capability
-        : undefined
+        : undefined,
+      scope.generationModels
     )
   }
 

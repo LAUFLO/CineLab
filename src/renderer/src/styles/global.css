@@ -476,23 +476,6 @@ body.is-exporting .react-flow__minimap {
   background: var(--divider);
 }
 
-.bottombar__agent {
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-2);
-  margin-left: 2px;
-}
-
-.bottombar__agent:hover {
-  background: var(--surface-hover);
-  color: var(--text-1);
-}
-
 /* 左下悬浮工具条 */
 .statusbar {
   position: absolute;

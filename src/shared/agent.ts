@@ -127,6 +127,12 @@ export type AgentEvent =
   | { type: 'text_delta'; turnId: string; text: string }
   | { type: 'tool_start'; turnId: string; call: AgentToolCall }
   | { type: 'tool_end'; turnId: string; result: AgentToolResult }
+  | {
+      type: 'confirm_request'
+      turnId: string
+      call: AgentToolCall
+      reason: string
+    }
   | { type: 'turn_end'; turn: AgentTurn }
   | { type: 'proposal'; proposal: AgentProposal }
   | { type: 'error'; turnId?: string; message: string }
@@ -156,6 +162,12 @@ export interface AgentToolCallRequest extends AgentToolCall {
 export interface AgentToolResultInput extends AgentToolResult {
   turnId: string
   change?: AgentTurnChange
+}
+
+export interface AgentConfirmInput {
+  turnId: string
+  callId: string
+  approved: boolean
 }
 
 export interface AgentSessionEntryBase {

@@ -1,5 +1,5 @@
 {
-  "version": 58,
+  "version": 59,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "技能管理 UI 已完成：三级技能列表、全局/项目覆盖配置、启用/禁用与禁止模型调用、创建/编辑/删除、SKILL.md/references/assets 浏览，242 测试通过；真实设置页验证创建、保存、开关、预览与删除。下一步做删除/批量操作二次确认，再补剪辑高级工具（自动字幕/删静音/转场/导出）、技能文件上传与覆盖快捷操作，最后整体验收；推送前先同步 origin/main。",
+  "next_focus": "删除/批量确认与 AI 入口调整已完成：requiresConfirm + confirm_request 确认卡覆盖节点/片段/导演台对象删除，时间线超 10 片段批量操作需确认；真实验证取消、允许与撤销；底部工具栏 robot 按钮删除，AI 悬浮按钮下移左移并换成用户 SVG。243 测试通过。下一步补剪辑高级工具（自动字幕/删静音/转场/导出）、技能文件上传与覆盖快捷操作，再做整体验收；推送前先同步 origin/main。",
   "frontier": [
     {
       "id": "M2-1",
@@ -310,6 +310,34 @@
         "src/main/agent/skills-config.ts",
         "src/main/ipc/skills.ts",
         "src/renderer/src/panels/SkillsSection.tsx"
+      ]
+    },
+    {
+      "id": "AGENT-CONFIRM-1",
+      "title": "Agent 删除 / 批量操作二次确认",
+      "status": "done",
+      "note": "2026-11-09 完成。工具层增加 requiresConfirm 与 toolConfirmationReason：canvas_delete_node、timeline_remove_clips、stage_remove_object 必须确认；timeline_move_clips/split_clips 超过 10 个片段必须确认。运行时在执行前发送 confirm_request 并等待 agent:confirm，60 秒超时自动拒绝，取消回合清理待确认。渲染层新增确认卡（工具名、影响说明、参数、允许/取消），tool_end/turn_end 自动清理。真实 Agent 验证取消后节点保留、允许后节点删除并可撤销。34 文件 243 测试通过；typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-CONFIRM-1.md",
+        ".opencode/handover/evidence/AGENT-CONFIRM-1.png",
+        "docs/agent-architecture-plan.md",
+        "src/main/agent/runtime.ts",
+        "src/main/agent/tools.ts",
+        "src/renderer/src/agent/AgentPanel.tsx"
+      ]
+    },
+    {
+      "id": "AGENT-FAB-1",
+      "title": "AI 悬浮按钮位置与图标调整",
+      "status": "done",
+      "note": "2026-11-09 完成。删除底部工具栏最右侧 robot 按钮及样式；AI 悬浮按钮从 right 16/bottom 48 调整为 right 26/bottom 32，尺寸 44px；图标替换为用户提供的 人工智能.svg（复制为 assets/agent-icon.svg），透明背景、圆形填满、保留 aria-label 与快捷键提示。typecheck/build 通过，截图验证。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-FAB-1.md",
+        ".opencode/handover/evidence/AGENT-ICON-1.png",
+        "src/renderer/src/assets/agent-icon.svg",
+        "src/renderer/src/agent/AgentPanel.tsx",
+        "src/renderer/src/canvas/BottomBar.tsx",
+        "src/renderer/src/styles/agent.css"
       ]
     },
     {
@@ -2272,6 +2300,14 @@
     {
       "category": "engineering",
       "content": "内置技能只读；技能管理只允许 SKILL.md、references/、assets/，并做 realpath 逃逸校验。"
+    },
+    {
+      "category": "engineering",
+      "content": "高风险 Agent 工具必须在执行前确认：requiresConfirm / toolConfirmationReason → confirm_request → agent:confirm；拒绝或 60 秒超时不得执行。"
+    },
+    {
+      "category": "engineering",
+      "content": "画布 AI 入口使用 assets/agent-icon.svg，底部工具栏不再重复放 robot 按钮。"
     }
   ],
   "designConventions": [
@@ -2306,6 +2342,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "删除 / 批量操作二次确认"
+    "nextMilestone": "剪辑高级工具与整体验收"
   }
 }

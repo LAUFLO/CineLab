@@ -386,6 +386,7 @@ const api: CineApi = {
     chat: (input) => ipcRenderer.invoke('agent:chat', input),
     cancel: (turnId) => ipcRenderer.invoke('agent:cancel', turnId),
     toolResult: (input) => ipcRenderer.invoke('agent:tool-result', input),
+    confirm: (input) => ipcRenderer.invoke('agent:confirm', input),
     sessionLoad: () => ipcRenderer.invoke('agent:session-load'),
     modelInfo: () => ipcRenderer.invoke('agent:model-info'),
     proposalCreate: (input) => ipcRenderer.invoke('agent:proposal-create', input),

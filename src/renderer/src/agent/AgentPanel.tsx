@@ -8,6 +8,7 @@ import {
   type AgentMessage
 } from './agentStore'
 import { useStudioStore } from '../stores/studio'
+import agentIcon from '../assets/agent-icon.svg'
 import '../styles/agent.css'
 
 function MessageBubble({ message }: { message: AgentMessage }) {
@@ -151,6 +152,9 @@ export function AgentPanel() {
   const proposalBusy = useAgentStore((state) => state.proposalBusy)
   const submitProposal = useAgentStore((state) => state.submitProposal)
   const cancelProposal = useAgentStore((state) => state.cancelProposal)
+  const pendingConfirm = useAgentStore((state) => state.pendingConfirm)
+  const confirming = useAgentStore((state) => state.confirming)
+  const confirmTool = useAgentStore((state) => state.confirmTool)
   const undoLastTurn = useAgentStore((state) => state.undoLastTurn)
   const clearError = useAgentStore((state) => state.clearError)
   const clipMode = useStudioStore((state) => state.open)
@@ -238,6 +242,41 @@ export function AgentPanel() {
             )}
           </div>
 
+          {pendingConfirm ? (
+            <section className="agent-confirm">
+              <header className="agent-confirm__head">
+                <span>需要确认</span>
+                <span className="agent-confirm__tool">
+                  {pendingConfirm.call.name}
+                </span>
+              </header>
+              <div className="agent-confirm__reason">
+                {pendingConfirm.reason}
+              </div>
+              <pre className="agent-confirm__args">
+                {JSON.stringify(pendingConfirm.call.args, null, 2)}
+              </pre>
+              <div className="agent-confirm__actions">
+                <button
+                  type="button"
+                  className="agent-confirm__approve"
+                  disabled={confirming}
+                  onClick={() => void confirmTool(true)}
+                >
+                  {confirming ? '处理中…' : '允许一次'}
+                </button>
+                <button
+                  type="button"
+                  className="agent-confirm__reject"
+                  disabled={confirming}
+                  onClick={() => void confirmTool(false)}
+                >
+                  取消
+                </button>
+              </div>
+            </section>
+          ) : null}
+
           {proposal ? (
             <ProposalCard
               proposal={proposal}
@@ -311,7 +350,7 @@ export function AgentPanel() {
           aria-label="打开 CineLab 助手"
           title="CineLab 助手（Ctrl+Shift+A）"
         >
-          AI
+          <img className="agent-fab__icon" src={agentIcon} alt="" />
         </button>
       )}
     </>,

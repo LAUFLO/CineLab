@@ -44,6 +44,7 @@ import type {
 import type { ModelsConfigStatus } from './models-file'
 import type {
   AgentChatRequest,
+  AgentConfirmInput,
   AgentEvent,
   AgentModelInfo,
   AgentProposal,
@@ -381,6 +382,7 @@ export interface AgentApi {
   chat(input: AgentChatRequest): Promise<{ turnId: string }>
   cancel(turnId: string): Promise<void>
   toolResult(input: AgentToolResultInput): Promise<void>
+  confirm(input: AgentConfirmInput): Promise<void>
   sessionLoad(): Promise<AgentSessionSnapshot>
   modelInfo(): Promise<AgentModelInfo | null>
   proposalCreate(input: AgentProposalDraft): Promise<AgentProposal>

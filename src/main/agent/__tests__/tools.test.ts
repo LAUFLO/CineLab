@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { AgentScope, AgentToolCall } from '@shared/agent'
-import { AgentToolError, assertToolAllowed } from '../tools'
+import {
+  AgentToolError,
+  assertToolAllowed,
+  toolConfirmationReason
+} from '../tools'
 
 const scope: AgentScope = {
   projectPath: 'C:/project',
@@ -557,6 +561,47 @@ describe('agent tool permissions', () => {
         'current'
       )
     ).not.toThrow()
+  })
+
+  it('requires confirmation for deletes and large batches', () => {
+    expect(
+      toolConfirmationReason(
+        call('canvas_delete_node', { nodeId: 'node-a' })
+      )
+    ).toContain('删除画布节点')
+    expect(
+      toolConfirmationReason(
+        call('stage_remove_object', {
+          nodeId: 'node-a',
+          objectId: 'object-1'
+        })
+      )
+    ).toContain('删除导演台对象')
+    expect(
+      toolConfirmationReason(
+        call('timeline_remove_clips', { clipIds: ['clip-1', 'clip-2'] })
+      )
+    ).toContain('2 个时间线片段')
+
+    expect(
+      toolConfirmationReason(
+        call('timeline_move_clips', {
+          clipIds: ['clip-1', 'clip-2'],
+          deltaMs: 1000
+        })
+      )
+    ).toBeNull()
+
+    expect(
+      toolConfirmationReason(
+        call('timeline_move_clips', {
+          clipIds: Array.from({ length: 11 }, (_, index) => `clip-${index}`),
+          deltaMs: 1000
+        })
+      )
+    ).toContain('11 个时间线片段')
+
+    expect(toolConfirmationReason(call('timeline_get', {}))).toBeNull()
   })
 
   it('validates catalog capability', () => {

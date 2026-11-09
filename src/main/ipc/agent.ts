@@ -1,6 +1,7 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type {
   AgentChatRequest,
+  AgentConfirmInput,
   AgentEvent,
   AgentProposal,
   AgentProposalDraft,
@@ -18,6 +19,7 @@ import {
 import {
   cancelTurn,
   getActiveTurnInfo,
+  resolveConfirmation,
   resolveToolResult,
   startTurn
 } from '../agent/runtime'
@@ -144,6 +146,23 @@ export function registerAgentIpc(): void {
       return
     }
     resolveToolResult(result)
+  })
+
+  ipcMain.handle('agent:confirm', (_event, input: unknown) => {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return
+    const value = input as Partial<AgentConfirmInput>
+    if (
+      typeof value.turnId !== 'string' ||
+      typeof value.callId !== 'string' ||
+      typeof value.approved !== 'boolean'
+    ) {
+      return
+    }
+    resolveConfirmation({
+      turnId: value.turnId,
+      callId: value.callId,
+      approved: value.approved
+    })
   })
 
   ipcMain.handle('agent:session-load', async () => {

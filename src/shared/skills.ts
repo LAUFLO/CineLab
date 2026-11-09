@@ -11,6 +11,40 @@ export interface SkillSummary extends SkillFrontmatter {
   scope: SkillScope
 }
 
+export interface SkillAdminEntry extends SkillSummary {
+  /** 是否参与 Agent 技能列表 */
+  enabled: boolean
+  /** 内置技能只读 */
+  editable: boolean
+  /** 被更高优先级作用域的同名技能覆盖 */
+  shadowedBy?: SkillScope
+}
+
+export interface SkillFileEntry {
+  path: string
+  size: number
+  binary: boolean
+}
+
+export interface SkillFileContent extends SkillFileEntry {
+  content?: string
+}
+
+export interface SkillWriteInput {
+  scope: 'global' | 'project'
+  name: string
+  description: string
+  version?: string
+  body: string
+}
+
+export interface SkillOverrideInput {
+  scope: SkillScope
+  name: string
+  enabled?: boolean
+  disableModelInvocation?: boolean
+}
+
 export interface SkillReadResult {
   name: string
   scope: SkillScope

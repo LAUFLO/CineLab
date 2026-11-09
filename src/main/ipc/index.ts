@@ -11,6 +11,7 @@ import { registerTimelineIpc } from './timeline'
 import { registerAgentIpc } from './agent'
 import { registerFilmStudyIpc } from './film-study'
 import { registerStageIpc } from './stage'
+import { registerSkillsIpc } from './skills'
 import { registerComponentsIpc } from './components'
 import { registerUpdateIpc } from './update'
 import { log, logDirectory } from '../logger'
@@ -32,6 +33,7 @@ export function registerIpc(): void {
   registerAgentIpc()
   registerFilmStudyIpc()
   registerStageIpc()
+  registerSkillsIpc()
   registerComponentsIpc()
   registerUpdateIpc()
 

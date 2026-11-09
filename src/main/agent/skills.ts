@@ -10,40 +10,47 @@ import {
   type SkillScope,
   type SkillSummary
 } from '@shared/skills'
+import {
+  loadSkillOverrides,
+  skillOverrideKey,
+  type SkillOverrides
+} from './skills-config'
 
-interface SkillLocation {
+export interface SkillLocation {
   scope: SkillScope
   directory: string
 }
 
-function isWithin(base: string, target: string): boolean {
+export function isWithin(base: string, target: string): boolean {
   const rel = relative(base, target)
   return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel)
 }
 
-function builtinSkillsDirectory(): string {
+export function builtinSkillsDirectory(): string {
   return app.isPackaged
     ? join(process.resourcesPath, 'skills')
     : join(app.getAppPath(), 'resources', 'skills')
 }
 
-function globalSkillsDirectory(): string {
+export function globalSkillsDirectory(): string {
   return join(app.getPath('userData'), 'skills')
 }
 
-function projectSkillsDirectory(root: string): string {
+export function projectSkillsDirectory(root: string): string {
   return join(root, '.cinelab', 'skills')
 }
 
-function skillLocations(root: string): SkillLocation[] {
+export function skillLocations(root: string): SkillLocation[] {
   return [
     { scope: 'builtin', directory: builtinSkillsDirectory() },
     { scope: 'global', directory: globalSkillsDirectory() },
-    { scope: 'project', directory: projectSkillsDirectory(root) }
+    ...(root
+      ? [{ scope: 'project' as const, directory: projectSkillsDirectory(root) }]
+      : [])
   ]
 }
 
-async function readManifest(
+export async function readSkillManifest(
   skillDirectory: string,
   scope: SkillScope
 ): Promise<SkillSummary | null> {
@@ -66,7 +73,8 @@ async function readManifest(
 
 async function scanScope(
   location: SkillLocation,
-  found: Map<string, { summary: SkillSummary; directory: string }>
+  found: Map<string, { summary: SkillSummary; directory: string }>,
+  overrides: SkillOverrides
 ): Promise<void> {
   let entries
   try {
@@ -79,17 +87,32 @@ async function scanScope(
   for (const entry of entries) {
     if (!entry.isDirectory() || entry.name.startsWith('.')) continue
     const directory = join(location.directory, entry.name)
-    const summary = await readManifest(directory, location.scope)
+    const summary = await readSkillManifest(directory, location.scope)
     if (!summary) continue
+
+    const override = overrides[skillOverrideKey(location.scope, summary.name)]
+    if (override?.enabled === false) {
+      // 同名高层技能即使禁用也应遮蔽低层技能，避免意外回退到内置版本
+      if (location.scope !== 'builtin') found.delete(summary.name)
+      continue
+    }
+
+    const effective: SkillSummary = {
+      ...summary,
+      ...(override?.disableModelInvocation !== undefined
+        ? { disableModelInvocation: override.disableModelInvocation }
+        : {})
+    }
     // 后扫描的作用域覆盖前面的：project > global > builtin
-    found.set(summary.name, { summary, directory })
+    found.set(summary.name, { summary: effective, directory })
   }
 }
 
 export async function listSkills(root: string): Promise<SkillSummary[]> {
   const found = new Map<string, { summary: SkillSummary; directory: string }>()
+  const overrides = await loadSkillOverrides(root)
   for (const location of skillLocations(root)) {
-    await scanScope(location, found)
+    await scanScope(location, found, overrides)
   }
   return [...found.values()]
     .map((item) => item.summary)
@@ -106,7 +129,7 @@ async function findSkill(
   for (let index = skillLocations(root).length - 1; index >= 0; index -= 1) {
     const location = skillLocations(root)[index]
     const directory = join(location.directory, name)
-    const summary = await readManifest(directory, location.scope)
+    const summary = await readSkillManifest(directory, location.scope)
     if (summary?.name === name) return { summary, directory }
   }
 

@@ -21,6 +21,7 @@ import { useUIStore } from '../stores/ui'
 import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
 import { GeneralSettingsSection } from './GeneralSettingsSection'
+import { SkillsSection } from './SkillsSection'
 import { ModelParamsDialog } from '../canvas/nodes/ModelParamsDialog'
 import {
   ModelInputsDialog,
@@ -30,6 +31,7 @@ import {
 type SectionId =
   | 'general'
   | 'models'
+  | 'skills'
   | 'library'
   | 'components'
   | 'appearance'
@@ -45,6 +47,7 @@ interface SectionDef {
 const SECTIONS: SectionDef[] = [
   { id: 'general', label: '通用', icon: 'settings' },
   { id: 'models', label: '模型服务', icon: 'robot' },
+  { id: 'skills', label: '技能', icon: 'sparkles' },
   { id: 'library', label: '资产库', icon: 'library' },
   { id: 'components', label: '组件', icon: 'layers' },
   { id: 'appearance', label: '外观', icon: 'sun' },
@@ -1082,6 +1085,7 @@ export function SettingsPanel() {
           <div className="settings-content">
             {active === 'general' ? <GeneralSettingsSection /> : null}
             {active === 'models' ? <ModelsSection /> : null}
+            {active === 'skills' ? <SkillsSection /> : null}
             {active === 'library' ? <LibrarySection /> : null}
             {active === 'components' ? <ComponentsSection /> : null}
             {active === 'appearance' ? <AppearanceSection /> : null}

@@ -2,15 +2,15 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
-import type {
-  DirectorStageDoc,
-  StageCamera,
-  StageObject
-} from '@shared/stage-schema'
+import type { StageCamera } from '@shared/stage-schema'
+import { sampleCameraTrack } from '@shared/stage-timeline'
+import {
+  createStageObject,
+  disposeObject3D as disposeObject
+} from './stage-scene'
 import { useStageStore } from './stageStore'
 
 const DEFAULT_BACKGROUND = '#1a1a1a'
-const OBJECT_COLOR = '#9ca3af'
 const SELECTED_COLOR = '#4ade80'
 const FALLBACK_ASPECT = 16 / 9
 
@@ -25,98 +25,6 @@ function findUserData(
     current = current.parent
   }
   return null
-}
-
-function disposeObject(object: THREE.Object3D): void {
-  object.traverse((child) => {
-    if (!(child instanceof THREE.Mesh)) return
-    child.geometry.dispose()
-    if (Array.isArray(child.material)) {
-      child.material.forEach((material) => material.dispose())
-    } else {
-      child.material.dispose()
-    }
-  })
-}
-
-function createHuman(color: string): THREE.Group {
-  const group = new THREE.Group()
-  const material = new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.85,
-    metalness: 0.05
-  })
-
-  const body = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.3, 1.05, 6, 12),
-    material
-  )
-  body.position.y = 0.85
-  group.add(body)
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 16, 12), material)
-  head.position.y = 1.78
-  group.add(head)
-
-  return group
-}
-
-function createStageObject(object: StageObject): THREE.Object3D {
-  const group = new THREE.Group()
-  group.userData.stageObjectId = object.id
-  group.position.fromArray(object.transform.position)
-  group.rotation.fromArray(object.transform.rotation)
-  group.scale.fromArray(object.transform.scale)
-  group.visible = object.visible !== false
-
-  const color = object.color ?? OBJECT_COLOR
-  const material = new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.8,
-    metalness: 0.08
-  })
-
-  if (object.type === 'human') {
-    group.add(createHuman(color))
-    return group
-  }
-
-  if (object.type === 'crowd' || object.type === 'gltf') {
-    const count = object.type === 'crowd' ? Math.max(1, object.count ?? 3) : 1
-    for (let index = 0; index < count; index += 1) {
-      const person = createHuman(color)
-      if (object.type === 'gltf') {
-        person.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.material = new THREE.MeshStandardMaterial({
-              color,
-              wireframe: true
-            })
-          }
-        })
-      }
-      person.position.x = (index % 5) * 0.9
-      person.position.z = Math.floor(index / 5) * 0.9
-      group.add(person)
-    }
-    return group
-  }
-
-  let geometry: THREE.BufferGeometry
-  if (object.type === 'sphere') {
-    geometry = new THREE.SphereGeometry(0.5, 24, 16)
-    geometry.translate(0, 0.5, 0)
-  } else if (object.type === 'plane') {
-    geometry = new THREE.PlaneGeometry(2, 2)
-    geometry.rotateX(-Math.PI / 2)
-    material.side = THREE.DoubleSide
-  } else {
-    geometry = new THREE.BoxGeometry(1, 1, 1)
-    geometry.translate(0, 0.5, 0)
-  }
-
-  group.add(new THREE.Mesh(geometry, material))
-  return group
 }
 
 function createCameraMarker(
@@ -152,6 +60,7 @@ export function StageViewport() {
   const doc = useStageStore((state) => state.doc)
   const viewMode = useStageStore((state) => state.viewMode)
   const transformMode = useStageStore((state) => state.transformMode)
+  const playing = useStageStore((state) => state.playing)
   const selectedObjectId = useStageStore((state) => state.selectedObjectId)
   const selectedCameraId = useStageStore((state) => state.selectedCameraId)
 
@@ -352,7 +261,36 @@ export function StageViewport() {
     updateSize()
 
     renderer.setAnimationLoop(() => {
-      controls.update()
+      const state = useStageStore.getState()
+      const shot =
+        state.playing && state.selectedShotId
+          ? state.doc?.shots.find((item) => item.id === state.selectedShotId)
+          : undefined
+      const shotSource =
+        shot && state.doc
+          ? state.doc.cameras.find((camera) => camera.id === shot.cameraId)
+          : undefined
+
+      if (shot && shotSource && shotCameraRef.current) {
+        const shotCamera = shotCameraRef.current
+        const sample = sampleCameraTrack(
+          shotSource,
+          shot,
+          state.playbackMs
+        )
+        shotCamera.position.fromArray(sample.position)
+        shotCamera.fov = sample.fov
+        shotCamera.aspect = aspectRef.current
+        shotCamera.lookAt(new THREE.Vector3(...sample.target))
+        shotCamera.updateProjectionMatrix()
+        activeCameraRef.current = shotCamera
+        if (cameraGroupRef.current) cameraGroupRef.current.visible = false
+        if (selectionRef.current) selectionRef.current.visible = false
+        if (transformHelperRef.current) transformHelperRef.current.visible = false
+      } else {
+        controls.update()
+      }
+
       const camera = activeCameraRef.current
       if (camera) renderer.render(scene, camera)
     })
@@ -364,8 +302,39 @@ export function StageViewport() {
       return renderer.domElement.toDataURL('image/png')
     })
 
+    useStageStore.getState().registerViewCapture(() => {
+      const state = useStageStore.getState()
+      if (state.viewMode === 'camera' && shotCameraRef.current) {
+        const shotCamera = shotCameraRef.current
+        const direction = new THREE.Vector3()
+        shotCamera.getWorldDirection(direction)
+        const target = shotCamera.position
+          .clone()
+          .add(direction.multiplyScalar(6))
+        return {
+          position: [
+            shotCamera.position.x,
+            shotCamera.position.y,
+            shotCamera.position.z
+          ],
+          target: [target.x, target.y, target.z],
+          fov: shotCamera.fov
+        }
+      }
+
+      const director = directorCameraRef.current
+      const controls = controlsRef.current
+      if (!director || !controls) return null
+      return {
+        position: [director.position.x, director.position.y, director.position.z],
+        target: [controls.target.x, controls.target.y, controls.target.z],
+        fov: director.fov
+      }
+    })
+
     return () => {
       useStageStore.getState().registerCapture(null)
+      useStageStore.getState().registerViewCapture(null)
       observer.disconnect()
       renderer.setAnimationLoop(null)
       renderer.domElement.removeEventListener('pointerdown', onPointerDown)
@@ -520,6 +489,36 @@ export function StageViewport() {
   useEffect(() => {
     transformRef.current?.setMode(transformMode)
   }, [transformMode])
+
+  // 播放开始时隐藏编辑辅助；停止后恢复当前视角
+  useEffect(() => {
+    const director = directorCameraRef.current
+    const shot = shotCameraRef.current
+    const controls = controlsRef.current
+    if (!director || !shot || !controls) return
+
+    if (playing) {
+      controls.enabled = false
+      transformRef.current?.detach()
+      if (transformHelperRef.current) transformHelperRef.current.visible = false
+      if (cameraGroupRef.current) cameraGroupRef.current.visible = false
+      if (selectionRef.current) selectionRef.current.visible = false
+      return
+    }
+
+    const state = useStageStore.getState()
+    const hasCamera = Boolean(
+      state.doc?.cameras.some(
+        (camera) => camera.id === (state.selectedCameraId ?? state.doc?.activeCameraId)
+      )
+    )
+    const cameraMode = state.viewMode === 'camera' && hasCamera
+    activeCameraRef.current = cameraMode ? shot : director
+    controls.enabled = !cameraMode
+    if (cameraGroupRef.current) cameraGroupRef.current.visible = !cameraMode
+    syncTransformControls()
+    syncShotCamera()
+  }, [playing])
 
   // 机位标记选中色与当前相机
   useEffect(() => {

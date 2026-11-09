@@ -383,6 +383,26 @@ export interface AgentApi {
   onToolCall(callback: (call: AgentToolCallRequest) => void): () => void
 }
 
+export interface StageExportInput {
+  stageId: string
+  shotId: string
+  resolution: '720p' | '1080p'
+  fps: 24 | 30
+}
+
+export interface StageExportProgress {
+  stageId: string
+  shotId: string
+  frame: number
+  total: number
+  stage: 'rendering' | 'encoding' | 'done'
+}
+
+export interface StageExportResult {
+  asset: GeneratedAsset
+  path: string
+}
+
 export interface StageApi {
   create(name?: string): Promise<DirectorStageDoc>
   load(stageId: string): Promise<DirectorStageDoc | null>
@@ -390,6 +410,10 @@ export interface StageApi {
   delete(stageId: string): Promise<void>
   duplicate(stageId: string): Promise<DirectorStageDoc>
   capture(input: { stageId: string; dataUrl: string }): Promise<GeneratedAsset>
+  exportPreview(input: StageExportInput): Promise<StageExportResult>
+  onExportProgress(
+    callback: (progress: StageExportProgress) => void
+  ): () => void
 }
 
 export interface CineApi {

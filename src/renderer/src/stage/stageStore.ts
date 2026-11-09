@@ -4,6 +4,7 @@ import type {
   StageCamera,
   StageObject,
   StageObjectType,
+  StageShot,
   StageTransform,
   StageVec3
 } from '@shared/stage-schema'
@@ -21,6 +22,12 @@ import { isStageNode, useCanvasStore } from '../stores/canvas'
 export type StageViewMode = 'director' | 'camera'
 export type StageTransformMode = 'translate' | 'rotate' | 'scale'
 
+export interface StageViewCapture {
+  position: StageVec3
+  target: StageVec3
+  fov: number
+}
+
 const OBJECT_LABEL: Record<StageObjectType, string> = {
   human: '人物',
   box: '立方体',
@@ -37,13 +44,18 @@ interface StageState {
   history: StageHistoryState
   selectedObjectId: string | null
   selectedCameraId: string | null
+  selectedShotId: string | null
+  selectedKeyframeIndex: number | null
   viewMode: StageViewMode
   transformMode: StageTransformMode
+  playing: boolean
+  playbackMs: number
   loading: boolean
   saving: boolean
   dirty: boolean
   error: string | null
   captureHandler: (() => string | null) | null
+  viewCaptureHandler: (() => StageViewCapture | null) | null
 
   openStage: (nodeId: string) => Promise<void>
   closeStage: () => void
@@ -52,6 +64,18 @@ interface StageState {
   redo: () => void
   selectObject: (objectId: string | null) => void
   selectCamera: (cameraId: string | null) => void
+  selectShot: (shotId: string | null) => void
+  addShot: () => string | null
+  removeSelectedShot: () => boolean
+  setShotDuration: (durationMs: number) => boolean
+  captureKeyframe: () => boolean
+  removeKeyframe: (index: number) => boolean
+  seek: (timeMs: number) => void
+  play: () => void
+  pause: () => void
+  registerViewCapture: (
+    handler: (() => StageViewCapture | null) | null
+  ) => void
   setViewMode: (mode: StageViewMode) => void
   setTransformMode: (mode: StageTransformMode) => void
   setActiveCamera: (cameraId: string | null) => void
@@ -93,13 +117,18 @@ export const useStageStore = create<StageState>((set, get) => ({
   history: createStageHistory(),
   selectedObjectId: null,
   selectedCameraId: null,
+  selectedShotId: null,
+  selectedKeyframeIndex: null,
   viewMode: 'director',
   transformMode: 'translate',
+  playing: false,
+  playbackMs: 0,
   loading: false,
   saving: false,
   dirty: false,
   error: null,
   captureHandler: null,
+  viewCaptureHandler: null,
 
   openStage: async (nodeId) => {
     const node = useCanvasStore
@@ -119,8 +148,12 @@ export const useStageStore = create<StageState>((set, get) => ({
       history: createStageHistory(),
       selectedObjectId: null,
       selectedCameraId: null,
+      selectedShotId: null,
+      selectedKeyframeIndex: null,
       viewMode: 'director',
       transformMode: 'translate',
+      playing: false,
+      playbackMs: 0,
       dirty: false
     })
 
@@ -137,7 +170,11 @@ export const useStageStore = create<StageState>((set, get) => ({
         doc,
         loading: false,
         selectedCameraId: doc.activeCameraId ?? null,
-        viewMode: 'director'
+        selectedShotId: doc.shots[0]?.id ?? null,
+        selectedKeyframeIndex: null,
+        viewMode: 'director',
+        playing: false,
+        playbackMs: 0
       })
       syncStageNodeSummary(nodeId, doc)
     } catch (error) {
@@ -163,12 +200,17 @@ export const useStageStore = create<StageState>((set, get) => ({
       history: createStageHistory(),
       selectedObjectId: null,
       selectedCameraId: null,
+      selectedShotId: null,
+      selectedKeyframeIndex: null,
       viewMode: 'director',
+      playing: false,
+      playbackMs: 0,
       loading: false,
       saving: false,
       dirty: false,
       error: null,
-      captureHandler: null
+      captureHandler: null,
+      viewCaptureHandler: null
     })
   },
 
@@ -210,7 +252,8 @@ export const useStageStore = create<StageState>((set, get) => ({
     syncStageNodeSummary(nodeId, next.doc)
   },
 
-  selectObject: (objectId) => set({ selectedObjectId: objectId }),
+  selectObject: (objectId) =>
+    set({ selectedObjectId: objectId, playing: false }),
 
   selectCamera: (cameraId) => {
     if (cameraId) {
@@ -220,12 +263,196 @@ export const useStageStore = create<StageState>((set, get) => ({
       set({
         selectedObjectId: null,
         selectedCameraId: cameraId,
-        viewMode: applied ? 'camera' : get().viewMode
+        viewMode: applied ? 'camera' : get().viewMode,
+        playing: false
       })
       return
     }
-    set({ selectedCameraId: null, viewMode: 'director' })
+    set({ selectedCameraId: null, viewMode: 'director', playing: false })
   },
+
+  selectShot: (shotId) =>
+    set({
+      selectedShotId: shotId,
+      selectedKeyframeIndex: null,
+      playbackMs: 0,
+      playing: false
+    }),
+
+  addShot: () => {
+    const { doc, selectedCameraId } = get()
+    if (!doc) return null
+    const cameraId =
+      selectedCameraId ?? doc.activeCameraId ?? doc.cameras[0]?.id
+    if (!cameraId) {
+      set({ error: '请先添加机位，再创建镜头' })
+      return null
+    }
+
+    const shot: StageShot = {
+      id: `shot_${crypto.randomUUID().slice(0, 8)}`,
+      name: `镜头 ${doc.shots.length + 1}`,
+      cameraId,
+      durationMs: 5000,
+      aspect: '16:9'
+    }
+    if (!get().applyCommands([{ type: 'addShot', shot }])) return null
+    set({
+      selectedShotId: shot.id,
+      selectedKeyframeIndex: null,
+      playbackMs: 0,
+      playing: false
+    })
+    return shot.id
+  },
+
+  removeSelectedShot: () => {
+    const shotId = get().selectedShotId
+    if (!shotId) return false
+    const remaining =
+      get().doc?.shots.filter((shot) => shot.id !== shotId) ?? []
+    if (!get().applyCommands([{ type: 'removeShot', shotId }])) return false
+    set({
+      selectedShotId: remaining[0]?.id ?? null,
+      selectedKeyframeIndex: null,
+      playbackMs: 0,
+      playing: false
+    })
+    return true
+  },
+
+  setShotDuration: (durationMs) => {
+    const { doc, selectedShotId } = get()
+    if (!doc || !selectedShotId) return false
+    const shot = doc.shots.find((item) => item.id === selectedShotId)
+    if (!shot) return false
+
+    const duration = Math.round(durationMs)
+    if (!Number.isFinite(duration) || duration < 100 || duration > 15000) {
+      set({ error: '镜头时长需要在 0.1-15 秒之间' })
+      return false
+    }
+
+    const track = (shot.cameraTrack ?? []).filter(
+      (key) => key.timeMs <= duration
+    )
+    const actionTracks = (shot.actionTracks ?? [])
+      .map((action) => ({
+        ...action,
+        keys: action.keys.filter((key) => key.timeMs <= duration)
+      }))
+      .filter((action) => action.keys.length > 0)
+
+    const applied = get().applyCommands([
+      {
+        type: 'updateShot',
+        shotId: selectedShotId,
+        patch: {
+          durationMs: duration,
+          cameraTrack: track.length > 0 ? track : undefined,
+          actionTracks: actionTracks.length > 0 ? actionTracks : undefined
+        }
+      }
+    ])
+    if (applied) {
+      set({
+        playbackMs: Math.min(get().playbackMs, duration),
+        selectedKeyframeIndex: null
+      })
+    }
+    return applied
+  },
+
+  captureKeyframe: () => {
+    const {
+      doc,
+      selectedShotId,
+      playbackMs,
+      viewCaptureHandler
+    } = get()
+    if (!doc || !selectedShotId) {
+      set({ error: '请先选择一个镜头' })
+      return false
+    }
+    const shot = doc.shots.find((item) => item.id === selectedShotId)
+    if (!shot) return false
+
+    const capture = viewCaptureHandler?.()
+    if (!capture) {
+      set({ error: '当前视口无法捕获机位' })
+      return false
+    }
+
+    const timeMs = Math.round(
+      Math.min(shot.durationMs, Math.max(0, playbackMs))
+    )
+    const track = (shot.cameraTrack ?? []).filter(
+      (key) => Math.abs(key.timeMs - timeMs) > 2
+    )
+    track.push({
+      timeMs,
+      position: [...capture.position],
+      target: [...capture.target],
+      fov: capture.fov,
+      easing: 'linear'
+    })
+    track.sort((a, b) => a.timeMs - b.timeMs)
+
+    if (
+      !get().applyCommands([
+        { type: 'setCameraTrack', shotId: selectedShotId, track }
+      ])
+    ) {
+      return false
+    }
+
+    set({
+      selectedKeyframeIndex: track.findIndex((key) => key.timeMs === timeMs)
+    })
+    return true
+  },
+
+  removeKeyframe: (index) => {
+    const { doc, selectedShotId } = get()
+    if (!doc || !selectedShotId) return false
+    const shot = doc.shots.find((item) => item.id === selectedShotId)
+    if (!shot) return false
+    const track = [...(shot.cameraTrack ?? [])]
+    if (index < 0 || index >= track.length) return false
+
+    const next = track.filter((_, keyIndex) => keyIndex !== index)
+    const applied = get().applyCommands([
+      { type: 'setCameraTrack', shotId: selectedShotId, track: next }
+    ])
+    if (applied) set({ selectedKeyframeIndex: null })
+    return applied
+  },
+
+  seek: (timeMs) => {
+    const { doc, selectedShotId } = get()
+    const shot = doc?.shots.find((item) => item.id === selectedShotId)
+    const max = shot?.durationMs ?? 0
+    set({
+      playbackMs: Math.round(Math.min(max, Math.max(0, timeMs)))
+    })
+  },
+
+  play: () => {
+    const { doc, selectedShotId, playbackMs } = get()
+    const shot = doc?.shots.find((item) => item.id === selectedShotId)
+    if (!shot) {
+      set({ error: '请先选择一个镜头' })
+      return
+    }
+    set({
+      playing: true,
+      playbackMs: playbackMs >= shot.durationMs ? 0 : playbackMs
+    })
+  },
+
+  pause: () => set({ playing: false }),
+
+  registerViewCapture: (handler) => set({ viewCaptureHandler: handler }),
 
   setViewMode: (mode) => {
     if (mode === 'camera' && !get().selectedCameraId && !get().doc?.cameras[0]) {
@@ -238,7 +465,7 @@ export const useStageStore = create<StageState>((set, get) => ({
         get().applyCommands([{ type: 'setActiveCamera', cameraId: targetId }])
       }
     }
-    set({ viewMode: mode })
+    set({ viewMode: mode, playing: false })
   },
 
   setTransformMode: (mode) => set({ transformMode: mode }),

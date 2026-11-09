@@ -3,7 +3,9 @@ import type { AgentScope, AgentToolCall } from '@shared/agent'
 import {
   AgentToolError,
   assertToolAllowed,
-  toolConfirmationReason
+  isTimelineWriteTool,
+  toolConfirmationReason,
+  toolDefinitionsForModel
 } from '../tools'
 
 const scope: AgentScope = {
@@ -561,6 +563,161 @@ describe('agent tool permissions', () => {
         'current'
       )
     ).not.toThrow()
+  })
+
+  it('validates advanced clip tools', () => {
+    const clipScope = { ...scope, timelineId: 'timeline-1' }
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_auto_subtitles', { clipId: 'clip-1' }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_auto_subtitles', { clipId: '' }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_remove_silence', {
+          clipIds: ['clip-1'],
+          paddingMs: 120,
+          minDurationMs: 400,
+          ripple: true
+        }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_remove_silence', { paddingMs: -1 }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_remove_silence', { clipIds: [] }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_transition', {
+          clipId: 'clip-1',
+          type: 'wipe-left',
+          durationMs: 600
+        }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_transition', {
+          clipId: 'clip-1',
+          type: 'none'
+        }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_transition', {
+          clipId: 'clip-1',
+          type: 'spin'
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_transition', {
+          clipId: 'clip-1',
+          type: 'fade',
+          durationMs: 50
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_export', { codec: 'hevc' }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_export', { codec: 'gif' }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+  })
+
+  it('requires confirmation for advanced clip tools', () => {
+    expect(
+      toolConfirmationReason(call('timeline_remove_silence', {}))
+    ).toContain('静音')
+    expect(
+      toolConfirmationReason(call('timeline_export', { codec: 'h264' }))
+    ).toContain('导出成片')
+    expect(
+      toolConfirmationReason(
+        call('timeline_auto_subtitles', { clipId: 'clip-1' })
+      )
+    ).toBeNull()
+    expect(
+      toolConfirmationReason(
+        call('timeline_set_transition', {
+          clipId: 'clip-1',
+          type: 'fade'
+        })
+      )
+    ).toBeNull()
+  })
+
+  it('exposes advanced clip tools in the clip profile', () => {
+    const names = toolDefinitionsForModel('clip', 'current').map(
+      (tool) => tool.function.name
+    )
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'timeline_auto_subtitles',
+        'timeline_remove_silence',
+        'timeline_set_transition',
+        'timeline_export'
+      ])
+    )
+
+    const readOnlyNames = toolDefinitionsForModel('clip', 'read-only').map(
+      (tool) => tool.function.name
+    )
+    expect(readOnlyNames).not.toContain('timeline_export')
+    expect(readOnlyNames).not.toContain('timeline_remove_silence')
+  })
+
+  it('only marks timeline-mutating tools as undoable', () => {
+    expect(isTimelineWriteTool('timeline_auto_subtitles')).toBe(true)
+    expect(isTimelineWriteTool('timeline_remove_silence')).toBe(true)
+    expect(isTimelineWriteTool('timeline_set_transition')).toBe(true)
+    expect(isTimelineWriteTool('timeline_export')).toBe(false)
+    expect(isTimelineWriteTool('timeline_get')).toBe(false)
+    expect(isTimelineWriteTool('timeline_select_clips')).toBe(false)
   })
 
   it('requires confirmation for deletes and large batches', () => {

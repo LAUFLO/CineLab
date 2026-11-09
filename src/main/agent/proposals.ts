@@ -282,7 +282,7 @@ async function expireIfNeeded(
   ) {
     return patchProposal(root, proposal, {
       status: 'expired',
-      error: '提案已超过有效期，请让助手重新生成'
+      error: '提案已超过有效期，请让 CineBot 重新生成'
     })
   }
   return proposal
@@ -336,7 +336,7 @@ export async function submitProposal(
 
   const checked = await expireIfNeeded(root, proposal)
   if (checked.status === 'expired') {
-    throw new Error('提案已失效，请让助手重新生成')
+    throw new Error('提案已失效，请让 CineBot 重新生成')
   }
   if (checked.status === 'submitting') {
     throw new Error('提案正在提交，请稍候')
@@ -348,7 +348,7 @@ export async function submitProposal(
     return checked
   }
   if (checked.status === 'failed' && checked.runId) {
-    throw new Error('这个提案已经提交过一次，不能重复购买；请让助手新建提案')
+    throw new Error('这个提案已经提交过一次，不能重复购买；请让 CineBot 新建提案')
   }
   if (checked.status === 'cancelled') {
     throw new Error('提案已取消')

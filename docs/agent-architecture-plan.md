@@ -255,7 +255,7 @@ type AgentErrorCode =
 | 前缀 | 域 | 示例 |
 |---|---|---|
 | `canvas.` | 画布 | `canvas.get`、`canvas.addNode`、`canvas.connect`、`canvas.updateNode` |
-| `timeline.` | 剪辑 | `timeline.get`、`timeline.applyPlan`、`timeline.analyze` |
+| `timeline.` | 剪辑 | `timeline.get`、`timeline.moveClips`、`timeline.autoSubtitles`、`timeline.removeSilence`、`timeline.setTransition`、`timeline.export` |
 | `stage.` | 导演台 | `stage.get`、`stage.addObject`、`stage.renderPreview` |
 | `film.` | 拉片 | `film.get`、`film.readFrames`、`film.exportAnalysis` |
 | `project.` | 项目 | `project.get`、`project.searchAssets`、`project.export` |

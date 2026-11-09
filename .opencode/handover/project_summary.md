@@ -36,8 +36,10 @@
 | `AGENT-CONFIRM-1` | 删除 / 批量操作二次确认，确认前不执行 |
 | `AGENT-FAB-1` | 底部工具栏 robot 按钮移除，AI 悬浮按钮位置与 SVG 图标调整 |
 | `AGENT-UI-2` | LibTV 风格助手、会话历史、文本模型/技能选择、工具过程隐藏 JSON |
-| 验证 | 247 测试、`typecheck`、`build` 通过；真实 Agnes 提案、视口、stage、白模导出、剪辑助手、技能 UI、确认流程与助手新 UI 验证完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 20 个提交、落后 6 个（a768e64、6abef3d、3a406a7、436768d、91b16b4、71c8b48），未推送；推送前先同步 |
+| `CLIP-ADVANCED-TOOLS-1` | 自动字幕、删静音、转场、导出四个剪辑 Agent 工具；长任务超时与取消 |
+| `AGENT-CINEBOT-1` | 助手统一命名 CineBot；移除角色标签；工具状态兜底修正 |
+| 验证 | 251 测试、`typecheck`、`build` 通过；真实 Agnes 提案、视口、stage、白模导出、剪辑助手、剪辑高级工具、技能 UI、确认流程、CineBot 新 UI 验证完成 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 22 个提交、落后 8 个（a768e64、6abef3d、3a406a7、436768d、91b16b4、71c8b48、336debb、1627ac9），未推送；推送前先同步 |
 
 ## 关键工件
 
@@ -72,9 +74,10 @@
 - 白模预演使用隐藏窗口 `stage-render.html` 逐帧渲染，ffmpeg 编码后写入 assets/vid。
 - 剪辑助手与画布助手共用 AgentRuntime，按 profile 切换系统提示与工具集。
 - 技能覆盖配置：全局 `<userData>/skills-config.json`，项目 `<project>/.cinelab/skills-config.json`。
-- 高风险 Agent 工具执行前确认；删除与超过 10 个片段的批量操作强制确认。
+- 高风险 Agent 工具执行前确认；删除、删静音、导出与超过 10 个片段的批量操作强制确认。
 - 画布 AI 入口使用 `assets/agent-icon.svg`。
-- 助手面板采用 LibTV 风格：历史会话、文本模型选择、技能插入、工具过程折叠。
+- 助手品牌统一为 CineBot；面板采用 LibTV 风格：历史会话、文本模型选择、技能插入、工具过程折叠。
+- 消息区不显示「你 / 助手」标签；工具状态按最新 callId 更新，回合结束时兜底。
 - Agent 会话按项目 JSONL 保存，meta 存标题，首条消息自动命名。
 - 工具执行在渲染进程；主进程构造 scope、权限和回合事务。
 - 生成必须走提案确认，不直接执行；`generation_submit` 不暴露给模型。

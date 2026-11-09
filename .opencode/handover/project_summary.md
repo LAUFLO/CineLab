@@ -36,7 +36,7 @@
 | `AGENT-CONFIRM-1` | 删除 / 批量操作二次确认，确认前不执行 |
 | `AGENT-FAB-1` | 底部工具栏 robot 按钮移除，AI 悬浮按钮位置与 SVG 图标调整 |
 | 验证 | 243 测试、`typecheck`、`build` 通过；真实 Agnes 提案、视口、stage、白模导出、剪辑助手、技能 UI 与确认流程验证完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 18 个提交、落后 4 个（a768e64、6abef3d、3a406a7、436768d），未推送；推送前先同步 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 18 个提交、落后 5 个（a768e64、6abef3d、3a406a7、436768d、91b16b4），未推送；推送前先同步 |
 
 ## 关键工件
 

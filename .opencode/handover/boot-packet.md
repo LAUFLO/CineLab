@@ -17,7 +17,7 @@
 ## Gates
 
 - G-AGENT-VIDEO：Agnes Video 2.5 Flash 队列 503，待恢复重试。
-- G-AGENT-MAIN：origin/main 新增 a768e64、6abef3d、3a406a7、436768d；推送前先同步，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / preload / ipc-contract 冲突。
+- G-AGENT-MAIN：origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4；推送前先同步，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract 冲突。
 
 ## 证据
 

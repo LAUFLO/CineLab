@@ -1465,8 +1465,8 @@
       "id": "G-AGENT-MAIN",
       "scope": "repo",
       "status": "blocked",
-      "reason": "origin/main 新增 a768e64（Markdown 文本编辑 / 工作区增强）、6abef3d（成片合并进剪辑室节点 / 节点 UI 调整）、3a406a7（音频波形与裁剪/变速）、436768d（音频波形 / 文本编辑 / 剪辑室时间线修复），当前 feat/agent-runtime 落后 4 个提交",
-      "resolve": "推送前先同步 origin/main，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / preload / ipc-contract 冲突"
+      "reason": "origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4（连线删除 / 拉片镜头检测重做），当前 feat/agent-runtime 落后 5 个提交",
+      "resolve": "推送前先同步 origin/main，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract 冲突"
     }
   ],
   "completed": [

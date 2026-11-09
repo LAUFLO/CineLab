@@ -7,6 +7,7 @@ import type { TimelineVideoCodec } from '@shared/ipc-contract'
 import type { TimelineDoc } from '@shared/timeline-schema'
 import { assetUrl } from '../../lib/asset-url'
 import { Icon } from '../../components/Icon'
+import { Select } from '../../components/Select'
 import {
   isStudioNode,
   useCanvasStore,
@@ -388,20 +389,18 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
             >
               VTT
             </button>
-            <select
+            <Select
               className="studio-node__codec nodrag nopan"
               title="导出编码"
               value={codec}
               disabled={busy}
-              onClick={(event) => event.stopPropagation()}
-              onChange={(event) =>
-                setCodec(event.target.value as TimelineVideoCodec)
-              }
-            >
-              <option value="h264">H.264</option>
-              <option value="hevc">HEVC</option>
-              <option value="av1">AV1</option>
-            </select>
+              options={[
+                { value: 'h264', label: 'H.264' },
+                { value: 'hevc', label: 'HEVC' },
+                { value: 'av1', label: 'AV1' }
+              ]}
+              onChange={(value) => setCodec(value as TimelineVideoCodec)}
+            />
             <button
               type="button"
               className="studio-node__btn is-primary"

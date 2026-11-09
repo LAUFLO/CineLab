@@ -16,6 +16,12 @@ import { resolveInside, resolveMediaPath } from '../media/paths'
 import { httpFetch } from '../providers/http'
 import { listProviders, resolveProvider } from '../settings/store'
 import { saveFilmStudy } from './service'
+import {
+  analyzeVideoFrames,
+  buildCandidateTimes,
+  detectShotCuts,
+  detectMotionPeaks
+} from './shot-detect'
 
 type ProgressEmitter = (progress: FilmStudyProgress) => void
 
@@ -118,8 +124,15 @@ export function mergeToLimit(shots: ShotRange[], limit: number): ShotRange[] {
 }
 
 function representativeTime(shot: ShotRange): number {
-  const span = shot.end - shot.start
-  return Math.max(shot.start, shot.end - Math.min(0.08, span / 3))
+  return shot.start + (shot.end - shot.start) / 2
+}
+
+function cutsToShots(cuts: number[]): ShotRange[] {
+  const shots: ShotRange[] = []
+  for (let index = 0; index < cuts.length - 1; index += 1) {
+    shots.push({ start: cuts[index], end: cuts[index + 1] })
+  }
+  return shots.length > 0 ? shots : [{ start: 0, end: 0 }]
 }
 
 function formatTime(seconds: number): string {
@@ -146,26 +159,32 @@ function buildAutoSegments(shots: ShotRange[], frames: FilmStudyFrame[]): FilmSt
 
 function buildPrompt(
   study: FilmStudy,
-  shots: ShotRange[],
+  cuts: number[],
   frames: FilmStudyFrame[]
 ): string {
-  const list = shots.map((shot, index) => {
-    const frame = frames[index]
-    return `图 ${index + 1}：${baseTitle(index)}，${formatTime(shot.start)}–${formatTime(shot.end)}（代表帧 ${formatTime(frame?.time ?? shot.start)}）`
+  const cutList = cuts.map(
+    (time, index) => `切点 ${index + 1}：${formatTime(time)}`
+  )
+  const frameList = frames.map((frame, index) => {
+    const from = cuts[index]
+    const to = cuts[index + 1]
+    return `图 ${index + 1}：切点 ${index + 1}–${index + 2}，${formatTime(from)}–${formatTime(to)}（代表帧 ${formatTime(frame.time)}）`
   })
 
   return [
     `你是电影拉片助手。请分析《${study.sourceName}》的分镜。`,
-    `片长 ${study.duration.toFixed(1)} 秒，下面附上 ${frames.length} 张按时间顺序排列的代表帧。`,
+    `片长 ${study.duration.toFixed(1)} 秒。下面是按镜头切换和动作变化给出的候选切点，以及每个候选区间的一张代表帧。`,
     '',
-    ...list,
+    ...cutList,
     '',
-    '下面这些是按画面变化切出的候选镜头。请完成两件事：',
-    '1. 根据画面内容和叙事，把连续候选镜头合并成更合理的分镜；不要拆分候选镜头。',
-    '2. 为每个最终分镜补充画面描述与镜头语言。',
+    ...frameList,
     '',
-    'segments 每项用 from/to 表示包含的候选镜头编号（从 1 开始）。',
-    '必须连续覆盖全部候选镜头、不重叠、不遗漏；可以不合并，from 和 to 相同即可。',
+    '请根据画面内容和叙事，把候选切点组织成最终分镜。可以合并多个区间，也可以重新拆分；但只能使用上面列出的切点作为边界。',
+    '',
+    `segments 每项用 from/to 表示切点编号（从 1 开始，共 ${cuts.length} 个切点）：`,
+    `- 第一段必须 from = 1，最后一段必须 to = ${cuts.length}`,
+    '- 下一段的 from 必须等于上一段的 to，from 必须小于 to',
+    '- 每段至少覆盖一个候选区间，不要跳段或重叠',
     '每个最终分镜补充：',
     '- title：4–8 个字的分镜标题',
     '- type：分镜类型，例如 开场、推进、转折、高潮、结尾、过渡',
@@ -206,7 +225,7 @@ function buildPrompt(
         }
       }
     }),
-    'from/to 从 1 开始，与上面的候选镜头编号一致。'
+    `from/to 从 1 开始，to 表示结束切点编号，最大 ${cuts.length}。`
   ].join('\n')
 }
 
@@ -222,7 +241,7 @@ function parseJson(raw: string): unknown {
 function applyAnalysis(
   study: FilmStudy,
   payload: unknown,
-  shots: ShotRange[],
+  cuts: number[],
   frames: FilmStudyFrame[]
 ): FilmStudy {
   const record =
@@ -239,17 +258,14 @@ function applyAnalysis(
     const rawFrom =
       typeof segment.from === 'number' && Number.isFinite(segment.from)
         ? Math.round(segment.from)
-        : typeof segment.index === 'number' && Number.isFinite(segment.index)
-          ? Math.round(segment.index)
-          : undefined
+        : undefined
     const rawTo =
       typeof segment.to === 'number' && Number.isFinite(segment.to)
         ? Math.round(segment.to)
-        : rawFrom
+        : undefined
     entries.push({
       from: rawFrom,
       to: rawTo,
-      index: rawFrom,
       title: readText(segment.title),
       type: readText(segment.type),
       shotSize: readText(segment.shotSize),
@@ -263,15 +279,15 @@ function applyAnalysis(
     })
   }
 
-  // 优先使用模型给出的 from/to 语义合并；必须连续覆盖全部候选镜头
+  // 模型用切点编号分组，必须连续覆盖全部切点
   const groups = entries
     .filter(
       (entry): entry is AutoAnalysisSegment & { from: number; to: number } =>
         entry.from !== undefined &&
         entry.to !== undefined &&
         entry.from >= 1 &&
-        entry.to <= shots.length &&
-        entry.to >= entry.from
+        entry.to <= cuts.length &&
+        entry.to > entry.from
     )
     .sort((a, b) => a.from - b.from)
 
@@ -280,63 +296,32 @@ function applyAnalysis(
     let cursor = 1
     const valid = groups.every((group) => {
       if (group.from !== cursor) return false
-      cursor = group.to + 1
+      cursor = group.to
       return true
     })
-    if (valid && cursor === shots.length + 1) {
-      segments = groups.map((group) => {
-        const from = group.from
-        const to = group.to
-        const base = study.segments[from - 1]
-        return {
-          id: randomUUID(),
-          startTime: shots[from - 1].start,
-          endTime: shots[to - 1].end,
-          title: group.title ?? base?.title ?? baseTitle(from - 1),
-          type: group.type ?? '分镜',
-          coverFile: frames[from - 1]?.file,
-          shotSize: group.shotSize,
-          cameraAngle: group.cameraAngle,
-          cameraMove: group.cameraMove,
-          lighting: group.lighting,
-          visualDescription: group.visualDescription,
-          imagePrompt: group.imagePrompt,
-          voiceOver: group.voiceOver,
-          musicCue: group.musicCue
-        }
-      })
+    if (valid && cursor === cuts.length) {
+      segments = groups.map((group, index) => ({
+        id: randomUUID(),
+        startTime: cuts[group.from - 1],
+        endTime: cuts[group.to - 1],
+        title: group.title ?? baseTitle(index),
+        type: group.type ?? '分镜',
+        coverFile: frames[group.from - 1]?.file,
+        shotSize: group.shotSize,
+        cameraAngle: group.cameraAngle,
+        cameraMove: group.cameraMove,
+        lighting: group.lighting,
+        visualDescription: group.visualDescription,
+        imagePrompt: group.imagePrompt,
+        voiceOver: group.voiceOver,
+        musicCue: group.musicCue
+      }))
     }
-  }
-
-  if (!segments) {
-    const byIndex = new Map<number, AutoAnalysisSegment>()
-    const ordered: AutoAnalysisSegment[] = []
-    for (const entry of entries) {
-      ordered.push(entry)
-      if (entry.index) byIndex.set(entry.index, entry)
-    }
-    segments = study.segments.map((segment, index) => {
-      const analysis = byIndex.get(index + 1) ?? ordered[index]
-      if (!analysis) return segment
-      return {
-        ...segment,
-        title: analysis.title ?? segment.title,
-        type: analysis.type ?? segment.type,
-        shotSize: analysis.shotSize,
-        cameraAngle: analysis.cameraAngle,
-        cameraMove: analysis.cameraMove,
-        lighting: analysis.lighting,
-        visualDescription: analysis.visualDescription,
-        imagePrompt: analysis.imagePrompt,
-        voiceOver: analysis.voiceOver,
-        musicCue: analysis.musicCue
-      }
-    })
   }
 
   return {
     ...study,
-    segments,
+    segments: segments ?? study.segments,
     autoAnalyzedAt: new Date().toISOString()
   }
 }
@@ -358,7 +343,7 @@ async function pickModel(modelKey?: string): Promise<string | null> {
 
 async function requestAnalysis(
   study: FilmStudy,
-  shots: ShotRange[],
+  cuts: number[],
   frames: FilmStudyFrame[],
   root: string,
   modelKey: string
@@ -403,7 +388,7 @@ async function requestAnalysis(
           {
             role: 'user',
             content: [
-              { type: 'text', text: buildPrompt(study, shots, frames) },
+              { type: 'text', text: buildPrompt(study, cuts, frames) },
               ...content
             ]
           }
@@ -423,7 +408,7 @@ async function requestAnalysis(
   const raw = json.choices?.[0]?.message?.content?.trim()
   if (!raw) throw new Error('模型没有返回分析内容')
 
-  return applyAnalysis(study, parseJson(raw), shots, frames)
+  return applyAnalysis(study, parseJson(raw), cuts, frames)
 }
 
 export async function autoFilmStudy(
@@ -454,6 +439,7 @@ export async function autoFilmStudy(
     })
 
     let shots: ShotRange[]
+    let cuts: number[]
     let usedShotDetection = false
     const requestedInterval = Number.isFinite(input.interval)
       ? Math.max(0, input.interval ?? 0)
@@ -461,31 +447,32 @@ export async function autoFilmStudy(
 
     if (requestedInterval > 0) {
       shots = splitByInterval(duration, requestedInterval)
+      cuts = [0, ...shots.map((shot) => shot.end)]
     } else {
       try {
-        const stderr = await runFfmpegCapture(
-          [
-            '-hide_banner',
-            '-nostats',
-            '-i',
-            absolute,
-            '-vf',
-            'scdet=threshold=10',
-            '-an',
-            '-f',
-            'null',
-            '-'
-          ],
-          { signal: controller.signal }
+        const stats = await analyzeVideoFrames(
+          absolute,
+          controller.signal
         )
-        shots = splitByCuts(detectCuts(stderr), duration)
-        usedShotDetection = shots.length > 1
+        const detected = detectShotCuts(stats)
+        const motion =
+          detected.length < 2 ? detectMotionPeaks(stats) : []
+        cuts = buildCandidateTimes([...detected, ...motion], duration)
+        usedShotDetection = detected.length > 0
       } catch {
-        shots = splitByInterval(duration, 2)
+        cuts = [0]
+        for (let time = 2; time < duration - 0.5; time += 2) {
+          cuts.push(time)
+        }
+        cuts.push(duration)
       }
+      shots = cutsToShots(cuts)
     }
 
-    shots = mergeToLimit(shots, MAX_SHOTS)
+    if (shots.length > MAX_SHOTS) {
+      shots = mergeToLimit(shots, MAX_SHOTS)
+      cuts = [0, ...shots.map((shot) => shot.end)]
+    }
 
     emit({
       nodeId: input.nodeId,
@@ -662,7 +649,7 @@ export async function autoFilmStudy(
         message: '正在分析分镜'
       })
       try {
-        study = await requestAnalysis(study, shots, frames, root, modelKey)
+        study = await requestAnalysis(study, cuts, frames, root, modelKey)
         study = { ...study, analysisModel: modelKey }
         analyzed = true
       } catch (error) {

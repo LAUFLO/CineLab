@@ -179,7 +179,7 @@ export const videoOpNodeSchema = z.object({
     title: z.string().max(200),
     status: nodeStatusSchema,
     operation: z.enum(['shot-retake', 'element-replace', 'extend']),
-    sourceNodeId: z.string().min(1).max(120),
+    sourceNodeId: z.string().max(120),
     resultNodeId: z.string().max(120).optional(),
     range: z
       .object({ start: z.number(), end: z.number() })

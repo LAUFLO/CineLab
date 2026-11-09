@@ -1,8 +1,8 @@
 {
-  "version": 58,
+  "version": 59,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-09T15:30:59.377Z",
+  "updatedAt": "2026-11-09T16:19:22.653Z",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
@@ -1228,6 +1228,16 @@
       "evidence": [
         ".opencode/handover/evidence/STUDIO-RATIO-2.md",
         ".opencode/handover/evidence/STUDIO-RATIO-2-portrait.png"
+      ]
+    },
+    {
+      "id": "STUDIO-INSPECTOR-1",
+      "title": "剪辑室预览播放、顶部画幅、时间线缩略图、属性面板四 tab",
+      "status": "done",
+      "note": "2026-11-10 完成。预览播放改为视频自行解码、canvas 取当前帧，仅偏差超过 0.3s 才同步，非活跃视频自动暂停；播放采样 32 次仅起止 2 帧黑。画幅入口固定到顶部栏下拉（9:16/16:9/21:9/3:4/4:3/1:1），切换后 canvas 立即重绘。时间线缩略图统一用第一帧按比例 repeat-x 平铺，消除黑块与裁剪。属性面板拆为属性/画面/音频/助手四个 tab；速度、滤镜、转场、变声改用统一 Select；输入框与按钮样式统一。typecheck、162 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/STUDIO-INSPECTOR-1.md",
+        ".opencode/handover/evidence/STUDIO-INSPECTOR-1-tabs.png"
       ]
     }
   ],

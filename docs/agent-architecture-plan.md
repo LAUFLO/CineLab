@@ -260,6 +260,7 @@ type AgentErrorCode =
 | `film.` | 拉片 | `film.get`、`film.readFrames`、`film.exportAnalysis` |
 | `project.` | 项目 | `project.get`、`project.searchAssets`、`project.export` |
 | `generation.` | 生成 | `generation.catalog`、`generation.propose`、`generation.submit` |
+| `library.` | 资产库 | `library.search` |
 | `skill.` | 技能 | `skill.list`、`skill.read`、`skill.install` |
 
 具体工具清单见 `docs/agent-full-scope.md` C 域，不在这里重复。

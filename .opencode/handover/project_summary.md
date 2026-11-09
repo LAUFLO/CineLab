@@ -38,8 +38,9 @@
 | `AGENT-UI-2` | LibTV 风格助手、会话历史、文本模型/技能选择、工具过程隐藏 JSON |
 | `CLIP-ADVANCED-TOOLS-1` | 自动字幕、删静音、转场、导出四个剪辑 Agent 工具；长任务超时与取消 |
 | `AGENT-CINEBOT-1` | 助手统一命名 CineBot；移除角色标签；工具状态兜底修正 |
-| 验证 | 251 测试、`typecheck`、`build` 通过；真实 Agnes 提案、视口、stage、白模导出、剪辑助手、剪辑高级工具、技能 UI、确认流程、CineBot 新 UI 验证完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 22 个提交、落后 8 个（a768e64、6abef3d、3a406a7、436768d、91b16b4、71c8b48、336debb、1627ac9），未推送；推送前先同步 |
+| `AGENT-ASSET-REFS-1` | 画布/资产库/本地附件引用；素材节点自动创建与连线；提示词回填 |
+| 验证 | 256 测试、`typecheck`、`build` 通过；真实 Agnes 提案、视口、stage、白模导出、剪辑助手、剪辑高级工具、素材引用、技能 UI、确认流程、CineBot 新 UI 验证完成 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 23 个提交、落后 9 个（a768e64、6abef3d、3a406a7、436768d、91b16b4、71c8b48、336debb、1627ac9、72679c8），未推送；推送前先同步 |
 
 ## 关键工件
 
@@ -81,6 +82,7 @@
 - Agent 会话按项目 JSONL 保存，meta 存标题，首条消息自动命名。
 - 工具执行在渲染进程；主进程构造 scope、权限和回合事务。
 - 生成必须走提案确认，不直接执行；`generation_submit` 不暴露给模型。
+- 生成引用：画布节点用 `refNodeIds`，资产库用 `library_search` + `libraryRefs`，本地附件用上传后的附件 nodeId；引用素材自动补线，提示词回填目标节点。
 
 ## 输入源
 

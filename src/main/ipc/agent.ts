@@ -1,5 +1,6 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type {
+  AgentAttachment,
   AgentChatRequest,
   AgentConfirmInput,
   AgentEvent,
@@ -71,6 +72,62 @@ function assertChatRequest(input: unknown): AgentChatRequest {
   if (selectedClipIds.length > 200) {
     throw new Error('选中片段过多')
   }
+
+  const attachments: AgentAttachment[] = []
+  if (request.attachments !== undefined) {
+    if (!Array.isArray(request.attachments) || request.attachments.length > 8) {
+      throw new Error('附件最多 8 个')
+    }
+    for (const item of request.attachments) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        throw new Error('附件格式无效')
+      }
+      const attachment = item as Partial<AgentAttachment>
+      if (
+        typeof attachment.nodeId !== 'string' ||
+        !attachment.nodeId.trim() ||
+        attachment.nodeId.length > 120
+      ) {
+        throw new Error('附件节点 ID 无效')
+      }
+      if (
+        typeof attachment.name !== 'string' ||
+        !attachment.name.trim() ||
+        attachment.name.length > 200
+      ) {
+        throw new Error('附件名称无效')
+      }
+      const path = attachment.path
+      if (
+        typeof path !== 'string' ||
+        !path.trim() ||
+        path.length > 2000 ||
+        path.includes('..') ||
+        path.startsWith('/') ||
+        path.startsWith('\\') ||
+        /^[a-zA-Z]:/.test(path)
+      ) {
+        throw new Error('附件路径必须是相对路径')
+      }
+      if (attachment.scope !== 'project' && attachment.scope !== 'global') {
+        throw new Error('附件作用域无效')
+      }
+      if (
+        attachment.kind !== 'image' &&
+        attachment.kind !== 'video' &&
+        attachment.kind !== 'audio'
+      ) {
+        throw new Error('附件类型无效')
+      }
+      attachments.push({
+        nodeId: attachment.nodeId.trim(),
+        name: attachment.name.trim(),
+        path,
+        scope: attachment.scope,
+        kind: attachment.kind
+      })
+    }
+  }
   if (
     request.timelineId !== undefined &&
     (typeof request.timelineId !== 'string' ||
@@ -117,7 +174,8 @@ function assertChatRequest(input: unknown): AgentChatRequest {
     request.modelKey.includes('/') &&
     request.modelKey.length <= 300
       ? { modelKey: request.modelKey }
-      : {})
+      : {}),
+    ...(attachments.length > 0 ? { attachments } : {})
   }
 }
 

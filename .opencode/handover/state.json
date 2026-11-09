@@ -1,5 +1,5 @@
 {
-  "version": 61,
+  "version": 62,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "剪辑高级 Agent 工具与 CineBot 品牌已落地：自动字幕、删静音（按目标轨道）、转场、导出成片均可由模型调用；导出会写回成片节点；CineBot 面板去掉「你/助手」标签，工具状态按最新 callId 与回合结束兜底修正；251 测试通过。下一步做技能文件上传与覆盖快捷操作，再做整体验收；推送前先同步 origin/main。",
+  "next_focus": "CineBot 素材引用链路已完成：画布节点、资产库素材、本地附件三类引用；生成提案会补建素材节点、自动连线、写回提示词并同步 PromptBar；256 测试通过。下一步做技能文件上传与覆盖快捷操作，再做整体验收；推送前先同步 origin/main。",
   "frontier": [
     {
       "id": "M2-1",
@@ -383,6 +383,23 @@
         "src/renderer/src/agent/AgentPanel.tsx",
         "src/renderer/src/agent/agentStore.ts",
         "src/renderer/src/styles/agent.css"
+      ]
+    },
+    {
+      "id": "AGENT-ASSET-REFS-1",
+      "title": "CineBot 素材引用、自动连线与提示词回填",
+      "status": "done",
+      "note": "2026-11-09 完成。支持画布节点、资产库素材、本地附件三类引用；library_search 搜索资产库；generation_propose 新增 libraryRefs；引用素材会自动创建素材节点、补 source→target 连线、写回目标节点提示词；canvas_add_node 支持 nearNodeId；canvas_get 返回全部节点；CanvasCommand 新增 updatePrompt；PromptBar 监听外部提示词变化；Agent 输入框新增上传 chip 与附件 chip。真实 mock 文本模型验证画布、资产库、附件三条链路；提案卡显示引用；256 测试通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-ASSET-REFS-1.md",
+        ".opencode/handover/evidence/AGENT-ASSET-REFS-1.png",
+        "src/renderer/src/agent/canvasBridge.ts",
+        "src/renderer/src/agent/agentStore.ts",
+        "src/renderer/src/canvas/PromptBar.tsx",
+        "src/main/agent/tools.ts",
+        "src/main/agent/main-tools.ts",
+        "src/main/agent/proposals.ts",
+        "src/shared/canvas-commands.ts"
       ]
     },
     {
@@ -1510,7 +1527,7 @@
       "id": "G-AGENT-MAIN",
       "scope": "repo",
       "status": "blocked",
-      "reason": "origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4（连线删除 / 拉片镜头检测重做）、71c8b48（音频控件与文本占位）、336debb（模型参数配置精简）、1627ac9（剪辑室画幅与预览适配），当前 feat/agent-runtime 落后 8 个提交",
+      "reason": "origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4（连线删除 / 拉片镜头检测重做）、71c8b48（音频控件与文本占位）、336debb（模型参数配置精简）、1627ac9（剪辑室画幅与预览适配）、72679c8（六种画幅与缩略图修复），当前 feat/agent-runtime 落后 9 个提交",
       "resolve": "推送前先同步 origin/main，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract / provider 参数配置冲突"
     }
   ],
@@ -2373,6 +2390,18 @@
     {
       "category": "preference",
       "content": "助手品牌统一为 CineBot；消息区不显示「你 / 助手」标签，用户消息靠右、CineBot 消息靠左；工具状态按最新 callId 更新，回合结束时兜底把残留 running 标为完成或未完成。"
+    },
+    {
+      "category": "engineering",
+      "content": "生成提案引用素材时先登记提案再改画布：提案校验失败不能留下素材节点、连线和提示词。引用画布节点自动补线，引用资产库路径创建素材节点后连线，提示词通过 CanvasCommand.updatePrompt 写回目标节点。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 本地附件由上传动作先创建画布素材节点，再随 agent:chat 传 nodeId；运行时把附件列表写进系统提示，模型用 refNodeIds 引用。发送后清空附件 chip，节点保留；切换会话清空附件。"
+    },
+    {
+      "category": "engineering",
+      "content": "PromptBar 必须监听同一节点 data.prompt 的外部变化，不能只在 node.id 变化时读取；否则 CineBot 回填提示词后已打开的输入框不会更新。"
     }
   ],
   "designConventions": [

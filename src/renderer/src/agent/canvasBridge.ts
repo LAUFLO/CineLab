@@ -6,15 +6,19 @@ import type {
 } from '@shared/agent'
 import {
   emptyCanvasChange,
+  type CanvasCommand,
   type CanvasCommandEdge,
   type CanvasCommandNode
 } from '@shared/canvas-commands'
-import { NODE_META, TITLE_HEIGHT } from '@shared/canvas-schema'
+import { NODE_META, TITLE_HEIGHT, type OutputRef } from '@shared/canvas-schema'
 import type { ReferenceInput } from '@shared/generation'
 import {
+  absolutePosition,
   isGroupNode,
+  nodeSize,
   selectedNodeOutput,
-  useCanvasStore
+  useCanvasStore,
+  type CanvasNode
 } from '../stores/canvas'
 import { executeStageTool } from './stageBridge'
 import { executeTimelineTool } from './timelineBridge'
@@ -44,46 +48,16 @@ function nodeTitleOf(node: { data?: unknown }): string {
 interface CollectedRefs {
   refs: ReferenceInput[]
   video?: ReferenceInput
+  nodeIds: string[]
 }
 
-function collectRefsFromNodes(nodeIds: string[]): CollectedRefs {
-  const { nodes } = useCanvasStore.getState()
-  const refs: ReferenceInput[] = []
-  let video: ReferenceInput | undefined
-  let imageIndex = 0
-
-  for (const nodeId of nodeIds) {
-    const node = nodes.find((item) => item.id === nodeId)
-    if (!node || isGroupNode(node)) continue
-    const output = selectedNodeOutput(node)
-    if (!output) continue
-
-    if (output.kind === 'video') {
-      if (!video) {
-        video = {
-          path: output.path,
-          role: 'reference',
-          scope: output.scope
-        }
-      }
-      continue
-    }
-
-    if (output.kind !== 'image' || imageIndex >= 3) continue
-    const role: ReferenceInput['role'] =
-      imageIndex === 0
-        ? 'firstFrame'
-        : imageIndex === 1
-          ? 'lastFrame'
-          : 'reference'
-    refs.push({ path: output.path, role, scope: output.scope })
-    imageIndex += 1
-  }
-
-  return { refs, ...(video ? { video } : {}) }
+interface LibraryRefInput {
+  path: string
+  kind: 'image' | 'video'
+  role?: ReferenceInput['role']
 }
 
-function collectUpstreamRefs(targetNodeId: string): CollectedRefs {
+function upstreamNodeIds(targetNodeId: string): string[] {
   const { nodes, edges } = useCanvasStore.getState()
   const sourceIds = edges
     .filter((edge) => edge.target === targetNodeId)
@@ -103,8 +77,133 @@ function collectUpstreamRefs(targetNodeId: string): CollectedRefs {
       expanded.push(sourceId)
     }
   }
+  return expanded
+}
 
-  return collectRefsFromNodes(expanded)
+function buildReferences(
+  nodeIds: string[],
+  libraryRefs: LibraryRefInput[] = []
+): CollectedRefs {
+  const { nodes } = useCanvasStore.getState()
+  const images: ReferenceInput[] = []
+  const videos: ReferenceInput[] = []
+  const usedRoles = new Set<ReferenceInput['role']>()
+  const seen = new Set<string>()
+
+  const keyOf = (path: string, scope?: string): string =>
+    `${scope ?? 'project'}:${path}`
+
+  const pushImage = (
+    path: string,
+    scope: ReferenceInput['scope'],
+    role?: ReferenceInput['role']
+  ): void => {
+    if (images.length >= 3) return
+    const key = keyOf(path, scope)
+    if (seen.has(key)) return
+    seen.add(key)
+
+    let nextRole: ReferenceInput['role'] =
+      role ??
+      (images.length === 0
+        ? 'firstFrame'
+        : images.length === 1
+          ? 'lastFrame'
+          : 'reference')
+    if (nextRole !== 'reference' && usedRoles.has(nextRole)) {
+      nextRole = 'reference'
+    }
+    if (nextRole !== 'reference') usedRoles.add(nextRole)
+    images.push({ path, role: nextRole, ...(scope ? { scope } : {}) })
+  }
+
+  const pushVideo = (path: string, scope: ReferenceInput['scope']): void => {
+    if (videos.length > 0) return
+    const key = keyOf(path, scope)
+    if (seen.has(key)) return
+    seen.add(key)
+    videos.push({ path, role: 'reference', ...(scope ? { scope } : {}) })
+  }
+
+  for (const nodeId of nodeIds) {
+    const node = nodes.find((item) => item.id === nodeId)
+    if (!node || isGroupNode(node)) continue
+    const output = selectedNodeOutput(node)
+    if (!output) continue
+    if (output.kind === 'video') pushVideo(output.path, output.scope)
+    else if (output.kind === 'image') pushImage(output.path, output.scope)
+  }
+
+  for (const ref of libraryRefs) {
+    if (ref.kind === 'video') pushVideo(ref.path, 'global')
+    else pushImage(ref.path, 'global', ref.role)
+  }
+
+  return {
+    refs: images,
+    ...(videos[0] ? { video: videos[0] } : {}),
+    nodeIds: [...new Set(nodeIds)]
+  }
+}
+
+function findNodeWithOutput(
+  path: string,
+  scope: ReferenceInput['scope']
+): string | undefined {
+  const { nodes } = useCanvasStore.getState()
+  for (const node of nodes) {
+    if (isGroupNode(node)) continue
+    const output = selectedNodeOutput(node)
+    if (!output) continue
+    if (output.path !== path) continue
+    if ((output.scope ?? 'project') !== (scope ?? 'project')) continue
+    return node.id
+  }
+  return undefined
+}
+
+function libraryAssetName(path: string, fallback: string): string {
+  const fileName = path.split('/').pop() ?? ''
+  return fileName.replace(/\.[^.]+$/, '') || fallback
+}
+
+function libraryAssetNode(
+  ref: LibraryRefInput,
+  target: CanvasNode,
+  nodes: CanvasNode[],
+  offsetY: number
+): CanvasCommandNode {
+  const kind = ref.kind
+  const meta = NODE_META[kind]
+  const base = absolutePosition(target, nodes)
+  const position = {
+    x: base.x - meta.width - 80,
+    y: base.y + offsetY
+  }
+  const output: OutputRef = {
+    id: ref.path,
+    path: ref.path,
+    scope: 'global',
+    kind,
+    createdAt: new Date().toISOString(),
+    model: '资产库'
+  }
+  return {
+    id: `node-${kind}-${crypto.randomUUID().slice(0, 8)}`,
+    type: 'cine',
+    position,
+    selected: false,
+    data: {
+      kind,
+      title: libraryAssetName(ref.path, `${meta.label}素材`),
+      status: 'done',
+      assetOnly: true,
+      outputs: [output],
+      selectedOutputId: output.id,
+      templates: meta.templates
+    },
+    style: { width: meta.width, height: meta.height + TITLE_HEIGHT }
+  }
 }
 
 function proposalSummary(proposal: AgentProposal): Record<string, unknown> {
@@ -142,7 +241,23 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
       result: {
         nodeCount: state.nodes.length,
         edgeCount: state.edges.length,
-        selectedNodes: selectedNodeSummary()
+        selectedNodes: selectedNodeSummary(),
+        nodes: state.nodes.slice(0, 200).map((node) => {
+          const output = selectedNodeOutput(node)
+          return {
+            id: node.id,
+            title: nodeTitleOf(node),
+            kind:
+              node.type === 'cine'
+                ? node.data.kind
+                : node.type,
+            selected: node.selected === true,
+            x: Math.round(node.position.x),
+            y: Math.round(node.position.y),
+            ...(output ? { outputKind: output.kind } : {})
+          }
+        }),
+        ...(state.nodes.length > 200 ? { nodesTruncated: true } : {})
       }
     }
   }
@@ -213,11 +328,27 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
       return { ok: false, error: '节点类型无效' }
     }
     const meta = NODE_META[kind as 'text' | 'image' | 'video' | 'audio']
-    const x = Number(call.args.x)
-    const y = Number(call.args.y)
-    if (!Number.isFinite(x) || !Number.isFinite(y)) {
-      return { ok: false, error: '节点位置必须是有限数字' }
+    const nearNodeId =
+      typeof call.args.nearNodeId === 'string' ? call.args.nearNodeId.trim() : ''
+    let position: { x: number; y: number }
+
+    if (nearNodeId) {
+      const near = state.nodes.find((node) => node.id === nearNodeId)
+      if (!near) {
+        return { ok: false, error: '找不到参考节点 nearNodeId' }
+      }
+      const base = absolutePosition(near, state.nodes)
+      const size = nodeSize(near)
+      position = { x: base.x + size.width + 80, y: base.y }
+    } else {
+      const x = Number(call.args.x)
+      const y = Number(call.args.y)
+      if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        return { ok: false, error: '节点位置必须是有限数字' }
+      }
+      position = { x, y }
     }
+    const { x, y } = position
 
     const count = state.nodes.filter(
       (node) =>
@@ -379,10 +510,68 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
           (id): id is string => typeof id === 'string' && Boolean(id)
         )
       : []
-    const collected =
-      explicitRefs.length > 0
-        ? collectRefsFromNodes(explicitRefs)
-        : collectUpstreamRefs(nodeId)
+    const libraryRefs: LibraryRefInput[] = Array.isArray(call.args.libraryRefs)
+      ? call.args.libraryRefs
+          .filter(
+            (item): item is Record<string, unknown> =>
+              Boolean(item) && typeof item === 'object' && !Array.isArray(item)
+          )
+          .map((item): LibraryRefInput => {
+            const role = item.role
+            return {
+              path: String(item.path ?? ''),
+              kind: item.kind === 'video' ? 'video' : 'image',
+              ...(role === 'firstFrame' ||
+              role === 'lastFrame' ||
+              role === 'reference'
+                ? { role: role as ReferenceInput['role'] }
+                : {})
+            }
+          })
+          .filter((item) => item.path)
+      : []
+
+    const matchedLibraryNodeIds = libraryRefs
+      .map((ref) => findNodeWithOutput(ref.path, 'global'))
+      .filter((id): id is string => Boolean(id))
+    const refNodeIds = [
+      ...new Set([...explicitRefs, ...matchedLibraryNodeIds])
+    ]
+    const autoRefNodeIds =
+      explicitRefs.length === 0 && libraryRefs.length === 0
+        ? upstreamNodeIds(nodeId)
+        : refNodeIds
+
+    const libraryNodes: CanvasCommandNode[] = []
+    const libraryNodeIds: string[] = []
+    const matchedPaths = new Set(
+      libraryRefs
+        .map((ref) => (findNodeWithOutput(ref.path, 'global') ? ref.path : ''))
+        .filter(Boolean)
+    )
+    let offsetY = 0
+    for (const ref of libraryRefs) {
+      if (matchedPaths.has(ref.path)) continue
+      const node = libraryAssetNode(ref, target, state.nodes, offsetY)
+      libraryNodes.push(node)
+      libraryNodeIds.push(node.id)
+      offsetY += NODE_META[ref.kind].height + TITLE_HEIGHT + 24
+    }
+
+    const collected = buildReferences(
+      [...autoRefNodeIds, ...libraryNodeIds],
+      libraryRefs
+    )
+    if (
+      (explicitRefs.length > 0 || libraryRefs.length > 0) &&
+      collected.refs.length === 0 &&
+      !collected.video
+    ) {
+      return {
+        ok: false,
+        error: '参考素材不存在或没有可用的图片/视频输出'
+      }
+    }
 
     const baseParams =
       call.args.params &&
@@ -415,7 +604,76 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
         nodeTitle: nodeTitleOf(target),
         ...(count !== undefined ? { count } : {})
       })
-      return { ok: true, result: proposalSummary(proposal) }
+
+      const commands: CanvasCommand[] = libraryNodes.map((node) => ({
+        type: 'addNode',
+        node
+      }))
+      const existingSources = new Set(
+        state.edges
+          .filter((edge) => edge.target === nodeId)
+          .map((edge) => edge.source)
+      )
+      const knownNodeIds = new Set([
+        ...state.nodes.map((node) => node.id),
+        ...libraryNodeIds
+      ])
+      const connectedNodeIds: string[] = []
+
+      for (const sourceId of [...autoRefNodeIds, ...libraryNodeIds]) {
+        if (sourceId === nodeId) continue
+        if (!knownNodeIds.has(sourceId)) continue
+        if (existingSources.has(sourceId)) {
+          connectedNodeIds.push(sourceId)
+          continue
+        }
+        existingSources.add(sourceId)
+        connectedNodeIds.push(sourceId)
+        commands.push({
+          type: 'connect',
+          edge: {
+            id: `edge-${crypto.randomUUID().slice(0, 8)}`,
+            source: sourceId,
+            target: nodeId,
+            type: 'flow',
+            data: { role: 'auto' }
+          }
+        })
+      }
+
+      commands.push({ type: 'updatePrompt', nodeId, prompt })
+
+      const change = useCanvasStore
+        .getState()
+        .applyCommands(commands, call.turnId)
+
+      useCanvasStore.setState({
+        nodes: useCanvasStore.getState().nodes.map((node) => ({
+          ...node,
+          selected: node.id === nodeId
+        }))
+      })
+
+      return {
+        ok: true,
+        result: {
+          ...proposalSummary(proposal),
+          refs: collected.refs.map((ref) => ({
+            path: ref.path,
+            role: ref.role,
+            scope: ref.scope ?? 'project'
+          })),
+          videoRef: collected.video
+            ? {
+                path: collected.video.path,
+                scope: collected.video.scope ?? 'project'
+              }
+            : null,
+          createdNodeIds: change.createdNodeIds,
+          connectedNodeIds
+        },
+        change
+      }
     } catch (error) {
       return {
         ok: false,

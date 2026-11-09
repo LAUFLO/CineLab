@@ -55,6 +55,7 @@ export type IconName =
   | 'step-back'
   | 'step-forward'
   | 'fullscreen'
+  | 'paperclip'
 const paths: Record<IconName, ReactNode> = {
   logo: (
     <>
@@ -295,6 +296,9 @@ const paths: Record<IconName, ReactNode> = {
   ),
   fullscreen: (
     <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+  ),
+  paperclip: (
+    <path d="M8.5 12.5l6.2-6.2a3 3 0 1 1 4.2 4.2l-7.5 7.5a5 5 0 0 1-7.1-7.1l7.8-7.8" />
   )
 }
 

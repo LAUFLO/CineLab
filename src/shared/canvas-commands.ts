@@ -20,6 +20,7 @@ export type CanvasCommandEdge = Edge
 
 export type CanvasCommand =
   | { type: 'updateTitle'; nodeId: string; title: string }
+  | { type: 'updatePrompt'; nodeId: string; prompt: string }
   | { type: 'moveNode'; nodeId: string; position: XYPosition }
   | { type: 'addNode'; node: CanvasCommandNode }
   | { type: 'removeNode'; nodeId: string }
@@ -116,6 +117,27 @@ export function applyCanvasCommand(
       }
     }
 
+    case 'updatePrompt': {
+      const node = state.nodes.find((item) => item.id === command.nodeId)
+      if (!node || node.type !== 'cine') {
+        warnings.push(`找不到生成节点：${command.nodeId}`)
+        return { ...state, change, warnings }
+      }
+      const prompt = command.prompt
+      if (node.data.prompt === prompt) return { ...state, change, warnings }
+      change.updatedNodeIds.push(node.id)
+      return {
+        nodes: state.nodes.map((item) =>
+          item.id === node.id && item.type === 'cine'
+            ? ({ ...item, data: { ...item.data, prompt } } as CanvasCommandNode)
+            : item
+        ),
+        edges: state.edges,
+        change,
+        warnings
+      }
+    }
+
     case 'moveNode': {
       const node = state.nodes.find((item) => item.id === command.nodeId)
       if (!node) {
@@ -148,8 +170,13 @@ export function applyCanvasCommand(
         return { ...state, change, warnings }
       }
       change.createdNodeIds.push(command.node.id)
+      const nodes = command.node.selected
+        ? state.nodes.map((item) =>
+            item.selected ? { ...item, selected: false } : item
+          )
+        : state.nodes
       return {
-        nodes: [...state.nodes, command.node],
+        nodes: [...nodes, command.node],
         edges: state.edges,
         change,
         warnings

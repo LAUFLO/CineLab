@@ -16,6 +16,15 @@ export interface AgentScope {
   playheadMs?: number
 }
 
+export interface AgentAttachment {
+  /** 已上传到画布的素材节点 */
+  nodeId: string
+  name: string
+  path: string
+  scope: 'project' | 'global'
+  kind: 'image' | 'video' | 'audio'
+}
+
 export interface AgentChatRequest {
   profileId: AgentProfileId
   permissionMode: AgentPermissionMode
@@ -29,6 +38,8 @@ export interface AgentChatRequest {
   sessionId?: string
   /** 用户选择的文本模型；省略时自动选择第一个可用模型 */
   modelKey?: string
+  /** 用户本轮附带的本地素材，已经创建为画布节点 */
+  attachments?: AgentAttachment[]
 }
 
 export interface AgentModelInfo {

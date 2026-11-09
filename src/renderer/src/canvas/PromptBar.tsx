@@ -253,6 +253,14 @@ export function PromptBar() {
   }, [pendingPrompt, clearPendingPrompt])
 
   useEffect(() => {
+    if (!node) return
+    const nextPrompt = node.data.prompt ?? ''
+    if (promptRef.current === nextPrompt) return
+    setPromptText(nextPrompt)
+    promptRef.current = nextPrompt
+  }, [node?.id, node?.data.prompt])
+
+  useEffect(() => {
     setAutoLink(autoLinkPreference)
   }, [autoLinkPreference])
 

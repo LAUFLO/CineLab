@@ -1,5 +1,5 @@
 {
-  "version": 56,
+  "version": 57,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "A3 运镜时间轴与本地白模预演已完成：关键帧采样/缓动、镜头与时长编辑、捕获/删除关键帧、播放预演、隐藏窗口逐帧渲染 + ffmpeg 导出 MP4、自动创建视频节点，233 测试通过。下一步重建剪辑助手 clip profile（用通用 AgentRuntime），再做技能管理 UI、白模导出参数与取消、动作轨预演；推送前先同步 origin/main。",
+  "next_focus": "剪辑助手 clip profile 已完成：时间线 scope、timeline_get/select/move/trim/split/remove/update/set_track/add_marker 工具、剪辑室上下文、回合级时间线撤销、Agent 面板剪辑模式，239 测试通过；真实剪辑室验证读取、移动、裁剪与撤销。下一步做技能管理 UI，再做删除/批量操作二次确认、剪辑高级工具（自动字幕/删静音/转场/导出）、整体验收；推送前先同步 origin/main。",
   "frontier": [
     {
       "id": "M2-1",
@@ -282,6 +282,20 @@
         "src/shared/stage-timeline.ts",
         "src/renderer/src/stage/StageTimeline.tsx",
         "src/main/stage/export.ts"
+      ]
+    },
+    {
+      "id": "CLIP-PROFILE-1",
+      "title": "剪辑助手 clip profile",
+      "status": "done",
+      "note": "2026-11-09 完成。AgentScope/ChatRequest 增加 timelineId、studioNodeId、selectedClipIds、playheadMs；runtime 按 profile 切换画布/剪辑系统提示；新增 timeline_get/select_clips/move_clips/trim_clip/split_clips/remove_clips/update_clip/set_track/add_marker 工具与 renderer 执行桥；timelineStore 增加 dispatchMany + endCommandTurn，一轮工具只压一条历史；AgentTurnChange 增加 timelineUpdated，面板显示「本轮修改了 N 处」并支持时间线回合撤销；Agent 面板 z-index 提升到 95，剪辑室中显示剪辑助手。真实剪辑室验证 timeline_get、move 0→1000ms、trim 5000→4000ms、两次回合撤销恢复；239 测试通过，typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-PROFILE-1.md",
+        ".opencode/handover/evidence/CLIP-ASSISTANT-1.png",
+        "docs/agent-plan.md",
+        "src/main/agent/tools.ts",
+        "src/renderer/src/agent/timelineBridge.ts",
+        "src/renderer/src/stores/timeline.ts"
       ]
     },
     {
@@ -2232,6 +2246,10 @@
     {
       "category": "engineering",
       "content": "白模预演导出复用隐藏 BrowserWindow + stage-render 页面逐帧渲染 JPEG，再通过 stdin 流进 ffmpeg；不要用可见视口截图逐帧导出。"
+    },
+    {
+      "category": "engineering",
+      "content": "剪辑助手 scope 必须带 timelineId；timelineStore 用 dispatchMany + turnId 保证一轮 Agent 只压一条撤销历史，AgentTurnChange.timelineUpdated 驱动面板的时间线撤销。"
     }
   ],
   "designConventions": [
@@ -2266,6 +2284,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "剪辑助手 clip profile"
+    "nextMilestone": "技能管理 UI"
   }
 }

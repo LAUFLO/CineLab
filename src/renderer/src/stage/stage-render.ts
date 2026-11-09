@@ -12,8 +12,8 @@ interface StageRenderInput {
 
 declare global {
   interface Window {
-    __setStage?: (input: StageRenderInput) => boolean
-    __renderFrame?: (timeMs: number) => string
+    __setStagePreview?: (input: StageRenderInput) => boolean
+    __renderStageFrame?: (timeMs: number) => string
   }
 }
 
@@ -94,12 +94,12 @@ function buildScene(input: StageRenderInput): void {
   }
 }
 
-window.__setStage = (input: StageRenderInput): boolean => {
+window.__setStagePreview = (input: StageRenderInput): boolean => {
   buildScene(input)
   return true
 }
 
-window.__renderFrame = (timeMs: number): string => {
+window.__renderStageFrame = (timeMs: number): string => {
   if (!doc || !shot || !renderer || !scene || !camera) {
     throw new Error('stage renderer not ready')
   }

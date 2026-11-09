@@ -17,6 +17,7 @@ import {
   useCanvasStore
 } from '../stores/canvas'
 import { executeStageTool } from './stageBridge'
+import { executeTimelineTool } from './timelineBridge'
 
 function selectedNodeSummary(): Array<{
   id: string
@@ -127,6 +128,10 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
 }> {
   if (call.name.startsWith('stage_')) {
     return executeStageTool(call)
+  }
+
+  if (call.name.startsWith('timeline_')) {
+    return executeTimelineTool(call)
   }
 
   const state = useCanvasStore.getState()

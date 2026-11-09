@@ -1,5 +1,5 @@
 {
-  "version": 62,
+  "version": 63,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "CineBot 素材引用链路已完成：画布节点、资产库素材、本地附件三类引用；生成提案会补建素材节点、自动连线、写回提示词并同步 PromptBar；256 测试通过。下一步做技能文件上传与覆盖快捷操作，再做整体验收；推送前先同步 origin/main。",
+  "next_focus": "继续完成 CineBot UI 精修（WIP 已本地提交）：上下文使用圆环与手动压缩、模型选择端到端生成验证、@ 引用与 / 技能弹窗细节；随后整体验收。当前 typecheck/test/build 通过；推送前先同步 origin/main。",
   "frontier": [
     {
       "id": "M2-1",
@@ -400,6 +400,24 @@
         "src/main/agent/main-tools.ts",
         "src/main/agent/proposals.ts",
         "src/shared/canvas-commands.ts"
+      ]
+    },
+    {
+      "id": "AGENT-UI-REFINE-1",
+      "title": "CineBot UI 精修、多能力模型、@ 引用与上下文",
+      "status": "pending",
+      "note": "2026-11-10 睡前 WIP。已完成并验证：面板底边与底部工具栏底边对齐；发送按钮 30px；删除会话 API/UI；权限浮窗以按钮为中心向上展开；技能浮窗从按钮上方展开；删除头部重复设置按钮；模型选择拆成文本/生图/生视频/音频四组，generation_propose 按 scope.generationModels 覆盖；输入 @ 弹出画布/资产库素材引用，输入 / 弹出技能选择；Agent 运行时会加载历史对话与 summary。仍未完成：发送按钮左侧的上下文使用圆环与手动压缩 UI/IPC；模型选择端到端生成验证；@/技能弹窗的键盘导航与细节；视觉回归截图仅覆盖权限、技能、模型、@、/。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-UI-REFINE-PERM-1.png",
+        ".opencode/handover/evidence/AGENT-UI-REFINE-SKILL-1.png",
+        ".opencode/handover/evidence/AGENT-UI-REFINE-MODELS-1.png",
+        ".opencode/handover/evidence/AGENT-UI-REFINE-MENTION-1.png",
+        ".opencode/handover/evidence/AGENT-UI-REFINE-SLASH-1.png",
+        "src/renderer/src/agent/AgentPanel.tsx",
+        "src/renderer/src/agent/agentStore.ts",
+        "src/main/agent/runtime.ts",
+        "src/main/agent/session.ts",
+        "src/main/agent/model.ts"
       ]
     },
     {
@@ -1527,7 +1545,7 @@
       "id": "G-AGENT-MAIN",
       "scope": "repo",
       "status": "blocked",
-      "reason": "origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4（连线删除 / 拉片镜头检测重做）、71c8b48（音频控件与文本占位）、336debb（模型参数配置精简）、1627ac9（剪辑室画幅与预览适配）、72679c8（六种画幅与缩略图修复），当前 feat/agent-runtime 落后 9 个提交",
+      "reason": "origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4（连线删除 / 拉片镜头检测重做）、71c8b48（音频控件与文本占位）、336debb（模型参数配置精简）、1627ac9（剪辑室画幅与预览适配）、72679c8（六种画幅与缩略图修复）、ef5c0d1（剪辑室预览稳定与检查器分页），当前 feat/agent-runtime 落后 10 个提交",
       "resolve": "推送前先同步 origin/main，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract / provider 参数配置冲突"
     }
   ],
@@ -2402,6 +2420,22 @@
     {
       "category": "engineering",
       "content": "PromptBar 必须监听同一节点 data.prompt 的外部变化，不能只在 node.id 变化时读取；否则 CineBot 回填提示词后已打开的输入框不会更新。"
+    },
+    {
+      "category": "preference",
+      "content": "CineBot 面板底边与底部工具栏底边对齐（bottom: 16px）；发送按钮 30px；权限与技能浮窗以触发按钮为锚点、在按钮上方居中对齐；头部不再放重复的模型设置按钮。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 模型选择分文本/生图/生视频/音频四类；generation_propose 按目标节点类型读取 scope.generationModels 覆盖模型；generation_catalog 标记选中模型。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 输入框支持 @ 引用画布/资产库素材、/ 打开技能选择；引用随 agent:chat 的 references 传给主进程，由系统提示注入，发送后清空。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 上下文圆环与手动压缩仍是 WIP：session summary 数据结构、appendSessionSummary、runtime 历史加载已就绪，但缺少 agent:session-compact IPC、UI 圆环与压缩按钮；不要误认为已完成。"
     }
   ],
   "designConventions": [

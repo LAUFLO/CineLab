@@ -6,11 +6,21 @@ import {
   type ReactNode
 } from 'react'
 import { createPortal } from 'react-dom'
-import type { AgentModelInfo, AgentProposal } from '@shared/agent'
+import type {
+  AgentModelInfo,
+  AgentProposal,
+  AgentReference
+} from '@shared/agent'
 import type { SkillAdminEntry } from '@shared/skills'
 import { proposalStatusLabel } from '@shared/agent-proposal'
 import { Icon } from '../components/Icon'
+import {
+  isGroupNode,
+  selectedNodeOutput,
+  useCanvasStore
+} from '../stores/canvas'
 import { useStudioStore } from '../stores/studio'
+import { useUIStore } from '../stores/ui'
 import {
   agentTurnChangeCount,
   useAgentStore,
@@ -72,6 +82,15 @@ function relativeTime(iso: string): string {
 function modelNameOf(model: AgentModelInfo | null): string {
   if (!model) return '选择模型'
   return model.name
+}
+
+interface MentionItem {
+  key: string
+  name: string
+  kind: 'image' | 'video' | 'audio'
+  path: string
+  scope: 'project' | 'global'
+  nodeId?: string
 }
 
 function MessageActions({
@@ -333,11 +352,13 @@ export function AgentPanel() {
   const sessions = useAgentStore((state) => state.sessions)
   const messages = useAgentStore((state) => state.messages)
   const attachments = useAgentStore((state) => state.attachments)
+  const references = useAgentStore((state) => state.references)
   const running = useAgentStore((state) => state.running)
   const error = useAgentStore((state) => state.error)
   const modelInfo = useAgentStore((state) => state.modelInfo)
   const modelKey = useAgentStore((state) => state.modelKey)
-  const textModels = useAgentStore((state) => state.textModels)
+  const allModels = useAgentStore((state) => state.allModels)
+  const generationModels = useAgentStore((state) => state.generationModels)
   const permissionMode = useAgentStore((state) => state.permissionMode)
   const lastTurn = useAgentStore((state) => state.lastTurn)
   const proposal = useAgentStore((state) => state.proposal)
@@ -352,12 +373,16 @@ export function AgentPanel() {
   const setPermissionMode = useAgentStore((state) => state.setPermissionMode)
   const attachLocalAssets = useAgentStore((state) => state.attachLocalAssets)
   const removeAttachment = useAgentStore((state) => state.removeAttachment)
+  const addReference = useAgentStore((state) => state.addReference)
+  const removeReference = useAgentStore((state) => state.removeReference)
   const loadSessions = useAgentStore((state) => state.loadSessions)
   const newSession = useAgentStore((state) => state.newSession)
   const selectSession = useAgentStore((state) => state.selectSession)
+  const deleteSession = useAgentStore((state) => state.deleteSession)
   const loadModelInfo = useAgentStore((state) => state.loadModelInfo)
-  const loadTextModels = useAgentStore((state) => state.loadTextModels)
+  const loadModels = useAgentStore((state) => state.loadModels)
   const setModelKey = useAgentStore((state) => state.setModelKey)
+  const setGenerationModel = useAgentStore((state) => state.setGenerationModel)
   const loadProposal = useAgentStore((state) => state.loadProposal)
   const submitProposal = useAgentStore((state) => state.submitProposal)
   const cancelProposal = useAgentStore((state) => state.cancelProposal)
@@ -366,6 +391,7 @@ export function AgentPanel() {
   const clearError = useAgentStore((state) => state.clearError)
 
   const clipMode = useStudioStore((state) => state.open)
+  const requestConfirm = useUIStore((state) => state.requestConfirm)
   const [draft, setDraft] = useState('')
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false)
   const [sessionSearch, setSessionSearch] = useState('')
@@ -374,6 +400,10 @@ export function AgentPanel() {
   const [skillPickerOpen, setSkillPickerOpen] = useState(false)
   const [skillSearch, setSkillSearch] = useState('')
   const [skills, setSkills] = useState<SkillAdminEntry[]>([])
+  const [mentionOpen, setMentionOpen] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [mentionItems, setMentionItems] = useState<MentionItem[]>([])
+  const mentionLoadedRef = useRef(false)
   const listRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const panelRef = useRef<HTMLElement>(null)
@@ -381,9 +411,9 @@ export function AgentPanel() {
   useEffect(() => {
     if (!visible) return
     void loadSessions()
-    void loadTextModels()
+    void loadModels()
     void loadModelInfo()
-  }, [visible, loadSessions, loadTextModels, loadModelInfo])
+  }, [visible, loadSessions, loadModels, loadModelInfo])
 
   useEffect(() => {
     if (!visible || !sessionId) return
@@ -417,6 +447,7 @@ export function AgentPanel() {
       setModelPickerOpen(false)
       setPermissionMenuOpen(false)
       setSkillPickerOpen(false)
+      setMentionOpen(false)
     }
     window.addEventListener('pointerdown', onPointerDown)
     return () => window.removeEventListener('pointerdown', onPointerDown)
@@ -424,7 +455,8 @@ export function AgentPanel() {
     sessionMenuOpen,
     modelPickerOpen,
     permissionMenuOpen,
-    skillPickerOpen
+    skillPickerOpen,
+    mentionOpen
   ])
 
   const submit = (): void => {
@@ -437,8 +469,8 @@ export function AgentPanel() {
 
   const suggestion = clipMode
     ? '把选中片段整体前移 1 秒'
-    : attachments.length > 0
-      ? '用这张图生成一段视频'
+    : attachments.length > 0 || references.length > 0
+      ? '用引用的素材生成一段视频'
       : '帮我整理一下当前选中的节点'
   const changedCount = agentTurnChangeCount(lastTurn)
   const renderItems = useMemo(() => buildRenderItems(messages), [messages])
@@ -463,22 +495,186 @@ export function AgentPanel() {
           .toLowerCase()
           .includes(skillSearch.trim().toLowerCase()))
   )
+  const filteredMentionItems = mentionItems
+    .filter((item) => {
+      const query = mentionQuery.trim().toLowerCase()
+      if (!query) return true
+      return (
+        item.name.toLowerCase().includes(query) ||
+        item.path.toLowerCase().includes(query)
+      )
+    })
+    .slice(0, 24)
 
   const openSkillPicker = (): void => {
     setSkillPickerOpen(true)
     setSkillSearch('')
+    setMentionOpen(false)
     void window.api.skills.list().then(setSkills).catch(() => setSkills([]))
   }
 
-  const insertSkill = (skill: SkillAdminEntry): void => {
+  const loadMentionItems = async (): Promise<void> => {
+    if (mentionLoadedRef.current) return
+    mentionLoadedRef.current = true
+    const items: MentionItem[] = []
+    const seen = new Set<string>()
+    const push = (item: MentionItem): void => {
+      const key = `${item.scope}:${item.path}`
+      if (seen.has(key)) return
+      seen.add(key)
+      items.push(item)
+    }
+
+    const nodes = useCanvasStore.getState().nodes
+    for (const node of nodes) {
+      if (isGroupNode(node)) continue
+      const output = selectedNodeOutput(node)
+      if (
+        !output ||
+        (output.kind !== 'image' &&
+          output.kind !== 'video' &&
+          output.kind !== 'audio')
+      ) {
+        continue
+      }
+      push({
+        key: `node:${node.id}`,
+        name: String(
+          (node.data as { title?: unknown }).title ?? '未命名素材'
+        ),
+        kind: output.kind,
+        path: output.path,
+        scope: output.scope ?? 'project',
+        nodeId: node.id
+      })
+    }
+
+    try {
+      const assets = await window.api.library.listAllAssets()
+      for (const asset of assets) {
+        if (asset.kind === 'template') continue
+        push({
+          key: `asset:${asset.path}`,
+          name: asset.name,
+          kind: asset.kind,
+          path: asset.path,
+          scope: 'global'
+        })
+      }
+    } catch {
+      // 资产库读取失败时仅展示画布素材
+    }
+
+    setMentionItems(items.slice(0, 80))
+  }
+
+  const syncInputTriggers = (value: string): void => {
+    const mentionMatch = /(^|\s)@([^\s@]*)$/.exec(value)
+    if (mentionMatch) {
+      setSkillPickerOpen(false)
+      setPermissionMenuOpen(false)
+      setMentionOpen(true)
+      setMentionQuery(mentionMatch[2] ?? '')
+      if (!mentionLoadedRef.current) void loadMentionItems()
+    } else if (mentionOpen) {
+      setMentionOpen(false)
+      setMentionQuery('')
+    }
+
+    const slashMatch = /(^|\s)\/([^\s/]*)$/.exec(value)
+    if (slashMatch && !mentionMatch) {
+      if (!skillPickerOpen) {
+        setSkillPickerOpen(true)
+        void window.api.skills.list().then(setSkills).catch(() => setSkills([]))
+      }
+      setSkillSearch(slashMatch[2] ?? '')
+    }
+  }
+
+  const insertReference = (item: MentionItem): void => {
+    addReference({
+      ...(item.nodeId ? { nodeId: item.nodeId } : {}),
+      name: item.name,
+      path: item.path,
+      scope: item.scope,
+      kind: item.kind
+    })
     setDraft((current) =>
-      current.trim()
-        ? `${current.trim()} 使用技能：${skill.name}`
-        : `使用技能：${skill.name}`
+      current.replace(/(^|\s)@[^\s@]*$/, '$1').trimEnd()
     )
+    setMentionOpen(false)
+    setMentionQuery('')
+    textareaRef.current?.focus()
+  }
+
+  const insertSkill = (skill: SkillAdminEntry): void => {
+    setDraft((current) => {
+      const cleaned = current
+        .replace(/(^|\s)\/[^\s/]*$/, '$1')
+        .trimEnd()
+      return cleaned
+        ? `${cleaned} 使用技能：${skill.name}`
+        : `使用技能：${skill.name}`
+    })
     setSkillPickerOpen(false)
     textareaRef.current?.focus()
   }
+
+  const confirmDeleteSession = (
+    session: (typeof sessions)[number]
+  ): void => {
+    requestConfirm({
+      title: '删除对话',
+      message: `确定删除「${session.title}」？该对话的消息和生成提案会被删除，无法恢复。`,
+      confirmLabel: '删除',
+      onConfirm: () => {
+        setSessionMenuOpen(false)
+        void deleteSession(session.sessionId)
+      }
+    })
+  }
+
+  const modelGroups: Array<{
+    key: 'text' | 'image' | 'video' | 'audio'
+    label: string
+    desc: string
+    selected: string | null
+    models: AgentModelInfo[]
+    setModel: (modelKey: string | null) => Promise<void>
+  }> = [
+    {
+      key: 'text',
+      label: '文本对话',
+      desc: '用于 CineBot 对话和工具调用',
+      selected: modelKey,
+      models: allModels.filter((model) => model.output === 'text'),
+      setModel: setModelKey
+    },
+    {
+      key: 'image',
+      label: '生图',
+      desc: 'CineBot 登记图片生成时使用',
+      selected: generationModels.image ?? null,
+      models: allModels.filter((model) => model.output === 'image'),
+      setModel: (key) => setGenerationModel('image', key)
+    },
+    {
+      key: 'video',
+      label: '生视频',
+      desc: 'CineBot 登记视频生成时使用',
+      selected: generationModels.video ?? null,
+      models: allModels.filter((model) => model.output === 'video'),
+      setModel: (key) => setGenerationModel('video', key)
+    },
+    {
+      key: 'audio',
+      label: '音频',
+      desc: 'CineBot 登记音频生成时使用',
+      selected: generationModels.audio ?? null,
+      models: allModels.filter((model) => model.output === 'audio'),
+      setModel: (key) => setGenerationModel('audio', key)
+    }
+  ]
 
   const panel = createPortal(
     <>
@@ -508,14 +704,6 @@ export function AgentPanel() {
                 disabled={running}
               >
                 <Icon name="plus" size={15} />
-              </button>
-              <button
-                type="button"
-                className="agent-icon-button"
-                title="选择文本模型"
-                onClick={() => setModelPickerOpen(true)}
-              >
-                <Icon name="settings" size={15} />
               </button>
               <button
                 type="button"
@@ -557,21 +745,37 @@ export function AgentPanel() {
                   <div className="agent-session-empty">没有匹配的对话</div>
                 ) : (
                   filteredSessions.map((session) => (
-                    <button
+                    <div
                       key={session.sessionId}
-                      type="button"
                       className={`agent-session-item ${
                         session.sessionId === sessionId ? 'is-active' : ''
                       }`}
-                      onClick={() => {
-                        setSessionMenuOpen(false)
-                        void selectSession(session.sessionId)
-                      }}
-                      disabled={running}
                     >
-                      <span>{session.title}</span>
-                      <small>{relativeTime(session.updatedAt)}</small>
-                    </button>
+                      <button
+                        type="button"
+                        className="agent-session-item__main"
+                        onClick={() => {
+                          setSessionMenuOpen(false)
+                          void selectSession(session.sessionId)
+                        }}
+                        disabled={running}
+                      >
+                        <span>{session.title}</span>
+                        <small>{relativeTime(session.updatedAt)}</small>
+                      </button>
+                      <button
+                        type="button"
+                        className="agent-session-item__delete"
+                        title="删除对话"
+                        disabled={running}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          confirmDeleteSession(session)
+                        }}
+                      >
+                        <Icon name="trash" size={12} />
+                      </button>
+                    </div>
                   ))
                 )}
               </div>
@@ -670,7 +874,7 @@ export function AgentPanel() {
           ) : null}
 
           <div className="agent-composer">
-            {attachments.length > 0 ? (
+            {attachments.length > 0 || references.length > 0 ? (
               <div className="agent-attachments">
                 {attachments.map((item) => (
                   <span className="agent-attachment" key={item.nodeId}>
@@ -695,13 +899,86 @@ export function AgentPanel() {
                     </button>
                   </span>
                 ))}
+                {references.map((item) => (
+                  <span
+                    className="agent-attachment agent-attachment--reference"
+                    key={`${item.scope}:${item.path}`}
+                  >
+                    <Icon
+                      name={
+                        item.kind === 'video'
+                          ? 'video'
+                          : item.kind === 'audio'
+                            ? 'audio'
+                            : 'image'
+                      }
+                      size={11}
+                    />
+                    <span className="agent-attachment__name">
+                      @{item.name}
+                    </span>
+                    <button
+                      type="button"
+                      title="移除引用"
+                      disabled={running}
+                      onClick={() => removeReference(item)}
+                    >
+                      <Icon name="close" size={10} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {mentionOpen ? (
+              <div className="agent-mention-popover">
+                <div className="agent-popover__title">引用素材</div>
+                <div className="agent-mention-list">
+                  {filteredMentionItems.length === 0 ? (
+                    <div className="agent-modal__empty">
+                      没有匹配的素材
+                    </div>
+                  ) : (
+                    filteredMentionItems.map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        className="agent-mention-item"
+                        onClick={() => insertReference(item)}
+                      >
+                        <Icon
+                          name={
+                            item.kind === 'video'
+                              ? 'video'
+                              : item.kind === 'audio'
+                                ? 'audio'
+                                : 'image'
+                          }
+                          size={13}
+                        />
+                        <span>{item.name}</span>
+                        <small>
+                          {item.nodeId ? '画布' : '资产库'}
+                        </small>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
             ) : null}
             <textarea
               ref={textareaRef}
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => {
+                const value = event.target.value
+                setDraft(value)
+                syncInputTriggers(value)
+              }}
               onKeyDown={(event) => {
+                if (event.key === 'Escape' && mentionOpen) {
+                  event.preventDefault()
+                  setMentionOpen(false)
+                  return
+                }
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault()
                   submit()
@@ -710,12 +987,14 @@ export function AgentPanel() {
               placeholder={
                 clipMode
                   ? '描述你想怎么剪，例如：把选中片段前移 1 秒'
-                  : attachments.length > 0
-                    ? '描述你想用附件做什么，例如：用这张图生成视频'
-                    : '描述你想做什么，例如：用这张图生成视频'
+                  : '输入 @ 引用素材，输入 / 选择技能'
               }
               disabled={running}
               rows={2}
+              onFocus={() => {
+                if (skillPickerOpen) setSkillPickerOpen(false)
+                if (permissionMenuOpen) setPermissionMenuOpen(false)
+              }}
             />
             <div className="agent-composer__bar">
               <div className="agent-composer__chips">
@@ -738,24 +1017,98 @@ export function AgentPanel() {
                   <Icon name="robot" size={12} />
                   {modelNameOf(modelInfo)}
                 </button>
-                <button
-                  type="button"
-                  className="agent-chip"
-                  onClick={() => setPermissionMenuOpen((open) => !open)}
-                  title="权限范围"
-                >
-                  <Icon name="target" size={12} />
-                  {permissionMode === 'read-only' ? '只读' : '当前空间'}
-                </button>
-                <button
-                  type="button"
-                  className="agent-chip"
-                  onClick={openSkillPicker}
-                  title="选择技能"
-                >
-                  <Icon name="sparkles" size={12} />
-                  技能
-                </button>
+                <span className="agent-chip-anchor">
+                  <button
+                    type="button"
+                    className="agent-chip"
+                    onClick={() => setPermissionMenuOpen((open) => !open)}
+                    title="权限范围"
+                  >
+                    <Icon name="target" size={12} />
+                    {permissionMode === 'read-only' ? '只读' : '当前空间'}
+                  </button>
+                  {permissionMenuOpen ? (
+                    <div className="agent-permission-menu">
+                      <button
+                        type="button"
+                        className={
+                          permissionMode === 'read-only' ? 'is-active' : ''
+                        }
+                        onClick={() => {
+                          setPermissionMode('read-only')
+                          setPermissionMenuOpen(false)
+                        }}
+                      >
+                        <span>只读</span>
+                        <small>只读取，不修改画布或时间线</small>
+                      </button>
+                      <button
+                        type="button"
+                        className={
+                          permissionMode === 'current' ? 'is-active' : ''
+                        }
+                        onClick={() => {
+                          setPermissionMode('current')
+                          setPermissionMenuOpen(false)
+                        }}
+                      >
+                        <span>当前空间</span>
+                        <small>允许修改当前画布或时间线</small>
+                      </button>
+                    </div>
+                  ) : null}
+                </span>
+                <span className="agent-chip-anchor agent-chip-anchor--skill">
+                  <button
+                    type="button"
+                    className="agent-chip"
+                    onClick={openSkillPicker}
+                    title="选择技能"
+                  >
+                    <Icon name="sparkles" size={12} />
+                    技能
+                  </button>
+                  {skillPickerOpen ? (
+                    <div className="agent-skill-popover">
+                      <div className="agent-popover__title">选择技能</div>
+                      <div className="agent-popover__search">
+                        <Icon name="search" size={13} />
+                        <input
+                          autoFocus
+                          value={skillSearch}
+                          onChange={(event) =>
+                            setSkillSearch(event.target.value)
+                          }
+                          placeholder="搜索技能"
+                        />
+                      </div>
+                      <div className="agent-skill-list">
+                        {filteredSkills.length === 0 ? (
+                          <div className="agent-modal__empty">
+                            没有可用技能
+                          </div>
+                        ) : (
+                          filteredSkills.map((skill) => (
+                            <button
+                              key={`${skill.scope}:${skill.name}`}
+                              type="button"
+                              className="agent-skill-item"
+                              onClick={() => insertSkill(skill)}
+                            >
+                              <div>
+                                <span>{skill.name}</span>
+                                <small>{skill.description}</small>
+                              </div>
+                              <span className="agent-skill-scope">
+                                {skill.scope}
+                              </span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </span>
               </div>
               {running ? (
                 <button
@@ -764,7 +1117,7 @@ export function AgentPanel() {
                   onClick={() => void cancel()}
                   title="停止"
                 >
-                  <Icon name="stop" size={15} />
+                  <Icon name="stop" size={14} />
                 </button>
               ) : (
                 <button
@@ -774,37 +1127,10 @@ export function AgentPanel() {
                   disabled={!draft.trim()}
                   title="发送"
                 >
-                  <Icon name="arrow-up" size={16} />
+                  <Icon name="arrow-up" size={14} />
                 </button>
               )}
             </div>
-
-            {permissionMenuOpen ? (
-              <div className="agent-permission-menu">
-                <button
-                  type="button"
-                  className={permissionMode === 'read-only' ? 'is-active' : ''}
-                  onClick={() => {
-                    setPermissionMode('read-only')
-                    setPermissionMenuOpen(false)
-                  }}
-                >
-                  <span>只读</span>
-                  <small>只读取，不修改画布或时间线</small>
-                </button>
-                <button
-                  type="button"
-                  className={permissionMode === 'current' ? 'is-active' : ''}
-                  onClick={() => {
-                    setPermissionMode('current')
-                    setPermissionMenuOpen(false)
-                  }}
-                >
-                  <span>当前空间</span>
-                  <small>允许修改当前画布或时间线</small>
-                </button>
-              </div>
-            ) : null}
           </div>
 
           {modelPickerOpen ? (
@@ -818,9 +1144,9 @@ export function AgentPanel() {
               >
                 <header className="agent-modal__head">
                   <div>
-                    <div className="agent-modal__title">选择文本模型</div>
+                    <div className="agent-modal__title">选择模型</div>
                     <div className="agent-modal__desc">
-                      用于 CineBot 对话和工具调用
+                      文本模型用于对话，生成模型用于 CineBot 生图、生视频和音频
                     </div>
                   </div>
                   <button
@@ -832,114 +1158,66 @@ export function AgentPanel() {
                   </button>
                 </header>
                 <div className="agent-modal__list">
-                  <button
-                    type="button"
-                    className={`agent-model-item ${
-                      !modelKey ? 'is-active' : ''
-                    }`}
-                    onClick={() => {
-                      void setModelKey(null)
-                      setModelPickerOpen(false)
-                    }}
-                  >
-                    <div>
-                      <span>自动选择</span>
-                      <small>使用第一个可用文本模型</small>
-                    </div>
-                    {!modelKey ? <Icon name="target" size={14} /> : null}
-                  </button>
-                  {textModels.map((model) => {
-                    const key = `${model.providerId}/${model.modelId}`
-                    return (
+                  {modelGroups.map((group) => (
+                    <section className="agent-model-group" key={group.key}>
+                      <header className="agent-model-group__head">
+                        <span>{group.label}</span>
+                        <small>{group.desc}</small>
+                      </header>
                       <button
-                        key={key}
                         type="button"
                         className={`agent-model-item ${
-                          modelKey === key ? 'is-active' : ''
+                          !group.selected ? 'is-active' : ''
                         }`}
                         onClick={() => {
-                          void setModelKey(key)
-                          setModelPickerOpen(false)
+                          void group.setModel(null)
                         }}
                       >
                         <div>
-                          <span>{model.name}</span>
-                          <small>{model.providerName ?? model.providerId}</small>
+                          <span>自动选择</span>
+                          <small>使用该能力下第一个可用模型</small>
                         </div>
-                        {modelKey === key ? (
+                        {!group.selected ? (
                           <Icon name="target" size={14} />
                         ) : null}
                       </button>
-                    )
-                  })}
-                  {textModels.length === 0 ? (
-                    <div className="agent-modal__empty">
-                      还没有配置 text.chat 模型，请先在设置中添加。
-                    </div>
-                  ) : null}
+                      {group.models.map((model) => {
+                        const key = `${model.providerId}/${model.modelId}`
+                        return (
+                          <button
+                            key={`${group.key}:${key}`}
+                            type="button"
+                            className={`agent-model-item ${
+                              group.selected === key ? 'is-active' : ''
+                            }`}
+                            onClick={() => {
+                              void group.setModel(key)
+                            }}
+                          >
+                            <div>
+                              <span>{model.name}</span>
+                              <small>
+                                {model.providerName ?? model.providerId}
+                              </small>
+                            </div>
+                            {group.selected === key ? (
+                              <Icon name="target" size={14} />
+                            ) : null}
+                          </button>
+                        )
+                      })}
+                      {group.models.length === 0 ? (
+                        <div className="agent-modal__empty">
+                          没有配置可用的{group.label}模型
+                        </div>
+                      ) : null}
+                    </section>
+                  ))}
                 </div>
               </div>
             </div>
           ) : null}
 
-          {skillPickerOpen ? (
-            <div
-              className="agent-modal-backdrop"
-              onPointerDown={() => setSkillPickerOpen(false)}
-            >
-              <div
-                className="agent-modal"
-                onPointerDown={(event) => event.stopPropagation()}
-              >
-                <header className="agent-modal__head">
-                  <div>
-                    <div className="agent-modal__title">选择技能</div>
-                    <div className="agent-modal__desc">
-                      选中的技能会插入到输入框
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="agent-icon-button"
-                    onClick={() => setSkillPickerOpen(false)}
-                  >
-                    <Icon name="close" size={14} />
-                  </button>
-                </header>
-                <div className="agent-popover__search">
-                  <Icon name="search" size={13} />
-                  <input
-                    autoFocus
-                    value={skillSearch}
-                    onChange={(event) => setSkillSearch(event.target.value)}
-                    placeholder="搜索技能"
-                  />
-                </div>
-                <div className="agent-modal__list">
-                  {filteredSkills.length === 0 ? (
-                    <div className="agent-modal__empty">没有可用技能</div>
-                  ) : (
-                    filteredSkills.map((skill) => (
-                      <button
-                        key={`${skill.scope}:${skill.name}`}
-                        type="button"
-                        className="agent-skill-item"
-                        onClick={() => insertSkill(skill)}
-                      >
-                        <div>
-                          <span>{skill.name}</span>
-                          <small>{skill.description}</small>
-                        </div>
-                        <span className="agent-skill-scope">
-                          {skill.scope}
-                        </span>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : null}
         </section>
       ) : (
         <button

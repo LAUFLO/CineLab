@@ -37,24 +37,40 @@ export interface AgentChatResult {
   usage?: AgentUsage
 }
 
-export async function listTextModels(): Promise<AgentModelInfo[]> {
+function outputOfCapability(
+  capability: string
+): AgentModelInfo['output'] | null {
+  if (capability === 'text.chat') return 'text'
+  if (capability.startsWith('image.')) return 'image'
+  if (capability.startsWith('video.')) return 'video'
+  if (capability.startsWith('audio.')) return 'audio'
+  return null
+}
+
+export async function listAgentModels(): Promise<AgentModelInfo[]> {
   const providers = await listProviders()
   const models: AgentModelInfo[] = []
 
   for (const provider of providers) {
     if (!provider.hasKey) continue
     for (const model of provider.models) {
-      if (model.capability !== 'text.chat') continue
+      const output = outputOfCapability(model.capability)
+      if (!output) continue
       models.push({
         providerId: provider.id,
         modelId: model.id,
         name: model.name,
-        providerName: provider.name
+        providerName: provider.name,
+        output
       })
     }
   }
 
   return models
+}
+
+export async function listTextModels(): Promise<AgentModelInfo[]> {
+  return (await listAgentModels()).filter((model) => model.output === 'text')
 }
 
 export async function resolveTextModel(
@@ -75,7 +91,8 @@ export async function resolveTextModel(
       info: {
         providerId,
         modelId,
-        name: model.name
+        name: model.name,
+        output: 'text'
       },
       model,
       provider: {
@@ -99,7 +116,8 @@ export async function resolveTextModel(
       info: {
         providerId: provider.id,
         modelId: model.id,
-        name: model.name
+        name: model.name,
+        output: 'text'
       },
       model,
       provider: {

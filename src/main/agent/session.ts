@@ -141,6 +141,7 @@ export async function loadSession(
   const turns: AgentTurn[] = []
   const toolMessageIndex = new Map<string, number>()
   let title: string | undefined
+  let summary: AgentSessionSnapshot['summary']
 
   for (const entry of entries) {
     if (entry.type === 'message') {
@@ -158,10 +159,21 @@ export async function loadSession(
       turns.push(entry.turn)
     } else if (entry.type === 'meta') {
       title = entry.title
+    } else if (entry.type === 'summary') {
+      summary = {
+        content: entry.content,
+        coveredMessages: entry.coveredMessages
+      }
     }
   }
 
-  return { sessionId, ...(title ? { title } : {}), messages, turns }
+  return {
+    sessionId,
+    ...(title ? { title } : {}),
+    ...(summary ? { summary } : {}),
+    messages,
+    turns
+  }
 }
 
 export async function listSessions(root: string): Promise<AgentSessionInfo[]> {
@@ -237,6 +249,13 @@ export async function createSession(
   }
 }
 
+export async function deleteSession(
+  root: string,
+  sessionId: string
+): Promise<void> {
+  await fs.rm(sessionFile(root, sessionId), { force: true })
+}
+
 export async function renameSession(
   root: string,
   sessionId: string,
@@ -276,6 +295,21 @@ export async function ensureSessionTitle(
     timestamp: new Date().toISOString(),
     type: 'meta',
     title
+  })
+}
+
+export async function appendSessionSummary(
+  root: string,
+  sessionId: string,
+  content: string,
+  coveredMessages: number
+): Promise<void> {
+  await appendSessionEntry(root, sessionId, {
+    id: randomUUID(),
+    timestamp: new Date().toISOString(),
+    type: 'summary',
+    content,
+    coveredMessages: Math.max(0, Math.round(coveredMessages))
   })
 }
 

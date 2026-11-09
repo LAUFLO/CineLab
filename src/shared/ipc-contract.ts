@@ -391,8 +391,10 @@ export interface AgentApi {
     sessionId: string,
     title: string
   ): Promise<AgentSessionInfo>
+  sessionDelete(sessionId: string): Promise<void>
   modelInfo(modelKey?: string): Promise<AgentModelInfo | null>
   textModels(): Promise<AgentModelInfo[]>
+  models(): Promise<AgentModelInfo[]>
   proposalCreate(input: AgentProposalDraft): Promise<AgentProposal>
   proposalActive(sessionId?: string): Promise<AgentProposal | null>
   proposalSubmit(proposalId: string): Promise<AgentProposal>

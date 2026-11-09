@@ -601,6 +601,35 @@
   outline: none;
 }
 
+.studio-ratio-row {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+}
+
+.studio-ratio-btn {
+  height: 26px;
+  flex: 1;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-2);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.studio-ratio-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-1);
+}
+
+.studio-ratio-btn.is-active {
+  border-color: var(--border-selected);
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
 /* 时间线 */
 
 .studio-timeline {

@@ -155,7 +155,8 @@ function drawMedia(
   const stretchX = clip.transform?.stretchX ?? 1
   const stretchY = clip.transform?.stretchY ?? 1
 
-  const fit = Math.max(width / sw, height / sh)
+  // 等比适应画幅，避免非本比例素材被裁剪
+  const fit = Math.min(width / sw, height / sh)
   const drawWidth = sw * fit * keys.scale * stretchX
   const drawHeight = sh * fit * keys.scale * stretchY
   const filterValue = canvasFilterString(clip.filter)

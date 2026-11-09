@@ -1290,6 +1290,39 @@ export function InspectorPane() {
       ) : (
         <Section title="时间线">
           <Field label="名称" value={doc.name} />
+          <div className="studio-field">
+            <span>画幅</span>
+            <div className="studio-ratio-row">
+              {[
+                { label: '16:9', width: 1920, height: 1080 },
+                { label: '9:16', width: 1080, height: 1920 },
+                { label: '1:1', width: 1080, height: 1080 }
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  className={`studio-ratio-btn${
+                    doc.video.width === item.width &&
+                    doc.video.height === item.height
+                      ? ' is-active'
+                      : ''
+                  }`}
+                  onClick={() =>
+                    dispatch({
+                      op: 'setTimelineVideo',
+                      video: {
+                        ...doc.video,
+                        width: item.width,
+                        height: item.height
+                      }
+                    })
+                  }
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <Field label="分辨率" value={`${doc.video.width} × ${doc.video.height}`} />
           <Field label="帧率" value={`${doc.video.fps} fps`} />
           <Field label="片段" value={`${doc.clips.length} 个`} />

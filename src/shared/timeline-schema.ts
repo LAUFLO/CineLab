@@ -35,7 +35,10 @@ export const timelineMediaRefSchema = z.object({
   /** 来源画布节点，便于上游更新时提示 */
   nodeId: z.string().max(120).optional(),
   outputId: z.string().max(120).optional(),
-  kind: z.enum(['video', 'image', 'audio'])
+  kind: z.enum(['video', 'image', 'audio']),
+  /** 素材原始尺寸，用于首次导入时匹配时间线画幅 */
+  width: z.number().int().min(1).max(16384).optional(),
+  height: z.number().int().min(1).max(16384).optional()
 })
 
 export const clipTransformSchema = z.object({

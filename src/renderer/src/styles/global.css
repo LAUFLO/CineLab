@@ -2394,12 +2394,12 @@ body.is-exporting .react-flow__minimap {
 
 .audio-node__controls {
   flex-shrink: 0;
-  height: 36px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
-  border-top: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
 }
 
 .audio-node__time {

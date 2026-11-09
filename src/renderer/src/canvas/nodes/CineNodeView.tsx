@@ -375,7 +375,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             />
           ) : assetSrc ? (
             <img src={assetSrc} alt="" className="cnode__media" loading="lazy" />
-          ) : (
+          ) : data.kind === 'text' && data.text ? null : (
             <Icon
               name={NODE_ICON[data.kind]}
               size={data.kind === 'text' ? 44 : 40}

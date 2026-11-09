@@ -1321,8 +1321,8 @@ body.is-exporting .react-flow__minimap {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 9px 11px;
+  gap: 8px;
+  padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -1378,21 +1378,22 @@ body.is-exporting .react-flow__minimap {
 .study-node-card__field .app-select {
   flex: 1;
   min-width: 0;
-  height: 26px;
+  height: 30px;
 }
 
 .study-node-card__chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
 .study-node-card__chip {
-  height: 24px;
-  padding: 0 10px;
-  border-radius: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 7px;
   background: var(--surface-hover);
   color: var(--text-3);
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 .study-node-card__chip.is-active {
@@ -1431,11 +1432,22 @@ body.is-exporting .react-flow__minimap {
 }
 
 .study-node-card__actions {
-  margin-top: 2px;
+  margin-top: auto;
+  padding-top: 2px;
   display: flex;
   justify-content: flex-end;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
+}
+
+.study-node-card__actions .btn-sm,
+.study-node-card__actions .btn-primary,
+.study-node-card__actions .btn-secondary {
+  height: 30px;
+  padding: 0 11px;
+  font-size: 12px;
+  border-radius: 7px;
 }
 
 .study-node-card__enter {
@@ -1469,13 +1481,13 @@ body.is-exporting .react-flow__minimap {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 48px 24px 24px;
   background: color-mix(in srgb, var(--canvas-bg) 72%, transparent);
 }
 
 .film-study-sheet__panel {
   width: min(1440px, calc(100vw - 48px));
-  height: min(900px, calc(100vh - 48px));
+  height: min(900px, calc(100vh - 72px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2264,7 +2276,7 @@ body.is-exporting .react-flow__minimap {
 }
 
 .cnode__preview--audio {
-  padding: 6px 10px 8px;
+  padding: 0;
   align-items: stretch;
   justify-content: flex-start;
 }
@@ -2276,7 +2288,7 @@ body.is-exporting .react-flow__minimap {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
 }
 
 .audio-node audio {
@@ -2287,9 +2299,9 @@ body.is-exporting .react-flow__minimap {
   position: relative;
   flex: 1;
   min-height: 0;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  background: color-mix(in srgb, var(--surface-hover) 82%, transparent);
+  border-radius: 0;
+  border: 0;
+  background: color-mix(in srgb, var(--surface-hover) 88%, transparent);
   overflow: hidden;
   cursor: pointer;
   touch-action: none;
@@ -2382,11 +2394,12 @@ body.is-exporting .react-flow__minimap {
 
 .audio-node__controls {
   flex-shrink: 0;
-  height: 34px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px;
+  padding: 0 12px;
+  border-top: 1px solid var(--divider);
 }
 
 .audio-node__time {
@@ -2401,22 +2414,21 @@ body.is-exporting .react-flow__minimap {
 }
 
 .audio-node__play {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid var(--border-strong);
-  background: var(--surface-hover);
+  border: 0;
+  background: transparent;
   color: var(--text-1);
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: background 120ms ease;
 }
 
 .audio-node__play:hover:not(:disabled) {
-  border-color: var(--border-selected);
-  background: var(--surface-raised);
+  background: var(--surface-hover);
 }
 
 .audio-node__play:disabled {
@@ -2577,7 +2589,42 @@ body.is-exporting .react-flow__minimap {
   -webkit-line-clamp: unset;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.cnode__text--markdown::-webkit-scrollbar,
+.text-editor__preview::-webkit-scrollbar,
+.text-editor__input::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.cnode__text--markdown::-webkit-scrollbar-track,
+.text-editor__preview::-webkit-scrollbar-track,
+.text-editor__input::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cnode__text--markdown::-webkit-scrollbar-thumb,
+.text-editor__preview::-webkit-scrollbar-thumb,
+.text-editor__input::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-3) 52%, transparent);
+  background-clip: padding-box;
+}
+
+.cnode__text--markdown::-webkit-scrollbar-thumb:hover,
+.text-editor__preview::-webkit-scrollbar-thumb:hover,
+.text-editor__input::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--text-3) 72%, transparent);
+  background-clip: padding-box;
+}
+
+.cnode__text--markdown pre {
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .cnode__text--markdown > *:first-child {
@@ -2951,6 +2998,11 @@ body.is-exporting .react-flow__minimap {
   font-size: 11px;
   z-index: 4;
   backdrop-filter: blur(4px);
+}
+
+.cnode__preview--audio .cnode__versions {
+  top: 8px;
+  bottom: auto;
 }
 
 .cnode__version-label {

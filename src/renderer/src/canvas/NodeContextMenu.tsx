@@ -245,6 +245,12 @@ function buildSections(
       title: '文本',
       actions: [
         {
+          label: '编辑文本',
+          run: () => {
+            useUIStore.getState().openTextEditor(node.id)
+          }
+        },
+        {
           label: '复制文本内容',
           disabled: !cine.data.text?.trim(),
           run: () => {

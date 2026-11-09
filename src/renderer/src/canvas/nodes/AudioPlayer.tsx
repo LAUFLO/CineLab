@@ -18,7 +18,7 @@ interface AudioPlayerProps {
   onSelect?: (start: number, end: number) => void
 }
 
-const WAVE_BARS = 96
+const WAVE_BARS = 60
 const FLAT_BARS = Array.from({ length: WAVE_BARS }, () => 0.06)
 const waveformCache = new Map<string, number[]>()
 

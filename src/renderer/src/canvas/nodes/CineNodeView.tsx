@@ -68,7 +68,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [panoramaOpen, setPanoramaOpen] = useState(false)
-  const [textEditorOpen, setTextEditorOpen] = useState(false)
+  const textEditorOpen = useUIStore(
+    (state) => state.textEditorNodeId === id
+  )
+  const closeTextEditor = useUIStore((state) => state.closeTextEditor)
   const [previewRatio, setPreviewRatio] = useState<number | null>(null)
   const [audioMode, setAudioMode] = useState<AudioActionMode | null>(null)
   const [audioSelection, setAudioSelection] = useState({ start: 0, end: 0 })
@@ -81,14 +84,14 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     if (next && next !== data.title) patchNodeData(id, { title: next })
   }
 
-  const openTextEditor = (event: React.MouseEvent): void => {
-    event.stopPropagation()
-    setTextEditorOpen(true)
+  const openTextEditor = (event?: React.MouseEvent): void => {
+    event?.stopPropagation()
+    useUIStore.getState().openTextEditor(id)
   }
 
   const saveText = (text: string): void => {
     patchNodeData(id, { text, status: 'done' })
-    setTextEditorOpen(false)
+    closeTextEditor()
   }
 
   const retryGeneration = (): void => {
@@ -243,12 +246,12 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           align={toolbarAlign}
           onDownload={() => void exportCurrent()}
           onExpand={() => {
-            if (data.kind === 'text') setTextEditorOpen(true)
+            if (data.kind === 'text') openTextEditor()
             else setPreviewOpen(true)
           }}
           onEdit={
             data.kind === 'text'
-              ? () => setTextEditorOpen(true)
+              ? () => openTextEditor()
               : undefined
           }
           onAudioTrim={data.kind === 'audio' ? openAudioTrim : undefined}
@@ -283,7 +286,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               title="编辑文本（支持 Markdown）"
               onClick={(event) => {
                 event.stopPropagation()
-                setTextEditorOpen(true)
+                openTextEditor()
               }}
             >
               <Icon name="edit" size={14} />
@@ -359,7 +362,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           ) : assetSrc && current?.kind === 'text' ? (
             <div
               className="cnode__text cnode__text--markdown"
-              onDoubleClick={openTextEditor}
+              onDoubleClick={(event) => event.stopPropagation()}
               dangerouslySetInnerHTML={{
                 __html: renderMarkdown(data.text ?? '文本已生成')
               }}
@@ -383,7 +386,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           {!assetSrc && data.kind === 'text' && data.text ? (
             <div
               className="cnode__text cnode__text--markdown"
-              onDoubleClick={openTextEditor}
+              onDoubleClick={(event) => event.stopPropagation()}
               dangerouslySetInnerHTML={{
                 __html: renderMarkdown(data.text)
               }}
@@ -424,18 +427,6 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                 重新生成
               </button>
             </div>
-          ) : null}
-
-          {data.kind === 'text' && !isBusy ? (
-            <button
-              type="button"
-              className="cnode__text-edit nodrag nopan"
-              title="编辑文本（支持 Markdown）"
-              onClick={openTextEditor}
-            >
-              <Icon name="edit" size={12} />
-              编辑
-            </button>
           ) : null}
 
           {outputs.length > 1 && !isBusy ? (
@@ -513,7 +504,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
       open={textEditorOpen}
       title={data.title}
       initialText={data.text ?? ''}
-      onClose={() => setTextEditorOpen(false)}
+      onClose={closeTextEditor}
       onSave={saveText}
     />
     {previewOpen &&

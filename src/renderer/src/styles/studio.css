@@ -917,7 +917,7 @@
   min-width: 0;
   height: 100%;
   object-fit: cover;
-  opacity: 0.6;
+  opacity: 0.95;
 }
 
 .studio-clip__wave {
@@ -925,33 +925,33 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  opacity: 0.55;
+  opacity: 0.8;
   background-repeat: repeat-x;
   background-position: 0 0;
 }
 
 .studio-clip__media--video {
-  opacity: 0.55;
+  opacity: 0.92;
 }
 
 .studio-clip__media--image {
-  opacity: 0.6;
+  opacity: 0.95;
 }
 
 .studio-clip__media--audio {
-  opacity: 0.5;
+  opacity: 0.8;
   object-fit: fill;
 }
 
 .studio-clip--video {
-  background: linear-gradient(180deg, rgba(34, 211, 238, 0.18), rgba(34, 211, 238, 0.06));
+  background: rgba(34, 211, 238, 0.1);
 }
 
 .studio-clip--audio {
   background: repeating-linear-gradient(
     90deg,
-    rgba(163, 230, 53, 0.16) 0 2px,
-    rgba(163, 230, 53, 0.04) 2px 4px
+    rgba(163, 230, 53, 0.12) 0 2px,
+    rgba(163, 230, 53, 0.03) 2px 4px
   );
 }
 

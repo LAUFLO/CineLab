@@ -19,10 +19,17 @@ interface ModelParamsDialogProps {
 type ParamRow = ParamDef
 
 const TYPE_LABEL: Record<ParamDef['type'], string> = {
-  select: '下拉选择',
-  number: '数字',
+  select: '选项',
+  number: '数值',
   text: '文本',
   boolean: '开关'
+}
+
+const TYPE_HINT: Record<ParamDef['type'], string> = {
+  select: '从预设值里选，例如比例 16:9',
+  number: '输入或拖动一个数，例如时长 5 秒',
+  text: '自由输入文字',
+  boolean: '开 / 关'
 }
 
 function cloneDef(def: ParamDef): ParamRow {
@@ -55,6 +62,32 @@ function chipSummary(def: ParamDef): string {
   return `默认 ${def.defaultValue ?? '—'}`
 }
 
+/** 时长统一用滑条：旧的固定秒数下拉自动转成数值范围 */
+function normalizeParam(def: ParamDef): ParamRow {
+  const row = cloneDef(def)
+  if (row.key !== 'duration' || row.type !== 'select') return row
+
+  const values = (row.options ?? [])
+    .map((option) => Number(option.value))
+    .filter((value) => Number.isFinite(value))
+  if (values.length < 2) return row
+
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const current = Number(row.defaultValue)
+
+  return {
+    ...row,
+    type: 'number',
+    options: undefined,
+    defaultValue: Number.isFinite(current)
+      ? Math.min(max, Math.max(min, current))
+      : min,
+    min,
+    max
+  }
+}
+
 export function ModelParamsDialog({
   model,
   onCancel,
@@ -63,6 +96,7 @@ export function ModelParamsDialog({
   const [rows, setRows] = useState<ParamRow[]>([])
   const [error, setError] = useState<string | null>(null)
   const [templatesOpen, setTemplatesOpen] = useState(true)
+  const [openRow, setOpenRow] = useState<number | null>(null)
 
   useEffect(() => {
     if (!model) {
@@ -70,8 +104,9 @@ export function ModelParamsDialog({
       return
     }
     setError(null)
-    setRows(model.params.map(cloneDef))
+    setRows(model.params.map(normalizeParam))
     setTemplatesOpen(model.params.length === 0)
+    setOpenRow(null)
   }, [model])
 
   const templates = model ? paramTemplatesFor(model.capability) : []
@@ -97,6 +132,7 @@ export function ModelParamsDialog({
   const addTemplate = (template: ParamTemplate): void => {
     if (existingKeys.has(template.def.key)) return
     setError(null)
+    setOpenRow(rows.length)
     setRows((current) => [...current, cloneDef(template.def)])
   }
 
@@ -106,6 +142,7 @@ export function ModelParamsDialog({
     )
     if (missing.length === 0) return
     setError(null)
+    setOpenRow(rows.length)
     setRows((current) => [
       ...current,
       ...missing.map((template) => cloneDef(template.def))
@@ -115,14 +152,14 @@ export function ModelParamsDialog({
   const addCustom = (): void => {
     const index = rows.length + 1
     setError(null)
+    setOpenRow(rows.length)
     setRows((current) => [
       ...current,
       {
         key: `param_${index}`,
         label: '自定义参数',
-        type: 'select',
-        options: [{ value: `value_${index}`, label: '选项 1' }],
-        defaultValue: `value_${index}`,
+        type: 'text',
+        defaultValue: '',
         group: '其它'
       }
     ])
@@ -130,6 +167,7 @@ export function ModelParamsDialog({
 
   const removeRow = (index: number): void => {
     setError(null)
+    setOpenRow(null)
     setRows((current) => current.filter((_, rowIndex) => rowIndex !== index))
   }
 
@@ -426,8 +464,45 @@ export function ModelParamsDialog({
               <div>从上方常用参数添加，或点底部「自定义参数」</div>
             </div>
           ) : (
-            rows.map((row, index) => (
-              <div className="model-param" key={`${row.key}-${index}`}>
+            rows.map((row, index) => {
+              const expanded = openRow === index
+              return (
+              <div
+                className={`model-param${expanded ? ' is-open' : ''}`}
+                key={`${row.key}-${index}`}
+              >
+                <div className="model-param__summary-row">
+                  <button
+                    type="button"
+                    className="model-param__summary"
+                    onClick={() => setOpenRow(expanded ? null : index)}
+                  >
+                    <Icon
+                      name={expanded ? 'chevron-down' : 'chevron-right'}
+                      size={12}
+                    />
+                    <span className="model-param__name">
+                      {row.label || '未命名参数'}
+                    </span>
+                    <span className="model-param__type">
+                      {TYPE_LABEL[row.type]}
+                    </span>
+                    <span className="model-param__value">
+                      {optionSummary(row)}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    title="删除参数"
+                    onClick={() => removeRow(index)}
+                  >
+                    <Icon name="close" size={12} />
+                  </button>
+                </div>
+
+                {expanded ? (
+                <div className="model-param__body">
                 <div className="model-param__head">
                   <input
                     className="model-param__label"
@@ -449,14 +524,9 @@ export function ModelParamsDialog({
                       changeType(index, next as ParamDef['type'])
                     }
                   />
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    title="删除参数"
-                    onClick={() => removeRow(index)}
-                  >
-                    <Icon name="close" size={12} />
-                  </button>
+                </div>
+                <div className="model-param__type-hint">
+                  {TYPE_HINT[row.type]}
                 </div>
 
                 <div className="model-param__grid is-single">
@@ -654,8 +724,11 @@ export function ModelParamsDialog({
                     />
                   </div>
                 ) : null}
+                </div>
+                ) : null}
               </div>
-            ))
+              )
+            })
           )}
         </div>
 

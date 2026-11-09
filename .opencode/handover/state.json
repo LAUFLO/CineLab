@@ -1,8 +1,8 @@
 {
-  "version": 51,
+  "version": 52,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-08T16:23:38.290Z",
+  "updatedAt": "2026-11-09T11:09:45.137Z",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
@@ -1154,6 +1154,18 @@
         ".opencode/handover/evidence/STUDIO-FILM-MERGE-1-params-collapsed.png",
         ".opencode/handover/evidence/STUDIO-FILM-MERGE-1-params-open.png",
         "docs/studio-film-merge-plan.md"
+      ]
+    },
+    {
+      "id": "AUDIO-LIBTV-1",
+      "title": "音频波形对齐 LibTV、截取变速、下载 scope、复制粘贴完整内容",
+      "status": "done",
+      "note": "2026-11-09 完成。音频波形改为 96 根柱、以中线上下对称、深色圆角内嵌、红色播放头，修复 SVG 高度按 viewBox 比例撑高被裁剪的问题；时长显示四舍五入。修复导出未传 scope 导致全局素材提示资源不存在；音频节点隐藏放大按钮。新增主进程 trimAudio/changeAudioSpeed（AAC 192k、atempo 链路 0.1-4.0x）与 media:trim-audio、media:audio-speed IPC；音频节点工具栏加截取/变速，节点下方浮动条支持波形拖拽选区、时间输入、倍率滑块与数字输入，生成结果写回节点新版本。复制粘贴新增边界边记录与重建，粘贴时映射拉片 sourceNodeId/studyOutputNodeIds、视频操作 sourceNodeId/resultNodeId、剪辑室 references，prompt/outputs/text 等完整保留；实测单节点复制重建上游边，双节点复制内部边与上下游边全部保留。typecheck、145 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AUDIO-LIBTV-1.md",
+        ".opencode/handover/evidence/AUDIO-LIBTV-1-waveform.png",
+        ".opencode/handover/evidence/AUDIO-LIBTV-1-trim.png",
+        ".opencode/handover/evidence/AUDIO-LIBTV-1-speed.png"
       ]
     }
   ],

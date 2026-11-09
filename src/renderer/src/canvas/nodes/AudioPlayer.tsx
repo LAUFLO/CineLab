@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent
+} from 'react'
 
 interface AudioPlayerProps {
   src: string | null
@@ -6,9 +12,13 @@ interface AudioPlayerProps {
   scope?: 'project' | 'global'
   busy?: boolean
   onCancel?: () => void
+  /** 截取模式：在波形上拖拽选择区间 */
+  selecting?: boolean
+  selection?: { start: number; end: number } | null
+  onSelect?: (start: number, end: number) => void
 }
 
-const WAVE_BARS = 64
+const WAVE_BARS = 96
 const FLAT_BARS = Array.from({ length: WAVE_BARS }, () => 0.06)
 const waveformCache = new Map<string, number[]>()
 
@@ -87,9 +97,13 @@ export function AudioPlayer({
   path,
   scope,
   busy,
-  onCancel
+  onCancel,
+  selecting = false,
+  selection,
+  onSelect
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
+  const dragStart = useRef<number | null>(null)
   const [peaks, setPeaks] = useState<number[]>([])
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -150,28 +164,64 @@ export function AudioPlayer({
     else audio.pause()
   }
 
+  const ratioAt = (event: MouseEvent<HTMLDivElement> | PointerEvent<HTMLDivElement>): number => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    return Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
+  }
+
   const seek = (event: MouseEvent<HTMLDivElement>): void => {
     const audio = audioRef.current
-    if (!audio || busy || !duration) return
-    const rect = event.currentTarget.getBoundingClientRect()
-    const ratio = Math.min(
-      1,
-      Math.max(0, (event.clientX - rect.left) / rect.width)
-    )
-    audio.currentTime = ratio * duration
+    if (!audio || busy || !duration || selecting) return
+    audio.currentTime = ratioAt(event) * duration
     setCurrentTime(audio.currentTime)
+  }
+
+  const startSelect = (event: PointerEvent<HTMLDivElement>): void => {
+    if (!selecting || !duration || !onSelect) return
+    event.preventDefault()
+    const ratio = ratioAt(event)
+    dragStart.current = ratio
+    event.currentTarget.setPointerCapture(event.pointerId)
+    onSelect(ratio * duration, ratio * duration)
+  }
+
+  const moveSelect = (event: PointerEvent<HTMLDivElement>): void => {
+    if (dragStart.current === null || !duration || !onSelect) return
+    const ratio = ratioAt(event)
+    const from = Math.min(dragStart.current, ratio) * duration
+    const to = Math.max(dragStart.current, ratio) * duration
+    onSelect(from, to)
+  }
+
+  const endSelect = (event: PointerEvent<HTMLDivElement>): void => {
+    if (dragStart.current === null) return
+    dragStart.current = null
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
   }
 
   const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0
   const bars = peaks.length > 0 ? peaks : FLAT_BARS
+  const selectionStart =
+    selection && duration > 0 ? Math.min(1, selection.start / duration) : 0
+  const selectionEnd =
+    selection && duration > 0 ? Math.min(1, selection.end / duration) : 0
+  const hasSelection = selecting && selectionEnd - selectionStart > 0.001
 
   return (
     <div className={`audio-node${busy ? ' is-busy' : ''}`}>
       <audio ref={audioRef} src={src ?? undefined} preload="metadata" />
 
       <div
-        className="audio-node__wave-wrap nodrag nopan"
+        className={`audio-node__wave-wrap nodrag nopan${
+          selecting ? ' is-selecting' : ''
+        }`}
         onClick={seek}
+        onPointerDown={startSelect}
+        onPointerMove={moveSelect}
+        onPointerUp={endSelect}
+        onPointerCancel={endSelect}
         role="presentation"
       >
         <svg
@@ -181,19 +231,40 @@ export function AudioPlayer({
           aria-hidden="true"
         >
           {bars.map((peak, index) => {
-            const height = Math.max(3, peak * 92)
+            const height = Math.max(4, Math.pow(peak, 0.72) * 96)
             return (
               <rect
                 key={index}
-                x={index + 0.23}
-                y={100 - height}
-                width={0.54}
+                x={index + 0.19}
+                y={(100 - height) / 2}
+                width={0.62}
                 height={height}
-                rx={0.27}
+                rx={0.31}
               />
             )
           })}
         </svg>
+
+        {hasSelection ? (
+          <>
+            <div
+              className="audio-node__selection"
+              style={{
+                left: `${selectionStart * 100}%`,
+                width: `${(selectionEnd - selectionStart) * 100}%`
+              }}
+            />
+            <div
+              className="audio-node__selection-edge"
+              style={{ left: `${selectionStart * 100}%` }}
+            />
+            <div
+              className="audio-node__selection-edge"
+              style={{ left: `${selectionEnd * 100}%` }}
+            />
+          </>
+        ) : null}
+
         {!busy && duration > 0 ? (
           <div
             className="audio-node__playhead"
@@ -248,7 +319,7 @@ export function AudioPlayer({
           )}
         </button>
         <span className="audio-node__time">
-          {timeLabel(duration || 0)}
+          {timeLabel(Math.round(duration || 0))}
         </span>
       </div>
     </div>

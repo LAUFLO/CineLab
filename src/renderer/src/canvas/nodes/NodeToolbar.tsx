@@ -40,6 +40,8 @@ interface NodeToolbarProps {
   onDownload: () => void
   onExpand: () => void
   onEdit?: () => void
+  onAudioTrim?: () => void
+  onAudioSpeed?: () => void
   libraryAction?: {
     label: string
     title: string
@@ -66,6 +68,8 @@ export function NodeToolbar({
   onDownload,
   onExpand,
   onEdit,
+  onAudioTrim,
+  onAudioSpeed,
   libraryAction
 }: NodeToolbarProps) {
   const pinned = useToolbarStore((state) => state.pinned)
@@ -1314,6 +1318,36 @@ export function NodeToolbar({
         </>
       ) : null}
 
+      {kind === 'audio' ? (
+        <>
+          <button
+            type="button"
+            className="cnode__toolbar-btn"
+            title="截取音频片段"
+            onClick={(event) => {
+              event.stopPropagation()
+              onAudioTrim?.()
+            }}
+          >
+            <Icon name="scissors" size={14} />
+            <span>截取</span>
+          </button>
+          <button
+            type="button"
+            className="cnode__toolbar-btn"
+            title="调整播放速度"
+            onClick={(event) => {
+              event.stopPropagation()
+              onAudioSpeed?.()
+            }}
+          >
+            <Icon name="audio" size={14} />
+            <span>变速</span>
+          </button>
+          <span className="cnode__toolbar-divider" />
+        </>
+      ) : null}
+
       <button
         type="button"
         className="cnode__toolbar-btn"
@@ -1340,18 +1374,20 @@ export function NodeToolbar({
         <Icon name="download" size={14} />
       </button>
 
-      <button
-        type="button"
-        className="cnode__toolbar-btn"
-        title={kind === 'text' ? '放大编辑' : '查看大图'}
-        aria-label={kind === 'text' ? '放大编辑' : '查看大图'}
-        onClick={(event) => {
-          event.stopPropagation()
-          onExpand()
-        }}
-      >
-        <Icon name="expand" size={14} />
-      </button>
+      {kind !== 'audio' ? (
+        <button
+          type="button"
+          className="cnode__toolbar-btn"
+          title={kind === 'text' ? '放大编辑' : '查看大图'}
+          aria-label={kind === 'text' ? '放大编辑' : '查看大图'}
+          onClick={(event) => {
+            event.stopPropagation()
+            onExpand()
+          }}
+        >
+          <Icon name="expand" size={14} />
+        </button>
+      ) : null}
 
       {libraryAction ? (
         <button

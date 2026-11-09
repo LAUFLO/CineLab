@@ -2,6 +2,8 @@ import { ipcMain } from 'electron'
 import { promises as fs } from 'node:fs'
 import type {
   AudioPeaksRequest,
+  AudioSpeedRequest,
+  AudioTrimRequest,
   CropImageRectRequest,
   CropImageRequest,
   CropVideoRequest,
@@ -16,6 +18,7 @@ import type {
 } from '@shared/media'
 import { probeMedia } from '../media/ffmpeg'
 import { computeAudioPeaks } from '../media/audio-peaks'
+import { changeAudioSpeed, trimAudio } from '../media/audio'
 import { importSound, listSounds } from '../media/sound-library'
 import { captureDepth } from '../media/depth'
 import { cancelDepthTask, startDepthTask } from '../media/depth-tasks'
@@ -169,6 +172,14 @@ export function registerMediaIpc(): void {
 
   ipcMain.handle('media:trim-video', async (_event, input: TrimVideoRequest) => {
     return { asset: await trimVideo(requireProjectRoot(), input) }
+  })
+
+  ipcMain.handle('media:trim-audio', async (_event, input: AudioTrimRequest) => {
+    return { asset: await trimAudio(requireProjectRoot(), input) }
+  })
+
+  ipcMain.handle('media:audio-speed', async (_event, input: AudioSpeedRequest) => {
+    return { asset: await changeAudioSpeed(requireProjectRoot(), input) }
   })
 
   ipcMain.handle(

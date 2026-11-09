@@ -415,6 +415,21 @@ const api: CineApi = {
       }
     }
   },
+  skills: {
+    list: () => ipcRenderer.invoke('skills:list'),
+    files: (scope, name) => ipcRenderer.invoke('skills:files', scope, name),
+    readFile: (scope, name, path) =>
+      ipcRenderer.invoke('skills:read-file', scope, name, path),
+    create: (input) => ipcRenderer.invoke('skills:create', input),
+    save: (input) => ipcRenderer.invoke('skills:save', input),
+    remove: (scope, name) => ipcRenderer.invoke('skills:remove', scope, name),
+    setOverride: (input) =>
+      ipcRenderer.invoke('skills:set-override', input),
+    openDirectory: (scope, name) =>
+      ipcRenderer.invoke('skills:open-directory', scope, name),
+    openFile: (scope, name, path) =>
+      ipcRenderer.invoke('skills:open-file', scope, name, path)
+  },
   stage: {
     create: (name?: string) => ipcRenderer.invoke('stage:create', name),
     load: (stageId: string) => ipcRenderer.invoke('stage:load', stageId),

@@ -1,5 +1,5 @@
 {
-  "version": 57,
+  "version": 58,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "剪辑助手 clip profile 已完成：时间线 scope、timeline_get/select/move/trim/split/remove/update/set_track/add_marker 工具、剪辑室上下文、回合级时间线撤销、Agent 面板剪辑模式，239 测试通过；真实剪辑室验证读取、移动、裁剪与撤销。下一步做技能管理 UI，再做删除/批量操作二次确认、剪辑高级工具（自动字幕/删静音/转场/导出）、整体验收；推送前先同步 origin/main。",
+  "next_focus": "技能管理 UI 已完成：三级技能列表、全局/项目覆盖配置、启用/禁用与禁止模型调用、创建/编辑/删除、SKILL.md/references/assets 浏览，242 测试通过；真实设置页验证创建、保存、开关、预览与删除。下一步做删除/批量操作二次确认，再补剪辑高级工具（自动字幕/删静音/转场/导出）、技能文件上传与覆盖快捷操作，最后整体验收；推送前先同步 origin/main。",
   "frontier": [
     {
       "id": "M2-1",
@@ -296,6 +296,20 @@
         "src/main/agent/tools.ts",
         "src/renderer/src/agent/timelineBridge.ts",
         "src/renderer/src/stores/timeline.ts"
+      ]
+    },
+    {
+      "id": "SKILLS-UI-1",
+      "title": "技能管理 UI",
+      "status": "done",
+      "note": "2026-11-09 完成。新增全局/项目技能覆盖配置（skills-config.json），listSkills 应用 enabled/disableModelInvocation 并保持 project>global>builtin 优先级；新增 skills-admin 管理 API（三级列表、文件浏览、创建/保存/删除、覆盖开关、打开目录/文件）与 skills:* IPC；设置页新增「技能」分区，支持列表、详情编辑、新建、启用/禁用、禁止模型调用、references/assets 预览与两步删除。34 文件 242 测试通过；typecheck/build 通过。真实 UI 验证内置/项目列表、创建项目技能、编辑保存、开关写配置、references 预览与删除。内置技能只读；覆盖状态存本机/项目配置，不写 frontmatter。",
+      "evidence": [
+        ".opencode/handover/evidence/SKILLS-UI-1.md",
+        ".opencode/handover/evidence/SKILLS-UI-1.png",
+        "src/main/agent/skills-admin.ts",
+        "src/main/agent/skills-config.ts",
+        "src/main/ipc/skills.ts",
+        "src/renderer/src/panels/SkillsSection.tsx"
       ]
     },
     {
@@ -2250,6 +2264,14 @@
     {
       "category": "engineering",
       "content": "剪辑助手 scope 必须带 timelineId；timelineStore 用 dispatchMany + turnId 保证一轮 Agent 只压一条撤销历史，AgentTurnChange.timelineUpdated 驱动面板的时间线撤销。"
+    },
+    {
+      "category": "engineering",
+      "content": "技能启用/禁用与模型调用开关存 scope:name 覆盖配置：全局 skills-config.json，项目 .cinelab/skills-config.json；禁用高层同名技能要遮蔽低层技能，避免回退到内置版本。"
+    },
+    {
+      "category": "engineering",
+      "content": "内置技能只读；技能管理只允许 SKILL.md、references/、assets/，并做 realpath 逃逸校验。"
     }
   ],
   "designConventions": [
@@ -2284,6 +2306,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "技能管理 UI"
+    "nextMilestone": "删除 / 批量操作二次确认"
   }
 }

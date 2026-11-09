@@ -53,6 +53,14 @@ import type {
   AgentToolResultInput
 } from './agent'
 import type { DirectorStageDoc } from './stage-schema'
+import type {
+  SkillAdminEntry,
+  SkillFileContent,
+  SkillFileEntry,
+  SkillOverrideInput,
+  SkillScope,
+  SkillWriteInput
+} from './skills'
 import type { OperationBindings } from './operation-schema'
 import type { TimelineDoc } from './timeline-schema'
 import type { ImportedSound, SoundAsset } from './sound-schema'
@@ -403,6 +411,22 @@ export interface StageExportResult {
   path: string
 }
 
+export interface SkillsApi {
+  list(): Promise<SkillAdminEntry[]>
+  files(scope: SkillScope, name: string): Promise<SkillFileEntry[]>
+  readFile(
+    scope: SkillScope,
+    name: string,
+    path?: string
+  ): Promise<SkillFileContent>
+  create(input: SkillWriteInput): Promise<SkillAdminEntry>
+  save(input: SkillWriteInput): Promise<SkillAdminEntry>
+  remove(scope: SkillScope, name: string): Promise<void>
+  setOverride(input: SkillOverrideInput): Promise<SkillAdminEntry>
+  openDirectory(scope: SkillScope, name?: string): Promise<void>
+  openFile(scope: SkillScope, name: string, path: string): Promise<void>
+}
+
 export interface StageApi {
   create(name?: string): Promise<DirectorStageDoc>
   load(stageId: string): Promise<DirectorStageDoc | null>
@@ -442,4 +466,5 @@ export interface CineApi {
   update: UpdateApi
   agent: AgentApi
   stage: StageApi
+  skills: SkillsApi
 }

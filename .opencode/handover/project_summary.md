@@ -32,8 +32,9 @@
 | `STAGE-AGENT-EDITING-1` | stage Agent 工具、TransformControls、属性编辑、增删对象/机位、落盘保护 |
 | `STAGE-TIMELINE-PREVIEW-1` | 运镜关键帧、时间轴、播放预演、隐藏窗口逐帧渲染、ffmpeg 白模视频 |
 | `CLIP-PROFILE-1` | 剪辑室 Agent 上下文、时间线工具、回合级撤销、剪辑助手 UI |
-| 验证 | 239 测试、`typecheck`、`build` 通过；真实 Agnes 提案、视口、stage、白模导出与剪辑助手验证完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 16 个提交、落后 4 个（a768e64、6abef3d、3a406a7、436768d），未推送；推送前先同步 |
+| `SKILLS-UI-1` | 三级技能管理、覆盖开关、创建/编辑/删除、文件浏览 |
+| 验证 | 242 测试、`typecheck`、`build` 通过；真实 Agnes 提案、视口、stage、白模导出、剪辑助手与技能 UI 验证完成 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 17 个提交、落后 4 个（a768e64、6abef3d、3a406a7、436768d），未推送；推送前先同步 |
 
 ## 关键工件
 
@@ -49,9 +50,9 @@
 
 ## 下一步
 
-1. 技能管理 UI
-2. 删除 / 批量操作二次确认
-3. 剪辑高级工具：自动字幕、删静音、转场、导出
+1. 删除 / 批量操作二次确认
+2. 剪辑高级工具：自动字幕、删静音、转场、导出
+3. 技能文件上传与覆盖快捷操作
 4. 整体验收
 5. Agnes 视频补测；推送前同步 origin/main
 
@@ -67,6 +68,7 @@
 - stage Agent 工具执行后立即保存场景；保存拒绝更旧 `updatedAt`。
 - 白模预演使用隐藏窗口 `stage-render.html` 逐帧渲染，ffmpeg 编码后写入 assets/vid。
 - 剪辑助手与画布助手共用 AgentRuntime，按 profile 切换系统提示与工具集。
+- 技能覆盖配置：全局 `<userData>/skills-config.json`，项目 `<project>/.cinelab/skills-config.json`。
 - 工具执行在渲染进程；主进程构造 scope、权限和回合事务。
 - 生成必须走提案确认，不直接执行；`generation_submit` 不暴露给模型。
 

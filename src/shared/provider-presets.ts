@@ -31,9 +31,6 @@ const PRESET_MODELS: Record<string, ModelDef[]> = {
     .map(presetModel)
     .filter((model): model is ModelDef => model !== null),
   moss: [MOSS_IMAGE],
-  zhipu: ['zhipu-cogvideox-flash']
-    .map(presetModel)
-    .filter((model): model is ModelDef => model !== null),
   vidu: ['vidu-q2']
     .map(presetModel)
     .filter((model): model is ModelDef => model !== null),
@@ -43,7 +40,7 @@ const PRESET_MODELS: Record<string, ModelDef[]> = {
   kling: ['kling-v2-5-turbo']
     .map(presetModel)
     .filter((model): model is ModelDef => model !== null),
-  volcengine: ['doubao-seedance']
+  volcengine: ['doubao-seedream-5', 'doubao-seedance']
     .map(presetModel)
     .filter((model): model is ModelDef => model !== null),
   agnes: ['agnes-image-2.5-flash', 'agnes-video-2.5-flash']
@@ -67,14 +64,6 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     type: 'openai-compat',
     baseUrl: 'https://api.mosi.cn/v1',
     models: PRESET_MODELS.moss
-  },
-  {
-    id: 'zhipu',
-    name: '智谱',
-    description: 'CogVideoX 视频',
-    type: 'openai-compat',
-    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    models: PRESET_MODELS.zhipu
   },
   {
     id: 'vidu',
@@ -103,7 +92,7 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
   {
     id: 'volcengine',
     name: '火山方舟',
-    description: 'Seedance 视频',
+    description: 'Seedance 视频 · Seedream 图片',
     type: 'openai-compat',
     baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
     models: PRESET_MODELS.volcengine

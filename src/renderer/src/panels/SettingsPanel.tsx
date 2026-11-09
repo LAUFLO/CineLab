@@ -506,7 +506,12 @@ function ModelsSection() {
                           .join('/')}`
                       : ''}
                     {model.params.length > 0
-                      ? ` · ${model.params.length} 个参数`
+                      ? ` · 参数 ${model.params
+                          .slice(0, 3)
+                          .map((param) => param.label)
+                          .join(' · ')}${
+                          model.params.length > 3 ? ' 等' : ''
+                        }`
                       : ''}
                   </div>
                 </div>

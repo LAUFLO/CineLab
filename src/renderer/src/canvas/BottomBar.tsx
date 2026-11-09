@@ -126,14 +126,6 @@ export function BottomBar() {
         <Icon name="help" />
       </button>
 
-      <button
-        type="button"
-        className="bottombar__agent"
-        title="AI 助手（即将支持）"
-        onClick={() => showToast('AI 助手将在后续版本提供')}
-      >
-        <Icon name="robot" size={19} />
-      </button>
     </div>
   )
 }

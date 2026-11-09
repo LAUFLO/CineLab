@@ -5,6 +5,7 @@ import type {
   AgentPermissionMode,
   AgentProposal,
   AgentSessionMessage,
+  AgentToolCall,
   AgentTurn
 } from '@shared/agent'
 import { isStudioNode, useCanvasStore } from '../stores/canvas'
@@ -34,6 +35,12 @@ interface AgentState {
   lastTurn: AgentTurn | null
   proposal: AgentProposal | null
   proposalBusy: boolean
+  pendingConfirm: {
+    turnId: string
+    call: AgentToolCall
+    reason: string
+  } | null
+  confirming: boolean
   toggle: () => void
   open: () => void
   close: () => void
@@ -43,6 +50,7 @@ interface AgentState {
   loadProposal: () => Promise<void>
   submitProposal: () => Promise<void>
   cancelProposal: () => Promise<void>
+  confirmTool: (approved: boolean) => Promise<void>
   send: (text: string) => Promise<void>
   cancel: () => Promise<void>
   applyEvent: (event: AgentEvent) => void
@@ -122,6 +130,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   lastTurn: null,
   proposal: null,
   proposalBusy: false,
+  pendingConfirm: null,
+  confirming: false,
 
   toggle: () => set((state) => ({ visible: !state.visible })),
   open: () => set({ visible: true }),
@@ -206,6 +216,26 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       })
     } finally {
       set({ proposalBusy: false })
+    }
+  },
+
+  confirmTool: async (approved) => {
+    const pending = get().pendingConfirm
+    if (!pending || get().confirming) return
+    set({ confirming: true })
+    try {
+      await window.api.agent.confirm({
+        turnId: pending.turnId,
+        callId: pending.call.callId,
+        approved
+      })
+      set({ pendingConfirm: null })
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : '确认操作失败'
+      })
+    } finally {
+      set({ confirming: false })
     }
   },
 
@@ -324,16 +354,31 @@ export const useAgentStore = create<AgentState>((set, get) => ({
               message.role === 'tool' &&
               message.callId === event.result.callId
           )
-          if (index < 0) return state
           const next = [...state.messages]
-          next[index] = {
-            ...next[index],
-            toolStatus: event.result.ok ? 'ok' : 'error',
-            content: event.result.ok
-              ? JSON.stringify(event.result.result ?? { ok: true })
-              : event.result.error ?? '工具执行失败'
+          if (index >= 0) {
+            next[index] = {
+              ...next[index],
+              toolStatus: event.result.ok ? 'ok' : 'error',
+              content: event.result.ok
+                ? JSON.stringify(event.result.result ?? { ok: true })
+                : event.result.error ?? '工具执行失败'
+            }
           }
-          return { messages: next }
+          return {
+            messages: next,
+            ...(state.pendingConfirm?.call.callId === event.result.callId
+              ? { pendingConfirm: null }
+              : {})
+          }
+        })
+        break
+      case 'confirm_request':
+        set({
+          pendingConfirm: {
+            turnId: event.turnId,
+            call: event.call,
+            reason: event.reason
+          }
         })
         break
       case 'turn_end':
@@ -343,6 +388,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           running: false,
           currentTurnId: null,
           lastTurn: event.turn,
+          pendingConfirm: null,
+          confirming: false,
           turns: [...state.turns, event.turn],
           messages:
             event.turn.status === 'cancelled'

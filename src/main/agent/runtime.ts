@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type {
   AgentChatRequest,
+  AgentConfirmInput,
   AgentEvent,
   AgentProfileId,
   AgentScope,
@@ -21,6 +22,7 @@ import {
   AgentToolError,
   assertToolAllowed,
   getTool,
+  toolConfirmationReason,
   toolDefinitionsForModel
 } from './tools'
 import { executeMainTool } from './main-tools'
@@ -74,6 +76,13 @@ interface ActiveTurn {
     string,
     {
       resolve(result: AgentToolResultInput): void
+      reject(error: Error): void
+    }
+  >
+  confirmations: Map<
+    string,
+    {
+      resolve(approved: boolean): void
       reject(error: Error): void
     }
   >
@@ -188,7 +197,8 @@ export function startTurn(
     controller: new AbortController(),
     turn,
     scope,
-    pending: new Map()
+    pending: new Map(),
+    confirmations: new Map()
   }
   activeTurns.set(turn.id, active)
 
@@ -242,6 +252,54 @@ async function runTurn(input: {
       },
       { role: 'user', content: request.message }
     ]
+
+    const requestConfirmation = (
+      call: AgentToolCall,
+      reason: string
+    ): Promise<boolean> => {
+      const signal = active.controller.signal
+      if (signal.aborted) {
+        return Promise.reject(new DOMException('已取消', 'AbortError'))
+      }
+
+      return new Promise<boolean>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          active.confirmations.delete(call.callId)
+          cleanup()
+          resolve(false)
+        }, 60_000)
+
+        const cleanup = (): void => {
+          clearTimeout(timer)
+          signal.removeEventListener('abort', onAbort)
+        }
+
+        const onAbort = (): void => {
+          active.confirmations.delete(call.callId)
+          cleanup()
+          reject(new DOMException('已取消', 'AbortError'))
+        }
+
+        signal.addEventListener('abort', onAbort, { once: true })
+        active.confirmations.set(call.callId, {
+          resolve: (approved) => {
+            cleanup()
+            resolve(approved)
+          },
+          reject: (error) => {
+            cleanup()
+            reject(error)
+          }
+        })
+
+        callbacks.sendEvent({
+          type: 'confirm_request',
+          turnId: turn.id,
+          call,
+          reason
+        })
+      })
+    }
 
     let steps = 0
     while (steps < MAX_STEPS) {
@@ -312,30 +370,44 @@ async function runTurn(input: {
         let toolResult: AgentToolResultInput
         try {
           assertToolAllowed(toolCall, scope, permissionMode)
-          const tool = getTool(toolCall.name)
-          if (tool?.executor === 'main') {
-            const mainResult = await executeMainTool(toolCall, scope)
+          const confirmation = toolConfirmationReason(toolCall)
+          const approved = confirmation
+            ? await requestConfirmation(toolCall, confirmation)
+            : true
+
+          if (!approved) {
             toolResult = {
               turnId: turn.id,
               callId: call.callId,
-              ok: mainResult.ok,
-              ...(mainResult.result !== undefined
-                ? { result: mainResult.result }
-                : {}),
-              ...(mainResult.error ? { error: mainResult.error } : {})
+              ok: false,
+              error: '用户取消了该操作'
             }
           } else {
-            callbacks.sendToolCall({
-              ...toolCall,
-              turnId: turn.id,
-              permissionMode,
-              scope
-            })
-            toolResult = await waitForToolResult(
-              turn.id,
-              call.callId,
-              active.controller.signal
-            )
+            const tool = getTool(toolCall.name)
+            if (tool?.executor === 'main') {
+              const mainResult = await executeMainTool(toolCall, scope)
+              toolResult = {
+                turnId: turn.id,
+                callId: call.callId,
+                ok: mainResult.ok,
+                ...(mainResult.result !== undefined
+                  ? { result: mainResult.result }
+                  : {}),
+                ...(mainResult.error ? { error: mainResult.error } : {})
+              }
+            } else {
+              callbacks.sendToolCall({
+                ...toolCall,
+                turnId: turn.id,
+                permissionMode,
+                scope
+              })
+              toolResult = await waitForToolResult(
+                turn.id,
+                call.callId,
+                active.controller.signal
+              )
+            }
           }
           mergeChange(turn.change, toolResult.change)
           if (toolResult.ok && call.name.startsWith('timeline_')) {
@@ -494,10 +566,22 @@ export function resolveToolResult(input: AgentToolResultInput): void {
   pending.resolve(input)
 }
 
+export function resolveConfirmation(input: AgentConfirmInput): void {
+  const active = activeTurns.get(input.turnId)
+  const pending = active?.confirmations.get(input.callId)
+  if (!pending) return
+  active?.confirmations.delete(input.callId)
+  pending.resolve(input.approved)
+}
+
 export function cancelTurn(turnId: string): void {
   const active = activeTurns.get(turnId)
   if (!active) return
   active.controller.abort(new DOMException('已取消', 'AbortError'))
+  for (const [callId, pending] of active.confirmations) {
+    active.confirmations.delete(callId)
+    pending.reject(new DOMException('已取消', 'AbortError'))
+  }
 }
 
 /** 供提案登记校验回合是否仍然活跃，并取得真实 sessionId */

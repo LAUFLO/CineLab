@@ -161,7 +161,8 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId'],
       additionalProperties: false
     },
-    replay: 'unsafe'
+    replay: 'unsafe',
+    requiresConfirm: true
   },
   {
     id: 'canvas.group',
@@ -445,7 +446,8 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'objectId'],
       additionalProperties: false
     },
-    replay: 'unsafe'
+    replay: 'unsafe',
+    requiresConfirm: true
   }
 ]
 
@@ -581,7 +583,8 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       required: ['clipIds'],
       additionalProperties: false
     },
-    replay: 'unsafe'
+    replay: 'unsafe',
+    requiresConfirm: true
   },
   {
     id: 'timeline.updateClip',
@@ -721,6 +724,39 @@ export function toolDefinitionsForModel(
 
 export function getTool(name: string): AgentToolDefinition | undefined {
   return AGENT_TOOLS.find((tool) => tool.name === name)
+}
+
+/** 返回需要用户确认的原因；null 表示可以直接执行 */
+export function toolConfirmationReason(
+  call: AgentToolCall
+): string | null {
+  const tool = getTool(call.name)
+  if (!tool) return null
+
+  const clipIds = Array.isArray(call.args.clipIds)
+    ? call.args.clipIds
+    : []
+
+  if (call.name === 'timeline_remove_clips') {
+    return `将删除 ${clipIds.length} 个时间线片段，成片时长会改变。`
+  }
+  if (call.name === 'canvas_delete_node') {
+    return '将删除画布节点及其所有连线。'
+  }
+  if (call.name === 'stage_remove_object') {
+    return '将删除导演台对象及其动作轨。'
+  }
+  if (
+    clipIds.length > 10 &&
+    (call.name === 'timeline_move_clips' ||
+      call.name === 'timeline_split_clips')
+  ) {
+    return `将一次修改 ${clipIds.length} 个时间线片段。`
+  }
+  if (tool.requiresConfirm) {
+    return '该操作会删除或覆盖已有内容。'
+  }
+  return null
 }
 
 function assertSelectedNode(scope: AgentScope, nodeId: string): void {

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import type {
   DirectorStageDoc,
   StageCamera,
@@ -150,6 +151,7 @@ export function StageViewport() {
   const hostRef = useRef<HTMLDivElement>(null)
   const doc = useStageStore((state) => state.doc)
   const viewMode = useStageStore((state) => state.viewMode)
+  const transformMode = useStageStore((state) => state.transformMode)
   const selectedObjectId = useStageStore((state) => state.selectedObjectId)
   const selectedCameraId = useStageStore((state) => state.selectedCameraId)
 
@@ -159,6 +161,8 @@ export function StageViewport() {
   const shotCameraRef = useRef<THREE.PerspectiveCamera | null>(null)
   const activeCameraRef = useRef<THREE.PerspectiveCamera | null>(null)
   const controlsRef = useRef<OrbitControls | null>(null)
+  const transformRef = useRef<TransformControls | null>(null)
+  const transformHelperRef = useRef<THREE.Object3D | null>(null)
   const objectsGroupRef = useRef<THREE.Group | null>(null)
   const cameraGroupRef = useRef<THREE.Group | null>(null)
   const selectionRef = useRef<THREE.BoxHelper | null>(null)
@@ -226,6 +230,50 @@ export function StageViewport() {
     controls.maxPolarAngle = Math.PI / 2 - 0.03
     controlsRef.current = controls
 
+    const transform = new TransformControls(director, renderer.domElement)
+    transform.setMode('translate')
+    transform.setSize(0.75)
+    const transformHelper = transform.getHelper()
+    transformHelper.visible = false
+    scene.add(transformHelper)
+    transformRef.current = transform
+    transformHelperRef.current = transformHelper
+
+    const onTransformDragging = (event: unknown): void => {
+      const dragging = Boolean((event as { value?: boolean }).value)
+      controls.enabled = !dragging
+      if (dragging) return
+
+      const object = transform.object
+      const objectId = object?.userData.stageObjectId
+      if (!object || typeof objectId !== 'string') return
+      useStageStore.getState().applyCommands([
+        {
+          type: 'transformObject',
+          objectId,
+          transform: {
+            position: [
+              object.position.x,
+              object.position.y,
+              object.position.z
+            ],
+            rotation: [
+              object.rotation.x,
+              object.rotation.y,
+              object.rotation.z
+            ],
+            scale: [object.scale.x, object.scale.y, object.scale.z]
+          }
+        }
+      ])
+    }
+    transform.addEventListener('dragging-changed', onTransformDragging)
+
+    const onTransformChange = (): void => {
+      selectionRef.current?.update()
+    }
+    transform.addEventListener('objectChange', onTransformChange)
+
     const ambient = new THREE.AmbientLight(0xffffff, 1.4)
     scene.add(ambient)
     const directional = new THREE.DirectionalLight(0xffffff, 1.8)
@@ -266,6 +314,12 @@ export function StageViewport() {
       if (Math.abs(event.clientX - downX) > 5) return
       if (Math.abs(event.clientY - downY) > 5) return
       if (viewModeRef.current === 'camera') return
+      if (
+        (transformRef.current as unknown as { dragging?: boolean } | null)
+          ?.dragging
+      ) {
+        return
+      }
 
       const rect = renderer.domElement.getBoundingClientRect()
       if (rect.width === 0 || rect.height === 0) return
@@ -316,6 +370,11 @@ export function StageViewport() {
       renderer.setAnimationLoop(null)
       renderer.domElement.removeEventListener('pointerdown', onPointerDown)
       renderer.domElement.removeEventListener('pointerup', onPointerUp)
+      transform.removeEventListener('dragging-changed', onTransformDragging)
+      transform.removeEventListener('objectChange', onTransformChange)
+      transform.detach()
+      transform.dispose()
+      scene.remove(transformHelper)
       controls.dispose()
       disposeObject(objectsGroup)
       disposeObject(cameraGroup)
@@ -336,6 +395,8 @@ export function StageViewport() {
       shotCameraRef.current = null
       activeCameraRef.current = null
       controlsRef.current = null
+      transformRef.current = null
+      transformHelperRef.current = null
       objectsGroupRef.current = null
       cameraGroupRef.current = null
       selectionRef.current = null
@@ -374,6 +435,7 @@ export function StageViewport() {
     }
 
     updateSelectionHelper()
+    syncTransformControls()
     syncShotCamera()
   }, [doc])
 
@@ -402,6 +464,33 @@ export function StageViewport() {
     selectionRef.current = helper
   }
 
+  const syncTransformControls = (): void => {
+    const transform = transformRef.current
+    const helper = transformHelperRef.current
+    const objectsGroup = objectsGroupRef.current
+    if (!transform || !helper || !objectsGroup) return
+
+    const state = useStageStore.getState()
+    if (state.viewMode !== 'director' || !state.selectedObjectId) {
+      transform.detach()
+      helper.visible = false
+      return
+    }
+
+    const target = objectsGroup.children.find(
+      (child) => child.userData.stageObjectId === state.selectedObjectId
+    )
+    if (!target) {
+      transform.detach()
+      helper.visible = false
+      return
+    }
+
+    transform.attach(target)
+    transform.setMode(state.transformMode)
+    helper.visible = true
+  }
+
   const syncShotCamera = (): void => {
     const shot = shotCameraRef.current
     const currentDoc = useStageStore.getState().doc
@@ -421,10 +510,16 @@ export function StageViewport() {
     shot.updateProjectionMatrix()
   }
 
-  // 选中对象高亮
+  // 选中对象高亮与变换控件
   useEffect(() => {
     updateSelectionHelper()
+    syncTransformControls()
   }, [selectedObjectId])
+
+  // 变换模式
+  useEffect(() => {
+    transformRef.current?.setMode(transformMode)
+  }, [transformMode])
 
   // 机位标记选中色与当前相机
   useEffect(() => {
@@ -471,6 +566,7 @@ export function StageViewport() {
     if (selectionRef.current) {
       selectionRef.current.visible = !cameraMode
     }
+    syncTransformControls()
     syncShotCamera()
   }, [viewMode, selectedCameraId, doc])
 

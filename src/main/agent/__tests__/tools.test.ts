@@ -242,6 +242,146 @@ describe('agent tool permissions', () => {
     ).toThrow(AgentToolError)
   })
 
+  it('requires stage node in scope for stage tools', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('stage_get', { nodeId: 'node-b' }),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_get', { nodeId: 'node-a' }),
+        scope,
+        'read-only'
+      )
+    ).not.toThrow()
+  })
+
+  it('validates stage object parameters', () => {
+    const base = { nodeId: 'node-a', type: 'human' }
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_object', { ...base, type: 'unknown' }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_object', { ...base, position: [1, 2] }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_object', { ...base, count: 101 }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_object', {
+          ...base,
+          type: 'crowd',
+          count: 5,
+          position: [0, 0, 0],
+          pose: 'walk'
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('requires at least one transform field', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('stage_transform_object', {
+          nodeId: 'node-a',
+          objectId: 'object-1'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_transform_object', {
+          nodeId: 'node-a',
+          objectId: 'object-1',
+          position: [1, 0, 0]
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('validates stage camera parameters', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_camera', { nodeId: 'node-a', fov: 200 }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_camera', { nodeId: 'node-a', aspect: '4:3' }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_camera', {
+          nodeId: 'node-a',
+          position: [5, 2, 6],
+          target: [0, 1, 0],
+          fov: 45,
+          aspect: '16:9'
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('allows stage capabilities in read-only mode', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('stage_capabilities', {}),
+        scope,
+        'read-only'
+      )
+    ).not.toThrow()
+  })
+
+  it('rejects stage writes in read-only mode', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_object', {
+          nodeId: 'node-a',
+          type: 'human'
+        }),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+  })
+
   it('validates catalog capability', () => {
     expect(() =>
       assertToolAllowed(

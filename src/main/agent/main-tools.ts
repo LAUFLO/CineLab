@@ -1,5 +1,13 @@
 import type { AgentScope, AgentToolCall } from '@shared/agent'
 import type { Capability } from '@shared/provider-schema'
+import {
+  DEFAULT_PREVIEW_OPTIONS,
+  STAGE_ASPECTS,
+  STAGE_EASINGS,
+  STAGE_LIMITS,
+  STAGE_OBJECT_TYPES,
+  STAGE_POSE_PRESETS
+} from '@shared/stage-schema'
 import { listProviders } from '../settings/store'
 import { listSkills, readSkill } from './skills'
 
@@ -68,6 +76,20 @@ export async function executeMainTool(
   call: AgentToolCall,
   scope: AgentScope
 ): Promise<MainToolResult> {
+  if (call.name === 'stage_capabilities') {
+    return {
+      ok: true,
+      result: {
+        objectTypes: STAGE_OBJECT_TYPES,
+        posePresets: STAGE_POSE_PRESETS,
+        easings: STAGE_EASINGS,
+        aspects: STAGE_ASPECTS,
+        limits: STAGE_LIMITS,
+        preview: DEFAULT_PREVIEW_OPTIONS
+      }
+    }
+  }
+
   if (call.name === 'generation_catalog') {
     return generationCatalog(
       typeof call.args.capability === 'string'

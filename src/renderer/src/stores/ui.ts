@@ -23,6 +23,11 @@ export interface NodeContextMenuState {
   nodeId: string
 }
 
+export interface EdgeContextMenuState {
+  screen: XYPosition
+  edgeId: string
+}
+
 export interface NodeCommandState {
   nodeId: string
   action: 'operation' | 'expand' | 'download' | 'library'
@@ -53,6 +58,7 @@ interface UIStore {
   menu: MenuState | null
   contextMenu: ContextMenuState | null
   nodeContextMenu: NodeContextMenuState | null
+  edgeContextMenu: EdgeContextMenuState | null
   nodeCommand: NodeCommandState | null
   pendingPrompt: string | null
   confirm: ConfirmState | null
@@ -86,6 +92,8 @@ interface UIStore {
   closeContextMenu: () => void
   openNodeContextMenu: (menu: NodeContextMenuState) => void
   closeNodeContextMenu: () => void
+  openEdgeContextMenu: (menu: EdgeContextMenuState) => void
+  closeEdgeContextMenu: () => void
   runNodeCommand: (
     command: Omit<NodeCommandState, 'nonce'>
   ) => void
@@ -106,6 +114,7 @@ export const useUIStore = create<UIStore>((set) => ({
   menu: null,
   contextMenu: null,
   nodeContextMenu: null,
+  edgeContextMenu: null,
   nodeCommand: null,
   pendingPrompt: null,
   confirm: null,
@@ -145,8 +154,11 @@ export const useUIStore = create<UIStore>((set) => ({
   openContextMenu: (contextMenu) => set({ contextMenu, menu: null }),
   closeContextMenu: () => set({ contextMenu: null }),
   openNodeContextMenu: (nodeContextMenu) =>
-    set({ nodeContextMenu, menu: null, contextMenu: null }),
+    set({ nodeContextMenu, menu: null, contextMenu: null, edgeContextMenu: null }),
   closeNodeContextMenu: () => set({ nodeContextMenu: null }),
+  openEdgeContextMenu: (edgeContextMenu) =>
+    set({ edgeContextMenu, menu: null, contextMenu: null, nodeContextMenu: null }),
+  closeEdgeContextMenu: () => set({ edgeContextMenu: null }),
   runNodeCommand: (command) =>
     set((state) => ({
       nodeCommand: { ...command, nonce: (state.nodeCommand?.nonce ?? 0) + 1 }

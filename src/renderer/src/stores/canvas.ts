@@ -35,6 +35,7 @@ import {
 } from '@shared/canvas-schema'
 import { VIDEO_OPERATIONS, type VideoOperationId } from '@shared/operation-schema'
 import type { GeneratedAsset } from '@shared/generation'
+import { clearEdgeReferences } from './edge-references'
 
 export type CineNode = Node<CineNodeData, 'cine'>
 export type StudioNode = Node<StudioNodeData, 'studio'>
@@ -222,6 +223,7 @@ interface CanvasStore {
   setViewport: (viewport: Viewport) => void
   onNodesChange: (changes: NodeChange<CanvasNode>[]) => void
   onEdgesChange: (changes: EdgeChange<CineEdge>[]) => void
+  removeEdges: (edgeIds: string[]) => number
   onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string
   addStudioNode: (position: XYPosition, title?: string) => string
@@ -631,7 +633,39 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   onEdgesChange: (changes) => {
-    set({ edges: applyEdgeChanges(changes, get().edges) })
+    const removedIds = new Set(
+      changes
+        .filter((change) => change.type === 'remove')
+        .map((change) => change.id)
+    )
+    if (removedIds.size === 0) {
+      set({ edges: applyEdgeChanges(changes, get().edges) })
+      return
+    }
+
+    const removedEdges = get().edges.filter((edge) => removedIds.has(edge.id))
+    const edges = applyEdgeChanges(changes, get().edges)
+    set({
+      edges,
+      nodes: clearEdgeReferences(get().nodes, edges, removedEdges)
+    })
+  },
+
+  removeEdges: (edgeIds) => {
+    if (edgeIds.length === 0) return 0
+    const ids = new Set(edgeIds)
+    const removedEdges = get().edges.filter((edge) => ids.has(edge.id))
+    if (removedEdges.length === 0) return 0
+
+    get().pushHistory()
+
+    const edges = get().edges.filter((edge) => !ids.has(edge.id))
+    set({
+      edges,
+      nodes: clearEdgeReferences(get().nodes, edges, removedEdges)
+    })
+
+    return removedEdges.length
   },
 
   onConnect: (connection) => {

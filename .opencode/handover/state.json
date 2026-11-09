@@ -1,8 +1,8 @@
 {
-  "version": 53,
+  "version": 54,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-09T11:40:20.898Z",
+  "updatedAt": "2026-11-09T12:42:00.263Z",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
@@ -1178,6 +1178,17 @@
         ".opencode/handover/evidence/NODE-POLISH-1-audio.png",
         ".opencode/handover/evidence/NODE-POLISH-1-study.png",
         ".opencode/handover/evidence/NODE-POLISH-1-sheet.png"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-REA-1",
+      "title": "删除连线、拉片逐帧检测与动作峰值、剪辑室下拉统一",
+      "status": "done",
+      "note": "2026-11-09 完成。连线支持单击选中后 Delete 删除、双击删除、右键菜单删除，移除边时清理拉片 sourceNodeId、剪辑室 references、视频操作 sourceNodeId，video-op schema 允许空 source。新增 shot-detect：ffmpeg 抽 8fps 96px RGB 帧，4x4x4 直方图 + 像素差 + 局部中位数检测硬切/跳切，动作峰值补充候选切点，最多 12 段；拉片 prompt 改为切点编号，模型可合并/拆分，必须连续覆盖，本地按切点重建。实测 12 秒硬切视频 4 段、12 秒移动方块舞蹈 6 段（原 1 段）；修复灰度帧红绿同亮度漏检。剪辑室编码下拉替换为统一 Select。新增 shot-detect 与 edge-references 测试；typecheck、26 文件 155 用例、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/FILM-STUDY-REA-1.md",
+        ".opencode/handover/evidence/FILM-STUDY-REA-1-edge-menu.png",
+        ".opencode/handover/evidence/FILM-STUDY-REA-1-codec.png"
       ]
     }
   ],

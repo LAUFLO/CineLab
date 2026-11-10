@@ -59,7 +59,8 @@ interface StageState {
 
   openStage: (nodeId: string) => Promise<void>
   closeStage: () => void
-  applyCommands: (commands: StageCommand[]) => boolean
+  applyCommands: (commands: StageCommand[], turnId?: string) => boolean
+  endCommandTurn: (turnId: string) => void
   undo: () => void
   redo: () => void
   selectObject: (objectId: string | null) => void
@@ -109,6 +110,9 @@ export function syncStageNodeSummary(
     activeCameraId: doc.activeCameraId
   })
 }
+
+/** 一轮 Agent 的多个场景命令只压入一条历史记录 */
+const commandTurns = new Set<string>()
 
 export const useStageStore = create<StageState>((set, get) => ({
   open: false,
@@ -214,8 +218,8 @@ export const useStageStore = create<StageState>((set, get) => ({
     })
   },
 
-  applyCommands: (commands) => {
-    const { doc, nodeId } = get()
+  applyCommands: (commands, turnId) => {
+    const { doc, nodeId, history } = get()
     if (!doc || !nodeId) return false
 
     const result = applyStageCommands(doc, commands)
@@ -224,14 +228,21 @@ export const useStageStore = create<StageState>((set, get) => ({
       return false
     }
 
+    const shouldPushHistory = !turnId || !commandTurns.has(turnId)
+    if (turnId && shouldPushHistory) commandTurns.add(turnId)
+
     set({
       doc: result.doc,
-      history: pushStageHistory(get().history, doc),
+      history: shouldPushHistory ? pushStageHistory(history, doc) : history,
       dirty: true,
       error: null
     })
     syncStageNodeSummary(nodeId, result.doc)
     return true
+  },
+
+  endCommandTurn: (turnId) => {
+    commandTurns.delete(turnId)
   },
 
   undo: () => {

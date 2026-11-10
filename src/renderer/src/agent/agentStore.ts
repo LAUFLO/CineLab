@@ -20,6 +20,7 @@ import {
 } from '@shared/canvas-schema'
 import { isStudioNode, useCanvasStore } from '../stores/canvas'
 import { useProjectStore } from '../stores/project'
+import { useStageStore } from '../stage/stageStore'
 import { useStudioStore } from '../stores/studio'
 import { useTimelineStore } from '../stores/timeline'
 
@@ -111,7 +112,8 @@ export function agentTurnChangeCount(turn: AgentTurn | null): number {
     (change.deletedNodeIds?.length ?? 0) +
     (change.createdEdgeIds?.length ?? 0) +
     (change.deletedEdgeIds?.length ?? 0) +
-    (change.timelineUpdated ? 1 : 0)
+    (change.timelineUpdated ? 1 : 0) +
+    (change.stageUpdated ? 1 : 0)
   )
 }
 
@@ -827,6 +829,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       case 'turn_end': {
         useCanvasStore.getState().endCommandTurn(event.turn.id)
         useTimelineStore.getState().endCommandTurn(event.turn.id)
+        useStageStore.getState().endCommandTurn(event.turn.id)
         set((state) => {
           const messages = state.messages.map((message) =>
             message.role === 'tool' &&
@@ -905,6 +908,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
     if (canvasChanges > 0) useCanvasStore.getState().undo()
     if (change.timelineUpdated) useTimelineStore.getState().undo()
+    if (change.stageUpdated) useStageStore.getState().undo()
 
     set((state) => ({
       lastTurn: null,
@@ -913,7 +917,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         {
           id: nextMessageId(),
           role: 'assistant',
-          content: change.timelineUpdated
+          content: change.timelineUpdated || change.stageUpdated
             ? '已撤销本轮修改。'
             : '已撤销本轮画布修改。'
         }

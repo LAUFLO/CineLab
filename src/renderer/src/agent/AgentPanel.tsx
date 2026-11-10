@@ -664,6 +664,8 @@ export function AgentPanel() {
 
     const slashMatch = /(^|[^\w/])\/([^\s/]*)$/.exec(value)
     if (slashMatch && !mentionMatch) {
+      setMentionOpen(false)
+      setMentionQuery('')
       if (!skillPickerOpen) {
         setSkillPickerOpen(true)
         setSkillIndex(0)

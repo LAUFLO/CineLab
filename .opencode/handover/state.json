@@ -1,8 +1,8 @@
 {
-  "version": 59,
+  "version": 60,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-09T16:19:22.653Z",
+  "updatedAt": "2026-11-10T13:05:02.156Z",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
@@ -1238,6 +1238,15 @@
       "evidence": [
         ".opencode/handover/evidence/STUDIO-INSPECTOR-1.md",
         ".opencode/handover/evidence/STUDIO-INSPECTOR-1-tabs.png"
+      ]
+    },
+    {
+      "id": "TEXT-VISION-1",
+      "title": "文本节点引用图片传给多模态模型",
+      "status": "done",
+      "note": "2026-11-10 完成。根因是 generate:run 的文本分支调用 generateText 时没有传 refs，请求体只有纯文本。generateText 增加 refs 参数，有图时构造 OpenAI 多模态 content 数组（text + image_url data URL）。同时修正模型未勾选图片输入时的错误文案。用本地 mock chat 服务验证请求体包含 image_url 和 data:image。typecheck、162 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/TEXT-VISION-1.md"
       ]
     }
   ],

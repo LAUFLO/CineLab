@@ -11,6 +11,13 @@ import { startModelsWatcher } from './settings/models-watch'
 import { log, setupLogging } from './logger'
 import { appendFileSync } from 'node:fs'
 
+// 隔离测试实例：避免窗口被遮挡时 Chromium 暂停 requestAnimationFrame，
+// 影响运镜播放与逐帧渲染的自动化验证。
+if (process.env.CINELAB_DISABLE_THROTTLE === '1') {
+  app.commandLine.appendSwitch('disable-renderer-backgrounding')
+  app.commandLine.appendSwitch('disable-background-timer-throttling')
+}
+
 const diagLogPath = process.env.CINELAB_DIAG_LOG
 
 function diagLog(message: string): void {

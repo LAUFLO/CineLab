@@ -31,3 +31,5 @@ publish:
 extraResources:
   - from: resources/sounds
     to: sounds
+  - from: resources/skills
+    to: skills

@@ -37,7 +37,15 @@
 | 深度 runtime 构建发布 | `docs/runtime-components-plan.md` |
 | 剩余本地增强方案 | `docs/remaining-features-plan.md` |
 | 剪辑室合并成片方案 | `docs/studio-film-merge-plan.md` |
-| 导演台方案（待调研） | `docs/director-stage-plan.md` |
+| 导演台方案 | `docs/director-stage-plan.md` |
+| 导演台 3D 视口 | `docs/director-stage-viewport-plan.md` |
+| Agent 完整范围 | `docs/agent-full-scope.md` |
+| Agent 架构 | `docs/agent-architecture-plan.md` |
+| Agent 生成提案 | `docs/agent-generation-proposal-plan.md` |
+| CineBot 能力扩展方案 | `docs/agent-capability-plan.md` |
+| 剪辑室计划 | `docs/clip-studio-plan.md` |
+| 拉片室计划 | `docs/film-study-plan.md` |
+| 剪辑助手计划 | `docs/agent-plan.md` |
 
 ## 开发命令
 

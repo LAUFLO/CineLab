@@ -1,107 +1,250 @@
-export type AgentProfileId = 'clip' | 'canvas'
+import type { GenerateRequest } from './generation'
+import type { Capability } from './provider-schema'
 
-export type AgentIntent =
-  | 'remove_silence'
-  | 'split_by_shots'
-  | 'beat_markers'
-  | 'beat_split'
-  | 'answer'
-  | 'unsupported'
+export type AgentProfileId = 'canvas' | 'clip' | 'film' | 'stage'
 
-export interface AgentMessage {
-  role: 'user' | 'assistant'
-  content: string
+export type AgentPermissionMode = 'read-only' | 'current' | 'full-access'
+
+export interface AgentScope {
+  projectPath: string
+  canvasId: string
+  selectedNodeIds: string[]
+  /** 用户在模型选择器里选定的生图/生视频/音频模型 */
+  generationModels?: AgentGenerationModels
+  /** CineBot 剪辑作用域：当前打开的时间线 */
+  timelineId?: string
+  studioNodeId?: string
+  selectedClipIds?: string[]
+  playheadMs?: number
 }
 
-export interface AgentSelectedClip {
-  id: string
-  kind: 'video' | 'audio' | 'image' | 'text' | 'layer' | 'transition'
+export interface AgentAttachment {
+  /** 已上传到画布的素材节点 */
+  nodeId: string
   name: string
-  startMs: number
-  durationMs: number
-  hasMedia: boolean
+  path: string
+  scope: 'project' | 'global'
+  kind: 'image' | 'video' | 'audio'
 }
 
-export interface AgentContext {
-  timelineName: string
-  durationMs: number
-  clipCount: number
-  trackCount: number
-  markerCount: number
-  selectedClip?: AgentSelectedClip
+export interface AgentReference {
+  /** 画布素材节点；资产库素材可省略 */
+  nodeId?: string
+  name: string
+  path: string
+  scope: 'project' | 'global'
+  kind: 'image' | 'video' | 'audio'
 }
 
 export interface AgentChatRequest {
   profileId: AgentProfileId
-  messages: AgentMessage[]
-  context: AgentContext
+  permissionMode: AgentPermissionMode
+  message: string
+  canvasId: string
+  selectedNodeIds: string[]
+  timelineId?: string
+  studioNodeId?: string
+  selectedClipIds?: string[]
+  playheadMs?: number
+  sessionId?: string
+  /** 用户选择的文本模型；省略时自动选择第一个可用模型 */
+  modelKey?: string
+  /** 用户选择的生图/生视频/音频模型 */
+  generationModels?: AgentGenerationModels
+  /** 用户本轮附带的本地素材，已经创建为画布节点 */
+  attachments?: AgentAttachment[]
+  /** 用户用 @ 引用的画布或资产库素材 */
+  references?: AgentReference[]
 }
 
-export interface AgentChatResult {
-  content: string
-  model?: string
+export interface AgentModelInfo {
+  providerId: string
+  modelId: string
+  name: string
+  providerName?: string
+  output: 'text' | 'image' | 'video' | 'audio'
 }
 
-export interface AgentPlanResponse {
-  reply: string
-  intent: AgentIntent
+export interface AgentGenerationModels {
+  image?: string
+  video?: string
+  audio?: string
+}
+
+export interface AgentSessionInfo {
+  sessionId: string
+  title: string
+  updatedAt: string
+  messageCount: number
+  preview?: string
+}
+
+export interface AgentUsage {
+  input: number
+  output: number
+  total: number
+}
+
+export type AgentProposalStatus =
+  | 'pending'
+  | 'submitting'
+  | 'submitted'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'expired'
+
+export interface AgentProposal {
+  id: string
+  sessionId: string
+  turnId: string
+  status: AgentProposalStatus
+  /** 提交时直接交给 generationQueue 的完整请求 */
+  request: GenerateRequest
+  nodeTitle: string
+  modelName: string
+  capability: Capability
+  /** 本次请求会生成的媒体数量 */
+  count: number
+  createdAt: string
+  expiresAt: string
+  submittedAt?: string
+  runId?: string
+  error?: string
+}
+
+/** 渲染进程登记提案时提交的草稿；模型名与能力由主进程补全 */
+export interface AgentProposalDraft {
+  turnId: string
+  request: GenerateRequest
+  nodeTitle: string
+  /** 期望数量；只有模型声明了数量参数时才生效 */
+  count?: number
+}
+
+export interface AgentToolCall {
+  callId: string
+  name: string
   args: Record<string, unknown>
-  needsConfirm: boolean
 }
 
-const INTENTS: AgentIntent[] = [
-  'remove_silence',
-  'split_by_shots',
-  'beat_markers',
-  'beat_split',
-  'answer',
-  'unsupported'
-]
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {}
+export interface AgentToolResult {
+  callId: string
+  ok: boolean
+  result?: unknown
+  error?: string
 }
 
-/**
- * 解析模型返回的结构化计划。
- * 兼容纯 JSON、```json 代码围栏，以及 JSON 前后带解释文字的情况。
- */
-export function parseAgentPlan(content: string): AgentPlanResponse {
-  const trimmed = content.trim()
-  const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(trimmed)
-  const raw = fenced ? fenced[1] : trimmed
-  const start = raw.indexOf('{')
-  const end = raw.lastIndexOf('}')
+export interface AgentTurnChange {
+  createdNodeIds: string[]
+  updatedNodeIds: string[]
+  deletedNodeIds: string[]
+  createdEdgeIds: string[]
+  deletedEdgeIds: string[]
+  previousTitles: Record<string, string>
+  previousPositions: Record<string, { x: number; y: number }>
+  /** 本轮是否修改了剪辑室时间线 */
+  timelineUpdated?: boolean
+}
 
-  if (start >= 0 && end > start) {
-    try {
-      const parsed = JSON.parse(raw.slice(start, end + 1)) as Record<
-        string,
-        unknown
-      >
-      const intent = INTENTS.includes(parsed.intent as AgentIntent)
-        ? (parsed.intent as AgentIntent)
-        : 'unsupported'
-      return {
-        reply:
-          typeof parsed.reply === 'string' && parsed.reply.trim()
-            ? parsed.reply.trim()
-            : trimmed,
-        intent,
-        args: asRecord(parsed.args),
-        needsConfirm: parsed.needsConfirm !== false
-      }
-    } catch {
-      // 非 JSON 时按普通回答处理
+export type AgentTurnStatus = 'running' | 'completed' | 'cancelled' | 'error'
+
+export interface AgentTurn {
+  id: string
+  sessionId: string
+  status: AgentTurnStatus
+  userText: string
+  assistantText: string
+  toolCalls: AgentToolCall[]
+  /** 本轮登记的生成提案 */
+  proposalIds: string[]
+  change: AgentTurnChange
+  usage?: AgentUsage
+  error?: string
+  startedAt: string
+  endedAt?: string
+}
+
+export type AgentEvent =
+  | { type: 'turn_start'; turn: AgentTurn }
+  | { type: 'text'; turnId: string; text: string }
+  | { type: 'text_delta'; turnId: string; text: string }
+  | { type: 'tool_start'; turnId: string; call: AgentToolCall }
+  | { type: 'tool_end'; turnId: string; result: AgentToolResult }
+  | {
+      type: 'confirm_request'
+      turnId: string
+      call: AgentToolCall
+      reason: string
     }
-  }
+  | { type: 'turn_end'; turn: AgentTurn }
+  | { type: 'proposal'; proposal: AgentProposal }
+  | { type: 'error'; turnId?: string; message: string }
 
-  return {
-    reply: trimmed,
-    intent: 'unsupported',
-    args: {},
-    needsConfirm: false
-  }
+export interface AgentSessionMessage {
+  id: string
+  role: 'user' | 'assistant' | 'tool'
+  content: string
+  turnId?: string
+  callId?: string
+  toolName?: string
+  toolStatus?: 'running' | 'ok' | 'error'
 }
+
+export interface AgentSessionSnapshot {
+  sessionId: string
+  title?: string
+  summary?: {
+    content: string
+    coveredMessages: number
+  }
+  messages: AgentSessionMessage[]
+  turns: AgentTurn[]
+}
+
+export interface AgentToolCallRequest extends AgentToolCall {
+  turnId: string
+  permissionMode: AgentPermissionMode
+  scope: AgentScope
+}
+
+export interface AgentToolResultInput extends AgentToolResult {
+  turnId: string
+  change?: AgentTurnChange
+}
+
+export interface AgentConfirmInput {
+  turnId: string
+  callId: string
+  approved: boolean
+}
+
+export interface AgentSessionEntryBase {
+  id: string
+  timestamp: string
+}
+
+export type AgentSessionEntry =
+  | (AgentSessionEntryBase & {
+      type: 'session'
+      version: 1
+      sessionId: string
+    })
+  | (AgentSessionEntryBase & {
+      type: 'message'
+      message: AgentSessionMessage
+    })
+  | (AgentSessionEntryBase & {
+      type: 'turn'
+      turn: AgentTurn
+    })
+  | (AgentSessionEntryBase & {
+      type: 'meta'
+      title: string
+    })
+  | (AgentSessionEntryBase & {
+      type: 'summary'
+      content: string
+      /** 摘要覆盖的前 N 条 user/assistant 消息 */
+      coveredMessages: number
+    })

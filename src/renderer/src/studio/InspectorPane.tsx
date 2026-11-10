@@ -23,7 +23,6 @@ import {
 import { useTimelineStore } from '../stores/timeline'
 import { useUIStore } from '../stores/ui'
 import { Select } from '../components/Select'
-import { AssistantPane } from './AssistantPane'
 import { BezierEditor } from './BezierEditor'
 
 const BLEND_LABEL: Record<string, string> = {
@@ -589,9 +588,7 @@ export function InspectorPane() {
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   type AutoCutAction = 'silence' | 'shots' | 'beats' | 'beat-split'
   const [runningAction, setRunningAction] = useState<AutoCutAction | null>(null)
-  const [pane, setPane] = useState<
-    'props' | 'visual' | 'audio' | 'assistant'
-  >('props')
+  const [pane, setPane] = useState<'props' | 'visual' | 'audio'>('props')
   const clip = doc?.clips.find((item) => item.id === selectedIds[0]) ?? null
 
   const confirmPlan = (
@@ -868,18 +865,9 @@ export function InspectorPane() {
         >
           音频
         </button>
-        <button
-          type="button"
-          className={`studio-inspector__tab ${pane === 'assistant' ? 'is-active' : ''}`}
-          onClick={() => setPane('assistant')}
-        >
-          助手
-        </button>
       </div>
 
-      {pane === 'assistant' ? (
-        <AssistantPane />
-      ) : clip ? (
+      {clip ? (
         <>
           {pane === 'props' ? (
           <Section title="基础">

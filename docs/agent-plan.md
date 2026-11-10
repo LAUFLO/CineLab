@@ -1,7 +1,7 @@
 # 剪辑室智能编排与内置 Agent 方案
 
 日期：2026-11-08
-状态：阶段 1-3 已完成（2026-11-08），阶段 4 待开始
+状态：阶段 1-3 已完成（2026-11-08）；剪辑助手已用通用 AgentRuntime 以 `clip` profile 重建（2026-11-09）；自动字幕、删静音、转场、导出 Agent 工具已接入（2026-11-09）
 范围：剪辑室自动粗剪、对话式剪辑、内置创作 Agent
 
 ## 1. 结论
@@ -204,6 +204,32 @@ interface TimelinePlan {
 - 所有规则操作只产生一条 `batch` 撤销记录。
 - 执行后 toast 显示「已删除 7 段静音，时长 10:00 → 08:42」。
 - 暂不做执行前画面预览，阶段 2 与 Agent 共用方案预览。
+
+### 4.7 Agent 高级剪辑工具（已落地）
+
+通用 AgentRuntime 的 `clip` profile 已接入四个高级工具：
+
+| 工具 | 作用 | 关键参数 | 确认 |
+|---|---|---|---|
+| `timeline_auto_subtitles` | 选片段或整条时间线转写，生成字幕轨与字幕片段 | `clipId?` | 否 |
+| `timeline_remove_silence` | 检测静音并删除；指定片段时只处理所在轨道 | `clipIds?`、`paddingMs`、`minDurationMs`、`ripple` | 是 |
+| `timeline_set_transition` | 给视觉片段设置片头转场，`none` 移除 | `clipId`、`type`、`durationMs` | 否 |
+| `timeline_export` | 渲染导出成片，并尽量写回画布成片节点 | `codec` | 是 |
+
+约束：
+
+- 自动字幕复用 `timeline.transcribe`，先检查 `whisper-runtime` 与 `whisper-model` 是否安装。
+- 删静音复用 `timeline.analyze({ kind: 'silences' })` 和 `buildRemoveSilencePlan`；显式指定片段或选中片段时传入 `trackIds`，避免误删其他轨道。
+- 转场只支持视觉片段，音频片段和锁定轨道会拒绝。
+- 导出复用 `timeline.export`，成功后更新成片节点的输出列表和上游签名。
+- 长任务单独放宽工具超时：自动字幕 15 分钟、删静音 10 分钟、导出 30 分钟；回合结束或取消时停止等待并取消转写/导出。
+- 每个工具调用都进入时间线回合撤销历史。
+
+验收：
+
+- 真实 Agnes 文本模型可触发转场、自动字幕、删静音和导出工具。
+- 本地 mock 文本模型完整跑通四个工具，导出成功后成片节点新增输出。
+- 自动字幕真实生成两条字幕；删静音只切分音频轨，视频与字幕轨保持不变；撤销恢复原时间线。
 
 ## 5. 阶段 2：对话式剪辑 MVP
 

@@ -130,16 +130,18 @@ export const clipKeySchema = z.object({
     .optional()
 })
 
+export const TIMELINE_TRANSITION_TYPES = [
+  'fade',
+  'dip-black',
+  'wipe-left',
+  'wipe-right',
+  'slide-left',
+  'slide-right',
+  'zoom-in'
+] as const
+
 export const transitionInSchema = z.object({
-  type: z.enum([
-    'fade',
-    'dip-black',
-    'wipe-left',
-    'wipe-right',
-    'slide-left',
-    'slide-right',
-    'zoom-in'
-  ]),
+  type: z.enum(TIMELINE_TRANSITION_TYPES),
   durationMs: z.number().min(MIN_TRANSITION_MS).max(10000)
 })
 

@@ -14,6 +14,8 @@ import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
 import type { Preferences } from '../shared/preferences'
 import type { TimelineDoc } from '../shared/timeline-schema'
+import type { DirectorStageDoc } from '../shared/stage-schema'
+import type { StageExportProgress } from '../shared/ipc-contract'
 import type {
   FilmStudy,
   FilmStudyAutoRequest,
@@ -321,10 +323,6 @@ const api: CineApi = {
     importSubtitles: (path?: string) =>
       ipcRenderer.invoke('timeline:import-subtitles', path)
   },
-  agent: {
-    chat: (input) => ipcRenderer.invoke('agent:chat', input),
-    cancel: () => ipcRenderer.invoke('agent:cancel')
-  },
   filmStudy: {
     extract: (input: FilmStudyExtractRequest) =>
       ipcRenderer.invoke('film-study:extract', input),
@@ -391,6 +389,96 @@ const api: CineApi = {
   },
   clipboard: {
     read: () => ipcRenderer.invoke('clipboard:read')
+  },
+  agent: {
+    chat: (input) => ipcRenderer.invoke('agent:chat', input),
+    cancel: (turnId) => ipcRenderer.invoke('agent:cancel', turnId),
+    toolResult: (input) => ipcRenderer.invoke('agent:tool-result', input),
+    confirm: (input) => ipcRenderer.invoke('agent:confirm', input),
+    sessionLoad: (sessionId) =>
+      ipcRenderer.invoke('agent:session-load', sessionId),
+    sessionList: () => ipcRenderer.invoke('agent:session-list'),
+    sessionCreate: (title) =>
+      ipcRenderer.invoke('agent:session-create', title),
+    sessionRename: (sessionId, title) =>
+      ipcRenderer.invoke('agent:session-rename', sessionId, title),
+    sessionDelete: (sessionId) =>
+      ipcRenderer.invoke('agent:session-delete', sessionId),
+    sessionCompact: (sessionId, modelKey) =>
+      ipcRenderer.invoke('agent:session-compact', sessionId, modelKey),
+    modelInfo: (modelKey) =>
+      ipcRenderer.invoke('agent:model-info', modelKey),
+    textModels: () => ipcRenderer.invoke('agent:text-models'),
+    models: () => ipcRenderer.invoke('agent:models'),
+    proposalCreate: (input) => ipcRenderer.invoke('agent:proposal-create', input),
+    proposalActive: (sessionId) =>
+      ipcRenderer.invoke('agent:proposal-active', sessionId),
+    proposalSubmit: (proposalId) =>
+      ipcRenderer.invoke('agent:proposal-submit', proposalId),
+    proposalCancel: (proposalId) =>
+      ipcRenderer.invoke('agent:proposal-cancel', proposalId),
+    onEvent: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: import('../shared/agent').AgentEvent
+      ): void => callback(payload)
+      ipcRenderer.on('agent:event', listener)
+      return () => {
+        ipcRenderer.removeListener('agent:event', listener)
+      }
+    },
+    onToolCall: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: import('../shared/agent').AgentToolCallRequest
+      ): void => callback(payload)
+      ipcRenderer.on('agent:tool-call', listener)
+      return () => {
+        ipcRenderer.removeListener('agent:tool-call', listener)
+      }
+    }
+  },
+  skills: {
+    list: () => ipcRenderer.invoke('skills:list'),
+    files: (scope, name) => ipcRenderer.invoke('skills:files', scope, name),
+    readFile: (scope, name, path) =>
+      ipcRenderer.invoke('skills:read-file', scope, name, path),
+    create: (input) => ipcRenderer.invoke('skills:create', input),
+    save: (input) => ipcRenderer.invoke('skills:save', input),
+    remove: (scope, name) => ipcRenderer.invoke('skills:remove', scope, name),
+    uploadFiles: (scope, name, folder) =>
+      ipcRenderer.invoke('skills:upload-files', scope, name, folder),
+    removeFile: (scope, name, path) =>
+      ipcRenderer.invoke('skills:remove-file', scope, name, path),
+    clone: (input) => ipcRenderer.invoke('skills:clone', input),
+    setOverride: (input) =>
+      ipcRenderer.invoke('skills:set-override', input),
+    openDirectory: (scope, name) =>
+      ipcRenderer.invoke('skills:open-directory', scope, name),
+    openFile: (scope, name, path) =>
+      ipcRenderer.invoke('skills:open-file', scope, name, path)
+  },
+  stage: {
+    create: (name?: string) => ipcRenderer.invoke('stage:create', name),
+    load: (stageId: string) => ipcRenderer.invoke('stage:load', stageId),
+    save: (doc: DirectorStageDoc) => ipcRenderer.invoke('stage:save', doc),
+    delete: (stageId: string) => ipcRenderer.invoke('stage:delete', stageId),
+    duplicate: (stageId: string) =>
+      ipcRenderer.invoke('stage:duplicate', stageId),
+    capture: (input: { stageId: string; dataUrl: string }) =>
+      ipcRenderer.invoke('stage:capture', input),
+    exportPreview: (input: import('../shared/ipc-contract').StageExportInput) =>
+      ipcRenderer.invoke('stage:export-preview', input),
+    onExportProgress: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: StageExportProgress
+      ): void => callback(payload)
+      ipcRenderer.on('stage:export-progress', listener)
+      return () => {
+        ipcRenderer.removeListener('stage:export-progress', listener)
+      }
+    }
   }
 }
 

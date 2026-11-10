@@ -1,13 +1,13 @@
 {
-  "version": 61,
+  "version": 69,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-10T13:58:01.720Z",
-  "phase": "M7",
-  "phaseStatus": "completed",
-  "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
+  "phase": "AGENT",
+  "phaseStatus": "in_progress",
+  "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
-  "next_focus": "剪辑室 M1-M3、Concat 第一/第二批已完成；feat/clip-studio（fa30ff5）已合并最新 main（ac3350a）并快进本地 main，工作区通过 typecheck、145 测试、build、check:encryption。下一步整体验收与 bug 修复；远程 feat/clip-studio 与 PR #1 尚未更新。",
+  "next_focus": "CineBot 能力扩展方案已写入 docs/agent-capability-plan.md：main 新功能覆盖盘点、节点操作桥、能力注册表、未来功能接入清单和分阶段计划。建议 PR #2 先合入稳定部分，Phase 1 小范围能力可在当前分支补，Phase 2/3 用新分支。等待确认是否先实施 Phase 1。",
   "frontier": [
     {
       "id": "M2-1",
@@ -118,7 +118,371 @@
       "id": "AGENT-1",
       "title": "Agent 与画布协作",
       "status": "pending",
-      "note": "用户明确延后；下一阶段与 P4 一起做立项讨论，先确定优先级、交互形态和方案文档，不直接进入实现。"
+      "note": "2026-11-08 架构方案已确认（docs/agent-architecture-plan.md），通用 AgentRuntime 最小闭环 spike 通过。剪辑助手旧实现（结构化 JSON 单轮计划）已按用户要求删除，改由通用运行时重新编码。下一步进入批次 1。",
+      "evidence": [
+        "docs/agent-full-scope.md",
+        "docs/agent-architecture-plan.md",
+        ".opencode/handover/evidence/AGENT-SPIKE-1.md"
+      ]
+    },
+    {
+      "id": "AGENT-SPIKE-1",
+      "title": "Agent 最小闭环：工具调用 / 画布改名 / 回合撤销 / 会话恢复 / 流式",
+      "status": "done",
+      "note": "2026-11-08 完成。自研 AgentRuntime 跑通：模型请求走现有 provider，主进程构造 scope，工具执行在渲染进程，回合一次 pushHistory + 一次 undo，JSONL 会话重启恢复。mock 与真实 Agnes 3.0 Flash 均验证 canvas_get → canvas_update_title；只读模式拒绝写工具；取消显示「已停止本轮」；SSE 流式 34 个 text_delta；Agnes Image 2.5 Flash 真实出图；本地真实代理验证 httpFetch 走会话代理。Agnes Video 2.5 Flash 因 503 video_queue_full 待重试。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-SPIKE-1.md",
+        ".opencode/handover/evidence/AGENT-SPIKE-1-tools.png",
+        "src/main/agent/",
+        "src/main/ipc/agent.ts",
+        "src/renderer/src/agent/",
+        "src/shared/agent.ts"
+      ]
+    },
+    {
+      "id": "AGENT-TOOLS-1",
+      "title": "Agent 工具注册表与 CanvasCommand 画布命令层",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 shared/agent-tools.ts（profile/mode 过滤、模型工具转换）与 shared/canvas-commands.ts（updateTitle/moveNode/addNode/removeNode/connect/removeEdge 纯函数 + batch + 变更记录）；main/agent/tools.ts 改为注册表并新增 canvas_move_node；canvas store 增加 applyCommands(turnId) 与 endCommandTurn，一轮多个工具只 pushHistory 一次；真实 Agnes 验证改名+移动，一次撤销同时恢复。新增 8 个测试，25 文件 148 用例通过；typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-TOOLS-1.md",
+        "src/shared/agent-tools.ts",
+        "src/shared/canvas-commands.ts",
+        "src/shared/__tests__/canvas-commands.test.ts",
+        "src/shared/__tests__/agent-tools.test.ts",
+        "src/main/agent/tools.ts",
+        "src/renderer/src/stores/canvas.ts",
+        "src/renderer/src/agent/canvasBridge.ts"
+      ]
+    },
+    {
+      "id": "AGENT-SKILLS-1",
+      "title": "技能目录骨架：三级目录 / SKILL.md / skill.list / skill.read",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 shared/skills.ts（frontmatter 解析、名称校验、路径规范化）、main/agent/skills.ts（内置/全局/项目三级扫描，project > global > builtin，realpath 防逃逸、大小限制、分页读取）、main/agent/main-tools.ts 与 executor: main 分流；skill_list/skill_read 已接真实 Agnes，项目技能 test-director 成功列出并读取；内置 canvas-basics 同时可见。新增 5 个技能测试，26 文件 153 用例通过；typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-SKILLS-1.md",
+        "src/shared/skills.ts",
+        "src/shared/__tests__/skills.test.ts",
+        "src/main/agent/skills.ts",
+        "src/main/agent/main-tools.ts",
+        "src/main/agent/tools.ts",
+        "src/main/agent/runtime.ts",
+        "resources/skills/canvas-basics/SKILL.md",
+        "electron-builder.yml"
+      ]
+    },
+    {
+      "id": "AGENT-CANVAS-TOOLS-1",
+      "title": "Agent 画布工具：创建节点 / 连接 / 删除",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 canvas_add_node / canvas_connect / canvas_delete_node；创建节点不需要选中，改名/移动/连接/删除只操作 selectedNodeIds；runtime 把 createdNodeIds 加入本轮 scope，新建节点可继续连接或删除。真实 Agnes 验证：创建「开场镜头」并连接选中节点，一次撤销恢复 1 节点 0 连线；创建「临时节点」后删除，画布保持 1 节点。27 文件 157 测试通过；typecheck/build 通过，主进程约 410KB。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-CANVAS-TOOLS-1.md",
+        "src/main/agent/__tests__/tools.test.ts",
+        "src/main/agent/tools.ts",
+        "src/main/agent/runtime.ts",
+        "src/renderer/src/agent/canvasBridge.ts"
+      ]
+    },
+    {
+      "id": "AGENT-GROUP-TOOLS-1",
+      "title": "Agent 分组 / 解散分组工具",
+      "status": "done",
+      "note": "2026-11-08 完成。新增 canvas_group / canvas_ungroup；复用 store 的 groupSelection/ungroup，并增加可选 turnId 以加入回合级历史；canvas_get selectedNodes 现在包含 group 节点。真实 Agnes 验证：A/B 打组得到 4 节点 1 分组，解散恢复 3 节点 0 分组；C/D 打组后一次撤销恢复 3 节点 0 分组。27 文件 159 测试通过；typecheck/build 通过，主进程约 412KB。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-GROUP-TOOLS-1.md",
+        "src/main/agent/tools.ts",
+        "src/main/agent/__tests__/tools.test.ts",
+        "src/renderer/src/stores/canvas.ts",
+        "src/renderer/src/agent/canvasBridge.ts"
+      ]
+    },
+    {
+      "id": "AGENT-PROPOSAL-1",
+      "title": "Agent 生成提案 propose / submit",
+      "status": "done",
+      "note": "2026-11-09 完成。新增 generation_catalog / generation_propose；提案写入 <project>/.cinelab/agent/proposals，用户点击确认后才进入 generationQueue；支持参数规范化、目标/参考节点 scope、提案卡、新消息失效、runId 幂等与生成状态回写。真实 Agnes 验证：catalog → 图片提案 → 确认 → 已完成并写回节点；重复提交返回同一 runId；新消息使 pending 提案立即失效。29 文件 185 测试通过；typecheck/build 通过，主进程约 436KB。金额预估因供应商计费差异且 Agnes 免费，已整体移除。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-PROPOSAL-1.md",
+        "docs/agent-generation-proposal-plan.md",
+        "src/main/agent/proposals.ts",
+        "src/main/engine/start-generation.ts",
+        "src/shared/agent-proposal.ts",
+        "src/renderer/src/agent/AgentPanel.tsx"
+      ]
+    },
+    {
+      "id": "STAGE-COMMANDS-1",
+      "title": "StageCommand 骨架：场景 schema、命令层、批量原子执行、撤销历史",
+      "status": "done",
+      "note": "2026-11-09 完成。新增 src/shared/stage-schema.ts（DirectorStageDoc、对象、机位、镜头、运镜关键帧、动作轨、预览参数、限制与校验）和 src/shared/stage-commands.ts（17 类命令、applyStageCommands 原子 batch、StageChange、StageEffect、push/undo/redo 历史）。删除父对象会清理子对象 parentId 与动作轨；被镜头引用的机位拒绝删除。30 文件 202 测试通过，typecheck 通过。尚未接入画布 stage 节点、3D 视口、场景文件存储和 stage.* Agent 工具执行层。",
+      "evidence": [
+        ".opencode/handover/evidence/STAGE-COMMANDS-1.md",
+        "docs/director-stage-plan.md",
+        "src/shared/stage-schema.ts",
+        "src/shared/stage-commands.ts",
+        "src/shared/__tests__/stage-commands.test.ts"
+      ]
+    },
+    {
+      "id": "STAGE-NODE-STORAGE-1",
+      "title": "导演台 stage 节点与场景存储",
+      "status": "done",
+      "note": "2026-11-09 完成。画布新增 StageNodeData / stageNodeSchema / NODE_META.stage / CanvasCommandNode stage；新增 StageNodeView 与添加菜单入口；主进程新增 stages/<stageId>.json 创建/读取/保存/复制/删除，保存前 validateStageDoc 校验，stageId 防路径穿越；preload/ipc-contract 增加 stage API；复制粘贴深拷贝场景并换 stageId；项目创建/打开确保 stages 目录，项目导出随 fs.cp 自动包含。31 文件 211 测试通过；typecheck/build 通过，主进程约 448KB。真实隔离实例验证创建、场景文件写入、Ctrl+C/V 副本文件、reload 保留。删除节点暂不清理场景文件；3D 视口与 stage.* 工具待接入。",
+      "evidence": [
+        ".opencode/handover/evidence/STAGE-NODE-STORAGE-1.md",
+        "docs/director-stage-plan.md",
+        "src/shared/canvas-schema.ts",
+        "src/shared/project-schema.ts",
+        "src/main/stage/storage.ts",
+        "src/main/ipc/stage.ts",
+        "src/renderer/src/canvas/nodes/StageNodeView.tsx"
+      ]
+    },
+    {
+      "id": "STAGE-VIEWPORT-1",
+      "title": "导演台 A1 3D 视口：原生 three.js、机位切换、截图",
+      "status": "done",
+      "note": "2026-11-09 完成。新增 StageWindow / StageViewport / StageInspector / stageStore / stage.css；原生 three.js 渲染背景、网格、灯光、人体素模、box/sphere/plane/crowd、机位标记；OrbitControls 导演视角，机位视角按 position/target/fov 切换；Raycaster 选中对象/机位，BoxHelper 高亮；stage:capture 把 PNG 写入资产并自动创建图片节点连线；doc 变化 500ms 防抖保存，关闭补存，重开恢复 activeCameraId。31 文件 211 测试通过；typecheck/build 通过，主进程约 449KB。真实隔离实例验证 4 对象/2 机位/1 镜头、对象属性、机位切换画面变化、截图节点与资产、关闭摘要与重开恢复。A2 拖拽编辑、stage.* Agent 工具、运镜与白模预演待接入。",
+      "evidence": [
+        ".opencode/handover/evidence/STAGE-VIEWPORT-1.md",
+        ".opencode/handover/evidence/STAGE-VIEWPORT-1.png",
+        "docs/director-stage-viewport-plan.md",
+        "src/renderer/src/stage/StageWindow.tsx",
+        "src/renderer/src/stage/StageViewport.tsx",
+        "src/renderer/src/stage/stageStore.ts"
+      ]
+    },
+    {
+      "id": "STAGE-AGENT-EDITING-1",
+      "title": "stage Agent 工具与 A2 手动编辑",
+      "status": "done",
+      "note": "2026-11-09 完成。新增 stage_get / stage_capabilities / stage_add_object / stage_transform_object / stage_add_camera / stage_set_active_camera / stage_remove_object；渲染桥在导演台打开时走 store，未打开时直接读写场景文件并同步节点摘要。A2 加入 three TransformControls（移动/旋转/缩放）、对象与机位属性面板编辑、左栏添加/删除、撤销/重做。真实 UI 验证属性位置写回、添加对象/机位、删除与撤销；真实 Agent 验证 capabilities/add_object/add_camera/stage_get。发现并修复 Agent 工具只改内存、不落盘、旧快照覆盖新场景的问题：工具执行后立即保存，saveStageFile 拒绝更旧 updatedAt。31 文件 219 测试通过；typecheck/build 通过，主进程约 458KB。",
+      "evidence": [
+        ".opencode/handover/evidence/STAGE-AGENT-EDITING-1.md",
+        ".opencode/handover/evidence/STAGE-EDITING-1.png",
+        "docs/director-stage-viewport-plan.md",
+        "src/renderer/src/agent/stageBridge.ts",
+        "src/main/agent/tools.ts",
+        "src/renderer/src/stage/StageViewport.tsx",
+        "src/renderer/src/stage/StageInspector.tsx"
+      ]
+    },
+    {
+      "id": "STAGE-TIMELINE-PREVIEW-1",
+      "title": "导演台运镜时间轴与本地白模预演",
+      "status": "done",
+      "note": "2026-11-09 完成。新增 stage-timeline 采样纯函数（位置/注视点/FOV、四种缓动、边界钳制）、StageTimeline 时间轴 UI（镜头/时长/关键帧捕获与删除/播放头/播放暂停）、StageStore 播放与镜头操作。新增 stage-render.html 隐藏窗口渲染页与 stage-scene 共享对象构建；主进程 stage/export.ts 逐帧 JPEG → ffmpeg H.264 → ingestAsset → 自动创建视频节点。真实导出 1280×720、5 秒、24fps、H.264 yuv420p，0s/3s 抽帧不同。隔离测试实例增加禁用后台节流开关，避免窗口遮挡导致 rAF 暂停。33 文件 233 测试通过；typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/STAGE-TIMELINE-PREVIEW-1.md",
+        ".opencode/handover/evidence/STAGE-TIMELINE-1.png",
+        ".opencode/handover/evidence/STAGE-PREVIEW-FRAME.png",
+        "docs/director-stage-viewport-plan.md",
+        "src/shared/stage-timeline.ts",
+        "src/renderer/src/stage/StageTimeline.tsx",
+        "src/main/stage/export.ts"
+      ]
+    },
+    {
+      "id": "CLIP-PROFILE-1",
+      "title": "剪辑助手 clip profile",
+      "status": "done",
+      "note": "2026-11-09 完成。AgentScope/ChatRequest 增加 timelineId、studioNodeId、selectedClipIds、playheadMs；runtime 按 profile 切换画布/剪辑系统提示；新增 timeline_get/select_clips/move_clips/trim_clip/split_clips/remove_clips/update_clip/set_track/add_marker 工具与 renderer 执行桥；timelineStore 增加 dispatchMany + endCommandTurn，一轮工具只压一条历史；AgentTurnChange 增加 timelineUpdated，面板显示「本轮修改了 N 处」并支持时间线回合撤销；Agent 面板 z-index 提升到 95，剪辑室中显示剪辑助手。真实剪辑室验证 timeline_get、move 0→1000ms、trim 5000→4000ms、两次回合撤销恢复；239 测试通过，typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-PROFILE-1.md",
+        ".opencode/handover/evidence/CLIP-ASSISTANT-1.png",
+        "docs/agent-plan.md",
+        "src/main/agent/tools.ts",
+        "src/renderer/src/agent/timelineBridge.ts",
+        "src/renderer/src/stores/timeline.ts"
+      ]
+    },
+    {
+      "id": "SKILLS-UI-1",
+      "title": "技能管理 UI",
+      "status": "done",
+      "note": "2026-11-09 完成。新增全局/项目技能覆盖配置（skills-config.json），listSkills 应用 enabled/disableModelInvocation 并保持 project>global>builtin 优先级；新增 skills-admin 管理 API（三级列表、文件浏览、创建/保存/删除、覆盖开关、打开目录/文件）与 skills:* IPC；设置页新增「技能」分区，支持列表、详情编辑、新建、启用/禁用、禁止模型调用、references/assets 预览与两步删除。34 文件 242 测试通过；typecheck/build 通过。真实 UI 验证内置/项目列表、创建项目技能、编辑保存、开关写配置、references 预览与删除。内置技能只读；覆盖状态存本机/项目配置，不写 frontmatter。",
+      "evidence": [
+        ".opencode/handover/evidence/SKILLS-UI-1.md",
+        ".opencode/handover/evidence/SKILLS-UI-1.png",
+        "src/main/agent/skills-admin.ts",
+        "src/main/agent/skills-config.ts",
+        "src/main/ipc/skills.ts",
+        "src/renderer/src/panels/SkillsSection.tsx"
+      ]
+    },
+    {
+      "id": "AGENT-CONFIRM-1",
+      "title": "Agent 删除 / 批量操作二次确认",
+      "status": "done",
+      "note": "2026-11-09 完成。工具层增加 requiresConfirm 与 toolConfirmationReason：canvas_delete_node、timeline_remove_clips、stage_remove_object 必须确认；timeline_move_clips/split_clips 超过 10 个片段必须确认。运行时在执行前发送 confirm_request 并等待 agent:confirm，60 秒超时自动拒绝，取消回合清理待确认。渲染层新增确认卡（工具名、影响说明、参数、允许/取消），tool_end/turn_end 自动清理。真实 Agent 验证取消后节点保留、允许后节点删除并可撤销。34 文件 243 测试通过；typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-CONFIRM-1.md",
+        ".opencode/handover/evidence/AGENT-CONFIRM-1.png",
+        "docs/agent-architecture-plan.md",
+        "src/main/agent/runtime.ts",
+        "src/main/agent/tools.ts",
+        "src/renderer/src/agent/AgentPanel.tsx"
+      ]
+    },
+    {
+      "id": "AGENT-FAB-1",
+      "title": "AI 悬浮按钮位置与图标调整",
+      "status": "done",
+      "note": "2026-11-09 完成。删除底部工具栏最右侧 robot 按钮及样式；AI 悬浮按钮从 right 16/bottom 48 调整为 right 26/bottom 32，尺寸 44px；图标替换为用户提供的 人工智能.svg（复制为 assets/agent-icon.svg），透明背景、圆形填满、保留 aria-label 与快捷键提示。typecheck/build 通过，截图验证。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-FAB-1.md",
+        ".opencode/handover/evidence/AGENT-ICON-1.png",
+        "src/renderer/src/assets/agent-icon.svg",
+        "src/renderer/src/agent/AgentPanel.tsx",
+        "src/renderer/src/canvas/BottomBar.tsx",
+        "src/renderer/src/styles/agent.css"
+      ]
+    },
+    {
+      "id": "AGENT-UI-2",
+      "title": "助手 UI 重做、会话与文本模型选择",
+      "status": "done",
+      "note": "2026-11-09 完成。AgentPanel 重做为 LibTV 风格圆角面板；新增历史会话下拉（搜索/新建/切换/自动标题）、文本模型选择器（自动或指定 provider/model）、技能选择插入、权限菜单；工具调用折叠为「思考过程」，只显示友好名称与状态，不再展示参数/结果 JSON，错误才显示错误文本；助手消息支持复制。后端新增 AgentSessionInfo、list/create/rename session、session meta 自动标题、listTextModels、resolveTextModel(modelKey)，提案按 session 读取。36 文件 247 测试通过；typecheck/build 通过。真实 UI 验证历史会话、新建对话、模型选择 Agnes、发送后自动标题、技能插入与权限菜单。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-UI-2.md",
+        ".opencode/handover/evidence/AGENT-UI-1.png",
+        ".opencode/handover/evidence/AGENT-UI-2.png",
+        ".opencode/handover/evidence/AGENT-UI-MODEL-1.png",
+        ".opencode/handover/evidence/AGENT-UI-SESSIONS-2.png",
+        "src/renderer/src/agent/AgentPanel.tsx",
+        "src/main/agent/session.ts",
+        "src/main/agent/model.ts"
+      ]
+    },
+    {
+      "id": "CLIP-ADVANCED-TOOLS-1",
+      "title": "剪辑高级 Agent 工具：自动字幕、删静音、转场、导出",
+      "status": "done",
+      "note": "2026-11-09 完成。clip profile 新增 timeline_auto_subtitles / timeline_remove_silence / timeline_set_transition / timeline_export；自动字幕复用 whisper 转写并生成字幕轨；删静音复用 silencedetect + buildRemoveSilencePlan，指定/选中片段时限定目标轨道；转场支持 fade/dip-black/wipe/slide/zoom-in 与 none；导出复用 timeline.export，成功后写回成片节点输出与上游签名。删静音与导出走确认卡。长任务超时分别放宽到 15/10/30 分钟，回合取消会取消转写/导出。只有真正修改时间线的工具才计入撤销。真实 Agnes 触发过转场、自动字幕、删静音与导出；mock 文本模型完整跑通四工具。",
+      "evidence": [
+        ".opencode/handover/evidence/CLIP-ADVANCED-TOOLS-1.md",
+        "src/main/agent/tools.ts",
+        "src/main/agent/runtime.ts",
+        "src/renderer/src/agent/timelineBridge.ts",
+        "src/shared/timeline-schema.ts",
+        "src/main/agent/__tests__/tools.test.ts"
+      ]
+    },
+    {
+      "id": "AGENT-CINEBOT-1",
+      "title": "CineBot 品牌与消息/工具状态修正",
+      "status": "done",
+      "note": "2026-11-09 完成。助手统一命名为 CineBot：面板标题、空状态、FAB、系统提示、提案错误文案全部更新；移除消息区「你 / 助手」标签，保持用户右侧、CineBot 左侧；工具状态按最新 callId 更新，turn_end 时把残留 running 兜底为完成或用「本轮已结束」标错；助手消息支持简单行内 Markdown（粗体、行内代码）。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-CINEBOT-1.png",
+        ".opencode/handover/evidence/AGENT-CINEBOT-2.png",
+        ".opencode/handover/evidence/AGENT-CINEBOT-EMPTY-1.png",
+        ".opencode/handover/evidence/AGENT-CINEBOT-CONFIRM-1.png",
+        "src/renderer/src/agent/AgentPanel.tsx",
+        "src/renderer/src/agent/agentStore.ts",
+        "src/renderer/src/styles/agent.css"
+      ]
+    },
+    {
+      "id": "AGENT-ASSET-REFS-1",
+      "title": "CineBot 素材引用、自动连线与提示词回填",
+      "status": "done",
+      "note": "2026-11-09 完成。支持画布节点、资产库素材、本地附件三类引用；library_search 搜索资产库；generation_propose 新增 libraryRefs；引用素材会自动创建素材节点、补 source→target 连线、写回目标节点提示词；canvas_add_node 支持 nearNodeId；canvas_get 返回全部节点；CanvasCommand 新增 updatePrompt；PromptBar 监听外部提示词变化；Agent 输入框新增上传 chip 与附件 chip。真实 mock 文本模型验证画布、资产库、附件三条链路；提案卡显示引用；256 测试通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-ASSET-REFS-1.md",
+        ".opencode/handover/evidence/AGENT-ASSET-REFS-1.png",
+        "src/renderer/src/agent/canvasBridge.ts",
+        "src/renderer/src/agent/agentStore.ts",
+        "src/renderer/src/canvas/PromptBar.tsx",
+        "src/main/agent/tools.ts",
+        "src/main/agent/main-tools.ts",
+        "src/main/agent/proposals.ts",
+        "src/shared/canvas-commands.ts"
+      ]
+    },
+    {
+      "id": "AGENT-UI-REFINE-1",
+      "title": "CineBot UI 精修、多能力模型、@ 引用与上下文",
+      "status": "done",
+      "note": "2026-11-10 完成。面板底边与底部工具栏对齐；发送按钮 30px；会话删除 API/UI + 二次确认；权限/技能浮窗从按钮上方居中展开；删除头部重复设置按钮。模型选择拆成文本/生图/生视频/音频四组，generation_propose 按 scope.generationModels 覆盖；实测图片/视频目标分别使用选中的 Agnes Image / Video 模型。输入 @ 弹出画布/资产库引用，输入 / 弹出技能选择，支持方向键/Enter/Esc。新增上下文圆环与手动压缩：32K 固定预算、3 字符≈1 token 估算、保留最近 6 条、session summary 写入 JSONL 并由运行时注入；实测 108 条消息压缩覆盖 44 条，30 条消息确认压缩 24 条。新增 compact.test.ts；37 文件 258 测试通过，typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-UI-REFINE-1.md",
+        ".opencode/handover/evidence/AGENT-UI-REFINE-PERM-1.png",
+        ".opencode/handover/evidence/AGENT-UI-REFINE-SKILL-1.png",
+        ".opencode/handover/evidence/AGENT-UI-REFINE-MODELS-1.png",
+        ".opencode/handover/evidence/AGENT-UI-REFINE-MENTION-1.png",
+        ".opencode/handover/evidence/AGENT-CONTEXT-RING-1.png",
+        ".opencode/handover/evidence/AGENT-CONTEXT-COMPACT-1.png",
+        ".opencode/handover/evidence/AGENT-CONTEXT-COMPACT-2.png",
+        ".opencode/handover/evidence/AGENT-CONTEXT-MODEL-1.png",
+        "src/main/agent/compact.ts",
+        "src/main/agent/session.ts",
+        "src/main/agent/runtime.ts",
+        "src/main/agent/model.ts",
+        "src/renderer/src/agent/AgentPanel.tsx",
+        "src/renderer/src/agent/agentStore.ts",
+        "src/renderer/src/styles/agent.css"
+      ]
+    },
+    {
+      "id": "SKILLS-FILES-1",
+      "title": "技能文件上传、删除与同名覆盖",
+      "status": "done",
+      "note": "2026-11-10 完成。新增 references/assets 多文件上传（同名覆盖）、技能文件删除、同名技能克隆覆盖（递归复制 SKILL.md/references/assets）；设置技能页增加上传/删除按钮与「创建项目覆盖」「创建全局覆盖」；Agent 技能弹窗底部增加「管理技能」。真实 UI 验证项目覆盖、文件列表、删除确认与磁盘移除；新增上传/覆盖/删除/克隆测试。37 文件 260 测试通过，typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/SKILLS-FILES-1.md",
+        ".opencode/handover/evidence/SKILLS-UPLOAD-1.png",
+        "src/main/agent/skills-admin.ts",
+        "src/main/ipc/skills.ts",
+        "src/renderer/src/panels/SkillsSection.tsx",
+        "src/main/agent/__tests__/skills-admin.test.ts"
+      ]
+    },
+    {
+      "id": "AGENT-ACCEPTANCE-1",
+      "title": "CineBot 整体自验收与回归",
+      "status": "done",
+      "note": "2026-11-10 自验收通过。画布：无空格 @ 引用、四类模型选择、生成提案模型覆盖、引用 chip 清空；剪辑室：设置转场工具、思考过程、时间线写入与回合撤销；技能：项目覆盖、上传按钮、文件删除与磁盘移除；上下文：圆环、压缩确认、summary；会话：删除与历史上下文。37 文件 260 测试通过，typecheck/build 通过。已知缺口：Agnes 视频 503、无独立 film profile、stage 由 canvas profile 操作、原生上传对话框未自动化、上下文估算固定 32K、落后 main 11 个提交。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-ACCEPTANCE-1.md",
+        "src/main/agent/__tests__/skills-admin.test.ts",
+        "src/main/agent/__tests__/compact.test.ts"
+      ]
+    },
+    {
+      "id": "MERGE-MAIN-1",
+      "title": "同步 origin/main 并解决冲突",
+      "status": "done",
+      "note": "2026-11-10 完成。origin/main 9f4511d 合并进 feat/agent-runtime，合并提交 5b4f0ea，修复提交 a5a0ced。解决 6 个冲突文件：AGENTS.md、state.json、generate.ts、InspectorPane、canvas store、global.css。main 新增 marked 依赖已安装；generate.ts 的图片引用改动移植到 start-generation.ts；InspectorPane 保留属性/画面/音频分页并移除旧助手分页；canvas store 重新叠加 stage/applyCommands/回合撤销；timeline_export 改为写回合并后的 studio 节点。40 文件 277 测试通过，typecheck/build 通过；隔离实例 smoke test 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/MERGE-MAIN-1.md",
+        "AGENTS.md",
+        "src/main/engine/start-generation.ts",
+        "src/renderer/src/stores/canvas.ts",
+        "src/renderer/src/studio/InspectorPane.tsx",
+        "src/renderer/src/agent/timelineBridge.ts"
+      ]
+    },
+    {
+      "id": "PR-CINELAB-2",
+      "title": "推送 feat/agent-runtime 并创建 PR",
+      "status": "done",
+      "note": "2026-11-10 完成。分支已推送到 origin/feat/agent-runtime，创建 PR #2（feat: CineBot agent runtime and advanced clip tools），base main。GitHub Actions build 通过（3m25s），mergeable=CLEAN。等待 review/merge；合并后继续优化已知缺口。",
+      "evidence": [
+        ".opencode/handover/evidence/PR-CINELAB-2.md"
+      ]
+    },
+    {
+      "id": "AGENT-CAPABILITY-PLAN-1",
+      "title": "CineBot 能力扩展方案",
+      "status": "done",
+      "note": "2026-11-10 完成方案文档。盘点 main 新功能的 Agent 覆盖：画布基础操作/生成/素材引用/时间线高级工具已覆盖；连线删除、文本正文、画幅、镜头/节拍、导演台机位/预览、拉片、29 个节点工具栏操作未覆盖。提出能力注册表、统一执行器、节点操作桥、capability_catalog、未来功能接入清单和 Phase 1-3 计划。建议 PR #2 先合入，Phase 1 小范围能力可在当前分支补，Phase 2/3 新分支。",
+      "evidence": [
+        "docs/agent-capability-plan.md",
+        "AGENTS.md"
+      ]
     },
     {
       "id": "K3-1",
@@ -927,8 +1291,8 @@
     {
       "id": "CLIP-STUDIO-M3-AGENT",
       "title": "剪辑室 M3：内置剪辑助手（单轮计划）",
-      "status": "done",
-      "note": "2026-11-08 完成。新增 shared agent 协议与 parseAgentPlan、openai-compat chatCompletion（system + 多轮）、主进程 agent:chat/cancel、preload API、检查器属性/助手页签、AssistantPane 消息与方案卡片；模型未配置时明确引导。本地 mock provider 实测：发送「删掉所有静音」→ 模型 JSON 计划 → 方案卡片 3 段 3.1 秒 13→10 → 应用 4→7 片段 → 撤销恢复。typecheck、117 测试、build 通过；真实模型 Key 待验收。",
+      "status": "dropped",
+      "note": "2026-11-08 已按用户要求删除旧剪辑助手实现（AssistantPane、shared/agent 结构化计划、main/agent/chat、agent:chat 通道），改由通用 AgentRuntime 重新编码；timeline-tools 与检查器自动粗剪按钮保留。原实现曾通过 mock 验证，evidence 仅作历史记录。",
       "evidence": [
         ".opencode/handover/evidence/CLIP-STUDIO-M3-AGENT.md",
         "src/shared/agent.ts",
@@ -1364,9 +1728,29 @@
       "id": "K11",
       "area": "library",
       "content": "资产网格直接加载原图，未生成缩略图缓存；大库滚动可能卡顿。"
+    },
+    {
+      "id": "K28",
+      "area": "agent",
+      "content": "通用 AgentRuntime 已验证 mock、Agnes 3.0 Flash、Image 2.5 Flash、本地代理和 SSE 流式；Agnes Video 2.5 Flash 因 503 video_queue_full 未完成真实生成；外网代理、上下文预算、生成提案、技能、多 profile、导演台尚未实现。旧剪辑助手已删除，待用通用运行时重新编码。"
     }
   ],
-  "gates": [],
+  "gates": [
+    {
+      "id": "G-AGENT-VIDEO",
+      "scope": "agent",
+      "status": "blocked",
+      "reason": "Agnes Video 2.5 Flash 队列返回 503 video_queue_full",
+      "resolve": "队列恢复后重试真实视频生成"
+    },
+    {
+      "id": "G-AGENT-MAIN",
+      "scope": "repo",
+      "status": "resolved",
+      "reason": "origin/main 已同步到 9f4511d，冲突已解决，合并提交 5b4f0ea；当前分支领先 31、落后 0",
+      "resolve": "推送 feat/agent-runtime 并创建到 main 的 PR"
+    }
+  ],
   "completed": [
     {
       "id": "T1",
@@ -2110,6 +2494,170 @@
     {
       "category": "preference",
       "content": "拉片结果的可视化要能反向驱动播放器：点击泳道段落、结构树节点、情绪点都应 seek 到对应时间。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 取消不能只依赖 net.fetch 的 abort；runtime 需要 abortable race 立即结束 turn，否则 UI 会一直停在停止按钮。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 工具消息要在开始时写 running、结束时写结果，加载时按 callId 合并；否则重启后失败工具会显示完成。"
+    },
+    {
+      "category": "engineering",
+      "content": "OpenAI 兼容流式：请求加 stream:true，按 data: 行解析 delta.content 与 delta.tool_calls（按 index 累积 id/name/arguments）；content-type 不是 text/event-stream 时回退整段 JSON。"
+    },
+    {
+      "category": "engineering",
+      "content": "CanvasCommand 与回合级撤销：同一 turnId 的多个工具命令只 pushHistory 一次，endCommandTurn 清理；否则一次撤销只能回退最后一个命令。"
+    },
+    {
+      "category": "engineering",
+      "content": "技能读取必须在主进程做 realpath 校验：只允许 SKILL.md/references/assets，拒绝 ..、绝对路径、盘符和符号链接逃逸；作用域优先级 project > global > builtin。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 创建节点后要把 toolResult.change.createdNodeIds 加入本轮 scope，否则同一轮无法继续连接、改名或删除新建节点。"
+    },
+    {
+      "category": "engineering",
+      "content": "分组/解散工具要复用 store 的 groupSelection/ungroup 并传 turnId；canvas_get 的 selectedNodes 必须包含 group 节点，否则模型看不到选中分组，无法解散。"
+    },
+    {
+      "category": "engineering",
+      "content": "付费生成必须两段式：generation_propose 只登记本地提案，generation_submit 不注册给模型，只允许用户点击提案卡触发；提案提交前先原子写 submitting，拿到 runId 后写 submitted，重复提交返回原 runId。"
+    },
+    {
+      "category": "engineering",
+      "content": "生成提案的目标节点和参考节点必须在当前 turn scope；主进程无法读取画布，提案工具在渲染进程构造请求，IPC 层还要再校验一次目标节点。"
+    },
+    {
+      "category": "engineering",
+      "content": "不要做金额预估：不同供应商计费差异大，部分模型免费，本地无法可靠推算；生成提案只展示目标、模型、参数和数量。"
+    },
+    {
+      "category": "engineering",
+      "content": "StageCommand 必须原子批量执行：任意一条失败整批回滚；删除父对象要清理子对象 parentId 与动作轨，被镜头引用的机位拒绝删除。"
+    },
+    {
+      "category": "engineering",
+      "content": "导演台复制/粘贴必须深拷贝 stages 文件并替换 stageId，否则两个节点共享同一个场景。"
+    },
+    {
+      "category": "engineering",
+      "content": "删除导演台节点不要立即删除场景文件：画布撤销无法恢复文件；场景孤儿清理应独立于节点删除。"
+    },
+    {
+      "category": "engineering",
+      "content": "导演台用原生 three.js 渲染内核 + React 外壳；WebGLRenderer 必须开启 preserveDrawingBuffer，截图前先渲染一帧再 toDataURL。"
+    },
+    {
+      "category": "engineering",
+      "content": "导演台与剪辑室都是全屏工作区，画布快捷键让位要同时检查 .studio-window 和 .stage-window。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 的 stage 工具必须立即保存场景文件，不能只依赖导演台窗口的 500ms 防抖保存，否则窗口关闭时的旧快照会覆盖工具结果。"
+    },
+    {
+      "category": "engineering",
+      "content": "场景文件保存要保留调用方 updatedAt 并拒绝更旧快照，防止延迟保存或并发工具保存覆盖新数据。"
+    },
+    {
+      "category": "engineering",
+      "content": "导演台播放预演依赖 requestAnimationFrame；窗口被完全遮挡时 Chromium 会暂停 rAF，隔离测试实例用 CINELAB_DISABLE_THROTTLE=1 追加 disable-renderer-backgrounding 与 disable-background-timer-throttling。"
+    },
+    {
+      "category": "engineering",
+      "content": "白模预演导出复用隐藏 BrowserWindow + stage-render 页面逐帧渲染 JPEG，再通过 stdin 流进 ffmpeg；不要用可见视口截图逐帧导出。"
+    },
+    {
+      "category": "engineering",
+      "content": "剪辑助手 scope 必须带 timelineId；timelineStore 用 dispatchMany + turnId 保证一轮 Agent 只压一条撤销历史，AgentTurnChange.timelineUpdated 驱动面板的时间线撤销。"
+    },
+    {
+      "category": "engineering",
+      "content": "技能启用/禁用与模型调用开关存 scope:name 覆盖配置：全局 skills-config.json，项目 .cinelab/skills-config.json；禁用高层同名技能要遮蔽低层技能，避免回退到内置版本。"
+    },
+    {
+      "category": "engineering",
+      "content": "内置技能只读；技能管理只允许 SKILL.md、references/、assets/，并做 realpath 逃逸校验。"
+    },
+    {
+      "category": "engineering",
+      "content": "技能文件上传只允许可编辑作用域的 references/assets：单次 20 个、单文件 20MB、单次 100MB；同名文件直接覆盖并返回 overwritten。技能文件删除不允许 SKILL.md，路径必须经过 normalizeSkillPath 和 isWithin。"
+    },
+    {
+      "category": "engineering",
+      "content": "同名技能覆盖用 cloneSkill 递归复制 SKILL.md/references/assets 到更高优先级作用域，并清除目标作用域旧 override；目标已有同名技能时拒绝，UI 隐藏对应覆盖按钮。"
+    },
+    {
+      "category": "engineering",
+      "content": "高风险 Agent 工具必须在执行前确认：requiresConfirm / toolConfirmationReason → confirm_request → agent:confirm；拒绝或 60 秒超时不得执行。"
+    },
+    {
+      "category": "engineering",
+      "content": "画布 AI 入口使用 assets/agent-icon.svg，底部工具栏不再重复放 robot 按钮。"
+    },
+    {
+      "category": "engineering",
+      "content": "助手工具过程不要直接展示 JSON；按工具名映射中文标签，折叠为「思考过程」，错误才展示错误文本。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 会话按项目存 JSONL，meta 条目保存标题；首条用户消息自动命名；会话与文本模型选择存本地偏好，请求带 sessionId 与 modelKey。"
+    },
+    {
+      "category": "engineering",
+      "content": "长耗时 Agent 工具（自动字幕、删静音、导出）必须单独放宽工具超时；回合结束或取消时轮询 currentTurnId，停止等待并取消转写/导出，避免迟到的写操作。"
+    },
+    {
+      "category": "engineering",
+      "content": "只有真正修改时间线文档的工具才计入 timelineUpdated；timeline_get、timeline_select_clips、timeline_export 不应显示「撤销这一轮」。"
+    },
+    {
+      "category": "preference",
+      "content": "助手品牌统一为 CineBot；消息区不显示「你 / 助手」标签，用户消息靠右、CineBot 消息靠左；工具状态按最新 callId 更新，回合结束时兜底把残留 running 标为完成或未完成。"
+    },
+    {
+      "category": "engineering",
+      "content": "生成提案引用素材时先登记提案再改画布：提案校验失败不能留下素材节点、连线和提示词。引用画布节点自动补线，引用资产库路径创建素材节点后连线，提示词通过 CanvasCommand.updatePrompt 写回目标节点。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 本地附件由上传动作先创建画布素材节点，再随 agent:chat 传 nodeId；运行时把附件列表写进系统提示，模型用 refNodeIds 引用。发送后清空附件 chip，节点保留；切换会话清空附件。"
+    },
+    {
+      "category": "engineering",
+      "content": "PromptBar 必须监听同一节点 data.prompt 的外部变化，不能只在 node.id 变化时读取；否则 CineBot 回填提示词后已打开的输入框不会更新。"
+    },
+    {
+      "category": "preference",
+      "content": "CineBot 面板底边与底部工具栏底边对齐（bottom: 16px）；发送按钮 30px；权限与技能浮窗以触发按钮为锚点、在按钮上方居中对齐；头部不再放重复的模型设置按钮。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 模型选择分文本/生图/生视频/音频四类；generation_propose 按目标节点类型读取 scope.generationModels 覆盖模型；generation_catalog 标记选中模型。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 输入框支持 @ 引用画布/资产库素材、/ 打开技能选择；引用随 agent:chat 的 references 传给主进程，由系统提示注入，发送后清空。"
+    },
+    {
+      "category": "engineering",
+      "content": "Agent 上下文压缩 v1：发送按钮左侧圆环按 3 字符≈1 token、32K 固定预算估算；点击确认后保留最近 6 条 user/assistant 消息，更早内容由当前文本模型生成摘要，写入 session JSONL 的 summary 条目（content + coveredMessages）；运行时跳过 coveredMessages 前的对话并注入摘要。摘要失败不落盘；原始消息仍保留展示。"
+    },
+    {
+      "category": "engineering",
+      "content": "合并 main 时 generate.ts 已拆成薄 IPC + engine/start-generation；main 对旧 generate.ts 的图片引用改动要移植到 start-generation，不能保留旧内联生成逻辑。"
+    },
+    {
+      "category": "engineering",
+      "content": "main 已把成片从独立 film 节点合并进 studio 节点：timeline_export 要调用 applyStudioOutput/patchStudioNode，不能再使用 applyFilmOutput/patchFilmNode。"
+    },
+    {
+      "category": "engineering",
+      "content": "main 的 InspectorPane 有属性/画面/音频分页；合并时保留这些分页，只移除旧的助手分页和 AssistantPane，因为 CineBot 已改为全局浮窗。"
     }
   ],
   "designConventions": [
@@ -2124,19 +2672,26 @@
     "模型配置：models.json 为唯一元数据清单，settings.json 只存加密 Key",
     "派生多节点自动成组：宫格/分离音视频/多文件上传；单结果功能不成组",
     "节点默认尺寸：图片 360、视频 480、宫格 240、分镜 480、文本/音频 348",
-    "对齐线只保留同侧边与中心线"
+    "对齐线只保留同侧边与中心线",
+    "Agent 会话存储在 <project>/.cinelab/agent/sessions/<id>.jsonl；工具执行在渲染进程，主进程构造 scope 与回合事务",
+    "Agent 生成提案存储在 <project>/.cinelab/agent/proposals/<id>.json；提案提交前不产生网络请求",
+    "导演台场景存储在 <project>/stages/<stageId>.json；手动编辑与 Agent 共用 StageCommand",
+    "白模预演使用隐藏窗口 stage-render.html 逐帧渲染，ffmpeg 编码后写入 assets/vid 并创建视频节点"
   ],
   "stats": {
-    "sessions": 10,
+    "sessions": 12,
     "completedMilestones": [
       "M0",
       "M1",
       "M2",
       "M3",
       "M4",
-      "M6"
+      "M6",
+      "M7"
     ],
-    "partialMilestones": [],
-    "nextMilestone": "P1-1 模型配置引导"
+    "partialMilestones": [
+      "AGENT"
+    ],
+    "nextMilestone": "PR review 与合并"
   }
 }

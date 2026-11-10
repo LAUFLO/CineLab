@@ -1,5 +1,9 @@
 import { create } from 'zustand'
-import { applyCommand, type TimelineCommand } from '@shared/timeline-commands'
+import {
+  applyCommand,
+  applyCommands,
+  type TimelineCommand
+} from '@shared/timeline-commands'
 import type { TimelineDoc } from '@shared/timeline-schema'
 import {
   createHistory,
@@ -16,6 +20,9 @@ export interface ClipReferenceIssue {
   updateAvailable?: boolean
 }
 
+/** 一轮 Agent 的多个时间线命令只压入一条历史记录 */
+const commandTurns = new Set<string>()
+
 interface TimelineStore {
   doc: TimelineDoc | null
   history: TimelineHistory
@@ -29,6 +36,8 @@ interface TimelineStore {
   referenceIssues: Record<string, ClipReferenceIssue>
   load: (doc: TimelineDoc) => void
   dispatch: (command: TimelineCommand) => void
+  dispatchMany: (commands: TimelineCommand[], turnId?: string) => void
+  endCommandTurn: (turnId: string) => void
   undo: () => void
   redo: () => void
   setPlayhead: (ms: number) => void
@@ -71,6 +80,23 @@ export const useTimelineStore = create<TimelineStore>((set, get) => ({
       doc: applyCommand(doc, command),
       history: pushHistory(history, doc)
     })
+  },
+
+  dispatchMany: (commands, turnId) => {
+    const { doc, history } = get()
+    if (!doc || commands.length === 0) return
+
+    const shouldPushHistory = !turnId || !commandTurns.has(turnId)
+    if (turnId && shouldPushHistory) commandTurns.add(turnId)
+
+    set({
+      doc: applyCommands(doc, commands),
+      history: shouldPushHistory ? pushHistory(history, doc) : history
+    })
+  },
+
+  endCommandTurn: (turnId) => {
+    commandTurns.delete(turnId)
   },
 
   undo: () => {

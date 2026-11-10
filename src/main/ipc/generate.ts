@@ -231,7 +231,9 @@ export function registerGenerateIpc(): void {
           (refs.length > 0 || request.mask) &&
           !supportedInputs.includes('image')
         ) {
-          throw new Error('该模型不支持图生图，请选择支持参考图的模型')
+          throw new Error(
+            '该模型不支持图片输入，请在设置 → 模型 → 输入能力中勾选「图片」'
+          )
         }
         if (video && !supportedInputs.includes('video')) {
           throw new Error('该模型不支持参考视频，请选择支持视频输入的模型')
@@ -326,6 +328,7 @@ export function registerGenerateIpc(): void {
               runtime,
               request.prompt,
               request.params,
+              refs,
               context
             )
           }

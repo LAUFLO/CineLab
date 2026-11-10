@@ -15,11 +15,17 @@ import type { ReferenceInput } from '@shared/generation'
 import {
   absolutePosition,
   isGroupNode,
+  isStudioNode,
   nodeSize,
   selectedNodeOutput,
   useCanvasStore,
   type CanvasNode
 } from '../stores/canvas'
+import { listNodeOperations, executeNodeOperation } from '../canvas/nodes/node-operation-runner'
+import { useFilmStudyStore } from '../stores/film-study'
+import { useStageStore } from '../stage/stageStore'
+import { useStudioStore } from '../stores/studio'
+import { useTimelineStore } from '../stores/timeline'
 import { executeFilmTool } from './filmBridge'
 import { executeStageTool } from './stageBridge'
 import { executeTimelineTool } from './timelineBridge'
@@ -28,18 +34,29 @@ function selectedNodeSummary(): Array<{
   id: string
   title: string
   kind: string
+  availableOperations?: string[]
 }> {
   const { nodes } = useCanvasStore.getState()
   return nodes
     .filter((node) => node.selected)
-    .map((node) => ({
-      id: node.id,
-      title: String((node.data as { title?: unknown }).title ?? ''),
-      kind:
-        node.type === 'cine'
-          ? String((node.data as { kind?: unknown }).kind ?? 'unknown')
-          : node.type
-    }))
+    .map((node) => {
+      const summary = listNodeOperations(node.id)
+      return {
+        id: node.id,
+        title: String((node.data as { title?: unknown }).title ?? ''),
+        kind:
+          node.type === 'cine'
+            ? String((node.data as { kind?: unknown }).kind ?? 'unknown')
+            : node.type,
+        ...(summary
+          ? {
+              availableOperations: summary.operations
+                .filter((op) => op.implemented)
+                .map((op) => op.id)
+            }
+          : {})
+      }
+    })
 }
 
 function nodeTitleOf(node: { data?: unknown }): string {
@@ -220,6 +237,166 @@ function proposalSummary(proposal: AgentProposal): Record<string, unknown> {
   }
 }
 
+const SPACE_TOOLS: Record<string, string[]> = {
+  canvas: [
+    'canvas_get',
+    'canvas_update_title',
+    'canvas_update_text',
+    'canvas_move_node',
+    'canvas_add_node',
+    'canvas_connect',
+    'canvas_remove_edge',
+    'canvas_delete_node',
+    'canvas_group',
+    'canvas_ungroup',
+    'canvas_node_operations',
+    'canvas_node_operation',
+    'generation_catalog',
+    'generation_propose',
+    'library_search',
+    'film_study_get',
+    'film_study_auto',
+    'film_study_export',
+    'skill_list',
+    'skill_read'
+  ],
+  clip: [
+    'timeline_get',
+    'timeline_select_clips',
+    'timeline_set_video',
+    'timeline_move_clips',
+    'timeline_trim_clip',
+    'timeline_split_clips',
+    'timeline_split_by_shots',
+    'timeline_beat_markers',
+    'timeline_beat_split',
+    'timeline_remove_clips',
+    'timeline_update_clip',
+    'timeline_set_track',
+    'timeline_add_marker',
+    'timeline_auto_subtitles',
+    'timeline_remove_silence',
+    'timeline_set_transition',
+    'timeline_export'
+  ],
+  stage: [
+    'stage_get',
+    'stage_capabilities',
+    'stage_add_object',
+    'stage_transform_object',
+    'stage_add_camera',
+    'stage_transform_camera',
+    'stage_set_active_camera',
+    'stage_remove_object',
+    'stage_export_preview'
+  ],
+  film: [
+    'film_study_get',
+    'film_study_auto',
+    'film_study_export'
+  ]
+}
+
+function currentSpace(): 'canvas' | 'clip' | 'stage' | 'film' {
+  if (useStudioStore.getState().open) return 'clip'
+  if (useStageStore.getState().open) return 'stage'
+  if (useFilmStudyStore.getState().roomNodeId) return 'film'
+  return 'canvas'
+}
+
+function capabilityCatalog(args: {
+  space?: string
+  nodeId?: string
+}): Record<string, unknown> {
+  const space =
+    args.space === 'canvas' ||
+    args.space === 'clip' ||
+    args.space === 'stage' ||
+    args.space === 'film'
+      ? args.space
+      : currentSpace()
+  const canvas = useCanvasStore.getState()
+  const selectedNodeId =
+    args.nodeId ?? canvas.nodes.find((node) => node.selected)?.id
+  const nodeOperations = selectedNodeId
+    ? listNodeOperations(selectedNodeId)
+    : null
+  const timeline = useTimelineStore.getState()
+  const stage = useStageStore.getState()
+  const film = useFilmStudyStore.getState()
+
+  return {
+    space,
+    availableTools: SPACE_TOOLS[space] ?? [],
+    selectedNode: nodeOperations,
+    ...(space === 'clip' && timeline.doc
+      ? {
+          timeline: {
+            timelineId: timeline.doc.id,
+            name: timeline.doc.name,
+            clipCount: timeline.doc.clips.length,
+            trackCount: timeline.doc.tracks.length,
+            markerCount: timeline.doc.markers.length,
+            selectedClipIds: timeline.selectedIds,
+            availableTimelineActions: [
+              'set_video',
+              'move_clips',
+              'trim_clip',
+              'split_clips',
+              'split_by_shots',
+              'beat_markers',
+              'beat_split',
+              'remove_clips',
+              'update_clip',
+              'set_track',
+              'add_marker',
+              'auto_subtitles',
+              'remove_silence',
+              'set_transition',
+              'export'
+            ]
+          }
+        }
+      : {}),
+    ...(space === 'stage' && stage.doc
+      ? {
+          stage: {
+            stageId: stage.doc.stageId,
+            nodeId: stage.nodeId,
+            objectCount: stage.doc.objects.length,
+            cameraCount: stage.doc.cameras.length,
+            shots: stage.doc.shots.slice(0, 40).map((shot) => ({
+              id: shot.id,
+              name: shot.name ?? null,
+              durationMs: shot.durationMs,
+              aspect: shot.aspect
+            })),
+            availableStageActions: [
+              'add_object',
+              'transform_object',
+              'add_camera',
+              'transform_camera',
+              'set_active_camera',
+              'remove_object',
+              'export_preview'
+            ]
+          }
+        }
+      : {}),
+    ...(space === 'film' && film.study
+      ? {
+          film: {
+            studyId: film.study.id,
+            sourceName: film.study.sourceName,
+            frameCount: film.study.frames.length,
+            segmentCount: film.study.segments.length,
+            availableFilmActions: ['study_get', 'study_auto', 'study_export']
+          }
+        }
+      : {})
+  }
+}
+
 async function executeTool(call: AgentToolCallRequest): Promise<{
   ok: boolean
   result?: unknown
@@ -239,6 +416,43 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
   }
 
   const state = useCanvasStore.getState()
+
+  if (call.name === 'canvas_node_operations') {
+    const nodeId = String(call.args.nodeId ?? '')
+    const summary = listNodeOperations(nodeId)
+    if (!summary) return { ok: false, error: '找不到这个画布节点' }
+    return { ok: true, result: summary }
+  }
+
+  if (call.name === 'canvas_node_operation') {
+    return executeNodeOperation({
+      nodeId: String(call.args.nodeId ?? ''),
+      operationId: String(call.args.operationId ?? ''),
+      ...(typeof call.args.itemId === 'string'
+        ? { itemId: call.args.itemId }
+        : {}),
+      ...(call.args.params &&
+      typeof call.args.params === 'object' &&
+      !Array.isArray(call.args.params)
+        ? { params: call.args.params as Record<string, unknown> }
+        : {}),
+      turnId: call.turnId
+    })
+  }
+
+  if (call.name === 'capability_catalog') {
+    return {
+      ok: true,
+      result: capabilityCatalog({
+        ...(typeof call.args.space === 'string'
+          ? { space: call.args.space }
+          : {}),
+        ...(typeof call.args.nodeId === 'string'
+          ? { nodeId: call.args.nodeId }
+          : {})
+      })
+    }
+  }
 
   if (call.name === 'canvas_get') {
     return {

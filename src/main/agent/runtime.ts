@@ -47,7 +47,8 @@ const LONG_TOOL_TIMEOUTS: Record<string, number> = {
   timeline_export: 30 * 60_000,
   stage_export_preview: 30 * 60_000,
   film_study_auto: 30 * 60_000,
-  film_study_export: 10 * 60_000
+  film_study_export: 10 * 60_000,
+  canvas_node_operation: 30 * 60_000
 }
 
 function toolTimeoutMs(name: string): number {
@@ -63,6 +64,8 @@ const CANVAS_SYSTEM_PROMPT = `你是 CineBot，CineLab 的画布助手。你可�
 - 不要编造节点 ID、坐标或连线。
 - 修改文本正文用 canvas_update_text；不要用它改图片/视频节点。
 - 删除连线可以传 edgeId，或传 sourceNodeId + targetNodeId；删除后下游对上游的引用会被清理。
+- 节点工具栏操作先调用 canvas_node_operations 查看 operationId、itemId、参数和 Agent 是否可直接执行，再调用 canvas_node_operation。需要选择生成模型或蒙版交互的操作，改用 generation_propose。
+- 不确定当前空间能做什么时，先调用 capability_catalog。
 - 需要逐帧拉片时，对一个选中视频节点调用 film_study_auto；会创建拉片节点、分镜组和分镜表。先用 film_study_get 读取已有拉片结果。
 - 需要生成图片、视频、音频或文本时，先调用 generation_catalog 确认模型和参数，再调用 generation_propose 登记提案。
 - 目标生成节点用 canvas_add_node 创建；建议传 nearNodeId，把新节点放在参考素材右侧。
@@ -134,6 +137,7 @@ const CLIP_SYSTEM_PROMPT = `你是 CineBot，CineLab 的剪辑助手。你只操
 - 片段 ID 必须来自 timeline_get；未指定片段时，默认使用当前选中片段。
 - 时间单位统一为毫秒；移动、裁剪、切分、删除会改变成片时长，操作前先说明影响。
 - 改画幅、分辨率、帧率或背景用 timeline_set_video；画幅宽高必须成对且为偶数。
+- 不确定当前空间或选中片段能做什么时，先调用 capability_catalog。
 - 按镜头切分用 timeline_split_by_shots，需要先指定一个视频片段。
 - 节拍标记用 timeline_beat_markers，节拍切分用 timeline_beat_split；节拍源必须是音频或视频片段。
 - 删除片段、批量移动等破坏性操作，如果用户没有明确要求，先提出方案再执行。

@@ -67,6 +67,9 @@ const CANVAS_SYSTEM_PROMPT = `你是 CineBot，CineLab 的画布助手。你可�
 - 节点工具栏操作先调用 canvas_node_operations 查看 operationId、itemId、参数和 Agent 是否可直接执行，再调用 canvas_node_operation。需要选择生成模型或蒙版交互的操作，改用 generation_propose。
 - 不确定当前空间能做什么时，先调用 capability_catalog。
 - 需要逐帧拉片时，对一个选中视频节点调用 film_study_auto；会创建拉片节点、分镜组和分镜表。先用 film_study_get 读取已有拉片结果。
+- 修改拉片段落用 film_study_update_segment；提取内嵌字幕用 film_study_extract_subtitles。
+- 导演台镜头用 stage_add_shot / stage_update_shot / stage_remove_shot；运镜用 stage_set_camera_track；背景用 stage_set_background。
+- 不确定工具名时，用 capability_search 按关键词搜索已注册工具。
 - 需要生成图片、视频、音频或文本时，先调用 generation_catalog 确认模型和参数，再调用 generation_propose 登记提案。
 - 目标生成节点用 canvas_add_node 创建；建议传 nearNodeId，把新节点放在参考素材右侧。
 - 引用画布素材用 generation_propose.refNodeIds；引用资产库素材先用 library_search 搜索，再用 generation_propose.libraryRefs。
@@ -245,6 +248,7 @@ function mergeChange(target: AgentTurnChange, next?: AgentTurnChange): void {
   }
   if (next.timelineUpdated) target.timelineUpdated = true
   if (next.stageUpdated) target.stageUpdated = true
+  if (next.filmUpdated) target.filmUpdated = true
 }
 
 function createTurn(sessionId: string, userText: string): AgentTurn {

@@ -219,7 +219,8 @@ export async function createProject(
     'assets/aud',
     'assets/thumb',
     'exports',
-    'timelines'
+    'timelines',
+    'stages'
   ]) {
     await fs.mkdir(join(path, dir), { recursive: true })
   }
@@ -241,6 +242,7 @@ export async function openProject(path: string): Promise<ProjectSnapshot> {
 
   const canvas = canvasDataSchema.parse(await readJson(join(projectPath, active.file)))
   await fs.mkdir(join(projectPath, 'timelines'), { recursive: true })
+  await fs.mkdir(join(projectPath, 'stages'), { recursive: true })
   await addRecent(projectPath, meta.name)
   setCurrentProjectRoot(projectPath)
 

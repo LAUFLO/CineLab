@@ -42,9 +42,32 @@ import type {
   ThumbCacheInfo
 } from './library-schema'
 import type { ModelsConfigStatus } from './models-file'
+import type {
+  AgentChatRequest,
+  AgentConfirmInput,
+  AgentEvent,
+  AgentModelInfo,
+  AgentProposal,
+  AgentProposalDraft,
+  AgentSessionInfo,
+  AgentSessionSnapshot,
+  AgentToolCallRequest,
+  AgentToolResultInput
+} from './agent'
+import type { DirectorStageDoc } from './stage-schema'
+import type {
+  SkillAdminEntry,
+  SkillCloneInput,
+  SkillFileContent,
+  SkillFileEntry,
+  SkillOverrideInput,
+  SkillScope,
+  SkillUploadFolder,
+  SkillUploadResult,
+  SkillWriteInput
+} from './skills'
 import type { OperationBindings } from './operation-schema'
 import type { TimelineDoc } from './timeline-schema'
-import type { AgentChatRequest, AgentChatResult } from './agent'
 import type { ImportedSound, SoundAsset } from './sound-schema'
 import type { UpdateApi } from './update'
 import type {
@@ -353,11 +376,6 @@ export interface TimelineApi {
   importSubtitles(path?: string): Promise<TimelineSubtitleImportResult | null>
 }
 
-export interface AgentApi {
-  chat(input: AgentChatRequest): Promise<AgentChatResult>
-  cancel(): Promise<void>
-}
-
 export interface FilmStudyApi {
   extract(input: FilmStudyExtractRequest): Promise<FilmStudyExtractResult>
   auto(input: FilmStudyAutoRequest): Promise<FilmStudyAutoResult>
@@ -373,6 +391,94 @@ export interface FilmStudyApi {
   analyze(studyId: string, modelKey: string): Promise<FilmStudy>
   contactSheet(studyId: string): Promise<GeneratedAsset>
   onProgress(callback: (progress: FilmStudyProgress) => void): () => void
+}
+
+export interface AgentApi {
+  chat(input: AgentChatRequest): Promise<{ turnId: string }>
+  cancel(turnId: string): Promise<void>
+  toolResult(input: AgentToolResultInput): Promise<void>
+  confirm(input: AgentConfirmInput): Promise<void>
+  sessionLoad(sessionId: string): Promise<AgentSessionSnapshot>
+  sessionList(): Promise<AgentSessionInfo[]>
+  sessionCreate(title?: string): Promise<AgentSessionInfo>
+  sessionRename(
+    sessionId: string,
+    title: string
+  ): Promise<AgentSessionInfo>
+  sessionDelete(sessionId: string): Promise<void>
+  sessionCompact(
+    sessionId: string,
+    modelKey?: string
+  ): Promise<AgentSessionSnapshot>
+  modelInfo(modelKey?: string): Promise<AgentModelInfo | null>
+  textModels(): Promise<AgentModelInfo[]>
+  models(): Promise<AgentModelInfo[]>
+  proposalCreate(input: AgentProposalDraft): Promise<AgentProposal>
+  proposalActive(sessionId?: string): Promise<AgentProposal | null>
+  proposalSubmit(proposalId: string): Promise<AgentProposal>
+  proposalCancel(proposalId: string): Promise<AgentProposal>
+  onEvent(callback: (event: AgentEvent) => void): () => void
+  onToolCall(callback: (call: AgentToolCallRequest) => void): () => void
+}
+
+export interface StageExportInput {
+  stageId: string
+  shotId: string
+  resolution: '720p' | '1080p'
+  fps: 24 | 30
+}
+
+export interface StageExportProgress {
+  stageId: string
+  shotId: string
+  frame: number
+  total: number
+  stage: 'rendering' | 'encoding' | 'done'
+}
+
+export interface StageExportResult {
+  asset: GeneratedAsset
+  path: string
+}
+
+export interface SkillsApi {
+  list(): Promise<SkillAdminEntry[]>
+  files(scope: SkillScope, name: string): Promise<SkillFileEntry[]>
+  readFile(
+    scope: SkillScope,
+    name: string,
+    path?: string
+  ): Promise<SkillFileContent>
+  create(input: SkillWriteInput): Promise<SkillAdminEntry>
+  save(input: SkillWriteInput): Promise<SkillAdminEntry>
+  remove(scope: SkillScope, name: string): Promise<void>
+  uploadFiles(
+    scope: SkillScope,
+    name: string,
+    folder: SkillUploadFolder
+  ): Promise<SkillUploadResult | null>
+  removeFile(
+    scope: SkillScope,
+    name: string,
+    path: string
+  ): Promise<SkillFileEntry[]>
+  clone(input: SkillCloneInput): Promise<SkillAdminEntry>
+  setOverride(input: SkillOverrideInput): Promise<SkillAdminEntry>
+  openDirectory(scope: SkillScope, name?: string): Promise<void>
+  openFile(scope: SkillScope, name: string, path: string): Promise<void>
+}
+
+export interface StageApi {
+  create(name?: string): Promise<DirectorStageDoc>
+  load(stageId: string): Promise<DirectorStageDoc | null>
+  save(doc: DirectorStageDoc): Promise<void>
+  delete(stageId: string): Promise<void>
+  duplicate(stageId: string): Promise<DirectorStageDoc>
+  capture(input: { stageId: string; dataUrl: string }): Promise<GeneratedAsset>
+  exportPreview(input: StageExportInput): Promise<StageExportResult>
+  onExportProgress(
+    callback: (progress: StageExportProgress) => void
+  ): () => void
 }
 
 export interface CineApi {
@@ -395,9 +501,11 @@ export interface CineApi {
   clipboard: ClipboardApi
   media: MediaApi
   timeline: TimelineApi
-  agent: AgentApi
   filmStudy: FilmStudyApi
   components: ComponentsApi
   export: ExportApi
   update: UpdateApi
+  agent: AgentApi
+  stage: StageApi
+  skills: SkillsApi
 }

@@ -476,23 +476,6 @@ body.is-exporting .react-flow__minimap {
   background: var(--divider);
 }
 
-.bottombar__agent {
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-2);
-  margin-left: 2px;
-}
-
-.bottombar__agent:hover {
-  background: var(--surface-hover);
-  color: var(--text-1);
-}
-
 /* 左下悬浮工具条 */
 .statusbar {
   position: absolute;
@@ -8805,6 +8788,7 @@ body.is-node-menu-open .react-flow {
 }
 
 .cnode .react-flow__handle.cnode__handle.studio-node__handle--derived,
+.cnode .react-flow__handle.cnode__handle.stage-node__handle--derived,
 .cnode .react-flow__handle.cnode__handle.film-node__handle--passive {
   opacity: 0;
   pointer-events: none;
@@ -9652,4 +9636,68 @@ body.is-node-menu-open .react-flow {
   width: 100%;
   height: 34px;
 }
+
+/* 导演台节点 */
+.stage-node__badge {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 16px;
+  color: var(--text-2);
+  background: var(--surface-hover);
+  white-space: nowrap;
+}
+
+.stage-node__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+.stage-node__preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.stage-node__stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.stage-node__dot {
+  color: var(--text-3);
+}
+
+.stage-node__open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  align-self: center;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-1);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.stage-node__open:hover {
+  background: var(--surface-hover);
+}
+
 

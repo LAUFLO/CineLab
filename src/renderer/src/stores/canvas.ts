@@ -30,25 +30,37 @@ import {
   type GroupRatio,
   type NodeKind,
   type OutputRef,
+  type StageNodeData,
   type StudioNodeData,
   type VideoOpNodeData
 } from '@shared/canvas-schema'
 import { VIDEO_OPERATIONS, type VideoOperationId } from '@shared/operation-schema'
 import type { GeneratedAsset } from '@shared/generation'
+import type { DirectorStageDoc } from '@shared/stage-schema'
+import {
+  applyCanvasBatch,
+  type CanvasCommand,
+  type CanvasCommandChange
+} from '@shared/canvas-commands'
 import { clearEdgeReferences } from './edge-references'
 
 export type CineNode = Node<CineNodeData, 'cine'>
 export type StudioNode = Node<StudioNodeData, 'studio'>
+export type StageNode = Node<StageNodeData, 'stage'>
 export type FilmNode = Node<FilmNodeData, 'film'>
 export type VideoOpNode = Node<VideoOpNodeData, 'video-op'>
 export type GroupNode = Node<GroupNodeData, 'group'>
 export type CanvasNode =
   | CineNode
   | StudioNode
+  | StageNode
   | FilmNode
   | VideoOpNode
   | GroupNode
 export type CineEdge = Edge
+
+/** 一轮 Agent 的多个画布命令只压入一条历史记录 */
+const commandTurns = new Set<string>()
 
 export function isGroupNode(node: CanvasNode): node is GroupNode {
   return node.type === 'group'
@@ -60,6 +72,10 @@ export function isMediaNode(node: CanvasNode): node is CineNode {
 
 export function isStudioNode(node: CanvasNode): node is StudioNode {
   return node.type === 'studio'
+}
+
+export function isStageNode(node: CanvasNode): node is StageNode {
+  return node.type === 'stage'
 }
 
 export function isFilmNode(node: CanvasNode): node is FilmNode {
@@ -227,6 +243,7 @@ interface CanvasStore {
   onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string
   addStudioNode: (position: XYPosition, title?: string) => string
+  addStageNode: (doc: DirectorStageDoc, position: XYPosition) => string
   addVideoOpNode: (
     sourceNodeId: string,
     operation: VideoOperationId,
@@ -234,6 +251,7 @@ interface CanvasStore {
     title?: string
   ) => string
   patchStudioNode: (nodeId: string, patch: Partial<StudioNodeData>) => void
+  patchStageNode: (nodeId: string, patch: Partial<StageNodeData>) => void
   patchVideoOpNode: (nodeId: string, patch: Partial<VideoOpNodeData>) => void
   setStudioFilmStatus: (studioNodeId: string, filmStatus: FilmStatus) => void
   applyStudioOutput: (studioNodeId: string, output: OutputRef) => void
@@ -260,6 +278,11 @@ interface CanvasStore {
   ) => string | null
   applyOutput: (nodeId: string, asset: GeneratedAsset, op?: string) => void
   patchNodeData: (nodeId: string, patch: Partial<CineNodeData>) => void
+  applyCommands: (
+    commands: CanvasCommand[],
+    turnId?: string
+  ) => CanvasCommandChange
+  endCommandTurn: (turnId: string) => void
   resizeNode: (nodeId: string, height: number) => void
   removeNode: (id: string) => void
   clearSelection: () => void
@@ -270,13 +293,17 @@ interface CanvasStore {
   copySelection: () => number
   pasteNodes: (
     position?: XYPosition,
-    studioTimelines?: Map<string, string>
+    studioTimelines?: Map<string, string>,
+    stageDocs?: Map<string, string>
   ) => number
-  duplicateSelection: (studioTimelines?: Map<string, string>) => number
+  duplicateSelection: (
+    studioTimelines?: Map<string, string>,
+    stageDocs?: Map<string, string>
+  ) => number
   removeSelection: () => number
   removeNodesByIds: (ids: string[]) => number
   convertFilmToMedia: (filmId: string, detach?: boolean) => boolean
-  groupSelection: () => string | null
+  groupSelection: (turnId?: string) => string | null
   mergeSelection: () => string | null
   createStoryboard: () => string | null
   arrangeStoryboard: (groupId: string) => void
@@ -285,7 +312,7 @@ interface CanvasStore {
   setStoryboardRatio: (groupId: string, ratio: GroupRatio) => void
   toggleStoryboardIndex: (groupId: string) => void
   clearGroupChildren: (groupId: string) => number
-  ungroup: (groupId: string) => void
+  ungroup: (groupId: string, turnId?: string) => void
   deleteGroupWithChildren: (groupId: string) => number
   renameGroup: (groupId: string, title: string) => void
   setGroupColor: (groupId: string, color: GroupColor) => void
@@ -755,6 +782,42 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return id
   },
 
+  addStageNode: (doc, position) => {
+    get().pushHistory()
+
+    const meta = NODE_META.stage
+    const id = nextId('stage-node')
+    const node: StageNode = {
+      id,
+      type: 'stage',
+      position,
+      selected: true,
+      data: {
+        kind: 'stage',
+        title: doc.name,
+        status: 'idle',
+        stageId: doc.stageId,
+        ...(doc.activeCameraId
+          ? { activeCameraId: doc.activeCameraId }
+          : {}),
+        objectCount: doc.objects.length,
+        cameraCount: doc.cameras.length,
+        shotCount: doc.shots.length,
+        templates: []
+      },
+      style: { width: meta.width, height: meta.height }
+    }
+
+    set({
+      nodes: [
+        ...get().nodes.map((entry) => ({ ...entry, selected: false })),
+        node
+      ]
+    })
+
+    return id
+  },
+
   addVideoOpNode: (sourceNodeId, operation, position, title) => {
     const state = get()
     const existing = state.nodes.find(
@@ -821,6 +884,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     set({
       nodes: get().nodes.map((node) =>
         node.id === nodeId && isStudioNode(node)
+          ? { ...node, data: { ...node.data, ...patch } }
+          : node
+      )
+    })
+  },
+
+  patchStageNode: (nodeId, patch) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId && isStageNode(node)
           ? { ...node, data: { ...node.data, ...patch } }
           : node
       )
@@ -1308,6 +1381,32 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
   },
 
+  applyCommands: (commands, turnId) => {
+    const { nodes, edges } = get()
+    const result = applyCanvasBatch({ nodes, edges }, commands)
+    const change = result.change
+    const hasChange =
+      change.createdNodeIds.length > 0 ||
+      change.updatedNodeIds.length > 0 ||
+      change.deletedNodeIds.length > 0 ||
+      change.createdEdgeIds.length > 0 ||
+      change.deletedEdgeIds.length > 0
+
+    if (hasChange) {
+      if (!turnId || !commandTurns.has(turnId)) {
+        get().pushHistory()
+        if (turnId) commandTurns.add(turnId)
+      }
+      set({ nodes: result.nodes, edges: result.edges })
+    }
+
+    return change
+  },
+
+  endCommandTurn: (turnId) => {
+    commandTurns.delete(turnId)
+  },
+
   resizeNode: (nodeId, height) => {
     set({
       nodes: get().nodes.map((node) =>
@@ -1553,14 +1652,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return selected.length
   },
 
-  pasteNodes: (position, studioTimelines) => {
+  pasteNodes: (position, studioTimelines, stageDocs) => {
     const clipboard = get().clipboard
     if (!clipboard || clipboard.nodes.length === 0) return 0
 
     const nodesToPaste = clipboard.nodes.filter(
       (node) =>
         node.type !== 'film' &&
-        (node.type !== 'studio' || studioTimelines?.has(node.id))
+        (node.type !== 'studio' || studioTimelines?.has(node.id)) &&
+        (node.type !== 'stage' || stageDocs?.has(node.id))
     )
     if (nodesToPaste.length === 0) return 0
 
@@ -1605,6 +1705,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         clone.data.title = `${clone.data.title} 副本`
       }
 
+      if (clone.type === 'stage') {
+        const stageId = stageDocs?.get(node.id)
+        if (stageId) clone.data.stageId = stageId
+        clone.data.title = `${clone.data.title} 副本`
+      }
+
       return {
         ...clone,
         id,
@@ -1642,13 +1748,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return pastedNodes.length
   },
 
-  duplicateSelection: (studioTimelines) => {
+  duplicateSelection: (studioTimelines, stageDocs) => {
     const allNodes = get().nodes
     const selected = allNodes.filter(
       (node) =>
         node.selected &&
         node.type !== 'film' &&
-        (node.type !== 'studio' || studioTimelines?.has(node.id))
+        (node.type !== 'studio' || studioTimelines?.has(node.id)) &&
+        (node.type !== 'stage' || stageDocs?.has(node.id))
     )
     if (selected.length === 0) return 0
 
@@ -1658,6 +1765,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       for (const child of childrenOf(allNodes, node.id)) {
         if (child.type === 'film') continue
         if (child.type === 'studio' && !studioTimelines?.has(child.id)) continue
+        if (child.type === 'stage' && !stageDocs?.has(child.id)) continue
         ids.add(child.id)
       }
     }
@@ -1666,7 +1774,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       (node) =>
         ids.has(node.id) &&
         node.type !== 'film' &&
-        (node.type !== 'studio' || studioTimelines?.has(node.id))
+        (node.type !== 'studio' || studioTimelines?.has(node.id)) &&
+        (node.type !== 'stage' || stageDocs?.has(node.id))
     )
     const expandedIds = new Set(expanded.map((node) => node.id))
     const internalEdges = get().edges.filter(
@@ -1700,6 +1809,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       if (clone.type === 'studio') {
         clone.data.timelineId = studioTimelines?.get(node.id) as string
         clone.data.filmNodeId = undefined
+        clone.data.title = `${clone.data.title} 副本`
+      }
+
+      if (clone.type === 'stage') {
+        const stageId = stageDocs?.get(node.id)
+        if (stageId) clone.data.stageId = stageId
         clone.data.title = `${clone.data.title} 副本`
       }
 
@@ -1828,14 +1943,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return true
   },
 
-  groupSelection: () => {
+  groupSelection: (turnId) => {
     const all = get().nodes
     const selected = all.filter(
       (node) => node.selected && !isGroupNode(node) && !node.parentId
     )
     if (selected.length < 2) return null
 
-    get().pushHistory()
+    if (!turnId || !commandTurns.has(turnId)) {
+      get().pushHistory()
+      if (turnId) commandTurns.add(turnId)
+    }
 
     const absolute = selected.map((node) => {
       const size = nodeSize(node)
@@ -2266,12 +2384,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     return removed.size
   },
 
-  ungroup: (groupId) => {
+  ungroup: (groupId, turnId) => {
     const all = get().nodes
     const group = all.find((node) => node.id === groupId)
     if (!group || !isGroupNode(group)) return
 
-    get().pushHistory()
+    if (!turnId || !commandTurns.has(turnId)) {
+      get().pushHistory()
+      if (turnId) commandTurns.add(turnId)
+    }
 
     const nodes: CanvasNode[] = all
       .filter((node) => node.id !== groupId)

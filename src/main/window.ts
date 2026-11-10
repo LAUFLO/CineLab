@@ -59,7 +59,9 @@ export function createMainWindow(): BrowserWindow {
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
-      webgl: true
+      webgl: true,
+      // 导演台运镜预览与时间线播放不应因窗口失焦而暂停
+      backgroundThrottling: false
     }
   })
 

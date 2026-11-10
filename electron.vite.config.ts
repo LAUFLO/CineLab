@@ -25,7 +25,8 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve('src/renderer/index.html'),
-          'timeline-render': resolve('src/renderer/timeline-render.html')
+          'timeline-render': resolve('src/renderer/timeline-render.html'),
+          'stage-render': resolve('src/renderer/stage-render.html')
         }
       }
     },

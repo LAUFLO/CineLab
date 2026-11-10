@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { NODE_META, GRID_SPLIT_CELL_WIDTH, type NodeKind, type OutputRef } from '@shared/canvas-schema'
+import { NODE_META, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
 import { assetUrl } from '../../lib/asset-url'
@@ -14,7 +14,6 @@ import { trackVisionTask } from '../../stores/vision-tasks'
 import { createStudioFromNode } from '../../studio/nodes'
 import { AiOperationDialog } from './AiOperationDialog'
 import { CropDialog } from './CropDialog'
-import { createStudyNodeFromVideo, runFilmStudyAuto } from './film-study-runner'
 import { MaskEditorDialog } from './MaskEditorDialog'
 import { SphereDialog } from './SphereDialog'
 import { SubtitleDialog } from './SubtitleDialog'
@@ -22,7 +21,6 @@ import { TrimDialog } from './TrimDialog'
 import { DepthCaptureDialog } from './DepthCaptureDialog'
 import {
   OPERATION_SECTIONS,
-  buildOperationPrompt,
   defaultPrimaryForKind,
   operationsForKind,
   type NodeOperation,
@@ -30,7 +28,10 @@ import {
   type OperationMenuItem,
   type OperationSection
 } from './node-operations'
-import { isVideoOperation, type VideoOperationId } from '@shared/operation-schema'
+import {
+  executeNodeOperation,
+  type NodeOperationUiEffect
+} from './node-operation-runner'
 
 interface NodeToolbarProps {
   nodeId: string
@@ -246,48 +247,6 @@ export function NodeToolbar({
     }
   }
 
-  const executeLayerSplit = async (): Promise<void> => {
-    const source = sourceNode()
-    if (!source || !(await ensureVision())) return
-
-    const pendingIds = useCanvasStore
-      .getState()
-      .addPendingNodes('image', source.origin, 2, `${source.title} · 图层`, nodeId)
-
-    showToast('已开始图层分离，完成后自动写入节点')
-    await startVisionTask(
-      { kind: 'layer-split', path: current.path },
-      {
-        mode: 'pending',
-        nodeId,
-        pendingIds,
-        op: 'layer-split',
-        title: '图层分离'
-      }
-    )
-  }
-
-  const executeMatteVideo = async (): Promise<void> => {
-    const source = sourceNode()
-    if (!source || !(await ensureVision())) return
-
-    const pendingIds = useCanvasStore
-      .getState()
-      .addPendingNodes('video', source.origin, 1, `${source.title} · 抠像`, nodeId)
-
-    showToast('已开始视频抠像，完成后自动写入节点')
-    await startVisionTask(
-      { kind: 'matte-video', path: current.path },
-      {
-        mode: 'pending',
-        nodeId,
-        pendingIds,
-        op: 'matting',
-        title: '视频抠像'
-      }
-    )
-  }
-
   const executeVisionRepair = async (
     rect: { x: number; y: number; width: number; height: number },
     title: string
@@ -312,315 +271,6 @@ export function NodeToolbar({
     )
   }
 
-  const executeOutpaint = async (item: OperationMenuItem): Promise<void> => {
-    if (!(await visionReady())) {
-      const op = ops.find((entry) => entry.id === 'outpaint')
-      if (op) executeAiOperation(op, item)
-      return
-    }
-
-    const ratio = item.id as
-      | '16:9'
-      | '9:16'
-      | '1:1'
-      | '4:3'
-      | '3:4'
-      | '21:9'
-    showToast(`已开始扩成 ${item.label.replace('扩成 ', '')}`)
-    await startVisionTask(
-      { kind: 'outpaint-image', path: current.path, ratio },
-      {
-        mode: 'apply',
-        nodeId,
-        pendingIds: [],
-        op: 'outpaint',
-        title: '扩图'
-      }
-    )
-  }
-
-  const executeCutout = async (): Promise<void> => {
-    const op = ops.find((entry) => entry.id === 'cutout')
-    if (!op) return
-
-    if (!(await visionReady())) {
-      executeAiOperation(op)
-      return
-    }
-
-    showToast('已开始本地抠图')
-    await startVisionTask(
-      { kind: 'matte-image', path: current.path },
-      {
-        mode: 'apply',
-        nodeId,
-        pendingIds: [],
-        op: 'cutout',
-        title: '抠图'
-      }
-    )
-  }
-
-  const executeGridSplit = async (item: OperationMenuItem): Promise<void> => {
-    if (item.id === 'custom') {
-      showToast('自定义行列暂未开放')
-      return
-    }
-
-    const [rows, cols] = item.id.split('x').map(Number)
-    if (!rows || !cols) return
-
-    const source = sourceNode()
-    if (!source) return
-
-    setRunning(true)
-    showToast(`正在切分 ${rows} × ${cols}…`)
-
-    const groupCount = useCanvasStore
-      .getState()
-      .nodes.filter(isGroupNode).length
-    const pendingIds = useCanvasStore.getState().addPendingNodes(
-      'image',
-      source.origin,
-      rows * cols,
-      `${source.title} · 切分`,
-      nodeId,
-      {
-        columns: cols,
-        cellWidth: GRID_SPLIT_CELL_WIDTH,
-        groupTitle: `宫格组 ${groupCount + 1}`,
-        groupColor: 'green'
-      }
-    )
-
-    try {
-      const result = await window.api.media.splitGrid({
-        path: current.path,
-        rows,
-        cols
-      })
-      const state = useCanvasStore.getState()
-
-      result.assets.forEach((asset, index) => {
-        const pendingId = pendingIds[index]
-        if (pendingId) state.applyOutput(pendingId, asset, `grid-split`)
-      })
-      showToast(`已生成 ${result.assets.length} 个切分节点`)
-    } catch (error) {
-      pendingIds.forEach((id) => markFailed(id, error))
-      showToast(error instanceof Error ? error.message : String(error), 'error')
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  const startFilmStudy = (interval: number): void => {
-    const source = sourceNode()
-    if (!source) return
-
-    const studyNodeId = createStudyNodeFromVideo(nodeId, interval)
-    if (!studyNodeId) {
-      showToast('当前视频还没有可用的视频输出', 'error')
-      return
-    }
-
-    showToast(
-      interval > 0
-        ? `已创建拉片节点，按 ${interval} 秒/镜拆分…`
-        : '已创建拉片节点，正在自动拆解分镜…'
-    )
-    void runFilmStudyAuto(studyNodeId, {
-      interval,
-      outputs: { storyboard: true, sheet: true }
-    })
-  }
-
-  const executeFrame = async (item: OperationMenuItem): Promise<void> => {
-    const source = sourceNode()
-    if (!source) return
-
-    let time: number | undefined
-    if (item.id === 'current') {
-      const video = document.querySelector<HTMLVideoElement>(
-        `.react-flow__node[data-id="${nodeId}"] video`
-      )
-      time = video?.currentTime ?? 0
-    }
-
-    setRunning(true)
-    showToast(`正在截取${item.label}…`)
-
-    const pendingId = useCanvasStore.getState().addPendingNodes(
-      'image',
-      source.origin,
-      1,
-      `${source.title} · ${item.label}`,
-      nodeId
-    )[0]
-
-    try {
-      const result = await window.api.media.extractFrame({
-        path: current.path,
-        mode: item.id as 'first' | 'last' | 'current',
-        time
-      })
-
-      useCanvasStore
-        .getState()
-        .applyOutput(pendingId, result.asset, `frame-${item.id}`)
-      showToast(`已生成${item.label}`)
-    } catch (error) {
-      markFailed(pendingId, error)
-      showToast(error instanceof Error ? error.message : String(error), 'error')
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  const executeSplitAv = async (): Promise<void> => {
-    const source = sourceNode()
-    if (!source) return
-
-    setRunning(true)
-    showToast('正在分离音视频…')
-
-    const state = useCanvasStore.getState()
-    const pendingVideoId = state.addPendingNodes(
-      'video',
-      source.origin,
-      1,
-      `${source.title} · 无声`,
-      nodeId
-    )[0]
-    const pendingAudioId = state.addPendingNodes(
-      'audio',
-      { x: source.origin.x, y: source.origin.y + 420 },
-      1,
-      `${source.title} · 音轨`,
-      nodeId
-    )[0]
-
-    const groupCount = useCanvasStore
-      .getState()
-      .nodes.filter(isGroupNode).length
-    state.createGroupFromNodes([pendingVideoId, pendingAudioId], {
-      columns: 1,
-      title: `音视频组 ${groupCount + 1}`,
-      color: 'cyan'
-    })
-
-    try {
-      const result = await window.api.media.splitAv({ path: current.path })
-
-      useCanvasStore
-        .getState()
-        .applyOutput(pendingVideoId, result.video, 'split-av-video')
-      if (result.audio) {
-        useCanvasStore
-          .getState()
-          .applyOutput(pendingAudioId, result.audio, 'split-av-audio')
-      } else {
-        markFailed(pendingAudioId, '当前视频无音轨')
-      }
-
-      showToast(
-        result.audio ? '已生成无声视频和音轨节点' : '已生成无声视频节点'
-      )
-    } catch (error) {
-      markFailed(pendingVideoId, error)
-      markFailed(pendingAudioId, error)
-      showToast(error instanceof Error ? error.message : String(error), 'error')
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  const executeVideoCrop = async (item: OperationMenuItem): Promise<void> => {
-    if (item.id === 'source') {
-      showToast('当前已是原比例，无需裁切')
-      return
-    }
-
-    setRunning(true)
-    markRunning(nodeId)
-    showToast(`正在裁切为 ${item.label}…`)
-
-    try {
-      const result = await window.api.media.cropVideo({
-        path: current.path,
-        ratio: item.id
-      })
-      useCanvasStore.getState().applyOutput(nodeId, result.asset, 'video-crop')
-      showToast(
-        `裁切完成：${result.asset.width ?? 0} × ${result.asset.height ?? 0}`
-      )
-    } catch (error) {
-      markFailed(nodeId, error)
-      showToast(error instanceof Error ? error.message : String(error), 'error')
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  const executeCrop = async (item: OperationMenuItem): Promise<void> => {
-    if (item.id === 'free') {
-      void openFreeCrop()
-      return
-    }
-
-    setRunning(true)
-    markRunning(nodeId)
-    showToast(`正在裁剪为 ${item.label}…`)
-
-    try {
-      const result = await window.api.media.cropImage({
-        path: current.path,
-        ratio: item.id
-      })
-      useCanvasStore.getState().applyOutput(nodeId, result.asset, 'crop')
-      showToast(
-        `裁剪完成：${result.asset.width ?? 0} × ${result.asset.height ?? 0}`
-      )
-    } catch (error) {
-      markFailed(nodeId, error)
-      showToast(error instanceof Error ? error.message : String(error), 'error')
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  const openFreeCrop = async (): Promise<void> => {
-    const width = current.width
-    const height = current.height
-
-    if (width && height) {
-      setCropDialog({
-        src: `cinelab-asset://local/${current.path}`,
-        width,
-        height
-      })
-      return
-    }
-
-    setRunning(true)
-    try {
-      const probe = await window.api.media.probe(current.path)
-      if (!probe.width || !probe.height) {
-        showToast('无法读取图片尺寸', 'error')
-        return
-      }
-      setCropDialog({
-        src: `cinelab-asset://local/${current.path}`,
-        width: probe.width,
-        height: probe.height
-      })
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : String(error), 'error')
-    } finally {
-      setRunning(false)
-    }
-  }
-
   const executeCropRect = async (rect: {
     x: number
     y: number
@@ -643,43 +293,6 @@ export function NodeToolbar({
       )
     } catch (error) {
       markFailed(nodeId, error)
-      showToast(error instanceof Error ? error.message : String(error), 'error')
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  const openSubtitleBox = async (
-    mode: 'delogo' | 'vision' = 'delogo',
-    title = '框选去字幕'
-  ): Promise<void> => {
-    setSubtitleMode(mode)
-    setSubtitleTitle(title)
-    const width = current.width
-    const height = current.height
-
-    if (width && height) {
-      setSubtitleDialog({
-        src: assetUrl(current.path, current.scope),
-        width,
-        height
-      })
-      return
-    }
-
-    setRunning(true)
-    try {
-      const probe = await window.api.media.probe(current.path)
-      if (!probe.width || !probe.height) {
-        showToast('无法读取视频尺寸', 'error')
-        return
-      }
-      setSubtitleDialog({
-        src: assetUrl(current.path, current.scope),
-        width: probe.width,
-        height: probe.height
-      })
-    } catch (error) {
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -718,29 +331,6 @@ export function NodeToolbar({
     }
   }
 
-  const openTrim = async (): Promise<void> => {
-    if (current.duration && current.duration > 0) {
-      setTrimDuration(current.duration)
-      setTrimOpen(true)
-      return
-    }
-
-    setRunning(true)
-    try {
-      const probe = await window.api.media.probe(current.path)
-      if (!probe.duration) {
-        showToast('无法读取视频时长', 'error')
-        return
-      }
-      setTrimDuration(probe.duration)
-      setTrimOpen(true)
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : String(error), 'error')
-    } finally {
-      setRunning(false)
-    }
-  }
-
   const executeTrim = async (start: number, end: number): Promise<void> => {
     setTrimOpen(false)
     setRunning(true)
@@ -763,22 +353,6 @@ export function NodeToolbar({
     } finally {
       setRunning(false)
     }
-  }
-
-  const executeAiOperation = (
-    op: NodeOperation,
-    item?: OperationMenuItem
-  ): void => {
-    const prompt = buildOperationPrompt(op, item)
-    if (!prompt) {
-      showToast(`《${item?.label ?? op.label}》缺少提示词配置`, 'error')
-      return
-    }
-    if (op.mask) {
-      setMaskDialog({ op, item, prompt })
-      return
-    }
-    setAiDialog({ op, item, prompt })
   }
 
   const handleAiConfirm = (
@@ -811,11 +385,6 @@ export function NodeToolbar({
     })
   }
 
-  const executeDedicatedVideo = (op: NodeOperation): void => {
-    if (!isVideoOperation(op.id)) return
-    useCanvasStore.getState().addVideoOpNode(nodeId, op.id as VideoOperationId)
-  }
-
   const handleSphereConfirm = (
     prompt: string,
     modelKey: string,
@@ -838,46 +407,6 @@ export function NodeToolbar({
         }
       ]
     })
-  }
-
-  const openDepthDialog = async (): Promise<void> => {
-    try {
-      const status = await window.api.components.status()
-      const ready =
-        status.find((item) => item.kind === 'depth-runtime')?.state ===
-          'installed' &&
-        status.find((item) => item.kind === 'depth-model')?.state ===
-          'installed'
-
-      if (!ready) {
-        useUIStore.getState().requestConfirm({
-          title: '需要先安装深度组件',
-          message:
-            '「深度动作捕捉」需要「深度动作捕捉运行时」和「Video Depth Anything Small 模型」，合计约 375MB。是否前往设置安装？',
-          confirmLabel: '前往设置',
-          onConfirm: () => {
-            useSettingsStore.getState().openPanel('components')
-          }
-        })
-        return
-      }
-
-      const probe = await window.api.media.probe(current.path).catch((error: unknown) => {
-        console.error('[depth] failed to probe video', error)
-        return null
-      })
-      if (!probe) {
-        showToast('无法读取视频信息，请确认素材文件仍然存在', 'error')
-        return
-      }
-      if (!probe.duration) {
-        showToast('无法读取视频时长，请确认素材文件仍然存在', 'error')
-        return
-      }
-      setDepthDialog({ duration: probe.duration })
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : String(error), 'error')
-    }
   }
 
   const confirmDepthCapture = async (
@@ -916,6 +445,58 @@ export function NodeToolbar({
     }
   }
 
+  const applyUiEffect = (effect: NodeOperationUiEffect): void => {
+    if (effect.type === 'crop-dialog') {
+      setCropDialog({
+        src: `cinelab-asset://local/${effect.path}`,
+        width: effect.width ?? 1,
+        height: effect.height ?? 1
+      })
+      return
+    }
+    if (effect.type === 'trim-dialog') {
+      setTrimDuration(effect.duration)
+      setTrimOpen(true)
+      return
+    }
+    if (effect.type === 'mask-dialog') {
+      setMaskDialog({
+        op: effect.op,
+        ...(effect.item ? { item: effect.item } : {}),
+        prompt: effect.prompt
+      })
+      return
+    }
+    if (effect.type === 'ai-dialog') {
+      setAiDialog({
+        op: effect.op,
+        ...(effect.item ? { item: effect.item } : {}),
+        prompt: effect.prompt
+      })
+      return
+    }
+    if (effect.type === 'subtitle-dialog') {
+      setSubtitleMode(effect.mode)
+      setSubtitleTitle(effect.title)
+      setSubtitleDialog({
+        src: assetUrl(effect.path, effect.scope),
+        width: effect.width ?? 1,
+        height: effect.height ?? 1
+      })
+      return
+    }
+    if (effect.type === 'depth-dialog') {
+      setDepthDialog({ duration: effect.duration })
+      return
+    }
+    if (effect.type === 'sphere-dialog') {
+      setSphereDialog(effect.kind)
+      return
+    }
+    showToast(effect.message, 'error')
+    useSettingsStore.getState().openPanel(effect.panel)
+  }
+
   const activate = (op: NodeOperation, item?: OperationMenuItem): void => {
     if (running) return
 
@@ -941,132 +522,27 @@ export function NodeToolbar({
       return
     }
 
-    if (op.id === 'grid-split' && item) {
-      void executeGridSplit(item)
-      return
-    }
-
-    if (op.id === 'film-study') {
-      startFilmStudy(0)
-      return
-    }
-
-    if (op.id === 'frame-study' && item) {
-      void executeFrame(item)
-      return
-    }
-
-    if (op.id === 'crop' && item) {
-      void executeCrop(item)
-      return
-    }
-
-    if (op.id === 'clip-trim') {
-      void openTrim()
-      return
-    }
-
-    if (op.id === 'split-av') {
-      void executeSplitAv()
-      return
-    }
-
-    if (op.id === 'motion-capture') {
-      void openDepthDialog()
-      return
-    }
-
-    if (op.id === 'video-crop' && item) {
-      void executeVideoCrop(item)
-      return
-    }
-
-    if (op.id === 'subtitle') {
-      if (item?.id === 'box') {
-        void openSubtitleBox('delogo', '框选去字幕')
-        return
+    void executeNodeOperation(
+      {
+        nodeId,
+        operationId: op.id,
+        ...(item ? { itemId: item.id } : {})
+      },
+      {
+        effect: applyUiEffect,
+        toast: showToast,
+        setRunning,
+        getCurrentTime: () => {
+          const video = document.querySelector<HTMLVideoElement>(
+            `.react-flow__node[data-id="${nodeId}"] video`
+          )
+          return video?.currentTime
+        }
       }
-      void (async () => {
-        if (!(await ensureVision())) return
-        setRunning(true)
-        try {
-          showToast('正在检测字幕区域…')
-          const rect = await window.api.media.detectSubtitleRect(
-            current.path,
-            current.scope
-          )
-          if (rect) {
-            showToast(
-              `已检测到字幕区域，开始智能去字幕`
-            )
-            void executeVisionRepair(rect, '智能去字幕')
-          } else {
-            showToast('未检测到字幕区域，请手动框选', 'error')
-            await openSubtitleBox('vision', '智能去字幕')
-          }
-        } catch (error) {
-          showToast(
-            error instanceof Error ? error.message : String(error),
-            'error'
-          )
-          await openSubtitleBox('vision', '智能去字幕')
-        } finally {
-          setRunning(false)
-        }
-      })()
-      return
-    }
-
-    if (op.id === 'layer-split') {
-      void executeLayerSplit()
-      return
-    }
-
-    if (op.id === 'matting') {
-      void executeMatteVideo()
-      return
-    }
-
-    if (op.id === 'object-remove') {
-      void (async () => {
-        if (await ensureVision()) {
-          await openSubtitleBox('vision', '主体消除')
-        }
-      })()
-      return
-    }
-
-    if (op.id === 'outpaint' && item) {
-      void executeOutpaint(item)
-      return
-    }
-
-    if (op.id === 'cutout') {
-      void executeCutout()
-      return
-    }
-
-    if (op.id === 'relight' && item?.id === 'custom') {
-      setSphereDialog('light')
-      return
-    }
-
-    if (op.id === 'multi-angle' && item?.id === 'custom') {
-      setSphereDialog('camera')
-      return
-    }
-
-    if (isVideoOperation(op.id)) {
-      executeDedicatedVideo(op)
-      return
-    }
-
-    if (op.prompt || op.promptByItem) {
-      executeAiOperation(op, item)
-      return
-    }
-
-    showToast(`《${item?.label ?? op.label}》暂不可用`, 'error')
+    ).then((result) => {
+      if (result.ok || result.needsUi || result.needsGeneration) return
+      if (result.error) showToast(result.error, 'error')
+    })
   }
 
   const togglePrimaryMenu = (op: NodeOperation): void => {

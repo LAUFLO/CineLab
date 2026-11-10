@@ -79,8 +79,33 @@ Phase 1 的所有写操作都走命令层，UI 和 Agent 共用执行器。
 - `src/main/agent/__tests__/tools.test.ts`：新工具的参数校验、只读过滤、确认规则、时间线写工具标记。
 - 现有 `timeline-tools.test.ts` 覆盖镜头切分和节拍计划生成。
 
-## 6. 已知限制
+## 6. 节点操作桥
+
+| 工具 | 能力 ID | 只读 | 确认 | 回合撤销 |
+|---|---|---|---|---|
+| `canvas_node_operations` | `canvas.nodeOperations` | 是 | 否 | 不适用 |
+| `canvas_node_operation` | `canvas.nodeOperation` | 否 | 按操作 | 画布历史 |
+
+实现说明：
+
+- `src/shared/node-operation-specs.ts` 声明每个操作是否 Agent 可执行、需要的 itemId、参数和确认规则。
+- `src/renderer/src/canvas/nodes/node-operation-runner.ts` 是 UI 和 Agent 共用的执行器；UI 传入 dialog host，Agent 不传。
+- Agent 可直接执行 17 个操作：宫格切分、裁剪、深度动作捕捉、片段截取、分离音视频、抽帧、逐帧拉片、画面裁切、去字幕、图层分离、视频抠像、主体消除、扩图、抠图、片段重拍、元素替换、智能续写。
+- 需要模型或蒙版交互的 11 个操作显式标记 `agentExecutable: false`，提示词仍会通过 `canvas_node_operations` 返回，Agent 改用 `generation_propose`。
+- 新增节点操作只需要改 `node-operations.ts`、`node-operation-specs.ts` 和 `node-operation-runner.ts`，不需要新增工具。
+
+## 7. 能力目录
+
+| 工具 | 能力 ID | 只读 | 说明 |
+|---|---|---|---|
+| `capability_catalog` | `capability.catalog` | 是 | 返回当前空间、可用工具、选中节点操作、时间线摘要、导演台镜头、拉片摘要 |
+
+`canvas_get` 的 `selectedNodes` 现在额外返回 `availableOperations`。
+
+## 8. 已知限制
 
 - 场景撤销依赖导演台处于打开状态；Agent 写场景会自动打开导演台，手动关闭后再次撤销会作用到当前场景。
 - 拉片导出和场景导出的本地文件不会随画布撤销删除。
-- 节点工具栏的 29 个操作仍只在 UI 中可用；节点操作桥属于 Phase 2。
+- 需要模型选择的节点操作（九宫格、角色三视图、打光、蒙版重绘等）仍由 `generation_propose` 或界面完成；Agent 只能读取提示词，不能直接执行。
+- 蒙版类节点操作（重绘、擦除、元素编辑）仍需要界面涂抹。
+- 深度动作捕捉、图层分离、视频抠像等长时间任务在启动后异步完成；回合撤销会移除占位节点，但不会取消已启动的本地任务。

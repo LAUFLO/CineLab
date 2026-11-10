@@ -17,11 +17,14 @@ vi.mock('electron', () => ({
 }))
 
 import {
+  cloneSkill,
   createSkill,
   deleteSkill,
+  importSkillFiles,
   listSkillAdmin,
   listSkillFiles,
   readSkillFile,
+  removeSkillFile,
   saveSkill,
   setSkillOverride
 } from '../skills-admin'
@@ -177,5 +180,97 @@ describe('skill admin', () => {
         name: 'new-skill'
       })
     ).rejects.toThrow('技能文件不存在')
+  })
+
+  it('uploads, overwrites and removes skill files', async () => {
+    const rootProject = join(root, 'project')
+    await createSkill(rootProject, {
+      scope: 'project',
+      name: 'upload-skill',
+      description: '上传测试',
+      body: '# 上传测试'
+    })
+    const references = join(rootProject, '.cinelab', 'skills', 'upload-skill', 'references')
+    await fs.mkdir(references, { recursive: true })
+
+    const first = join(root, 'first.md')
+    const second = join(root, 'second.png')
+    await fs.writeFile(first, '第一版', 'utf8')
+    await fs.writeFile(second, 'PNG', 'utf8')
+
+    const uploaded = await importSkillFiles(rootProject, {
+      scope: 'project',
+      name: 'upload-skill',
+      folder: 'references',
+      files: [first, second]
+    })
+    expect(uploaded.uploaded.sort()).toEqual([
+      'references/first.md',
+      'references/second.png'
+    ])
+    expect(uploaded.overwritten).toEqual([])
+
+    await fs.writeFile(first, '第二版', 'utf8')
+    const overwritten = await importSkillFiles(rootProject, {
+      scope: 'project',
+      name: 'upload-skill',
+      folder: 'references',
+      files: [first]
+    })
+    expect(overwritten.overwritten).toEqual(['references/first.md'])
+    const content = await readSkillFile(rootProject, {
+      scope: 'project',
+      name: 'upload-skill',
+      path: 'references/first.md'
+    })
+    expect(content.content).toBe('第二版')
+
+    const remaining = await removeSkillFile(rootProject, {
+      scope: 'project',
+      name: 'upload-skill',
+      path: 'references/first.md'
+    })
+    expect(remaining.map((file) => file.path)).not.toContain(
+      'references/first.md'
+    )
+  })
+
+  it('clones a skill to a higher-priority scope with its files', async () => {
+    const builtinReferences = join(
+      paths.app,
+      'resources',
+      'skills',
+      'builtin-skill',
+      'references'
+    )
+    await fs.mkdir(builtinReferences, { recursive: true })
+    await fs.writeFile(
+      join(builtinReferences, 'notes.md'),
+      '# notes',
+      'utf8'
+    )
+
+    const rootProject = join(root, 'project')
+    const cloned = await cloneSkill(rootProject, {
+      sourceScope: 'builtin',
+      sourceName: 'builtin-skill',
+      targetScope: 'project'
+    })
+    expect(cloned.scope).toBe('project')
+    expect(cloned.name).toBe('builtin-skill')
+
+    const files = await listSkillFiles(rootProject, {
+      scope: 'project',
+      name: 'builtin-skill'
+    })
+    expect(files.map((file) => file.path)).toContain('references/notes.md')
+
+    await expect(
+      cloneSkill(rootProject, {
+        sourceScope: 'builtin',
+        sourceName: 'builtin-skill',
+        targetScope: 'project'
+      })
+    ).rejects.toThrow('目标作用域已有同名技能')
   })
 })

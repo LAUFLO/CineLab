@@ -19,6 +19,7 @@ import {
   selectedNodeOutput,
   useCanvasStore
 } from '../stores/canvas'
+import { useSettingsStore } from '../stores/settings'
 import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
 import {
@@ -437,6 +438,7 @@ export function AgentPanel() {
   const clearError = useAgentStore((state) => state.clearError)
 
   const clipMode = useStudioStore((state) => state.open)
+  const openSettings = useSettingsStore((state) => state.openPanel)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   const showToast = useUIStore((state) => state.showToast)
   const [draft, setDraft] = useState('')
@@ -647,7 +649,7 @@ export function AgentPanel() {
   }
 
   const syncInputTriggers = (value: string): void => {
-    const mentionMatch = /(^|\s)@([^\s@]*)$/.exec(value)
+    const mentionMatch = /(^|[^\w@])@([^\s@]*)$/.exec(value)
     if (mentionMatch) {
       setSkillPickerOpen(false)
       setPermissionMenuOpen(false)
@@ -660,7 +662,7 @@ export function AgentPanel() {
       setMentionQuery('')
     }
 
-    const slashMatch = /(^|\s)\/([^\s/]*)$/.exec(value)
+    const slashMatch = /(^|[^\w/])\/([^\s/]*)$/.exec(value)
     if (slashMatch && !mentionMatch) {
       if (!skillPickerOpen) {
         setSkillPickerOpen(true)
@@ -680,7 +682,7 @@ export function AgentPanel() {
       kind: item.kind
     })
     setDraft((current) =>
-      current.replace(/(^|\s)@[^\s@]*$/, '$1').trimEnd()
+      current.replace(/(^|[^\w@])@[^\s@]*$/, '$1').trimEnd()
     )
     setMentionOpen(false)
     setMentionQuery('')
@@ -691,7 +693,7 @@ export function AgentPanel() {
   const insertSkill = (skill: SkillAdminEntry): void => {
     setDraft((current) => {
       const cleaned = current
-        .replace(/(^|\s)\/[^\s/]*$/, '$1')
+        .replace(/(^|[^\w/])\/[^\s/]*$/, '$1')
         .trimEnd()
       return cleaned
         ? `${cleaned} 使用技能：${skill.name}`
@@ -1250,6 +1252,17 @@ export function AgentPanel() {
                           ))
                         )}
                       </div>
+                      <button
+                        type="button"
+                        className="agent-skill-manage"
+                        onClick={() => {
+                          setSkillPickerOpen(false)
+                          openSettings('skills')
+                        }}
+                      >
+                        <Icon name="settings" size={12} />
+                        管理技能
+                      </button>
                     </div>
                   ) : null}
                 </span>

@@ -45,6 +45,20 @@ export interface SkillOverrideInput {
   disableModelInvocation?: boolean
 }
 
+export type SkillUploadFolder = 'references' | 'assets'
+
+export interface SkillUploadResult {
+  uploaded: string[]
+  overwritten: string[]
+  files: SkillFileEntry[]
+}
+
+export interface SkillCloneInput {
+  sourceScope: SkillScope
+  sourceName: string
+  targetScope: 'global' | 'project'
+}
+
 export interface SkillReadResult {
   name: string
   scope: SkillScope
@@ -59,6 +73,8 @@ export const MAX_SKILL_DESCRIPTION_LENGTH = 500
 export const MAX_SKILL_BODY_BYTES = 256 * 1024
 export const MAX_SKILL_REFERENCE_BYTES = 2 * 1024 * 1024
 export const MAX_SKILL_PATH_LENGTH = 200
+export const MAX_SKILL_UPLOAD_FILES = 20
+export const MAX_SKILL_UPLOAD_BYTES = 20 * 1024 * 1024
 
 function stripQuotes(value: string): string {
   const trimmed = value.trim()

@@ -7,6 +7,7 @@ import type {
 } from '@shared/skills'
 import { Icon } from '../components/Icon'
 import { useProjectStore } from '../stores/project'
+import { useUIStore } from '../stores/ui'
 import '../styles/skills.css'
 
 const SCOPE_LABEL: Record<SkillScope, string> = {
@@ -55,6 +56,8 @@ function emptyDraft(): SkillDraft {
 
 export function SkillsSection() {
   const projectPath = useProjectStore((state) => state.path)
+  const requestConfirm = useUIStore((state) => state.requestConfirm)
+  const showToast = useUIStore((state) => state.showToast)
   const [skills, setSkills] = useState<SkillAdminEntry[]>([])
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [body, setBody] = useState('')
@@ -64,6 +67,8 @@ export function SkillsSection() {
   const [preview, setPreview] = useState<SkillFileContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [cloning, setCloning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [draft, setDraft] = useState<SkillDraft>(emptyDraft)
@@ -247,6 +252,90 @@ export function SkillsSection() {
       setError(
         toggleError instanceof Error ? toggleError.message : '更新状态失败'
       )
+    }
+  }
+
+  const upload = async (
+    folder: 'references' | 'assets'
+  ): Promise<void> => {
+    if (!selected || !selected.editable || uploading) return
+    setUploading(true)
+    setError(null)
+    try {
+      const result = await window.api.skills.uploadFiles(
+        selected.scope,
+        selected.name,
+        folder
+      )
+      if (!result) return
+      setFiles(result.files)
+      setPreview(null)
+      const overwritten = result.overwritten.length
+      showToast(
+        `已上传 ${result.uploaded.length} 个文件${
+          overwritten > 0 ? `，覆盖 ${overwritten} 个` : ''
+        }`
+      )
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error ? uploadError.message : '上传文件失败'
+      )
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const removeFile = (file: SkillFileEntry): void => {
+    if (!selected || !selected.editable) return
+    requestConfirm({
+      title: '删除技能文件',
+      message: `确定删除「${file.path}」？此操作无法撤销。`,
+      confirmLabel: '删除',
+      onConfirm: async () => {
+        setError(null)
+        try {
+          const next = await window.api.skills.removeFile(
+            selected.scope,
+            selected.name,
+            file.path
+          )
+          setFiles(next)
+          if (preview?.path === file.path) setPreview(null)
+        } catch (removeError) {
+          setError(
+            removeError instanceof Error
+              ? removeError.message
+              : '删除文件失败'
+          )
+        }
+      }
+    })
+  }
+
+  const cloneTo = async (
+    targetScope: 'global' | 'project'
+  ): Promise<void> => {
+    if (!selected || cloning) return
+    if (targetScope === 'project' && !projectPath) {
+      setError('请先打开项目，再创建项目覆盖')
+      return
+    }
+    setCloning(true)
+    setError(null)
+    try {
+      const created = await window.api.skills.clone({
+        sourceScope: selected.scope,
+        sourceName: selected.name,
+        targetScope
+      })
+      await refresh({ scope: created.scope, name: created.name })
+      showToast(`已创建${SCOPE_LABEL[targetScope]}覆盖：${created.name}`)
+    } catch (cloneError) {
+      setError(
+        cloneError instanceof Error ? cloneError.message : '创建覆盖失败'
+      )
+    } finally {
+      setCloning(false)
     }
   }
 
@@ -490,6 +579,38 @@ export function SkillsSection() {
                   </div>
                 </div>
                 <div className="skills-detail__actions">
+                  {selected.scope !== 'project' &&
+                  !skills.some(
+                    (entry) =>
+                      entry.scope === 'project' &&
+                      entry.name === selected.name
+                  ) ? (
+                    <button
+                      type="button"
+                      className="btn-secondary btn-small"
+                      onClick={() => void cloneTo('project')}
+                      disabled={!projectPath || cloning}
+                    >
+                      <Icon name="copy" size={13} />
+                      创建项目覆盖
+                    </button>
+                  ) : null}
+                  {selected.scope === 'builtin' &&
+                  !skills.some(
+                    (entry) =>
+                      entry.scope === 'global' &&
+                      entry.name === selected.name
+                  ) ? (
+                    <button
+                      type="button"
+                      className="btn-secondary btn-small"
+                      onClick={() => void cloneTo('global')}
+                      disabled={cloning}
+                    >
+                      <Icon name="copy" size={13} />
+                      创建全局覆盖
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="btn-secondary btn-small"
@@ -597,22 +718,60 @@ export function SkillsSection() {
               <div className="skills-files">
                 <div className="skills-files__head">
                   <span>文件</span>
-                  <small>{files.length} 个</small>
+                  <div className="skills-files__actions">
+                    <small>{files.length} 个</small>
+                    {selected.editable ? (
+                      <>
+                        <button
+                          type="button"
+                          className="skills-link"
+                          onClick={() => void upload('references')}
+                          disabled={uploading}
+                        >
+                          <Icon name="plus" size={11} />
+                          references
+                        </button>
+                        <button
+                          type="button"
+                          className="skills-link"
+                          onClick={() => void upload('assets')}
+                          disabled={uploading}
+                        >
+                          <Icon name="plus" size={11} />
+                          assets
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="skills-files__list">
                   {files.map((file) => (
-                    <button
+                    <div
                       key={file.path}
-                      type="button"
                       className={`skills-file ${
                         preview?.path === file.path ? 'is-active' : ''
                       }`}
-                      onClick={() => void openFile(file)}
                     >
-                      <Icon name={fileIcon(file.path)} size={13} />
-                      <span>{file.path}</span>
-                      <small>{formatSize(file.size)}</small>
-                    </button>
+                      <button
+                        type="button"
+                        className="skills-file__main"
+                        onClick={() => void openFile(file)}
+                      >
+                        <Icon name={fileIcon(file.path)} size={13} />
+                        <span>{file.path}</span>
+                        <small>{formatSize(file.size)}</small>
+                      </button>
+                      {selected.editable && file.path !== 'SKILL.md' ? (
+                        <button
+                          type="button"
+                          className="skills-file__delete"
+                          title="删除文件"
+                          onClick={() => removeFile(file)}
+                        >
+                          <Icon name="trash" size={12} />
+                        </button>
+                      ) : null}
+                    </div>
                   ))}
                 </div>
                 {preview ? (

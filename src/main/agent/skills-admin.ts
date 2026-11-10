@@ -511,6 +511,7 @@ export async function cloneSkill(
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
   }
 
+  await fs.mkdir(dirname(targetDirectory), { recursive: true })
   await fs.cp(sourceDirectory, targetDirectory, {
     recursive: true,
     errorOnExist: true,

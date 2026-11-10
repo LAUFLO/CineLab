@@ -22,6 +22,8 @@ import {
 import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
 import {
+  AGENT_CONTEXT_BUDGET_TOKENS,
+  agentContextStats,
   agentTurnChangeCount,
   useAgentStore,
   type AgentMessage
@@ -91,6 +93,47 @@ interface MentionItem {
   path: string
   scope: 'project' | 'global'
   nodeId?: string
+}
+
+function ContextRing({
+  percent,
+  compacting,
+  title,
+  disabled,
+  onClick
+}: {
+  percent: number
+  compacting: boolean
+  title: string
+  disabled: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className={`agent-context-ring ${
+        percent >= 80 ? 'is-high' : ''
+      }`}
+      title={title}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <circle className="agent-context-ring__track" cx="16" cy="16" r="13" />
+        <circle
+          className="agent-context-ring__value"
+          cx="16"
+          cy="16"
+          r="13"
+          pathLength={100}
+          strokeDasharray={`${Math.max(0, Math.min(100, percent))} ${
+            100 - Math.max(0, Math.min(100, percent))
+          }`}
+        />
+      </svg>
+      <span>{compacting ? '…' : `${percent}%`}</span>
+    </button>
+  )
 }
 
 function MessageActions({
@@ -353,6 +396,8 @@ export function AgentPanel() {
   const messages = useAgentStore((state) => state.messages)
   const attachments = useAgentStore((state) => state.attachments)
   const references = useAgentStore((state) => state.references)
+  const contextSummary = useAgentStore((state) => state.contextSummary)
+  const compacting = useAgentStore((state) => state.compacting)
   const running = useAgentStore((state) => state.running)
   const error = useAgentStore((state) => state.error)
   const modelInfo = useAgentStore((state) => state.modelInfo)
@@ -375,6 +420,7 @@ export function AgentPanel() {
   const removeAttachment = useAgentStore((state) => state.removeAttachment)
   const addReference = useAgentStore((state) => state.addReference)
   const removeReference = useAgentStore((state) => state.removeReference)
+  const compactContext = useAgentStore((state) => state.compactContext)
   const loadSessions = useAgentStore((state) => state.loadSessions)
   const newSession = useAgentStore((state) => state.newSession)
   const selectSession = useAgentStore((state) => state.selectSession)
@@ -392,6 +438,7 @@ export function AgentPanel() {
 
   const clipMode = useStudioStore((state) => state.open)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
+  const showToast = useUIStore((state) => state.showToast)
   const [draft, setDraft] = useState('')
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false)
   const [sessionSearch, setSessionSearch] = useState('')
@@ -403,6 +450,8 @@ export function AgentPanel() {
   const [mentionOpen, setMentionOpen] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
   const [mentionItems, setMentionItems] = useState<MentionItem[]>([])
+  const [mentionIndex, setMentionIndex] = useState(0)
+  const [skillIndex, setSkillIndex] = useState(0)
   const mentionLoadedRef = useRef(false)
   const listRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -473,6 +522,34 @@ export function AgentPanel() {
       ? '用引用的素材生成一段视频'
       : '帮我整理一下当前选中的节点'
   const changedCount = agentTurnChangeCount(lastTurn)
+  const contextStats = useMemo(
+    () => agentContextStats(messages, contextSummary),
+    [messages, contextSummary]
+  )
+  const contextTitle = compacting
+    ? '正在压缩上下文…'
+    : `对话上下文约 ${contextStats.usedTokens.toLocaleString()} / ${Math.round(
+        AGENT_CONTEXT_BUDGET_TOKENS / 1000
+      )}K tokens${
+        contextStats.coveredMessages > 0
+          ? `，已压缩 ${contextStats.coveredMessages} 条旧消息`
+          : ''
+      }；点击手动压缩`
+  const requestCompact = (): void => {
+    if (running || compacting) return
+    if (contextStats.compactableMessages === 0) {
+      showToast('当前上下文较短，不需要压缩', 'info')
+      return
+    }
+    requestConfirm({
+      title: '压缩上下文',
+      message: `当前约 ${contextStats.usedTokens.toLocaleString()} tokens。将把较早的 ${contextStats.compactableMessages} 条对话总结成摘要，后续对话使用摘要；原始消息仍保留在会话记录中。`,
+      confirmLabel: '压缩',
+      onConfirm: () => {
+        void compactContext()
+      }
+    })
+  }
   const renderItems = useMemo(() => buildRenderItems(messages), [messages])
   const visibleSessions = sessions.filter(
     (session) =>
@@ -509,6 +586,7 @@ export function AgentPanel() {
   const openSkillPicker = (): void => {
     setSkillPickerOpen(true)
     setSkillSearch('')
+    setSkillIndex(0)
     setMentionOpen(false)
     void window.api.skills.list().then(setSkills).catch(() => setSkills([]))
   }
@@ -575,6 +653,7 @@ export function AgentPanel() {
       setPermissionMenuOpen(false)
       setMentionOpen(true)
       setMentionQuery(mentionMatch[2] ?? '')
+      setMentionIndex(0)
       if (!mentionLoadedRef.current) void loadMentionItems()
     } else if (mentionOpen) {
       setMentionOpen(false)
@@ -585,6 +664,7 @@ export function AgentPanel() {
     if (slashMatch && !mentionMatch) {
       if (!skillPickerOpen) {
         setSkillPickerOpen(true)
+        setSkillIndex(0)
         void window.api.skills.list().then(setSkills).catch(() => setSkills([]))
       }
       setSkillSearch(slashMatch[2] ?? '')
@@ -604,6 +684,7 @@ export function AgentPanel() {
     )
     setMentionOpen(false)
     setMentionQuery('')
+    setMentionIndex(0)
     textareaRef.current?.focus()
   }
 
@@ -938,11 +1019,14 @@ export function AgentPanel() {
                       没有匹配的素材
                     </div>
                   ) : (
-                    filteredMentionItems.map((item) => (
+                    filteredMentionItems.map((item, index) => (
                       <button
                         key={item.key}
                         type="button"
-                        className="agent-mention-item"
+                        className={`agent-mention-item ${
+                          index === mentionIndex ? 'is-active' : ''
+                        }`}
+                        onMouseEnter={() => setMentionIndex(index)}
                         onClick={() => insertReference(item)}
                       >
                         <Icon
@@ -974,10 +1058,35 @@ export function AgentPanel() {
                 syncInputTriggers(value)
               }}
               onKeyDown={(event) => {
-                if (event.key === 'Escape' && mentionOpen) {
-                  event.preventDefault()
-                  setMentionOpen(false)
-                  return
+                if (mentionOpen) {
+                  if (event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    setMentionIndex((index) =>
+                      Math.min(
+                        index + 1,
+                        Math.max(0, filteredMentionItems.length - 1)
+                      )
+                    )
+                    return
+                  }
+                  if (event.key === 'ArrowUp') {
+                    event.preventDefault()
+                    setMentionIndex((index) => Math.max(0, index - 1))
+                    return
+                  }
+                  if (event.key === 'Enter') {
+                    const item = filteredMentionItems[mentionIndex]
+                    if (item) {
+                      event.preventDefault()
+                      insertReference(item)
+                      return
+                    }
+                  }
+                  if (event.key === 'Escape') {
+                    event.preventDefault()
+                    setMentionOpen(false)
+                    return
+                  }
                 }
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault()
@@ -1076,9 +1185,41 @@ export function AgentPanel() {
                         <input
                           autoFocus
                           value={skillSearch}
-                          onChange={(event) =>
+                          onChange={(event) => {
                             setSkillSearch(event.target.value)
-                          }
+                            setSkillIndex(0)
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'ArrowDown') {
+                              event.preventDefault()
+                              setSkillIndex((index) =>
+                                Math.min(
+                                  index + 1,
+                                  Math.max(0, filteredSkills.length - 1)
+                                )
+                              )
+                              return
+                            }
+                            if (event.key === 'ArrowUp') {
+                              event.preventDefault()
+                              setSkillIndex((index) =>
+                                Math.max(0, index - 1)
+                              )
+                              return
+                            }
+                            if (event.key === 'Enter') {
+                              const skill = filteredSkills[skillIndex]
+                              if (skill) {
+                                event.preventDefault()
+                                insertSkill(skill)
+                              }
+                              return
+                            }
+                            if (event.key === 'Escape') {
+                              event.preventDefault()
+                              setSkillPickerOpen(false)
+                            }
+                          }}
                           placeholder="搜索技能"
                         />
                       </div>
@@ -1088,11 +1229,14 @@ export function AgentPanel() {
                             没有可用技能
                           </div>
                         ) : (
-                          filteredSkills.map((skill) => (
+                          filteredSkills.map((skill, index) => (
                             <button
                               key={`${skill.scope}:${skill.name}`}
                               type="button"
-                              className="agent-skill-item"
+                              className={`agent-skill-item ${
+                                index === skillIndex ? 'is-active' : ''
+                              }`}
+                              onMouseEnter={() => setSkillIndex(index)}
                               onClick={() => insertSkill(skill)}
                             >
                               <div>
@@ -1110,6 +1254,13 @@ export function AgentPanel() {
                   ) : null}
                 </span>
               </div>
+              <ContextRing
+                percent={contextStats.percent}
+                compacting={compacting}
+                title={contextTitle}
+                disabled={running || compacting}
+                onClick={requestCompact}
+              />
               {running ? (
                 <button
                   type="button"

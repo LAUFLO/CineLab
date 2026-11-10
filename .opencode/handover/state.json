@@ -1,5 +1,5 @@
 {
-  "version": 66,
+  "version": 67,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-10T13:58:01.720Z",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
-  "next_focus": "CineBot 整体自验收通过，等待用户验收反馈。下一步处理验收问题、Agnes 视频队列恢复后补测，并在推送前同步 origin/main（落后 11 个提交）。",
+  "next_focus": "已同步 origin/main 并解决全部冲突，类型检查/277 测试/构建通过，隔离实例 smoke test 通过。下一步推送 feat/agent-runtime 并创建到 main 的 PR；已知缺口在 PR 合并后继续优化。",
   "frontier": [
     {
       "id": "M2-1",
@@ -449,6 +449,20 @@
         ".opencode/handover/evidence/AGENT-ACCEPTANCE-1.md",
         "src/main/agent/__tests__/skills-admin.test.ts",
         "src/main/agent/__tests__/compact.test.ts"
+      ]
+    },
+    {
+      "id": "MERGE-MAIN-1",
+      "title": "同步 origin/main 并解决冲突",
+      "status": "done",
+      "note": "2026-11-10 完成。origin/main 9f4511d 合并进 feat/agent-runtime，合并提交 5b4f0ea，修复提交 a5a0ced。解决 6 个冲突文件：AGENTS.md、state.json、generate.ts、InspectorPane、canvas store、global.css。main 新增 marked 依赖已安装；generate.ts 的图片引用改动移植到 start-generation.ts；InspectorPane 保留属性/画面/音频分页并移除旧助手分页；canvas store 重新叠加 stage/applyCommands/回合撤销；timeline_export 改为写回合并后的 studio 节点。40 文件 277 测试通过，typecheck/build 通过；隔离实例 smoke test 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/MERGE-MAIN-1.md",
+        "AGENTS.md",
+        "src/main/engine/start-generation.ts",
+        "src/renderer/src/stores/canvas.ts",
+        "src/renderer/src/studio/InspectorPane.tsx",
+        "src/renderer/src/agent/timelineBridge.ts"
       ]
     },
     {
@@ -1713,9 +1727,9 @@
     {
       "id": "G-AGENT-MAIN",
       "scope": "repo",
-      "status": "blocked",
-      "reason": "origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4（连线删除 / 拉片镜头检测重做）、71c8b48（音频控件与文本占位）、336debb（模型参数配置精简）、1627ac9（剪辑室画幅与预览适配）、72679c8（六种画幅与缩略图修复）、ef5c0d1（剪辑室预览稳定与检查器分页）、8d6a4fb（多模态文本模型图片引用），当前 feat/agent-runtime 落后 11 个提交",
-      "resolve": "推送前先同步 origin/main，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract / provider 参数配置冲突"
+      "status": "resolved",
+      "reason": "origin/main 已同步到 9f4511d，冲突已解决，合并提交 5b4f0ea；当前分支领先 31、落后 0",
+      "resolve": "推送 feat/agent-runtime 并创建到 main 的 PR"
     }
   ],
   "completed": [
@@ -2613,6 +2627,18 @@
     {
       "category": "engineering",
       "content": "Agent 上下文压缩 v1：发送按钮左侧圆环按 3 字符≈1 token、32K 固定预算估算；点击确认后保留最近 6 条 user/assistant 消息，更早内容由当前文本模型生成摘要，写入 session JSONL 的 summary 条目（content + coveredMessages）；运行时跳过 coveredMessages 前的对话并注入摘要。摘要失败不落盘；原始消息仍保留展示。"
+    },
+    {
+      "category": "engineering",
+      "content": "合并 main 时 generate.ts 已拆成薄 IPC + engine/start-generation；main 对旧 generate.ts 的图片引用改动要移植到 start-generation，不能保留旧内联生成逻辑。"
+    },
+    {
+      "category": "engineering",
+      "content": "main 已把成片从独立 film 节点合并进 studio 节点：timeline_export 要调用 applyStudioOutput/patchStudioNode，不能再使用 applyFilmOutput/patchFilmNode。"
+    },
+    {
+      "category": "engineering",
+      "content": "main 的 InspectorPane 有属性/画面/音频分页；合并时保留这些分页，只移除旧的助手分页和 AssistantPane，因为 CineBot 已改为全局浮窗。"
     }
   ],
   "designConventions": [
@@ -2647,6 +2673,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "用户验收与 main 同步"
+    "nextMilestone": "推送分支与 PR 合并"
   }
 }

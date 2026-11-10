@@ -42,8 +42,9 @@
 | `AGENT-UI-REFINE-1` | 面板对齐/会话删除/多能力模型/@ 引用/技能弹窗/上下文圆环与手动压缩 |
 | `SKILLS-FILES-1` | 技能 references/assets 上传、覆盖、删除；同名技能快速覆盖 |
 | `AGENT-ACCEPTANCE-1` | CineBot 画布/剪辑/技能/上下文/会话整体自验收 |
-| 验证 | 260 测试、`typecheck`、`build` 通过；画布生成提案与模型覆盖、剪辑转场、技能上传/覆盖/删除、上下文压缩、会话删除、素材引用、CineBot UI 回归通过 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 29 个提交、落后 11 个（a768e64、6abef3d、3a406a7、436768d、91b16b4、71c8b48、336debb、1627ac9、72679c8、ef5c0d1、8d6a4fb），未推送；推送前先同步 |
+| `MERGE-MAIN-1` | 同步 origin/main 9f4511d，解决 6 个冲突，合并后 277 测试通过 |
+| 验证 | 40 文件 277 测试、`typecheck`、`build` 通过；画布生成提案与模型覆盖、剪辑转场、技能上传/覆盖/删除、上下文压缩、会话删除、素材引用、CineBot UI、合并后剪辑室分页与 studio 成片回归通过 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 32 个提交、落后 0，未推送；下一步推送分支并创建 PR |
 
 ## 关键工件
 

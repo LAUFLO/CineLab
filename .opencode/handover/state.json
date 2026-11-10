@@ -1,13 +1,13 @@
 {
-  "version": 71,
+  "version": 72,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-10T15:55:00.000Z",
+  "updatedAt": "2026-11-11T16:10:00.000Z",
   "phase": "AGENT",
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
-  "next_focus": "Phase 2 节点操作桥已在 feat/node-operation-bridge 完成：统一 runner、canvas_node_operations/canvas_node_operation、capability_catalog、能力注册表投影。下一步：提交分支、创建 PR、CI 通过后 review 合并；Phase 3 再做完整 tools 拆分和拉片/导演台能力补齐。",
+  "next_focus": "Phase 3 已在 feat/agent-phase3 完成：拉片段落编辑与快照撤销、字幕提取、导演台镜头/运镜/背景/对象属性、capability_search。下一步：提交分支、创建 PR、CI 通过后合并；后续再做拉片分析包导入、对象动作轨、真实 tokenizer/动态工具暴露和 Agnes 视频补测。",
   "frontier": [
     {
       "id": "M2-1",
@@ -507,6 +507,19 @@
         "src/shared/node-operation-specs.ts",
         "src/renderer/src/canvas/nodes/node-operation-runner.ts",
         "src/main/agent/capabilities/registry.ts"
+      ]
+    },
+    {
+      "id": "AGENT-PHASE3",
+      "title": "CineBot Phase 3：拉片段落编辑/字幕提取、导演台镜头/运镜/背景、能力搜索",
+      "status": "done",
+      "note": "2026-11-11 完成。新增 film_study_update_segment、film_study_extract_subtitles、stage_add_shot、stage_update_shot、stage_remove_shot、stage_set_camera_track、stage_set_background、stage_update_object、capability_search。AgentTurnChange.filmUpdated 接入本轮撤销；useFilmStudyStore 增加最多 10 份拉片快照并在撤销时写回；StageCommand 新增 setBackground。typecheck、310 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-PHASE3.md",
+        "docs/agent-phase3-plan.md",
+        "docs/agent-capabilities.md",
+        "src/shared/__tests__/stage-commands.test.ts",
+        "src/main/agent/__tests__/tools.test.ts"
       ]
     },
     {

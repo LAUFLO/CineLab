@@ -323,13 +323,14 @@ capability_catalog
 - 新增 `capabilities/types.ts` + `capabilities/registry.ts` 作为能力投影；`CANVAS_TOOLS` 等定义暂时保留在 `tools.ts`，保持兼容导出，完整文件拆分留到 Phase 3。
 - 保持兼容导出，避免一次性大改。
 
-### Phase 3（后续）
+### Phase 3（已实施，`feat/agent-phase3`）
 
-- 拉片完整 Agent：读取、自动拉片、段落编辑、导出、导入。
-- 导演台完整 Agent：镜头/运镜、灯光/背景、预览。
-- 能力搜索与动态工具暴露。
-- 真实 tokenizer / 动态上下文预算。
-- Agnes 视频补测。
+状态：**已实施**（2026-11-11）。详见 `docs/agent-phase3-plan.md`。
+
+- 拉片完整 Agent：读取、自动拉片、段落编辑、字幕提取、导出；导入保留界面。
+- 导演台完整 Agent：镜头/运镜、背景、对象姿势/颜色/可见性、预览。
+- 能力搜索：`capability_search`。
+- 真实 tokenizer / 动态上下文预算、Agnes 视频补测仍留后续。
 
 ## 6. 合并策略建议
 

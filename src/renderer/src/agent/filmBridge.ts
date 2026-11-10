@@ -4,10 +4,12 @@ import type {
 } from '@shared/agent'
 import type {
   FilmStudy,
-  FilmStudyOutputOptions
+  FilmStudyOutputOptions,
+  FilmStudySegment
 } from '@shared/film-study'
 import { createStudyNodeFromVideo, runFilmStudyAuto } from '../canvas/nodes/film-study-runner'
 import { useCanvasStore } from '../stores/canvas'
+import { useFilmStudyStore } from '../stores/film-study'
 
 export interface FilmToolResult {
   ok: boolean
@@ -31,6 +33,10 @@ function emptyChange(): AgentTurnChange {
     previousTitles: {},
     previousPositions: {}
   }
+}
+
+function filmChange(): AgentTurnChange {
+  return { ...emptyChange(), filmUpdated: true }
 }
 
 function nodeById(nodeId: string) {
@@ -264,6 +270,66 @@ export async function executeFilmTool(
         ...(exported.ok
           ? { result: { ...(exported.result as object), studyId: ref.studyId } }
           : {})
+      }
+    }
+
+    if (call.name === 'film_study_update_segment') {
+      const ref = resolveStudy(nodeId, studyId)
+      const study = await window.api.filmStudy.load(ref.studyId)
+      const segmentId = String(call.args.segmentId ?? '')
+      const segment = study.segments.find((item) => item.id === segmentId)
+      if (!segment) {
+        return { ok: false, error: '找不到这个拉片段落' }
+      }
+      const patch =
+        call.args.patch &&
+        typeof call.args.patch === 'object' &&
+        !Array.isArray(call.args.patch)
+          ? (call.args.patch as Partial<FilmStudySegment>)
+          : {}
+      if (Object.keys(patch).length === 0) {
+        return { ok: false, error: 'patch 不能为空' }
+      }
+
+      useFilmStudyStore.getState().rememberFilmTurn(call.turnId, study)
+      const next: FilmStudy = {
+        ...study,
+        segments: study.segments.map((item) =>
+          item.id === segmentId ? { ...item, ...patch, id: item.id } : item
+        ),
+        updatedAt: new Date().toISOString()
+      }
+      const saved = await window.api.filmStudy.save(next)
+      if (useFilmStudyStore.getState().study?.id === saved.id) {
+        useFilmStudyStore.getState().replaceStudy(saved)
+      }
+      const updated = saved.segments.find((item) => item.id === segmentId)
+      return {
+        ok: true,
+        result: {
+          studyId: saved.id,
+          segmentId,
+          segment: updated ?? null
+        },
+        change: filmChange()
+      }
+    }
+
+    if (call.name === 'film_study_extract_subtitles') {
+      const ref = resolveStudy(nodeId, studyId)
+      const before = await window.api.filmStudy.load(ref.studyId)
+      useFilmStudyStore.getState().rememberFilmTurn(call.turnId, before)
+      const saved = await window.api.filmStudy.extractSubtitles(ref.studyId)
+      if (useFilmStudyStore.getState().study?.id === saved.id) {
+        useFilmStudyStore.getState().replaceStudy(saved)
+      }
+      return {
+        ok: true,
+        result: {
+          studyId: saved.id,
+          subtitleCount: saved.subtitles?.length ?? 0
+        },
+        change: filmChange()
       }
     }
 

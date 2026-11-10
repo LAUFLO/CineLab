@@ -7,11 +7,14 @@ import {
   type StageCommand
 } from '@shared/stage-commands'
 import type {
+  CameraKeyframe,
   DirectorStageDoc,
   StageAspect,
+  StageBackground,
   StageCamera,
   StageObject,
   StageObjectType,
+  StageShot,
   StageTransform,
   StageVec3
 } from '@shared/stage-schema'
@@ -380,6 +383,182 @@ export async function executeStageTool(
       result: {
         objectId,
         objectCount: updated.objects.length
+      },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_add_shot') {
+    await ensureStageOpen(nodeId)
+    const { doc } = await readDoc(nodeId)
+    const cameraId = String(call.args.cameraId ?? '')
+    const durationMs = Number(call.args.durationMs)
+    const aspect = call.args.aspect as StageAspect
+    const shot: StageShot = {
+      id: generateId('shot'),
+      ...(typeof call.args.name === 'string' && call.args.name.trim()
+        ? { name: call.args.name.trim() }
+        : { name: `镜头 ${doc.shots.length + 1}` }),
+      cameraId,
+      durationMs,
+      aspect
+    }
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'addShot', shot }],
+      call.turnId
+    )
+    return {
+      ok: true,
+      result: {
+        shotId: shot.id,
+        shot,
+        shotCount: updated.shots.length
+      },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_update_shot') {
+    await ensureStageOpen(nodeId)
+    const shotId = String(call.args.shotId ?? '')
+    const patch: Partial<Omit<StageShot, 'id'>> = {}
+    if (typeof call.args.name === 'string') patch.name = call.args.name.trim()
+    if (typeof call.args.cameraId === 'string') {
+      patch.cameraId = call.args.cameraId.trim()
+    }
+    if (typeof call.args.durationMs === 'number') {
+      patch.durationMs = call.args.durationMs
+    }
+    if (typeof call.args.aspect === 'string') {
+      patch.aspect = call.args.aspect as StageAspect
+    }
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'updateShot', shotId, patch }],
+      call.turnId
+    )
+    const shot = updated.shots.find((item) => item.id === shotId)
+    return {
+      ok: true,
+      result: {
+        shotId,
+        shot: shot
+          ? {
+              id: shot.id,
+              name: shot.name ?? null,
+              cameraId: shot.cameraId,
+              durationMs: shot.durationMs,
+              aspect: shot.aspect,
+              cameraKeyframes: shot.cameraTrack?.length ?? 0
+            }
+          : null
+      },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_remove_shot') {
+    await ensureStageOpen(nodeId)
+    const shotId = String(call.args.shotId ?? '')
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'removeShot', shotId }],
+      call.turnId
+    )
+    return {
+      ok: true,
+      result: {
+        shotId,
+        shotCount: updated.shots.length
+      },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_set_camera_track') {
+    await ensureStageOpen(nodeId)
+    const shotId = String(call.args.shotId ?? '')
+    const raw = Array.isArray(call.args.keyframes)
+      ? call.args.keyframes
+      : []
+    const keyframes: CameraKeyframe[] = raw.map((frame) => {
+      const item =
+        frame && typeof frame === 'object'
+          ? (frame as Record<string, unknown>)
+          : {}
+      return {
+        timeMs: Number(item.timeMs),
+        position: readVec(item.position, [0, 0, 0]),
+        target: readVec(item.target, [0, 0, 0]),
+        fov: Number(item.fov),
+        ...(typeof item.easing === 'string'
+          ? { easing: item.easing as CameraKeyframe['easing'] }
+          : {})
+      }
+    })
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'setCameraTrack', shotId, track: keyframes }],
+      call.turnId
+    )
+    const shot = updated.shots.find((item) => item.id === shotId)
+    return {
+      ok: true,
+      result: {
+        shotId,
+        keyframeCount: shot?.cameraTrack?.length ?? keyframes.length
+      },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_set_background') {
+    await ensureStageOpen(nodeId)
+    const background: StageBackground = {
+      kind: String(call.args.kind) as StageBackground['kind'],
+      value: String(call.args.value ?? '').trim()
+    }
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'setBackground', background }],
+      call.turnId
+    )
+    return {
+      ok: true,
+      result: { background: updated.background },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_update_object') {
+    await ensureStageOpen(nodeId)
+    const objectId = String(call.args.objectId ?? '')
+    const commands: StageCommand[] = []
+    if (typeof call.args.pose === 'string') {
+      commands.push({ type: 'setPose', objectId, pose: call.args.pose })
+    }
+    if (typeof call.args.color === 'string') {
+      commands.push({ type: 'setColor', objectId, color: call.args.color })
+    }
+    if (typeof call.args.visible === 'boolean') {
+      commands.push({
+        type: 'setVisible',
+        objectId,
+        visible: call.args.visible
+      })
+    }
+    if (commands.length === 0) {
+      return { ok: false, error: '没有可修改的对象属性' }
+    }
+    const updated = await applyToStage(nodeId, commands, call.turnId)
+    const object = updated.objects.find((item) => item.id === objectId)
+    if (!object) throw new Error('找不到这个对象')
+    return {
+      ok: true,
+      result: {
+        objectId,
+        object: objectSummary(object)
       },
       change: stageChange()
     }

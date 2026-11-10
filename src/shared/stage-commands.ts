@@ -9,6 +9,7 @@ import {
   type CameraKeyframe,
   type DirectorStageDoc,
   type PreviewOptions,
+  type StageBackground,
   type StageCamera,
   type StageObject,
   type StageShot,
@@ -44,6 +45,7 @@ export type StageCommand =
   | { type: 'setCameraTrack'; shotId: string; track: CameraKeyframe[] }
   | { type: 'setActionTrack'; shotId: string; track: ActionTrack }
   | { type: 'setActiveCamera'; cameraId: string | null }
+  | { type: 'setBackground'; background: StageBackground }
   | { type: 'captureFrame'; cameraId: string; shotId?: string }
   | {
       type: 'renderPreview'
@@ -66,6 +68,7 @@ export interface StageChange {
   updatedShotIds: string[]
   deletedShotIds: string[]
   activeCameraChanged: boolean
+  backgroundChanged: boolean
 }
 
 export interface StageCommandResult {
@@ -91,7 +94,8 @@ export function emptyStageChange(): StageChange {
     createdShotIds: [],
     updatedShotIds: [],
     deletedShotIds: [],
-    activeCameraChanged: false
+    activeCameraChanged: false,
+    backgroundChanged: false
   }
 }
 
@@ -110,6 +114,7 @@ function mergeChange(target: StageChange, source: StageChange): void {
   for (const id of source.updatedShotIds) pushUnique(target.updatedShotIds, id)
   for (const id of source.deletedShotIds) pushUnique(target.deletedShotIds, id)
   target.activeCameraChanged ||= source.activeCameraChanged
+  target.backgroundChanged ||= source.backgroundChanged
 }
 
 function fail(
@@ -595,6 +600,22 @@ export function applyStageCommand(
       }
       next.activeCameraId = command.cameraId ?? undefined
       change.activeCameraChanged = true
+      break
+    }
+
+    case 'setBackground': {
+      if (!['color', 'panorama', 'model'].includes(command.background.kind)) {
+        return fail(doc, '背景类型无效')
+      }
+      if (
+        typeof command.background.value !== 'string' ||
+        !command.background.value.trim() ||
+        command.background.value.length > 2000
+      ) {
+        return fail(doc, '背景值无效')
+      }
+      next.background = { ...command.background }
+      change.backgroundChanged = true
       break
     }
 

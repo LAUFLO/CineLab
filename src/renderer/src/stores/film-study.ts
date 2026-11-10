@@ -39,11 +39,15 @@ interface FilmStudyState {
   closeSheet: () => void
   updateStudy: (updater: (study: FilmStudy) => FilmStudy) => void
   replaceStudy: (study: FilmStudy) => void
+  rememberFilmTurn: (turnId: string, study: FilmStudy) => void
+  undoFilmTurn: (turnId: string) => Promise<boolean>
   saveNow: () => Promise<void>
   closeRoom: () => void
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
+const MAX_FILM_TURN_SNAPSHOTS = 10
+const filmTurnSnapshots = new Map<string, FilmStudy>()
 
 function patchNode(nodeId: string, patch: Partial<CineNodeData>): void {
   useCanvasStore.getState().patchNodeData(nodeId, patch)
@@ -473,6 +477,32 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
     set({ study })
     const nodeId = get().roomNodeId
     if (nodeId) patchSummary(nodeId, study)
+  },
+
+  rememberFilmTurn: (turnId, study) => {
+    if (!turnId) return
+    filmTurnSnapshots.set(turnId, structuredClone(study))
+    while (filmTurnSnapshots.size > MAX_FILM_TURN_SNAPSHOTS) {
+      const oldest = filmTurnSnapshots.keys().next().value
+      if (!oldest) break
+      filmTurnSnapshots.delete(oldest)
+    }
+  },
+
+  undoFilmTurn: async (turnId) => {
+    const snapshot = filmTurnSnapshots.get(turnId)
+    if (!snapshot) return false
+    filmTurnSnapshots.delete(turnId)
+
+    try {
+      const saved = await window.api.filmStudy.save(snapshot)
+      if (get().study?.id === saved.id) set({ study: saved })
+      const nodeId = get().roomNodeId
+      if (nodeId) patchSummary(nodeId, saved)
+      return true
+    } catch {
+      return false
+    }
   },
 
   saveNow: async () => {

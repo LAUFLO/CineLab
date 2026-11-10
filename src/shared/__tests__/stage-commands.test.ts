@@ -482,6 +482,33 @@ describe('stage batch and effects', () => {
       }
     ])
   })
+
+  it('sets the stage background', () => {
+    const doc = baseDoc()
+    const result = applyStageCommand(doc, {
+      type: 'setBackground',
+      background: { kind: 'color', value: '#101010' }
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.doc.background).toEqual({
+      kind: 'color',
+      value: '#101010'
+    })
+    expect(result.change.backgroundChanged).toBe(true)
+  })
+
+  it('rejects an empty background', () => {
+    const doc = baseDoc()
+    const result = applyStageCommand(doc, {
+      type: 'setBackground',
+      background: { kind: 'color', value: ' ' }
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.error).toContain('背景值无效')
+    expect(result.doc).toBe(doc)
+  })
 })
 
 describe('stage history', () => {

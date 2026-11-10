@@ -1,5 +1,5 @@
 {
-  "version": 64,
+  "version": 65,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "CineBot UI 精修、上下文圆环/手动压缩、多能力模型选择、@/技能弹窗、会话删除均已完成并验证。下一步整体验收与回归修复，再补技能文件上传/覆盖快捷操作；推送前先同步 origin/main。",
+  "next_focus": "技能文件上传、覆盖与删除已完成并验证。下一步整体验收与回归修复，再补 Agnes 视频补测；推送前先同步 origin/main。",
   "frontier": [
     {
       "id": "M2-1",
@@ -424,6 +424,20 @@
         "src/renderer/src/agent/AgentPanel.tsx",
         "src/renderer/src/agent/agentStore.ts",
         "src/renderer/src/styles/agent.css"
+      ]
+    },
+    {
+      "id": "SKILLS-FILES-1",
+      "title": "技能文件上传、删除与同名覆盖",
+      "status": "done",
+      "note": "2026-11-10 完成。新增 references/assets 多文件上传（同名覆盖）、技能文件删除、同名技能克隆覆盖（递归复制 SKILL.md/references/assets）；设置技能页增加上传/删除按钮与「创建项目覆盖」「创建全局覆盖」；Agent 技能弹窗底部增加「管理技能」。真实 UI 验证项目覆盖、文件列表、删除确认与磁盘移除；新增上传/覆盖/删除/克隆测试。37 文件 260 测试通过，typecheck/build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/SKILLS-FILES-1.md",
+        ".opencode/handover/evidence/SKILLS-UPLOAD-1.png",
+        "src/main/agent/skills-admin.ts",
+        "src/main/ipc/skills.ts",
+        "src/renderer/src/panels/SkillsSection.tsx",
+        "src/main/agent/__tests__/skills-admin.test.ts"
       ]
     },
     {
@@ -2386,6 +2400,14 @@
     {
       "category": "engineering",
       "content": "内置技能只读；技能管理只允许 SKILL.md、references/、assets/，并做 realpath 逃逸校验。"
+    },
+    {
+      "category": "engineering",
+      "content": "技能文件上传只允许可编辑作用域的 references/assets：单次 20 个、单文件 20MB、单次 100MB；同名文件直接覆盖并返回 overwritten。技能文件删除不允许 SKILL.md，路径必须经过 normalizeSkillPath 和 isWithin。"
+    },
+    {
+      "category": "engineering",
+      "content": "同名技能覆盖用 cloneSkill 递归复制 SKILL.md/references/assets 到更高优先级作用域，并清除目标作用域旧 override；目标已有同名技能时拒绝，UI 隐藏对应覆盖按钮。"
     },
     {
       "category": "engineering",

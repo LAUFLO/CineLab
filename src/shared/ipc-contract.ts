@@ -57,10 +57,13 @@ import type {
 import type { DirectorStageDoc } from './stage-schema'
 import type {
   SkillAdminEntry,
+  SkillCloneInput,
   SkillFileContent,
   SkillFileEntry,
   SkillOverrideInput,
   SkillScope,
+  SkillUploadFolder,
+  SkillUploadResult,
   SkillWriteInput
 } from './skills'
 import type { OperationBindings } from './operation-schema'
@@ -438,6 +441,17 @@ export interface SkillsApi {
   create(input: SkillWriteInput): Promise<SkillAdminEntry>
   save(input: SkillWriteInput): Promise<SkillAdminEntry>
   remove(scope: SkillScope, name: string): Promise<void>
+  uploadFiles(
+    scope: SkillScope,
+    name: string,
+    folder: SkillUploadFolder
+  ): Promise<SkillUploadResult | null>
+  removeFile(
+    scope: SkillScope,
+    name: string,
+    path: string
+  ): Promise<SkillFileEntry[]>
+  clone(input: SkillCloneInput): Promise<SkillAdminEntry>
   setOverride(input: SkillOverrideInput): Promise<SkillAdminEntry>
   openDirectory(scope: SkillScope, name?: string): Promise<void>
   openFile(scope: SkillScope, name: string, path: string): Promise<void>

@@ -438,6 +438,11 @@ const api: CineApi = {
     create: (input) => ipcRenderer.invoke('skills:create', input),
     save: (input) => ipcRenderer.invoke('skills:save', input),
     remove: (scope, name) => ipcRenderer.invoke('skills:remove', scope, name),
+    uploadFiles: (scope, name, folder) =>
+      ipcRenderer.invoke('skills:upload-files', scope, name, folder),
+    removeFile: (scope, name, path) =>
+      ipcRenderer.invoke('skills:remove-file', scope, name, path),
+    clone: (input) => ipcRenderer.invoke('skills:clone', input),
     setOverride: (input) =>
       ipcRenderer.invoke('skills:set-override', input),
     openDirectory: (scope, name) =>

@@ -1,15 +1,20 @@
 import { promises as fs } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import {
   MAX_SKILL_DESCRIPTION_LENGTH,
+  MAX_SKILL_UPLOAD_BYTES,
+  MAX_SKILL_UPLOAD_FILES,
   SKILL_NAME_PATTERN,
   normalizeSkillPath,
   parseSkillMarkdown,
   type SkillAdminEntry,
+  type SkillCloneInput,
   type SkillFileContent,
   type SkillFileEntry,
   type SkillOverrideInput,
   type SkillScope,
+  type SkillUploadFolder,
+  type SkillUploadResult,
   type SkillWriteInput
 } from '@shared/skills'
 import {
@@ -377,6 +382,149 @@ export async function listSkillFiles(
 
   await walk('', 0)
   return files.sort((left, right) => left.path.localeCompare(right.path))
+}
+
+function assertUploadFolder(folder: string): asserts folder is SkillUploadFolder {
+  if (folder !== 'references' && folder !== 'assets') {
+    throw new Error('只能上传到 references 或 assets')
+  }
+}
+
+function safeFileName(filePath: string): string {
+  const fileName = basename(filePath)
+  if (
+    !fileName ||
+    fileName === '.' ||
+    fileName === '..' ||
+    fileName.length > 200 ||
+    /[\\/:*?"<>|\u0000-\u001f]/.test(fileName)
+  ) {
+    throw new Error(`文件名无效：${fileName}`)
+  }
+  return fileName
+}
+
+export async function importSkillFiles(
+  root: string,
+  input: {
+    scope: SkillScope
+    name: string
+    folder: SkillUploadFolder
+    files: string[]
+  }
+): Promise<SkillUploadResult> {
+  assertEditableScope(input.scope)
+  assertUploadFolder(input.folder)
+  const directory = await skillDirectoryFor(root, input.scope, input.name)
+  if (
+    input.files.length === 0 ||
+    input.files.length > MAX_SKILL_UPLOAD_FILES
+  ) {
+    throw new Error(`一次最多上传 ${MAX_SKILL_UPLOAD_FILES} 个文件`)
+  }
+
+  const targetDirectory = join(directory, input.folder)
+  await fs.mkdir(targetDirectory, { recursive: true })
+  const uploaded: string[] = []
+  const overwritten: string[] = []
+  let totalBytes = 0
+
+  for (const source of input.files) {
+    const fileName = safeFileName(source)
+    const info = await fs.stat(source).catch(() => null)
+    if (!info?.isFile()) throw new Error(`不是文件：${fileName}`)
+    if (info.size <= 0) throw new Error(`文件为空：${fileName}`)
+    if (info.size > MAX_SKILL_UPLOAD_BYTES) {
+      throw new Error(`文件超过 20MB：${fileName}`)
+    }
+    totalBytes += info.size
+    if (totalBytes > MAX_SKILL_UPLOAD_BYTES * 5) {
+      throw new Error('单次上传总大小不能超过 100MB')
+    }
+
+    const target = join(targetDirectory, fileName)
+    const relativePath = `${input.folder}/${fileName}`
+    try {
+      await fs.access(target)
+      overwritten.push(relativePath)
+    } catch {
+      uploaded.push(relativePath)
+    }
+    await fs.copyFile(source, target)
+  }
+
+  return {
+    uploaded,
+    overwritten,
+    files: await listSkillFiles(root, {
+      scope: input.scope,
+      name: input.name
+    })
+  }
+}
+
+export async function removeSkillFile(
+  root: string,
+  input: { scope: SkillScope; name: string; path: string }
+): Promise<SkillFileEntry[]> {
+  assertEditableScope(input.scope)
+  const directory = await skillDirectoryFor(root, input.scope, input.name)
+  const relativePath = normalizeSkillPath(input.path)
+  if (
+    !relativePath ||
+    (!relativePath.startsWith('references/') &&
+      !relativePath.startsWith('assets/'))
+  ) {
+    throw new Error('只能删除 references 或 assets 下的文件')
+  }
+  const target = resolve(directory, relativePath)
+  if (!isWithin(directory, target)) throw new Error('技能文件路径越界')
+  const info = await fs.lstat(target).catch(() => null)
+  if (!info?.isFile()) throw new Error('技能文件不存在')
+  await fs.rm(target, { force: true })
+  return listSkillFiles(root, {
+    scope: input.scope,
+    name: input.name
+  })
+}
+
+export async function cloneSkill(
+  root: string,
+  input: SkillCloneInput
+): Promise<SkillAdminEntry> {
+  assertEditableScope(input.targetScope)
+  assertName(input.sourceName)
+  const sourceDirectory = await skillDirectoryFor(
+    root,
+    input.sourceScope,
+    input.sourceName
+  )
+  const targetDirectory = skillDirectory(
+    root,
+    input.targetScope,
+    input.sourceName
+  )
+  try {
+    await fs.access(targetDirectory)
+    throw new Error('目标作用域已有同名技能')
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+  }
+
+  await fs.cp(sourceDirectory, targetDirectory, {
+    recursive: true,
+    errorOnExist: true,
+    force: false
+  })
+  await removeSkillOverride(root, input.targetScope, input.sourceName)
+
+  const created = await findAdminEntry(
+    root,
+    input.targetScope,
+    input.sourceName
+  )
+  if (!created) throw new Error('创建技能覆盖失败')
+  return created
 }
 
 export async function setSkillOverride(

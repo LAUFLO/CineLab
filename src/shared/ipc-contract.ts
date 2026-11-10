@@ -392,6 +392,10 @@ export interface AgentApi {
     title: string
   ): Promise<AgentSessionInfo>
   sessionDelete(sessionId: string): Promise<void>
+  sessionCompact(
+    sessionId: string,
+    modelKey?: string
+  ): Promise<AgentSessionSnapshot>
   modelInfo(modelKey?: string): Promise<AgentModelInfo | null>
   textModels(): Promise<AgentModelInfo[]>
   models(): Promise<AgentModelInfo[]>

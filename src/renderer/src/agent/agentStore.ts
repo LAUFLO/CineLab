@@ -9,6 +9,7 @@ import type {
   AgentReference,
   AgentSessionInfo,
   AgentSessionMessage,
+  AgentSessionSnapshot,
   AgentToolCall,
   AgentTurn
 } from '@shared/agent'
@@ -41,6 +42,8 @@ interface AgentState {
   turns: AgentTurn[]
   attachments: AgentAttachment[]
   references: AgentReference[]
+  contextSummary: AgentSessionSnapshot['summary'] | null
+  compacting: boolean
   running: boolean
   currentTurnId: string | null
   permissionMode: AgentPermissionMode
@@ -67,6 +70,7 @@ interface AgentState {
   removeAttachment: (nodeId: string) => void
   addReference: (reference: AgentReference) => void
   removeReference: (reference: AgentReference) => void
+  compactContext: () => Promise<void>
   loadSessions: () => Promise<void>
   loadSession: (sessionId?: string) => Promise<void>
   newSession: () => Promise<void>
@@ -109,6 +113,47 @@ export function agentTurnChangeCount(turn: AgentTurn | null): number {
     (change.deletedEdgeIds?.length ?? 0) +
     (change.timelineUpdated ? 1 : 0)
   )
+}
+
+export const AGENT_CONTEXT_BUDGET_TOKENS = 32_000
+export const AGENT_KEEP_RECENT_MESSAGES = 6
+
+export interface AgentContextStats {
+  usedTokens: number
+  percent: number
+  coveredMessages: number
+  compactableMessages: number
+  totalDialogueMessages: number
+}
+
+/** 粗略按 3 字符 ≈ 1 token 估算，只用于圆环提示 */
+export function agentContextStats(
+  messages: AgentMessage[],
+  summary: AgentSessionSnapshot['summary'] | null
+): AgentContextStats {
+  const dialogue = messages.filter(
+    (message) => message.role === 'user' || message.role === 'assistant'
+  )
+  const covered = summary?.coveredMessages ?? 0
+  const remaining = dialogue.slice(covered)
+  const chars =
+    (summary?.content.length ?? 0) +
+    remaining.reduce((sum, message) => sum + message.content.length, 0)
+  const usedTokens = Math.ceil(chars / 3)
+  const percent = Math.min(
+    100,
+    Math.max(0, Math.round((usedTokens / AGENT_CONTEXT_BUDGET_TOKENS) * 100))
+  )
+  return {
+    usedTokens,
+    percent,
+    coveredMessages: covered,
+    compactableMessages: Math.max(
+      0,
+      remaining.length - AGENT_KEEP_RECENT_MESSAGES
+    ),
+    totalDialogueMessages: dialogue.length
+  }
 }
 
 function toAgentMessage(message: AgentSessionMessage): AgentMessage {
@@ -211,6 +256,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   turns: [],
   attachments: [],
   references: [],
+  contextSummary: null,
+  compacting: false,
   running: false,
   currentTurnId: null,
   permissionMode: 'current',
@@ -336,6 +383,32 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           )
       )
     })),
+
+  compactContext: async () => {
+    const state = get()
+    if (!state.sessionId || state.running || state.compacting) return
+    set({ compacting: true, error: null })
+    try {
+      const snapshot = await window.api.agent.sessionCompact(
+        state.sessionId,
+        state.modelKey ?? undefined
+      )
+      set({
+        contextSummary: snapshot.summary ?? null,
+        messages: snapshot.messages.map(toAgentMessage),
+        turns: snapshot.turns,
+        lastTurn:
+          snapshot.turns[snapshot.turns.length - 1] ?? state.lastTurn,
+        compacting: false,
+        error: null
+      })
+    } catch (error) {
+      set({
+        compacting: false,
+        error: error instanceof Error ? error.message : '压缩上下文失败'
+      })
+    }
+  },
   clearError: () => set({ error: null }),
 
   loadSessions: async () => {
@@ -373,6 +446,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         turns: session.turns,
         attachments: [],
         references: [],
+        contextSummary: session.summary ?? null,
+        compacting: false,
         lastTurn: session.turns[session.turns.length - 1] ?? null,
         running: false,
         currentTurnId: null,

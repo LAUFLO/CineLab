@@ -396,6 +396,8 @@ const api: CineApi = {
       ipcRenderer.invoke('agent:session-rename', sessionId, title),
     sessionDelete: (sessionId) =>
       ipcRenderer.invoke('agent:session-delete', sessionId),
+    sessionCompact: (sessionId, modelKey) =>
+      ipcRenderer.invoke('agent:session-compact', sessionId, modelKey),
     modelInfo: (modelKey) =>
       ipcRenderer.invoke('agent:model-info', modelKey),
     textModels: () => ipcRenderer.invoke('agent:text-models'),

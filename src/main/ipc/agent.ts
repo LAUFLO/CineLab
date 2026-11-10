@@ -12,6 +12,7 @@ import type {
   AgentToolResultInput
 } from '@shared/agent'
 import { listAgentModels, listTextModels, resolveTextModel } from '../agent/model'
+import { compactSession } from '../agent/compact'
 import {
   activeProposal,
   cancelProposal,
@@ -360,6 +361,20 @@ export function registerAgentIpc(): void {
       const root = requireProjectRoot()
       await deleteSession(root, sessionId.trim())
       await deleteSessionProposals(root, sessionId.trim())
+    }
+  )
+
+  ipcMain.handle(
+    'agent:session-compact',
+    async (_event, sessionId: unknown, modelKey: unknown) => {
+      if (typeof sessionId !== 'string' || !sessionId.trim()) {
+        throw new Error('缺少会话 ID')
+      }
+      return compactSession(
+        requireProjectRoot(),
+        sessionId.trim(),
+        typeof modelKey === 'string' ? modelKey : undefined
+      )
     }
   )
 

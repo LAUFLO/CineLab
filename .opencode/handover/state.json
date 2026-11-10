@@ -1,5 +1,5 @@
 {
-  "version": 63,
+  "version": 64,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "继续完成 CineBot UI 精修（WIP 已本地提交）：上下文使用圆环与手动压缩、模型选择端到端生成验证、@ 引用与 / 技能弹窗细节；随后整体验收。当前 typecheck/test/build 通过；推送前先同步 origin/main。",
+  "next_focus": "CineBot UI 精修、上下文圆环/手动压缩、多能力模型选择、@/技能弹窗、会话删除均已完成并验证。下一步整体验收与回归修复，再补技能文件上传/覆盖快捷操作；推送前先同步 origin/main。",
   "frontier": [
     {
       "id": "M2-1",
@@ -405,19 +405,25 @@
     {
       "id": "AGENT-UI-REFINE-1",
       "title": "CineBot UI 精修、多能力模型、@ 引用与上下文",
-      "status": "pending",
-      "note": "2026-11-10 睡前 WIP。已完成并验证：面板底边与底部工具栏底边对齐；发送按钮 30px；删除会话 API/UI；权限浮窗以按钮为中心向上展开；技能浮窗从按钮上方展开；删除头部重复设置按钮；模型选择拆成文本/生图/生视频/音频四组，generation_propose 按 scope.generationModels 覆盖；输入 @ 弹出画布/资产库素材引用，输入 / 弹出技能选择；Agent 运行时会加载历史对话与 summary。仍未完成：发送按钮左侧的上下文使用圆环与手动压缩 UI/IPC；模型选择端到端生成验证；@/技能弹窗的键盘导航与细节；视觉回归截图仅覆盖权限、技能、模型、@、/。",
+      "status": "done",
+      "note": "2026-11-10 完成。面板底边与底部工具栏对齐；发送按钮 30px；会话删除 API/UI + 二次确认；权限/技能浮窗从按钮上方居中展开；删除头部重复设置按钮。模型选择拆成文本/生图/生视频/音频四组，generation_propose 按 scope.generationModels 覆盖；实测图片/视频目标分别使用选中的 Agnes Image / Video 模型。输入 @ 弹出画布/资产库引用，输入 / 弹出技能选择，支持方向键/Enter/Esc。新增上下文圆环与手动压缩：32K 固定预算、3 字符≈1 token 估算、保留最近 6 条、session summary 写入 JSONL 并由运行时注入；实测 108 条消息压缩覆盖 44 条，30 条消息确认压缩 24 条。新增 compact.test.ts；37 文件 258 测试通过，typecheck/build 通过。",
       "evidence": [
+        ".opencode/handover/evidence/AGENT-UI-REFINE-1.md",
         ".opencode/handover/evidence/AGENT-UI-REFINE-PERM-1.png",
         ".opencode/handover/evidence/AGENT-UI-REFINE-SKILL-1.png",
         ".opencode/handover/evidence/AGENT-UI-REFINE-MODELS-1.png",
         ".opencode/handover/evidence/AGENT-UI-REFINE-MENTION-1.png",
-        ".opencode/handover/evidence/AGENT-UI-REFINE-SLASH-1.png",
+        ".opencode/handover/evidence/AGENT-CONTEXT-RING-1.png",
+        ".opencode/handover/evidence/AGENT-CONTEXT-COMPACT-1.png",
+        ".opencode/handover/evidence/AGENT-CONTEXT-COMPACT-2.png",
+        ".opencode/handover/evidence/AGENT-CONTEXT-MODEL-1.png",
+        "src/main/agent/compact.ts",
+        "src/main/agent/session.ts",
+        "src/main/agent/runtime.ts",
+        "src/main/agent/model.ts",
         "src/renderer/src/agent/AgentPanel.tsx",
         "src/renderer/src/agent/agentStore.ts",
-        "src/main/agent/runtime.ts",
-        "src/main/agent/session.ts",
-        "src/main/agent/model.ts"
+        "src/renderer/src/styles/agent.css"
       ]
     },
     {
@@ -2435,7 +2441,7 @@
     },
     {
       "category": "engineering",
-      "content": "Agent 上下文圆环与手动压缩仍是 WIP：session summary 数据结构、appendSessionSummary、runtime 历史加载已就绪，但缺少 agent:session-compact IPC、UI 圆环与压缩按钮；不要误认为已完成。"
+      "content": "Agent 上下文压缩 v1：发送按钮左侧圆环按 3 字符≈1 token、32K 固定预算估算；点击确认后保留最近 6 条 user/assistant 消息，更早内容由当前文本模型生成摘要，写入 session JSONL 的 summary 条目（content + coveredMessages）；运行时跳过 coveredMessages 前的对话并注入摘要。摘要失败不落盘；原始消息仍保留展示。"
     }
   ],
   "designConventions": [
@@ -2470,6 +2476,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "技能文件上传与整体验收"
+    "nextMilestone": "整体验收与回归修复"
   }
 }

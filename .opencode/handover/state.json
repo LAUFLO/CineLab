@@ -1,5 +1,5 @@
 {
-  "version": 67,
+  "version": 68,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-10T13:58:01.720Z",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
-  "next_focus": "已同步 origin/main 并解决全部冲突，类型检查/277 测试/构建通过，隔离实例 smoke test 通过。下一步推送 feat/agent-runtime 并创建到 main 的 PR；已知缺口在 PR 合并后继续优化。",
+  "next_focus": "PR #2 已创建（https://github.com/LAUFLO/CineLab/pull/2），GitHub Actions build 通过，状态 CLEAN。下一步等待 PR review/merge；合并后继续优化已知缺口（film Agent、stage profile、上下文 tokenizer、Agnes 视频补测）。",
   "frontier": [
     {
       "id": "M2-1",
@@ -463,6 +463,15 @@
         "src/renderer/src/stores/canvas.ts",
         "src/renderer/src/studio/InspectorPane.tsx",
         "src/renderer/src/agent/timelineBridge.ts"
+      ]
+    },
+    {
+      "id": "PR-CINELAB-2",
+      "title": "推送 feat/agent-runtime 并创建 PR",
+      "status": "done",
+      "note": "2026-11-10 完成。分支已推送到 origin/feat/agent-runtime，创建 PR #2（feat: CineBot agent runtime and advanced clip tools），base main。GitHub Actions build 通过（3m25s），mergeable=CLEAN。等待 review/merge；合并后继续优化已知缺口。",
+      "evidence": [
+        ".opencode/handover/evidence/PR-CINELAB-2.md"
       ]
     },
     {
@@ -2673,6 +2682,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "推送分支与 PR 合并"
+    "nextMilestone": "PR review 与合并"
   }
 }

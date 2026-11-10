@@ -1,37 +1,36 @@
 # CineLab · Boot Packet
 
-> **下一会话优先**：推送 `feat/agent-runtime` 并创建到 main 的 PR；已知缺口在 PR 合并后继续优化。
+> **下一会话优先**：等待 PR #2 review/merge；合并后继续优化已知缺口。
 
 ## 状态
 
-2026-11-10：`origin/main` 9f4511d 已合并进 `feat/agent-runtime`。
+2026-11-10：`feat/agent-runtime` 已推送并创建 PR。
 
-- 合并提交：`5b4f0ea`
+- PR：https://github.com/LAUFLO/CineLab/pull/2
+- 标题：`feat: CineBot agent runtime and advanced clip tools`
+- base：`main`
+- 合并状态：`MERGEABLE` / `CLEAN`
+- GitHub Actions `build`：通过（3m25s）
+- `origin/main` 9f4511d 已合并，6 个冲突已解决
 - 合并后修复：`a5a0ced`（timeline_export 写回 studio 节点）
-- 冲突文件：`AGENTS.md`、`state.json`、`generate.ts`、`InspectorPane.tsx`、`canvas.ts`、`global.css`
-- main 新增 `marked` 依赖，已执行 `pnpm install`
-- main 的 `generate.ts` 图片引用改动已移植到 `start-generation.ts`
-- main 的成片合并进 studio 节点，`timeline_export` 已改为 `applyStudioOutput`
-- InspectorPane 保留「属性 / 画面 / 音频」，移除旧「助手」分页
+- 验证：40 文件 277 测试、`typecheck`、`build` 通过
+- 隔离实例 smoke test：画布、CineBot、剪辑室、检查器分页正常
 
-验证：40 文件 277 测试通过，`typecheck` / `build` 通过；隔离实例 smoke test 通过。
-
-分支领先 `origin/main` 32 个提交、落后 0，未推送。
+分支领先 `origin/main` 33 个提交、落后 0，已推送 `origin/feat/agent-runtime`。
 
 ## Frontier
 
-1. 推送 `feat/agent-runtime`（下一项）
-2. 创建到 main 的 PR
-3. PR 合并后优化已知缺口
+1. 等待 PR #2 review/merge（下一项）
+2. PR 合并后优化已知缺口
 
 ## Gates
 
 - G-AGENT-VIDEO：Agnes Video 2.5 Flash 队列 503，待恢复重试。
-- G-AGENT-MAIN：已同步 9f4511d，合并提交 5b4f0ea，冲突已解决。
+- G-AGENT-MAIN：已解决，origin/main 9f4511d 已合并且 CI 通过。
 
 ## 证据
 
-`.opencode/handover/evidence/` 下 `MERGE-MAIN-1.md`、`AGENT-ACCEPTANCE-1.md`、`SKILLS-FILES-1.md`、`AGENT-UI-REFINE-1.md`、`AGENT-ASSET-REFS-1.md`、`AGENT-CONTEXT-*.png`、`SKILLS-UPLOAD-1.png`。
+`.opencode/handover/evidence/` 下 `PR-CINELAB-2.md`、`MERGE-MAIN-1.md`、`AGENT-ACCEPTANCE-1.md`、`SKILLS-FILES-1.md`、`AGENT-UI-REFINE-1.md`、`AGENT-ASSET-REFS-1.md`、`AGENT-CONTEXT-*.png`、`SKILLS-UPLOAD-1.png`。
 
 ## 已知缺口（PR 合并后处理）
 

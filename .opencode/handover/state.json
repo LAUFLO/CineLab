@@ -1,5 +1,5 @@
 {
-  "version": 65,
+  "version": 66,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
   "updatedAt": "2026-11-08",
@@ -7,7 +7,7 @@
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
   "nextPhase": "发布前体验完善",
-  "next_focus": "技能文件上传、覆盖与删除已完成并验证。下一步整体验收与回归修复，再补 Agnes 视频补测；推送前先同步 origin/main。",
+  "next_focus": "CineBot 整体自验收通过，等待用户验收反馈。下一步处理验收问题、Agnes 视频队列恢复后补测，并在推送前同步 origin/main（落后 11 个提交）。",
   "frontier": [
     {
       "id": "M2-1",
@@ -438,6 +438,17 @@
         "src/main/ipc/skills.ts",
         "src/renderer/src/panels/SkillsSection.tsx",
         "src/main/agent/__tests__/skills-admin.test.ts"
+      ]
+    },
+    {
+      "id": "AGENT-ACCEPTANCE-1",
+      "title": "CineBot 整体自验收与回归",
+      "status": "done",
+      "note": "2026-11-10 自验收通过。画布：无空格 @ 引用、四类模型选择、生成提案模型覆盖、引用 chip 清空；剪辑室：设置转场工具、思考过程、时间线写入与回合撤销；技能：项目覆盖、上传按钮、文件删除与磁盘移除；上下文：圆环、压缩确认、summary；会话：删除与历史上下文。37 文件 260 测试通过，typecheck/build 通过。已知缺口：Agnes 视频 503、无独立 film profile、stage 由 canvas profile 操作、原生上传对话框未自动化、上下文估算固定 32K、落后 main 11 个提交。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-ACCEPTANCE-1.md",
+        "src/main/agent/__tests__/skills-admin.test.ts",
+        "src/main/agent/__tests__/compact.test.ts"
       ]
     },
     {
@@ -2498,6 +2509,6 @@
     "partialMilestones": [
       "AGENT"
     ],
-    "nextMilestone": "整体验收与回归修复"
+    "nextMilestone": "用户验收与 main 同步"
   }
 }

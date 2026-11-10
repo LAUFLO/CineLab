@@ -1,22 +1,23 @@
 # CineLab · Boot Packet
 
-> **下一会话优先**：整体验收与回归修复；随后补 Agnes 视频补测；推送前先同步 origin/main。
+> **下一会话优先**：等待/处理用户整体验收反馈；Agnes 视频队列恢复后补测；推送前先同步 origin/main。
 
 ## 状态
 
-2026-11-10：技能文件上传、删除与同名覆盖已完成。
+2026-11-10：CineBot 整体自验收通过。
 
-- 技能 `references/` / `assets/` 支持多文件上传；同名文件覆盖，单次 20 个、单文件 20MB、单次 100MB。
-- 技能文件列表支持删除 `references/assets` 文件；`SKILL.md` 不可删。
-- 技能详情支持「创建项目覆盖」「创建全局覆盖」，递归复制 SKILL.md/references/assets。
-- Agent 技能弹窗底部新增「管理技能」，直达设置 → 技能。
-- CineBot UI 精修、上下文圆环/手动压缩、多能力模型、@ 引用、/ 技能、会话删除均已完成。
+- 画布：无空格 `用@` 引用素材、四类模型选择、生成提案模型覆盖、引用 chip 清空。
+- 剪辑室：设置转场工具、思考过程、时间线写入、回合撤销正常。
+- 技能：项目覆盖、references/assets 上传按钮、文件删除、管理入口正常。
+- 上下文：圆环、压缩确认、summary 注入、会话历史正常。
+- 会话：删除与二次确认正常。
+- `@` / `/` 支持方向键、Enter、Esc。
 
-37 文件 260 测试通过，`typecheck` / `build` 通过。`feat/agent-runtime` 领先 `origin/main` 27 个提交、落后 11 个，未推送。
+37 文件 260 测试通过，`typecheck` / `build` 通过。`feat/agent-runtime` 领先 `origin/main` 29 个提交、落后 11 个，未推送。
 
 ## Frontier
 
-1. 整体验收与回归修复（下一项）
+1. 用户验收反馈与修复（下一项）
 2. Agnes 视频补测
 3. 推送前同步 origin/main
 
@@ -27,7 +28,15 @@
 
 ## 证据
 
-`.opencode/handover/evidence/` 下 `SKILLS-FILES-1.md`、`AGENT-UI-REFINE-1.md`、`AGENT-ASSET-REFS-1.md`、`AGENT-CONTEXT-*.png`、`SKILLS-UPLOAD-1.png`、`AGENT-*-1.md`、`STAGE-*-1.md`、`CLIP-ADVANCED-TOOLS-1.md`。
+`.opencode/handover/evidence/` 下 `AGENT-ACCEPTANCE-1.md`、`SKILLS-FILES-1.md`、`AGENT-UI-REFINE-1.md`、`AGENT-ASSET-REFS-1.md`、`AGENT-CONTEXT-*.png`、`SKILLS-UPLOAD-1.png`、`AGENT-*-1.md`、`STAGE-*-1.md`、`CLIP-ADVANCED-TOOLS-1.md`。
+
+## 已知缺口
+
+- 无独立 `film` Agent 工具集/入口；拉片仍以画布节点和界面操作为主。
+- 导演台没有独立 `stage` profile UI，当前由 canvas profile 使用 `stage_*` 工具。
+- 原生技能文件选择对话框未自动化；导入函数与 UI 按钮已验证。
+- 上下文预算固定 32K、3 字符≈1 token。
+- Agnes Video 可能 503。
 
 ## 关键 lessons
 

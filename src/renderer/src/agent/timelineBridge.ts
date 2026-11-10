@@ -16,7 +16,6 @@ import {
 } from '@shared/timeline-schema'
 import { buildRemoveSilencePlan } from '@shared/timeline-tools'
 import {
-  isFilmNode,
   isStudioNode,
   useCanvasStore
 } from '../stores/canvas'
@@ -757,7 +756,8 @@ export async function executeTimelineTool(
         return { ok: false, error: '导出失败' }
       }
 
-      let filmNodeId: string | undefined
+      let studioNodeId: string | undefined
+      let outputId: string | undefined
       const canvasState = useCanvasStore.getState()
       const studioNode = call.scope.studioNodeId
         ? canvasState.nodes.find(
@@ -766,50 +766,36 @@ export async function executeTimelineTool(
         : undefined
 
       if (studioNode && isStudioNode(studioNode)) {
-        const linked = studioNode.data.filmNodeId
-          ? canvasState.nodes.find(
-              (node) => node.id === studioNode.data.filmNodeId
-            )
-          : undefined
-        const film =
-          linked && isFilmNode(linked)
-            ? linked
-            : canvasState.nodes.find(
-                (node) =>
-                  isFilmNode(node) &&
-                  node.data.studioNodeId === studioNode.id
-              )
-
-        if (film && isFilmNode(film)) {
-          const output: OutputRef = {
-            id: `film_${Date.now().toString(36)}`,
-            path: result.path,
-            scope: 'project',
-            kind: 'video',
-            createdAt: new Date().toISOString(),
-            model: '剪辑室',
-            width: doc.video.width,
-            height: doc.video.height,
-            duration: docDurationMs(doc) / 1000,
-            fps: doc.video.fps,
-            hasAudio: await docHasAudio(doc)
-          }
-          canvasState.applyFilmOutput(film.id, output)
-          canvasState.patchFilmNode(film.id, {
-            upstreamAck: upstreamSignature(
-              referencesFromDoc(doc),
-              useCanvasStore.getState().nodes
-            )
-          })
-          filmNodeId = film.id
+        const output: OutputRef = {
+          id: `film_${Date.now().toString(36)}`,
+          path: result.path,
+          scope: 'project',
+          kind: 'video',
+          createdAt: new Date().toISOString(),
+          model: '剪辑室',
+          width: doc.video.width,
+          height: doc.video.height,
+          duration: docDurationMs(doc) / 1000,
+          fps: doc.video.fps,
+          hasAudio: await docHasAudio(doc)
         }
+        canvasState.applyStudioOutput(studioNode.id, output)
+        canvasState.patchStudioNode(studioNode.id, {
+          upstreamAck: upstreamSignature(
+            referencesFromDoc(doc),
+            useCanvasStore.getState().nodes
+          )
+        })
+        studioNodeId = studioNode.id
+        outputId = output.id
       }
 
       return {
         ok: true,
         result: {
           path: result.path,
-          filmNodeId: filmNodeId ?? null,
+          studioNodeId: studioNodeId ?? null,
+          outputId: outputId ?? null,
           durationMs: Math.round(docDurationMs(doc)),
           width: doc.video.width,
           height: doc.video.height,

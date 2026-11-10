@@ -44,8 +44,9 @@
 | `AGENT-ACCEPTANCE-1` | CineBot 画布/剪辑/技能/上下文/会话整体自验收 |
 | `MERGE-MAIN-1` | 同步 origin/main 9f4511d，解决 6 个冲突，合并后 277 测试通过 |
 | `PR-CINELAB-2` | 已推送 feat/agent-runtime，PR #2 创建，CI build 通过，状态 CLEAN |
+| `AGENT-CAPABILITY-PLAN-1` | CineBot 能力覆盖盘点、节点操作桥、能力注册表、未来功能接入清单 |
 | 验证 | 40 文件 277 测试、`typecheck`、`build` 通过；画布生成提案与模型覆盖、剪辑转场、技能上传/覆盖/删除、上下文压缩、会话删除、素材引用、CineBot UI、合并后剪辑室分页与 studio 成片回归通过 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 33 个提交、落后 0，已推送；PR #2 等待 review/merge |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 34 个提交、落后 0，已推送；PR #2 等待 review/merge |
 
 ## 关键工件
 
@@ -90,6 +91,7 @@
 - 工具执行在渲染进程；主进程构造 scope、权限和回合事务。
 - 生成必须走提案确认，不直接执行；`generation_submit` 不暴露给模型。
 - 生成引用：画布节点用 `refNodeIds`，资产库用 `library_search` + `libraryRefs`，本地附件用上传后的附件 nodeId；引用素材自动补线，提示词回填目标节点。
+- 新功能接入 Agent：UI 与 Agent 共用执行器，写操作走命令层；节点工具栏操作统一走 `node-operation-runner`，能力用 `AgentCapability` 注册，详见 `docs/agent-capability-plan.md`。
 
 ## 输入源
 

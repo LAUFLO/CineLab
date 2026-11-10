@@ -1551,7 +1551,7 @@
       "id": "G-AGENT-MAIN",
       "scope": "repo",
       "status": "blocked",
-      "reason": "origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4（连线删除 / 拉片镜头检测重做）、71c8b48（音频控件与文本占位）、336debb（模型参数配置精简）、1627ac9（剪辑室画幅与预览适配）、72679c8（六种画幅与缩略图修复）、ef5c0d1（剪辑室预览稳定与检查器分页），当前 feat/agent-runtime 落后 10 个提交",
+      "reason": "origin/main 新增 a768e64、6abef3d、3a406a7、436768d、91b16b4（连线删除 / 拉片镜头检测重做）、71c8b48（音频控件与文本占位）、336debb（模型参数配置精简）、1627ac9（剪辑室画幅与预览适配）、72679c8（六种画幅与缩略图修复）、ef5c0d1（剪辑室预览稳定与检查器分页）、8d6a4fb（多模态文本模型图片引用），当前 feat/agent-runtime 落后 11 个提交",
       "resolve": "推送前先同步 origin/main，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract / provider 参数配置冲突"
     }
   ],

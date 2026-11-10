@@ -41,7 +41,7 @@
 | `AGENT-ASSET-REFS-1` | 画布/资产库/本地附件引用；素材节点自动创建与连线；提示词回填 |
 | `AGENT-UI-REFINE-1` | 面板对齐/会话删除/多能力模型/@ 引用/技能弹窗/上下文圆环与手动压缩 |
 | 验证 | 258 测试、`typecheck`、`build` 通过；真实 Agnes 提案、视口、stage、白模导出、剪辑助手、剪辑高级工具、素材引用、模型选择覆盖、上下文压缩、会话删除、技能 UI、确认流程、CineBot 新 UI 验证完成 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 24 个提交、落后 10 个（a768e64、6abef3d、3a406a7、436768d、91b16b4、71c8b48、336debb、1627ac9、72679c8、ef5c0d1），未推送；推送前先同步 |
+| 分支 | `feat/agent-runtime` 领先 `origin/main` 26 个提交、落后 11 个（a768e64、6abef3d、3a406a7、436768d、91b16b4、71c8b48、336debb、1627ac9、72679c8、ef5c0d1、8d6a4fb），未推送；推送前先同步 |
 
 ## 关键工件
 

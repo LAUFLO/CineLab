@@ -14,7 +14,7 @@
 - 发送按钮左侧上下文圆环；点击确认后压缩旧对话，保留最近 6 条，摘要写入 session JSONL，运行时注入摘要。
 - 运行时加载同会话历史（user/assistant，工具消息不进入上下文）。
 
-37 文件 258 测试通过，`typecheck` / `build` 通过。`feat/agent-runtime` 领先 `origin/main` 24 个提交、落后 10 个，未推送。
+37 文件 258 测试通过，`typecheck` / `build` 通过。`feat/agent-runtime` 领先 `origin/main` 26 个提交、落后 11 个，未推送。
 
 ## Frontier
 
@@ -26,7 +26,7 @@
 ## Gates
 
 - G-AGENT-VIDEO：Agnes Video 2.5 Flash 队列 503，待恢复重试。
-- G-AGENT-MAIN：origin/main 最新 ef5c0d1，落后 10 个提交；推送前先同步，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract / provider 参数配置冲突。
+- G-AGENT-MAIN：origin/main 最新 8d6a4fb，落后 11 个提交；推送前先同步，重点检查 StudioNodeView / CineNodeView / AudioPlayer / TimelinePane / canvas store / film-study / preload / ipc-contract / provider 参数配置冲突。
 
 ## 证据
 

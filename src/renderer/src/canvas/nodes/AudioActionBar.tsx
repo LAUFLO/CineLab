@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Icon } from '../../components/Icon'
 
 export type AudioActionMode = 'trim' | 'speed'
@@ -9,6 +10,8 @@ interface AudioActionBarProps {
   selection: { start: number; end: number }
   rate: number
   busy: boolean
+  /** 节点在屏幕上的位置，用于 fixed 定位 */
+  anchor: { left: number; top: number; width: number; height: number } | null
   onSelectionChange: (start: number, end: number) => void
   onRateChange: (rate: number) => void
   onClose: () => void
@@ -44,6 +47,7 @@ export function AudioActionBar({
   selection,
   rate,
   busy,
+  anchor,
   onSelectionChange,
   onRateChange,
   onClose,
@@ -95,9 +99,24 @@ export function AudioActionBar({
     onRateChange(Number(next.toFixed(2)))
   }
 
-  return (
+  if (!anchor) return null
+
+  const gap = 10
+  const barHeight = 48
+  const below = anchor.top + anchor.height + gap
+  const above = anchor.top - barHeight - gap
+  const top =
+    below + barHeight <= window.innerHeight - 8
+      ? below
+      : Math.max(8, Math.min(above, window.innerHeight - barHeight - 8))
+
+  return createPortal(
     <div
       className="audio-bar nodrag nopan"
+      style={{
+        left: anchor.left + anchor.width / 2,
+        top
+      }}
       onPointerDown={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}
     >
@@ -190,6 +209,7 @@ export function AudioActionBar({
       >
         {busy ? '生成中…' : '生成'}
       </button>
-    </div>
+    </div>,
+    document.body
   )
 }

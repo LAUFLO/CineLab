@@ -2399,7 +2399,7 @@ body.is-exporting .react-flow__minimap {
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
-  border-bottom: 1px solid var(--divider);
+  border-top: 1px solid var(--divider);
 }
 
 .audio-node__time {
@@ -2438,11 +2438,13 @@ body.is-exporting .react-flow__minimap {
 
 /* 音频截取 / 变速浮动条 */
 .audio-bar {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
+  position: fixed;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
   transform: translateX(-50%);
-  z-index: 30;
+  z-index: 60;
   display: flex;
   align-items: center;
   gap: 10px;

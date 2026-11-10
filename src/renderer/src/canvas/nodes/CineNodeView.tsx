@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
+import { Handle, Position, useReactFlow, useViewport, type NodeProps } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
 import {
+  absolutePosition,
   nodeSize,
   useCanvasStore,
   type CineNode
@@ -34,7 +35,7 @@ const NODE_ICON: Record<NodeKind, IconName> = {
 
 export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const meta = NODE_META[data.kind]
-  const { screenToFlowPosition } = useReactFlow()
+  const { screenToFlowPosition, fitView } = useReactFlow()
   const openMenu = useUIStore((state) => state.openMenu)
   const showToast = useUIStore((state) => state.showToast)
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
@@ -59,10 +60,24 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   })
   const cancelGeneration = useGenerationStore((state) => state.cancel)
   const openLibraryPicker = useLibraryStore((state) => state.openPicker)
-  const nodeWidth = useCanvasStore((state) => {
-    const found = state.nodes.find((entry) => entry.id === id)
-    return found ? nodeSize(found).width : meta.width
-  })
+  const allNodes = useCanvasStore((state) => state.nodes)
+  const currentNode = allNodes.find((entry) => entry.id === id)
+  const nodeWidth = currentNode ? nodeSize(currentNode).width : meta.width
+  const nodeHeight = currentNode
+    ? nodeSize(currentNode).height
+    : meta.height + TITLE_HEIGHT
+  const absolute = currentNode
+    ? absolutePosition(currentNode, allNodes)
+    : null
+  const viewport = useViewport()
+  const audioAnchor = absolute
+    ? {
+        left: absolute.x * viewport.zoom + viewport.x,
+        top: absolute.y * viewport.zoom + viewport.y,
+        width: nodeWidth * viewport.zoom,
+        height: nodeHeight * viewport.zoom
+      }
+    : null
   const toolbarAlign = 'center' as const
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
@@ -237,7 +252,20 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
   return (
     <>
-    <div className={`cnode ${selected ? 'is-selected' : ''}`}>
+    <div
+      className={`cnode ${selected ? 'is-selected' : ''}`}
+      onDoubleClick={(event) => {
+        const target = event.target as HTMLElement
+        if (target.closest('button, input, textarea, a')) return
+        event.stopPropagation()
+        void fitView({
+          nodes: currentNode ? [currentNode] : [{ id }],
+          padding: 0.6,
+          duration: 300,
+          maxZoom: 2
+        })
+      }}
+    >
       {selected && !multiSelected && current && !isBusy && data.kind !== 'study' ? (
         <NodeToolbar
           nodeId={id}
@@ -362,7 +390,6 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           ) : assetSrc && current?.kind === 'text' ? (
             <div
               className="cnode__text cnode__text--markdown"
-              onDoubleClick={(event) => event.stopPropagation()}
               dangerouslySetInnerHTML={{
                 __html: renderMarkdown(data.text ?? '文本已生成')
               }}
@@ -386,7 +413,6 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           {!assetSrc && data.kind === 'text' && data.text ? (
             <div
               className="cnode__text cnode__text--markdown"
-              onDoubleClick={(event) => event.stopPropagation()}
               dangerouslySetInnerHTML={{
                 __html: renderMarkdown(data.text)
               }}
@@ -472,6 +498,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           selection={audioSelection}
           rate={audioRate}
           busy={audioBusy}
+          anchor={audioAnchor}
           onSelectionChange={(start, end) =>
             setAudioSelection({ start, end })
           }

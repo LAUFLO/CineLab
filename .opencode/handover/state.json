@@ -1,8 +1,8 @@
 {
-  "version": 60,
+  "version": 61,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-10T13:05:02.156Z",
+  "updatedAt": "2026-11-10T13:58:01.720Z",
   "phase": "M7",
   "phaseStatus": "completed",
   "phaseGoal": "M7 分组节点：打组、合并、重命名、10 色、排列、拖出脱离、复制与删除级联",
@@ -1247,6 +1247,15 @@
       "note": "2026-11-10 完成。根因是 generate:run 的文本分支调用 generateText 时没有传 refs，请求体只有纯文本。generateText 增加 refs 参数，有图时构造 OpenAI 多模态 content 数组（text + image_url data URL）。同时修正模型未勾选图片输入时的错误文案。用本地 mock chat 服务验证请求体包含 image_url 和 data:image。typecheck、162 tests、build 通过。",
       "evidence": [
         ".opencode/handover/evidence/TEXT-VISION-1.md"
+      ]
+    },
+    {
+      "id": "AUDIO-TEXT-FOCUS-1",
+      "title": "音频控制条回底部、操作条层级、双击聚焦、文本上下文注入",
+      "status": "done",
+      "note": "2026-11-10 完成。音频控制条移回波形下方，分隔线改回 border-top。截取/变速操作条改为 portal 到 body + fixed + z-index 60，默认在节点下方、空间不足时翻转，始终高于 z-index 50 的 PromptBar；实测与 PromptBar 重叠时命中操作条。CineNodeView 根元素新增双击 fitView，文本内容不再阻止冒泡；实测文本节点和图片节点都能放大聚焦。PromptBar 收集上游连线和 @标题命中的文本节点，生成时拼接【参考文本：标题】到 prompt 前，单条截断 4000 字符，只有文本上下文时也允许发送；用 mock 图片服务验证请求体包含文本内容。typecheck、162 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AUDIO-TEXT-FOCUS-1.md"
       ]
     }
   ],

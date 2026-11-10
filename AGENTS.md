@@ -43,6 +43,7 @@
 | Agent 架构 | `docs/agent-architecture-plan.md` |
 | Agent 生成提案 | `docs/agent-generation-proposal-plan.md` |
 | CineBot 能力扩展方案 | `docs/agent-capability-plan.md` |
+| CineBot 能力清单 | `docs/agent-capabilities.md` |
 | 剪辑室计划 | `docs/clip-studio-plan.md` |
 | 拉片室计划 | `docs/film-study-plan.md` |
 | 剪辑助手计划 | `docs/agent-plan.md` |

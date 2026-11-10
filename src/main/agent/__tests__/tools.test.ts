@@ -863,4 +863,411 @@ describe('agent tool permissions', () => {
       )
     ).toThrow(AgentToolError)
   })
+
+  it('validates edge removal and text updates', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_remove_edge', {}),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_remove_edge', {
+          sourceNodeId: 'node-a',
+          targetNodeId: 'node-b'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_remove_edge', {
+          sourceNodeId: 'node-a',
+          targetNodeId: 'node-b'
+        }),
+        { ...scope, selectedNodeIds: ['node-a', 'node-b'] },
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_update_text', { nodeId: 'node-a', text: '' }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_update_text', {
+          nodeId: 'node-a',
+          text: 'x'.repeat(100_001)
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_update_text', { nodeId: 'node-b', text: '正文' }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+  })
+
+  it('validates timeline video settings', () => {
+    const clipScope = { ...scope, timelineId: 'timeline-1' }
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_video', { width: 1080 }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_video', { width: 1081, height: 1920 }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_video', {
+          width: 1080,
+          height: 1920,
+          fps: 30
+        }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_video', {
+          background: { type: 'color' }
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_set_video', {
+          background: { type: 'image', path: 'assets/bg.png' }
+        }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('validates shot splitting and beat tools', () => {
+    const clipScope = { ...scope, timelineId: 'timeline-1' }
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_split_by_shots', {}),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_split_by_shots', {
+          clipId: 'clip-1',
+          minShotMs: -1
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_split_by_shots', { clipId: 'clip-1' }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_beat_markers', { clipId: 'clip-1', label: '鼓点' }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_beat_split', {
+          clipId: 'clip-1',
+          trackId: '',
+          minGapMs: 200
+        }),
+        clipScope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('timeline_beat_split', {
+          clipId: 'clip-1',
+          trackId: 'track-1',
+          minGapMs: 200
+        }),
+        clipScope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('validates stage camera transforms and preview export', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('stage_transform_camera', {
+          nodeId: 'node-a',
+          cameraId: 'camera-1'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_transform_camera', {
+          nodeId: 'node-a',
+          cameraId: 'camera-1',
+          position: [0, 2],
+          fov: 50
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_transform_camera', {
+          nodeId: 'node-a',
+          cameraId: 'camera-1',
+          position: [2, 3, 4],
+          target: [0, 1, 0],
+          fov: 35
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_export_preview', { nodeId: 'node-a' }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_export_preview', {
+          nodeId: 'node-a',
+          shotId: 'shot-1',
+          resolution: '4k',
+          fps: 25
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_export_preview', {
+          nodeId: 'node-a',
+          shotId: 'shot-1',
+          resolution: '1080p',
+          fps: 30
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('validates film study tools', () => {
+    expect(() =>
+      assertToolAllowed(call('film_study_get', {}), scope, 'read-only')
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_get', { nodeId: 'node-a' }),
+        scope,
+        'read-only'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_auto', { nodeId: 'node-b' }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_auto', {
+          nodeId: 'node-a',
+          interval: -1
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_auto', {
+          nodeId: 'node-a',
+          outputs: { storyboard: 'yes' }
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_auto', {
+          nodeId: 'node-a',
+          interval: 0,
+          outputs: { storyboard: true, sheet: true }
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_export', {
+          nodeId: 'node-a',
+          format: 'pdf'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_export', {
+          studyId: 'study-1',
+          format: 'bundle'
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('marks new tools for confirmation and timeline undo', () => {
+    expect(
+      toolConfirmationReason(
+        call('canvas_remove_edge', {
+          sourceNodeId: 'node-a',
+          targetNodeId: 'node-b'
+        })
+      )
+    ).toContain('删除画布连线')
+    expect(
+      toolConfirmationReason(
+        call('canvas_update_text', { nodeId: 'node-a', text: '正文' })
+      )
+    ).toContain('覆盖文本节点')
+    expect(
+      toolConfirmationReason(
+        call('stage_export_preview', {
+          nodeId: 'node-a',
+          shotId: 'shot-1'
+        })
+      )
+    ).toContain('白模预演')
+    expect(
+      toolConfirmationReason(
+        call('timeline_split_by_shots', { clipId: 'clip-1' })
+      )
+    ).toContain('按镜头')
+    expect(
+      toolConfirmationReason(
+        call('timeline_beat_split', { clipId: 'clip-1' })
+      )
+    ).toContain('节拍')
+    expect(
+      toolConfirmationReason(
+        call('film_study_auto', { nodeId: 'node-a' })
+      )
+    ).toContain('逐帧拉片')
+
+    expect(
+      toolConfirmationReason(
+        call('timeline_beat_markers', { clipId: 'clip-1' })
+      )
+    ).toBeNull()
+    expect(
+      toolConfirmationReason(
+        call('film_study_export', { nodeId: 'node-a', format: 'markdown' })
+      )
+    ).toBeNull()
+
+    expect(isTimelineWriteTool('timeline_set_video')).toBe(true)
+    expect(isTimelineWriteTool('timeline_split_by_shots')).toBe(true)
+    expect(isTimelineWriteTool('timeline_beat_markers')).toBe(true)
+    expect(isTimelineWriteTool('timeline_beat_split')).toBe(true)
+    expect(isTimelineWriteTool('film_study_auto')).toBe(false)
+  })
+
+  it('exposes new capabilities only in writable modes', () => {
+    const currentNames = toolDefinitionsForModel('canvas', 'current').map(
+      (tool) => tool.function.name
+    )
+    expect(currentNames).toEqual(
+      expect.arrayContaining([
+        'canvas_remove_edge',
+        'canvas_update_text',
+        'stage_transform_camera',
+        'stage_export_preview',
+        'film_study_get',
+        'film_study_auto',
+        'film_study_export'
+      ])
+    )
+
+    const readOnlyNames = toolDefinitionsForModel('canvas', 'read-only').map(
+      (tool) => tool.function.name
+    )
+    expect(readOnlyNames).toContain('film_study_get')
+    expect(readOnlyNames).not.toContain('film_study_auto')
+    expect(readOnlyNames).not.toContain('canvas_update_text')
+    expect(readOnlyNames).not.toContain('stage_export_preview')
+  })
 })

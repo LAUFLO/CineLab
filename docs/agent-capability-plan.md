@@ -1,9 +1,9 @@
 # CineBot 能力扩展方案
 
 日期：2026-11-10
-状态：方案待实施
+状态：**Phase 1 已实施**（`feat/agent-capabilities`）
 关联：`docs/agent-architecture-plan.md`、`docs/agent-full-scope.md`、`docs/agent-plan.md`
-分支：`feat/agent-runtime`（PR #2）
+分支：`feat/agent-capabilities`（PR 待创建）
 
 ## 1. 结论
 
@@ -295,6 +295,8 @@ capability_catalog
 ## 5. 分阶段实施计划
 
 ### Phase 1（当前分支可做，小范围补齐）
+
+状态：**已实施**（2026-11-10，`feat/agent-capabilities`）。能力清单与实现映射见 `docs/agent-capabilities.md`。
 
 目标：先补齐 main 新功能里低风险、收益高的缺口。
 

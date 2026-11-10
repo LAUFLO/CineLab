@@ -5,7 +5,6 @@ import { Icon } from '../../components/Icon'
 import { assetUrl } from '../../lib/asset-url'
 import { isGroupNode, useCanvasStore } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
-import { useFilmStudyStore } from '../../stores/film-study'
 import { useToolbarStore } from '../../stores/toolbar'
 import { useUIStore } from '../../stores/ui'
 import { useSettingsStore } from '../../stores/settings'
@@ -15,6 +14,7 @@ import { trackVisionTask } from '../../stores/vision-tasks'
 import { createStudioFromNode } from '../../studio/nodes'
 import { AiOperationDialog } from './AiOperationDialog'
 import { CropDialog } from './CropDialog'
+import { createStudyNodeFromVideo, runFilmStudyAuto } from './film-study-runner'
 import { MaskEditorDialog } from './MaskEditorDialog'
 import { SphereDialog } from './SphereDialog'
 import { SubtitleDialog } from './SubtitleDialog'
@@ -418,44 +418,18 @@ export function NodeToolbar({
     const source = sourceNode()
     if (!source) return
 
-    const state = useCanvasStore.getState()
-    const sourceEntry = state.nodes.find((entry) => entry.id === nodeId)
-    const sourceKind: NodeKind =
-      sourceEntry && sourceEntry.type === 'cine'
-        ? sourceEntry.data.kind
-        : 'video'
-    const sourceHeight = sourceEntry
-      ? sourceEntry.measured?.height ?? NODE_META[sourceKind].height
-      : 300
-    const studyNodeId = state.addNode(
-      'study',
-      sourceEntry
-        ? {
-            x: sourceEntry.position.x,
-            y: sourceEntry.position.y + sourceHeight + 80
-          }
-        : source.origin
-    )
-    state.patchNodeData(studyNodeId, {
-      title: `${source.title} · 拉片`,
-      status: 'queued',
-      progress: 0,
-      error: undefined,
-      sourceNodeId: nodeId,
-      sourcePath: current.path,
-      sourceScope: current.scope,
-      sourceName: source.title,
-      studyInterval: interval,
-      studyOutputs: { storyboard: true, sheet: true }
-    })
-    state.onConnect({ source: nodeId, target: studyNodeId })
+    const studyNodeId = createStudyNodeFromVideo(nodeId, interval)
+    if (!studyNodeId) {
+      showToast('当前视频还没有可用的视频输出', 'error')
+      return
+    }
 
     showToast(
       interval > 0
         ? `已创建拉片节点，按 ${interval} 秒/镜拆分…`
         : '已创建拉片节点，正在自动拆解分镜…'
     )
-    void useFilmStudyStore.getState().runAuto(studyNodeId, {
+    void runFilmStudyAuto(studyNodeId, {
       interval,
       outputs: { storyboard: true, sheet: true }
     })

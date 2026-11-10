@@ -61,6 +61,8 @@ export type CineEdge = Edge
 
 /** 一轮 Agent 的多个画布命令只压入一条历史记录 */
 const commandTurns = new Set<string>()
+/** 直接写 store 的工具批次期间暂停自身的历史压栈，由 beginToolTurn 统一压一条 */
+let externalWriteDepth = 0
 
 export function isGroupNode(node: CanvasNode): node is GroupNode {
   return node.type === 'group'
@@ -239,7 +241,7 @@ interface CanvasStore {
   setViewport: (viewport: Viewport) => void
   onNodesChange: (changes: NodeChange<CanvasNode>[]) => void
   onEdgesChange: (changes: EdgeChange<CineEdge>[]) => void
-  removeEdges: (edgeIds: string[]) => number
+  removeEdges: (edgeIds: string[], turnId?: string) => number
   onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string
   addStudioNode: (position: XYPosition, title?: string) => string
@@ -283,6 +285,9 @@ interface CanvasStore {
     turnId?: string
   ) => CanvasCommandChange
   endCommandTurn: (turnId: string) => void
+  /** 工具直接写 store 前调用：一轮只压一条历史，批次内的 pushHistory 不再重复压栈 */
+  beginToolTurn: (turnId?: string) => void
+  endToolTurn: () => void
   resizeNode: (nodeId: string, height: number) => void
   removeNode: (id: string) => void
   clearSelection: () => void
@@ -678,13 +683,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
   },
 
-  removeEdges: (edgeIds) => {
+  removeEdges: (edgeIds, turnId) => {
     if (edgeIds.length === 0) return 0
     const ids = new Set(edgeIds)
     const removedEdges = get().edges.filter((edge) => ids.has(edge.id))
     if (removedEdges.length === 0) return 0
 
-    get().pushHistory()
+    if (!turnId || !commandTurns.has(turnId)) {
+      get().pushHistory()
+      if (turnId) commandTurns.add(turnId)
+    }
 
     const edges = get().edges.filter((edge) => !ids.has(edge.id))
     set({
@@ -1407,6 +1415,18 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     commandTurns.delete(turnId)
   },
 
+  beginToolTurn: (turnId) => {
+    if (turnId && !commandTurns.has(turnId)) {
+      get().pushHistory()
+      commandTurns.add(turnId)
+    }
+    externalWriteDepth += 1
+  },
+
+  endToolTurn: () => {
+    externalWriteDepth = Math.max(0, externalWriteDepth - 1)
+  },
+
   resizeNode: (nodeId, height) => {
     set({
       nodes: get().nodes.map((node) =>
@@ -1589,6 +1609,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   pushHistory: () => {
+    if (externalWriteDepth > 0) return
     const { nodes, edges, past } = get()
     const next = [...past, cloneSnapshot(nodes, edges)]
     if (next.length > HISTORY_LIMIT) next.shift()

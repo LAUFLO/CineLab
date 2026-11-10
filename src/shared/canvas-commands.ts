@@ -20,6 +20,7 @@ export type CanvasCommandEdge = Edge
 
 export type CanvasCommand =
   | { type: 'updateTitle'; nodeId: string; title: string }
+  | { type: 'updateText'; nodeId: string; text: string }
   | { type: 'updatePrompt'; nodeId: string; prompt: string }
   | { type: 'moveNode'; nodeId: string; position: XYPosition }
   | { type: 'addNode'; node: CanvasCommandNode }
@@ -34,6 +35,7 @@ export interface CanvasCommandChange {
   createdEdgeIds: string[]
   deletedEdgeIds: string[]
   previousTitles: Record<string, string>
+  previousTexts: Record<string, string>
   previousPositions: Record<string, XYPosition>
 }
 
@@ -55,6 +57,7 @@ export function emptyCanvasChange(): CanvasCommandChange {
     createdEdgeIds: [],
     deletedEdgeIds: [],
     previousTitles: {},
+    previousTexts: {},
     previousPositions: {}
   }
 }
@@ -74,6 +77,9 @@ function mergeChange(
   for (const id of next.deletedEdgeIds) pushUnique(target.deletedEdgeIds, id)
   for (const [id, title] of Object.entries(next.previousTitles)) {
     if (!(id in target.previousTitles)) target.previousTitles[id] = title
+  }
+  for (const [id, text] of Object.entries(next.previousTexts)) {
+    if (!(id in target.previousTexts)) target.previousTexts[id] = text
   }
   for (const [id, position] of Object.entries(next.previousPositions)) {
     if (!(id in target.previousPositions)) {
@@ -109,6 +115,32 @@ export function applyCanvasCommand(
         nodes: state.nodes.map((item) =>
           item.id === node.id
             ? ({ ...item, data: { ...item.data, title } } as CanvasCommandNode)
+            : item
+        ),
+        edges: state.edges,
+        change,
+        warnings
+      }
+    }
+
+    case 'updateText': {
+      const node = state.nodes.find((item) => item.id === command.nodeId)
+      if (
+        !node ||
+        node.type !== 'cine' ||
+        node.data.kind !== 'text'
+      ) {
+        warnings.push(`找不到文本节点：${command.nodeId}`)
+        return { ...state, change, warnings }
+      }
+      const previous = String(node.data.text ?? '')
+      if (previous === command.text) return { ...state, change, warnings }
+      change.updatedNodeIds.push(node.id)
+      change.previousTexts[node.id] = previous
+      return {
+        nodes: state.nodes.map((item) =>
+          item.id === node.id && item.type === 'cine'
+            ? ({ ...item, data: { ...item.data, text: command.text } } as CanvasCommandNode)
             : item
         ),
         edges: state.edges,

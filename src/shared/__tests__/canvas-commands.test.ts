@@ -1,19 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyCanvasBatch,
-  type CanvasCommandNode
+  type CanvasCommandNode,
+  type CanvasCommandState
 } from '../canvas-commands'
 
-function node(id: string, title: string, x = 0, y = 0): CanvasCommandNode {
+function node(
+  id: string,
+  title: string,
+  x = 0,
+  y = 0,
+  kind: 'text' | 'image' = 'text',
+  text?: string
+): CanvasCommandNode {
   return {
     id,
     type: 'cine',
     position: { x, y },
     data: {
-      kind: 'text',
+      kind,
       title,
       status: 'idle',
-      templates: []
+      templates: [],
+      ...(text !== undefined ? { text } : {})
     }
   }
 }
@@ -42,6 +51,47 @@ describe('canvas commands', () => {
 
     expect((result.nodes[0].data as { title: string }).title).toBe('第二次')
     expect(result.change.previousTitles.a).toBe('原始')
+  })
+
+  it('updates text on a text node and records the previous text', () => {
+    const start: CanvasCommandState = {
+      nodes: [node('a', '文本', 0, 0, 'text', '旧正文')],
+      edges: []
+    }
+    const result = applyCanvasBatch(start, [
+      { type: 'updateText', nodeId: 'a', text: '# 新正文' }
+    ])
+
+    expect((result.nodes[0].data as { text: string }).text).toBe('# 新正文')
+    expect(result.change.updatedNodeIds).toEqual(['a'])
+    expect(result.change.previousTexts.a).toBe('旧正文')
+  })
+
+  it('refuses to update text on a non-text node', () => {
+    const start: CanvasCommandState = {
+      nodes: [node('a', '图片', 0, 0, 'image')],
+      edges: []
+    }
+    const result = applyCanvasBatch(start, [
+      { type: 'updateText', nodeId: 'a', text: 'X' }
+    ])
+
+    expect(result.change.updatedNodeIds).toEqual([])
+    expect(result.warnings[0]).toContain('找不到文本节点')
+  })
+
+  it('removes an edge without touching nodes', () => {
+    const start = {
+      nodes: [node('a', 'A'), node('b', 'B')],
+      edges: [{ id: 'e1', source: 'a', target: 'b' }]
+    }
+    const result = applyCanvasBatch(start, [
+      { type: 'removeEdge', edgeId: 'e1' }
+    ])
+
+    expect(result.edges).toEqual([])
+    expect(result.nodes).toHaveLength(2)
+    expect(result.change.deletedEdgeIds).toEqual(['e1'])
   })
 
   it('updates prompt on a generation node', () => {

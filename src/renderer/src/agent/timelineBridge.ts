@@ -11,15 +11,22 @@ import {
   createClip,
   createTrack,
   newMarkerId,
+  type TimelineBackground,
   type TimelineClip,
   type TimelineDoc
 } from '@shared/timeline-schema'
-import { buildRemoveSilencePlan } from '@shared/timeline-tools'
+import {
+  buildBeatMarkerPlan,
+  buildBeatSplitPlan,
+  buildRemoveSilencePlan,
+  buildSplitByShotsPlan
+} from '@shared/timeline-tools'
 import {
   isStudioNode,
   useCanvasStore
 } from '../stores/canvas'
 import { referencesFromDoc, upstreamSignature } from '../studio/references'
+import { applyTimelinePlan } from '../studio/timeline-plan-runner'
 import { useTimelineStore } from '../stores/timeline'
 import { useStudioStore } from '../stores/studio'
 import { useAgentStore } from './agentStore'
@@ -241,6 +248,70 @@ export async function executeTimelineTool(
       return { ok: true, result: timelineSummary(doc) }
     }
 
+    if (call.name === 'timeline_set_video') {
+      const width =
+        typeof call.args.width === 'number' ? call.args.width : undefined
+      const height =
+        typeof call.args.height === 'number' ? call.args.height : undefined
+      const fps =
+        typeof call.args.fps === 'number' ? call.args.fps : undefined
+      const rawBackground = call.args.background
+      const commands: TimelineCommand[] = []
+      let nextVideo = doc.video
+
+      if (width !== undefined && height !== undefined) {
+        nextVideo = { ...nextVideo, width, height }
+      }
+      if (fps !== undefined) {
+        nextVideo = { ...nextVideo, fps }
+      }
+      if (width !== undefined || height !== undefined || fps !== undefined) {
+        commands.push({ op: 'setTimelineVideo', video: nextVideo })
+      }
+      if (rawBackground !== undefined) {
+        if (
+          !rawBackground ||
+          typeof rawBackground !== 'object' ||
+          Array.isArray(rawBackground)
+        ) {
+          return { ok: false, error: 'background 参数无效' }
+        }
+        const item = rawBackground as Record<string, unknown>
+        const type =
+          item.type === 'color' || item.type === 'image' ? item.type : 'none'
+        const background: TimelineBackground = {
+          type,
+          ...(type === 'color' && typeof item.color === 'string'
+            ? { color: item.color }
+            : {}),
+          ...(type === 'image' && typeof item.path === 'string'
+            ? { path: item.path }
+            : {})
+        }
+        if (type === 'color' && !background.color) {
+          return { ok: false, error: '背景颜色不能为空' }
+        }
+        if (type === 'image' && !background.path) {
+          return { ok: false, error: '背景图片路径不能为空' }
+        }
+        commands.push({ op: 'setTimelineBackground', background })
+      }
+
+      if (commands.length === 0) {
+        return { ok: false, error: '没有可修改的画面设置' }
+      }
+
+      apply(commands, turnId)
+      const nextDoc = requireTimeline(call.scope)
+      return {
+        ok: true,
+        result: {
+          video: nextDoc.video,
+          background: nextDoc.background
+        }
+      }
+    }
+
     if (call.name === 'timeline_select_clips') {
       const clipIds = Array.isArray(call.args.clipIds)
         ? call.args.clipIds.map(String)
@@ -337,6 +408,198 @@ export async function executeTimelineTool(
         ok: true,
         result: {
           atMs,
+          clipCount: nextDoc.clips.length,
+          durationMs: Math.round(docDurationMs(nextDoc))
+        }
+      }
+    }
+
+    if (call.name === 'timeline_split_by_shots') {
+      const clipId = String(call.args.clipId ?? '')
+      const clip = findClips(doc, [clipId])[0]
+      if (
+        clip.kind !== 'video' ||
+        !clip.media ||
+        clip.muted
+      ) {
+        throw new Error('按镜头切分只支持未静音的视频片段')
+      }
+      if (clipOnLockedTrack(doc, clip)) {
+        throw new Error('片段所在轨道已锁定，无法切分')
+      }
+
+      ensureTurnActive(turnId)
+      const result = await runWithTurn(
+        turnId,
+        window.api.timeline.analyze({
+          kind: 'shots',
+          path: clip.media.path,
+          scope: clip.media.scope,
+          sourceStartMs: clip.sourceStartMs,
+          durationMs: clip.durationMs,
+          speed: clip.speed
+        })
+      )
+      ensureTurnActive(turnId)
+
+      const cuts = result.markers.map(
+        (marker) => clip.startMs + marker.atMs
+      )
+      const plan = buildSplitByShotsPlan(doc, clipId, cuts, {
+        ...(typeof call.args.minShotMs === 'number'
+          ? { minShotMs: call.args.minShotMs }
+          : {}),
+        ...(typeof call.args.edgePaddingMs === 'number'
+          ? { edgePaddingMs: call.args.edgePaddingMs }
+          : {})
+      })
+
+      if (plan.commands.length === 0) {
+        return {
+          ok: true,
+          result: {
+            applied: false,
+            summary: plan.summary,
+            cutCount: 0
+          }
+        }
+      }
+
+      applyTimelinePlan(plan, { label: '按镜头切分', turnId })
+      const nextDoc = requireTimeline(call.scope)
+      return {
+        ok: true,
+        result: {
+          applied: true,
+          summary: plan.summary,
+          cutCount: plan.rangeCount,
+          clipCount: nextDoc.clips.length,
+          durationMs: Math.round(docDurationMs(nextDoc))
+        }
+      }
+    }
+
+    if (call.name === 'timeline_beat_markers') {
+      const clipId = String(call.args.clipId ?? '')
+      const source = findClips(doc, [clipId])[0]
+      if (
+        !source.media ||
+        (source.kind !== 'video' && source.kind !== 'audio') ||
+        source.muted
+      ) {
+        throw new Error('节拍标记需要未静音的视频或音频片段')
+      }
+
+      ensureTurnActive(turnId)
+      const result = await runWithTurn(
+        turnId,
+        window.api.timeline.analyze({
+          kind: 'beats',
+          path: source.media.path,
+          scope: source.media.scope,
+          sourceStartMs: source.sourceStartMs,
+          durationMs: source.durationMs,
+          speed: source.speed
+        })
+      )
+      ensureTurnActive(turnId)
+
+      const beats = result.markers.map(
+        (marker) => source.startMs + marker.atMs
+      )
+      const plan = buildBeatMarkerPlan(doc, beats, {
+        ...(typeof call.args.label === 'string'
+          ? { label: call.args.label }
+          : {}),
+        ...(typeof call.args.color === 'string'
+          ? { color: call.args.color }
+          : {})
+      })
+
+      if (plan.commands.length === 0) {
+        return {
+          ok: true,
+          result: {
+            applied: false,
+            summary: plan.summary,
+            markerCount: 0,
+            warnings: plan.warnings
+          }
+        }
+      }
+
+      applyTimelinePlan(plan, { label: '节拍标记', turnId })
+      return {
+        ok: true,
+        result: {
+          applied: true,
+          summary: plan.summary,
+          markerCount: plan.rangeCount,
+          warnings: plan.warnings
+        }
+      }
+    }
+
+    if (call.name === 'timeline_beat_split') {
+      const clipId = String(call.args.clipId ?? '')
+      const source = findClips(doc, [clipId])[0]
+      if (
+        !source.media ||
+        (source.kind !== 'video' && source.kind !== 'audio') ||
+        source.muted
+      ) {
+        throw new Error('节拍切分需要未静音的视频或音频片段')
+      }
+
+      ensureTurnActive(turnId)
+      const result = await runWithTurn(
+        turnId,
+        window.api.timeline.analyze({
+          kind: 'beats',
+          path: source.media.path,
+          scope: source.media.scope,
+          sourceStartMs: source.sourceStartMs,
+          durationMs: source.durationMs,
+          speed: source.speed
+        })
+      )
+      ensureTurnActive(turnId)
+
+      const beats = result.markers.map(
+        (marker) => source.startMs + marker.atMs
+      )
+      const trackId =
+        typeof call.args.trackId === 'string'
+          ? call.args.trackId
+          : source.kind === 'video'
+            ? source.trackId
+            : undefined
+      const plan = buildBeatSplitPlan(doc, beats, {
+        ...(trackId ? { trackId } : {}),
+        ...(typeof call.args.minGapMs === 'number'
+          ? { minGapMs: call.args.minGapMs }
+          : {})
+      })
+
+      if (plan.commands.length === 0) {
+        return {
+          ok: true,
+          result: {
+            applied: false,
+            summary: plan.summary,
+            cutCount: 0
+          }
+        }
+      }
+
+      applyTimelinePlan(plan, { label: '节拍切分', turnId })
+      const nextDoc = requireTimeline(call.scope)
+      return {
+        ok: true,
+        result: {
+          applied: true,
+          summary: plan.summary,
+          cutCount: plan.rangeCount,
           clipCount: nextDoc.clips.length,
           durationMs: Math.round(docDurationMs(nextDoc))
         }

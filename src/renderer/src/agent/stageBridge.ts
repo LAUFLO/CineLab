@@ -1,4 +1,7 @@
-import type { AgentToolCallRequest } from '@shared/agent'
+import type {
+  AgentToolCallRequest,
+  AgentTurnChange
+} from '@shared/agent'
 import {
   applyStageCommands,
   type StageCommand
@@ -12,11 +15,15 @@ import type {
   StageTransform,
   StageVec3
 } from '@shared/stage-schema'
-import { isStageNode, useCanvasStore } from '../stores/canvas'
+import {
+  isStageNode,
+  useCanvasStore
+} from '../stores/canvas'
 import {
   syncStageNodeSummary,
   useStageStore
 } from '../stage/stageStore'
+import { exportStagePreviewToCanvas } from '../stage/preview-runner'
 
 const OBJECT_LABEL: Record<StageObjectType, string> = {
   human: '人物',
@@ -31,6 +38,20 @@ export interface StageToolResult {
   ok: boolean
   result?: unknown
   error?: string
+  change?: AgentTurnChange
+}
+
+function stageChange(): AgentTurnChange {
+  return {
+    createdNodeIds: [],
+    updatedNodeIds: [],
+    deletedNodeIds: [],
+    createdEdgeIds: [],
+    deletedEdgeIds: [],
+    previousTitles: {},
+    previousPositions: {},
+    stageUpdated: true
+  }
 }
 
 function stageNode(nodeId: string) {
@@ -73,15 +94,20 @@ async function readDoc(
 
 async function applyToStage(
   nodeId: string,
-  commands: StageCommand[]
+  commands: StageCommand[],
+  turnId?: string
 ): Promise<DirectorStageDoc> {
   const store = useStageStore.getState()
   if (store.open && store.nodeId === nodeId && store.doc) {
-    if (!store.applyCommands(commands)) {
+    const previous = store.doc
+    if (!store.applyCommands(commands, turnId)) {
       throw new Error(useStageStore.getState().error ?? '场景命令执行失败')
     }
     const doc = useStageStore.getState().doc
     if (!doc) throw new Error('场景未加载')
+    if (doc === previous) {
+      throw new Error('场景命令没有产生修改')
+    }
     // 工具执行必须立即落盘，不能只依赖窗口的防抖保存
     await window.api.stage.save(doc)
     useStageStore.setState({ dirty: false })
@@ -97,6 +123,17 @@ async function applyToStage(
   await window.api.stage.save(result.doc)
   syncStageNodeSummary(nodeId, result.doc)
   return result.doc
+}
+
+/** Agent 写场景前自动打开导演台，保证修改可见且进入场景撤销历史 */
+async function ensureStageOpen(nodeId: string): Promise<void> {
+  const store = useStageStore.getState()
+  if (store.open && store.nodeId === nodeId && store.doc) return
+  await useStageStore.getState().openStage(nodeId)
+  const next = useStageStore.getState()
+  if (!next.open || next.nodeId !== nodeId || !next.doc) {
+    throw new Error(next.error ?? '打开导演台场景失败')
+  }
 }
 
 function objectSummary(object: StageObject): Record<string, unknown> {
@@ -155,6 +192,7 @@ export async function executeStageTool(
   }
 
   if (call.name === 'stage_add_object') {
+    await ensureStageOpen(nodeId)
     const type = String(call.args.type ?? '') as StageObjectType
     const { doc } = await readDoc(nodeId)
     const countOfType = doc.objects.filter(
@@ -185,7 +223,11 @@ export async function executeStageTool(
         : {})
     }
 
-    const updated = await applyToStage(nodeId, [{ type: 'addObject', object }])
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'addObject', object }],
+      call.turnId
+    )
     return {
       ok: true,
       result: {
@@ -193,11 +235,13 @@ export async function executeStageTool(
         stageId: updated.stageId,
         object: objectSummary(object),
         objectCount: updated.objects.length
-      }
+      },
+      change: stageChange()
     }
   }
 
   if (call.name === 'stage_transform_object') {
+    await ensureStageOpen(nodeId)
     const objectId = String(call.args.objectId ?? '')
     const transform: Partial<StageTransform> = {}
     if (call.args.position !== undefined) {
@@ -210,20 +254,24 @@ export async function executeStageTool(
       transform.scale = readVec(call.args.scale, [1, 1, 1])
     }
 
-    const updated = await applyToStage(nodeId, [
-      { type: 'transformObject', objectId, transform }
-    ])
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'transformObject', objectId, transform }],
+      call.turnId
+    )
     const object = updated.objects.find((item) => item.id === objectId)
     return {
       ok: true,
       result: {
         objectId,
         transform: object?.transform ?? null
-      }
+      },
+      change: stageChange()
     }
   }
 
   if (call.name === 'stage_add_camera') {
+    await ensureStageOpen(nodeId)
     const { doc } = await readDoc(nodeId)
     const aspect =
       typeof call.args.aspect === 'string'
@@ -241,9 +289,11 @@ export async function executeStageTool(
       ...(aspect ? { aspect } : {})
     }
 
-    const updated = await applyToStage(nodeId, [
-      { type: 'addCamera', camera }
-    ])
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'addCamera', camera }],
+      call.turnId
+    )
     return {
       ok: true,
       result: {
@@ -251,34 +301,121 @@ export async function executeStageTool(
         camera,
         activeCameraId: updated.activeCameraId ?? null,
         cameraCount: updated.cameras.length
-      }
+      },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_transform_camera') {
+    await ensureStageOpen(nodeId)
+    const cameraId = String(call.args.cameraId ?? '')
+    const patch: Partial<Omit<StageCamera, 'id'>> = {}
+    if (typeof call.args.name === 'string') {
+      patch.name = call.args.name.trim()
+    }
+    if (call.args.position !== undefined) {
+      patch.position = readVec(call.args.position, [0, 0, 0])
+    }
+    if (call.args.target !== undefined) {
+      patch.target = readVec(call.args.target, [0, 0, 0])
+    }
+    if (typeof call.args.fov === 'number') {
+      patch.fov = call.args.fov
+    }
+    if (typeof call.args.aspect === 'string') {
+      patch.aspect = call.args.aspect as StageAspect
+    }
+
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'updateCamera', cameraId, patch }],
+      call.turnId
+    )
+    const camera = updated.cameras.find((item) => item.id === cameraId)
+    if (!camera) throw new Error('找不到这个机位')
+    return {
+      ok: true,
+      result: {
+        cameraId,
+        camera: {
+          id: camera.id,
+          name: camera.name,
+          position: camera.position,
+          target: camera.target,
+          fov: camera.fov,
+          ...(camera.aspect ? { aspect: camera.aspect } : {})
+        }
+      },
+      change: stageChange()
     }
   }
 
   if (call.name === 'stage_set_active_camera') {
+    await ensureStageOpen(nodeId)
     const cameraId = String(call.args.cameraId ?? '')
-    const updated = await applyToStage(nodeId, [
-      { type: 'setActiveCamera', cameraId }
-    ])
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'setActiveCamera', cameraId }],
+      call.turnId
+    )
     return {
       ok: true,
       result: {
         activeCameraId: updated.activeCameraId ?? null
-      }
+      },
+      change: stageChange()
     }
   }
 
   if (call.name === 'stage_remove_object') {
+    await ensureStageOpen(nodeId)
     const objectId = String(call.args.objectId ?? '')
-    const updated = await applyToStage(nodeId, [
-      { type: 'removeObject', objectId }
-    ])
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'removeObject', objectId }],
+      call.turnId
+    )
     return {
       ok: true,
       result: {
         objectId,
         objectCount: updated.objects.length
-      }
+      },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_export_preview') {
+    const shotId = String(call.args.shotId ?? '')
+    const { doc } = await readDoc(nodeId)
+    if (!doc.shots.some((shot) => shot.id === shotId)) {
+      return { ok: false, error: '找不到这个镜头' }
+    }
+    const stageNodeEntry = stageNode(nodeId)
+    const resolution =
+      call.args.resolution === '1080p' ? '1080p' : '720p'
+    const fps = call.args.fps === 30 ? 30 : 24
+
+    const result = await exportStagePreviewToCanvas({
+      stageNodeId: stageNodeEntry.id,
+      stageId: doc.stageId,
+      shotId,
+      resolution,
+      fps,
+      turnId: call.turnId
+    })
+
+    const change = stageChange()
+    change.createdNodeIds.push(...result.nodeIds)
+    return {
+      ok: true,
+      result: {
+        path: result.path,
+        nodeId: result.nodeIds[0] ?? null,
+        width: result.asset.width ?? null,
+        height: result.asset.height ?? null
+      },
+      change
     }
   }
 

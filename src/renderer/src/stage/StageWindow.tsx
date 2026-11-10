@@ -12,6 +12,7 @@ import { StageInspector } from './StageInspector'
 import { StageTimeline } from './StageTimeline'
 import { StageViewport } from './StageViewport'
 import { useStageStore } from './stageStore'
+import { exportStagePreviewToCanvas } from './preview-runner'
 import '../styles/stage.css'
 
 const OBJECT_OPTIONS: Array<{ type: StageObjectType; label: string }> = [
@@ -172,28 +173,18 @@ export function StageWindow() {
     setExporting(true)
     setExportProgress(0)
     try {
-      const result = await window.api.stage.exportPreview({
+      const result = await exportStagePreviewToCanvas({
+        stageNodeId: stageNode.id,
         stageId: state.doc.stageId,
         shotId: state.selectedShotId,
         resolution: '720p',
         fps: 24
       })
 
-      const size = nodeSize(stageNode)
-      const ids = useCanvasStore.getState().addAssetNodes(
-        'video',
-        {
-          x: stageNode.position.x + size.width + 80,
-          y: stageNode.position.y + size.height + 40
-        },
-        [result.asset],
-        '白模预演',
-        stageNode.id
-      )
       useUIStore
         .getState()
         .showToast(
-          ids.length > 0
+          result.nodeIds.length > 0
             ? '白模预演已导出并添加到画布'
             : '白模预演已导出'
         )

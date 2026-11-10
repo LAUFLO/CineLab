@@ -21,6 +21,7 @@ import {
   type TimelineClip
 } from '@shared/timeline-schema'
 import { useTimelineStore } from '../stores/timeline'
+import { applyTimelinePlan } from './timeline-plan-runner'
 import { useUIStore } from '../stores/ui'
 import { Select } from '../components/Select'
 import { BezierEditor } from './BezierEditor'
@@ -605,14 +606,10 @@ export function InspectorPane() {
       message: [plan.summary, ...plan.warnings].join('\n'),
       confirmLabel: '应用',
       onConfirm: () => {
-        const latest = useTimelineStore.getState()
-        if (!latest.doc) return
-        latest.dispatch({
-          op: 'batch',
+        applyTimelinePlan(plan, {
           label: `自动粗剪 · ${label}`,
-          commands: plan.commands
+          clearSelection
         })
-        if (clearSelection) latest.select([])
         showToast(plan.summary)
       }
     })

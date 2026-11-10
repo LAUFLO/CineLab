@@ -105,7 +105,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   }
 
   const saveText = (text: string): void => {
-    patchNodeData(id, { text, status: 'done' })
+    useCanvasStore
+      .getState()
+      .applyCommands([{ type: 'updateText', nodeId: id, text }])
+    patchNodeData(id, { status: 'done' })
     closeTextEditor()
   }
 

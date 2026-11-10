@@ -47,6 +47,63 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     replay: 'safe'
   },
   {
+    id: 'canvas.removeEdge',
+    name: 'canvas_remove_edge',
+    description:
+      '删除画布上的一条连线。传 edgeId，或传上游 sourceNodeId 和下游 targetNodeId；两条节点之间同一对端点的连线会被断开。只允许操作与选中节点或本轮新建节点相关的连线。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        edgeId: {
+          type: 'string',
+          description: '连线 ID，必须来自 canvas_get 的 edges'
+        },
+        sourceNodeId: {
+          type: 'string',
+          description: '上游节点 ID；与 targetNodeId 一起使用'
+        },
+        targetNodeId: {
+          type: 'string',
+          description: '下游节点 ID；与 sourceNodeId 一起使用'
+        }
+      },
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
+  },
+  {
+    id: 'canvas.updateText',
+    name: 'canvas_update_text',
+    description:
+      '覆盖一个选中文本节点的正文，支持 Markdown。传空字符串可清空正文。只允许修改当前选中的文本节点。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: {
+          type: 'string',
+          description: '要修改的文本节点 ID，必须来自 canvas_get 的 selectedNodes'
+        },
+        text: {
+          type: 'string',
+          description: '新的正文，最多 100000 个字符；支持 Markdown'
+        }
+      },
+      required: ['nodeId', 'text'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
+  },
+  {
     id: 'canvas.updateTitle',
     name: 'canvas_update_title',
     description:
@@ -473,6 +530,54 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
     replay: 'safe'
   },
   {
+    id: 'stage.transformCamera',
+    name: 'stage_transform_camera',
+    description:
+      '调整一个已有机位的位置、朝向目标、视场角、画幅或名称，支持只传其中一部分。cameraId 必须来自 stage_get。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        cameraId: { type: 'string', description: '机位 ID，来自 stage_get' },
+        name: { type: 'string', description: '机位名称；省略时不修改' },
+        position: stageVec3Parameter,
+        target: stageVec3Parameter,
+        fov: { type: 'number', description: '视场角 10-120；省略时不修改' },
+        aspect: { type: 'string', enum: ['16:9', '9:16', '1:1'] }
+      },
+      required: ['nodeId', 'cameraId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.exportPreview',
+    name: 'stage_export_preview',
+    description:
+      '把导演台的一个镜头渲染导出为白模预演视频，并自动在画布上创建一个视频节点。shotId 必须来自 stage_get；导出耗时较长，执行前需要用户确认。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        shotId: { type: 'string', description: '镜头 ID，来自 stage_get 的 shots' },
+        resolution: { type: 'string', enum: ['720p', '1080p'] },
+        fps: { type: 'number', enum: [24, 30] }
+      },
+      required: ['nodeId', 'shotId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
+  },
+  {
     id: 'stage.setActiveCamera',
     name: 'stage_set_active_camera',
     description: '切换导演台当前机位。cameraId 必须来自 stage_get。',
@@ -534,6 +639,37 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
     parameters: {
       type: 'object',
       properties: {},
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.setVideo',
+    name: 'timeline_set_video',
+    description:
+      '设置时间线画幅、分辨率、帧率或背景。width 和 height 必须成对出现且为偶数；只传其中一项或只改 fps/background 也可以。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        width: { type: 'number', description: '画面宽度 16-7680，偶数' },
+        height: { type: 'number', description: '画面高度 16-4320，偶数' },
+        fps: { type: 'number', description: '帧率 1-120' },
+        background: {
+          type: 'object',
+          description: '时间线背景设置',
+          properties: {
+            type: { type: 'string', enum: ['none', 'color', 'image'] },
+            color: { type: 'string', description: '背景颜色，例如 #000000' },
+            path: { type: 'string', description: '背景图片的项目内相对路径' }
+          },
+          required: ['type'],
+          additionalProperties: false
+        }
+      },
       additionalProperties: false
     },
     replay: 'safe'
@@ -627,6 +763,83 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe'
+  },
+  {
+    id: 'timeline.splitByShots',
+    name: 'timeline_split_by_shots',
+    description:
+      '分析一个选中视频片段的镜头切点，并按镜头自动切分。会改变片段结构，执行前需要用户确认。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipId: { type: 'string', description: '作为镜头切分来源的视频片段 ID' },
+        minShotMs: {
+          type: 'number',
+          description: '两个镜头之间的最短间隔，默认 500'
+        },
+        edgePaddingMs: {
+          type: 'number',
+          description: '片段首尾不切的缓冲，默认 100'
+        }
+      },
+      required: ['clipId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
+  },
+  {
+    id: 'timeline.beatMarkers',
+    name: 'timeline_beat_markers',
+    description:
+      '分析一个选中音频或视频片段的节拍，并把节拍点写成时间线标记。只新增标记，不改变片段。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipId: { type: 'string', description: '作为节拍来源的音频或视频片段 ID' },
+        label: { type: 'string', description: '标记名称，默认「节拍」' },
+        color: { type: 'string', description: '标记颜色，例如 #7bd88f' }
+      },
+      required: ['clipId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'timeline.beatSplit',
+    name: 'timeline_beat_split',
+    description:
+      '分析一个选中音频或视频片段的节拍，并在目标轨道上按节拍点切分片段。省略 trackId 时使用主轨。执行前需要用户确认。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        clipId: { type: 'string', description: '作为节拍来源的音频或视频片段 ID' },
+        trackId: {
+          type: 'string',
+          description: '要切分的轨道 ID；省略时使用主轨'
+        },
+        minGapMs: {
+          type: 'number',
+          description: '两个节拍切点之间的最短间隔，默认 250'
+        }
+      },
+      required: ['clipId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
   },
   {
     id: 'timeline.removeClips',
@@ -823,11 +1036,115 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
+export const FILM_TOOLS: AgentToolDefinition[] = [
+  {
+    id: 'film.studyGet',
+    name: 'film_study_get',
+    description:
+      '读取一个拉片节点的拉片数据，包括源视频、帧数、分镜段落、AI 描述和结构/情绪摘要。nodeId 可以是拉片节点，也可以是它上游的视频节点。',
+    profiles: ['canvas'],
+    readOnly: true,
+    scope: 'film',
+    modes: ['read-only', 'current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: {
+          type: 'string',
+          description: '拉片节点 ID，或作为拉片来源的视频节点 ID'
+        },
+        studyId: {
+          type: 'string',
+          description: '拉片数据 ID，已知时可直接读取'
+        }
+      },
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'film.studyAuto',
+    name: 'film_study_auto',
+    description:
+      '对一个选中视频节点执行逐帧拉片：自动检测镜头、抽取代表帧、生成分镜组和分镜表并连到画布；传入拉片节点时重新拉片。会创建或替换分镜输出，耗时较长，执行前需要用户确认。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'film',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: {
+          type: 'string',
+          description: '要拉片的视频节点或拉片节点 ID'
+        },
+        interval: {
+          type: 'number',
+          description: '分镜间隔秒数；0 表示自动镜头检测，默认 0'
+        },
+        modelKey: {
+          type: 'string',
+          description: '描述画面的视觉文本模型，格式 providerId/modelId；none 表示只用基础分镜'
+        },
+        outputs: {
+          type: 'object',
+          description: '拉片输出选项；默认生成分镜组和分镜表',
+          properties: {
+            storyboard: { type: 'boolean' },
+            sheet: { type: 'boolean' },
+            motion: { type: 'boolean' },
+            music: { type: 'boolean' }
+          },
+          additionalProperties: false
+        }
+      },
+      required: ['nodeId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
+  },
+  {
+    id: 'film.studyExport',
+    name: 'film_study_export',
+    description:
+      '导出拉片结果：markdown 导出拉片笔记，analysis 导出 AI 分析包，bundle 导出完整拉片包。会弹出保存对话框，用户可取消。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'film',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: {
+          type: 'string',
+          description: '拉片节点 ID，或作为拉片来源的视频节点 ID'
+        },
+        studyId: {
+          type: 'string',
+          description: '拉片数据 ID，已知时可直接导出'
+        },
+        format: {
+          type: 'string',
+          enum: ['markdown', 'analysis', 'bundle'],
+          description: '导出格式，默认 markdown'
+        }
+      },
+      additionalProperties: false
+    },
+    replay: 'unsafe'
+  }
+]
+
 /** 真正修改时间线文档的工具；只读、选择和导出不计入回合撤销 */
 const TIMELINE_WRITE_TOOL_NAMES = new Set([
+  'timeline_set_video',
   'timeline_move_clips',
   'timeline_trim_clip',
   'timeline_split_clips',
+  'timeline_split_by_shots',
+  'timeline_beat_markers',
+  'timeline_beat_split',
   'timeline_remove_clips',
   'timeline_update_clip',
   'timeline_set_track',
@@ -901,6 +1218,7 @@ export const AGENT_TOOLS = [
   ...GENERATION_TOOLS,
   ...STAGE_TOOLS,
   ...TIMELINE_TOOLS,
+  ...FILM_TOOLS,
   ...SKILL_TOOLS
 ]
 
@@ -940,8 +1258,26 @@ export function toolConfirmationReason(
   if (call.name === 'canvas_delete_node') {
     return '将删除画布节点及其所有连线。'
   }
+  if (call.name === 'canvas_remove_edge') {
+    return '将删除画布连线，下游节点对上游的引用会被清理。'
+  }
+  if (call.name === 'canvas_update_text') {
+    return '将覆盖文本节点的正文内容。'
+  }
   if (call.name === 'stage_remove_object') {
     return '将删除导演台对象及其动作轨。'
+  }
+  if (call.name === 'stage_export_preview') {
+    return '将渲染并导出白模预演视频，耗时取决于镜头长度。'
+  }
+  if (call.name === 'timeline_split_by_shots') {
+    return '将按镜头分析视频并切分片段，片段结构会改变。'
+  }
+  if (call.name === 'timeline_beat_split') {
+    return '将按节拍切分片段，片段结构会改变。'
+  }
+  if (call.name === 'film_study_auto') {
+    return '将执行逐帧拉片并创建或替换分镜输出，耗时较长。'
   }
   if (
     clipIds.length > 10 &&
@@ -1014,6 +1350,21 @@ export function assertToolAllowed(
     assertSelectedNode(scope, nodeId)
   }
 
+  if (call.name === 'canvas_update_text') {
+    const nodeId = call.args.nodeId
+    const text = call.args.text
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    if (typeof text !== 'string') {
+      throw new AgentToolError('invalid_params', 'text 必须是字符串')
+    }
+    if (text.length > 100_000) {
+      throw new AgentToolError('invalid_params', 'text 不能超过 100000 个字符')
+    }
+    assertSelectedNode(scope, nodeId)
+  }
+
   if (call.name === 'canvas_move_node') {
     const nodeId = call.args.nodeId
     const x = call.args.x
@@ -1082,6 +1433,45 @@ export function assertToolAllowed(
     }
     assertSelectedNode(scope, source)
     assertSelectedNode(scope, target)
+  }
+
+  if (call.name === 'canvas_remove_edge') {
+    const edgeId = call.args.edgeId
+    const source = call.args.sourceNodeId
+    const target = call.args.targetNodeId
+    const hasEdgeId = edgeId !== undefined
+    const hasEndpoints = source !== undefined || target !== undefined
+
+    if (hasEdgeId) {
+      if (typeof edgeId !== 'string' || !edgeId.trim()) {
+        throw new AgentToolError('invalid_params', 'edgeId 必须是非空字符串')
+      }
+    }
+    if (hasEndpoints) {
+      if (typeof source !== 'string' || !source.trim()) {
+        throw new AgentToolError(
+          'invalid_params',
+          'sourceNodeId 必须是非空字符串'
+        )
+      }
+      if (typeof target !== 'string' || !target.trim()) {
+        throw new AgentToolError(
+          'invalid_params',
+          'targetNodeId 必须是非空字符串'
+        )
+      }
+      if (source === target) {
+        throw new AgentToolError('invalid_params', '连线的上下游不能相同')
+      }
+      assertSelectedNode(scope, source)
+      assertSelectedNode(scope, target)
+    }
+    if (!hasEdgeId && !hasEndpoints) {
+      throw new AgentToolError(
+        'invalid_params',
+        '需要 edgeId，或同时提供 sourceNodeId 和 targetNodeId'
+      )
+    }
   }
 
   if (call.name === 'canvas_delete_node') {
@@ -1384,6 +1774,54 @@ export function assertToolAllowed(
       }
     }
 
+    if (call.name === 'stage_transform_camera') {
+      if (
+        typeof call.args.cameraId !== 'string' ||
+        !call.args.cameraId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'cameraId 必须是非空字符串')
+      }
+      if (
+        call.args.name === undefined &&
+        call.args.position === undefined &&
+        call.args.target === undefined &&
+        call.args.fov === undefined &&
+        call.args.aspect === undefined
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '至少需要 name、position、target、fov 或 aspect'
+        )
+      }
+      if (
+        call.args.name !== undefined &&
+        (typeof call.args.name !== 'string' ||
+          !call.args.name.trim() ||
+          call.args.name.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'name 无效')
+      }
+      assertStageVec3(call.args.position, 'position')
+      assertStageVec3(call.args.target, 'target')
+      if (call.args.fov !== undefined) {
+        const fov = call.args.fov
+        if (
+          typeof fov !== 'number' ||
+          !Number.isFinite(fov) ||
+          fov < 10 ||
+          fov > 120
+        ) {
+          throw new AgentToolError('invalid_params', 'fov 必须在 10-120 之间')
+        }
+      }
+      if (
+        call.args.aspect !== undefined &&
+        !['16:9', '9:16', '1:1'].includes(String(call.args.aspect))
+      ) {
+        throw new AgentToolError('invalid_params', 'aspect 无效')
+      }
+    }
+
     if (call.name === 'stage_set_active_camera') {
       if (
         typeof call.args.cameraId !== 'string' ||
@@ -1399,6 +1837,28 @@ export function assertToolAllowed(
         !call.args.objectId.trim()
       ) {
         throw new AgentToolError('invalid_params', 'objectId 必须是非空字符串')
+      }
+    }
+
+    if (call.name === 'stage_export_preview') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+      if (
+        call.args.resolution !== undefined &&
+        !['720p', '1080p'].includes(String(call.args.resolution))
+      ) {
+        throw new AgentToolError('invalid_params', 'resolution 无效')
+      }
+      if (
+        call.args.fps !== undefined &&
+        call.args.fps !== 24 &&
+        call.args.fps !== 30
+      ) {
+        throw new AgentToolError('invalid_params', 'fps 只能是 24 或 30')
       }
     }
   }
@@ -1432,6 +1892,103 @@ export function assertToolAllowed(
         call.args.clipIds.length > 200
       ) {
         throw new AgentToolError('invalid_params', '一次最多选择 200 个片段')
+      }
+    }
+
+    if (call.name === 'timeline_set_video') {
+      const width = call.args.width
+      const height = call.args.height
+      const fps = call.args.fps
+      const background = call.args.background
+
+      if (
+        (width === undefined) !== (height === undefined)
+      ) {
+        throw new AgentToolError('invalid_params', 'width 和 height 必须同时提供')
+      }
+      for (const [key, value, max] of [
+        ['width', width, 7680],
+        ['height', height, 4320]
+      ] as const) {
+        if (value === undefined) continue
+        if (
+          typeof value !== 'number' ||
+          !Number.isInteger(value) ||
+          value < 16 ||
+          value > max ||
+          value % 2 !== 0
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `${key} 必须是 16-${max} 之间的偶数`
+          )
+        }
+      }
+      if (fps !== undefined) {
+        if (
+          typeof fps !== 'number' ||
+          !Number.isFinite(fps) ||
+          fps < 1 ||
+          fps > 120
+        ) {
+          throw new AgentToolError('invalid_params', 'fps 必须在 1-120 之间')
+        }
+      }
+      if (background !== undefined) {
+        if (
+          !background ||
+          typeof background !== 'object' ||
+          Array.isArray(background)
+        ) {
+          throw new AgentToolError('invalid_params', 'background 必须是对象')
+        }
+        const item = background as Record<string, unknown>
+        if (!['none', 'color', 'image'].includes(String(item.type))) {
+          throw new AgentToolError('invalid_params', 'background.type 无效')
+        }
+        if (
+          item.color !== undefined &&
+          (typeof item.color !== 'string' || item.color.length > 50)
+        ) {
+          throw new AgentToolError('invalid_params', 'background.color 无效')
+        }
+        if (
+          item.path !== undefined &&
+          (typeof item.path !== 'string' ||
+            !item.path.trim() ||
+            item.path.length > 2000 ||
+            item.path.includes('..') ||
+            item.path.startsWith('/') ||
+            item.path.startsWith('\\') ||
+            /^[a-zA-Z]:/.test(item.path))
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            'background.path 必须是项目内相对路径'
+          )
+        }
+        if (item.type === 'image' && typeof item.path !== 'string') {
+          throw new AgentToolError(
+            'invalid_params',
+            'background.type=image 时必须提供 path'
+          )
+        }
+        if (item.type === 'color' && typeof item.color !== 'string') {
+          throw new AgentToolError(
+            'invalid_params',
+            'background.type=color 时必须提供 color'
+          )
+        }
+      }
+      if (
+        width === undefined &&
+        fps === undefined &&
+        background === undefined
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '至少需要 width/height、fps 或 background'
+        )
       }
     }
 
@@ -1700,12 +2257,175 @@ export function assertToolAllowed(
       }
     }
 
+    if (call.name === 'timeline_split_by_shots') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      for (const key of ['minShotMs', 'edgePaddingMs'] as const) {
+        const value = call.args[key]
+        if (
+          value !== undefined &&
+          (typeof value !== 'number' ||
+            !Number.isFinite(value) ||
+            value < 0 ||
+            value > 10_000)
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `${key} 必须是 0-10000 的数字`
+          )
+        }
+      }
+    }
+
+    if (call.name === 'timeline_beat_markers') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      if (
+        call.args.label !== undefined &&
+        (typeof call.args.label !== 'string' ||
+          call.args.label.length > 200)
+      ) {
+        throw new AgentToolError('invalid_params', 'label 过长')
+      }
+      if (
+        call.args.color !== undefined &&
+        (typeof call.args.color !== 'string' ||
+          call.args.color.length > 50)
+      ) {
+        throw new AgentToolError('invalid_params', 'color 无效')
+      }
+    }
+
+    if (call.name === 'timeline_beat_split') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      if (
+        call.args.trackId !== undefined &&
+        (typeof call.args.trackId !== 'string' ||
+          !call.args.trackId.trim())
+      ) {
+        throw new AgentToolError('invalid_params', 'trackId 必须是非空字符串')
+      }
+      if (
+        call.args.minGapMs !== undefined &&
+        (typeof call.args.minGapMs !== 'number' ||
+          !Number.isFinite(call.args.minGapMs) ||
+          call.args.minGapMs < 0 ||
+          call.args.minGapMs > 10_000)
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          'minGapMs 必须是 0-10000 的数字'
+        )
+      }
+    }
+
     if (call.name === 'timeline_export') {
       if (
         call.args.codec !== undefined &&
         !['h264', 'hevc', 'av1'].includes(String(call.args.codec))
       ) {
         throw new AgentToolError('invalid_params', 'codec 无效')
+      }
+    }
+  }
+
+  if (call.name.startsWith('film_')) {
+    const nodeId = call.args.nodeId
+    const studyId = call.args.studyId
+
+    if (nodeId !== undefined) {
+      if (typeof nodeId !== 'string' || !nodeId.trim()) {
+        throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+      }
+    }
+    if (studyId !== undefined) {
+      if (typeof studyId !== 'string' || !studyId.trim()) {
+        throw new AgentToolError('invalid_params', 'studyId 必须是非空字符串')
+      }
+    }
+
+    if (call.name === 'film_study_get' || call.name === 'film_study_export') {
+      if (!nodeId && !studyId) {
+        throw new AgentToolError(
+          'invalid_params',
+          '需要 nodeId 或 studyId'
+        )
+      }
+    }
+
+    if (call.name === 'film_study_auto') {
+      if (typeof nodeId !== 'string' || !nodeId.trim()) {
+        throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+      }
+      assertSelectedNode(scope, nodeId)
+      if (call.args.interval !== undefined) {
+        const interval = call.args.interval
+        if (
+          typeof interval !== 'number' ||
+          !Number.isFinite(interval) ||
+          interval < 0 ||
+          interval > 300
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            'interval 必须是 0-300 的秒数'
+          )
+        }
+      }
+      if (
+        call.args.modelKey !== undefined &&
+        (typeof call.args.modelKey !== 'string' ||
+          call.args.modelKey.length > 300)
+      ) {
+        throw new AgentToolError('invalid_params', 'modelKey 无效')
+      }
+      if (call.args.outputs !== undefined) {
+        const outputs = call.args.outputs
+        if (
+          !outputs ||
+          typeof outputs !== 'object' ||
+          Array.isArray(outputs)
+        ) {
+          throw new AgentToolError('invalid_params', 'outputs 必须是对象')
+        }
+        for (const [key, value] of Object.entries(outputs)) {
+          if (!['storyboard', 'sheet', 'motion', 'music'].includes(key)) {
+            throw new AgentToolError(
+              'invalid_params',
+              `不支持的拉片输出 ${key}`
+            )
+          }
+          if (typeof value !== 'boolean') {
+            throw new AgentToolError(
+              'invalid_params',
+              `outputs.${key} 必须是布尔值`
+            )
+          }
+        }
+      }
+    }
+
+    if (call.name === 'film_study_export') {
+      if (
+        call.args.format !== undefined &&
+        !['markdown', 'analysis', 'bundle'].includes(
+          String(call.args.format)
+        )
+      ) {
+        throw new AgentToolError('invalid_params', 'format 无效')
       }
     }
   }

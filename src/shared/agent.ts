@@ -145,6 +145,8 @@ export interface AgentTurnChange {
   previousPositions: Record<string, { x: number; y: number }>
   /** 本轮是否修改了剪辑室时间线 */
   timelineUpdated?: boolean
+  /** 本轮是否修改了导演台场景 */
+  stageUpdated?: boolean
 }
 
 export type AgentTurnStatus = 'running' | 'completed' | 'cancelled' | 'error'

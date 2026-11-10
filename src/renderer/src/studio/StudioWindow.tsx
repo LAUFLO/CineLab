@@ -5,7 +5,7 @@ import { useProjectStore } from '../stores/project'
 import { useStudioStore } from '../stores/studio'
 import { useTimelineStore } from '../stores/timeline'
 import { useUIStore } from '../stores/ui'
-import { isFilmNode, isStudioNode, useCanvasStore } from '../stores/canvas'
+import { isStudioNode, useCanvasStore } from '../stores/canvas'
 import { clearLegacyTimeline, loadTimeline } from './persist'
 import { createStudioAtViewportCenter, syncStudioAfterSave } from './nodes'
 import {
@@ -192,15 +192,8 @@ export function StudioWindow() {
 
           const state = useCanvasStore.getState()
           const studio = state.nodes.find((node) => node.id === nodeId)
-          if (!studio || !isStudioNode(studio) || !studio.data.filmNodeId) {
-            return
-          }
-          const film = state.nodes.find(
-            (node) => node.id === studio.data.filmNodeId
-          )
-          if (!film || !isFilmNode(film) || film.data.filmStatus !== 'ready') {
-            return
-          }
+          if (!studio || !isStudioNode(studio)) return
+          if (studio.data.filmStatus !== 'ready') return
 
           const signature = upstreamSignature(
             referencesFromDoc(doc),
@@ -209,11 +202,11 @@ export function StudioWindow() {
           const hasUpdates = Object.values(issues).some(
             (issue) => issue.updateAvailable
           )
-          const shouldStale = film.data.upstreamAck
-            ? film.data.upstreamAck !== signature
+          const shouldStale = studio.data.upstreamAck
+            ? studio.data.upstreamAck !== signature
             : hasUpdates
 
-          if (shouldStale) state.setFilmStatus(film.id, 'stale')
+          if (shouldStale) state.setStudioFilmStatus(studio.id, 'stale')
         })
         .catch(() => undefined)
     }, 300)

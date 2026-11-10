@@ -84,11 +84,17 @@ export interface StudioNodeData extends Record<string, unknown> {
   title: string
   status: NodeStatus
   timelineId: string
+  /** @deprecated 成片已合并进剪辑室节点，仅用于读取旧项目 */
   filmNodeId?: string
   clipCount?: number
   durationMs?: number
   /** 时间线里引用的画布节点 → outputId，用于关闭剪辑室后判断上游更新 */
   references?: Record<string, string>
+  filmStatus?: FilmStatus
+  outputs?: OutputRef[]
+  selectedOutputId?: string
+  /** 上次导出时的上游输出签名，避免同一版本反复标 stale */
+  upstreamAck?: string
   templates: string[]
 }
 
@@ -249,8 +255,8 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
   },
   studio: {
     label: '剪辑室',
-    width: 360,
-    height: 260,
+    width: 480,
+    height: 340,
     templates: []
   },
   film: {
@@ -274,7 +280,7 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
   study: {
     label: '拉片',
     width: 400,
-    height: 340,
+    height: 250,
     templates: []
   }
 }

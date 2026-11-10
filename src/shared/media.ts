@@ -60,6 +60,27 @@ export interface CropVideoResult {
   asset: GeneratedAsset
 }
 
+export interface AudioTrimRequest {
+  path: string
+  scope?: 'project' | 'global'
+  start: number
+  end: number
+}
+
+export interface AudioTrimResult {
+  asset: GeneratedAsset
+}
+
+export interface AudioSpeedRequest {
+  path: string
+  scope?: 'project' | 'global'
+  rate: number
+}
+
+export interface AudioSpeedResult {
+  asset: GeneratedAsset
+}
+
 export interface MediaProbe {
   width?: number
   height?: number
@@ -71,6 +92,13 @@ export interface MediaProbe {
   audioCodec?: string
   audioSampleRate?: number
   audioChannels?: number
+}
+
+export interface SubtitleRect {
+  x: number
+  y: number
+  width: number
+  height: number
 }
 
 export interface CropImageRequest {

@@ -5,7 +5,6 @@ import { docDurationMs } from '@shared/timeline-layout'
 import type { TimelineDoc } from '@shared/timeline-schema'
 import {
   absolutePosition,
-  isFilmNode,
   isGroupNode,
   isStudioNode,
   nodeSize,
@@ -208,10 +207,9 @@ if (import.meta.env.DEV) {
 }
 
 /**
- * 保存时间线后同步剪辑室摘要，并维护成片节点：
- * - 首次有片段：自动创建成片节点并连线
- * - 成片已完成：标记 stale
- * - 时间线清空：成片标记 empty
+ * 保存时间线后同步剪辑室摘要与成片状态：
+ * - 时间线为空：成片标记 empty
+ * - 成片已完成且时间线有改动：标记 stale
  */
 export function syncStudioAfterSave(
   studioNodeId: string,
@@ -224,6 +222,7 @@ export function syncStudioAfterSave(
   if (!studio || !isStudioNode(studio)) return
 
   const clipCount = doc.clips.length
+
   state.patchStudioNode(studioNodeId, {
     status: clipCount > 0 ? 'done' : 'idle',
     clipCount,
@@ -231,49 +230,31 @@ export function syncStudioAfterSave(
     references: referencesFromDoc(doc)
   })
 
-  const linked = studio.data.filmNodeId
-    ? state.nodes.find((node) => node.id === studio.data.filmNodeId)
-    : undefined
-  const film = linked && isFilmNode(linked) ? linked : undefined
-
-  if (!film) {
-    if (clipCount === 0) return
-
-    const absolute = absolutePosition(studio, state.nodes)
-    const width = nodeSize(studio).width
-    const filmId = state.addFilmNode(
-      studioNodeId,
-      { x: absolute.x + width + 80, y: absolute.y },
-      `${studio.data.title} · 成片`
-    )
-    state.linkStudioFilm(studioNodeId, filmId)
-    state.onConnect({ source: studioNodeId, target: filmId })
-    state.setFilmStatus(filmId, 'pending')
-    return
-  }
-
   if (clipCount === 0) {
-    state.setFilmStatus(film.id, 'empty')
+    // 时间线清空但已有成片时保留成片，只标记待更新
+    state.setStudioFilmStatus(
+      studioNodeId,
+      (studio.data.outputs?.length ?? 0) > 0 ? 'stale' : 'empty'
+    )
     return
   }
 
-  const status = film.data.filmStatus
+  const current = studio.data.filmStatus
+  const hasOutput = (studio.data.outputs?.length ?? 0) > 0
+
   if (markStale) {
-    if (status === 'ready' || status === 'rendering') {
-      state.setFilmStatus(film.id, 'stale')
-    } else if (status === 'empty' || status === 'missing' || !status) {
-      state.setFilmStatus(film.id, 'pending')
+    if (current === 'ready' || current === 'rendering') {
+      state.setStudioFilmStatus(studioNodeId, 'stale')
+    } else if (current === 'empty' || current === 'missing' || !current) {
+      state.setStudioFilmStatus(studioNodeId, 'pending')
     }
     return
   }
 
   // 只是打开/加载：不把已完成的成片标脏
-  if (status === 'rendering') {
-    state.setFilmStatus(
-      film.id,
-      (film.data.outputs?.length ?? 0) > 0 ? 'ready' : 'pending'
-    )
-  } else if (status === 'empty' || status === 'missing' || !status) {
-    state.setFilmStatus(film.id, 'pending')
+  if (current === 'rendering') {
+    state.setStudioFilmStatus(studioNodeId, hasOutput ? 'ready' : 'pending')
+  } else if (current === 'empty' || current === 'missing' || !current) {
+    state.setStudioFilmStatus(studioNodeId, 'pending')
   }
 }

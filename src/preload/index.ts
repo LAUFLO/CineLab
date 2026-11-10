@@ -30,6 +30,8 @@ import type {
 } from '../shared/library-schema'
 import type {
   AudioPeaksRequest,
+  AudioSpeedRequest,
+  AudioTrimRequest,
   CropImageRectRequest,
   CropImageRequest,
   CropVideoRequest,
@@ -241,10 +243,16 @@ const api: CineApi = {
       ipcRenderer.invoke('media:crop-image', input),
     trimVideo: (input: TrimVideoRequest) =>
       ipcRenderer.invoke('media:trim-video', input),
+    trimAudio: (input: AudioTrimRequest) =>
+      ipcRenderer.invoke('media:trim-audio', input),
+    audioSpeed: (input: AudioSpeedRequest) =>
+      ipcRenderer.invoke('media:audio-speed', input),
     cropImageRect: (input: CropImageRectRequest) =>
       ipcRenderer.invoke('media:crop-image-rect', input),
     removeSubtitles: (input: RemoveSubtitlesRequest) =>
       ipcRenderer.invoke('media:remove-subtitles', input),
+    detectSubtitleRect: (path: string, scope?: 'project' | 'global') =>
+      ipcRenderer.invoke('media:detect-subtitle-rect', path, scope),
     captureDepth: (input: DepthCaptureRequest) =>
       ipcRenderer.invoke('media:capture-depth', input),
     startDepthCapture: (input: DepthCaptureRequest) =>

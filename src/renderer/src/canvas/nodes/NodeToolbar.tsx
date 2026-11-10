@@ -39,6 +39,9 @@ interface NodeToolbarProps {
   align?: 'left' | 'center' | 'right'
   onDownload: () => void
   onExpand: () => void
+  onEdit?: () => void
+  onAudioTrim?: () => void
+  onAudioSpeed?: () => void
   libraryAction?: {
     label: string
     title: string
@@ -64,6 +67,9 @@ export function NodeToolbar({
   align = 'center',
   onDownload,
   onExpand,
+  onEdit,
+  onAudioTrim,
+  onAudioSpeed,
   libraryAction
 }: NodeToolbarProps) {
   const pinned = useToolbarStore((state) => state.pinned)
@@ -966,8 +972,8 @@ export function NodeToolbar({
       return
     }
 
-    if (op.id === 'film-study' && item) {
-      startFilmStudy(item.id === 'auto' ? 0 : Number(item.id))
+    if (op.id === 'film-study') {
+      startFilmStudy(0)
       return
     }
 
@@ -1007,8 +1013,31 @@ export function NodeToolbar({
         return
       }
       void (async () => {
-        if (await ensureVision()) {
+        if (!(await ensureVision())) return
+        setRunning(true)
+        try {
+          showToast('正在检测字幕区域…')
+          const rect = await window.api.media.detectSubtitleRect(
+            current.path,
+            current.scope
+          )
+          if (rect) {
+            showToast(
+              `已检测到字幕区域，开始智能去字幕`
+            )
+            void executeVisionRepair(rect, '智能去字幕')
+          } else {
+            showToast('未检测到字幕区域，请手动框选', 'error')
+            await openSubtitleBox('vision', '智能去字幕')
+          }
+        } catch (error) {
+          showToast(
+            error instanceof Error ? error.message : String(error),
+            'error'
+          )
           await openSubtitleBox('vision', '智能去字幕')
+        } finally {
+          setRunning(false)
         }
       })()
       return
@@ -1271,6 +1300,54 @@ export function NodeToolbar({
         <span className="cnode__toolbar-divider" />
       ) : null}
 
+      {onEdit ? (
+        <>
+          <button
+            type="button"
+            className="cnode__toolbar-btn"
+            title="编辑文本（支持 Markdown）"
+            onClick={(event) => {
+              event.stopPropagation()
+              onEdit()
+            }}
+          >
+            <Icon name="edit" size={14} />
+            <span>编辑</span>
+          </button>
+          <span className="cnode__toolbar-divider" />
+        </>
+      ) : null}
+
+      {kind === 'audio' ? (
+        <>
+          <button
+            type="button"
+            className="cnode__toolbar-btn"
+            title="截取音频片段"
+            onClick={(event) => {
+              event.stopPropagation()
+              onAudioTrim?.()
+            }}
+          >
+            <Icon name="scissors" size={14} />
+            <span>截取</span>
+          </button>
+          <button
+            type="button"
+            className="cnode__toolbar-btn"
+            title="调整播放速度"
+            onClick={(event) => {
+              event.stopPropagation()
+              onAudioSpeed?.()
+            }}
+          >
+            <Icon name="audio" size={14} />
+            <span>变速</span>
+          </button>
+          <span className="cnode__toolbar-divider" />
+        </>
+      ) : null}
+
       <button
         type="button"
         className="cnode__toolbar-btn"
@@ -1297,18 +1374,20 @@ export function NodeToolbar({
         <Icon name="download" size={14} />
       </button>
 
-      <button
-        type="button"
-        className="cnode__toolbar-btn"
-        title="查看大图"
-        aria-label="查看大图"
-        onClick={(event) => {
-          event.stopPropagation()
-          onExpand()
-        }}
-      >
-        <Icon name="expand" size={14} />
-      </button>
+      {kind !== 'audio' ? (
+        <button
+          type="button"
+          className="cnode__toolbar-btn"
+          title={kind === 'text' ? '放大编辑' : '查看大图'}
+          aria-label={kind === 'text' ? '放大编辑' : '查看大图'}
+          onClick={(event) => {
+            event.stopPropagation()
+            onExpand()
+          }}
+        >
+          <Icon name="expand" size={14} />
+        </button>
+      ) : null}
 
       {libraryAction ? (
         <button

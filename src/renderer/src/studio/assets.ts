@@ -14,6 +14,8 @@ export interface PoolAsset {
   durationMs: number
   path: string
   scope: 'project' | 'global'
+  width?: number
+  height?: number
   /** 来自画布节点时记录来源，用于上游更新检测 */
   nodeId?: string
   outputId?: string
@@ -39,6 +41,8 @@ export function poolFromNodes(nodes: CanvasNode[]): PoolAsset[] {
       durationMs: current.duration ? Math.round(current.duration * 1000) : 5000,
       path: current.path,
       scope: current.scope ?? 'project',
+      width: current.width,
+      height: current.height,
       nodeId: node.id,
       outputId: current.id
     })
@@ -79,7 +83,9 @@ export function assetToClip(
       path: asset.path,
       kind: asset.kind,
       nodeId: asset.nodeId,
-      outputId: asset.outputId
+      outputId: asset.outputId,
+      width: asset.width,
+      height: asset.height
     }
   })
 }

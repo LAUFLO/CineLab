@@ -85,11 +85,10 @@ export function ClipMedia({ clip, widthPx }: { clip: TimelineClip; widthPx: numb
 
   if (frames.length > 0) {
     return (
-      <div className="studio-clip__frames">
-        {frames.map((src, index) => (
-          <img key={`${index}-${src.slice(-16)}`} src={src} alt="" draggable={false} />
-        ))}
-      </div>
+      <div
+        className="studio-clip__frames is-repeat"
+        style={{ backgroundImage: `url(${frames[0]})` }}
+      />
     )
   }
 

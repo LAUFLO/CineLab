@@ -3,6 +3,8 @@ import { NODE_KINDS, NODE_META, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../components/Icon'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
+import { useStudioStore } from '../stores/studio'
+import { createStudioAt } from '../studio/nodes'
 import { uploadMaterialsAt } from './context-actions'
 
 const ICONS: Record<NodeKind, IconName> = {
@@ -216,6 +218,18 @@ export function AddNodeMenu() {
         <>
           <div className="add-menu__divider" />
           <div className="add-menu__title">添加资源</div>
+          <button
+            type="button"
+            className="add-menu__item"
+            onClick={() => {
+              closeMenu()
+              const studioId = createStudioAt(menu.flow)
+              useStudioStore.getState().openStudio(studioId)
+            }}
+          >
+            <Icon name="film" size={16} />
+            <span>剪辑室</span>
+          </button>
           <button
             type="button"
             className="add-menu__item"

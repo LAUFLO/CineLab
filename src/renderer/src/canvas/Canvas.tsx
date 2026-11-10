@@ -7,6 +7,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
+  type Edge,
   type FinalConnectionState
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -24,6 +25,7 @@ import { AddNodeMenu } from './AddNodeMenu'
 import { AlignmentGuides, type AlignmentGuide } from './AlignmentGuides'
 import { computeAlignment } from './alignment'
 import { CanvasContextMenu } from './CanvasContextMenu'
+import { EdgeContextMenu } from './EdgeContextMenu'
 import { NodeContextMenu } from './NodeContextMenu'
 import { copySelection, pasteAt } from './context-actions'
 import { requestDeleteSelection } from './delete-actions'
@@ -105,6 +107,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const openContextMenu = useUIStore((state) => state.openContextMenu)
   const closeContextMenu = useUIStore((state) => state.closeContextMenu)
   const openNodeContextMenu = useUIStore((state) => state.openNodeContextMenu)
+  const openEdgeContextMenu = useUIStore((state) => state.openEdgeContextMenu)
   const snapToGrid = useUIStore((state) => state.snapToGrid)
   const edgesVisible = useUIStore((state) => state.edgesVisible)
   const minimapVisible = useUIStore((state) => state.minimapVisible)
@@ -196,6 +199,12 @@ function CanvasInner({ theme }: { theme: Theme }) {
         (event.key === 'Delete' || event.key === 'Backspace')
       ) {
         const state = useCanvasStore.getState()
+        const selectedEdges = state.edges.filter((edge) => edge.selected)
+        if (selectedEdges.length > 0) {
+          event.preventDefault()
+          state.removeEdges(selectedEdges.map((edge) => edge.id))
+          return
+        }
         if (!state.nodes.some((node) => node.selected)) return
 
         event.preventDefault()
@@ -319,6 +328,19 @@ function CanvasInner({ theme }: { theme: Theme }) {
       })
     },
     [closeContextMenu, closeMenu, openNodeContextMenu, setNodes]
+  )
+
+  const handleEdgeContextMenu = useCallback(
+    (event: MouseEvent | React.MouseEvent, edge: Edge) => {
+      event.preventDefault()
+      closeMenu()
+      closeContextMenu()
+      openEdgeContextMenu({
+        screen: { x: event.clientX, y: event.clientY },
+        edgeId: edge.id
+      })
+    },
+    [closeContextMenu, closeMenu, openEdgeContextMenu]
   )
 
   const handleNodeDragStart = useCallback(() => {
@@ -480,6 +502,11 @@ function CanvasInner({ theme }: { theme: Theme }) {
         onPaneClick={closeMenu}
         onPaneContextMenu={handlePaneContextMenu}
         onNodeContextMenu={handleNodeContextMenu}
+        onEdgeContextMenu={handleEdgeContextMenu}
+        onEdgeDoubleClick={(event, edge) => {
+          event.stopPropagation()
+          useCanvasStore.getState().removeEdges([edge.id])
+        }}
         onNodeDragStart={handleNodeDragStart}
         onNodeDrag={handleNodeDrag}
         onNodeDragStop={handleNodeDragStop}
@@ -560,6 +587,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
       <StoryboardToolbar />
       <AddNodeMenu />
       <CanvasContextMenu />
+      <EdgeContextMenu />
       <NodeContextMenu />
       <ShortcutPanel />
       <HistoryPanel />

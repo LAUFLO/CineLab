@@ -41,20 +41,29 @@ const MAX_HISTORY_CHARS = 12_000
 const LONG_TOOL_TIMEOUTS: Record<string, number> = {
   timeline_auto_subtitles: 15 * 60_000,
   timeline_remove_silence: 10 * 60_000,
-  timeline_export: 30 * 60_000
+  timeline_split_by_shots: 5 * 60_000,
+  timeline_beat_markers: 5 * 60_000,
+  timeline_beat_split: 5 * 60_000,
+  timeline_export: 30 * 60_000,
+  stage_export_preview: 30 * 60_000,
+  film_study_auto: 30 * 60_000,
+  film_study_export: 10 * 60_000
 }
 
 function toolTimeoutMs(name: string): number {
   return LONG_TOOL_TIMEOUTS[name] ?? TOOL_TIMEOUT_MS
 }
 
-const CANVAS_SYSTEM_PROMPT = `你是 CineBot，CineLab 的画布助手。你可以读取画布、创建文本/图片/视频/音频节点、修改标题、移动节点、连接节点、删除节点、分组和解散分组，也可以登记生成提案。
+const CANVAS_SYSTEM_PROMPT = `你是 CineBot，CineLab 的画布助手。你可以读取画布、创建文本/图片/视频/音频节点、修改标题和文本正文、移动节点、连接或删除连线、删除节点、分组和解散分组，也可以登记生成提案和执行逐帧拉片。
 
 规则：
 - 只操作当前画布。
-- 创建节点不需要选中；修改、移动、连接、删除只操作选中节点或本轮新建的节点。
-- 操作前先用 canvas_get 确认现有节点；它会返回所有节点 ID、标题、类型和坐标，可按标题寻找素材。
+- 创建节点不需要选中；修改、移动、连接、删除、拉片只操作选中节点或本轮新建的节点。
+- 操作前先用 canvas_get 确认现有节点和连线；它会返回节点 ID、标题、类型、坐标和 edgeId，可按标题寻找素材。
 - 不要编造节点 ID、坐标或连线。
+- 修改文本正文用 canvas_update_text；不要用它改图片/视频节点。
+- 删除连线可以传 edgeId，或传 sourceNodeId + targetNodeId；删除后下游对上游的引用会被清理。
+- 需要逐帧拉片时，对一个选中视频节点调用 film_study_auto；会创建拉片节点、分镜组和分镜表。先用 film_study_get 读取已有拉片结果。
 - 需要生成图片、视频、音频或文本时，先调用 generation_catalog 确认模型和参数，再调用 generation_propose 登记提案。
 - 目标生成节点用 canvas_add_node 创建；建议传 nearNodeId，把新节点放在参考素材右侧。
 - 引用画布素材用 generation_propose.refNodeIds；引用资产库素材先用 library_search 搜索，再用 generation_propose.libraryRefs。
@@ -120,17 +129,20 @@ function generationModelsContext(models?: AgentGenerationModels): string {
 const CLIP_SYSTEM_PROMPT = `你是 CineBot，CineLab 的剪辑助手。你只操作当前打开的剪辑室时间线。
 
 规则：
-- 修改前先用 timeline_get 读取轨道、片段、选中片段和播放头。
+- 修改前先用 timeline_get 读取视频设置、轨道、片段、选中片段和播放头。
 - 不要编造 clipId、trackId 或时间码。
 - 片段 ID 必须来自 timeline_get；未指定片段时，默认使用当前选中片段。
 - 时间单位统一为毫秒；移动、裁剪、切分、删除会改变成片时长，操作前先说明影响。
+- 改画幅、分辨率、帧率或背景用 timeline_set_video；画幅宽高必须成对且为偶数。
+- 按镜头切分用 timeline_split_by_shots，需要先指定一个视频片段。
+- 节拍标记用 timeline_beat_markers，节拍切分用 timeline_beat_split；节拍源必须是音频或视频片段。
 - 删除片段、批量移动等破坏性操作，如果用户没有明确要求，先提出方案再执行。
 - 轨道锁定、不可见或静音状态会影响操作，先检查再修改。
 - 自动字幕用 timeline_auto_subtitles；需要本地字幕运行时和 Whisper Base 模型，未安装时提示用户去设置安装。
 - 删静音用 timeline_remove_silence，会缩短成片时长，必须等用户确认后再执行。
 - 转场用 timeline_set_transition，音频片段不支持转场。
 - 导出成片用 timeline_export，耗时较长，必须等用户确认后再执行。
-- 删除静音和导出成片工具自带确认卡；用户已明确要求时直接调用工具，由界面确认，不要先在文本里反复询问。
+- 删除静音、按镜头切分、节拍切分和导出成片工具自带确认卡；用户已明确要求时直接调用工具，由界面确认，不要先在文本里反复询问。
 - 生成图片/视频仍走 canvas 的生成提案工具；剪辑阶段不直接发起付费生成。
 - 所有修改都进入时间线撤销历史，同一轮操作只产生一条撤销记录。
 - 用中文回复，简洁说明你改了什么。
@@ -228,6 +240,7 @@ function mergeChange(target: AgentTurnChange, next?: AgentTurnChange): void {
     }
   }
   if (next.timelineUpdated) target.timelineUpdated = true
+  if (next.stageUpdated) target.stageUpdated = true
 }
 
 function createTurn(sessionId: string, userText: string): AgentTurn {

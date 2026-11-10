@@ -1,13 +1,13 @@
 {
-  "version": 69,
+  "version": 70,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-10T13:58:01.720Z",
+  "updatedAt": "2026-11-10T15:30:00.000Z",
   "phase": "AGENT",
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
-  "next_focus": "CineBot 能力扩展方案已写入 docs/agent-capability-plan.md：main 新功能覆盖盘点、节点操作桥、能力注册表、未来功能接入清单和分阶段计划。建议 PR #2 先合入稳定部分，Phase 1 小范围能力可在当前分支补，Phase 2/3 用新分支。等待确认是否先实施 Phase 1。",
+  "next_focus": "Phase 1 CineBot 能力已在 feat/agent-capabilities 完成：连线删除、文本正文、时间线画幅/镜头切分/节拍、导演台机位/白模预演、拉片读取/自动/导出。下一步：提交分支、创建 PR、CI 通过后 review 合并；之后进入 Phase 2 节点操作桥与能力注册表。",
   "frontier": [
     {
       "id": "M2-1",
@@ -482,6 +482,18 @@
       "evidence": [
         "docs/agent-capability-plan.md",
         "AGENTS.md"
+      ]
+    },
+    {
+      "id": "AGENT-CAPABILITY-PHASE1",
+      "title": "CineBot Phase 1：连线/文本/时间线画幅与自动切分/导演台机位与预演/拉片工具",
+      "status": "done",
+      "note": "2026-11-10 完成。新增 11 个工具：canvas_remove_edge、canvas_update_text、timeline_set_video、timeline_split_by_shots、timeline_beat_markers、timeline_beat_split、stage_transform_camera、stage_export_preview、film_study_get、film_study_auto、film_study_export。UI 与 Agent 共用命令层/执行器：CanvasCommand.updateText、removeEdges(turnId)、timeline-plan-runner、stage preview-runner、film-study-runner。补参数校验、确认规则、画布/时间线/场景回合撤销和工具测试。typecheck、287 tests、build 通过；隔离实例 CDP 验证拉片建节点、文本/连线撤销、场景与时间线单回合历史。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-CAPABILITY-PHASE1.md",
+        "docs/agent-capabilities.md",
+        "src/main/agent/__tests__/tools.test.ts",
+        "src/shared/__tests__/canvas-commands.test.ts"
       ]
     },
     {

@@ -20,6 +20,7 @@ import {
   useCanvasStore,
   type CanvasNode
 } from '../stores/canvas'
+import { executeFilmTool } from './filmBridge'
 import { executeStageTool } from './stageBridge'
 import { executeTimelineTool } from './timelineBridge'
 
@@ -233,6 +234,10 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
     return executeTimelineTool(call)
   }
 
+  if (call.name.startsWith('film_')) {
+    return executeFilmTool(call)
+  }
+
   const state = useCanvasStore.getState()
 
   if (call.name === 'canvas_get') {
@@ -257,6 +262,12 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
             ...(output ? { outputKind: output.kind } : {})
           }
         }),
+        edges: state.edges.slice(0, 200).map((edge) => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          ...(edge.data?.role ? { role: edge.data.role } : {})
+        })),
         ...(state.nodes.length > 200 ? { nodesTruncated: true } : {})
       }
     }
@@ -286,6 +297,36 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
         nodeId,
         title,
         previousTitle
+      },
+      change
+    }
+  }
+
+  if (call.name === 'canvas_update_text') {
+    const nodeId = String(call.args.nodeId ?? '')
+    const text = typeof call.args.text === 'string' ? call.args.text : ''
+    const node = state.nodes.find((item) => item.id === nodeId)
+
+    if (!node || node.type !== 'cine' || node.data.kind !== 'text') {
+      return { ok: false, error: '找不到这个文本节点' }
+    }
+
+    const previous = String(node.data.text ?? '')
+    const change = state.applyCommands(
+      [{ type: 'updateText', nodeId, text }],
+      call.turnId
+    )
+    if (change.updatedNodeIds.length > 0) {
+      state.patchNodeData(nodeId, { status: 'done' })
+    }
+
+    return {
+      ok: true,
+      result: {
+        nodeId,
+        changed: change.updatedNodeIds.length > 0,
+        previousLength: previous.length,
+        length: text.length
       },
       change
     }
@@ -408,6 +449,58 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
     return {
       ok: true,
       result: { edgeId: edge.id, sourceNodeId, targetNodeId },
+      change
+    }
+  }
+
+  if (call.name === 'canvas_remove_edge') {
+    const edgeId =
+      typeof call.args.edgeId === 'string' ? call.args.edgeId.trim() : ''
+    const sourceNodeId =
+      typeof call.args.sourceNodeId === 'string'
+        ? call.args.sourceNodeId.trim()
+        : ''
+    const targetNodeId =
+      typeof call.args.targetNodeId === 'string'
+        ? call.args.targetNodeId.trim()
+        : ''
+    const selected = new Set(call.scope.selectedNodeIds)
+
+    let targets = state.edges.filter((edge) => {
+      if (edgeId) return edge.id === edgeId
+      return edge.source === sourceNodeId && edge.target === targetNodeId
+    })
+
+    if (edgeId && targets.length === 0) {
+      return { ok: false, error: '找不到这条连线' }
+    }
+    if (!edgeId && targets.length === 0) {
+      return { ok: false, error: '这两个节点之间没有连线' }
+    }
+
+    if (edgeId) {
+      targets = targets.filter(
+        (edge) => selected.has(edge.source) || selected.has(edge.target)
+      )
+      if (targets.length === 0) {
+        return { ok: false, error: '只能删除与选中节点相关的连线' }
+      }
+    }
+
+    const edgeIds = targets.map((edge) => edge.id)
+    const removed = state.removeEdges(edgeIds, call.turnId)
+    if (removed === 0) {
+      return { ok: false, error: '连线已经不存在' }
+    }
+
+    const change = emptyCanvasChange()
+    change.deletedEdgeIds.push(...edgeIds)
+    return {
+      ok: true,
+      result: {
+        removedEdgeIds: edgeIds,
+        count: removed
+      },
       change
     }
   }

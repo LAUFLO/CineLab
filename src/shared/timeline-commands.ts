@@ -79,9 +79,11 @@ export function applyCommand(
   command: TimelineCommand,
   now: string = new Date().toISOString()
 ): TimelineDoc {
+  const wasEmpty = doc.clips.length === 0
   const next = structuredClone(doc)
   applyInPlace(next, command)
   normalizeClips(next)
+  matchCanvasToFirstClip(next, wasEmpty)
   next.updatedAt = now
   return next
 }
@@ -92,11 +94,51 @@ export function applyCommands(
   commands: TimelineCommand[],
   now: string = new Date().toISOString()
 ): TimelineDoc {
+  const wasEmpty = doc.clips.length === 0
   const next = structuredClone(doc)
   for (const command of commands) applyInPlace(next, command)
   normalizeClips(next)
+  matchCanvasToFirstClip(next, wasEmpty)
   next.updatedAt = now
   return next
+}
+
+/**
+ * 时间线原本为空时，按第一个视频/图片素材的比例匹配画幅。
+ * 只在仍是默认 16:9 时生效，避免覆盖用户手动设置的画幅。
+ */
+function matchCanvasToFirstClip(doc: TimelineDoc, wasEmpty: boolean): void {
+  if (!wasEmpty || doc.clips.length === 0) return
+  if (doc.video.width !== 1920 || doc.video.height !== 1080) return
+
+  const clip = doc.clips.find(
+    (item) =>
+      (item.kind === 'video' || item.kind === 'image') &&
+      item.media?.width &&
+      item.media?.height
+  )
+  if (!clip?.media?.width || !clip.media.height) return
+
+  const ratio = clip.media.width / clip.media.height
+  if (ratio >= 1.9) {
+    doc.video.width = 2560
+    doc.video.height = 1080
+  } else if (ratio >= 1.45) {
+    doc.video.width = 1920
+    doc.video.height = 1080
+  } else if (ratio >= 1.15) {
+    doc.video.width = 1440
+    doc.video.height = 1080
+  } else if (ratio >= 0.88) {
+    doc.video.width = 1080
+    doc.video.height = 1080
+  } else if (ratio >= 0.72) {
+    doc.video.width = 1080
+    doc.video.height = 1440
+  } else {
+    doc.video.width = 1080
+    doc.video.height = 1920
+  }
 }
 
 function trackOf(doc: TimelineDoc, trackId: string): TimelineTrack | undefined {

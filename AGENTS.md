@@ -36,6 +36,7 @@
 | BeefTV 深度组件调研 | `docs/beef-tv-depth-research.md` |
 | 深度 runtime 构建发布 | `docs/runtime-components-plan.md` |
 | 剩余本地增强方案 | `docs/remaining-features-plan.md` |
+| 剪辑室合并成片方案 | `docs/studio-film-merge-plan.md` |
 | 导演台方案 | `docs/director-stage-plan.md` |
 | 导演台 3D 视口 | `docs/director-stage-viewport-plan.md` |
 | Agent 完整范围 | `docs/agent-full-scope.md` |

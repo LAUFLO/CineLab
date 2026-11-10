@@ -381,11 +381,23 @@ export async function generateText(
   provider: ProviderRuntime,
   prompt: string,
   params: Record<string, unknown>,
+  refs: ReferenceImage[],
   ctx: AdapterContext
 ): Promise<ProviderOutput[]> {
+  const messageContent =
+    refs.length > 0
+      ? [
+          { type: 'text', text: prompt },
+          ...refs.map((ref) => ({
+            type: 'image_url',
+            image_url: { url: ref.dataUrl }
+          }))
+        ]
+      : prompt
+
   const body: Record<string, unknown> = {
     model: model.remoteModel,
-    messages: [{ role: 'user', content: prompt }]
+    messages: [{ role: 'user', content: messageContent }]
   }
 
   if (params.temperature !== undefined) {

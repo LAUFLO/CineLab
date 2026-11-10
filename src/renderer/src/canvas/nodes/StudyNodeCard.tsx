@@ -13,14 +13,6 @@ interface StudyNodeCardProps {
   data: CineNodeData
 }
 
-const INTERVAL_OPTIONS = [
-  { value: '0', label: '自动分镜（推荐）' },
-  { value: '0.5', label: '0.5 秒 / 镜' },
-  { value: '1', label: '1 秒 / 镜' },
-  { value: '2', label: '2 秒 / 镜' },
-  { value: '5', label: '5 秒 / 镜' }
-]
-
 export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
   const providers = useSettingsStore((state) => state.providers)
   const runAuto = useFilmStudyStore((state) => state.runAuto)
@@ -30,7 +22,6 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
   const summary = data.studySummary
   const busy = data.status === 'queued' || data.status === 'running'
   const ready = data.status === 'done' && Boolean(data.studyId)
-  const [interval, setInterval] = useState(String(data.studyInterval ?? 0))
   const [modelKey, setModelKey] = useState(data.studyModelKey ?? '')
   const [storyboard, setStoryboard] = useState(
     data.studyOutputs?.storyboard !== false
@@ -40,7 +31,6 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
   const [music, setMusic] = useState(data.studyOutputs?.music === true)
 
   useEffect(() => {
-    setInterval(String(data.studyInterval ?? 0))
     setModelKey(data.studyModelKey ?? '')
     setStoryboard(data.studyOutputs?.storyboard !== false)
     setSheet(data.studyOutputs?.sheet !== false)
@@ -80,7 +70,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
 
   const start = (): void => {
     void runAuto(nodeId, {
-      interval: Number(interval) || 0,
+      interval: 0,
       modelKey: modelKey === 'none' ? 'none' : modelKey || undefined,
       outputs
     })
@@ -137,16 +127,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
       ) : (
         <>
           <label className="study-node-card__field nodrag nopan">
-            <span>分镜精度</span>
-            <Select
-              value={interval}
-              options={INTERVAL_OPTIONS}
-              onChange={(value) => setInterval(value)}
-            />
-          </label>
-
-          <label className="study-node-card__field nodrag nopan">
-            <span>AI 描述</span>
+            <span>AI 分析</span>
             <Select
               value={modelKey}
               options={modelOptions}

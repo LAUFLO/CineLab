@@ -14,9 +14,12 @@ import { useGenerationHistoryStore } from '../../stores/generation-history'
 import { useUIStore } from '../../stores/ui'
 import { useLibraryStore } from '../../stores/library'
 import { useStudioStore } from '../../stores/studio'
+import { TextEditorDialog } from './TextEditorDialog'
+import { renderMarkdown } from './text-markdown'
 import { createStudioFromNode } from '../../studio/nodes'
 import { assetUrl } from '../../lib/asset-url'
 import { AudioPlayer, timeLabel } from './AudioPlayer'
+import { AudioActionBar, type AudioActionMode } from './AudioActionBar'
 import { NodeToolbar } from './NodeToolbar'
 import { PanoramaViewer } from './PanoramaViewer'
 import { VideoPlayer } from './VideoPlayer'
@@ -32,10 +35,11 @@ const NODE_ICON: Record<NodeKind, IconName> = {
 
 export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const meta = NODE_META[data.kind]
-  const { screenToFlowPosition } = useReactFlow()
+  const { screenToFlowPosition, fitView } = useReactFlow()
   const openMenu = useUIStore((state) => state.openMenu)
   const showToast = useUIStore((state) => state.showToast)
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
+  const applyOutput = useCanvasStore((state) => state.applyOutput)
   const resizeNode = useCanvasStore((state) => state.resizeNode)
   const multiSelected = useCanvasStore(
     (state) => state.nodes.filter((node) => node.selected).length > 1
@@ -56,36 +60,53 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   })
   const cancelGeneration = useGenerationStore((state) => state.cancel)
   const openLibraryPicker = useLibraryStore((state) => state.openPicker)
-  const nodeWidth = useCanvasStore((state) => {
-    const found = state.nodes.find((entry) => entry.id === id)
-    return found ? nodeSize(found).width : meta.width
-  })
-  const viewport = useViewport()
-  const node = useCanvasStore((state) =>
-    state.nodes.find((entry) => entry.id === id)
-  )
-  const absolute = node
-    ? absolutePosition(node, useCanvasStore.getState().nodes)
+  const allNodes = useCanvasStore((state) => state.nodes)
+  const currentNode = allNodes.find((entry) => entry.id === id)
+  const nodeWidth = currentNode ? nodeSize(currentNode).width : meta.width
+  const nodeHeight = currentNode
+    ? nodeSize(currentNode).height
+    : meta.height + TITLE_HEIGHT
+  const absolute = currentNode
+    ? absolutePosition(currentNode, allNodes)
     : null
-  const screenCenter = absolute
-    ? (absolute.x + nodeWidth / 2) * viewport.zoom + viewport.x
-    : window.innerWidth / 2
-  const toolbarAlign: 'left' | 'center' | 'right' =
-    screenCenter > window.innerWidth * 0.62
-      ? 'right'
-      : screenCenter < window.innerWidth * 0.38
-        ? 'left'
-        : 'center'
+  const viewport = useViewport()
+  const audioAnchor = absolute
+    ? {
+        left: absolute.x * viewport.zoom + viewport.x,
+        top: absolute.y * viewport.zoom + viewport.y,
+        width: nodeWidth * viewport.zoom,
+        height: nodeHeight * viewport.zoom
+      }
+    : null
+  const toolbarAlign = 'center' as const
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [panoramaOpen, setPanoramaOpen] = useState(false)
+  const textEditorOpen = useUIStore(
+    (state) => state.textEditorNodeId === id
+  )
+  const closeTextEditor = useUIStore((state) => state.closeTextEditor)
   const [previewRatio, setPreviewRatio] = useState<number | null>(null)
+  const [audioMode, setAudioMode] = useState<AudioActionMode | null>(null)
+  const [audioSelection, setAudioSelection] = useState({ start: 0, end: 0 })
+  const [audioRate, setAudioRate] = useState(1)
+  const [audioBusy, setAudioBusy] = useState(false)
 
   const submitTitle = (): void => {
     const next = titleDraft.trim()
     setEditingTitle(false)
     if (next && next !== data.title) patchNodeData(id, { title: next })
+  }
+
+  const openTextEditor = (event?: React.MouseEvent): void => {
+    event?.stopPropagation()
+    useUIStore.getState().openTextEditor(id)
+  }
+
+  const saveText = (text: string): void => {
+    patchNodeData(id, { text, status: 'done' })
+    closeTextEditor()
   }
 
   const retryGeneration = (): void => {
@@ -126,11 +147,75 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
   const exportCurrent = async (): Promise<void> => {
     if (!current) return
-    const result = await window.api.export.asset(current.path, data.title)
+    const result = await window.api.export.asset(
+      current.path,
+      data.title,
+      current.scope
+    )
     if (result.ok) {
       showToast(`已导出：${result.path ?? ''}`)
     } else if (!result.canceled) {
       showToast(result.error ?? '导出失败', 'error')
+    }
+  }
+
+  const openAudioTrim = (): void => {
+    if (!current) return
+    const duration = current.duration ?? 0
+    if (!duration) {
+      showToast('无法读取音频时长', 'error')
+      return
+    }
+    setAudioSelection({ start: 0, end: duration })
+    setAudioRate(1)
+    setAudioBusy(false)
+    setAudioMode('trim')
+  }
+
+  const openAudioSpeed = (): void => {
+    if (!current) return
+    setAudioRate(1)
+    setAudioBusy(false)
+    setAudioMode('speed')
+  }
+
+  const submitAudio = async (): Promise<void> => {
+    if (!current || !audioMode || audioBusy) return
+
+    if (audioMode === 'trim' && audioSelection.end - audioSelection.start < 0.1) {
+      showToast('截取区间太短', 'error')
+      return
+    }
+
+    setAudioBusy(true)
+
+    try {
+      if (audioMode === 'trim') {
+        const { asset } = await window.api.media.trimAudio({
+          path: current.path,
+          ...(current.scope ? { scope: current.scope } : {}),
+          start: audioSelection.start,
+          end: audioSelection.end
+        })
+        applyOutput(id, asset, 'audio-trim')
+        showToast(
+          `已截取 ${timeLabel(audioSelection.end - audioSelection.start)} 音频`
+        )
+      } else {
+        const { asset } = await window.api.media.audioSpeed({
+          path: current.path,
+          ...(current.scope ? { scope: current.scope } : {}),
+          rate: audioRate
+        })
+        applyOutput(id, asset, 'audio-speed')
+        showToast(`已变速 ${audioRate.toFixed(2)}x`)
+      }
+      setAudioMode(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      showToast(message, 'error')
+    } finally {
+      setAudioBusy(false)
     }
   }
 
@@ -153,6 +238,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   }
 
   useEffect(() => {
+    if (!selected) setAudioMode(null)
+  }, [selected])
+
+  useEffect(() => {
     if (!previewOpen) return
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') setPreviewOpen(false)
@@ -163,7 +252,20 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
   return (
     <>
-    <div className={`cnode ${selected ? 'is-selected' : ''}`}>
+    <div
+      className={`cnode ${selected ? 'is-selected' : ''}`}
+      onDoubleClick={(event) => {
+        const target = event.target as HTMLElement
+        if (target.closest('button, input, textarea, a')) return
+        event.stopPropagation()
+        void fitView({
+          nodes: currentNode ? [currentNode] : [{ id }],
+          padding: 0.6,
+          duration: 300,
+          maxZoom: 2
+        })
+      }}
+    >
       {selected && !multiSelected && current && !isBusy && data.kind !== 'study' ? (
         <NodeToolbar
           nodeId={id}
@@ -171,7 +273,17 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           current={current}
           align={toolbarAlign}
           onDownload={() => void exportCurrent()}
-          onExpand={() => setPreviewOpen(true)}
+          onExpand={() => {
+            if (data.kind === 'text') openTextEditor()
+            else setPreviewOpen(true)
+          }}
+          onEdit={
+            data.kind === 'text'
+              ? () => openTextEditor()
+              : undefined
+          }
+          onAudioTrim={data.kind === 'audio' ? openAudioTrim : undefined}
+          onAudioSpeed={data.kind === 'audio' ? openAudioSpeed : undefined}
           libraryAction={
             current.kind !== 'text'
               ? {
@@ -194,15 +306,21 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         />      ) : null}
 
       {selected && !multiSelected && !current && !isBusy ? (
-        <div
-          className={`cnode__toolbar cnode__toolbar--minimal nodrag nopan ${
-            toolbarAlign === 'left'
-              ? 'is-left'
-              : toolbarAlign === 'right'
-                ? 'is-right'
-                : ''
-          }`}
-        >
+        <div className="cnode__toolbar cnode__toolbar--minimal nodrag nopan">
+          {data.kind === 'text' ? (
+            <button
+              type="button"
+              className="cnode__toolbar-btn"
+              title="编辑文本（支持 Markdown）"
+              onClick={(event) => {
+                event.stopPropagation()
+                openTextEditor()
+              }}
+            >
+              <Icon name="edit" size={14} />
+              <span>编辑</span>
+            </button>
+          ) : null}
           <button
             type="button"
             className="cnode__toolbar-btn"
@@ -265,9 +383,17 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               scope={current?.scope}
               busy={isBusy}
               onCancel={() => void cancelGeneration(id)}
+              selecting={audioMode === 'trim'}
+              selection={audioMode === 'trim' ? audioSelection : null}
+              onSelect={(start, end) => setAudioSelection({ start, end })}
             />
           ) : assetSrc && current?.kind === 'text' ? (
-            <p className="cnode__text">{data.text ?? '文本已生成'}</p>
+            <div
+              className="cnode__text cnode__text--markdown"
+              dangerouslySetInnerHTML={{
+                __html: renderMarkdown(data.text ?? '文本已生成')
+              }}
+            />
           ) : assetSrc && (current?.kind === 'video' || data.kind === 'video') ? (
             <VideoPlayer
               src={assetSrc}
@@ -276,7 +402,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             />
           ) : assetSrc ? (
             <img src={assetSrc} alt="" className="cnode__media" loading="lazy" />
-          ) : (
+          ) : data.kind === 'text' && data.text ? null : (
             <Icon
               name={NODE_ICON[data.kind]}
               size={data.kind === 'text' ? 44 : 40}
@@ -285,7 +411,12 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           )}
 
           {!assetSrc && data.kind === 'text' && data.text ? (
-            <p className="cnode__text">{data.text}</p>
+            <div
+              className="cnode__text cnode__text--markdown"
+              dangerouslySetInnerHTML={{
+                __html: renderMarkdown(data.text)
+              }}
+            />
           ) : null}
 
           {isBusy && data.kind !== 'audio' ? (
@@ -360,29 +491,49 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         ) : null}
       </div>
 
-      {data.kind !== 'study' ? (
-        <>
-          <Handle
-            type="target"
-            position={Position.Left}
-            className="cnode__handle cnode__handle--left"
-            title="接收上游连线"
-          >
-            <Icon name="plus" size={12} className="cnode__handle-icon" />
-          </Handle>
-
-          <Handle
-            type="source"
-            position={Position.Right}
-            className="cnode__handle cnode__handle--right"
-            title="生成下游节点"
-            onClick={openFromHandle}
-          >
-            <Icon name="plus" size={12} className="cnode__handle-icon" />
-          </Handle>
-        </>
+      {data.kind === 'audio' && audioMode && selected ? (
+        <AudioActionBar
+          mode={audioMode}
+          duration={current?.duration ?? 0}
+          selection={audioSelection}
+          rate={audioRate}
+          busy={audioBusy}
+          anchor={audioAnchor}
+          onSelectionChange={(start, end) =>
+            setAudioSelection({ start, end })
+          }
+          onRateChange={setAudioRate}
+          onClose={() => setAudioMode(null)}
+          onSubmit={() => void submitAudio()}
+        />
       ) : null}
+
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="cnode__handle cnode__handle--left"
+        title="接收上游连线"
+      >
+        <Icon name="plus" size={12} className="cnode__handle-icon" />
+      </Handle>
+
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="cnode__handle cnode__handle--right"
+        title="生成下游节点"
+        onClick={openFromHandle}
+      >
+        <Icon name="plus" size={12} className="cnode__handle-icon" />
+      </Handle>
     </div>
+    <TextEditorDialog
+      open={textEditorOpen}
+      title={data.title}
+      initialText={data.text ?? ''}
+      onClose={closeTextEditor}
+      onSave={saveText}
+    />
     {previewOpen &&
     current &&
     (current.kind === 'image' || current.kind === 'video')

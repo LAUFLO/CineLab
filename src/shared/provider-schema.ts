@@ -237,9 +237,9 @@ export const CAPABILITY_LABEL: Record<Capability, string> = {
 export const MODEL_PRESETS: ModelDef[] = [
   {
     id: 'gpt-image-1',
-    name: 'GPT Image 1',
+    name: 'GPT Image 2.5',
     capability: 'image.t2i',
-    remoteModel: 'gpt-image-1',
+    remoteModel: 'gpt-image-2.5',
     inputs: ['text', 'image'],
     params: [
       {
@@ -341,12 +341,47 @@ export const MODEL_PRESETS: ModelDef[] = [
       {
         key: 'duration',
         label: '时长',
+        type: 'number',
+        defaultValue: 5,
+        min: 5,
+        max: 10
+      }
+    ]
+  },
+  {
+    id: 'doubao-seedream-5',
+    name: 'Seedream 5.0',
+    capability: 'image.t2i',
+    remoteModel: 'doubao-seedream-5-0-260128',
+    inputs: ['text', 'image'],
+    params: [
+      {
+        key: 'size',
+        label: '尺寸',
         type: 'select',
         options: [
-          { value: '5', label: '5s' },
-          { value: '10', label: '10s' }
+          { value: '1024x1024', label: '1024×1024' },
+          { value: '1536x1024', label: '1536×1024' },
+          { value: '1024x1536', label: '1024×1536' },
+          { value: '2048x2048', label: '2048×2048' },
+          { value: '2048x1152', label: '2048×1152' },
+          { value: '1152x2048', label: '1152×2048' }
         ],
-        defaultValue: '5'
+        defaultValue: '1024x1024'
+      },
+      {
+        key: 'n',
+        label: '数量',
+        type: 'number',
+        defaultValue: 1,
+        min: 1,
+        max: 4
+      },
+      {
+        key: 'watermark',
+        label: '水印',
+        type: 'boolean',
+        defaultValue: false
       }
     ]
   },
@@ -428,100 +463,6 @@ export const MODEL_PRESETS: ModelDef[] = [
     ]
   },
   {
-    id: 'zhipu-cogvideox-flash',
-    name: '智谱 CogVideoX Flash',
-    capability: 'video.t2v',
-    remoteModel: 'cogvideox-flash',
-    adapter: 'http-template',
-    inputs: ['text', 'image'],
-    params: [
-      {
-        key: 'duration',
-        label: '时长',
-        type: 'select',
-        options: [
-          { value: '5', label: '5s' },
-          { value: '10', label: '10s' }
-        ],
-        defaultValue: '5'
-      },
-      {
-        key: 'size',
-        label: '分辨率',
-        type: 'select',
-        options: [
-          { value: '1920x1080', label: '1920×1080' },
-          { value: '1080x1920', label: '1080×1920' },
-          { value: '1024x1024', label: '1024×1024' }
-        ],
-        defaultValue: '1920x1080'
-      },
-      {
-        key: 'fps',
-        label: '帧率',
-        type: 'select',
-        options: [
-          { value: '30', label: '30fps' },
-          { value: '60', label: '60fps' }
-        ],
-        defaultValue: '30'
-      },
-      {
-        key: 'quality',
-        label: '模式',
-        type: 'select',
-        options: [
-          { value: 'quality', label: '质量优先' },
-          { value: 'speed', label: '速度优先' }
-        ],
-        defaultValue: 'quality'
-      }
-    ],
-    template: {
-      auth: { header: 'Authorization', prefix: 'Bearer ' },
-      submit: {
-        path: '/videos/generations',
-        bodyByMode: {
-          text: {
-            model: '{{model}}',
-            prompt: '{{prompt}}',
-            quality: '{{params.quality}}',
-            size: '{{params.size}}',
-            fps: '{{params.fps}}',
-            duration: '{{params.duration}}'
-          },
-          image: {
-            model: '{{model}}',
-            prompt: '{{prompt}}',
-            image_url: '{{refs.firstFrame}}',
-            quality: '{{params.quality}}',
-            size: '{{params.size}}',
-            fps: '{{params.fps}}',
-            duration: '{{params.duration}}'
-          },
-          keyframe: {
-            model: '{{model}}',
-            prompt: '{{prompt}}',
-            image_url: ['{{refs.firstFrame}}', '{{refs.lastFrame}}'],
-            quality: '{{params.quality}}',
-            size: '{{params.size}}',
-            fps: '{{params.fps}}',
-            duration: '{{params.duration}}'
-          }
-        },
-        omitEmpty: true
-      },
-      poll: {
-        path: '/async-result/{{taskId}}',
-        taskIdPath: 'id',
-        statusPath: 'task_status',
-        successValues: ['SUCCESS'],
-        failValues: ['FAIL'],
-        resultPath: 'video_result[0].url'
-      }
-    }
-  },
-  {
     id: 'vidu-q2',
     name: 'Vidu Q2',
     capability: 'video.t2v',
@@ -532,14 +473,10 @@ export const MODEL_PRESETS: ModelDef[] = [
       {
         key: 'duration',
         label: '时长',
-        type: 'select',
-        options: [
-          { value: '4', label: '4s' },
-          { value: '5', label: '5s' },
-          { value: '8', label: '8s' },
-          { value: '10', label: '10s' }
-        ],
-        defaultValue: '5'
+        type: 'number',
+        defaultValue: 5,
+        min: 4,
+        max: 10
       },
       {
         key: 'resolution',
@@ -635,15 +572,10 @@ export const MODEL_PRESETS: ModelDef[] = [
       {
         key: 'duration',
         label: '时长',
-        type: 'select',
-        options: [
-          { value: '4', label: '4s' },
-          { value: '5', label: '5s' },
-          { value: '6', label: '6s' },
-          { value: '8', label: '8s' },
-          { value: '10', label: '10s' }
-        ],
-        defaultValue: '6'
+        type: 'number',
+        defaultValue: 6,
+        min: 4,
+        max: 10
       },
       {
         key: 'resolution',
@@ -679,12 +611,10 @@ export const MODEL_PRESETS: ModelDef[] = [
       {
         key: 'duration',
         label: '时长',
-        type: 'select',
-        options: [
-          { value: '6', label: '6s' },
-          { value: '10', label: '10s' }
-        ],
-        defaultValue: '6'
+        type: 'number',
+        defaultValue: 6,
+        min: 6,
+        max: 10
       },
       {
         key: 'resolution',
@@ -720,12 +650,10 @@ export const MODEL_PRESETS: ModelDef[] = [
       {
         key: 'duration',
         label: '时长',
-        type: 'select',
-        options: [
-          { value: '5', label: '5s' },
-          { value: '10', label: '10s' }
-        ],
-        defaultValue: '5'
+        type: 'number',
+        defaultValue: 5,
+        min: 5,
+        max: 10
       },
       {
         key: 'ratio',
@@ -776,12 +704,10 @@ export const MODEL_PRESETS: ModelDef[] = [
       {
         key: 'duration',
         label: '时长',
-        type: 'select',
-        options: [
-          { value: '5', label: '5s' },
-          { value: '10', label: '10s' }
-        ],
-        defaultValue: '5'
+        type: 'number',
+        defaultValue: 5,
+        min: 5,
+        max: 10
       },
       {
         key: 'ratio',
@@ -843,16 +769,10 @@ export const MODEL_PRESETS: ModelDef[] = [
       {
         key: 'duration',
         label: '时长',
-        type: 'select',
-        options: [
-          { value: '4', label: '4s' },
-          { value: '5', label: '5s' },
-          { value: '6', label: '6s' },
-          { value: '8', label: '8s' },
-          { value: '10', label: '10s' },
-          { value: '12', label: '12s' }
-        ],
-        defaultValue: '5'
+        type: 'number',
+        defaultValue: 5,
+        min: 4,
+        max: 12
       },
       {
         key: 'ratio',

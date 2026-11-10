@@ -23,6 +23,11 @@ export interface NodeContextMenuState {
   nodeId: string
 }
 
+export interface EdgeContextMenuState {
+  screen: XYPosition
+  edgeId: string
+}
+
 export interface NodeCommandState {
   nodeId: string
   action: 'operation' | 'expand' | 'download' | 'library'
@@ -53,6 +58,7 @@ interface UIStore {
   menu: MenuState | null
   contextMenu: ContextMenuState | null
   nodeContextMenu: NodeContextMenuState | null
+  edgeContextMenu: EdgeContextMenuState | null
   nodeCommand: NodeCommandState | null
   pendingPrompt: string | null
   confirm: ConfirmState | null
@@ -69,6 +75,7 @@ interface UIStore {
   shortcutsOpen: boolean
   historyOpen: boolean
   searchOpen: boolean
+  textEditorNodeId: string | null
   setTool: (tool: CanvasTool) => void
   requestAddMenu: (anchor?: XYPosition) => void
   openShortcuts: () => void
@@ -85,10 +92,14 @@ interface UIStore {
   closeContextMenu: () => void
   openNodeContextMenu: (menu: NodeContextMenuState) => void
   closeNodeContextMenu: () => void
+  openEdgeContextMenu: (menu: EdgeContextMenuState) => void
+  closeEdgeContextMenu: () => void
   runNodeCommand: (
     command: Omit<NodeCommandState, 'nonce'>
   ) => void
   consumeNodeCommand: () => void
+  openTextEditor: (nodeId: string) => void
+  closeTextEditor: () => void
   applyPrompt: (prompt: string) => void
   clearPendingPrompt: () => void
   requestConfirm: (confirm: ConfirmState) => void
@@ -103,6 +114,7 @@ export const useUIStore = create<UIStore>((set) => ({
   menu: null,
   contextMenu: null,
   nodeContextMenu: null,
+  edgeContextMenu: null,
   nodeCommand: null,
   pendingPrompt: null,
   confirm: null,
@@ -119,6 +131,7 @@ export const useUIStore = create<UIStore>((set) => ({
   shortcutsOpen: false,
   historyOpen: false,
   searchOpen: false,
+  textEditorNodeId: null,
   setTool: (tool) => set({ tool }),
   requestAddMenu: (anchor) =>
     set((state) => ({
@@ -141,13 +154,18 @@ export const useUIStore = create<UIStore>((set) => ({
   openContextMenu: (contextMenu) => set({ contextMenu, menu: null }),
   closeContextMenu: () => set({ contextMenu: null }),
   openNodeContextMenu: (nodeContextMenu) =>
-    set({ nodeContextMenu, menu: null, contextMenu: null }),
+    set({ nodeContextMenu, menu: null, contextMenu: null, edgeContextMenu: null }),
   closeNodeContextMenu: () => set({ nodeContextMenu: null }),
+  openEdgeContextMenu: (edgeContextMenu) =>
+    set({ edgeContextMenu, menu: null, contextMenu: null, nodeContextMenu: null }),
+  closeEdgeContextMenu: () => set({ edgeContextMenu: null }),
   runNodeCommand: (command) =>
     set((state) => ({
       nodeCommand: { ...command, nonce: (state.nodeCommand?.nonce ?? 0) + 1 }
     })),
   consumeNodeCommand: () => set({ nodeCommand: null }),
+  openTextEditor: (nodeId) => set({ textEditorNodeId: nodeId }),
+  closeTextEditor: () => set({ textEditorNodeId: null }),
   applyPrompt: (prompt) => set({ pendingPrompt: prompt }),
   clearPendingPrompt: () => set({ pendingPrompt: null }),
   requestConfirm: (confirm) => set({ confirm }),

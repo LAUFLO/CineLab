@@ -2,6 +2,8 @@ import { ipcMain } from 'electron'
 import { promises as fs } from 'node:fs'
 import type {
   AudioPeaksRequest,
+  AudioSpeedRequest,
+  AudioTrimRequest,
   CropImageRectRequest,
   CropImageRequest,
   CropVideoRequest,
@@ -16,6 +18,7 @@ import type {
 } from '@shared/media'
 import { probeMedia } from '../media/ffmpeg'
 import { computeAudioPeaks } from '../media/audio-peaks'
+import { changeAudioSpeed, trimAudio } from '../media/audio'
 import { importSound, listSounds } from '../media/sound-library'
 import { captureDepth } from '../media/depth'
 import { cancelDepthTask, startDepthTask } from '../media/depth-tasks'
@@ -25,6 +28,7 @@ import { stitchGrid } from '../media/stitch'
 import { cropImage, cropImageRect } from '../media/image'
 import { resolveInside, resolveMediaPath } from '../media/paths'
 import { cropVideo, removeSubtitles, splitAv, trimVideo } from '../media/video'
+import { detectSubtitleRect } from '../media/subtitle-detect'
 import { mediaThumbnail } from '../media/thumbnail'
 import { ensureProxy } from '../media/proxy'
 import {
@@ -170,10 +174,34 @@ export function registerMediaIpc(): void {
     return { asset: await trimVideo(requireProjectRoot(), input) }
   })
 
+  ipcMain.handle('media:trim-audio', async (_event, input: AudioTrimRequest) => {
+    return { asset: await trimAudio(requireProjectRoot(), input) }
+  })
+
+  ipcMain.handle('media:audio-speed', async (_event, input: AudioSpeedRequest) => {
+    return { asset: await changeAudioSpeed(requireProjectRoot(), input) }
+  })
+
   ipcMain.handle(
     'media:remove-subtitles',
     async (_event, input: RemoveSubtitlesRequest) => {
       return { asset: await removeSubtitles(requireProjectRoot(), input) }
+    }
+  )
+
+  ipcMain.handle(
+    'media:detect-subtitle-rect',
+    async (
+      _event,
+      path: string,
+      scope?: 'project' | 'global'
+    ) => {
+      const absolute = await resolveMediaPath(
+        requireProjectRoot(),
+        path,
+        scope
+      )
+      return detectSubtitleRect(absolute)
     }
   )
 

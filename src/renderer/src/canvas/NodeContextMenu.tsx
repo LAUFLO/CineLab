@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import {
-  isFilmNode,
   isGroupNode,
   isStudioNode,
   useCanvasStore,
@@ -158,19 +157,18 @@ function buildSections(
     command('operation', opId, itemId)
 
   const cine = node.type === 'cine' ? node : null
-  const film = isFilmNode(node) ? node : null
   const group = isGroupNode(node) ? node : null
   const studio = isStudioNode(node) ? node : null
   const videoOp = node.type === 'video-op' ? node : null
 
   const hasOutput =
     (cine?.data.outputs?.length ?? 0) > 0 ||
-    (film?.data.outputs?.length ?? 0) > 0
+    (studio?.data.outputs?.length ?? 0) > 0
 
   const common: MenuAction[] = []
-  if (cine || film) {
+  if (cine) {
     common.push({
-      label: film ? '预览成片' : '查看大图 / 播放',
+      label: '查看大图 / 播放',
       disabled: !hasOutput,
       run: () => command('expand')
     })
@@ -251,6 +249,12 @@ function buildSections(
       title: '文本',
       actions: [
         {
+          label: '编辑文本',
+          run: () => {
+            useUIStore.getState().openTextEditor(node.id)
+          }
+        },
+        {
           label: '复制文本内容',
           disabled: !cine.data.text?.trim(),
           run: () => {
@@ -292,12 +296,33 @@ function buildSections(
   }
 
   if (studio) {
+    const outputs = studio.data.outputs ?? []
+    const output =
+      outputs.find((item) => item.id === studio.data.selectedOutputId) ??
+      outputs[0]
+
     sections.push({
       title: '剪辑室',
       actions: [
         {
           label: '进入剪辑室',
           run: () => ctx.openStudio(node.id)
+        },
+        {
+          label: '下载成片',
+          disabled: !output,
+          run: () => {
+            if (!output) return
+            void window.api.export
+              .asset(output.path, studio.data.title)
+              .then((result) => {
+                if (result.ok) {
+                  ctx.showToast(`已导出：${result.path ?? ''}`)
+                } else if (!result.canceled) {
+                  ctx.showToast(result.error ?? '导出失败', 'error')
+                }
+              })
+          }
         }
       ]
     })

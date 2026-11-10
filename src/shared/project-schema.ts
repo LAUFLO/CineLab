@@ -113,6 +113,12 @@ export const studioNodeSchema = z.object({
     clipCount: z.number().int().min(0).optional(),
     durationMs: z.number().min(0).optional(),
     references: z.record(z.string().max(120), z.string().max(120)).optional(),
+    filmStatus: z
+      .enum(['pending', 'rendering', 'ready', 'stale', 'empty', 'missing'])
+      .optional(),
+    outputs: z.array(outputRefSchema).max(100).optional(),
+    selectedOutputId: z.string().max(120).optional(),
+    upstreamAck: z.string().max(2000).optional(),
     templates: z.array(z.string().max(100)).max(20)
   }),
   style: z
@@ -204,7 +210,7 @@ export const videoOpNodeSchema = z.object({
     title: z.string().max(200),
     status: nodeStatusSchema,
     operation: z.enum(['shot-retake', 'element-replace', 'extend']),
-    sourceNodeId: z.string().min(1).max(120),
+    sourceNodeId: z.string().max(120),
     resultNodeId: z.string().max(120).optional(),
     range: z
       .object({ start: z.number(), end: z.number() })

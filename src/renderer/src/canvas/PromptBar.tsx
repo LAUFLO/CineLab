@@ -95,6 +95,25 @@ interface MentionItem {
 
 const VIDEO_PATH = /\.(mp4|webm|mov|mkv)$/i
 
+const MAX_TEXT_CONTEXT = 4000
+
+interface TextContext {
+  title: string
+  text: string
+}
+
+function buildPromptWithContext(
+  prompt: string,
+  contexts: TextContext[]
+): string {
+  if (contexts.length === 0) return prompt
+  const blocks = contexts.map(
+    (item) =>
+      `【参考文本：${item.title}】\n${item.text.slice(0, MAX_TEXT_CONTEXT)}`
+  )
+  return [...blocks, prompt].filter(Boolean).join('\n\n---\n\n')
+}
+
 function isVideoPath(path: string): boolean {
   return VIDEO_PATH.test(path)
 }
@@ -778,6 +797,46 @@ export function PromptBar() {
     return result
   })()
 
+  const textContexts = (() => {
+    const result: TextContext[] = []
+    const seen = new Set<string>()
+
+    const collect = (entry: (typeof nodes)[number]): void => {
+      if (entry.type !== 'cine' || entry.data.kind !== 'text') return
+      if (seen.has(entry.id)) return
+      const text = entry.data.text?.trim()
+      if (!text) return
+      seen.add(entry.id)
+      result.push({ title: entry.data.title, text })
+    }
+
+    const incoming = edges.filter((edge) => edge.target === node.id)
+    for (const edge of incoming) {
+      const source = nodes.find((item) => item.id === edge.source)
+      if (!source) continue
+      const entries = isGroupNode(source)
+        ? nodes.filter((item) => item.parentId === source.id)
+        : [source]
+      for (const entry of entries) {
+        if (isGroupNode(entry)) continue
+        collect(entry)
+      }
+    }
+
+    if (autoLink) {
+      const text = promptText.trim()
+      if (text) {
+        for (const item of nodes) {
+          if (item.id === node.id || isGroupNode(item)) continue
+          if (!text.includes(item.data.title)) continue
+          collect(item)
+        }
+      }
+    }
+
+    return result
+  })()
+
   const requiredInputs = (() => {
     const inputs: MediaInput[] = ['text']
     if (mergedRefs.some((ref) => ref.kind === 'image')) inputs.push('image')
@@ -977,7 +1036,10 @@ export function PromptBar() {
   }
 
   const isRunning = Boolean(runningRunId)
-  const canSend = Boolean(active) && promptText.trim().length > 0 && !isRunning
+  const canSend =
+    Boolean(active) &&
+    (promptText.trim().length > 0 || textContexts.length > 0) &&
+    !isRunning
 
   const removeRef = (ref: PickedRef): void => {
     setPickedRefs((prev) =>
@@ -1045,7 +1107,7 @@ export function PromptBar() {
     void runGeneration({
       nodeId: node.id,
       modelKey: active.key,
-      prompt: promptText.trim(),
+      prompt: buildPromptWithContext(promptText.trim(), textContexts),
       params: { ...values, watermark },
       ...(imageRefs.length > 0 ? { refs: imageRefs } : {}),
       ...(videoRef

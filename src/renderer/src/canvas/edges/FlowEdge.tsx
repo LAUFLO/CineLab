@@ -1,5 +1,10 @@
 import { BaseEdge, getBezierPath, type EdgeProps } from '@xyflow/react'
 
+type FlowEdgeProps = EdgeProps & {
+  onClick?: (event: React.MouseEvent) => void
+  onDoubleClick?: (event: React.MouseEvent) => void
+}
+
 export function FlowEdge({
   id,
   sourceX,
@@ -9,8 +14,10 @@ export function FlowEdge({
   sourcePosition,
   targetPosition,
   selected,
-  markerEnd
-}: EdgeProps) {
+  markerEnd,
+  onClick,
+  onDoubleClick
+}: FlowEdgeProps) {
   const [path] = getBezierPath({
     sourceX,
     sourceY,
@@ -26,11 +33,14 @@ export function FlowEdge({
       id={id}
       path={path}
       markerEnd={markerEnd}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
       style={{
         stroke: selected ? 'var(--link)' : 'var(--edge-default)',
         strokeWidth: selected ? 2 : 1.5,
         filter: selected ? 'drop-shadow(0 0 4px var(--glow))' : undefined,
-        transition: 'stroke 150ms ease, stroke-width 150ms ease'
+        transition: 'stroke 150ms ease, stroke-width 150ms ease',
+        cursor: 'pointer'
       }}
     />
   )

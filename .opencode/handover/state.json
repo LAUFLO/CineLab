@@ -2,10 +2,10 @@
   "version": 66,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-08",
+  "updatedAt": "2026-11-10T13:58:01.720Z",
   "phase": "AGENT",
   "phaseStatus": "in_progress",
-  "phaseGoal": "通用 AgentRuntime：工具注册表、CanvasCommand、技能目录、画布工具、生成提案 propose/submit；下一项 StageCommand 骨架",
+  "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
   "next_focus": "CineBot 整体自验收通过，等待用户验收反馈。下一步处理验收问题、Agnes 视频队列恢复后补测，并在推送前同步 origin/main（落后 11 个提交）。",
   "frontier": [
@@ -1449,6 +1449,144 @@
         ".opencode/handover/evidence/FILM-STUDY-REDESIGN-2.md",
         ".opencode/handover/evidence/FILM-STUDY-REDESIGN-2-node-menu.png",
         ".opencode/handover/evidence/FILM-STUDY-REDESIGN-2-sheet.png"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-REDESIGN-3",
+      "title": "拉片连线修复、工具栏去精度菜单、节点布局与切片尺寸",
+      "status": "done",
+      "note": "2026-11-08 完成。根因：CineNodeView 对 study 节点不渲染 Handle，导致拉片节点与源视频/结果节点的边无法绘制；移除条件后所有 study 节点渲染左右 Handle，测试项目 16 条边全部显示。工具栏「逐帧拉片」移除精度下拉，点击直接自动分镜，精度在节点内调整。NODE_META study 高度 340→280，卡片间距/按钮位置收紧，旧节点加载时 368→308 迁移。动态切片改为 3×320，video-node 增加 min-width:0 和容器查询：≤360px 隐藏帧号/缩小按钮，≤250px 隐藏时间，旧 240px 切片控制条不再溢出。typecheck、145 tests、build 通过；隔离实例验证 Handle 数量、边渲染、节点高度迁移和切片控制条尺寸。",
+      "evidence": [
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-3.md",
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-3-links.png",
+        ".opencode/handover/evidence/FILM-STUDY-REDESIGN-3-layout.png"
+      ]
+    },
+    {
+      "id": "WORKSPACE-ENHANCE-1",
+      "title": "文本 Markdown 编辑、工具栏居中、拓扑整理、音频波形、智能去字幕、AI 分镜",
+      "status": "done",
+      "note": "2026-11-08 完成。文本节点新增 1100×720 Markdown 编辑弹窗（marked 18.1.3，左编辑右预览、快捷插入、Ctrl+Enter），节点内按 Markdown 渲染，双击或编辑按钮打开。CineNodeView 删除视口边缘 left/right 切换，工具栏固定相对节点居中，实测中心差 0。整理画布改为按连线拓扑分层：分组为整体块、孤立节点末列、循环依赖退化。音频波形改底部对齐，播放头与波形同 10px inset。新增主进程字幕区域检测（底部灰度帧行/列边缘统计），智能去字幕自动检测并直接修复，失败回退框选；640×360 测试视频检测结果 x197 y296 w245 h31。拉片删除分镜精度选择，scdet 候选镜头 + 多模态模型 from/to 语义合并，mock 验证 2→1 个分镜；节点高度 250 并迁移旧 278。typecheck、145 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/WORKSPACE-ENHANCE-1.md",
+        ".opencode/handover/evidence/WORKSPACE-ENHANCE-1-text-editor.png",
+        ".opencode/handover/evidence/WORKSPACE-ENHANCE-1-audio-wave.png",
+        ".opencode/handover/evidence/WORKSPACE-ENHANCE-1-arrange.png"
+      ]
+    },
+    {
+      "id": "STUDIO-FILM-MERGE-1",
+      "title": "剪辑室合并成片、文本编辑入口、模型参数卡片压缩",
+      "status": "done",
+      "note": "2026-11-09 完成。剪辑室与成片节点合并：StudioNodeData 增加 filmStatus/outputs/selectedOutputId/upstreamAck，节点改为 480×368 的成片卡片（预览、摘要、VCS 版本、剪辑室/VTT/编码/生成成片），双击进入剪辑室，右侧 source 输出成片。loadCanvas 幂等迁移旧 film 节点：数据并入剪辑室、下游边改写、删除旧节点与边、孤儿 film 降级为视频素材；实测 33 节点 20 边 → 32 节点 19 边，edge_film_down source 改写正确。syncStudioAfterSave、UpstreamWatcher、StudioWindow stale 检测改读剪辑室自身；删除剪辑室保留成片为视频节点；右键菜单加下载成片。文本节点放大按钮改为打开 Markdown 编辑弹窗，工具栏与 minimal 工具栏增加编辑按钮。模型参数常用卡片改为紧凑 chips 并默认折叠，区域高度 320px → 36px。排查并修复 dev 模式边不渲染：node_modules/.vite 预打包缓存损坏，清理后恢复。typecheck、145 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/STUDIO-FILM-MERGE-1.md",
+        ".opencode/handover/evidence/STUDIO-FILM-MERGE-1-studio.png",
+        ".opencode/handover/evidence/STUDIO-FILM-MERGE-1-params-collapsed.png",
+        ".opencode/handover/evidence/STUDIO-FILM-MERGE-1-params-open.png",
+        "docs/studio-film-merge-plan.md"
+      ]
+    },
+    {
+      "id": "AUDIO-LIBTV-1",
+      "title": "音频波形对齐 LibTV、截取变速、下载 scope、复制粘贴完整内容",
+      "status": "done",
+      "note": "2026-11-09 完成。音频波形改为 96 根柱、以中线上下对称、深色圆角内嵌、红色播放头，修复 SVG 高度按 viewBox 比例撑高被裁剪的问题；时长显示四舍五入。修复导出未传 scope 导致全局素材提示资源不存在；音频节点隐藏放大按钮。新增主进程 trimAudio/changeAudioSpeed（AAC 192k、atempo 链路 0.1-4.0x）与 media:trim-audio、media:audio-speed IPC；音频节点工具栏加截取/变速，节点下方浮动条支持波形拖拽选区、时间输入、倍率滑块与数字输入，生成结果写回节点新版本。复制粘贴新增边界边记录与重建，粘贴时映射拉片 sourceNodeId/studyOutputNodeIds、视频操作 sourceNodeId/resultNodeId、剪辑室 references，prompt/outputs/text 等完整保留；实测单节点复制重建上游边，双节点复制内部边与上下游边全部保留。typecheck、145 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AUDIO-LIBTV-1.md",
+        ".opencode/handover/evidence/AUDIO-LIBTV-1-waveform.png",
+        ".opencode/handover/evidence/AUDIO-LIBTV-1-trim.png",
+        ".opencode/handover/evidence/AUDIO-LIBTV-1-speed.png"
+      ]
+    },
+    {
+      "id": "NODE-POLISH-1",
+      "title": "音频波形铺满、双击菜单剪辑室、时间线提亮、文本编辑入口与换行、拉片布局、分镜表间距",
+      "status": "done",
+      "note": "2026-11-09 完成。音频波形柱数 96→60，波形区去掉 padding 铺满卡片圆角，消除上下/右侧白条；播放按钮改无边框 28px；版本切换移到波形右上角。画布双击添加菜单新增剪辑室。剪辑室时间线缩略图透明度 0.55/0.6→0.92/0.95，去掉青色蒙层。文本节点双击只聚焦不编辑，移除节点内编辑按钮，编辑统一到工具栏/右键；新增 UI store global textEditorNodeId，右键菜单可直接打开；长串 anywhere 换行；滚动条 7px 圆角 thumb。拉片节点按钮统一 30px、右下角对齐，下拉框/chips 间距优化。分镜表浮窗顶部间距 24→48。typecheck、145 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/NODE-POLISH-1.md",
+        ".opencode/handover/evidence/NODE-POLISH-1-audio.png",
+        ".opencode/handover/evidence/NODE-POLISH-1-study.png",
+        ".opencode/handover/evidence/NODE-POLISH-1-sheet.png"
+      ]
+    },
+    {
+      "id": "FILM-STUDY-REA-1",
+      "title": "删除连线、拉片逐帧检测与动作峰值、剪辑室下拉统一",
+      "status": "done",
+      "note": "2026-11-09 完成。连线支持单击选中后 Delete 删除、双击删除、右键菜单删除，移除边时清理拉片 sourceNodeId、剪辑室 references、视频操作 sourceNodeId，video-op schema 允许空 source。新增 shot-detect：ffmpeg 抽 8fps 96px RGB 帧，4x4x4 直方图 + 像素差 + 局部中位数检测硬切/跳切，动作峰值补充候选切点，最多 12 段；拉片 prompt 改为切点编号，模型可合并/拆分，必须连续覆盖，本地按切点重建。实测 12 秒硬切视频 4 段、12 秒移动方块舞蹈 6 段（原 1 段）；修复灰度帧红绿同亮度漏检。剪辑室编码下拉替换为统一 Select。新增 shot-detect 与 edge-references 测试；typecheck、26 文件 155 用例、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/FILM-STUDY-REA-1.md",
+        ".opencode/handover/evidence/FILM-STUDY-REA-1-edge-menu.png",
+        ".opencode/handover/evidence/FILM-STUDY-REA-1-codec.png"
+      ]
+    },
+    {
+      "id": "NODE-POLISH-2",
+      "title": "音频控制条上移、文本节点占位图标移除",
+      "status": "done",
+      "note": "2026-11-09 完成。音频节点的播放/时间控制条从卡片底部移到波形上方，避免被底部 Prompt Bar 遮挡；文本节点有内容时不再渲染三条杠占位图标（此前占位图标与绝对定位文本叠加）。typecheck 通过，截图确认。",
+      "evidence": [
+        ".opencode/handover/evidence/NODE-POLISH-2.md",
+        ".opencode/handover/evidence/NODE-POLISH-2-audio.png",
+        ".opencode/handover/evidence/NODE-POLISH-2-text.png"
+      ]
+    },
+    {
+      "id": "MODEL-CONFIG-SIMPLE-1",
+      "title": "模型参数配置简化、时长滑条、快速预设调整",
+      "status": "done",
+      "note": "2026-11-09 完成。参数类型术语改为选项/数值/文本/开关并加示例提示；参数卡片默认折叠，显示名称+类型+默认值，新增参数自动展开，高级字段保持折叠；模型行摘要改为列出参数名。所有内置视频模型 duration 从固定秒数下拉改为 number 滑条，旧 select 配置打开时自动迁移为 min/max 范围。快速预设移除智谱 CogVideoX，火山方舟增加 Seedream 5.0 图片，OpenAI 图片模型更新为 GPT Image 2.5；Gemini 因 OpenAI 兼容层不支持图片/视频暂未添加。typecheck、155 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/MODEL-CONFIG-SIMPLE-1.md"
+      ]
+    },
+    {
+      "id": "STUDIO-RATIO-1",
+      "title": "剪辑室画幅跟随素材、预览不裁剪、手动切换画幅",
+      "status": "done",
+      "note": "2026-11-09 完成。时间线首个视频/图片素材自动匹配画幅（竖屏 1080x1920、方形 1080x1080、横屏保持 1920x1080），仅在时间线为空且仍是默认 16:9 时生效；timelineMediaRef 增加 width/height，画布素材 PoolAsset 带上输出尺寸；预览渲染从 cover 改为 contain，不再裁剪；属性面板新增 16:9/9:16/1:1 画幅快捷按钮。新增 timeline-canvas 测试 5 例；typecheck、160 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/STUDIO-RATIO-1.md"
+      ]
+    },
+    {
+      "id": "STUDIO-RATIO-2",
+      "title": "六种画幅、时间线缩略图不裁剪",
+      "status": "done",
+      "note": "2026-11-09 完成。画幅扩展为 9:16/16:9/21:9/3:4/4:3/1:1 六种，属性面板 3 列布局；首个素材自动匹配比例同步扩展到 21:9 和 4:3/3:4。竖屏素材时间线缩略图改为按原始比例 repeat-x 平铺，普通素材和多处缩略图从 cover 改为 contain，不再裁剪。typecheck、162 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/STUDIO-RATIO-2.md",
+        ".opencode/handover/evidence/STUDIO-RATIO-2-portrait.png"
+      ]
+    },
+    {
+      "id": "STUDIO-INSPECTOR-1",
+      "title": "剪辑室预览播放、顶部画幅、时间线缩略图、属性面板四 tab",
+      "status": "done",
+      "note": "2026-11-10 完成。预览播放改为视频自行解码、canvas 取当前帧，仅偏差超过 0.3s 才同步，非活跃视频自动暂停；播放采样 32 次仅起止 2 帧黑。画幅入口固定到顶部栏下拉（9:16/16:9/21:9/3:4/4:3/1:1），切换后 canvas 立即重绘。时间线缩略图统一用第一帧按比例 repeat-x 平铺，消除黑块与裁剪。属性面板拆为属性/画面/音频/助手四个 tab；速度、滤镜、转场、变声改用统一 Select；输入框与按钮样式统一。typecheck、162 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/STUDIO-INSPECTOR-1.md",
+        ".opencode/handover/evidence/STUDIO-INSPECTOR-1-tabs.png"
+      ]
+    },
+    {
+      "id": "TEXT-VISION-1",
+      "title": "文本节点引用图片传给多模态模型",
+      "status": "done",
+      "note": "2026-11-10 完成。根因是 generate:run 的文本分支调用 generateText 时没有传 refs，请求体只有纯文本。generateText 增加 refs 参数，有图时构造 OpenAI 多模态 content 数组（text + image_url data URL）。同时修正模型未勾选图片输入时的错误文案。用本地 mock chat 服务验证请求体包含 image_url 和 data:image。typecheck、162 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/TEXT-VISION-1.md"
+      ]
+    },
+    {
+      "id": "AUDIO-TEXT-FOCUS-1",
+      "title": "音频控制条回底部、操作条层级、双击聚焦、文本上下文注入",
+      "status": "done",
+      "note": "2026-11-10 完成。音频控制条移回波形下方，分隔线改回 border-top。截取/变速操作条改为 portal 到 body + fixed + z-index 60，默认在节点下方、空间不足时翻转，始终高于 z-index 50 的 PromptBar；实测与 PromptBar 重叠时命中操作条。CineNodeView 根元素新增双击 fitView，文本内容不再阻止冒泡；实测文本节点和图片节点都能放大聚焦。PromptBar 收集上游连线和 @标题命中的文本节点，生成时拼接【参考文本：标题】到 prompt 前，单条截断 4000 字符，只有文本上下文时也允许发送；用 mock 图片服务验证请求体包含文本内容。typecheck、162 tests、build 通过。",
+      "evidence": [
+        ".opencode/handover/evidence/AUDIO-TEXT-FOCUS-1.md"
       ]
     }
   ],

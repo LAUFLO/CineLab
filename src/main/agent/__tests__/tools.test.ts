@@ -1270,4 +1270,146 @@ describe('agent tool permissions', () => {
     expect(readOnlyNames).not.toContain('canvas_update_text')
     expect(readOnlyNames).not.toContain('stage_export_preview')
   })
+
+  it('validates node operation discovery and execution', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_node_operations', { nodeId: 'node-a' }),
+        scope,
+        'read-only'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_node_operations', { nodeId: 'node-b' }),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_node_operation', {
+          nodeId: 'node-a',
+          operationId: 'grid-split',
+          itemId: '3x3'
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_node_operation', {
+          nodeId: 'node-a',
+          operationId: 'unknown-op'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_node_operation', {
+          nodeId: 'node-a',
+          operationId: 'grid-generate',
+          itemId: 'multi'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_node_operation', {
+          nodeId: 'node-a',
+          operationId: 'grid-split'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_node_operation', {
+          nodeId: 'node-a',
+          operationId: 'clip-trim',
+          params: { start: 2, end: 1 }
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+  })
+
+  it('requires confirmations for destructive node operations', () => {
+    expect(
+      toolConfirmationReason(
+        call('canvas_node_operation', {
+          nodeId: 'node-a',
+          operationId: 'grid-split',
+          itemId: '3x3'
+        })
+      )
+    ).toBeNull()
+
+    expect(
+      toolConfirmationReason(
+        call('canvas_node_operation', {
+          nodeId: 'node-a',
+          operationId: 'motion-capture'
+        })
+      )
+    ).toContain('节点操作')
+
+    expect(
+      toolConfirmationReason(
+        call('canvas_node_operation', {
+          nodeId: 'node-a',
+          operationId: 'subtitle',
+          itemId: 'smart'
+        })
+      )
+    ).toContain('节点操作')
+  })
+
+  it('validates capability catalog space', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('capability_catalog', { space: 'canvas' }),
+        scope,
+        'read-only'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('capability_catalog', { space: 'unknown' }),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('capability_catalog', { nodeId: '' }),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+  })
+
+  it('does not expose node operation writes in read-only mode', () => {
+    const readOnlyNames = toolDefinitionsForModel('canvas', 'read-only').map(
+      (tool) => tool.function.name
+    )
+    expect(readOnlyNames).toContain('canvas_node_operations')
+    expect(readOnlyNames).toContain('capability_catalog')
+    expect(readOnlyNames).not.toContain('canvas_node_operation')
+  })
 })

@@ -311,14 +311,16 @@ capability_catalog
 
 这些改动相对独立，可以继续提交到当前 PR。
 
-### Phase 2（建议合并 PR #2 后新分支）
+### Phase 2（已实施，`feat/node-operation-bridge`）
+
+状态：**已实施**（2026-11-10）。详见 `docs/node-operation-bridge-plan.md`。
 
 目标：节点操作桥 + 能力注册表。
 
 - 抽出 `node-operation-runner.ts`。
 - 新增 `canvas_node_operations` / `canvas_node_operation`。
 - 新增 `capability_catalog`。
-- 把现有 `CANVAS_TOOLS` / `TIMELINE_TOOLS` / `STAGE_TOOLS` 迁入 capabilities 目录。
+- 新增 `capabilities/types.ts` + `capabilities/registry.ts` 作为能力投影；`CANVAS_TOOLS` 等定义暂时保留在 `tools.ts`，保持兼容导出，完整文件拆分留到 Phase 3。
 - 保持兼容导出，避免一次性大改。
 
 ### Phase 3（后续）
@@ -366,10 +368,11 @@ Phase 1：
 
 Phase 2：
 
-- 29 个节点操作中已实现的都能通过 `canvas_node_operations` 被发现。
-- 已实现操作能通过 `canvas_node_operation` 执行。
+- 28 个节点操作中已实现的都能通过 `canvas_node_operations` 被发现。
+- 其中 17 个无需模型/蒙版的操作能通过 `canvas_node_operation` 直接执行。
+- 需要模型或蒙版的 11 个操作显式标记 `agentExecutable: false`，Agent 走 `generation_propose`。
 - UI 和 Agent 共用同一个 runner。
-- 新增一个节点操作只需改 operation 定义 + runner，不需要新增 Agent 工具。
+- 新增一个节点操作只需改 operation 定义 + Agent spec + runner，不需要新增 Agent 工具。
 
 Phase 3：
 

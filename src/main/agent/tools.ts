@@ -14,6 +14,10 @@ import {
   STAGE_OBJECT_TYPES
 } from '@shared/stage-schema'
 import { TIMELINE_TRANSITION_TYPES } from '@shared/timeline-schema'
+import {
+  nodeOperationAgentSpec,
+  validateNodeOperationParams
+} from '@shared/node-operation-specs'
 
 export class AgentToolError extends Error {
   readonly code: string
@@ -268,6 +272,57 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe'
+  },
+  {
+    id: 'canvas.nodeOperations',
+    name: 'canvas_node_operations',
+    description:
+      '读取一个选中节点当前可用的操作，包括操作 ID、菜单项、是否需要确认、参数定义和 Agent 是否可直接执行。执行节点操作前先调用它。',
+    profiles: ['canvas'],
+    readOnly: true,
+    scope: 'canvas',
+    modes: ['read-only', 'current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: { type: 'string', description: '要检查的节点 ID' }
+      },
+      required: ['nodeId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'canvas.nodeOperation',
+    name: 'canvas_node_operation',
+    description:
+      '在一个选中节点上执行工具栏操作，例如宫格切分、裁剪、抽帧、片段截取、分离音视频、去字幕、图层分离、抠图、主体消除、扩图、白模预演等。operationId 和 itemId 必须来自 canvas_node_operations；需要模型的操作请改用 generation_propose。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: { type: 'string', description: '要操作的节点 ID' },
+        operationId: {
+          type: 'string',
+          description: '操作 ID，必须来自 canvas_node_operations'
+        },
+        itemId: {
+          type: 'string',
+          description: '菜单项 ID，必须来自该操作的 menu'
+        },
+        params: {
+          type: 'object',
+          description:
+            '操作参数；矩形使用 { x, y, width, height }，时间单位为秒'
+        }
+      },
+      required: ['nodeId', 'operationId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe'
   }
 ]
 
@@ -1136,8 +1191,36 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
-/** 真正修改时间线文档的工具；只读、选择和导出不计入回合撤销 */
-const TIMELINE_WRITE_TOOL_NAMES = new Set([
+export const CAPABILITY_TOOLS: AgentToolDefinition[] = [
+  {
+    id: 'capability.catalog',
+    name: 'capability_catalog',
+    description:
+      '返回当前空间和选中节点可用的能力：节点操作、时间线操作、导演台镜头和拉片信息。不确定下一步能做什么时先调用它。',
+    profiles: ['canvas', 'clip', 'stage', 'film'],
+    readOnly: true,
+    scope: 'project',
+    modes: ['read-only', 'current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        space: {
+          type: 'string',
+          enum: ['canvas', 'clip', 'stage', 'film'],
+          description: '只看某个空间；省略时返回当前空间'
+        },
+        nodeId: {
+          type: 'string',
+          description: '可选，查询该节点可用的操作'
+        }
+      },
+      additionalProperties: false
+    },
+    replay: 'safe'
+  }
+]
+
+/** 真正修改时间线文档的工具；只读、选择和导出不计入回合撤销 */const TIMELINE_WRITE_TOOL_NAMES = new Set([
   'timeline_set_video',
   'timeline_move_clips',
   'timeline_trim_clip',
@@ -1219,6 +1302,7 @@ export const AGENT_TOOLS = [
   ...STAGE_TOOLS,
   ...TIMELINE_TOOLS,
   ...FILM_TOOLS,
+  ...CAPABILITY_TOOLS,
   ...SKILL_TOOLS
 ]
 
@@ -1263,6 +1347,14 @@ export function toolConfirmationReason(
   }
   if (call.name === 'canvas_update_text') {
     return '将覆盖文本节点的正文内容。'
+  }
+  if (call.name === 'canvas_node_operation') {
+    const operationId = String(call.args.operationId ?? '')
+    const spec = nodeOperationAgentSpec(operationId)
+    if (spec?.requiresConfirm) {
+      return `节点操作「${operationId}」会修改或生成素材，耗时可能较长。`
+    }
+    return null
   }
   if (call.name === 'stage_remove_object') {
     return '将删除导演台对象及其动作轨。'
@@ -1363,6 +1455,89 @@ export function assertToolAllowed(
       throw new AgentToolError('invalid_params', 'text 不能超过 100000 个字符')
     }
     assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'canvas_node_operations') {
+    const nodeId = call.args.nodeId
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'canvas_node_operation') {
+    const nodeId = call.args.nodeId
+    const operationId = call.args.operationId
+    const itemId = call.args.itemId
+    const params = call.args.params
+
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, nodeId)
+
+    if (typeof operationId !== 'string' || !operationId.trim()) {
+      throw new AgentToolError(
+        'invalid_params',
+        'operationId 必须是非空字符串'
+      )
+    }
+    const spec = nodeOperationAgentSpec(operationId)
+    if (!spec) {
+      throw new AgentToolError(
+        'invalid_params',
+        `未知节点操作：${operationId}`
+      )
+    }
+    if (!spec.executable) {
+      throw new AgentToolError(
+        'unsupported',
+        spec.reason ?? `${operationId} 不能由 Agent 直接执行`
+      )
+    }
+    if (
+      itemId !== undefined &&
+      (typeof itemId !== 'string' || !itemId.trim())
+    ) {
+      throw new AgentToolError('invalid_params', 'itemId 必须是非空字符串')
+    }
+    let paramRecord: Record<string, unknown> = {}
+    if (params !== undefined) {
+      if (
+        !params ||
+        typeof params !== 'object' ||
+        Array.isArray(params)
+      ) {
+        throw new AgentToolError('invalid_params', 'params 必须是对象')
+      }
+      paramRecord = params as Record<string, unknown>
+    }
+    const paramError = validateNodeOperationParams(
+      operationId,
+      typeof itemId === 'string' ? itemId : undefined,
+      paramRecord
+    )
+    if (paramError) {
+      throw new AgentToolError('invalid_params', paramError)
+    }
+  }
+
+  if (call.name === 'capability_catalog') {
+    if (
+      call.args.space !== undefined &&
+      !['canvas', 'clip', 'stage', 'film'].includes(
+        String(call.args.space)
+      )
+    ) {
+      throw new AgentToolError('invalid_params', 'space 无效')
+    }
+    if (
+      call.args.nodeId !== undefined &&
+      (typeof call.args.nodeId !== 'string' ||
+        !call.args.nodeId.trim())
+    ) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
   }
 
   if (call.name === 'canvas_move_node') {

@@ -1,9 +1,21 @@
 # 导演台方案：3D 片场 + 本地白模预演
 
 日期：2026-11-09
-状态：**stage 节点、场景存储、A1 视口、A2 编辑/Agent、A3 运镜与白模预演已完成**
+状态：**已实施**（2026-11-11 合并入 main）
+适用版本：`main` @ `b76a064`
 关联：LibTV 3D 导演台 / 3D-BOX、TapNow CineMap
-关联文档：`docs/agent-full-scope.md`、`docs/clip-studio-plan.md`
+关联文档：`docs/agent-capabilities.md`、`docs/ui-spec.md` 第 16 节、`docs/agent-full-scope.md`、`docs/clip-studio-plan.md`
+
+## 当前实现摘要
+
+- 场景：`DirectorsStageDoc` 存储于 `stages/<stageId>.json`，`StageCommand` 是唯一写入口。
+- 对象：人物、立方体、球体、平面、群众、glTF；支持位置/旋转/缩放、姿势、颜色、可见性。
+- 机位：多机位、位置/目标/FOV/画幅、机位关键帧运镜。
+- 镜头：添加/修改/删除、时长、画幅、机位绑定。
+- 背景：纯色、全景图、模型。
+- 白模预演：three.js 隐藏窗口逐帧渲染 + ffmpeg 编码，导出后回画布。
+- Agent：`stage_*` 工具覆盖对象、机位、镜头、运镜、背景和预演；写场景前自动打开导演台，同一轮合并一条场景撤销。
+- 当前未开放：对象动作轨、独立灯光实体。
 
 ## 1. 产品定义
 

@@ -2,6 +2,7 @@
 
 日期：2026-11-08
 状态：**已实施 Phase 1–4**（2026-11-11，`main` @ `b76a064`）
+适用版本：`main` @ `b76a064`
 范围：Agent 运行时、工具协议、权限、确认、回合事务、会话、上下文、技能、IPC
 关联文档：`docs/agent-capabilities.md`（当前工具清单）、`docs/agent-capability-plan.md`（分阶段记录）、`docs/agent-full-scope.md`、`docs/agent-plan.md`、`docs/director-stage-plan.md`
 

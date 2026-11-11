@@ -96,6 +96,7 @@ export interface NodeOperationSummary {
   section?: string
   implemented: boolean
   agentExecutable: boolean
+  generationProposable: boolean
   requiresConfirm: boolean
   requires?: NodeOperation['requires']
   reason?: string
@@ -167,6 +168,8 @@ export function listNodeOperations(
         ...(op.section ? { section: op.section } : {}),
         implemented: op.implemented === true,
         agentExecutable: op.implemented === true && spec?.executable === true,
+        generationProposable:
+          op.implemented === true && spec?.generationProposable === true,
         requiresConfirm: spec?.requiresConfirm === true,
         ...(op.requires ? { requires: op.requires } : {}),
         ...(reason

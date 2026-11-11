@@ -96,4 +96,16 @@ describe('node operation agent specs', () => {
       expect(spec.reason).toBeTruthy()
     }
   })
+
+  it('marks model operations as generation proposable', () => {
+    expect(
+      NODE_OPERATION_AGENT_SPECS['grid-generate'].generationProposable
+    ).toBe(true)
+    expect(
+      NODE_OPERATION_AGENT_SPECS['character-sheet'].generationProposable
+    ).toBe(true)
+    expect(NODE_OPERATION_AGENT_SPECS.inpaint.generationProposable).toBe(
+      false
+    )
+  })
 })

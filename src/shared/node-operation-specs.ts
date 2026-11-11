@@ -11,6 +11,8 @@ export interface NodeOperationAgentSpec {
   requiresConfirm?: boolean
   /** 不能直接执行时给模型的原因 */
   reason?: string
+  /** 是否可以通过 generation_propose 携带 operationId 登记生成提案 */
+  generationProposable?: boolean
   /** 必须从菜单里选择一个 item */
   itemRequired?: boolean
   /** 允许的 itemId；省略时不限制 */
@@ -172,46 +174,67 @@ export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> 
   // 需要模型或蒙版交互，面向 Agent 统一走 generation_propose
   'grid-generate': {
     executable: false,
-    reason: '需要选择生成模型，请用 generation_propose 并传入对应操作提示词'
+    generationProposable: true,
+    itemRequired: true,
+    itemOptions: ['multi', 'story'],
+    reason: '需要选择生成模型，请用 generation_propose 并传入 operationId'
   },
   'character-sheet': {
     executable: false,
-    reason: '需要选择生成模型，请用 generation_propose'
+    generationProposable: true,
+    reason: '需要选择生成模型，请用 generation_propose 并传入 operationId'
   },
   'time-shift': {
     executable: false,
-    reason: '需要选择生成模型，请用 generation_propose'
+    generationProposable: true,
+    itemRequired: true,
+    itemOptions: ['after', 'before'],
+    reason: '需要选择生成模型，请用 generation_propose 并传入 operationId'
   },
   'multi-angle': {
     executable: false,
-    reason: '需要选择生成模型，请用 generation_propose'
+    generationProposable: true,
+    itemRequired: true,
+    itemOptions: ['front', 'left', 'right', 'high', 'low', 'back', 'custom'],
+    reason: '需要选择生成模型，请用 generation_propose 并传入 operationId'
   },
   panorama: {
     executable: false,
-    reason: '需要选择生成模型，请用 generation_propose'
+    generationProposable: true,
+    reason: '需要选择生成模型，请用 generation_propose 并传入 operationId'
   },
   'color-grade': {
     executable: false,
-    reason: '需要选择生成模型，请用 generation_propose'
+    generationProposable: true,
+    reason: '需要选择生成模型，请用 generation_propose 并传入 operationId'
   },
   relight: {
     executable: false,
-    reason: '需要选择生成模型，请用 generation_propose'
+    generationProposable: true,
+    itemRequired: true,
+    itemOptions: ['top', 'left', 'right', 'back', 'golden', 'blue', 'custom'],
+    reason: '需要选择生成模型，请用 generation_propose 并传入 operationId'
   },
   portrait: {
     executable: false,
-    reason: '需要选择生成模型，请用 generation_propose'
+    generationProposable: true,
+    itemRequired: true,
+    itemOptions: ['natural', 'standard', 'strong'],
+    reason: '需要选择生成模型，请用 generation_propose 并传入 operationId'
   },
   inpaint: {
     executable: false,
+    generationProposable: false,
     reason: '需要蒙版交互和生成模型，请在界面中使用'
   },
   erase: {
     executable: false,
+    generationProposable: false,
     reason: '需要蒙版交互和生成模型，请在界面中使用'
   },
   'element-edit': {
     executable: false,
+    generationProposable: false,
     reason: '需要蒙版交互和生成模型，请在界面中使用'
   }
 }

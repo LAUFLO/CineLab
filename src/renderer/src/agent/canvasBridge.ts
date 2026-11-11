@@ -21,6 +21,11 @@ import {
   useCanvasStore,
   type CanvasNode
 } from '../stores/canvas'
+import {
+  buildOperationPrompt,
+  operationsForKind,
+  type NodeOperation
+} from '../canvas/nodes/node-operations'
 import { listNodeOperations, executeNodeOperation } from '../canvas/nodes/node-operation-runner'
 import { useFilmStudyStore } from '../stores/film-study'
 import { useStageStore } from '../stage/stageStore'
@@ -233,7 +238,8 @@ function proposalSummary(proposal: AgentProposal): Record<string, unknown> {
     modelKey: proposal.request.modelKey,
     modelName: proposal.modelName,
     count: proposal.count,
-    expiresAt: proposal.expiresAt
+    expiresAt: proposal.expiresAt,
+    ...(proposal.request.op ? { operationId: proposal.request.op } : {})
   }
 }
 
@@ -802,12 +808,54 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
   if (call.name === 'generation_propose') {
     const nodeId = String(call.args.nodeId ?? '')
     const modelKey = String(call.args.modelKey ?? '')
-    const prompt = String(call.args.prompt ?? '').trim()
+    const customPrompt = String(call.args.prompt ?? '').trim()
+    const mask =
+      typeof call.args.mask === 'string' && call.args.mask
+        ? call.args.mask
+        : undefined
+    const operationId =
+      typeof call.args.operationId === 'string'
+        ? call.args.operationId.trim()
+        : ''
+    const itemId =
+      typeof call.args.itemId === 'string' ? call.args.itemId.trim() : ''
     const target = state.nodes.find((node) => node.id === nodeId)
 
     if (!target || target.type !== 'cine') {
       return { ok: false, error: '找不到目标生成节点' }
     }
+
+    let operation: NodeOperation | undefined
+    let operationPrompt = ''
+    if (operationId) {
+      operation = operationsForKind(target.data.kind).find(
+        (entry) => entry.id === operationId
+      )
+      if (!operation) {
+        return {
+          ok: false,
+          error: `当前节点不支持操作：${operationId}`
+        }
+      }
+      const item = itemId
+        ? operation.menu?.find((entry) => entry.id === itemId)
+        : undefined
+      if (itemId && !item) {
+        return {
+          ok: false,
+          error: `操作 ${operationId} 不支持 itemId=${itemId}`
+        }
+      }
+      operationPrompt = buildOperationPrompt(operation, item)
+      if (!operationPrompt) {
+        return {
+          ok: false,
+          error: `操作 ${operationId} 需要具体的 itemId 或提示词`
+        }
+      }
+    }
+
+    const prompt = customPrompt || operationPrompt
     if (!prompt) {
       return { ok: false, error: '提示词不能为空' }
     }
@@ -882,6 +930,24 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
       [...autoRefNodeIds, ...libraryNodeIds],
       libraryRefs
     )
+    if (operationId) {
+      const self = selectedNodeOutput(target)
+      if (
+        self?.kind === 'image' &&
+        collected.refs.length < 3 &&
+        !collected.refs.some(
+          (ref) =>
+            ref.path === self.path &&
+            (ref.scope ?? 'project') === (self.scope ?? 'project')
+        )
+      ) {
+        collected.refs.push({
+          path: self.path,
+          role: 'reference',
+          ...(self.scope ? { scope: self.scope } : {})
+        })
+      }
+    }
     if (
       (explicitRefs.length > 0 || libraryRefs.length > 0) &&
       collected.refs.length === 0 &&
@@ -918,6 +984,8 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
           modelKey: effectiveModelKey,
           prompt,
           params: baseParams,
+          ...(operationId ? { op: operationId } : {}),
+          ...(mask ? { mask } : {}),
           ...(collected.refs.length > 0 ? { refs: collected.refs } : {}),
           ...(collected.video ? { video: collected.video } : {})
         },

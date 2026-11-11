@@ -155,7 +155,21 @@ function assertDraft(draft: AgentProposalDraft): void {
     throw new Error('生成参数格式无效')
   }
   if (request.mask !== undefined) {
-    throw new Error('生成提案暂不支持蒙版编辑')
+    if (
+      typeof request.mask !== 'string' ||
+      !request.mask.startsWith('data:image/png;base64,') ||
+      request.mask.length > 12_000_000
+    ) {
+      throw new Error('蒙版必须是 12MB 以内的 PNG data URL')
+    }
+  }
+  if (
+    request.op !== undefined &&
+    (typeof request.op !== 'string' ||
+      !request.op.trim() ||
+      request.op.length > 100)
+  ) {
+    throw new Error('操作标识无效')
   }
   if (request.videoOptions !== undefined) {
     throw new Error('生成提案暂不支持视频编辑操作')
@@ -242,6 +256,9 @@ async function resolveModel(
   }
   if (request.video && !inputs.includes('video')) {
     throw new Error('该模型不支持参考视频')
+  }
+  if (request.mask && !model.capability.startsWith('image.')) {
+    throw new Error('蒙版编辑只支持图片模型')
   }
 
   const count = proposalCount(model.capability, normalized.params)

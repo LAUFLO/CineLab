@@ -386,7 +386,7 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
     id: 'generation.propose',
     name: 'generation_propose',
     description:
-      '登记一个生成提案，不会立即生成或扣费。用户确认提案后才会提交。目标节点必须是选中节点或本轮新建节点。可用 refNodeIds 引用画布节点，或用 libraryRefs 引用资产库素材；引用素材会自动补建素材节点并连接到目标节点，同时把提示词写回目标节点。未指定参考时自动使用直接上游节点的最新输出。',
+      '登记一个生成提案，不会立即生成或扣费。用户确认提案后才会提交。目标节点必须是选中节点或本轮新建节点。可用 operationId 复用节点工具栏的模型类操作提示词；传 itemId 选择菜单项。也可用 refNodeIds 引用画布节点，或用 libraryRefs 引用资产库素材；引用素材会自动补建素材节点并连接到目标节点，同时把提示词写回目标节点。未指定参考时自动使用直接上游节点的最新输出。',
     profiles: ['canvas'],
     readOnly: false,
     scope: 'generation',
@@ -404,7 +404,22 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
         },
         prompt: {
           type: 'string',
-          description: '生成提示词，最多 8000 个字符'
+          description:
+            '生成提示词，最多 8000 个字符；传 operationId 时可省略，自动使用该操作的提示词'
+        },
+        operationId: {
+          type: 'string',
+          description:
+            '节点工具栏模型类操作 ID，例如 grid-generate、character-sheet、relight；必须来自 canvas_node_operations 且 generationProposable=true'
+        },
+        itemId: {
+          type: 'string',
+          description: '操作菜单项 ID，例如 multi / front / golden，必须来自该操作的 menu'
+        },
+        mask: {
+          type: 'string',
+          description:
+            'PNG data URL 蒙版，仅图片编辑操作使用；透明区域表示需要重绘'
         },
         params: {
           type: 'object',
@@ -451,7 +466,7 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
           description: '负向提示词，可选'
         }
       },
-      required: ['nodeId', 'modelKey', 'prompt'],
+      required: ['nodeId', 'modelKey'],
       additionalProperties: false
     },
     replay: 'safe'
@@ -2009,6 +2024,9 @@ export function assertToolAllowed(
     const nodeId = call.args.nodeId
     const modelKey = call.args.modelKey
     const prompt = call.args.prompt
+    const operationId = call.args.operationId
+    const itemId = call.args.itemId
+    const mask = call.args.mask
 
     if (typeof nodeId !== 'string' || !nodeId.trim()) {
       throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
@@ -2022,15 +2040,81 @@ export function assertToolAllowed(
     ) {
       throw new AgentToolError('invalid_params', 'modelKey 格式无效')
     }
+
+    if (operationId !== undefined) {
+      if (
+        typeof operationId !== 'string' ||
+        !operationId.trim() ||
+        operationId.length > 100
+      ) {
+        throw new AgentToolError('invalid_params', 'operationId 无效')
+      }
+      const spec = nodeOperationAgentSpec(operationId)
+      if (!spec) {
+        throw new AgentToolError(
+          'invalid_params',
+          `未知节点操作：${operationId}`
+        )
+      }
+      if (!spec.generationProposable) {
+        throw new AgentToolError(
+          'unsupported',
+          `${operationId} 不能通过 generation_propose 执行`
+        )
+      }
+      if (spec.itemRequired && typeof itemId !== 'string') {
+        throw new AgentToolError(
+          'invalid_params',
+          `操作 ${operationId} 需要 itemId`
+        )
+      }
+      if (
+        typeof itemId === 'string' &&
+        spec.itemOptions &&
+        !spec.itemOptions.includes(itemId)
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          `操作 ${operationId} 不支持 itemId=${itemId}`
+        )
+      }
+    }
     if (
-      typeof prompt !== 'string' ||
-      !prompt.trim() ||
-      prompt.length > 8000
+      itemId !== undefined &&
+      (typeof itemId !== 'string' || !itemId.trim() || itemId.length > 100)
+    ) {
+      throw new AgentToolError('invalid_params', 'itemId 无效')
+    }
+
+    if (
+      prompt !== undefined &&
+      (typeof prompt !== 'string' || prompt.length > 8000)
     ) {
       throw new AgentToolError(
         'invalid_params',
-        'prompt 不能为空且不能超过 8000 个字符'
+        'prompt 不能超过 8000 个字符'
       )
+    }
+    if (
+      (typeof prompt !== 'string' || !prompt.trim()) &&
+      typeof operationId !== 'string'
+    ) {
+      throw new AgentToolError(
+        'invalid_params',
+        '需要 prompt，或提供 operationId 以复用操作提示词'
+      )
+    }
+    if (mask !== undefined) {
+      if (
+        typeof mask !== 'string' ||
+        !mask.startsWith('data:image/png;base64,') ||
+        mask.length > 12_000_000
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          'mask 必须是 12MB 以内的 PNG data URL'
+        )
+      }
     }
     if (
       call.args.params !== undefined &&

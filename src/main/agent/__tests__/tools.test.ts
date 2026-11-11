@@ -1412,4 +1412,226 @@ describe('agent tool permissions', () => {
     expect(readOnlyNames).toContain('capability_catalog')
     expect(readOnlyNames).not.toContain('canvas_node_operation')
   })
+
+  it('validates stage shot, camera track and background tools', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_shot', {
+          nodeId: 'node-a',
+          cameraId: 'camera-1',
+          durationMs: 3000,
+          aspect: '16:9'
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_shot', {
+          nodeId: 'node-a',
+          cameraId: 'camera-1',
+          durationMs: 50,
+          aspect: '16:9'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_update_shot', {
+          nodeId: 'node-a',
+          shotId: 'shot-1'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_set_camera_track', {
+          nodeId: 'node-a',
+          shotId: 'shot-1',
+          keyframes: [
+            {
+              timeMs: 0,
+              position: [0, 1, 0],
+              target: [0, 1, 0],
+              fov: 50
+            }
+          ]
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_set_camera_track', {
+          nodeId: 'node-a',
+          shotId: 'shot-1',
+          keyframes: [{ timeMs: 0, position: [0, 1], target: [0, 1, 0], fov: 50 }]
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_set_background', {
+          nodeId: 'node-a',
+          kind: 'color',
+          value: '#000000'
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_set_background', {
+          nodeId: 'node-a',
+          kind: 'image',
+          value: 'bg.png'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_update_object', {
+          nodeId: 'node-a',
+          objectId: 'object-1'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+  })
+
+  it('validates film segment updates and subtitle extraction', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_update_segment', {
+          nodeId: 'node-a',
+          segmentId: 'seg-1',
+          patch: { title: '开场' }
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_update_segment', {
+          nodeId: 'node-a',
+          segmentId: 'seg-1',
+          patch: {}
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_update_segment', {
+          nodeId: 'node-a',
+          segmentId: 'seg-1',
+          patch: { unknownField: 'x' }
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_update_segment', {
+          nodeId: 'node-a',
+          segmentId: 'seg-1',
+          patch: { startTime: 5, endTime: 3 }
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_extract_subtitles', { nodeId: 'node-a' }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('film_study_extract_subtitles', {}),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+  })
+
+  it('validates capability search', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('capability_search', { query: '裁剪' }),
+        scope,
+        'read-only'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('capability_search', { query: '' }),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('capability_search', { query: '裁剪', limit: 0 }),
+        scope,
+        'read-only'
+      )
+    ).toThrow(AgentToolError)
+  })
+
+  it('requires confirmation for stage shot and film subtitle changes', () => {
+    expect(
+      toolConfirmationReason(
+        call('stage_remove_shot', {
+          nodeId: 'node-a',
+          shotId: 'shot-1'
+        })
+      )
+    ).toContain('删除导演台镜头')
+    expect(
+      toolConfirmationReason(
+        call('stage_set_camera_track', {
+          nodeId: 'node-a',
+          shotId: 'shot-1',
+          keyframes: []
+        })
+      )
+    ).toContain('机位关键帧')
+    expect(
+      toolConfirmationReason(
+        call('film_study_extract_subtitles', { nodeId: 'node-a' })
+      )
+    ).toContain('提取字幕')
+  })
 })

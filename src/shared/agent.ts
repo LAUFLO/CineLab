@@ -147,6 +147,8 @@ export interface AgentTurnChange {
   timelineUpdated?: boolean
   /** 本轮是否修改了导演台场景 */
   stageUpdated?: boolean
+  /** 本轮是否修改了拉片数据 */
+  filmUpdated?: boolean
 }
 
 export type AgentTurnStatus = 'running' | 'completed' | 'cancelled' | 'error'

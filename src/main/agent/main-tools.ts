@@ -14,6 +14,7 @@ import {
 } from '@shared/stage-schema'
 import { listAllAssets } from '../library/store'
 import { listProviders } from '../settings/store'
+import { AGENT_CAPABILITIES } from './capabilities/registry'
 import { listSkills, readSkill } from './skills'
 
 export interface MainToolResult {
@@ -150,6 +151,36 @@ export async function executeMainTool(
       typeof call.args.kind === 'string' ? call.args.kind : undefined,
       typeof call.args.limit === 'number' ? call.args.limit : 20
     )
+  }
+
+  if (call.name === 'capability_search') {
+    const query = String(call.args.query ?? '').trim().toLowerCase()
+    const limit =
+      typeof call.args.limit === 'number' ? call.args.limit : 10
+    const tokens = query.split(/\s+/).filter(Boolean)
+    const matches = AGENT_CAPABILITIES.filter((item) => {
+      const haystack =
+        `${item.toolName} ${item.id} ${item.description}`.toLowerCase()
+      return tokens.every((token) => haystack.includes(token))
+    })
+
+    return {
+      ok: true,
+      result: {
+        tools: matches.slice(0, Math.max(1, Math.min(30, limit))).map(
+          (item) => ({
+            name: item.toolName,
+            id: item.id,
+            description: item.description,
+            scope: item.scope,
+            readOnly: item.readOnly,
+            confirmation: item.confirmation,
+            profiles: item.profiles
+          })
+        ),
+        total: matches.length
+      }
+    }
   }
 
   if (call.name === 'skill_list') {

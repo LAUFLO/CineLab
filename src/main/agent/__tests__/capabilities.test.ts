@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import type { AgentScope } from '@shared/agent'
 import { AGENT_TOOLS } from '../tools'
+import { executeMainTool } from '../main-tools'
 import {
   AGENT_CAPABILITIES,
   capabilitySummary,
@@ -70,6 +72,22 @@ describe('agent capability registry', () => {
     const summary = capabilitySummary(AGENT_TOOLS)
     expect(summary.find((item) => item.scope === 'canvas')?.count).toBeGreaterThan(0)
     expect(summary.find((item) => item.scope === 'timeline')?.count).toBeGreaterThan(0)
-    expect(summary.find((item) => item.scope === 'film')?.count).toBe(3)
+    expect(summary.find((item) => item.scope === 'film')?.count).toBeGreaterThanOrEqual(5)
+  })
+
+  it('searches capabilities by keyword', async () => {
+    const scope: AgentScope = {
+      projectPath: 'C:/project',
+      canvasId: 'canvas-1',
+      selectedNodeIds: []
+    }
+    const result = await executeMainTool(
+      { callId: 'call-1', name: 'capability_search', args: { query: '拉片' } },
+      scope
+    )
+    expect(result.ok).toBe(true)
+    const tools = (result.result as { tools: Array<{ name: string }> }).tools
+    expect(tools.length).toBeGreaterThan(0)
+    expect(tools.some((tool) => tool.name === 'film_study_get')).toBe(true)
   })
 })

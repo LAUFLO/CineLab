@@ -10,6 +10,7 @@ import {
   type AgentToolDefinition
 } from '@shared/agent-tools'
 import {
+  STAGE_EASINGS,
   STAGE_LIMITS,
   STAGE_OBJECT_TYPES
 } from '@shared/stage-schema'
@@ -610,9 +611,164 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
     replay: 'safe'
   },
   {
-    id: 'stage.exportPreview',
-    name: 'stage_export_preview',
+    id: 'stage.addShot',
+    name: 'stage_add_shot',
     description:
+      '向导演台场景添加一个镜头，绑定已有机位并设置时长和画幅。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        cameraId: { type: 'string', description: '机位 ID，来自 stage_get' },
+        name: { type: 'string', description: '镜头名称；省略时自动命名' },
+        durationMs: {
+          type: 'number',
+          description: '镜头时长毫秒，100-600000'
+        },
+        aspect: { type: 'string', enum: ['16:9', '9:16', '1:1'] }
+      },
+      required: ['nodeId', 'cameraId', 'durationMs', 'aspect'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.updateShot',
+    name: 'stage_update_shot',
+    description:
+      '修改导演台镜头的名称、机位、时长或画幅，支持只传其中一部分。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        shotId: { type: 'string', description: '镜头 ID，来自 stage_get' },
+        name: { type: 'string', description: '镜头名称' },
+        cameraId: { type: 'string', description: '新的机位 ID' },
+        durationMs: { type: 'number', description: '镜头时长毫秒' },
+        aspect: { type: 'string', enum: ['16:9', '9:16', '1:1'] }
+      },
+      required: ['nodeId', 'shotId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.removeShot',
+    name: 'stage_remove_shot',
+    description: '删除导演台的一个镜头及其运镜和动作轨。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        shotId: { type: 'string', description: '镜头 ID' }
+      },
+      required: ['nodeId', 'shotId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
+  },
+  {
+    id: 'stage.setCameraTrack',
+    name: 'stage_set_camera_track',
+    description:
+      '整体替换一个镜头的机位关键帧轨道，用于运镜。关键帧时间单位为毫秒。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        shotId: { type: 'string', description: '镜头 ID' },
+        keyframes: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 60,
+          description: '机位关键帧',
+          items: {
+            type: 'object',
+            properties: {
+              timeMs: { type: 'number', description: '相对镜头起点的毫秒' },
+              position: stageVec3Parameter,
+              target: stageVec3Parameter,
+              fov: { type: 'number', description: '视场角 10-120' },
+              easing: {
+                type: 'string',
+                enum: ['linear', 'ease-in', 'ease-out', 'ease-in-out']
+              }
+            },
+            required: ['timeMs', 'position', 'target', 'fov'],
+            additionalProperties: false
+          }
+        }
+      },
+      required: ['nodeId', 'shotId', 'keyframes'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
+  },
+  {
+    id: 'stage.setBackground',
+    name: 'stage_set_background',
+    description:
+      '设置导演台背景：纯色 color、全景图 panorama 或模型 model。value 为颜色值、项目相对路径或模型标识。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        kind: { type: 'string', enum: ['color', 'panorama', 'model'] },
+        value: { type: 'string', description: '背景值，最多 2000 字符' }
+      },
+      required: ['nodeId', 'kind', 'value'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.updateObject',
+    name: 'stage_update_object',
+    description:
+      '修改导演台对象的姿势、颜色或可见性，支持只传其中一部分。位置/旋转/缩放请用 stage_transform_object。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        objectId: { type: 'string', description: '对象 ID，来自 stage_get' },
+        pose: { type: 'string', description: '姿势预设名称' },
+        color: { type: 'string', description: '十六进制颜色，例如 #60a5fa' },
+        visible: { type: 'boolean', description: '是否可见' }
+      },
+      required: ['nodeId', 'objectId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.exportPreview',
+    name: 'stage_export_preview',    description:
       '把导演台的一个镜头渲染导出为白模预演视频，并自动在画布上创建一个视频节点。shotId 必须来自 stage_get；导出耗时较长，执行前需要用户确认。',
     profiles: ['canvas', 'stage'],
     readOnly: false,
@@ -1188,6 +1344,86 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe'
+  },
+  {
+    id: 'film.studyUpdateSegment',
+    name: 'film_study_update_segment',
+    description:
+      '修改一个拉片段落的字段：标题、时间、类型、结构角色、景别、机位、运镜、光线、画面描述、生成提示词、人声、音乐和备注。只传需要修改的字段。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'film',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: {
+          type: 'string',
+          description: '拉片节点 ID，或作为拉片来源的视频节点 ID'
+        },
+        studyId: {
+          type: 'string',
+          description: '拉片数据 ID，已知时可直接修改'
+        },
+        segmentId: { type: 'string', description: '段落 ID，来自 film_study_get' },
+        patch: {
+          type: 'object',
+          description: '要修改的段落字段，至少提供一个',
+          properties: {
+            title: { type: 'string' },
+            type: { type: 'string' },
+            startTime: { type: 'number' },
+            endTime: { type: 'number' },
+            segmentFunction: { type: 'string' },
+            keyBeats: { type: 'string' },
+            creativeIntent: { type: 'string' },
+            techniques: { type: 'string' },
+            audienceExperience: { type: 'string' },
+            notes: { type: 'string' },
+            primaryLine: { type: 'string' },
+            structureRole: { type: 'string' },
+            shotSize: { type: 'string' },
+            cameraAngle: { type: 'string' },
+            cameraMove: { type: 'string' },
+            lighting: { type: 'string' },
+            visualDescription: { type: 'string' },
+            imagePrompt: { type: 'string' },
+            voiceOver: { type: 'string' },
+            musicCue: { type: 'string' }
+          },
+          additionalProperties: false
+        }
+      },
+      required: ['segmentId', 'patch'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'film.studyExtractSubtitles',
+    name: 'film_study_extract_subtitles',
+    description:
+      '从拉片源视频中提取内嵌字幕并写入拉片数据。需要本地字幕运行时；执行前需要用户确认。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'film',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: {
+          type: 'string',
+          description: '拉片节点 ID，或作为拉片来源的视频节点 ID'
+        },
+        studyId: {
+          type: 'string',
+          description: '拉片数据 ID，已知时可直接提取'
+        }
+      },
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true
   }
 ]
 
@@ -1217,6 +1453,30 @@ export const CAPABILITY_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe'
+  },
+  {
+    id: 'capability.search',
+    name: 'capability_search',
+    description:
+      '按关键词搜索 CineBot 已注册的工具。返回工具名、说明、作用域、只读性和确认级别；不确定工具名时使用。',
+    profiles: ['canvas', 'clip', 'stage', 'film'],
+    readOnly: true,
+    scope: 'project',
+    modes: ['read-only', 'current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: '搜索关键词，例如 裁剪、时间线、拉片、机位'
+        },
+        limit: { type: 'number', description: '返回数量，默认 10，最大 30' }
+      },
+      required: ['query'],
+      additionalProperties: false
+    },
+    replay: 'safe',
+    executor: 'main'
   }
 ]
 
@@ -1359,6 +1619,12 @@ export function toolConfirmationReason(
   if (call.name === 'stage_remove_object') {
     return '将删除导演台对象及其动作轨。'
   }
+  if (call.name === 'stage_remove_shot') {
+    return '将删除导演台镜头及其运镜和动作轨。'
+  }
+  if (call.name === 'stage_set_camera_track') {
+    return '将整体替换镜头的机位关键帧轨道。'
+  }
   if (call.name === 'stage_export_preview') {
     return '将渲染并导出白模预演视频，耗时取决于镜头长度。'
   }
@@ -1370,6 +1636,9 @@ export function toolConfirmationReason(
   }
   if (call.name === 'film_study_auto') {
     return '将执行逐帧拉片并创建或替换分镜输出，耗时较长。'
+  }
+  if (call.name === 'film_study_extract_subtitles') {
+    return '将从源视频提取字幕并覆盖当前拉片字幕，耗时较长。'
   }
   if (
     clipIds.length > 10 &&
@@ -1519,6 +1788,30 @@ export function assertToolAllowed(
     )
     if (paramError) {
       throw new AgentToolError('invalid_params', paramError)
+    }
+  }
+
+  if (call.name === 'capability_search') {
+    if (
+      typeof call.args.query !== 'string' ||
+      !call.args.query.trim() ||
+      call.args.query.length > 100
+    ) {
+      throw new AgentToolError(
+        'invalid_params',
+        'query 必须是非空字符串且不超过 100 字'
+      )
+    }
+    if (call.args.limit !== undefined) {
+      const limit = call.args.limit
+      if (
+        typeof limit !== 'number' ||
+        !Number.isInteger(limit) ||
+        limit < 1 ||
+        limit > 30
+      ) {
+        throw new AgentToolError('invalid_params', 'limit 必须是 1-30 的整数')
+      }
     }
   }
 
@@ -1994,6 +2287,205 @@ export function assertToolAllowed(
         !['16:9', '9:16', '1:1'].includes(String(call.args.aspect))
       ) {
         throw new AgentToolError('invalid_params', 'aspect 无效')
+      }
+    }
+
+    if (call.name === 'stage_add_shot') {
+      if (
+        typeof call.args.cameraId !== 'string' ||
+        !call.args.cameraId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'cameraId 必须是非空字符串')
+      }
+      if (
+        typeof call.args.durationMs !== 'number' ||
+        !Number.isFinite(call.args.durationMs) ||
+        call.args.durationMs < 100 ||
+        call.args.durationMs > 600_000
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          'durationMs 必须在 100-600000 之间'
+        )
+      }
+      if (!['16:9', '9:16', '1:1'].includes(String(call.args.aspect))) {
+        throw new AgentToolError('invalid_params', 'aspect 无效')
+      }
+      if (
+        call.args.name !== undefined &&
+        (typeof call.args.name !== 'string' ||
+          !call.args.name.trim() ||
+          call.args.name.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'name 无效')
+      }
+    }
+
+    if (call.name === 'stage_update_shot') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+      if (
+        call.args.name === undefined &&
+        call.args.cameraId === undefined &&
+        call.args.durationMs === undefined &&
+        call.args.aspect === undefined
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '至少需要 name、cameraId、durationMs 或 aspect'
+        )
+      }
+      if (
+        call.args.name !== undefined &&
+        (typeof call.args.name !== 'string' ||
+          call.args.name.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'name 无效')
+      }
+      if (
+        call.args.cameraId !== undefined &&
+        (typeof call.args.cameraId !== 'string' ||
+          !call.args.cameraId.trim())
+      ) {
+        throw new AgentToolError('invalid_params', 'cameraId 无效')
+      }
+      if (
+        call.args.durationMs !== undefined &&
+        (typeof call.args.durationMs !== 'number' ||
+          !Number.isFinite(call.args.durationMs) ||
+          call.args.durationMs < 100 ||
+          call.args.durationMs > 600_000)
+      ) {
+        throw new AgentToolError('invalid_params', 'durationMs 无效')
+      }
+      if (
+        call.args.aspect !== undefined &&
+        !['16:9', '9:16', '1:1'].includes(String(call.args.aspect))
+      ) {
+        throw new AgentToolError('invalid_params', 'aspect 无效')
+      }
+    }
+
+    if (call.name === 'stage_remove_shot') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+    }
+
+    if (call.name === 'stage_set_camera_track') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+      const keyframes = call.args.keyframes
+      if (
+        !Array.isArray(keyframes) ||
+        keyframes.length < 1 ||
+        keyframes.length > 60
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          'keyframes 需要 1-60 个关键帧'
+        )
+      }
+      for (const frame of keyframes) {
+        if (!frame || typeof frame !== 'object' || Array.isArray(frame)) {
+          throw new AgentToolError('invalid_params', '关键帧格式无效')
+        }
+        const item = frame as Record<string, unknown>
+        if (
+          typeof item.timeMs !== 'number' ||
+          !Number.isFinite(item.timeMs) ||
+          item.timeMs < 0 ||
+          item.timeMs > 600_000
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            '关键帧 timeMs 必须在 0-600000 之间'
+          )
+        }
+        assertStageVec3(item.position, 'position')
+        assertStageVec3(item.target, 'target')
+        if (
+          typeof item.fov !== 'number' ||
+          !Number.isFinite(item.fov) ||
+          item.fov < 10 ||
+          item.fov > 120
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            '关键帧 fov 必须在 10-120 之间'
+          )
+        }
+        if (
+          item.easing !== undefined &&
+          !STAGE_EASINGS.includes(
+            item.easing as (typeof STAGE_EASINGS)[number]
+          )
+        ) {
+          throw new AgentToolError('invalid_params', '关键帧 easing 无效')
+        }
+      }
+    }
+
+    if (call.name === 'stage_set_background') {
+      if (!['color', 'panorama', 'model'].includes(String(call.args.kind))) {
+        throw new AgentToolError('invalid_params', '背景 kind 无效')
+      }
+      if (
+        typeof call.args.value !== 'string' ||
+        !call.args.value.trim() ||
+        call.args.value.length > 2000
+      ) {
+        throw new AgentToolError('invalid_params', '背景 value 无效')
+      }
+    }
+
+    if (call.name === 'stage_update_object') {
+      if (
+        typeof call.args.objectId !== 'string' ||
+        !call.args.objectId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'objectId 必须是非空字符串')
+      }
+      if (
+        call.args.pose === undefined &&
+        call.args.color === undefined &&
+        call.args.visible === undefined
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '至少需要 pose、color 或 visible'
+        )
+      }
+      if (
+        call.args.pose !== undefined &&
+        (typeof call.args.pose !== 'string' ||
+          call.args.pose.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'pose 无效')
+      }
+      if (
+        call.args.color !== undefined &&
+        (typeof call.args.color !== 'string' ||
+          call.args.color.length > 40)
+      ) {
+        throw new AgentToolError('invalid_params', 'color 无效')
+      }
+      if (
+        call.args.visible !== undefined &&
+        typeof call.args.visible !== 'boolean'
+      ) {
+        throw new AgentToolError('invalid_params', 'visible 必须是布尔值')
       }
     }
 
@@ -2532,7 +3024,12 @@ export function assertToolAllowed(
       }
     }
 
-    if (call.name === 'film_study_get' || call.name === 'film_study_export') {
+    if (
+      call.name === 'film_study_get' ||
+      call.name === 'film_study_export' ||
+      call.name === 'film_study_update_segment' ||
+      call.name === 'film_study_extract_subtitles'
+    ) {
       if (!nodeId && !studyId) {
         throw new AgentToolError(
           'invalid_params',
@@ -2590,6 +3087,78 @@ export function assertToolAllowed(
             )
           }
         }
+      }
+    }
+
+    if (call.name === 'film_study_update_segment') {
+      const segmentId = call.args.segmentId
+      if (typeof segmentId !== 'string' || !segmentId.trim()) {
+        throw new AgentToolError('invalid_params', 'segmentId 必须是非空字符串')
+      }
+      const patch = call.args.patch
+      if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+        throw new AgentToolError('invalid_params', 'patch 必须是对象')
+      }
+      const allowed = new Set([
+        'title',
+        'type',
+        'startTime',
+        'endTime',
+        'segmentFunction',
+        'keyBeats',
+        'creativeIntent',
+        'techniques',
+        'audienceExperience',
+        'notes',
+        'primaryLine',
+        'structureRole',
+        'shotSize',
+        'cameraAngle',
+        'cameraMove',
+        'lighting',
+        'visualDescription',
+        'imagePrompt',
+        'voiceOver',
+        'musicCue'
+      ])
+      const entries = Object.entries(patch as Record<string, unknown>)
+      if (entries.length === 0) {
+        throw new AgentToolError('invalid_params', 'patch 不能为空')
+      }
+      for (const [key, value] of entries) {
+        if (!allowed.has(key)) {
+          throw new AgentToolError('invalid_params', `不支持修改 ${key}`)
+        }
+        if (key === 'startTime' || key === 'endTime') {
+          if (
+            typeof value !== 'number' ||
+            !Number.isFinite(value) ||
+            value < 0 ||
+            value > 86_400
+          ) {
+            throw new AgentToolError(
+              'invalid_params',
+              `${key} 必须是 0-86400 的秒数`
+            )
+          }
+        } else if (
+          typeof value !== 'string' ||
+          value.length > 8000
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `${key} 必须是不超过 8000 字符的字符串`
+          )
+        }
+      }
+      const start = (patch as Record<string, unknown>).startTime
+      const end = (patch as Record<string, unknown>).endTime
+      if (
+        typeof start === 'number' &&
+        typeof end === 'number' &&
+        end <= start
+      ) {
+        throw new AgentToolError('invalid_params', 'endTime 必须大于 startTime')
       }
     }
 

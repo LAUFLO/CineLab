@@ -1,11 +1,15 @@
 # CineBot 能力扩展方案
 
 日期：2026-11-10
-状态：**Phase 1 已实施**（`feat/agent-capabilities`）
-关联：`docs/agent-architecture-plan.md`、`docs/agent-full-scope.md`、`docs/agent-plan.md`
-分支：`feat/agent-capabilities`（PR 待创建）
+状态：**Phase 1–4 已实施**
+适用版本：`main` @ `b76a064`
+关联：`docs/agent-architecture-plan.md`、`docs/agent-capabilities.md`、`docs/agent-full-scope.md`、`docs/agent-plan.md`
+
+> 2026-11-11 更新：Phase 1–4 已全部合并入 main。本文件保留分阶段方案和验收记录；当前工具清单以 `docs/agent-capabilities.md` 为准。
 
 ## 1. 结论
+
+> 以下是 2026-11-10 的合并判断，现已按该节奏执行完成。Phase 1–4 均已进入 main。
 
 可以在当前分支继续优化，PR 已打开且 CI 通过，后续提交会自动更新 PR。
 
@@ -294,9 +298,9 @@ capability_catalog
 
 ## 5. 分阶段实施计划
 
-### Phase 1（当前分支可做，小范围补齐）
+### Phase 1（已完成，小范围补齐）
 
-状态：**已实施**（2026-11-10，`feat/agent-capabilities`）。能力清单与实现映射见 `docs/agent-capabilities.md`。
+状态：**已实施**（2026-11-10，已合并入 main）。能力清单与实现映射见 `docs/agent-capabilities.md`。
 
 目标：先补齐 main 新功能里低风险、收益高的缺口。
 
@@ -342,29 +346,20 @@ capability_catalog
 - 3 个蒙版操作仍需界面涂抹。
 - 真实模型烟测：Agnes 3.0 Flash 登记 `character-sheet` 提案成功。
 
-## 6. 合并策略建议
+## 6. 合并记录
 
-### 推荐
+Phase 1–4 已按独立 PR 合并入 main：
 
-1. 当前 PR #2 保持现状，CI 通过。
-2. 只把 Phase 1 中**低风险、小范围**的能力补进当前分支。
-3. 推送后 CI 重跑，合并 PR #2。
-4. Phase 2/3 在新分支 `feat/agent-capabilities` 做，单独 PR。
+| PR | 内容 |
+|---|---|
+| PR #2 | AgentRuntime、CineBot UI、剪辑高级工具、技能 |
+| PR #3 | Phase 1：连线删除、文本正文、时间线画幅/镜头/节拍、导演台机位/预演、拉片最小工具 |
+| PR #4 | Phase 2：节点操作桥、`canvas_node_operations` / `canvas_node_operation`、`capability_catalog` |
+| PR #5 | Phase 3：拉片段落编辑/字幕提取、导演台镜头/运镜/背景、`capability_search` |
+| PR #6 | 真实模型烟测记录 |
+| PR #7 | Phase 4：`generation_propose` 的 operationId / itemId / mask |
 
-原因：
-
-- PR #2 已经包含 33 个提交和一次 main 合并，继续加架构重构会让 review 过重。
-- 节点操作桥和能力注册表是结构性改动，单独 PR 更容易回滚。
-- Phase 1 的小工具可以复用现有命令层，风险低。
-
-### 如果希望全部在当前分支完成
-
-也可以，但建议至少拆成两个 PR 逻辑：
-
-- PR #2：已完成的 Agent/CineBot/技能/剪辑。
-- PR #3：能力注册表 + 节点操作桥 + 拉片/导演台扩展。
-
-不要把所有改动都压进 PR #2。
+后续新增能力继续使用独立分支和 PR，不直接在 main 上开发。
 
 ## 7. 验收标准
 

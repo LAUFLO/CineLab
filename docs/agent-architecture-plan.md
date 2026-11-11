@@ -1,11 +1,47 @@
-# CineLab Agent 架构方案（决策版）
+# CineLab Agent 架构方案（设计 + 实施状态）
 
 日期：2026-11-08
-状态：**已确认，spike 通过；Agnes 文本/图片、本地代理、SSE 流式已验证，视频队列待重试**
+状态：**已实施 Phase 1–4**（2026-11-11，`main` @ `b76a064`）
 范围：Agent 运行时、工具协议、权限、确认、回合事务、会话、上下文、技能、IPC
-关联文档：`docs/agent-full-scope.md`（功能范围）、`docs/agent-plan.md`（剪辑室编排）、`docs/director-stage-plan.md`（导演台）
+关联文档：`docs/agent-capabilities.md`（当前工具清单）、`docs/agent-capability-plan.md`（分阶段记录）、`docs/agent-full-scope.md`、`docs/agent-plan.md`、`docs/director-stage-plan.md`
 
-## 0. 结论
+> 本文件前半部分保留 2026-11-08 的架构设计；实际落地以第 0 节「实施状态」和 `docs/agent-capabilities.md` 为准。
+
+## 0. 实施状态（2026-11-11）
+
+### 已落地
+
+- **运行时**：`src/main/agent/runtime.ts`，自研循环、SSE 流式、工具调用、取消、超时、会话历史。
+- **工具注册**：`src/main/agent/tools.ts`，当前注册 56 个工具；`src/main/agent/capabilities/` 提供能力投影和关键词搜索。
+- **Profile**：`canvas` / `clip` / `film` / `stage`。当前主入口使用 `canvas` 和 `clip`；拉片和导演台能力挂在对应 scope。
+- **工具桥**：`src/renderer/src/agent/canvasBridge.ts`、`timelineBridge.ts`、`stageBridge.ts`、`filmBridge.ts`。
+- **节点操作桥**：`node-operation-runner.ts`，UI 和 Agent 共用；17 个操作可直接执行，8 个模型类操作通过 `generation_propose`，3 个蒙版操作保留 UI。
+- **确认**：`toolConfirmationReason` + `agent:confirm`，删除、覆盖、切分、导出、长任务按要求确认。
+- **回合撤销**：画布 / 时间线 / 场景使用 `turnId` 合并历史；拉片使用 study 快照；`AgentTurnChange` 记录 `timelineUpdated / stageUpdated / filmUpdated`。
+- **会话**：项目内 JSONL；支持历史、压缩、模型切换、技能 pin。
+- **技能**：内置 / 全局 / 项目三级目录，支持 SKILL.md、references、assets、导入导出。
+- **生成提案**：`generation_propose` 两段式，支持 `operationId` / `itemId` / `mask`，确认后提交。
+
+### 当前限制
+
+- 蒙版类节点操作（重绘 / 擦除 / 元素编辑）仍需 UI 涂抹。
+- 真实 tokenizer、动态工具暴露和上下文预算仍是简化实现。
+- 拉片分析包导入仍走界面文件对话框。
+- 导演台对象动作轨和独立灯光实体未开放给 Agent。
+- Agnes 视频队列 503 的真实视频补测仍待完成。
+
+### 验证记录
+
+- `docs/agent-capabilities.md`
+- `.opencode/handover/evidence/AGENT-CAPABILITY-PHASE1.md`
+- `.opencode/handover/evidence/AGENT-NODE-OPERATIONS-PHASE2.md`
+- `.opencode/handover/evidence/AGENT-PHASE3.md`
+- `.opencode/handover/evidence/AGENT-REAL-MODEL-SMOKE-1.md`
+- `.opencode/handover/evidence/AGENT-GENERATION-OPS-1.md`
+
+## 0A. 原始结论（2026-11-08）
+
+> 以下是设计阶段的决策记录，保留作为架构来源；实际实现以第 0 节为准。
 
 本方案先定 8 个决策，5 个待验证点留给 spike。
 

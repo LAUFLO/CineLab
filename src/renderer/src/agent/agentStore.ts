@@ -19,6 +19,7 @@ import {
   type OutputRef
 } from '@shared/canvas-schema'
 import { isStudioNode, useCanvasStore } from '../stores/canvas'
+import { useFilmStudyStore } from '../stores/film-study'
 import { useProjectStore } from '../stores/project'
 import { useStageStore } from '../stage/stageStore'
 import { useStudioStore } from '../stores/studio'
@@ -92,7 +93,7 @@ interface AgentState {
   send: (text: string) => Promise<void>
   cancel: () => Promise<void>
   applyEvent: (event: AgentEvent) => void
-  undoLastTurn: () => void
+  undoLastTurn: () => Promise<void>
   clearError: () => void
 }
 
@@ -113,7 +114,8 @@ export function agentTurnChangeCount(turn: AgentTurn | null): number {
     (change.createdEdgeIds?.length ?? 0) +
     (change.deletedEdgeIds?.length ?? 0) +
     (change.timelineUpdated ? 1 : 0) +
-    (change.stageUpdated ? 1 : 0)
+    (change.stageUpdated ? 1 : 0) +
+    (change.filmUpdated ? 1 : 0)
   )
 }
 
@@ -894,7 +896,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     }
   },
 
-  undoLastTurn: () => {
+  undoLastTurn: async () => {
     const turn = get().lastTurn
     if (!turn || agentTurnChangeCount(turn) === 0) return
 
@@ -909,6 +911,9 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     if (canvasChanges > 0) useCanvasStore.getState().undo()
     if (change.timelineUpdated) useTimelineStore.getState().undo()
     if (change.stageUpdated) useStageStore.getState().undo()
+    const filmUndone = change.filmUpdated
+      ? await useFilmStudyStore.getState().undoFilmTurn(turn.id)
+      : false
 
     set((state) => ({
       lastTurn: null,
@@ -917,9 +922,14 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         {
           id: nextMessageId(),
           role: 'assistant',
-          content: change.timelineUpdated || change.stageUpdated
-            ? '已撤销本轮修改。'
-            : '已撤销本轮画布修改。'
+          content:
+            change.filmUpdated && !filmUndone
+              ? '已撤销画布/时间线/场景修改；拉片修改没有可恢复的快照。'
+              : change.timelineUpdated ||
+                  change.stageUpdated ||
+                  change.filmUpdated
+                ? '已撤销本轮修改。'
+                : '已撤销本轮画布修改。'
         }
       ]
     }))

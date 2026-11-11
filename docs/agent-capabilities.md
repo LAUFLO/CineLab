@@ -45,11 +45,19 @@ Phase 1 的所有写操作都走命令层，UI 和 Agent 共用执行器。
 | 工具 | 能力 ID | 只读 | 确认 | 回合撤销 |
 |---|---|---|---|---|
 | `stage_transform_camera` | `stage.transformCamera` | 否 | 否 | 场景历史 |
+| `stage_add_shot` | `stage.addShot` | 否 | 否 | 场景历史 |
+| `stage_update_shot` | `stage.updateShot` | 否 | 否 | 场景历史 |
+| `stage_remove_shot` | `stage.removeShot` | 否 | 是 | 场景历史 |
+| `stage_set_camera_track` | `stage.setCameraTrack` | 否 | 是 | 场景历史 |
+| `stage_set_background` | `stage.setBackground` | 否 | 否 | 场景历史 |
+| `stage_update_object` | `stage.updateObject` | 否 | 否 | 场景历史 |
 | `stage_export_preview` | `stage.exportPreview` | 否 | 是 | 画布历史（导出节点） |
 
 实现说明：
 
 - 机位变换复用 `StageCommand.updateCamera`，UI 检查器同源。
+- 镜头增删改、机位关键帧、背景分别复用 `StageCommand.addShot / updateShot / removeShot / setCameraTrack / setBackground`。
+- 对象姿势、颜色和可见性复用 `StageCommand.setPose / setColor / setVisible`。
 - 导出白模预演复用 `src/renderer/src/stage/preview-runner.ts`，UI 的 StageWindow 和 Agent 同源。
 - Agent 写场景前会自动打开导演台，确保修改可见并进入场景撤销历史。
 - 同一轮场景命令通过 `turnId` 合并为一条撤销记录；本轮撤销时 `agentStore.undoLastTurn` 会同时回退画布与场景。
@@ -63,6 +71,8 @@ Phase 1 的所有写操作都走命令层，UI 和 Agent 共用执行器。
 |---|---|---|---|---|
 | `film_study_get` | `film.studyGet` | 是 | 否 | 不适用 |
 | `film_study_auto` | `film.studyAuto` | 否 | 是 | 画布历史（拉片节点 + 输出节点） |
+| `film_study_update_segment` | `film.studyUpdateSegment` | 否 | 否 | 拉片快照 + 时间线式撤销提示 |
+| `film_study_extract_subtitles` | `film.studyExtractSubtitles` | 否 | 是 | 拉片快照 |
 | `film_study_export` | `film.studyExport` | 否 | 否（保存对话框确认） | 不适用 |
 
 实现说明：
@@ -70,12 +80,17 @@ Phase 1 的所有写操作都走命令层，UI 和 Agent 共用执行器。
 - `nodeId` 可以是拉片节点，也可以是它上游的视频节点；`studyId` 可直接指定。
 - `film_study_auto` 复用 `src/renderer/src/canvas/nodes/film-study-runner.ts` 创建拉片节点，并复用 `useFilmStudyStore.runAuto` 执行自动拉片。
 - 拉片期间创建的拉片节点、分镜组、分镜表、动态切片和 BGM 节点通过 `beginToolTurn` 合并为一条画布撤销记录。
+- `film_study_update_segment` 可修改标题、时间、类型、结构角色、景别、机位、运镜、光线、画面描述、提示词、人声、音乐和备注；修改前把整份 study 快照存入 `useFilmStudyStore.rememberFilmTurn`，本轮撤销时恢复。
+- `film_study_extract_subtitles` 调用本地字幕运行时提取内嵌字幕；执行前确认，修改同样进入拉片快照。
 - 输出选项：`storyboard / sheet / motion / music`，默认生成分镜组和分镜表。
 - 导出格式：`markdown / analysis / bundle`，使用原生保存对话框，用户可取消。
 
 ## 5. 测试覆盖
 
 - `src/shared/__tests__/canvas-commands.test.ts`：`updateText`、非文本节点拒绝、`removeEdge`。
+- `src/shared/__tests__/stage-commands.test.ts`：镜头增删改、机位关键帧、背景、预览效果。
+- `src/shared/__tests__/node-operation-specs.test.ts`：节点操作参数和可执行性。
+- `src/main/agent/__tests__/capabilities.test.ts`：能力注册表投影和能力搜索。
 - `src/main/agent/__tests__/tools.test.ts`：新工具的参数校验、只读过滤、确认规则、时间线写工具标记。
 - 现有 `timeline-tools.test.ts` 覆盖镜头切分和节拍计划生成。
 
@@ -99,6 +114,7 @@ Phase 1 的所有写操作都走命令层，UI 和 Agent 共用执行器。
 | 工具 | 能力 ID | 只读 | 说明 |
 |---|---|---|---|
 | `capability_catalog` | `capability.catalog` | 是 | 返回当前空间、可用工具、选中节点操作、时间线摘要、导演台镜头、拉片摘要 |
+| `capability_search` | `capability.search` | 是 | 按关键词搜索已注册工具，返回名称、说明、作用域、只读性和确认级别 |
 
 `canvas_get` 的 `selectedNodes` 现在额外返回 `availableOperations`。
 

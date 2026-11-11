@@ -55,6 +55,12 @@ const TOOL_LABELS: Record<string, string> = {
   stage_transform_object: '移动场景对象',
   stage_add_camera: '添加机位',
   stage_transform_camera: '调整机位',
+  stage_add_shot: '添加镜头',
+  stage_update_shot: '修改镜头',
+  stage_remove_shot: '删除镜头',
+  stage_set_camera_track: '设置运镜',
+  stage_set_background: '设置背景',
+  stage_update_object: '调整场景对象',
   stage_export_preview: '导出白模预演',
   stage_set_active_camera: '切换机位',
   stage_remove_object: '删除场景对象',
@@ -77,7 +83,10 @@ const TOOL_LABELS: Record<string, string> = {
   timeline_export: '导出成片',
   film_study_get: '读取拉片',
   film_study_auto: '逐帧拉片',
+  film_study_update_segment: '修改拉片段落',
+  film_study_extract_subtitles: '提取拉片字幕',
   film_study_export: '导出拉片',
+  capability_search: '搜索能力',
   skill_list: '查看技能',
   skill_read: '读取技能'
 }

@@ -23,6 +23,7 @@
 | 项目概览 | `.opencode/handover/project_summary.md` |
 | 验证证据 | `.opencode/handover/evidence/` |
 | 文档索引 | `docs/README.md` |
+| 分支规范 | `docs/branch-policy.md` |
 | 界面规格 | `docs/ui-spec.md` |
 | 技术架构 | `docs/architecture.md` |
 | 模型配置 | `models.json`（用户数据目录） |

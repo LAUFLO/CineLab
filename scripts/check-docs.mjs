@@ -10,6 +10,7 @@ const CURRENT_DOCS = [
   'docs/ui-spec.md',
   'docs/models.md',
   'docs/roadmap-plan.md',
+  'docs/branch-policy.md',
   'docs/agent-architecture-plan.md',
   'docs/agent-capabilities.md',
   'docs/agent-capability-plan.md',

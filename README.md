@@ -202,7 +202,7 @@ src/
 
 ## 贡献
 
-项目仍在快速迭代中，欢迎提 Issue 和 PR。提交 PR 前建议先开 Issue 对齐方案。
+项目仍在快速迭代中，欢迎提 Issue 和 PR。提交 PR 前建议先开 Issue 对齐方案，并遵守 [分支规范](docs/branch-policy.md)。
 
 ## 协议
 

@@ -1,13 +1,13 @@
 {
-  "version": 72,
+  "version": 73,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-11T16:10:00.000Z",
+  "updatedAt": "2026-11-11T14:20:00.000Z",
   "phase": "AGENT",
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
-  "next_focus": "Phase 3 已在 feat/agent-phase3 完成：拉片段落编辑与快照撤销、字幕提取、导演台镜头/运镜/背景/对象属性、capability_search。下一步：提交分支、创建 PR、CI 通过后合并；后续再做拉片分析包导入、对象动作轨、真实 tokenizer/动态工具暴露和 Agnes 视频补测。",
+  "next_focus": "PR #5 已合并，Phase 1-3 能力进入 main。真实模型烟测（Agnes 3.0 Flash）已通过：canvas_node_operations→crop、capability_search、stage_get→add_camera→add_shot、film_study_get→update_segment，以及拉片段落撤销。下一步：补测确认卡/长任务/剩余拉片工具，然后进入 Phase 4 生成提案接入。",
   "frontier": [
     {
       "id": "M2-1",
@@ -520,6 +520,15 @@
         "docs/agent-capabilities.md",
         "src/shared/__tests__/stage-commands.test.ts",
         "src/main/agent/__tests__/tools.test.ts"
+      ]
+    },
+    {
+      "id": "AGENT-REAL-MODEL-SMOKE-1",
+      "title": "真实模型端到端烟测：节点操作、能力搜索、导演台镜头、拉片段落与撤销",
+      "status": "done",
+      "note": "2026-11-11 完成。使用 Agnes 3.0 Flash 真实模型和临时项目跑通：canvas_node_operations→canvas_node_operation(crop 1:1)、capability_search、stage_get→stage_add_camera→stage_add_shot、film_study_get→film_study_update_segment，并验证 undoLastTurn 恢复拉片段落。测试后已删除临时项目并把应用恢复到原项目。",
+      "evidence": [
+        ".opencode/handover/evidence/AGENT-REAL-MODEL-SMOKE-1.md"
       ]
     },
     {

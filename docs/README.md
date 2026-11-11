@@ -1,6 +1,7 @@
 # CineLab 文档索引
 
 日期：2026-11-11
+状态：现行
 适用版本：`main` @ `b76a064`
 
 > 本索引用于区分“现行系统文档”和“历史方案”。未列入现行文档的旧方案默认只作为设计参考，不再代表当前实现。
@@ -12,7 +13,7 @@
 | [README](../README.md) | 产品介绍、功能、技术栈、快速开始、路线图 | 2026-11-11 |
 | [architecture.md](architecture.md) | 主进程架构、项目文件格式、Provider、IPC、存储 | 2026-11-11 |
 | [ui-spec.md](ui-spec.md) | 布局、节点、Prompt Bar、工具栏、主题、CineBot/剪辑/导演台/拉片 | 2026-11-11 |
-| [models.md](models.md) | `models.json` 格式与 Provider 配置 | 2026-11-08 |
+| [models.md](models.md) | `models.json` 格式与 Provider 配置 | 2026-11-11 |
 | [agent-architecture-plan.md](agent-architecture-plan.md) | AgentRuntime 设计 + Phase 1–4 实施状态 | 2026-11-11 |
 | [agent-capabilities.md](agent-capabilities.md) | CineBot 当前工具、参数、确认和撤销 | 2026-11-11 |
 | [roadmap-plan.md](roadmap-plan.md) | 当前状态与剩余 backlog | 2026-11-11 |
@@ -76,3 +77,4 @@
 2. 已实施方案不再改设计细节，只补“实施记录”和 evidence。
 3. 现行系统文档（README / architecture / ui-spec / models / agent-capabilities / roadmap）每次功能合并后同步更新。
 4. 不确定是否仍有效的旧文档，移到“历史与参考”，不要继续写成待实施。
+5. 修改文档后执行 `corepack pnpm check:docs`，检查状态头、相对链接、索引收录和 Agent 工具清单；CI 也会执行。

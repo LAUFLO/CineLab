@@ -332,6 +332,16 @@ capability_catalog
 - 能力搜索：`capability_search`。
 - 真实 tokenizer / 动态上下文预算、Agnes 视频补测仍留后续。
 
+### Phase 4（已实施，`feat/agent-generation-ops`）
+
+状态：**已实施**（2026-11-11）。详见 `docs/agent-generation-operations-plan.md`。
+
+- `generation_propose` 新增 `operationId` / `itemId` / `mask`。
+- 8 个模型类节点操作标记 `generationProposable`，自动复用操作提示词。
+- 目标节点当前图片自动作为 reference，写入 `request.op`。
+- 3 个蒙版操作仍需界面涂抹。
+- 真实模型烟测：Agnes 3.0 Flash 登记 `character-sheet` 提案成功。
+
 ## 6. 合并策略建议
 
 ### 推荐

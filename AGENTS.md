@@ -46,6 +46,7 @@
 | CineBot 能力清单 | `docs/agent-capabilities.md` |
 | 节点操作桥方案 | `docs/node-operation-bridge-plan.md` |
 | CineBot Phase 3 方案 | `docs/agent-phase3-plan.md` |
+| CineBot Phase 4 方案 | `docs/agent-generation-operations-plan.md` |
 | 剪辑室计划 | `docs/clip-studio-plan.md` |
 | 拉片室计划 | `docs/film-study-plan.md` |
 | 剪辑助手计划 | `docs/agent-plan.md` |

@@ -17,6 +17,7 @@
 | [agent-architecture-plan.md](agent-architecture-plan.md) | AgentRuntime 设计 + Phase 1–4 实施状态 | 2026-11-11 |
 | [agent-capabilities.md](agent-capabilities.md) | CineBot 当前工具、参数、确认和撤销 | 2026-11-11 |
 | [roadmap-plan.md](roadmap-plan.md) | 当前状态与剩余 backlog | 2026-11-11 |
+| [branch-policy.md](branch-policy.md) | 分支类型、main 保护、PR 与清理流程 | 2026-11-12 |
 
 ## 2. 已实施功能方案
 

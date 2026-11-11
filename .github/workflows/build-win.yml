@@ -25,6 +25,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm check:encryption
+      - run: pnpm check:docs
       - run: pnpm build
 
       - run: pnpm exec electron-builder --win --publish never

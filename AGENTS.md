@@ -60,6 +60,7 @@ corepack pnpm dev:isolated # 独立测试实例：自动分配 CDP 端口和临�
 corepack pnpm typecheck    # 主进程 + 渲染进程类型检查
 corepack pnpm test         # Vitest 单元测试
 corepack pnpm check:encryption # 检查透明加密文件与 Git blob 是否为明文
+corepack pnpm check:docs   # 检查文档状态、链接、索引和 Agent 工具清单
 corepack pnpm build        # 构建
 corepack pnpm dist:win     # 打包 Windows 安装包
 ```

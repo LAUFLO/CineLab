@@ -3,6 +3,7 @@
 日期：2026-11-11
 状态：**已实施**
 分支：`feat/agent-generation-ops`
+适用版本：`main` @ `b76a064`
 关联：`docs/node-operation-bridge-plan.md`、`docs/agent-capabilities.md`
 
 ## 1. 目标

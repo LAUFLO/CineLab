@@ -3,6 +3,7 @@
 日期：2026-11-10
 状态：**已实施**
 分支：`feat/node-operation-bridge`
+适用版本：`main` @ `b76a064`
 关联：`docs/agent-capability-plan.md`、`docs/agent-capabilities.md`
 
 ## 1. 目标

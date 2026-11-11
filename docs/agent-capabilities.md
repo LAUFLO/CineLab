@@ -9,6 +9,32 @@
 本文件记录已开放给 CineBot 的能力、参数校验、确认规则和回合撤销方式。
 所有写操作都走命令层；UI 和 Agent 共用执行器。
 
+## 0. 全部工具索引
+
+### 画布（12）
+
+`canvas_get`、`canvas_update_title`、`canvas_update_text`、`canvas_move_node`、`canvas_add_node`、`canvas_connect`、`canvas_remove_edge`、`canvas_delete_node`、`canvas_group`、`canvas_ungroup`、`canvas_node_operations`、`canvas_node_operation`
+
+### 生成与资产（3）
+
+`generation_catalog`、`generation_propose`、`library_search`
+
+### 导演台（15）
+
+`stage_get`、`stage_capabilities`、`stage_add_object`、`stage_transform_object`、`stage_add_camera`、`stage_transform_camera`、`stage_add_shot`、`stage_update_shot`、`stage_remove_shot`、`stage_set_camera_track`、`stage_set_background`、`stage_update_object`、`stage_export_preview`、`stage_set_active_camera`、`stage_remove_object`
+
+### 剪辑室（17）
+
+`timeline_get`、`timeline_select_clips`、`timeline_set_video`、`timeline_move_clips`、`timeline_trim_clip`、`timeline_split_clips`、`timeline_split_by_shots`、`timeline_beat_markers`、`timeline_beat_split`、`timeline_remove_clips`、`timeline_update_clip`、`timeline_set_track`、`timeline_add_marker`、`timeline_auto_subtitles`、`timeline_remove_silence`、`timeline_set_transition`、`timeline_export`
+
+### 拉片（5）
+
+`film_study_get`、`film_study_auto`、`film_study_update_segment`、`film_study_extract_subtitles`、`film_study_export`
+
+### 能力与技能（4）
+
+`capability_catalog`、`capability_search`、`skill_list`、`skill_read`
+
 ## 1. 画布
 
 | 工具 | 能力 ID | 只读 | 确认 | 回合撤销 | 共用执行器 |

@@ -3,6 +3,7 @@
 日期：2026-11-11
 状态：**已实施**
 分支：`feat/agent-phase3`
+适用版本：`main` @ `b76a064`
 关联：`docs/agent-capability-plan.md`、`docs/agent-capabilities.md`、`docs/node-operation-bridge-plan.md`
 
 ## 1. 范围

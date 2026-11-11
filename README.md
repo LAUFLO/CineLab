@@ -132,6 +132,7 @@ corepack pnpm test             # Vitest 单元测试
 corepack pnpm build            # 生产构建
 corepack pnpm dist:win         # 打包 Windows 安装包
 corepack pnpm check:encryption # 检查透明加密文件与 Git blob 是否为明文
+corepack pnpm check:docs       # 检查文档状态、链接、索引和 Agent 工具清单
 corepack pnpm models:check     # 校验 models.json
 ```
 

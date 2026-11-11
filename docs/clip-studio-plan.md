@@ -1,10 +1,22 @@
 # 剪辑室与 AI 智能剪辑方案
 
-> 状态：方案评审中（节点形态已定稿 2026-11-07）
+> 状态：**已实施**（2026-11-11 合并入 main）
 > 日期：2026-11-07
-> 更新：2026-11-07 定稿剪辑室 / 成片双节点、保存与生成分离、本地字幕组件、节点工具栏瘦身
-> 关联：`src/shared/canvas-schema.ts`、`src/renderer/src/stores/canvas.ts`、`src/main/media/ffmpeg.ts`、`src/main/export/`、`src/main/components/`
+> 适用版本：`main` @ `b76a064`
+> 关联：`src/shared/timeline-*.ts`、`src/renderer/src/studio/`、`src/main/timeline/`、`src/main/ipc/timeline.ts`
 > 调研：[openfilm/openfilm](https://github.com/openfilm/openfilm)（MIT）、[jub0t/Concat](https://github.com/jub0t/Concat)（AGPL-3.0）
+
+> 2026-11-11 更新：剪辑室已进入 main。当前能力以 `docs/agent-capabilities.md` 和 `docs/ui-spec.md` 第 15 节为准；本文保留原始设计。
+
+## 当前实现摘要
+
+- 多轨时间线：视频、音频、字幕轨；片段支持视频、图片、音频、文本。
+- 编辑：拖拽、裁剪、切分、删除、吸附、速度、音量、静音、透明度、淡入淡出、转场、关键帧。
+- 自动粗剪：删静音、按镜头切分、节拍标记、节拍切分。
+- 自动字幕：本地 Whisper 运行时，生成字幕片段。
+- 导出：ffmpeg 渲染，写回画布剪辑室节点。
+- Agent：`clip` profile 下 17 个时间线工具，UI 和 Agent 共用 `timeline-plan-runner`。
+- 同一轮 Agent 修改通过 `turnId` 合并为一条时间线撤销记录。
 
 ## 1. 背景与结论
 

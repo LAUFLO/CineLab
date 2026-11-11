@@ -1634,4 +1634,69 @@ describe('agent tool permissions', () => {
       )
     ).toContain('提取字幕')
   })
+
+  it('supports generation proposals from node operations', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          nodeId: 'node-a',
+          modelKey: 'provider/model',
+          operationId: 'grid-generate',
+          itemId: 'multi'
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          nodeId: 'node-a',
+          modelKey: 'provider/model',
+          operationId: 'grid-generate'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          nodeId: 'node-a',
+          modelKey: 'provider/model',
+          operationId: 'unknown-operation',
+          itemId: 'multi'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          nodeId: 'node-a',
+          modelKey: 'provider/model',
+          operationId: 'inpaint'
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          nodeId: 'node-a',
+          modelKey: 'provider/model',
+          prompt: '局部重绘',
+          mask: 'data:image/png;base64,AAAA'
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
 })

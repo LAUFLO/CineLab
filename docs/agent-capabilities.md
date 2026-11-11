@@ -106,10 +106,21 @@ Phase 1 的所有写操作都走命令层，UI 和 Agent 共用执行器。
 - `src/shared/node-operation-specs.ts` 声明每个操作是否 Agent 可执行、需要的 itemId、参数和确认规则。
 - `src/renderer/src/canvas/nodes/node-operation-runner.ts` 是 UI 和 Agent 共用的执行器；UI 传入 dialog host，Agent 不传。
 - Agent 可直接执行 17 个操作：宫格切分、裁剪、深度动作捕捉、片段截取、分离音视频、抽帧、逐帧拉片、画面裁切、去字幕、图层分离、视频抠像、主体消除、扩图、抠图、片段重拍、元素替换、智能续写。
-- 需要模型或蒙版交互的 11 个操作显式标记 `agentExecutable: false`，提示词仍会通过 `canvas_node_operations` 返回，Agent 改用 `generation_propose`。
+- 需要模型或蒙版交互的 11 个操作显式标记 `agentExecutable: false`，提示词仍会通过 `canvas_node_operations` 返回。
+- 其中 8 个模型类操作标记 `generationProposable: true`，Agent 用 `generation_propose` 传 `operationId` / `itemId` 自动复用提示词；3 个蒙版操作仍需界面涂抹。
 - 新增节点操作只需要改 `node-operations.ts`、`node-operation-specs.ts` 和 `node-operation-runner.ts`，不需要新增工具。
 
-## 7. 能力目录
+## 7. 生成提案扩展
+
+`generation_propose` 新增：
+
+- `operationId`：复用节点操作提示词，例如 `character-sheet`、`grid-generate`
+- `itemId`：选择操作菜单项
+- `mask`：PNG data URL 蒙版，仅图片编辑模型
+
+传 `operationId` 时，目标节点当前图片会自动作为 reference，并写入 `request.op`。
+
+## 8. 能力目录
 
 | 工具 | 能力 ID | 只读 | 说明 |
 |---|---|---|---|
@@ -118,7 +129,7 @@ Phase 1 的所有写操作都走命令层，UI 和 Agent 共用执行器。
 
 `canvas_get` 的 `selectedNodes` 现在额外返回 `availableOperations`。
 
-## 8. 已知限制
+## 9. 已知限制
 
 - 场景撤销依赖导演台处于打开状态；Agent 写场景会自动打开导演台，手动关闭后再次撤销会作用到当前场景。
 - 拉片导出和场景导出的本地文件不会随画布撤销删除。

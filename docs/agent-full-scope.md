@@ -1,9 +1,11 @@
 # CineLab Agent 助手完整功能范围
 
 日期：2026-11-08
-状态：范围草案，待确认
-范围：画布、剪辑室、拉片室、导演台四个创作空间的 Agent 助手完整版
-关联文档：`docs/agent-plan.md`（剪辑室智能编排）、`docs/clip-studio-plan.md`、`docs/director-stage-plan.md`、`docs/film-study-plan.md`
+状态：范围已确认；Phase 1–4 已实施，完整版剩余项见 `docs/roadmap-plan.md`
+适用范围：画布、剪辑室、导演台、拉片四个创作空间
+关联文档：`docs/agent-capabilities.md`（当前工具）、`docs/agent-capability-plan.md`（阶段记录）、`docs/agent-plan.md`、`docs/clip-studio-plan.md`、`docs/director-stage-plan.md`、`docs/film-study-plan.md`
+
+> 2026-11-11 更新：本文保留完整版范围总表。当前已落地画布、剪辑、导演台、拉片的工具和节点操作桥；“拉片室”已降级为分镜表的高级编辑，不再是主入口。未完成项以 `docs/roadmap-plan.md` 为准。
 
 ## 0. 结论
 

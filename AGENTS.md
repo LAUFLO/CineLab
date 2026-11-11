@@ -22,6 +22,7 @@
 | 接续包 | `.opencode/handover/boot-packet.md` |
 | 项目概览 | `.opencode/handover/project_summary.md` |
 | 验证证据 | `.opencode/handover/evidence/` |
+| 文档索引 | `docs/README.md` |
 | 界面规格 | `docs/ui-spec.md` |
 | 技术架构 | `docs/architecture.md` |
 | 模型配置 | `models.json`（用户数据目录） |
@@ -48,7 +49,7 @@
 | CineBot Phase 3 方案 | `docs/agent-phase3-plan.md` |
 | CineBot Phase 4 方案 | `docs/agent-generation-operations-plan.md` |
 | 剪辑室计划 | `docs/clip-studio-plan.md` |
-| 拉片室计划 | `docs/film-study-plan.md` |
+| 逐帧拉片方案 | `docs/film-study-plan.md` |
 | 剪辑助手计划 | `docs/agent-plan.md` |
 
 ## 开发命令
@@ -57,6 +58,7 @@
 corepack pnpm dev          # 启动 Electron + Vite
 corepack pnpm dev:isolated # 独立测试实例：自动分配 CDP 端口和临时 userData
 corepack pnpm typecheck    # 主进程 + 渲染进程类型检查
+corepack pnpm test         # Vitest 单元测试
 corepack pnpm check:encryption # 检查透明加密文件与 Git blob 是否为明文
 corepack pnpm build        # 构建
 corepack pnpm dist:win     # 打包 Windows 安装包

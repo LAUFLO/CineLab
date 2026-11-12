@@ -51,6 +51,37 @@ const RECT_PARAM: NodeOperationParamSpec = {
   description: '原图像素坐标：{ x, y, width, height }'
 }
 
+export type NodeOperationOutputTarget = 'version' | 'new-node'
+
+/**
+ * 派生新素材、需要新建节点并连线的操作。
+ * UI 工具栏和 CineBot 生成提案共用这份清单。
+ */
+const NEW_NODE_OPERATION_IDS = new Set([
+  'crop',
+  'grid-generate',
+  'character-sheet',
+  'time-shift',
+  'multi-angle',
+  'panorama',
+  'outpaint',
+  'cutout',
+  'clip-trim',
+  'video-crop',
+  'subtitle',
+  'shot-retake',
+  'element-replace',
+  'extend'
+])
+
+export function nodeOperationOutputTarget(
+  operationId: string | undefined
+): NodeOperationOutputTarget {
+  return operationId && NEW_NODE_OPERATION_IDS.has(operationId)
+    ? 'new-node'
+    : 'version'
+}
+
 export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> = {
   'grid-split': {
     executable: true,

@@ -99,6 +99,7 @@ export interface NodeOperationSummary {
   generationProposable: boolean
   requiresConfirm: boolean
   requires?: NodeOperation['requires']
+  outputTarget?: 'version' | 'new-node'
   reason?: string
   hint?: string
   menu?: OperationMenuItem[]
@@ -172,6 +173,7 @@ export function listNodeOperations(
           op.implemented === true && spec?.generationProposable === true,
         requiresConfirm: spec?.requiresConfirm === true,
         ...(op.requires ? { requires: op.requires } : {}),
+        ...(op.outputTarget ? { outputTarget: op.outputTarget } : {}),
         ...(reason
           ? { reason }
           : spec?.reason
@@ -225,12 +227,6 @@ function originFor(node: CanvasNode): { x: number; y: number } {
   const state = useCanvasStore.getState()
   const base = absolutePosition(node, state.nodes)
   return { x: base.x + nodeSize(node).width + 48, y: base.y }
-}
-
-function markRunning(nodeId: string): void {
-  useCanvasStore
-    .getState()
-    .patchNodeData(nodeId, { status: 'running', error: undefined })
 }
 
 function markFailed(nodeId: string, error: unknown): void {
@@ -454,8 +450,16 @@ async function executeCrop(
     }
   }
 
+  const targetTitle = rect ? '自由裁剪' : item?.label ?? '裁剪'
+  const pendingId = useCanvasStore.getState().addPendingNodes(
+    'image',
+    originFor(node),
+    1,
+    `${node.data.title} · ${targetTitle}`,
+    node.id
+  )[0]
+
   host?.setRunning?.(true)
-  markRunning(node.id)
   consumeToast(host, rect ? '正在裁剪…' : `正在裁剪为 ${item?.label}…`)
 
   try {
@@ -467,7 +471,7 @@ async function executeCrop(
         })
     useCanvasStore
       .getState()
-      .applyOutput(node.id, result.asset, rect ? 'crop-free' : 'crop')
+      .applyOutput(pendingId, result.asset, rect ? 'crop-free' : 'crop')
     consumeToast(
       host,
       `裁剪完成：${result.asset.width ?? 0} × ${result.asset.height ?? 0}`
@@ -475,13 +479,14 @@ async function executeCrop(
     return {
       ok: true,
       result: {
+        createdNodeId: pendingId,
         outputId: result.asset.id,
         width: result.asset.width ?? null,
         height: result.asset.height ?? null
       }
     }
   } catch (error) {
-    markFailed(node.id, error)
+    markFailed(pendingId, error)
     const message = errorMessage(error, '裁剪失败')
     host?.toast(message, 'error')
     return { ok: false, error: message }
@@ -503,15 +508,24 @@ async function executeVideoCrop(
     return { ok: false, error: '当前已是原比例，无需裁切' }
   }
 
+  const pendingId = useCanvasStore.getState().addPendingNodes(
+    'video',
+    originFor(node),
+    1,
+    `${node.data.title} · 裁切 ${item.label}`,
+    node.id
+  )[0]
+
   host?.setRunning?.(true)
-  markRunning(node.id)
   consumeToast(host, `正在裁切为 ${item.label}…`)
   try {
     const result = await window.api.media.cropVideo({
       path: output.path,
       ratio: item.id
     })
-    useCanvasStore.getState().applyOutput(node.id, result.asset, 'video-crop')
+    useCanvasStore
+      .getState()
+      .applyOutput(pendingId, result.asset, 'video-crop')
     consumeToast(
       host,
       `裁切完成：${result.asset.width ?? 0} × ${result.asset.height ?? 0}`
@@ -519,13 +533,14 @@ async function executeVideoCrop(
     return {
       ok: true,
       result: {
+        createdNodeId: pendingId,
         outputId: result.asset.id,
         width: result.asset.width ?? null,
         height: result.asset.height ?? null
       }
     }
   } catch (error) {
-    markFailed(node.id, error)
+    markFailed(pendingId, error)
     const message = errorMessage(error, '画面裁切失败')
     host?.toast(message, 'error')
     return { ok: false, error: message }
@@ -696,8 +711,15 @@ async function executeTrim(
     return { ok: false, error: '结束时间必须大于开始时间' }
   }
 
+  const pendingId = useCanvasStore.getState().addPendingNodes(
+    'video',
+    originFor(node),
+    1,
+    `${node.data.title} · 截取`,
+    node.id
+  )[0]
+
   host?.setRunning?.(true)
-  markRunning(node.id)
   consumeToast(host, '正在截取…')
   try {
     const result = await window.api.media.trimVideo({
@@ -705,7 +727,7 @@ async function executeTrim(
       start,
       end
     })
-    useCanvasStore.getState().applyOutput(node.id, result.asset, 'trim')
+    useCanvasStore.getState().applyOutput(pendingId, result.asset, 'trim')
     consumeToast(
       host,
       `截取完成：${(result.asset.duration ?? end - start).toFixed(1)} 秒`
@@ -713,12 +735,13 @@ async function executeTrim(
     return {
       ok: true,
       result: {
+        createdNodeId: pendingId,
         outputId: result.asset.id,
         duration: result.asset.duration ?? end - start
       }
     }
   } catch (error) {
-    markFailed(node.id, error)
+    markFailed(pendingId, error)
     const message = errorMessage(error, '片段截取失败')
     host?.toast(message, 'error')
     return { ok: false, error: message }
@@ -958,19 +981,27 @@ async function executeSubtitle(
   }
 
   if (!rect) return { ok: false, error: '缺少字幕区域 rect' }
+  const pendingId = useCanvasStore.getState().addPendingNodes(
+    'video',
+    originFor(node),
+    1,
+    `${node.data.title} · ${title}`,
+    node.id
+  )[0]
   host?.setRunning?.(true)
-  markRunning(node.id)
   consumeToast(host, '正在框选去字幕…')
   try {
     const result = await window.api.media.removeSubtitles({
       path: output.path,
       ...rect
     })
-    useCanvasStore.getState().applyOutput(node.id, result.asset, 'subtitle-box')
+    useCanvasStore
+      .getState()
+      .applyOutput(pendingId, result.asset, 'subtitle-box')
     consumeToast(host, '去字幕完成')
-    return { ok: true, result: { outputId: result.asset.id } }
+    return { ok: true, result: { createdNodeId: pendingId, outputId: result.asset.id } }
   } catch (error) {
-    markFailed(node.id, error)
+    markFailed(pendingId, error)
     const message = errorMessage(error, '去字幕失败')
     host?.toast(message, 'error')
     return { ok: false, error: message }
@@ -1153,18 +1184,27 @@ async function executeOutpaintOrCutout(
           ...(output.scope ? { scope: output.scope } : {})
         }
 
+  const pendingId = useCanvasStore.getState().addPendingNodes(
+    'image',
+    originFor(node),
+    1,
+    `${node.data.title} · ${op.label}`,
+    node.id
+  )[0]
+
   try {
     const { taskId } = await window.api.media.startVisionTask(params)
     trackVisionTask(taskId, {
-      mode: 'apply',
+      mode: 'pending',
       nodeId: node.id,
-      pendingIds: [],
+      pendingIds: [pendingId],
       op: op.id,
       title: op.label
     })
     consumeToast(host, `已开始${op.label}`)
-    return { ok: true, result: { taskId } }
+    return { ok: true, result: { taskId, createdNodeId: pendingId } }
   } catch (error) {
+    markFailed(pendingId, error)
     const message = errorMessage(error, `${op.label}失败`)
     host?.toast(message, 'error')
     return { ok: false, error: message }

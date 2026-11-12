@@ -32,13 +32,20 @@ export function TextEditorDialog({
   onSave
 }: TextEditorDialogProps) {
   const [draft, setDraft] = useState(initialText)
+  const [view, setView] = useState<'edit' | 'preview'>('edit')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     if (!open) return
     setDraft(initialText)
+    setView('edit')
     window.setTimeout(() => textareaRef.current?.focus(), 30)
   }, [open, initialText])
+
+  useEffect(() => {
+    if (!open || view !== 'edit') return
+    textareaRef.current?.focus()
+  }, [open, view])
 
   useEffect(() => {
     if (!open) return
@@ -98,34 +105,54 @@ export function TextEditorDialog({
         </header>
 
         <div className="text-editor__toolbar">
-          {TOOLBAR.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              className="text-editor__tool"
-              onClick={() => insert(item.before, item.after ?? '')}
-            >
-              {item.label}
-            </button>
-          ))}
-          <span className="text-editor__hint">支持 Markdown · Ctrl+Enter 保存</span>
+          {view === 'edit'
+            ? TOOLBAR.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  className="text-editor__tool"
+                  onClick={() => insert(item.before, item.after ?? '')}
+                >
+                  {item.label}
+                </button>
+              ))
+            : (
+              <span className="text-editor__preview-label">Markdown 预览</span>
+            )}
+          <button
+            type="button"
+            className="text-editor__mode"
+            onClick={() =>
+              setView((current) =>
+                current === 'edit' ? 'preview' : 'edit'
+              )
+            }
+          >
+            {view === 'edit' ? '预览' : 'Markdown'}
+          </button>
+          <span className="text-editor__hint">
+            支持 Markdown · Ctrl+Enter 保存
+          </span>
         </div>
 
         <div className="text-editor__body">
-          <textarea
-            ref={textareaRef}
-            className="text-editor__input"
-            value={draft}
-            spellCheck={false}
-            placeholder="在这里输入文本，支持 Markdown…"
-            onChange={(event) => setDraft(event.target.value)}
-          />
-          <div className="text-editor__preview">
-            <div
-              className="cnode__text cnode__text--markdown"
-              dangerouslySetInnerHTML={{ __html: preview }}
+          {view === 'edit' ? (
+            <textarea
+              ref={textareaRef}
+              className="text-editor__input"
+              value={draft}
+              spellCheck={false}
+              placeholder="在这里输入文本，支持 Markdown…"
+              onChange={(event) => setDraft(event.target.value)}
             />
-          </div>
+          ) : (
+            <div className="text-editor__preview">
+              <div
+                className="cnode__text cnode__text--markdown"
+                dangerouslySetInnerHTML={{ __html: preview }}
+              />
+            </div>
+          )}
         </div>
 
         <footer className="text-editor__footer">

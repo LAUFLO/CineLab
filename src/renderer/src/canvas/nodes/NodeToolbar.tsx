@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { NODE_META, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
 import { assetUrl } from '../../lib/asset-url'
-import { isGroupNode, useCanvasStore } from '../../stores/canvas'
+import {
+  absolutePosition,
+  isGroupNode,
+  useCanvasStore
+} from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useToolbarStore } from '../../stores/toolbar'
 import { useUIStore } from '../../stores/ui'
@@ -80,7 +85,12 @@ export function NodeToolbar({
   const consumeNodeCommand = useUIStore((state) => state.consumeNodeCommand)
 
   const [openId, setOpenId] = useState<string | null>(null)
-  const [moreSubId, setMoreSubId] = useState<string | null>(null)
+  const [moreSub, setMoreSub] = useState<{
+    opId: string
+    top: number
+    left: number
+  } | null>(null)
+  const moreSubCloseTimer = useRef<number | null>(null)
   const lastCommandRef = useRef(0)
   const [running, setRunning] = useState(false)
   const [trimOpen, setTrimOpen] = useState(false)
@@ -142,35 +152,85 @@ export function NodeToolbar({
     return () => document.body.classList.remove('is-node-menu-open')
   }, [openId])
 
+  const cancelSubClose = (): void => {
+    if (moreSubCloseTimer.current === null) return
+    window.clearTimeout(moreSubCloseTimer.current)
+    moreSubCloseTimer.current = null
+  }
+
+  const scheduleSubClose = (): void => {
+    cancelSubClose()
+    moreSubCloseTimer.current = window.setTimeout(() => {
+      moreSubCloseTimer.current = null
+      setMoreSub(null)
+    }, 140)
+  }
+
+  const openSubMenu = (op: NodeOperation, element: HTMLElement): void => {
+    cancelSubClose()
+    const rect = element.getBoundingClientRect()
+    const estimatedHeight = Math.min(
+      360,
+      (op.menu?.length ?? 1) * 34 + 8
+    )
+    const left = Math.min(rect.right + 6, window.innerWidth - 196)
+    const top = Math.max(
+      8,
+      Math.min(rect.top, window.innerHeight - estimatedHeight - 8)
+    )
+    setMoreSub({ opId: op.id, top, left })
+  }
+
   useEffect(() => {
-    if (!openId) return
+    return () => {
+      if (moreSubCloseTimer.current !== null) {
+        window.clearTimeout(moreSubCloseTimer.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!openId) {
+      setMoreSub(null)
+      return
+    }
 
     const onPointerDown = (event: PointerEvent): void => {
       const target = event.target
       if (!(target instanceof Element)) return
       if (target.closest('.cnode__toolbar-item')) return
+      if (target.closest('.cnode__toolbar-submenu')) return
       setOpenId(null)
-      setMoreSubId(null)
+      setMoreSub(null)
     }
 
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         setOpenId(null)
-        setMoreSubId(null)
+        setMoreSub(null)
       }
+    }
+
+    const onScrollOrResize = (): void => {
+      setMoreSub(null)
     }
 
     document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
+    window.addEventListener('scroll', onScrollOrResize, true)
+    window.addEventListener('resize', onScrollOrResize)
     return () => {
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('scroll', onScrollOrResize, true)
+      window.removeEventListener('resize', onScrollOrResize)
     }
   }, [openId])
 
   const closeMenus = (): void => {
+    cancelSubClose()
     setOpenId(null)
-    setMoreSubId(null)
+    setMoreSub(null)
   }
 
   const openStudioFromNode = (): void => {
@@ -182,22 +242,36 @@ export function NodeToolbar({
     title: string
     origin: { x: number; y: number }
   } | null => {
-    const found = useCanvasStore
-      .getState()
-      .nodes.find((entry) => entry.id === nodeId)
+    const nodes = useCanvasStore.getState().nodes
+    const found = nodes.find((entry) => entry.id === nodeId)
     const node = found && !isGroupNode(found) ? found : undefined
     if (!node) return null
     const width = node.measured?.width ?? NODE_META[node.data.kind].width
+    const base = absolutePosition(node, nodes)
     return {
       title: node.data.title,
-      origin: { x: node.position.x + width + 48, y: node.position.y }
+      origin: { x: base.x + width + 48, y: base.y }
     }
   }
 
-  const markRunning = (id: string): void => {
-    useCanvasStore
-      .getState()
-      .patchNodeData(id, { status: 'running', error: undefined })
+  const createOutputNode = (
+    op: NodeOperation,
+    label: string
+  ): string | null => {
+    const source = sourceNode()
+    if (!source) return null
+    const targetKind: NodeKind = op.kinds.includes('video') ? 'video' : 'image'
+    return (
+      useCanvasStore
+        .getState()
+        .addPendingNodes(
+          targetKind,
+          source.origin,
+          1,
+          `${source.title} · ${label}`,
+          nodeId
+        )[0] ?? null
+    )
   }
 
   const markFailed = (id: string, error: unknown): void => {
@@ -278,8 +352,16 @@ export function NodeToolbar({
     height: number
   }): Promise<void> => {
     setCropDialog(null)
+    const source = sourceNode()
+    if (!source) return
+    const pendingId = useCanvasStore.getState().addPendingNodes(
+      'image',
+      source.origin,
+      1,
+      `${source.title} · 自由裁剪`,
+      nodeId
+    )[0]
     setRunning(true)
-    markRunning(nodeId)
     showToast('正在裁剪…')
 
     try {
@@ -287,12 +369,14 @@ export function NodeToolbar({
         path: current.path,
         ...rect
       })
-      useCanvasStore.getState().applyOutput(nodeId, result.asset, 'crop-free')
+      useCanvasStore
+        .getState()
+        .applyOutput(pendingId, result.asset, 'crop-free')
       showToast(
         `裁剪完成：${result.asset.width ?? 0} × ${result.asset.height ?? 0}`
       )
     } catch (error) {
-      markFailed(nodeId, error)
+      markFailed(pendingId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -312,8 +396,16 @@ export function NodeToolbar({
     }
 
     setSubtitleDialog(null)
+    const source = sourceNode()
+    if (!source) return
+    const pendingId = useCanvasStore.getState().addPendingNodes(
+      'video',
+      source.origin,
+      1,
+      `${source.title} · ${subtitleTitle}`,
+      nodeId
+    )[0]
     setRunning(true)
-    markRunning(nodeId)
     showToast('正在框选去字幕…')
 
     try {
@@ -321,10 +413,12 @@ export function NodeToolbar({
         path: current.path,
         ...rect
       })
-      useCanvasStore.getState().applyOutput(nodeId, result.asset, 'subtitle-box')
+      useCanvasStore
+        .getState()
+        .applyOutput(pendingId, result.asset, 'subtitle-box')
       showToast('去字幕完成')
     } catch (error) {
-      markFailed(nodeId, error)
+      markFailed(pendingId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -333,8 +427,16 @@ export function NodeToolbar({
 
   const executeTrim = async (start: number, end: number): Promise<void> => {
     setTrimOpen(false)
+    const source = sourceNode()
+    if (!source) return
+    const pendingId = useCanvasStore.getState().addPendingNodes(
+      'video',
+      source.origin,
+      1,
+      `${source.title} · 截取`,
+      nodeId
+    )[0]
     setRunning(true)
-    markRunning(nodeId)
     showToast('正在截取…')
 
     try {
@@ -343,12 +445,12 @@ export function NodeToolbar({
         start,
         end
       })
-      useCanvasStore.getState().applyOutput(nodeId, result.asset, 'trim')
+      useCanvasStore.getState().applyOutput(pendingId, result.asset, 'trim')
       showToast(
         `截取完成：${(result.asset.duration ?? end - start).toFixed(1)} 秒`
       )
     } catch (error) {
-      markFailed(nodeId, error)
+      markFailed(pendingId, error)
       showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(false)
@@ -365,11 +467,16 @@ export function NodeToolbar({
 
     const label = aiDialog.item?.label ?? aiDialog.op.label
     const opId = aiDialog.op.id
+    const targetNodeId =
+      aiDialog.op.outputTarget === 'new-node'
+        ? createOutputNode(aiDialog.op, label)
+        : nodeId
     setAiDialog(null)
+    if (!targetNodeId) return
     showToast(`已提交「${label}」生成`)
 
     void useGenerationStore.getState().run({
-      nodeId,
+      nodeId: targetNodeId,
       modelKey,
       prompt,
       params: { ...defaultParams(model), watermark: false },
@@ -391,11 +498,19 @@ export function NodeToolbar({
     model: ModelDef
   ): void => {
     const label = sphereDialog === 'light' ? '自定义光位' : '自定义机位'
+    const targetOp =
+      sphereDialog === 'camera'
+        ? ops.find((entry) => entry.id === 'multi-angle')
+        : undefined
+    const targetNodeId = targetOp
+      ? createOutputNode(targetOp, label)
+      : nodeId
     setSphereDialog(null)
+    if (!targetNodeId) return
     showToast(`已提交「${label}」生成`)
 
     void useGenerationStore.getState().run({
-      nodeId,
+      nodeId: targetNodeId,
       modelKey,
       prompt,
       params: { ...defaultParams(model), watermark: false },
@@ -551,7 +666,7 @@ export function NodeToolbar({
       showToast(reason, 'error')
       return
     }
-    setMoreSubId(null)
+    setMoreSub(null)
     setOpenId((currentId) => (currentId === op.id ? null : op.id))
   }
 
@@ -646,7 +761,7 @@ export function NodeToolbar({
             className={`cnode__toolbar-btn ${openId === 'more' ? 'is-active' : ''}`}
             onClick={(event) => {
               event.stopPropagation()
-              setMoreSubId(null)
+              setMoreSub(null)
               setOpenId((currentId) => (currentId === 'more' ? null : 'more'))
             }}
           >
@@ -682,13 +797,23 @@ export function NodeToolbar({
                               return
                             }
                             if (hasMenu) {
-                              setMoreSubId((currentId) =>
-                                currentId === op.id ? null : op.id
-                              )
+                              if (moreSub?.opId === op.id) {
+                                setMoreSub(null)
+                              } else {
+                                openSubMenu(op, event.currentTarget)
+                              }
                               return
                             }
                             activate(op)
                           }}
+                          onMouseEnter={(event) => {
+                            if (reason || !hasMenu) {
+                              scheduleSubClose()
+                              return
+                            }
+                            openSubMenu(op, event.currentTarget)
+                          }}
+                          onMouseLeave={hasMenu ? scheduleSubClose : undefined}
                         >
                           <Icon name={op.icon} size={14} />
                           <span>{op.label}</span>
@@ -697,29 +822,6 @@ export function NodeToolbar({
                           ) : null}
                           {hasMenu ? <Icon name="chevron-right" size={11} /> : null}
                         </button>
-
-                        {hasMenu && moreSubId === op.id ? (
-                          <div className="cnode__toolbar-menu__sub">
-                            {op.menu?.map((item) => (
-                              <button
-                                key={item.id}
-                                type="button"
-                                className="cnode__toolbar-menu__item"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  activate(op, item)
-                                }}
-                              >
-                                <span>{item.label}</span>
-                                {item.hint ? (
-                                  <span className="cnode__toolbar-menu__hint">
-                                    {item.hint}
-                                  </span>
-                                ) : null}
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
                       </div>
                     )
                   })}
@@ -855,6 +957,42 @@ export function NodeToolbar({
       ) : null}
       </div>
 
+      {moreSub && openId === 'more'
+        ? createPortal(
+            <div
+              className="cnode__toolbar-submenu"
+              style={{ top: moreSub.top, left: moreSub.left }}
+              onMouseEnter={cancelSubClose}
+              onMouseLeave={scheduleSubClose}
+            >
+              {ops
+                .find((entry) => entry.id === moreSub.opId)
+                ?.menu?.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="cnode__toolbar-menu__item"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      const op = ops.find(
+                        (entry) => entry.id === moreSub.opId
+                      )
+                      if (op) activate(op, item)
+                    }}
+                  >
+                    <span>{item.label}</span>
+                    {item.hint ? (
+                      <span className="cnode__toolbar-menu__hint">
+                        {item.hint}
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+            </div>,
+            document.body
+          )
+        : null}
+
       <DepthCaptureDialog
         open={Boolean(depthDialog)}
         duration={depthDialog?.duration ?? 0}
@@ -884,6 +1022,7 @@ export function NodeToolbar({
         initialPrompt={aiDialog?.prompt ?? ''}
         busy={running}
         masked={Boolean(aiDialog?.mask)}
+        createsNode={aiDialog?.op.outputTarget === 'new-node'}
         onClose={() => setAiDialog(null)}
         onConfirm={(prompt, key, model) =>
           handleAiConfirm(prompt, key, model, aiDialog?.mask)

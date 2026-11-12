@@ -425,13 +425,20 @@ export function registerAgentIpc(): void {
     }
   )
 
-  ipcMain.handle('agent:proposal-submit', async (_event, proposalId: unknown) => {
-    if (typeof proposalId !== 'string' || !proposalId.trim()) {
-      throw new Error('提案 ID 无效')
+  ipcMain.handle(
+    'agent:proposal-submit',
+    async (_event, proposalId: unknown, targetNodeId?: unknown) => {
+      if (typeof proposalId !== 'string' || !proposalId.trim()) {
+        throw new Error('提案 ID 无效')
+      }
+      const root = requireProjectRoot()
+      return submitProposal(
+        root,
+        proposalId,
+        typeof targetNodeId === 'string' ? targetNodeId : undefined
+      )
     }
-    const root = requireProjectRoot()
-    return submitProposal(root, proposalId)
-  })
+  )
 
   ipcMain.handle('agent:proposal-cancel', async (_event, proposalId: unknown) => {
     if (typeof proposalId !== 'string' || !proposalId.trim()) {

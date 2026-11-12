@@ -101,6 +101,8 @@ export interface AgentProposal {
   status: AgentProposalStatus
   /** 提交时直接交给 generationQueue 的完整请求 */
   request: GenerateRequest
+  /** 结果写回当前节点版本栈，还是新建节点并连线 */
+  outputTarget?: 'version' | 'new-node'
   nodeTitle: string
   modelName: string
   capability: Capability

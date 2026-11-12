@@ -133,8 +133,10 @@
 - `src/shared/node-operation-specs.ts` 声明每个操作是否 Agent 可执行、需要的 itemId、参数和确认规则。
 - `src/renderer/src/canvas/nodes/node-operation-runner.ts` 是 UI 和 Agent 共用的执行器；UI 传入 dialog host，Agent 不传。
 - Agent 可直接执行 17 个操作：宫格切分、裁剪、深度动作捕捉、片段截取、分离音视频、抽帧、逐帧拉片、画面裁切、去字幕、图层分离、视频抠像、主体消除、扩图、抠图、片段重拍、元素替换、智能续写。
+- `canvas_node_operations` 额外返回 `outputTarget`：`new-node` 表示执行后新建节点并连线，`version` 表示写回当前节点版本栈；规则见 `node-output-target-plan.md`。
 - 需要模型或蒙版交互的 11 个操作显式标记 `agentExecutable: false`，提示词仍会通过 `canvas_node_operations` 返回。
 - 其中 8 个模型类操作标记 `generationProposable: true`，Agent 用 `generation_propose` 传 `operationId` / `itemId` 自动复用提示词；3 个蒙版操作仍需界面涂抹。
+- 生成提案同样遵循 `outputTarget`：`new-node` 操作在确认时创建占位节点并连线，主进程把 `request.nodeId` 改写到新节点后再入队；提案卡显示输出方式。
 - 新增节点操作只需要改 `node-operations.ts`、`node-operation-specs.ts` 和 `node-operation-runner.ts`，不需要新增工具。
 
 ## 7. 生成提案扩展

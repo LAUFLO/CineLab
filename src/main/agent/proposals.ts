@@ -12,6 +12,7 @@ import {
   proposalCount,
   proposalExpiresAt
 } from '@shared/agent-proposal'
+import { nodeOperationOutputTarget } from '@shared/node-operation-specs'
 import { modelInputs, type Capability } from '@shared/provider-schema'
 import { startGeneration } from '../engine/start-generation'
 import { getLibraryRoot } from '../library/config'
@@ -303,6 +304,7 @@ export async function createProposal(
       prompt: draft.request.prompt.trim(),
       params: model.params
     },
+    outputTarget: nodeOperationOutputTarget(draft.request.op),
     nodeTitle: draft.nodeTitle,
     modelName: model.modelName,
     capability: model.capability,
@@ -373,7 +375,8 @@ export async function expireSessionProposals(
 
 export async function submitProposal(
   root: string,
-  proposalId: string
+  proposalId: string,
+  targetNodeId?: string
 ): Promise<AgentProposal> {
   const proposal = await readProposal(root, proposalId)
   if (!proposal) throw new Error('找不到这个生成提案')
@@ -398,9 +401,26 @@ export async function submitProposal(
     throw new Error('提案已取消')
   }
 
+  const outputTarget =
+    checked.outputTarget ?? nodeOperationOutputTarget(checked.request.op)
+  const requestedTarget =
+    typeof targetNodeId === 'string' ? targetNodeId.trim() : ''
+  if (requestedTarget && !/^[a-zA-Z0-9_-]{1,120}$/.test(requestedTarget)) {
+    throw new Error('目标节点 ID 无效')
+  }
+  if (outputTarget === 'new-node' && !requestedTarget) {
+    throw new Error('该提案需要新建节点，请先创建目标节点再提交')
+  }
+  const request =
+    outputTarget === 'new-node' && requestedTarget
+      ? { ...checked.request, nodeId: requestedTarget }
+      : checked.request
+
   const submitting = await patchProposal(root, checked, {
     status: 'submitting',
-    error: undefined
+    error: undefined,
+    outputTarget,
+    request
   })
 
   try {

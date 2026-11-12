@@ -37,7 +37,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   {
     id: 'character',
     name: '角色短片',
-    description: '角色设定 → 三视图 / 场景 / 分镜 → 短片'
+    description: '角色设定 → 四视图 / 场景 / 分镜 → 短片'
   }
 ]
 
@@ -202,12 +202,12 @@ function characterCanvas(): { nodes: TemplateNode[]; edges: PersistedEdge[] } {
     '角色设定',
     { x: 0, y: 0 },
     {
-      text: '角色名：\n年龄 / 身份：\n性格：\n外观特征：\n服装：\n\n补全设定后，用右侧节点生成三视图、场景概念和分镜，最后合成角色短片。'
+      text: '角色名：\n年龄 / 身份：\n性格：\n外观特征：\n服装：\n\n补全设定后，用右侧节点生成四视图、场景概念和分镜，最后合成角色短片。'
     }
   )
 
   const images = [
-    { id: 'image_turnaround', title: '角色三视图', y: 0 },
+    { id: 'image_turnaround', title: '角色四视图', y: 0 },
     { id: 'image_scene', title: '场景概念', y: 380 },
     { id: 'image_shot', title: '分镜 01', y: 760 }
   ]

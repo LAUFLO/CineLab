@@ -1,4 +1,8 @@
 import type { NodeKind } from '@shared/canvas-schema'
+import {
+  nodeOperationOutputTarget,
+  type NodeOperationOutputTarget
+} from '@shared/node-operation-specs'
 import type { IconName } from '../../components/Icon'
 
 export interface OperationContext {
@@ -29,6 +33,9 @@ export interface OperationRequires {
 
 export type OperationSection = 'generate' | 'edit' | 'video'
 
+/** 生成结果写回当前节点版本栈，还是新建节点并连线 */
+export type NodeOutputTarget = NodeOperationOutputTarget
+
 export interface NodeOperation {
   id: string
   label: string
@@ -38,6 +45,8 @@ export interface NodeOperation {
   defaultPrimary?: boolean
   /** 已实现的操作可直接执行 */
   implemented?: boolean
+  /** 默认 version；派生新素材的操作使用 new-node */
+  outputTarget?: NodeOutputTarget
   /** 未实现时说明缺少的模型或组件 */
   requires?: OperationRequires
   /** 需要先进入蒙版编辑器 */
@@ -64,7 +73,7 @@ const PROMPT_GRID_STORY =
   '基于参考图生成一张 2×2 剧情推演四宫格。保持同一角色身份、服装、场景和画风；四格依次展示接下来四个连续时刻的动作与表情变化，形成连贯的小叙事。每格独立完整，细白线分隔，不要文字、不要水印。'
 
 const PROMPT_CHARACTER_SHEET =
-  '基于参考图生成同一角色的正面、侧面、背面三视图。角色自然站姿，白色纯色背景，保持五官、发型、服装、体型和比例完全一致，全身完整，画面干净，不要文字、不要水印。'
+  '基于参考图生成同一角色的四视图设定图，横向并排四个视角：全身正面、全身侧面、全身背面、面部正面特写。四个视角保持五官、发型、服装、体型和比例完全一致；白色纯色背景，全身完整，面部特写清晰，画面干净，不要文字、不要水印。'
 
 const PROMPT_TIME_AFTER =
   '基于参考图推演 3 秒后的画面。保持同一角色、同一场景、同一镜头角度、同一光线和同一画风；只让角色动作、表情和环境细节自然延续，输出单张画面，不要分屏、不要文字、不要水印。'
@@ -287,11 +296,12 @@ export const NODE_OPERATIONS: NodeOperation[] = [
   },
   {
     id: 'character-sheet',
-    label: '角色三视图',
+    label: '角色四视图',
     icon: 'image',
     kinds: ['image'],
     implemented: true,
     section: 'generate',
+    hint: '正 / 侧 / 背 + 面部特写',
     prompt: PROMPT_CHARACTER_SHEET
   },
   {
@@ -532,7 +542,10 @@ export function buildOperationPrompt(
 }
 
 export function operationsForKind(kind: NodeKind): NodeOperation[] {
-  return NODE_OPERATIONS.filter((op) => op.kinds.includes(kind))
+  return NODE_OPERATIONS.filter((op) => op.kinds.includes(kind)).map((op) => ({
+    ...op,
+    outputTarget: nodeOperationOutputTarget(op.id)
+  }))
 }
 
 export function defaultPrimaryForKind(kind: NodeKind): string[] {

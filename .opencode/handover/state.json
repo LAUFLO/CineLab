@@ -2,12 +2,12 @@
   "version": 74,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-11T14:45:00.000Z",
+  "updatedAt": "2026-11-12T15:19:07.291Z",
   "phase": "AGENT",
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
-  "next_focus": "PR #6 已合并，Phase 4 已在 feat/agent-generation-ops 完成：generation_propose 支持 operationId/itemId/mask，8 个模型类节点操作可自动复用提示词并把目标图作为 reference，真实模型烟测通过。下一步：提交分支、创建 PR、CI 通过后合并；后续补测蒙版操作、确认卡长任务和真实生成队列。",
+  "next_focus": "Sora 视频适配器与通知品牌修复已完成，提交 feat/sora-video 并打包；本地 models.json 已配置 BeefTV provider，待写入设置页 Key。",
   "frontier": [
     {
       "id": "M2-1",
@@ -1679,6 +1679,32 @@
       "note": "2026-11-10 完成。音频控制条移回波形下方，分隔线改回 border-top。截取/变速操作条改为 portal 到 body + fixed + z-index 60，默认在节点下方、空间不足时翻转，始终高于 z-index 50 的 PromptBar；实测与 PromptBar 重叠时命中操作条。CineNodeView 根元素新增双击 fitView，文本内容不再阻止冒泡；实测文本节点和图片节点都能放大聚焦。PromptBar 收集上游连线和 @标题命中的文本节点，生成时拼接【参考文本：标题】到 prompt 前，单条截断 4000 字符，只有文本上下文时也允许发送；用 mock 图片服务验证请求体包含文本内容。typecheck、162 tests、build 通过。",
       "evidence": [
         ".opencode/handover/evidence/AUDIO-TEXT-FOCUS-1.md"
+      ]
+    },
+    {
+      "id": "SORA-VIDEO-1",
+      "title": "Sora 风格视频适配器与 BeefTV Seedance/Seedream 接入",
+      "status": "done",
+      "note": "新增 sora-video 适配器：POST /videos 提交、轮询状态、从 /videos/{id}/content 下载；models.json 追加 beeftv-local（3 Seedream 图片 + 6 Seedance 视频）。typecheck、315 tests、build 通过；真实烟测 Seedream 2048x2048 图片与 Seedance 2.0 Mini 4 秒视频均成功。Seedream 5.0 有总像素下限，尺寸选项已改为 2K 级。",
+      "evidence": [
+        ".opencode/handover/evidence/SORA-VIDEO-1.md",
+        "docs/sora-video-plan.md",
+        "src/main/providers/sora.ts",
+        "src/main/providers/__tests__/sora.test.ts",
+        "src/main/engine/start-generation.ts",
+        "src/main/settings/models-config.ts",
+        "scripts/models-check.mjs"
+      ]
+    },
+    {
+      "id": "NOTIFY-BRAND-1",
+      "title": "系统通知应用名与图标改为 CineLab",
+      "status": "done",
+      "note": "主进程设置 app.setAppUserModelId(\"com.cinelab.app\")，与安装版快捷方式 AUMID 一致；生成完成通知补充 app-icon 图标。typecheck、315 tests、build 通过；开发模式仍可能回退 Electron，打包安装后生效。",
+      "evidence": [
+        ".opencode/handover/evidence/NOTIFY-BRAND-1.md",
+        "src/main/index.ts",
+        "src/renderer/src/stores/generation.ts"
       ]
     }
   ],

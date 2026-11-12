@@ -13,7 +13,7 @@
 | [README](../README.md) | 产品介绍、功能、技术栈、快速开始、路线图 | 2026-11-11 |
 | [architecture.md](architecture.md) | 主进程架构、项目文件格式、Provider、IPC、存储 | 2026-11-11 |
 | [ui-spec.md](ui-spec.md) | 布局、节点、Prompt Bar、工具栏、主题、CineBot/剪辑/导演台/拉片 | 2026-11-11 |
-| [models.md](models.md) | `models.json` 格式与 Provider 配置 | 2026-11-11 |
+| [models.md](models.md) | `models.json` 格式与 Provider 配置 | 2026-11-12 |
 | [agent-architecture-plan.md](agent-architecture-plan.md) | AgentRuntime 设计 + Phase 1–4 实施状态 | 2026-11-11 |
 | [agent-capabilities.md](agent-capabilities.md) | CineBot 当前工具、参数、确认和撤销 | 2026-11-11 |
 | [roadmap-plan.md](roadmap-plan.md) | 当前状态与剩余 backlog | 2026-11-11 |
@@ -44,6 +44,7 @@
 | [model-params-plan.md](model-params-plan.md) | 模型参数编辑 |
 | [model-onboarding-plan.md](model-onboarding-plan.md) | 模型配置引导 |
 | [models-config-unify-plan.md](models-config-unify-plan.md) | 模型配置统一 |
+| [sora-video-plan.md](sora-video-plan.md) | Sora 风格视频适配器与 BeefTV Seedance 接入 |
 | [project-cover-plan.md](project-cover-plan.md) | 项目封面 |
 | [project-templates-plan.md](project-templates-plan.md) | 项目模板 |
 | [prompt-mention-plan.md](prompt-mention-plan.md) | Prompt Bar @ 引用 |

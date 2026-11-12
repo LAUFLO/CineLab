@@ -49,6 +49,12 @@ if (isolatedUserData) {
   app.setPath('userData', isolatedUserData)
 }
 
+// Windows toast 的应用名和图标由 AppUserModelID 对应的开始菜单快捷方式决定。
+// 必须与 electron-builder.yml 的 appId 保持一致，否则通知会显示 Electron。
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.cinelab.app')
+}
+
 if (process.env.CINELAB_USER_DATA) {
   app.setPath('userData', process.env.CINELAB_USER_DATA)
 }

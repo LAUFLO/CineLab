@@ -1,13 +1,13 @@
 {
-  "version": 74,
+  "version": 75,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-12T15:19:07.291Z",
+  "updatedAt": "2026-11-12T15:25:36.189Z",
   "phase": "AGENT",
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
-  "next_focus": "Sora 视频适配器与通知品牌修复已完成，提交 feat/sora-video 并打包；本地 models.json 已配置 BeefTV provider，待写入设置页 Key。",
+  "next_focus": "创建 feat/sora-video PR 并合并；合并后安装 Downloads\\cinelab-sora-video 的新包，验证通知品牌与 Seedance/Seedream 生成。",
   "frontier": [
     {
       "id": "M2-1",
@@ -1685,7 +1685,7 @@
       "id": "SORA-VIDEO-1",
       "title": "Sora 风格视频适配器与 BeefTV Seedance/Seedream 接入",
       "status": "done",
-      "note": "新增 sora-video 适配器：POST /videos 提交、轮询状态、从 /videos/{id}/content 下载；models.json 追加 beeftv-local（3 Seedream 图片 + 6 Seedance 视频）。typecheck、315 tests、build 通过；真实烟测 Seedream 2048x2048 图片与 Seedance 2.0 Mini 4 秒视频均成功。Seedream 5.0 有总像素下限，尺寸选项已改为 2K 级。",
+      "note": "新增 sora-video 适配器：POST /videos 提交、轮询状态、从 /videos/{id}/content 下载；models.json 追加 beeftv-local（3 Seedream 图片 + 6 Seedance 视频）。typecheck、315 tests、build 通过；真实烟测 Seedream 2048x2048 图片与 Seedance 2.0 Mini 4 秒视频均成功。已提交并推送 feat/sora-video（26c6bcd）；本地安装包已复制到 Downloads\\cinelab-sora-video；本地 models.json 与 settings.json Key 已配置并解密验证。Seedream 5.0 有总像素下限，尺寸选项已改为 2K 级。",
       "evidence": [
         ".opencode/handover/evidence/SORA-VIDEO-1.md",
         "docs/sora-video-plan.md",
@@ -1693,14 +1693,15 @@
         "src/main/providers/__tests__/sora.test.ts",
         "src/main/engine/start-generation.ts",
         "src/main/settings/models-config.ts",
-        "scripts/models-check.mjs"
+        "scripts/models-check.mjs",
+        "commit 26c6bcd"
       ]
     },
     {
       "id": "NOTIFY-BRAND-1",
       "title": "系统通知应用名与图标改为 CineLab",
       "status": "done",
-      "note": "主进程设置 app.setAppUserModelId(\"com.cinelab.app\")，与安装版快捷方式 AUMID 一致；生成完成通知补充 app-icon 图标。typecheck、315 tests、build 通过；开发模式仍可能回退 Electron，打包安装后生效。",
+      "note": "主进程设置 app.setAppUserModelId(\"com.cinelab.app\")，与安装版快捷方式 AUMID 一致；生成完成通知补充 app-icon 图标。typecheck、315 tests、build 通过；已随 26c6bcd 提交推送。开发模式仍可能回退 Electron，打包安装后生效，待安装版目视确认。",
       "evidence": [
         ".opencode/handover/evidence/NOTIFY-BRAND-1.md",
         "src/main/index.ts",
@@ -2743,6 +2744,26 @@
     {
       "category": "engineering",
       "content": "main 的 InspectorPane 有属性/画面/音频分页；合并时保留这些分页，只移除旧的助手分页和 AssistantPane，因为 CineBot 已改为全局浮窗。"
+    },
+    {
+      "category": "engineering",
+      "content": "OpenAI Sora 风格视频的 video_url 指向服务商域名，只认上游 Key；适配器必须用 provider baseUrl + /videos/{id}/content 下载，不能直接使用响应里的 video_url。"
+    },
+    {
+      "category": "engineering",
+      "content": "BeefTV Seedream 5.0 的 size 有总像素下限：1024x1024、1536x1024、2048x1152 被拒，2048x2048、2560x1440 可用；图片尺寸选项应使用 2K 级。"
+    },
+    {
+      "category": "engineering",
+      "content": "Electron safeStorage 的密钥绑定 userData 的 Local State；跨 userData 加密的密文无法被 CineLab 解密。写入用户 Key 时必须让脚本使用目标应用的 userData 目录。"
+    },
+    {
+      "category": "engineering",
+      "content": "Windows toast 的应用名和图标由 AUMID 对应的开始菜单快捷方式决定；app.setAppUserModelId 必须与 electron-builder 的 appId 一致（本项目 com.cinelab.app）。"
+    },
+    {
+      "category": "procedure",
+      "content": "新增视频协议按现有惯例独立成 providers/<protocol>.ts，注册 adapter 白名单并补单测；不要改动 openai-compat 的同步接口职责。"
     }
   ],
   "designConventions": [

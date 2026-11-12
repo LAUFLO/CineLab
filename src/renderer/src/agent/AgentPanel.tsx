@@ -13,6 +13,7 @@ import type {
 } from '@shared/agent'
 import type { SkillAdminEntry } from '@shared/skills'
 import { proposalStatusLabel } from '@shared/agent-proposal'
+import { nodeOperationOutputTarget } from '@shared/node-operation-specs'
 import { Icon } from '../components/Icon'
 import {
   isGroupNode,
@@ -318,6 +319,8 @@ function ProposalCard({
   onCancel: () => void
 }) {
   const pending = proposal.status === 'pending'
+  const outputTarget =
+    proposal.outputTarget ?? nodeOperationOutputTarget(proposal.request.op)
   const params = Object.entries(proposal.request.params)
     .filter(
       ([key, value]) =>
@@ -348,6 +351,14 @@ function ProposalCard({
       <div className="agent-proposal__row">
         <span>节点</span>
         <strong>{proposal.nodeTitle || proposal.request.nodeId}</strong>
+      </div>
+      <div className="agent-proposal__row">
+        <span>输出</span>
+        <strong>
+          {outputTarget === 'new-node'
+            ? '新建节点并连线'
+            : '写回当前节点版本'}
+        </strong>
       </div>
       <div className="agent-proposal__row">
         <span>模型</span>
@@ -397,7 +408,9 @@ function ProposalCard({
         </div>
       ) : proposal.status === 'submitted' ? (
         <div className="agent-proposal__hint">
-          已提交，生成完成后会自动写回节点。
+          {outputTarget === 'new-node'
+            ? '已提交，生成完成后会写入新节点并连线。'
+            : '已提交，生成完成后会自动写回节点。'}
         </div>
       ) : proposal.status === 'failed' ? (
         <div className="agent-proposal__hint">
@@ -468,6 +481,9 @@ export function AgentPanel() {
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false)
   const [sessionSearch, setSessionSearch] = useState('')
   const [modelPickerOpen, setModelPickerOpen] = useState(false)
+  const [modelTab, setModelTab] = useState<
+    'text' | 'image' | 'video' | 'audio'
+  >('text')
   const [permissionMenuOpen, setPermissionMenuOpen] = useState(false)
   const [skillPickerOpen, setSkillPickerOpen] = useState(false)
   const [skillSearch, setSkillSearch] = useState('')
@@ -744,6 +760,7 @@ export function AgentPanel() {
 
   const modelGroups: Array<{
     key: 'text' | 'image' | 'video' | 'audio'
+    tabLabel: string
     label: string
     desc: string
     selected: string | null
@@ -752,6 +769,7 @@ export function AgentPanel() {
   }> = [
     {
       key: 'text',
+      tabLabel: '文本',
       label: '文本对话',
       desc: '用于 CineBot 对话和工具调用',
       selected: modelKey,
@@ -760,6 +778,7 @@ export function AgentPanel() {
     },
     {
       key: 'image',
+      tabLabel: '图片',
       label: '生图',
       desc: 'CineBot 登记图片生成时使用',
       selected: generationModels.image ?? null,
@@ -768,6 +787,7 @@ export function AgentPanel() {
     },
     {
       key: 'video',
+      tabLabel: '视频',
       label: '生视频',
       desc: 'CineBot 登记视频生成时使用',
       selected: generationModels.video ?? null,
@@ -776,6 +796,7 @@ export function AgentPanel() {
     },
     {
       key: 'audio',
+      tabLabel: '音频',
       label: '音频',
       desc: 'CineBot 登记音频生成时使用',
       selected: generationModels.audio ?? null,
@@ -783,6 +804,9 @@ export function AgentPanel() {
       setModel: (key) => setGenerationModel('audio', key)
     }
   ]
+
+  const activeModelGroup =
+    modelGroups.find((group) => group.key === modelTab) ?? modelGroups[0]
 
   const panel = createPortal(
     <>
@@ -1147,8 +1171,11 @@ export function AgentPanel() {
                 <button
                   type="button"
                   className="agent-chip"
-                  onClick={() => setModelPickerOpen(true)}
-                  title="选择文本模型"
+                  onClick={() => {
+                    setModelTab('text')
+                    setModelPickerOpen(true)
+                  }}
+                  title="选择模型"
                 >
                   <Icon name="robot" size={12} />
                   {modelNameOf(modelInfo)}
@@ -1335,7 +1362,7 @@ export function AgentPanel() {
                   <div>
                     <div className="agent-modal__title">选择模型</div>
                     <div className="agent-modal__desc">
-                      文本模型用于对话，生成模型用于 CineBot 生图、生视频和音频
+                      文本模型用于对话，图片 / 视频 / 音频模型用于 CineBot 生成
                     </div>
                   </div>
                   <button
@@ -1346,62 +1373,79 @@ export function AgentPanel() {
                     <Icon name="close" size={14} />
                   </button>
                 </header>
-                <div className="agent-modal__list">
+                <div className="agent-model-tabs" role="tablist">
                   {modelGroups.map((group) => (
-                    <section className="agent-model-group" key={group.key}>
-                      <header className="agent-model-group__head">
-                        <span>{group.label}</span>
-                        <small>{group.desc}</small>
-                      </header>
-                      <button
-                        type="button"
-                        className={`agent-model-item ${
-                          !group.selected ? 'is-active' : ''
-                        }`}
-                        onClick={() => {
-                          void group.setModel(null)
-                        }}
-                      >
-                        <div>
-                          <span>自动选择</span>
-                          <small>使用该能力下第一个可用模型</small>
-                        </div>
-                        {!group.selected ? (
-                          <Icon name="target" size={14} />
-                        ) : null}
-                      </button>
-                      {group.models.map((model) => {
-                        const key = `${model.providerId}/${model.modelId}`
-                        return (
-                          <button
-                            key={`${group.key}:${key}`}
-                            type="button"
-                            className={`agent-model-item ${
-                              group.selected === key ? 'is-active' : ''
-                            }`}
-                            onClick={() => {
-                              void group.setModel(key)
-                            }}
-                          >
-                            <div>
-                              <span>{model.name}</span>
-                              <small>
-                                {model.providerName ?? model.providerId}
-                              </small>
-                            </div>
-                            {group.selected === key ? (
-                              <Icon name="target" size={14} />
-                            ) : null}
-                          </button>
-                        )
-                      })}
-                      {group.models.length === 0 ? (
-                        <div className="agent-modal__empty">
-                          没有配置可用的{group.label}模型
-                        </div>
+                    <button
+                      key={group.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={modelTab === group.key}
+                      className={`agent-model-tab ${
+                        modelTab === group.key ? 'is-active' : ''
+                      }`}
+                      onClick={() => setModelTab(group.key)}
+                    >
+                      {group.tabLabel}
+                      {group.selected ? (
+                        <span className="agent-model-tab__dot" />
                       ) : null}
-                    </section>
+                    </button>
                   ))}
+                </div>
+                <div className="agent-modal__list">
+                  <section className="agent-model-group">
+                    <header className="agent-model-group__head">
+                      <span>{activeModelGroup.label}</span>
+                      <small>{activeModelGroup.desc}</small>
+                    </header>
+                    <button
+                      type="button"
+                      className={`agent-model-item ${
+                        !activeModelGroup.selected ? 'is-active' : ''
+                      }`}
+                      onClick={() => {
+                        void activeModelGroup.setModel(null)
+                      }}
+                    >
+                      <div>
+                        <span>自动选择</span>
+                        <small>使用该能力下第一个可用模型</small>
+                      </div>
+                      {!activeModelGroup.selected ? (
+                        <Icon name="target" size={14} />
+                      ) : null}
+                    </button>
+                    {activeModelGroup.models.map((model) => {
+                      const key = `${model.providerId}/${model.modelId}`
+                      return (
+                        <button
+                          key={`${activeModelGroup.key}:${key}`}
+                          type="button"
+                          className={`agent-model-item ${
+                            activeModelGroup.selected === key ? 'is-active' : ''
+                          }`}
+                          onClick={() => {
+                            void activeModelGroup.setModel(key)
+                          }}
+                        >
+                          <div>
+                            <span>{model.name}</span>
+                            <small>
+                              {model.providerName ?? model.providerId}
+                            </small>
+                          </div>
+                          {activeModelGroup.selected === key ? (
+                            <Icon name="target" size={14} />
+                          ) : null}
+                        </button>
+                      )
+                    })}
+                    {activeModelGroup.models.length === 0 ? (
+                      <div className="agent-modal__empty">
+                        没有配置可用的{activeModelGroup.label}模型
+                      </div>
+                    ) : null}
+                  </section>
                 </div>
               </div>
             </div>

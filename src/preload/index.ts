@@ -413,8 +413,8 @@ const api: CineApi = {
     proposalCreate: (input) => ipcRenderer.invoke('agent:proposal-create', input),
     proposalActive: (sessionId) =>
       ipcRenderer.invoke('agent:proposal-active', sessionId),
-    proposalSubmit: (proposalId) =>
-      ipcRenderer.invoke('agent:proposal-submit', proposalId),
+    proposalSubmit: (proposalId, targetNodeId) =>
+      ipcRenderer.invoke('agent:proposal-submit', proposalId, targetNodeId),
     proposalCancel: (proposalId) =>
       ipcRenderer.invoke('agent:proposal-cancel', proposalId),
     onEvent: (callback) => {

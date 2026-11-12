@@ -18,7 +18,12 @@ import {
   TITLE_HEIGHT,
   type OutputRef
 } from '@shared/canvas-schema'
-import { isStudioNode, useCanvasStore } from '../stores/canvas'
+import { nodeOperationOutputTarget } from '@shared/node-operation-specs'
+import {
+  absolutePosition,
+  isStudioNode,
+  useCanvasStore
+} from '../stores/canvas'
 import { useFilmStudyStore } from '../stores/film-study'
 import { useProjectStore } from '../stores/project'
 import { useStageStore } from '../stage/stageStore'
@@ -33,6 +38,37 @@ export interface AgentMessage {
   callId?: string
   toolName?: string
   toolStatus?: 'running' | 'ok' | 'error'
+}
+
+/** 为 new-node 提案创建占位节点并返回节点 ID */
+function createProposalTargetNode(proposal: AgentProposal): string | null {
+  const state = useCanvasStore.getState()
+  const source = state.nodes.find((node) => node.id === proposal.request.nodeId)
+  if (!source) return null
+
+  const kind: 'image' | 'video' | 'audio' = proposal.capability.startsWith(
+    'video'
+  )
+    ? 'video'
+    : proposal.capability.startsWith('audio')
+      ? 'audio'
+      : 'image'
+  const base = absolutePosition(source, state.nodes)
+  const width =
+    source.measured?.width ??
+    (source.type === 'cine'
+      ? NODE_META[source.data.kind].width
+      : NODE_META[kind].width)
+
+  return (
+    state.addPendingNodes(
+      kind,
+      { x: base.x + width + 48, y: base.y },
+      1,
+      `${proposal.nodeTitle} · 生成`,
+      source.id
+    )[0] ?? null
+  )
 }
 
 interface AgentState {
@@ -607,14 +643,33 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       return
     }
 
+    const outputTarget =
+      proposal.outputTarget ?? nodeOperationOutputTarget(proposal.request.op)
+    let targetNodeId: string | undefined
+    if (outputTarget === 'new-node') {
+      targetNodeId = createProposalTargetNode(proposal) ?? undefined
+      if (!targetNodeId) {
+        set({ error: '无法创建新节点，请确认目标节点仍在画布中' })
+        return
+      }
+    }
+
     set({ proposalBusy: true, error: null })
     try {
-      const next = await window.api.agent.proposalSubmit(proposal.id)
+      const next = await window.api.agent.proposalSubmit(
+        proposal.id,
+        targetNodeId
+      )
       set({ proposal: next })
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : '提交生成失败'
-      })
+      const message =
+        error instanceof Error ? error.message : '提交生成失败'
+      if (targetNodeId) {
+        useCanvasStore
+          .getState()
+          .patchNodeData(targetNodeId, { status: 'error', error: message })
+      }
+      set({ error: message })
       await get().loadProposal()
     } finally {
       set({ proposalBusy: false })

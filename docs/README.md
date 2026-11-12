@@ -1,6 +1,6 @@
 # CineLab 文档索引
 
-日期：2026-11-11
+日期：2026-11-12
 状态：现行
 适用版本：`main` @ `b76a064`
 
@@ -12,7 +12,7 @@
 |---|---|---|
 | [README](../README.md) | 产品介绍、功能、技术栈、快速开始、路线图 | 2026-11-11 |
 | [architecture.md](architecture.md) | 主进程架构、项目文件格式、Provider、IPC、存储 | 2026-11-11 |
-| [ui-spec.md](ui-spec.md) | 布局、节点、Prompt Bar、工具栏、主题、CineBot/剪辑/导演台/拉片 | 2026-11-11 |
+| [ui-spec.md](ui-spec.md) | 布局、节点、Prompt Bar、工具栏、主题、CineBot/剪辑/导演台/拉片 | 2026-11-12 |
 | [models.md](models.md) | `models.json` 格式与 Provider 配置 | 2026-11-11 |
 | [agent-architecture-plan.md](agent-architecture-plan.md) | AgentRuntime 设计 + Phase 1–4 实施状态 | 2026-11-11 |
 | [agent-capabilities.md](agent-capabilities.md) | CineBot 当前工具、参数、确认和撤销 | 2026-11-11 |
@@ -30,6 +30,7 @@
 | [agent-generation-operations-plan.md](agent-generation-operations-plan.md) | 模型类节点操作接入 generation_propose |
 | [agent-phase3-plan.md](agent-phase3-plan.md) | 拉片段落、导演台镜头/背景、能力搜索 |
 | [node-operation-bridge-plan.md](node-operation-bridge-plan.md) | 节点操作桥与统一执行器 |
+| [node-output-target-plan.md](node-output-target-plan.md) | 节点操作输出目标：版本回写 / 新建节点规则 |
 | [agent-plan.md](agent-plan.md) | 剪辑助手编排 |
 | [clip-studio-plan.md](clip-studio-plan.md) | 剪辑室多轨时间线、自动粗剪、字幕、导出 |
 | [director-stage-plan.md](director-stage-plan.md) | 导演台 3D 场景、机位、镜头、白模预演 |

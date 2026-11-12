@@ -116,6 +116,7 @@
 | `minimax-video` | MiniMax H3 |
 | `minimax-legacy` | MiniMax Hailuo 旧版（file_id 两步下载） |
 | `kling-video` | 可灵（API Key 或 AccessKey/SecretKey JWT） |
+| `sora-video` | OpenAI Sora 风格：`POST /videos` 提交，轮询 `/videos/{id}`，从 `/videos/{id}/content` 下载 |
 
 ### http-template 模板
 

@@ -24,6 +24,7 @@ import { generateVideoHttpTemplate } from '../providers/http-template'
 import { generateVideoKling } from '../providers/kling'
 import { generateVideoMinimax } from '../providers/minimax'
 import { withRetry } from '../providers/retry'
+import { generateVideoSora } from '../providers/sora'
 import { generateVideoArk } from '../providers/volcengine'
 import { resolveProvider } from '../settings/store'
 
@@ -187,6 +188,16 @@ export async function startGeneration(
           }
           if (adapter === 'agnes-video') {
             return generateVideoAgnes(
+              model,
+              runtime,
+              request.prompt,
+              request.params,
+              refs,
+              context
+            )
+          }
+          if (adapter === 'sora-video') {
+            return generateVideoSora(
               model,
               runtime,
               request.prompt,

@@ -12,6 +12,8 @@ interface AiOperationDialogProps {
   initialPrompt: string
   busy: boolean
   masked?: boolean
+  /** 生成结果会创建新节点，而不是写回当前节点版本栈 */
+  createsNode?: boolean
   onClose: () => void
   onConfirm: (prompt: string, modelKey: string, model: ModelDef) => void
 }
@@ -22,6 +24,7 @@ export function AiOperationDialog({
   initialPrompt,
   busy,
   masked = false,
+  createsNode = false,
   onClose,
   onConfirm
 }: AiOperationDialogProps) {
@@ -100,7 +103,9 @@ export function AiOperationDialog({
             <div className="operation-dialog__subtitle">
               {masked
                 ? '只修改涂抹区域，结果作为当前节点的新版本'
-                : '结果作为当前节点的新版本，保留原图'}
+                : createsNode
+                  ? '结果会创建一个新节点，并自动连到当前节点'
+                  : '结果作为当前节点的新版本，保留原图'}
             </div>
           </div>
           <button

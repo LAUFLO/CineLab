@@ -183,12 +183,24 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   }
 
   const submitAudio = async (): Promise<void> => {
-    if (!current || !audioMode || audioBusy) return
+    if (!current || !audioMode || audioBusy || !absolute) return
 
     if (audioMode === 'trim' && audioSelection.end - audioSelection.start < 0.1) {
       showToast('截取区间太短', 'error')
       return
     }
+
+    const label =
+      audioMode === 'trim'
+        ? '截取'
+        : `变速 ${audioRate.toFixed(2)}x`
+    const targetId = useCanvasStore.getState().addPendingNodes(
+      'audio',
+      { x: absolute.x + nodeWidth + 48, y: absolute.y },
+      1,
+      `${data.title} · ${label}`,
+      id
+    )[0]
 
     setAudioBusy(true)
 
@@ -200,7 +212,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           start: audioSelection.start,
           end: audioSelection.end
         })
-        applyOutput(id, asset, 'audio-trim')
+        applyOutput(targetId, asset, 'audio-trim')
         showToast(
           `已截取 ${timeLabel(audioSelection.end - audioSelection.start)} 音频`
         )
@@ -210,12 +222,13 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           ...(current.scope ? { scope: current.scope } : {}),
           rate: audioRate
         })
-        applyOutput(id, asset, 'audio-speed')
+        applyOutput(targetId, asset, 'audio-speed')
         showToast(`已变速 ${audioRate.toFixed(2)}x`)
       }
       setAudioMode(null)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
+      patchNodeData(targetId, { status: 'error', error: message })
       showToast(message, 'error')
     } finally {
       setAudioBusy(false)

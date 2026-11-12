@@ -415,7 +415,10 @@ export interface AgentApi {
   models(): Promise<AgentModelInfo[]>
   proposalCreate(input: AgentProposalDraft): Promise<AgentProposal>
   proposalActive(sessionId?: string): Promise<AgentProposal | null>
-  proposalSubmit(proposalId: string): Promise<AgentProposal>
+  proposalSubmit(
+    proposalId: string,
+    targetNodeId?: string
+  ): Promise<AgentProposal>
   proposalCancel(proposalId: string): Promise<AgentProposal>
   onEvent(callback: (event: AgentEvent) => void): () => void
   onToolCall(callback: (call: AgentToolCallRequest) => void): () => void

@@ -1,8 +1,8 @@
 {
-  "version": 75,
+  "version": 77,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-12T15:25:36.189Z",
+  "updatedAt": "2026-11-12T15:28:00.378Z",
   "phase": "AGENT",
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
@@ -1706,6 +1706,20 @@
         ".opencode/handover/evidence/NOTIFY-BRAND-1.md",
         "src/main/index.ts",
         "src/renderer/src/stores/generation.ts"
+      ]
+    },
+    {
+      "id": "UI-FEISHU-OPT-2026-11-12",
+      "title": "飞书缺陷表 7 项优化：更多菜单悬浮二级、模型四 Tab、派生操作新建节点、FAB 间距、文本编辑器、角色四视图",
+      "status": "done",
+      "note": "2026-11-12 完成。NodeToolbar 更多菜单二级项改为 hover 浮窗（portal + fixed，避让视口）；CineBot 模型浮窗拆文本/图片/视频/音频四个 tab；新增 NodeOutputTarget 共享清单，生成型、裁剪/截取/画面裁切/去字幕/扩图/抠图/音频派生新建节点并连线，修图类保留版本回写；FAB right/bottom 统一 26px；文本编辑器改单栏并支持预览/Markdown 切换；角色三视图改四视图（正/侧/背 + 面部特写）。CineBot generation_propose 同步对齐：提案写入 outputTarget，确认时创建占位节点并连线，主进程改写 request.nodeId 后再入队，提案卡显示输出方式。typecheck、314 tests、build 通过；隔离实例验证 hover 浮窗、tab 切换、文本预览、裁剪新节点与连线、FAB 26/26、提案卡与提案节点创建。",
+      "evidence": [
+        "docs/node-output-target-plan.md",
+        ".opencode/handover/evidence/UI-FEISHU-OPT-2026-11-12.md",
+        ".opencode/handover/evidence/UI-FEISHU-MORE-SUBMENU.png",
+        ".opencode/handover/evidence/UI-FEISHU-MODEL-TABS.png",
+        ".opencode/handover/evidence/UI-FEISHU-TEXT-EDITOR.png",
+        ".opencode/handover/evidence/UI-FEISHU-FAB.png"
       ]
     }
   ],

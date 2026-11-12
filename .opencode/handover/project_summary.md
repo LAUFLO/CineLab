@@ -47,8 +47,9 @@
 | `AGENT-CAPABILITY-PLAN-1` | CineBot 能力覆盖盘点、节点操作桥、能力注册表、未来功能接入清单 |
 | `SORA-VIDEO-1` | Sora 风格视频适配器；BeefTV Seedream 图片 + Seedance 视频接入；独立 `providers/sora.ts` |
 | `NOTIFY-BRAND-1` | 系统通知应用名/图标改为 CineLab；AUMID 对齐 `com.cinelab.app` |
-| 验证 | 43 文件 315 测试、`typecheck`、`build` 通过；Seedream 2048×2048 图片与 Seedance 2.0 Mini 4 秒视频真实烟测通过 |
-| 分支 | `feat/sora-video`（commit `26c6bcd`）已推送，待创建 PR；安装包在 `Downloads\cinelab-sora-video` |
+| `SORA-RELEASE-1` | PR #14 合并（`03375de`）、重新打包安装、安装版连接与生成验证通过 |
+| 验证 | 43 文件 317 测试、`typecheck`、`build` 通过；安装版 Seedream 2048×2048 图片与 Seedance 2.0 Mini 4 秒视频生成成功 |
+| 分支 | `main` @ `03375de`，PR #14 已合并；安装包在 `Downloads\cinelab-sora-video` |
 
 ## 关键工件
 
@@ -62,14 +63,14 @@
 - `.opencode/handover/state.json`：唯一状态真相源
 - `.opencode/handover/evidence/AGENT-*.md`：Agent 验证记录
 - `docs/sora-video-plan.md`：Sora 风格视频适配器、Seedream 尺寸限制与烟测记录
-- `.opencode/handover/evidence/SORA-VIDEO-1.md`、`NOTIFY-BRAND-1.md`：本次交付证据
+- `.opencode/handover/evidence/SORA-VIDEO-1.md`、`NOTIFY-BRAND-1.md`、`SORA-RELEASE-1.md`：本次交付证据
 
 ## 下一步
 
-1. 创建并合并 `feat/sora-video` PR
-2. 安装 `Downloads\cinelab-sora-video` 新包，验证通知品牌与 Seedance/Seedream
-3. CineBot Phase 1 能力补齐
-4. PR #2 review/merge
+1. CineBot Phase 1 能力补齐
+2. PR #2 review/merge
+3. 安装版通知品牌目视确认
+4. 交接文件更新提交（可开 docs PR）
 
 ## 设计约定
 

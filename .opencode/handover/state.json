@@ -1,13 +1,13 @@
 {
-  "version": 77,
+  "version": 78,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-12T15:28:00.378Z",
+  "updatedAt": "2026-11-12T15:39:29.507Z",
   "phase": "AGENT",
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
-  "next_focus": "创建 feat/sora-video PR 并合并；合并后安装 Downloads\\cinelab-sora-video 的新包，验证通知品牌与 Seedance/Seedream 生成。",
+  "next_focus": "CineBot Phase 1 能力补齐；PR #2 review/merge。安装版通知品牌需要用户目视确认；交接文件更新尚未提交（main 受保护，可开 docs PR）。",
   "frontier": [
     {
       "id": "M2-1",
@@ -1720,6 +1720,16 @@
         ".opencode/handover/evidence/UI-FEISHU-MODEL-TABS.png",
         ".opencode/handover/evidence/UI-FEISHU-TEXT-EDITOR.png",
         ".opencode/handover/evidence/UI-FEISHU-FAB.png"
+      ]
+    },
+    {
+      "id": "SORA-RELEASE-1",
+      "title": "Sora 适配器 PR 合并、重新打包与安装版验证",
+      "status": "done",
+      "note": "PR #14 已合并（03375de），CI build 4m09s 通过；重新打包 main 并静默安装到本地。安装版 listProviders 显示 3 供应商 / beeftv-local 9 模型；testConnection 成功发现 59 模型；Seedream 2048x2048 图片与 Seedance 2.0 Mini 4 秒视频在安装版生成成功；通知权限 granted，通知品牌待目视确认。",
+      "evidence": [
+        ".opencode/handover/evidence/SORA-RELEASE-1.md",
+        "https://github.com/LAUFLO/CineLab/pull/14"
       ]
     }
   ],

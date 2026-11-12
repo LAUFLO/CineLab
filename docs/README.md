@@ -63,6 +63,7 @@
 | 文档 | 内容 |
 |---|---|
 | [roadmap-plan.md](roadmap-plan.md) | 当前剩余 backlog 和优先级 |
+| [engineering-quality-plan.md](engineering-quality-plan.md) | 工程质量、仓库隐私、文档治理与 Tailwind 决策（讨论稿） |
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 |
 | [placeholder-operations-plan.md](placeholder-operations-plan.md) | 占位操作补齐 |
 

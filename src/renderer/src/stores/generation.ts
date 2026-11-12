@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import appIcon from '../assets/app-icon.png'
 import { NODE_META, TITLE_HEIGHT, type CineNodeData, type OutputRef } from '@shared/canvas-schema'
 import type { GenerateRequest } from '@shared/generation'
 import { useCanvasStore } from './canvas'
@@ -12,7 +13,8 @@ function notifyGenerationDone(title: string): void {
     if (Notification.permission !== 'granted') return
 
     const notification = new Notification('生成完成', {
-      body: `${title} 已完成`
+      body: `${title} 已完成`,
+      icon: appIcon
     })
     notification.onclick = () => {
       window.focus()

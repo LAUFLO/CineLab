@@ -24,7 +24,8 @@ const ADAPTERS = [
   'http-template',
   'minimax-video',
   'minimax-legacy',
-  'kling-video'
+  'kling-video',
+  'sora-video'
 ]
 const PARAM_TYPES = ['select', 'number', 'text', 'boolean']
 

@@ -45,8 +45,10 @@
 | `MERGE-MAIN-1` | 同步 origin/main 9f4511d，解决 6 个冲突，合并后 277 测试通过 |
 | `PR-CINELAB-2` | 已推送 feat/agent-runtime，PR #2 创建，CI build 通过，状态 CLEAN |
 | `AGENT-CAPABILITY-PLAN-1` | CineBot 能力覆盖盘点、节点操作桥、能力注册表、未来功能接入清单 |
-| 验证 | 40 文件 277 测试、`typecheck`、`build` 通过；画布生成提案与模型覆盖、剪辑转场、技能上传/覆盖/删除、上下文压缩、会话删除、素材引用、CineBot UI、合并后剪辑室分页与 studio 成片回归通过 |
-| 分支 | `feat/agent-runtime` 领先 `origin/main` 34 个提交、落后 0，已推送；PR #2 等待 review/merge |
+| `SORA-VIDEO-1` | Sora 风格视频适配器；BeefTV Seedream 图片 + Seedance 视频接入；独立 `providers/sora.ts` |
+| `NOTIFY-BRAND-1` | 系统通知应用名/图标改为 CineLab；AUMID 对齐 `com.cinelab.app` |
+| 验证 | 43 文件 315 测试、`typecheck`、`build` 通过；Seedream 2048×2048 图片与 Seedance 2.0 Mini 4 秒视频真实烟测通过 |
+| 分支 | `feat/sora-video`（commit `26c6bcd`）已推送，待创建 PR；安装包在 `Downloads\cinelab-sora-video` |
 
 ## 关键工件
 
@@ -59,14 +61,15 @@
 - `docs/film-study-plan.md`：拉片室
 - `.opencode/handover/state.json`：唯一状态真相源
 - `.opencode/handover/evidence/AGENT-*.md`：Agent 验证记录
+- `docs/sora-video-plan.md`：Sora 风格视频适配器、Seedream 尺寸限制与烟测记录
+- `.opencode/handover/evidence/SORA-VIDEO-1.md`、`NOTIFY-BRAND-1.md`：本次交付证据
 
 ## 下一步
 
-1. 剪辑高级工具：自动字幕、删静音、转场、导出
-2. 技能文件上传与覆盖快捷操作
-3. 整体验收
-4. Agnes 视频补测
-5. 推送前同步 origin/main
+1. 创建并合并 `feat/sora-video` PR
+2. 安装 `Downloads\cinelab-sora-video` 新包，验证通知品牌与 Seedance/Seedream
+3. CineBot Phase 1 能力补齐
+4. PR #2 review/merge
 
 ## 设计约定
 
@@ -92,6 +95,8 @@
 - 生成必须走提案确认，不直接执行；`generation_submit` 不暴露给模型。
 - 生成引用：画布节点用 `refNodeIds`，资产库用 `library_search` + `libraryRefs`，本地附件用上传后的附件 nodeId；引用素材自动补线，提示词回填目标节点。
 - 新功能接入 Agent：UI 与 Agent 共用执行器，写操作走命令层；节点工具栏操作统一走 `node-operation-runner`，能力用 `AgentCapability` 注册，详见 `docs/agent-capability-plan.md`。
+- Sora 风格视频适配器独立在 `providers/sora.ts`；下载统一走 `baseUrl + /videos/{id}/content`，不使用上游 `video_url`。
+- Windows 通知 AUMID 必须与 `electron-builder` 的 `appId` 一致（`com.cinelab.app`）；用户 Key 用目标应用 userData 的 safeStorage 加密。
 
 ## 输入源
 

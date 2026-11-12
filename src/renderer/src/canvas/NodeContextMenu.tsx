@@ -235,7 +235,7 @@ function buildSections(
       title: '图像',
       actions: [
         { label: '九宫格', run: () => operation('grid-generate', 'multi') },
-        { label: '角色三视图', run: () => operation('character-sheet') },
+        { label: '角色四视图', run: () => operation('character-sheet') },
         { label: '抠图', run: () => operation('cutout') },
         { label: '扩图', run: () => operation('outpaint') },
         { label: '打光', run: () => operation('relight') },

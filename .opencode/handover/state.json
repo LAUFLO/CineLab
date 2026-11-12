@@ -1,13 +1,13 @@
 {
-  "version": 74,
+  "version": 76,
   "project": "CineLab",
   "root": "C:\\Users\\LAUFLO\\Documents\\CineLab",
-  "updatedAt": "2026-11-11T14:45:00.000Z",
+  "updatedAt": "2026-11-12T15:00:00.000Z",
   "phase": "AGENT",
   "phaseStatus": "in_progress",
   "phaseGoal": "通用 AgentRuntime 与 CineBot：画布/剪辑/技能/上下文/模型/会话；整体自验收完成，等待用户验收与 main 同步",
   "nextPhase": "发布前体验完善",
-  "next_focus": "PR #6 已合并，Phase 4 已在 feat/agent-generation-ops 完成：generation_propose 支持 operationId/itemId/mask，8 个模型类节点操作可自动复用提示词并把目标图作为 reference，真实模型烟测通过。下一步：提交分支、创建 PR、CI 通过后合并；后续补测蒙版操作、确认卡长任务和真实生成队列。",
+  "next_focus": "飞书缺陷表 7 项优化已完成：更多菜单悬浮二级浮窗、CineBot 模型四 Tab、派生操作新建节点并连线、FAB 右/下 26px、文本编辑器单栏预览切换、角色四视图、图片节点更多菜单。CineBot generation_propose 已对齐 outputTarget：提案确认时创建占位节点并把生成目标切到新节点。下一步：真实模型烟测生成类新节点；提交分支并创建 PR。",
   "frontier": [
     {
       "id": "M2-1",
@@ -1679,6 +1679,20 @@
       "note": "2026-11-10 完成。音频控制条移回波形下方，分隔线改回 border-top。截取/变速操作条改为 portal 到 body + fixed + z-index 60，默认在节点下方、空间不足时翻转，始终高于 z-index 50 的 PromptBar；实测与 PromptBar 重叠时命中操作条。CineNodeView 根元素新增双击 fitView，文本内容不再阻止冒泡；实测文本节点和图片节点都能放大聚焦。PromptBar 收集上游连线和 @标题命中的文本节点，生成时拼接【参考文本：标题】到 prompt 前，单条截断 4000 字符，只有文本上下文时也允许发送；用 mock 图片服务验证请求体包含文本内容。typecheck、162 tests、build 通过。",
       "evidence": [
         ".opencode/handover/evidence/AUDIO-TEXT-FOCUS-1.md"
+      ]
+    },
+    {
+      "id": "UI-FEISHU-OPT-2026-11-12",
+      "title": "飞书缺陷表 7 项优化：更多菜单悬浮二级、模型四 Tab、派生操作新建节点、FAB 间距、文本编辑器、角色四视图",
+      "status": "done",
+      "note": "2026-11-12 完成。NodeToolbar 更多菜单二级项改为 hover 浮窗（portal + fixed，避让视口）；CineBot 模型浮窗拆文本/图片/视频/音频四个 tab；新增 NodeOutputTarget 共享清单，生成型、裁剪/截取/画面裁切/去字幕/扩图/抠图/音频派生新建节点并连线，修图类保留版本回写；FAB right/bottom 统一 26px；文本编辑器改单栏并支持预览/Markdown 切换；角色三视图改四视图（正/侧/背 + 面部特写）。CineBot generation_propose 同步对齐：提案写入 outputTarget，确认时创建占位节点并连线，主进程改写 request.nodeId 后再入队，提案卡显示输出方式。typecheck、314 tests、build 通过；隔离实例验证 hover 浮窗、tab 切换、文本预览、裁剪新节点与连线、FAB 26/26、提案卡与提案节点创建。",
+      "evidence": [
+        "docs/node-output-target-plan.md",
+        ".opencode/handover/evidence/UI-FEISHU-OPT-2026-11-12.md",
+        ".opencode/handover/evidence/UI-FEISHU-MORE-SUBMENU.png",
+        ".opencode/handover/evidence/UI-FEISHU-MODEL-TABS.png",
+        ".opencode/handover/evidence/UI-FEISHU-TEXT-EDITOR.png",
+        ".opencode/handover/evidence/UI-FEISHU-FAB.png"
       ]
     }
   ],

@@ -156,6 +156,39 @@ describe('agent generation proposals', () => {
     expect((await readFile(root, proposal.id)).status).toBe('expired')
   })
 
+  it('marks derived operations as new-node and submits to the created target', async () => {
+    const input = draft()
+    input.request.op = 'character-sheet'
+    const proposal = await createProposal(root, 'main', input)
+    expect(proposal.outputTarget).toBe('new-node')
+
+    await expect(submitProposal(root, proposal.id)).rejects.toThrow(
+      '需要新建节点'
+    )
+    expect(mocks.startGeneration).not.toHaveBeenCalled()
+
+    mocks.startGeneration.mockResolvedValueOnce({ runId: 'run-new-node' })
+    const submitted = await submitProposal(root, proposal.id, 'image-new')
+    expect(submitted.status).toBe('submitted')
+    expect(submitted.request.nodeId).toBe('image-new')
+    expect(mocks.startGeneration).toHaveBeenCalledWith(
+      root,
+      expect.objectContaining({ nodeId: 'image-new' })
+    )
+    expect((await readFile(root, proposal.id)).request.nodeId).toBe('image-new')
+  })
+
+  it('keeps version target for edit operations even when a target is passed', async () => {
+    const proposal = await createProposal(root, 'main', draft())
+    expect(proposal.outputTarget).toBe('version')
+
+    await submitProposal(root, proposal.id, 'ignored-node')
+    expect(mocks.startGeneration).toHaveBeenCalledWith(
+      root,
+      expect.objectContaining({ nodeId: 'node-1' })
+    )
+  })
+
   it('submits once and returns the same proposal on repeated submit', async () => {
     const proposal = await createProposal(root, 'main', draft())
     const first = await submitProposal(root, proposal.id)

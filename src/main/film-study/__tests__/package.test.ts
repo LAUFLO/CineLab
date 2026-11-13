@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
-import extract from 'extract-zip'
 import type { FilmStudy } from '@shared/film-study'
+import { extractZipSafely } from '../../components/zip-extract'
 
 vi.mock('electron', () => ({
   app: {
@@ -76,7 +76,7 @@ describe('exportFilmStudyAnalysisPackage', () => {
 
     const output = join(root, 'unzip')
     await fs.mkdir(output, { recursive: true })
-    await extract(target, { dir: output })
+    await extractZipSafely(target, output)
 
     const base = join(output, '测试影片-AI分析包')
     const prompt = await fs.readFile(join(base, 'prompt.md'), 'utf8')
@@ -107,7 +107,7 @@ describe('exportFilmStudyAnalysisPackage', () => {
     await exportFilmStudyBundle(root, 'pack-test', bundleTarget)
     const bundleOutput = join(root, 'bundle')
     await fs.mkdir(bundleOutput, { recursive: true })
-    await extract(bundleTarget, { dir: bundleOutput })
+    await extractZipSafely(bundleTarget, bundleOutput)
     const bundleBase = join(bundleOutput, '测试影片-拉片包')
     const bundleStudy = JSON.parse(
       await fs.readFile(join(bundleBase, 'study.json'), 'utf8')

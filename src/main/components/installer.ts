@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
-import extract from 'extract-zip'
 import type { ComponentKind, ComponentManifest } from '@shared/components'
+import { extractZipSafely } from './zip-extract'
 
 export const MODEL_FILES: Partial<Record<ComponentKind, string>> = {
   'depth-model': 'video_depth_anything_vits.pth',
@@ -30,7 +30,13 @@ export async function installComponentFiles(
   await fs.mkdir(staging, { recursive: true })
 
   try {
-    await extract(downloadPath, { dir: staging })
+    await extractZipSafely(downloadPath, staging, {
+      maxFiles: manifest.files > 0 ? manifest.files + 32 : undefined,
+      maxTotalBytes:
+        manifest.expandedSize > 0
+          ? manifest.expandedSize + 64 * 1024 * 1024
+          : undefined
+    })
     await writeManifest(staging, manifest)
     await swapDirectory(staging, targetDir)
   } catch (error) {

@@ -156,6 +156,26 @@
 
 > 深色模式不用阴影分层，靠亮度差；浅色模式靠 1px 边框 + 淡阴影。
 
+### 3.5 Tailwind 主题映射
+
+`styles/tailwind.css` 用 `@theme` 把现有 tokens 映射为 Tailwind 主题；`styles/base.css` 负责 `color-scheme` 和文本选择；`global.css` 保留现有手写样式，迁移期逐步删除。
+
+| Tailwind token | 来源 CSS 变量 | 典型类 |
+|---|---|---|
+| `--color-canvas` | `--canvas-bg` | `bg-canvas` |
+| `--color-surface` | `--surface` | `bg-surface` |
+| `--color-surface-raised` | `--surface-raised` | `bg-surface-raised` |
+| `--color-fg` | `--text-1` | `text-fg` |
+| `--color-fg-muted` | `--text-2` | `text-fg-muted` |
+| `--color-fg-subtle` | `--text-3` | `text-fg-subtle` |
+| `--color-border` | `--border` | `border-border` |
+| `--color-accent` | `--accent` | `bg-accent` / `text-accent` |
+| `--color-success/warning/danger` | 同名状态色 | `text-success` 等 |
+| `--radius-card/panel/pill` | 新增圆角尺度 | `rounded-card` 等 |
+| `--shadow-float/menu/node` | 同名阴影 | `shadow-float` 等 |
+
+新组件优先使用上述语义类，不要使用 Tailwind 默认色板（如 `bg-slate-800`）或硬编码色值。动态画布尺寸、时间线定位和 3D 参数继续使用 CSS 变量/inline style。
+
 ---
 
 ## 4. 节点规格

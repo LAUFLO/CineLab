@@ -806,4 +806,5 @@ CineBot 是全局浮层，不占用画布布局。
 - 组件使用 Tailwind 语义类（`bg-surface`、`text-fg`、`border-border`、`bg-accent` 等），不硬编码色值。
 - 旧页面按「设置页 → 资产库 → 剪辑室 → 画布」逐步迁移。
 - 当前设置页已迁移 `Switch`、`SettingRow`、`Input`、`Select`；确认弹窗已迁移 `Dialog` 和 `Button`；全局提示已迁移 `Toast`。
+- 资产库的命名/模板弹窗已迁移 `Dialog`、`Field`、`Input`、`Textarea`、`Select`；资产库工具栏和底部操作已迁移 `Button`、`IconButton`。
 - `Menu` 已提供，但节点/工具栏菜单会在后续批次逐步迁移。

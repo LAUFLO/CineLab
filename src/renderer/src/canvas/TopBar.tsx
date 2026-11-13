@@ -475,7 +475,9 @@ export function TopBar() {
       ) : null}
 
       {exportNotice ? (
-        <Toast className="bottom-[72px]">{exportNotice}</Toast>
+        <Toast unstyled className="export-toast">
+          {exportNotice}
+        </Toast>
       ) : null}
     </>
   )

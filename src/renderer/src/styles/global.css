@@ -308,6 +308,42 @@ textarea {
   word-break: break-all;
 }
 
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 72px;
+  transform: translateX(-50%);
+  max-width: 560px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--danger);
+  color: var(--text-1);
+  font-size: 12px;
+  z-index: 80;
+}
+
+.export-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 72px;
+  transform: translateX(-50%);
+  max-width: 560px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  font-size: 12px;
+  z-index: 320;
+  box-shadow: var(--shadow-float);
+}
+
+.export-toast.is-error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 .topbar__brand:hover,
 .topbar__item:hover {
   background: var(--surface-hover);

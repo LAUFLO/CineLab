@@ -210,7 +210,7 @@ export default function App() {
         <ToolbarSettings />
         <ConfirmDialog />
         {error ? (
-          <ToastView tone="error" className="bottom-[72px]">
+          <ToastView unstyled className="toast">
             {error}
           </ToastView>
         ) : null}

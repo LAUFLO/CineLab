@@ -1,5 +1,5 @@
 import { Icon } from '../components/Icon'
-import { Select } from '../components/Select'
+import { IconButton, Select } from '../components/ui'
 import { docDurationMs, formatTimecode } from '@shared/timeline-layout'
 import { useStudioStore } from '../stores/studio'
 import { useTimelineStore } from '../stores/timeline'
@@ -28,9 +28,9 @@ export function StudioTopBar() {
   return (
     <header className="studio-top">
       <div className="studio-top__left">
-        <button type="button" className="studio-icon-btn" onClick={close} title="返回画布">
+        <IconButton label="返回画布" size="sm" onClick={close}>
           <Icon name="chevron-left" size={14} />
-        </button>
+        </IconButton>
         <span className="studio-top__title">剪辑室 · {doc?.name ?? '未命名项目'}</span>
       </div>
 
@@ -67,26 +67,16 @@ export function StudioTopBar() {
       </div>
 
       <div className="studio-top__right">
-        <button
-          type="button"
-          className="studio-icon-btn"
-          onClick={toggleLeft}
-          title="切换素材池"
-        >
+        <IconButton label="切换素材池" size="sm" onClick={toggleLeft}>
           <Icon name="library" size={14} />
-        </button>
-        <button
-          type="button"
-          className="studio-icon-btn"
-          onClick={toggleRight}
-          title="切换检查器"
-        >
+        </IconButton>
+        <IconButton label="切换检查器" size="sm" onClick={toggleRight}>
           <Icon name="layers" size={14} />
-        </button>
+        </IconButton>
         <span className="studio-top__hint">成片在画布节点生成</span>
-        <button type="button" className="studio-icon-btn" onClick={close} title="关闭">
+        <IconButton label="关闭" size="sm" onClick={close}>
           <Icon name="close" size={14} />
-        </button>
+        </IconButton>
       </div>
     </header>
   )

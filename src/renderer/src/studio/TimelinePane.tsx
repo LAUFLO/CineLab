@@ -14,6 +14,7 @@ import {
 import type { TimelineCommand } from '@shared/timeline-commands'
 import { snapTargets, snapValue } from '@shared/timeline-snap'
 import { Icon } from '../components/Icon'
+import { IconButton } from '../components/ui'
 import { useTimelineStore } from '../stores/timeline'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
@@ -829,24 +830,22 @@ export function TimelinePane() {
           导入字幕
         </button>
         <span className="studio-toolbar-divider" />
-        <button
-          type="button"
-          className="studio-icon-btn"
+        <IconButton
+          label="撤销 (Ctrl+Z)"
+          size="sm"
           onClick={undo}
           disabled={history.past.length === 0}
-          title="撤销 (Ctrl+Z)"
         >
           ↶
-        </button>
-        <button
-          type="button"
-          className="studio-icon-btn"
+        </IconButton>
+        <IconButton
+          label="重做 (Ctrl+Shift+Z)"
+          size="sm"
           onClick={redo}
           disabled={history.future.length === 0}
-          title="重做 (Ctrl+Shift+Z)"
         >
           ↷
-        </button>
+        </IconButton>
         <span className="studio-toolbar-divider" />
         <button
           type="button"
@@ -865,25 +864,23 @@ export function TimelinePane() {
           磁性
         </button>
         <span className="studio-toolbar-spacer" />
-        <button
-          type="button"
-          className="studio-icon-btn"
+        <IconButton
+          label="缩小"
+          size="sm"
           onClick={() => zoomAt(zoom / 1.6, width / 2)}
           disabled={zoom <= 0.5}
-          title="缩小"
         >
           −
-        </button>
+        </IconButton>
         <span className="studio-zoom">{Math.round(zoom * 100)}%</span>
-        <button
-          type="button"
-          className="studio-icon-btn"
+        <IconButton
+          label="放大"
+          size="sm"
           onClick={() => zoomAt(zoom * 1.6, width / 2)}
           disabled={zoom >= 4}
-          title="放大"
         >
           ＋
-        </button>
+        </IconButton>
       </div>
 
       <div className="studio-timeline__body">

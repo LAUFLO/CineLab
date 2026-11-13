@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { NODE_META, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
+import { Button, IconButton } from '../../components/ui'
 import { assetUrl } from '../../lib/asset-url'
 import {
   absolutePosition,
@@ -854,9 +855,9 @@ export function NodeToolbar({
 
       {onEdit ? (
         <>
-          <button
-            type="button"
-            className="cnode__toolbar-btn"
+          <Button
+            variant="ghost"
+            size="xs"
             title="编辑文本（支持 Markdown）"
             onClick={(event) => {
               event.stopPropagation()
@@ -865,16 +866,16 @@ export function NodeToolbar({
           >
             <Icon name="edit" size={14} />
             <span>编辑</span>
-          </button>
+          </Button>
           <span className="cnode__toolbar-divider" />
         </>
       ) : null}
 
       {kind === 'audio' ? (
         <>
-          <button
-            type="button"
-            className="cnode__toolbar-btn"
+          <Button
+            variant="ghost"
+            size="xs"
             title="截取音频片段"
             onClick={(event) => {
               event.stopPropagation()
@@ -883,10 +884,10 @@ export function NodeToolbar({
           >
             <Icon name="scissors" size={14} />
             <span>截取</span>
-          </button>
-          <button
-            type="button"
-            className="cnode__toolbar-btn"
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
             title="调整播放速度"
             onClick={(event) => {
               event.stopPropagation()
@@ -895,14 +896,14 @@ export function NodeToolbar({
           >
             <Icon name="audio" size={14} />
             <span>变速</span>
-          </button>
+          </Button>
           <span className="cnode__toolbar-divider" />
         </>
       ) : null}
 
-      <button
-        type="button"
-        className="cnode__toolbar-btn"
+      <Button
+        variant="ghost"
+        size="xs"
         title="用当前节点创建剪辑室"
         onClick={(event) => {
           event.stopPropagation()
@@ -911,49 +912,44 @@ export function NodeToolbar({
       >
         <Icon name="film" size={14} />
         <span>剪辑室</span>
-      </button>
+      </Button>
 
-      <button
-        type="button"
-        className="cnode__toolbar-btn"
-        title="下载素材"
-        aria-label="下载素材"
+      <IconButton
+        label="下载素材"
+        size="xs"
         onClick={(event) => {
           event.stopPropagation()
           onDownload()
         }}
       >
         <Icon name="download" size={14} />
-      </button>
+      </IconButton>
 
       {kind !== 'audio' ? (
-        <button
-          type="button"
-          className="cnode__toolbar-btn"
-          title={kind === 'text' ? '放大编辑' : '查看大图'}
-          aria-label={kind === 'text' ? '放大编辑' : '查看大图'}
+        <IconButton
+          label={kind === 'text' ? '放大编辑' : '查看大图'}
+          size="xs"
           onClick={(event) => {
             event.stopPropagation()
             onExpand()
           }}
         >
           <Icon name="expand" size={14} />
-        </button>
+        </IconButton>
       ) : null}
 
       {libraryAction ? (
-        <button
-          type="button"
-          className="cnode__toolbar-btn"
+        <IconButton
+          label={libraryAction.label}
+          size="xs"
           title={libraryAction.title}
-          aria-label={libraryAction.label}
           onClick={(event) => {
             event.stopPropagation()
             libraryAction.onClick()
           }}
         >
           <Icon name="folder" size={14} />
-        </button>
+        </IconButton>
       ) : null}
       </div>
 

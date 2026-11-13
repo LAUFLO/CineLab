@@ -23,7 +23,7 @@ import {
 import { useTimelineStore } from '../stores/timeline'
 import { applyTimelinePlan } from './timeline-plan-runner'
 import { useUIStore } from '../stores/ui'
-import { Select } from '../components/Select'
+import { Button, IconButton, Input, Select, Textarea } from '../components/ui'
 import { BezierEditor } from './BezierEditor'
 
 const BLEND_LABEL: Record<string, string> = {
@@ -106,27 +106,25 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
     <Section title="字幕">
       <label className="studio-field">
         <span>预设</span>
-        <select
+        <Select
+          className="w-full"
           value=""
-          onChange={(event) => {
-            const preset = SUBTITLE_PRESETS.find(
-              (item) => item.id === event.target.value
-            )
+          options={[
+            { value: '', label: '选择样式' },
+            ...SUBTITLE_PRESETS.map((preset) => ({
+              value: preset.id,
+              label: preset.name
+            }))
+          ]}
+          onChange={(value) => {
+            const preset = SUBTITLE_PRESETS.find((item) => item.id === value)
             if (preset) commit(preset.style)
           }}
-        >
-          <option value="">选择样式</option>
-          {SUBTITLE_PRESETS.map((preset) => (
-            <option key={preset.id} value={preset.id}>
-              {preset.name}
-            </option>
-          ))}
-        </select>
+        />
       </label>
       <label className="studio-field">
         <span>内容</span>
-        <textarea
-          className="studio-textarea"
+        <Textarea
           rows={4}
           value={content}
           onChange={(event) => setContent(event.target.value)}
@@ -143,7 +141,7 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
 
       <label className="studio-field">
         <span>字体</span>
-        <input
+        <Input
           value={fontFamily}
           onChange={(event) => setFontFamily(event.target.value)}
           onBlur={() => commit({ fontFamily })}
@@ -152,7 +150,7 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
 
       <label className="studio-field">
         <span>字号</span>
-        <input
+        <Input
           type="number"
           min={8}
           max={400}
@@ -175,16 +173,16 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
 
       <label className="studio-field">
         <span>对齐</span>
-        <select
+        <Select<TextStyle['align']>
+          className="w-full"
           value={text.align}
-          onChange={(event) =>
-            commit({ align: event.target.value as TextStyle['align'] })
-          }
-        >
-          <option value="left">左</option>
-          <option value="center">中</option>
-          <option value="right">右</option>
-        </select>
+          options={[
+            { value: 'left', label: '左' },
+            { value: 'center', label: '中' },
+            { value: 'right', label: '右' }
+          ]}
+          onChange={(value) => commit({ align: value })}
+        />
       </label>
 
       <div className="studio-field-row">
@@ -227,7 +225,7 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
 
       <label className="studio-field">
         <span>描边</span>
-        <input
+        <Input
           type="number"
           min={0}
           max={20}
@@ -316,31 +314,31 @@ function AnalysisSection({ clip }: { clip: TimelineClip }) {
     <Section title="AI 分析">
       <div className="studio-field-row">
         {canShots ? (
-          <button
-            type="button"
-            className="studio-ghost-btn"
+          <Button
+            variant="ghost"
+            size="sm"
             disabled={running !== null}
             onClick={() => void run('shots')}
           >
             {running === 'shots' ? '检测中…' : '镜头'}
-          </button>
+          </Button>
         ) : null}
-        <button
-          type="button"
-          className="studio-ghost-btn"
+        <Button
+          variant="ghost"
+          size="sm"
           disabled={running !== null}
           onClick={() => void run('silences')}
         >
           {running === 'silences' ? '检测中…' : '静音'}
-        </button>
-        <button
-          type="button"
-          className="studio-ghost-btn"
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           disabled={running !== null}
           onClick={() => void run('beats')}
         >
           {running === 'beats' ? '检测中…' : '节拍'}
-        </button>
+        </Button>
       </div>
       <small className="studio-field-hint">
         检测结果写入时间线标尺，可点击标记跳转
@@ -448,9 +446,9 @@ function KeyframeSection({
             onChange={(event) => setValue(Number(event.target.value) || 0)}
           />
         )}
-        <button type="button" className="studio-ghost-btn" onClick={addKey}>
+        <Button variant="ghost" size="sm" onClick={addKey}>
           添加
-        </button>
+        </Button>
       </div>
 
       {clip.keys.length === 0 ? (
@@ -553,16 +551,15 @@ function KeyframeSection({
                 <option value="ease-in-out">缓入缓出</option>
                 <option value="bezier">曲线</option>
               </select>
-              <button
-                type="button"
-                className="studio-icon-btn"
-                title="删除关键帧"
+              <IconButton
+                label="删除关键帧"
+                size="sm"
                 onClick={() =>
                   updateKeys(clip.keys.filter((_, itemIndex) => itemIndex !== index))
                 }
               >
                 ×
-              </button>
+              </IconButton>
               </div>
               {key.ease === 'bezier' ? (
                 <BezierEditor
@@ -969,9 +966,9 @@ export function InspectorPane() {
             </label>
             <Field label="混合" value={BLEND_LABEL[clip.blend] ?? clip.blend} />
             {clip.kind === 'video' || clip.kind === 'image' ? (
-              <button
-                type="button"
-                className="studio-ghost-btn"
+              <Button
+                variant="ghost"
+                size="sm"
                 title="缩放为 35% 并移到右下角；放到 V2 轨叠加在 V1 上"
                 onClick={() =>
                   changeTransform({
@@ -983,7 +980,7 @@ export function InspectorPane() {
                 }
               >
                 画中画预设
-              </button>
+              </Button>
             ) : null}
           </Section>
           ) : null}
@@ -1224,13 +1221,13 @@ export function InspectorPane() {
               </>
             ) : null}
             {clip.kind === 'video' && clip.media ? (
-              <button
-                type="button"
-                className="studio-ghost-btn"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => void detachAudio()}
               >
                 分离音频
-              </button>
+              </Button>
             ) : null}
           </Section>
           ) : null}
@@ -1243,40 +1240,40 @@ export function InspectorPane() {
           (clip.kind === 'video' || clip.kind === 'audio') &&
           clip.media ? (
             <Section title="自动粗剪">
-              <button
-                type="button"
-                className="studio-ghost-btn"
+              <Button
+                variant="ghost"
+                size="sm"
                 disabled={runningAction !== null}
                 onClick={() => void runRemoveSilence()}
               >
                 {runningAction === 'silence' ? '检测中…' : '删除静音'}
-              </button>
+              </Button>
               {clip.kind === 'video' ? (
-                <button
-                  type="button"
-                  className="studio-ghost-btn"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   disabled={runningAction !== null}
                   onClick={() => void runSplitByShots()}
                 >
                   {runningAction === 'shots' ? '检测中…' : '按镜头切分'}
-                </button>
+                </Button>
               ) : null}
-              <button
-                type="button"
-                className="studio-ghost-btn"
+              <Button
+                variant="ghost"
+                size="sm"
                 disabled={runningAction !== null}
                 onClick={() => void runBeatAction('markers')}
               >
                 {runningAction === 'beats' ? '检测中…' : '节拍标记'}
-              </button>
-              <button
-                type="button"
-                className="studio-ghost-btn"
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 disabled={runningAction !== null}
                 onClick={() => void runBeatAction('split')}
               >
                 {runningAction === 'beat-split' ? '检测中…' : '节拍切分'}
-              </button>
+              </Button>
               <small className="studio-field-hint">
                 静音两端保留 120ms，过短区间跳过；所有操作可 Ctrl+Z 恢复
               </small>
@@ -1343,18 +1340,18 @@ export function InspectorPane() {
           <Field label="片段" value={`${doc.clips.length} 个`} />
           <Field label="轨道" value={`${doc.tracks.length} 条`} />
           <Field label="标记" value={`${doc.markers.length} 个`} />
-          <button
-            type="button"
-            className="studio-ghost-btn"
+          <Button
+            variant="ghost"
+            size="sm"
             disabled={runningAction !== null}
             onClick={() => void runRemoveSilence()}
           >
             {runningAction === 'silence' ? '检测中…' : '整条时间线删静音'}
-          </button>
+          </Button>
           {doc.markers.length > 0 ? (
-            <button
-              type="button"
-              className="studio-ghost-btn"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() =>
                 dispatch({
                   op: 'batch',
@@ -1367,7 +1364,7 @@ export function InspectorPane() {
               }
             >
               清除全部标记
-            </button>
+            </Button>
           ) : null}
         </Section>
       )}

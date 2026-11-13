@@ -19,6 +19,7 @@ import {
 } from '@shared/provider-schema'
 import type { ReferenceInput, ReferenceRole } from '@shared/generation'
 import { Icon } from '../components/Icon'
+import { IconButton, MenuItem, Switch } from '../components/ui'
 import {
   absolutePosition,
   isGroupNode,
@@ -1168,25 +1169,21 @@ export function PromptBar() {
 
           {uploadMenuOpen ? (
             <div className="promptbar__upload-menu">
-              <button
-                type="button"
-                className="promptbar__upload-item"
-                onClick={() => void handleLocalUpload()}
+              <MenuItem
+                icon={<Icon name="folder-plus" size={14} />}
+                onSelect={() => void handleLocalUpload()}
               >
-                <Icon name="folder-plus" size={14} />
                 本地上传
-              </button>
-              <button
-                type="button"
-                className="promptbar__upload-item"
-                onClick={() => {
+              </MenuItem>
+              <MenuItem
+                icon={<Icon name="library" size={14} />}
+                onSelect={() => {
                   setUploadMenuOpen(false)
                   openLibrary('场景')
                 }}
               >
-                <Icon name="library" size={14} />
                 资产库上传
-              </button>
+              </MenuItem>
             </div>
           ) : null}
         </div>
@@ -1266,14 +1263,13 @@ export function PromptBar() {
             素材 {mergedRefs.length}
           </span>
         ) : null}
-        <button
-          type="button"
-          className="promptbar__icon"
-          title={expanded ? '收起输入框' : '展开输入框'}
+        <IconButton
+          label={expanded ? '收起输入框' : '展开输入框'}
+          size="xs"
           onClick={() => setExpanded((open) => !open)}
         >
           <Icon name="expand" size={13} />
-        </button>
+        </IconButton>
       </div>
 
       <div className="promptbar__input-wrap">
@@ -1696,17 +1692,14 @@ export function PromptBar() {
 
                   <div className="param-panel__switch-row">
                     <span>AI 水印</span>
-                    <button
-                      type="button"
-                      className={`promptbar__switch ${watermark ? 'is-on' : ''}`}
-                      onClick={() => {
-                        const next = !watermark
+                    <Switch
+                      label="AI 水印"
+                      checked={watermark}
+                      onChange={(next) => {
                         setWatermark(next)
                         void updateGeneration({ watermark: next })
                       }}
-                    >
-                      <span />
-                    </button>
+                    />
                   </div>
                 </div>
               ) : null}
@@ -1717,14 +1710,14 @@ export function PromptBar() {
         )}
 
         <div className="promptbar__spacer" />
-        <button
-          type="button"
-          className={`promptbar__advanced-trigger ${advancedOpen ? 'is-active' : ''}`}
-          title="高级设置"
+        <IconButton
+          label="高级设置"
+          size="xs"
+          className={advancedOpen ? 'bg-surface-hover text-fg' : undefined}
           onClick={() => setAdvancedOpen((open) => !open)}
         >
           <Icon name="settings" size={16} />
-        </button>
+        </IconButton>
 
         {isRunning ? (
           <button
@@ -1758,17 +1751,14 @@ export function PromptBar() {
                 自动匹配提示词中的节点、素材和角色名称，匹配结果会显示在素材缩略图中
               </div>
             </div>
-            <button
-              type="button"
-              className={`promptbar__switch ${autoLink ? 'is-on' : ''}`}
-              onClick={() => {
-                const next = !autoLink
+            <Switch
+              label="智能引用 AutoLink"
+              checked={autoLink}
+              onChange={(next) => {
                 setAutoLink(next)
                 void updateGeneration({ autoLink: next })
               }}
-            >
-              <span />
-            </button>
+            />
           </div>
         </div>
       ) : null}

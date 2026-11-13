@@ -4415,6 +4415,19 @@ body.is-picking .react-flow__node:hover .cnode__card {
   color: var(--text-2);
 }
 
+.settings-row__control {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-row__control button[aria-haspopup='listbox'] {
+  width: 210px;
+  height: 30px;
+  font-size: 12px;
+}
+
 .settings-input {
   width: 240px;
   height: 30px;

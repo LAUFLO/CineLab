@@ -61,7 +61,7 @@ export function SettingRow({
           </div>
         ) : null}
       </div>
-      <div className="flex shrink-0 items-center gap-2">{children}</div>
+      <div className="settings-row__control">{children}</div>
     </div>
   )
 }

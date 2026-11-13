@@ -419,7 +419,7 @@ export function LibraryWindow() {
             {mode === 'browse' && !isTemplateFolder ? (
               <Button
                 variant="secondary"
-                size="sm"
+                size="xs"
                 onClick={() => {
                   setSelectionMode((current) => !current)
                   setSelectedPaths(new Set())
@@ -532,7 +532,7 @@ export function LibraryWindow() {
               <>
                 <Button
                   variant="secondary"
-                  size="sm"
+                  size="xs"
                   onClick={() =>
                     setSelectedPaths(new Set(assets.map((asset) => asset.path)))
                   }
@@ -541,7 +541,7 @@ export function LibraryWindow() {
                 </Button>
                 <Button
                   variant="secondary"
-                  size="sm"
+                  size="xs"
                   onClick={() => setSelectedPaths(new Set())}
                 >
                   清空
@@ -577,7 +577,7 @@ export function LibraryWindow() {
               <>
                 <Button
                   variant="secondary"
-                  size="sm"
+                  size="xs"
                   disabled={selectedAssets.length === 0}
                   onClick={() => {
                     setMoveTargets(selectedAssets)
@@ -588,7 +588,7 @@ export function LibraryWindow() {
                 </Button>
                 <Button
                   variant="secondary"
-                  size="sm"
+                  size="xs"
                   disabled={!canConcat}
                   onClick={() => setConcatOpen(true)}
                 >
@@ -596,7 +596,7 @@ export function LibraryWindow() {
                 </Button>
                 <Button
                   variant="danger"
-                  size="sm"
+                  size="xs"
                   disabled={selectedAssets.length === 0}
                   onClick={handleBatchDelete}
                 >
@@ -604,7 +604,7 @@ export function LibraryWindow() {
                 </Button>
                 <Button
                   variant="primary"
-                  size="sm"
+                  size="xs"
                   onClick={() => {
                     setSelectionMode(false)
                     setSelectedPaths(new Set())
@@ -639,27 +639,16 @@ export function LibraryWindow() {
         <Dialog
           open
           onClose={() => setMoveTargets([])}
-          title={
-            moveTargets.length === 1
-              ? `移动「${moveTargets[0].name}」到`
-              : `移动 ${moveTargets.length} 个素材到`
-          }
-          size="md"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setMoveTargets([])}>
-                取消
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => void handleConfirmMove()}
-                disabled={!moveFolder}
-              >
-                移动到此处
-              </Button>
-            </>
-          }
+          bare
+          ariaLabel="移动素材"
+          overlayClassName="library-modal"
+          panelClassName="library-modal__panel"
         >
+          <div className="library-modal__title">
+            {moveTargets.length === 1
+              ? `移动「${moveTargets[0].name}」到`
+              : `移动 ${moveTargets.length} 个素材到`}
+          </div>
           <div className="library-move-tree">
             <FolderTree
               tree={tree}
@@ -671,6 +660,18 @@ export function LibraryWindow() {
               readOnly
             />
           </div>
+          <div className="library-modal__actions">
+            <Button variant="secondary" onClick={() => setMoveTargets([])}>
+              取消
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => void handleConfirmMove()}
+              disabled={!moveFolder}
+            >
+              移动到此处
+            </Button>
+          </div>
         </Dialog>
       ) : null}
 
@@ -678,27 +679,12 @@ export function LibraryWindow() {
         <Dialog
           open
           onClose={() => setConcatOpen(false)}
-          title="合成视频"
-          size="lg"
-          footer={
-            <>
-              <Button
-                variant="secondary"
-                disabled={concatBusy}
-                onClick={() => setConcatOpen(false)}
-              >
-                取消
-              </Button>
-              <Button
-                variant="primary"
-                disabled={concatBusy}
-                onClick={() => void handleConcat()}
-              >
-                {concatBusy ? '合成中…' : '选择位置并合成'}
-              </Button>
-            </>
-          }
+          bare
+          ariaLabel="合成视频"
+          overlayClassName="library-modal"
+          panelClassName="library-modal__panel library-modal__panel--wide"
         >
+          <div className="library-modal__title">合成视频</div>
           <div className="concat-form">
             <div className="concat-form__row">
               <span>分辨率</span>
@@ -886,6 +872,22 @@ export function LibraryWindow() {
               {concatSubtitle ? '；字幕烧录进画面' : ''}。
             </div>
           </div>
+          <div className="library-modal__actions">
+            <Button
+              variant="secondary"
+              disabled={concatBusy}
+              onClick={() => setConcatOpen(false)}
+            >
+              取消
+            </Button>
+            <Button
+              variant="primary"
+              disabled={concatBusy}
+              onClick={() => void handleConcat()}
+            >
+              {concatBusy ? '合成中…' : '选择位置并合成'}
+            </Button>
+          </div>
         </Dialog>
       ) : null}
 
@@ -893,35 +895,34 @@ export function LibraryWindow() {
         <Dialog
           open
           onClose={() => setTagTarget(null)}
-          title={`标签「${tagTarget.name}」`}
-          size="sm"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setTagTarget(null)}>
-                取消
-              </Button>
-              <Button variant="primary" onClick={() => void handleSaveTags()}>
-                保存标签
-              </Button>
-            </>
-          }
+          bare
+          ariaLabel={`标签「${tagTarget.name}」`}
+          overlayClassName="library-modal"
+          panelClassName="library-modal__panel"
         >
-          <div className="flex flex-col gap-3">
-            <Input
-              className="tag-input"
-              value={tagDraft}
-              placeholder="多个标签用逗号分隔，例如：人物, 夜景"
-              autoFocus
-              onChange={(event) => setTagDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') void handleSaveTags()
-              }}
-              unstyled
-            />
+          <div className="library-modal__title">标签「{tagTarget.name}」</div>
+          <Input
+            className="tag-input"
+            value={tagDraft}
+            placeholder="多个标签用逗号分隔，例如：人物, 夜景"
+            autoFocus
+            onChange={(event) => setTagDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') void handleSaveTags()
+            }}
+            unstyled
+          />
 
-            <div className="tag-hint">
-              标签保存在资产库根目录的 .tags.json，不修改原文件。
-            </div>
+          <div className="tag-hint">
+            标签保存在资产库根目录的 .tags.json，不修改原文件。
+          </div>
+          <div className="library-modal__actions">
+            <Button variant="secondary" onClick={() => setTagTarget(null)}>
+              取消
+            </Button>
+            <Button variant="primary" onClick={() => void handleSaveTags()}>
+              保存标签
+            </Button>
           </div>
         </Dialog>
       ) : null}

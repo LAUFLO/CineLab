@@ -113,21 +113,23 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
     <Section title="字幕">
       <label className="studio-field">
         <span>预设</span>
-        <Select
-          className="w-full"
+        <NativeSelect
           value=""
-          options={[
-            { value: '', label: '选择样式' },
-            ...SUBTITLE_PRESETS.map((preset) => ({
-              value: preset.id,
-              label: preset.name
-            }))
-          ]}
-          onChange={(value) => {
-            const preset = SUBTITLE_PRESETS.find((item) => item.id === value)
+          onChange={(event) => {
+            const preset = SUBTITLE_PRESETS.find(
+              (item) => item.id === event.target.value
+            )
             if (preset) commit(preset.style)
           }}
-        />
+          unstyled
+        >
+          <option value="">选择样式</option>
+          {SUBTITLE_PRESETS.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.name}
+            </option>
+          ))}
+        </NativeSelect>
       </label>
       <label className="studio-field">
         <span>内容</span>
@@ -183,16 +185,17 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
 
       <label className="studio-field">
         <span>对齐</span>
-        <Select<TextStyle['align']>
-          className="w-full"
+        <NativeSelect
           value={text.align}
-          options={[
-            { value: 'left', label: '左' },
-            { value: 'center', label: '中' },
-            { value: 'right', label: '右' }
-          ]}
-          onChange={(value) => commit({ align: value })}
-        />
+          onChange={(event) =>
+            commit({ align: event.target.value as TextStyle['align'] })
+          }
+          unstyled
+        >
+          <option value="left">左</option>
+          <option value="center">中</option>
+          <option value="right">右</option>
+        </NativeSelect>
       </label>
 
       <div className="studio-field-row">

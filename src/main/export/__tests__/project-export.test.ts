@@ -149,4 +149,48 @@ describe('stageProjectExport', () => {
       stageProjectExport(projectRoot, staging, libraryRoot)
     ).rejects.toThrow('全局素材缺失')
   })
+
+  it('excludes agent data but keeps project skills', async () => {
+    const projectRoot = await makeTemp('cinelab-project-')
+    const libraryRoot = await makeTemp('cinelab-library-')
+    const staging = await makeTemp('cinelab-staging-')
+
+    await fs.mkdir(join(libraryRoot, '场景'), { recursive: true })
+    await fs.writeFile(
+      join(libraryRoot, '场景', 'global.png'),
+      Buffer.from('global-image')
+    )
+    await fs.writeFile(
+      join(projectRoot, 'project.json'),
+      JSON.stringify(meta())
+    )
+    await fs.writeFile(
+      join(projectRoot, 'canvas-canvas.json'),
+      JSON.stringify(canvas('assets/img/local.png'))
+    )
+
+    await fs.mkdir(join(projectRoot, '.cinelab', 'agent', 'sessions'), {
+      recursive: true
+    })
+    await fs.writeFile(
+      join(projectRoot, '.cinelab', 'agent', 'sessions', 'session.jsonl'),
+      'private conversation'
+    )
+    await fs.mkdir(join(projectRoot, '.cinelab', 'skills', 'demo'), {
+      recursive: true
+    })
+    await fs.writeFile(
+      join(projectRoot, '.cinelab', 'skills', 'demo', 'SKILL.md'),
+      '# demo'
+    )
+
+    await stageProjectExport(projectRoot, staging, libraryRoot)
+
+    await expect(
+      fs.access(join(staging, '.cinelab', 'agent'))
+    ).rejects.toThrow()
+    await expect(
+      fs.access(join(staging, '.cinelab', 'skills', 'demo', 'SKILL.md'))
+    ).resolves.toBeUndefined()
+  })
 })

@@ -1,6 +1,8 @@
 import { app, BrowserWindow, screen, shell } from 'electron'
 import { appendFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { isAllowedExternalUrl } from './security/external-url'
+import { isAllowedNavigation } from './security/navigation'
 
 function logWindowError(message: string): void {
   try {
@@ -92,9 +94,30 @@ export function createMainWindow(): BrowserWindow {
   })
 
   win.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url)
+    if (isAllowedExternalUrl(url)) void shell.openExternal(url)
     return { action: 'deny' }
   })
+
+  win.webContents.on('will-navigate', (event, url) => {
+    if (
+      isAllowedNavigation(
+        win.webContents.getURL(),
+        url,
+        process.env.ELECTRON_RENDERER_URL
+      )
+    ) {
+      return
+    }
+
+    event.preventDefault()
+    if (isAllowedExternalUrl(url)) void shell.openExternal(url)
+  })
+
+  win.webContents.session.setPermissionRequestHandler(
+    (_webContents, _permission, callback) => {
+      callback(false)
+    }
+  )
 
   logWindowError(
     `create window packaged=${String(app.isPackaged)} appPath=${app.getAppPath()} dirname=${__dirname}`

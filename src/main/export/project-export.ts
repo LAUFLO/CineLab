@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { basename, extname, join } from 'node:path'
+import { basename, extname, join, relative } from 'node:path'
 import type { CanvasData, ProjectMeta } from '@shared/project-schema'
 import { zipDirectory } from './zip'
 
@@ -50,7 +50,16 @@ export async function stageProjectExport(
     recursive: true,
     filter: (source) => {
       const name = basename(source)
-      return name !== '.lock' && name !== '.trash'
+      if (name === '.lock' || name === '.trash') return false
+
+      // Agent sessions and proposals are local-only data. They must not be
+      // included when a project is shared or exported.
+      const rel = relative(projectRoot, source).replace(/\\/g, '/')
+      if (rel === '.cinelab/agent' || rel.startsWith('.cinelab/agent/')) {
+        return false
+      }
+
+      return true
     }
   })
 

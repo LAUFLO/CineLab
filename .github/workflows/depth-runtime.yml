@@ -50,7 +50,7 @@ jobs:
             -DownloadBase "https://github.com/${{ github.repository }}/releases/download/$env:RELEASE_TAG"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: depth-runtime-v1
           path: |

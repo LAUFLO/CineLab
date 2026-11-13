@@ -1,4 +1,9 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  type MouseEvent,
+  type ReactNode
+} from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from './cn'
 
@@ -90,33 +95,58 @@ export function Menu({
 export interface MenuItemProps {
   children: ReactNode
   icon?: ReactNode
+  trailing?: ReactNode
   danger?: boolean
   disabled?: boolean
-  onSelect: () => void
+  active?: boolean
+  title?: string
+  className?: string
+  onSelect: (event: MouseEvent<HTMLButtonElement>) => void
+  onMouseEnter?: (event: MouseEvent<HTMLButtonElement>) => void
+  onMouseLeave?: (event: MouseEvent<HTMLButtonElement>) => void
 }
 
 export function MenuItem({
   children,
   icon,
+  trailing,
   danger,
   disabled,
-  onSelect
+  active,
+  title,
+  className,
+  onSelect,
+  onMouseEnter,
+  onMouseLeave
 }: MenuItemProps) {
   return (
     <button
       type="button"
       role="menuitem"
       disabled={disabled}
-      onClick={onSelect}
+      title={title}
+      onClick={(event) => {
+        event.stopPropagation()
+        onSelect(event)
+      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       className={cn(
         'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
         'hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none',
+        active ? 'bg-surface-hover text-fg' : '',
         danger ? 'text-danger' : 'text-fg',
-        'disabled:pointer-events-none disabled:opacity-40'
+        'disabled:pointer-events-none disabled:opacity-40',
+        className
       )}
     >
       {icon ? <span className="shrink-0 text-fg-subtle">{icon}</span> : null}
-      <span className="truncate">{children}</span>
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      {trailing ? (
+        <span className="ml-auto flex shrink-0 items-center gap-2 text-xs text-fg-subtle">
+          {trailing}
+        </span>
+      ) : null}
     </button>
   )
 }

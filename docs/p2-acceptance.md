@@ -54,6 +54,22 @@
 
 说明：`global.css` 行数相比上一轮略有增加，是因为 Prettier 展开了部分单行规则；实际构建体积继续下降。
 
+## 视觉还原修正
+
+P2 早期迁移曾直接用公共组件的默认 Tailwind 样式替换原 CSS 类，导致按钮高度、字号、菜单行高、弹窗面板和输入框尺寸与原版不一致。本轮已按迁移前基线逐项还原：
+
+- `Button`：恢复 34px 高、13px 字号、8px 圆角、`.btn-*` 的边框与悬停行为；`xs` 对应 26px 的 `btn-small`，`sm` 对应 28px。
+- `IconButton`：默认 28px，恢复 `.icon-btn` 的尺寸和悬停。
+- `Select`：恢复 `.app-select` 的 34px 高度、13px 字号、`surface-hover` 背景和 280px 菜单。
+- `Switch`：默认 30×17（设置页），`sm` 为 22×12（Prompt Bar）。
+- `SettingRow`：恢复 56px 最小高度、12.5px 标题、11px 提示和 14px 横向内边距。
+- `Input`：恢复 `settings-input` 的 240×30 样式；设置行 Select 恢复 210×30。
+- 节点工具栏菜单：恢复 `.cnode__toolbar-menu__item` 的 12px 字号、32px 行高和 `text-2` 颜色。
+- Prompt Bar：恢复上传菜单、模型菜单、提及菜单的原始字号和行高，恢复 22×12 开关。
+- 弹窗：确认、命名、模板、移动、合成、标签弹窗恢复原 `.confirm-dialog` / `.library-modal` 结构；节点弹窗继续使用 `Dialog` 的 `bare` 模式。
+- 剪辑室：恢复 `.studio-icon-btn`、`.studio-ghost-btn`、`.studio-textarea` 和原生 select 的 30px 视觉。
+- Toast：恢复 `.export-toast` 和 `.toast` 的原样式。
+
 ## 视觉回归
 
 环境：生产预览构建，临时 userData，打开本地 `AgentSpike.cinelab` 测试项目。
@@ -66,6 +82,8 @@
 - 资产库的搜索框、文件夹树、底部操作正常
 - 剪辑室的顶栏、检查器输入框、时间线工具栏正常
 - 文本编辑弹窗（Dialog bare）正常打开，Escape 可关闭
+- 节点工具栏「更多」菜单与迁移前截图逐项对比：字号、行高、颜色、图标间距一致
+- 设置页的 Switch、Select、设置行高度与迁移前 CSS 一致
 - 遮罩、聚焦和弹窗层级未发现明显回归
 
 AgentPanel 的模型选择浮层保留原有面板内定位，不套用全屏 Dialog，避免遮罩范围和宽度变化。

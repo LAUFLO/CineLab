@@ -4,6 +4,7 @@ import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
 import { createStudioAt } from '../studio/nodes'
 import { pasteAt, uploadMaterialsAt } from './context-actions'
+import { Button } from '../components/ui'
 
 const MENU_WIDTH = 224
 const MENU_HEIGHT = 304
@@ -50,8 +51,14 @@ export function CanvasContextMenu() {
 
   if (!menu) return null
 
-  const left = Math.max(12, Math.min(menu.screen.x, window.innerWidth - MENU_WIDTH - 12))
-  const top = Math.max(12, Math.min(menu.screen.y, window.innerHeight - MENU_HEIGHT - 12))
+  const left = Math.max(
+    12,
+    Math.min(menu.screen.x, window.innerWidth - MENU_WIDTH - 12)
+  )
+  const top = Math.max(
+    12,
+    Math.min(menu.screen.y, window.innerHeight - MENU_HEIGHT - 12)
+  )
 
   return (
     <div
@@ -61,33 +68,35 @@ export function CanvasContextMenu() {
       onPointerDown={(event) => event.stopPropagation()}
       onContextMenu={(event) => event.preventDefault()}
     >
-      <button
+      <Button
         type="button"
         className="ctx-menu__item"
         onClick={() => {
           close()
           void uploadMaterialsAt(menu.flow)
         }}
+        unstyled
       >
         <span>上传</span>
-      </button>
+      </Button>
 
-      <button type="button" className="ctx-menu__item" disabled>
+      <Button type="button" className="ctx-menu__item" disabled unstyled>
         <span>保存到我的资产</span>
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         className="ctx-menu__item"
         onClick={() => {
           close()
           openMenu({ screen: menu.screen, flow: menu.flow })
         }}
+        unstyled
       >
         <span>添加节点</span>
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         className="ctx-menu__item"
         onClick={() => {
@@ -95,13 +104,14 @@ export function CanvasContextMenu() {
           const studioId = createStudioAt(menu.flow)
           openStudio(studioId)
         }}
+        unstyled
       >
         <span>剪辑室</span>
-      </button>
+      </Button>
 
       <div className="ctx-menu__divider" />
 
-      <button
+      <Button
         type="button"
         className="ctx-menu__item"
         disabled={!canUndo}
@@ -109,12 +119,13 @@ export function CanvasContextMenu() {
           undo()
           close()
         }}
+        unstyled
       >
         <span>撤销</span>
         <span className="ctx-menu__shortcut">Ctrl+Z</span>
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         className="ctx-menu__item"
         disabled={!canRedo}
@@ -122,24 +133,26 @@ export function CanvasContextMenu() {
           redo()
           close()
         }}
+        unstyled
       >
         <span>重做</span>
         <span className="ctx-menu__shortcut">Shift+Ctrl+Z</span>
-      </button>
+      </Button>
 
       <div className="ctx-menu__divider" />
 
-      <button
+      <Button
         type="button"
         className="ctx-menu__item"
         onClick={() => {
           close()
           void pasteAt(menu.flow)
         }}
+        unstyled
       >
         <span>粘贴</span>
         <span className="ctx-menu__shortcut">Ctrl+V</span>
-      </button>
+      </Button>
     </div>
   )
 }

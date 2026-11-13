@@ -120,7 +120,9 @@ export function NodeToolbar({
     width: number
     height: number
   } | null>(null)
-  const [subtitleMode, setSubtitleMode] = useState<'delogo' | 'vision'>('delogo')
+  const [subtitleMode, setSubtitleMode] = useState<'delogo' | 'vision'>(
+    'delogo'
+  )
   const [subtitleTitle, setSubtitleTitle] = useState('框选去字幕')
   const [sphereDialog, setSphereDialog] = useState<'light' | 'camera' | null>(
     null
@@ -170,10 +172,7 @@ export function NodeToolbar({
   const openSubMenu = (op: NodeOperation, element: HTMLElement): void => {
     cancelSubClose()
     const rect = element.getBoundingClientRect()
-    const estimatedHeight = Math.min(
-      360,
-      (op.menu?.length ?? 1) * 34 + 8
-    )
+    const estimatedHeight = Math.min(360, (op.menu?.length ?? 1) * 34 + 8)
     const left = Math.min(rect.right + 6, window.innerWidth - 196)
     const top = Math.max(
       8,
@@ -331,7 +330,13 @@ export function NodeToolbar({
 
     const pendingIds = useCanvasStore
       .getState()
-      .addPendingNodes('video', source.origin, 1, `${source.title} · ${title}`, nodeId)
+      .addPendingNodes(
+        'video',
+        source.origin,
+        1,
+        `${source.title} · ${title}`,
+        nodeId
+      )
 
     showToast(`已开始${title}，完成后自动写入节点`)
     await startVisionTask(
@@ -355,13 +360,15 @@ export function NodeToolbar({
     setCropDialog(null)
     const source = sourceNode()
     if (!source) return
-    const pendingId = useCanvasStore.getState().addPendingNodes(
-      'image',
-      source.origin,
-      1,
-      `${source.title} · 自由裁剪`,
-      nodeId
-    )[0]
+    const pendingId = useCanvasStore
+      .getState()
+      .addPendingNodes(
+        'image',
+        source.origin,
+        1,
+        `${source.title} · 自由裁剪`,
+        nodeId
+      )[0]
     setRunning(true)
     showToast('正在裁剪…')
 
@@ -399,13 +406,15 @@ export function NodeToolbar({
     setSubtitleDialog(null)
     const source = sourceNode()
     if (!source) return
-    const pendingId = useCanvasStore.getState().addPendingNodes(
-      'video',
-      source.origin,
-      1,
-      `${source.title} · ${subtitleTitle}`,
-      nodeId
-    )[0]
+    const pendingId = useCanvasStore
+      .getState()
+      .addPendingNodes(
+        'video',
+        source.origin,
+        1,
+        `${source.title} · ${subtitleTitle}`,
+        nodeId
+      )[0]
     setRunning(true)
     showToast('正在框选去字幕…')
 
@@ -430,13 +439,15 @@ export function NodeToolbar({
     setTrimOpen(false)
     const source = sourceNode()
     if (!source) return
-    const pendingId = useCanvasStore.getState().addPendingNodes(
-      'video',
-      source.origin,
-      1,
-      `${source.title} · 截取`,
-      nodeId
-    )[0]
+    const pendingId = useCanvasStore
+      .getState()
+      .addPendingNodes(
+        'video',
+        source.origin,
+        1,
+        `${source.title} · 截取`,
+        nodeId
+      )[0]
     setRunning(true)
     showToast('正在截取…')
 
@@ -503,9 +514,7 @@ export function NodeToolbar({
       sphereDialog === 'camera'
         ? ops.find((entry) => entry.id === 'multi-angle')
         : undefined
-    const targetNodeId = targetOp
-      ? createOutputNode(targetOp, label)
-      : nodeId
+    const targetNodeId = targetOp ? createOutputNode(targetOp, label) : nodeId
     setSphereDialog(null)
     if (!targetNodeId) return
     showToast(`已提交「${label}」生成`)
@@ -535,13 +544,15 @@ export function NodeToolbar({
     const source = sourceNode()
     if (!source) return
 
-    const pendingId = useCanvasStore.getState().addPendingNodes(
-      'video',
-      source.origin,
-      1,
-      `${source.title} · 深度`,
-      nodeId
-    )[0]
+    const pendingId = useCanvasStore
+      .getState()
+      .addPendingNodes(
+        'video',
+        source.origin,
+        1,
+        `${source.title} · 深度`,
+        nodeId
+      )[0]
 
     try {
       const { taskId } = await window.api.media.startDepthCapture({
@@ -707,250 +718,257 @@ export function NodeToolbar({
           align === 'left' ? 'is-left' : align === 'right' ? 'is-right' : ''
         }`}
       >
-      {primaryOps.map((op) => {
-        const reason = op.disabledReason?.(ctx) ?? null
-        const hasMenu = Boolean(op.menu)
+        {primaryOps.map((op) => {
+          const reason = op.disabledReason?.(ctx) ?? null
+          const hasMenu = Boolean(op.menu)
 
-        return (
-          <div className="cnode__toolbar-item" key={`${nodeId}-${op.id}`}>
-            <button
+          return (
+            <div className="cnode__toolbar-item" key={`${nodeId}-${op.id}`}>
+              <Button
+                type="button"
+                className={`cnode__toolbar-btn ${
+                  openId === op.id ? 'is-active' : ''
+                } ${reason ? 'is-disabled' : ''}`}
+                title={reason ?? op.label}
+                aria-disabled={Boolean(reason)}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  if (hasMenu) togglePrimaryMenu(op)
+                  else activate(op)
+                }}
+                unstyled
+              >
+                <Icon name={op.icon} size={14} />
+                <span>{op.label}</span>
+                {hasMenu ? <Icon name="chevron-down" size={10} /> : null}
+              </Button>
+
+              {openId === op.id && op.menu ? (
+                <div className="cnode__toolbar-menu">
+                  {op.menu.map((item) => (
+                    <MenuItem
+                      key={item.id}
+                      onSelect={() => activate(op, item)}
+                      trailing={
+                        item.hint ? (
+                          <span className="cnode__toolbar-menu__hint">
+                            {item.hint}
+                          </span>
+                        ) : undefined
+                      }
+                    >
+                      {item.label}
+                    </MenuItem>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
+
+        {moreOps.length > 0 ? (
+          <div className="cnode__toolbar-item">
+            <Button
               type="button"
-              className={`cnode__toolbar-btn ${
-                openId === op.id ? 'is-active' : ''
-              } ${reason ? 'is-disabled' : ''}`}
-              title={reason ?? op.label}
-              aria-disabled={Boolean(reason)}
+              className={`cnode__toolbar-btn ${openId === 'more' ? 'is-active' : ''}`}
               onClick={(event) => {
                 event.stopPropagation()
-                if (hasMenu) togglePrimaryMenu(op)
-                else activate(op)
+                setMoreSub(null)
+                setOpenId((currentId) => (currentId === 'more' ? null : 'more'))
               }}
+              unstyled
             >
-              <Icon name={op.icon} size={14} />
-              <span>{op.label}</span>
-              {hasMenu ? <Icon name="chevron-down" size={10} /> : null}
-            </button>
+              <Icon name="more" size={14} />
+              <span>更多</span>
+              <Icon name="chevron-down" size={10} />
+            </Button>
 
-            {openId === op.id && op.menu ? (
-              <div className="cnode__toolbar-menu">
-                {op.menu.map((item) => (
-                  <MenuItem
-                    key={item.id}
-                    onSelect={() => activate(op, item)}
-                    trailing={
-                      item.hint ? (
-                        <span className="cnode__toolbar-menu__hint">
-                          {item.hint}
-                        </span>
-                      ) : undefined
-                    }
+            {openId === 'more' ? (
+              <div className="cnode__toolbar-menu is-right is-more">
+                {moreGroups.map((group) => (
+                  <div
+                    className="cnode__toolbar-menu__section"
+                    key={group.section}
                   >
-                    {item.label}
-                  </MenuItem>
+                    <div className="cnode__toolbar-menu__section-title">
+                      {OPERATION_SECTIONS[group.section]}
+                    </div>
+
+                    {group.items.map((op) => {
+                      const reason = op.disabledReason?.(ctx) ?? null
+                      const hasMenu = Boolean(op.menu)
+
+                      return (
+                        <div key={op.id}>
+                          <MenuItem
+                            icon={<Icon name={op.icon} size={14} />}
+                            title={reason ?? op.label}
+                            className={reason ? 'opacity-50' : undefined}
+                            onSelect={(event) => {
+                              if (reason) {
+                                showToast(reason, 'error')
+                                return
+                              }
+                              if (hasMenu) {
+                                if (moreSub?.opId === op.id) {
+                                  setMoreSub(null)
+                                } else {
+                                  openSubMenu(op, event.currentTarget)
+                                }
+                                return
+                              }
+                              activate(op)
+                            }}
+                            onMouseEnter={(event) => {
+                              if (reason || !hasMenu) {
+                                scheduleSubClose()
+                                return
+                              }
+                              openSubMenu(op, event.currentTarget)
+                            }}
+                            onMouseLeave={
+                              hasMenu ? scheduleSubClose : undefined
+                            }
+                            trailing={
+                              <>
+                                {op.hint ? (
+                                  <span className="cnode__toolbar-menu__hint">
+                                    {op.hint}
+                                  </span>
+                                ) : null}
+                                {hasMenu ? (
+                                  <Icon name="chevron-right" size={11} />
+                                ) : null}
+                              </>
+                            }
+                          >
+                            {op.label}
+                          </MenuItem>
+                        </div>
+                      )
+                    })}
+                  </div>
                 ))}
+
+                <div className="cnode__toolbar-menu__footer">
+                  <MenuItem
+                    icon={<Icon name="settings" size={14} />}
+                    trailing={<Icon name="chevron-right" size={11} />}
+                    onSelect={() => {
+                      closeMenus()
+                      openSettings(kind)
+                    }}
+                  >
+                    自定义工具栏
+                  </MenuItem>
+                </div>
               </div>
             ) : null}
           </div>
-        )
-      })}
+        ) : null}
 
-      {moreOps.length > 0 ? (
-        <div className="cnode__toolbar-item">
-          <button
-            type="button"
-            className={`cnode__toolbar-btn ${openId === 'more' ? 'is-active' : ''}`}
-            onClick={(event) => {
-              event.stopPropagation()
-              setMoreSub(null)
-              setOpenId((currentId) => (currentId === 'more' ? null : 'more'))
-            }}
-          >
-            <Icon name="more" size={14} />
-            <span>更多</span>
-            <Icon name="chevron-down" size={10} />
-          </button>
-
-          {openId === 'more' ? (
-            <div className="cnode__toolbar-menu is-right is-more">
-              {moreGroups.map((group) => (
-                <div className="cnode__toolbar-menu__section" key={group.section}>
-                  <div className="cnode__toolbar-menu__section-title">
-                    {OPERATION_SECTIONS[group.section]}
-                  </div>
-
-                  {group.items.map((op) => {
-                    const reason = op.disabledReason?.(ctx) ?? null
-                    const hasMenu = Boolean(op.menu)
-
-                    return (
-                      <div key={op.id}>
-                        <MenuItem
-                          icon={<Icon name={op.icon} size={14} />}
-                          title={reason ?? op.label}
-                          className={reason ? 'opacity-50' : undefined}
-                          onSelect={(event) => {
-                            if (reason) {
-                              showToast(reason, 'error')
-                              return
-                            }
-                            if (hasMenu) {
-                              if (moreSub?.opId === op.id) {
-                                setMoreSub(null)
-                              } else {
-                                openSubMenu(op, event.currentTarget)
-                              }
-                              return
-                            }
-                            activate(op)
-                          }}
-                          onMouseEnter={(event) => {
-                            if (reason || !hasMenu) {
-                              scheduleSubClose()
-                              return
-                            }
-                            openSubMenu(op, event.currentTarget)
-                          }}
-                          onMouseLeave={hasMenu ? scheduleSubClose : undefined}
-                          trailing={
-                            <>
-                              {op.hint ? (
-                                <span className="cnode__toolbar-menu__hint">
-                                  {op.hint}
-                                </span>
-                              ) : null}
-                              {hasMenu ? (
-                                <Icon name="chevron-right" size={11} />
-                              ) : null}
-                            </>
-                          }
-                        >
-                          {op.label}
-                        </MenuItem>
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
-
-              <div className="cnode__toolbar-menu__footer">
-                <MenuItem
-                  icon={<Icon name="settings" size={14} />}
-                  trailing={<Icon name="chevron-right" size={11} />}
-                  onSelect={() => {
-                    closeMenus()
-                    openSettings(kind)
-                  }}
-                >
-                  自定义工具栏
-                </MenuItem>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {primaryOps.length > 0 || moreOps.length > 0 ? (
-        <span className="cnode__toolbar-divider" />
-      ) : null}
-
-      {onEdit ? (
-        <>
-          <Button
-            variant="ghost"
-            size="xs"
-            title="编辑文本（支持 Markdown）"
-            onClick={(event) => {
-              event.stopPropagation()
-              onEdit()
-            }}
-          >
-            <Icon name="edit" size={14} />
-            <span>编辑</span>
-          </Button>
+        {primaryOps.length > 0 || moreOps.length > 0 ? (
           <span className="cnode__toolbar-divider" />
-        </>
-      ) : null}
+        ) : null}
 
-      {kind === 'audio' ? (
-        <>
-          <Button
-            variant="ghost"
-            size="xs"
-            title="截取音频片段"
-            onClick={(event) => {
-              event.stopPropagation()
-              onAudioTrim?.()
-            }}
-          >
-            <Icon name="scissors" size={14} />
-            <span>截取</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="xs"
-            title="调整播放速度"
-            onClick={(event) => {
-              event.stopPropagation()
-              onAudioSpeed?.()
-            }}
-          >
-            <Icon name="audio" size={14} />
-            <span>变速</span>
-          </Button>
-          <span className="cnode__toolbar-divider" />
-        </>
-      ) : null}
+        {onEdit ? (
+          <>
+            <Button
+              variant="ghost"
+              size="xs"
+              title="编辑文本（支持 Markdown）"
+              onClick={(event) => {
+                event.stopPropagation()
+                onEdit()
+              }}
+            >
+              <Icon name="edit" size={14} />
+              <span>编辑</span>
+            </Button>
+            <span className="cnode__toolbar-divider" />
+          </>
+        ) : null}
 
-      <Button
-        variant="ghost"
-        size="xs"
-        title="用当前节点创建剪辑室"
-        onClick={(event) => {
-          event.stopPropagation()
-          openStudioFromNode()
-        }}
-      >
-        <Icon name="film" size={14} />
-        <span>剪辑室</span>
-      </Button>
+        {kind === 'audio' ? (
+          <>
+            <Button
+              variant="ghost"
+              size="xs"
+              title="截取音频片段"
+              onClick={(event) => {
+                event.stopPropagation()
+                onAudioTrim?.()
+              }}
+            >
+              <Icon name="scissors" size={14} />
+              <span>截取</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              title="调整播放速度"
+              onClick={(event) => {
+                event.stopPropagation()
+                onAudioSpeed?.()
+              }}
+            >
+              <Icon name="audio" size={14} />
+              <span>变速</span>
+            </Button>
+            <span className="cnode__toolbar-divider" />
+          </>
+        ) : null}
 
-      <IconButton
-        label="下载素材"
-        size="xs"
-        onClick={(event) => {
-          event.stopPropagation()
-          onDownload()
-        }}
-      >
-        <Icon name="download" size={14} />
-      </IconButton>
+        <Button
+          variant="ghost"
+          size="xs"
+          title="用当前节点创建剪辑室"
+          onClick={(event) => {
+            event.stopPropagation()
+            openStudioFromNode()
+          }}
+        >
+          <Icon name="film" size={14} />
+          <span>剪辑室</span>
+        </Button>
 
-      {kind !== 'audio' ? (
         <IconButton
-          label={kind === 'text' ? '放大编辑' : '查看大图'}
+          label="下载素材"
           size="xs"
           onClick={(event) => {
             event.stopPropagation()
-            onExpand()
+            onDownload()
           }}
         >
-          <Icon name="expand" size={14} />
+          <Icon name="download" size={14} />
         </IconButton>
-      ) : null}
 
-      {libraryAction ? (
-        <IconButton
-          label={libraryAction.label}
-          size="xs"
-          title={libraryAction.title}
-          onClick={(event) => {
-            event.stopPropagation()
-            libraryAction.onClick()
-          }}
-        >
-          <Icon name="folder" size={14} />
-        </IconButton>
-      ) : null}
+        {kind !== 'audio' ? (
+          <IconButton
+            label={kind === 'text' ? '放大编辑' : '查看大图'}
+            size="xs"
+            onClick={(event) => {
+              event.stopPropagation()
+              onExpand()
+            }}
+          >
+            <Icon name="expand" size={14} />
+          </IconButton>
+        ) : null}
+
+        {libraryAction ? (
+          <IconButton
+            label={libraryAction.label}
+            size="xs"
+            title={libraryAction.title}
+            onClick={(event) => {
+              event.stopPropagation()
+              libraryAction.onClick()
+            }}
+          >
+            <Icon name="folder" size={14} />
+          </IconButton>
+        ) : null}
       </div>
 
       {moreSub && openId === 'more'
@@ -967,9 +985,7 @@ export function NodeToolbar({
                   <MenuItem
                     key={item.id}
                     onSelect={() => {
-                      const op = ops.find(
-                        (entry) => entry.id === moreSub.opId
-                      )
+                      const op = ops.find((entry) => entry.id === moreSub.opId)
                       if (op) activate(op, item)
                     }}
                     trailing={
@@ -992,9 +1008,7 @@ export function NodeToolbar({
         open={Boolean(depthDialog)}
         duration={depthDialog?.duration ?? 0}
         onClose={() => setDepthDialog(null)}
-        onConfirm={(quality, fps) =>
-          void confirmDepthCapture(quality, fps)
-        }
+        onConfirm={(quality, fps) => void confirmDepthCapture(quality, fps)}
       />
 
       <TrimDialog

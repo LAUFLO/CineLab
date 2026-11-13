@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Icon } from '../components/Icon'
 import { useUIStore } from '../stores/ui'
 import { studioOpen } from '../studio/scope'
+import { Button } from '../components/ui'
 
 export function BottomBar() {
   const tool = useUIStore((state) => state.tool)
@@ -49,30 +50,32 @@ export function BottomBar() {
 
   return (
     <div className="bottombar">
-      <button
+      <Button
         type="button"
         className="icon-btn bottombar__add"
         title="添加节点或资源"
         onClick={add}
+        unstyled
       >
         <Icon name="plus" />
-      </button>
+      </Button>
 
       <div className="bottombar__divider" />
 
       <div className="bottombar__tool" ref={toolWrapRef}>
-        <button
+        <Button
           type="button"
           className={`icon-btn ${toolMenuOpen ? 'is-open' : ''}`}
           title={`当前工具：${tool === 'select' ? '选择' : '抓手'}`}
           onClick={() => setToolMenuOpen((open) => !open)}
+          unstyled
         >
           <Icon name={tool === 'select' ? 'cursor' : 'move'} />
-        </button>
+        </Button>
 
         {toolMenuOpen ? (
           <div className="bottombar__tool-menu">
-            <button
+            <Button
               type="button"
               className={`bottombar__tool-item ${
                 tool === 'select' ? 'is-active' : ''
@@ -81,12 +84,13 @@ export function BottomBar() {
                 setTool('select')
                 setToolMenuOpen(false)
               }}
+              unstyled
             >
               <Icon name="cursor" size={14} />
               <span>选择</span>
               <kbd>V</kbd>
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className={`bottombar__tool-item ${
                 tool === 'hand' ? 'is-active' : ''
@@ -95,37 +99,45 @@ export function BottomBar() {
                 setTool('hand')
                 setToolMenuOpen(false)
               }}
+              unstyled
             >
               <Icon name="move" size={14} />
               <span>抓手</span>
               <kbd>H</kbd>
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>
 
       <div className="bottombar__divider" />
 
-      <button type="button" className="icon-btn" title="生成历史" onClick={openHistory}>
+      <Button
+        type="button"
+        className="icon-btn"
+        title="生成历史"
+        onClick={openHistory}
+        unstyled
+      >
         <Icon name="history" />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         className="icon-btn"
         title="快捷键"
         onClick={openShortcuts}
+        unstyled
       >
         <Icon name="keyboard" />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         className="icon-btn"
         title="教程（即将支持）"
         onClick={() => showToast('教程将在后续版本提供')}
+        unstyled
       >
         <Icon name="help" />
-      </button>
-
+      </Button>
     </div>
   )
 }

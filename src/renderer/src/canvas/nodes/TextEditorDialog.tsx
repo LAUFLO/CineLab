@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { Icon } from '../../components/Icon'
 import { renderMarkdown } from './text-markdown'
+import { Button, Dialog, Textarea } from '../../components/ui'
 
 interface TextEditorDialogProps {
   open: boolean
@@ -50,10 +50,6 @@ export function TextEditorDialog({
   useEffect(() => {
     if (!open) return
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        onClose()
-      }
       if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
         event.preventDefault()
         onSave(draft)
@@ -82,94 +78,103 @@ export function TextEditorDialog({
 
   if (!open) return null
 
-  return createPortal(
-    <div className="text-editor" onPointerDown={onClose}>
-      <div
-        className="text-editor__panel"
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="text-editor__head">
-          <div className="text-editor__title">
-            <Icon name="text" size={14} />
-            <span>编辑文本</span>
-            <span className="text-editor__subtitle">{title}</span>
-          </div>
-          <button
-            type="button"
-            className="icon-btn"
-            title="关闭"
-            onClick={onClose}
-          >
-            <Icon name="close" size={14} />
-          </button>
-        </header>
-
-        <div className="text-editor__toolbar">
-          {view === 'edit'
-            ? TOOLBAR.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  className="text-editor__tool"
-                  onClick={() => insert(item.before, item.after ?? '')}
-                >
-                  {item.label}
-                </button>
-              ))
-            : (
-              <span className="text-editor__preview-label">Markdown 预览</span>
-            )}
-          <button
-            type="button"
-            className="text-editor__mode"
-            onClick={() =>
-              setView((current) =>
-                current === 'edit' ? 'preview' : 'edit'
-              )
-            }
-          >
-            {view === 'edit' ? '预览' : 'Markdown'}
-          </button>
-          <span className="text-editor__hint">
-            支持 Markdown · Ctrl+Enter 保存
-          </span>
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      bare
+      ariaLabel="编辑文本"
+      overlayClassName="text-editor"
+      panelClassName="text-editor__panel"
+    >
+      <header className="text-editor__head">
+        <div className="text-editor__title">
+          <Icon name="text" size={14} />
+          <span>编辑文本</span>
+          <span className="text-editor__subtitle">{title}</span>
         </div>
+        <Button
+          type="button"
+          className="icon-btn"
+          title="关闭"
+          onClick={onClose}
+          unstyled
+        >
+          <Icon name="close" size={14} />
+        </Button>
+      </header>
 
-        <div className="text-editor__body">
-          {view === 'edit' ? (
-            <textarea
-              ref={textareaRef}
-              className="text-editor__input"
-              value={draft}
-              spellCheck={false}
-              placeholder="在这里输入文本，支持 Markdown…"
-              onChange={(event) => setDraft(event.target.value)}
-            />
-          ) : (
-            <div className="text-editor__preview">
-              <div
-                className="cnode__text cnode__text--markdown"
-                dangerouslySetInnerHTML={{ __html: preview }}
-              />
-            </div>
-          )}
-        </div>
-
-        <footer className="text-editor__footer">
-          <span className="text-editor__count">{draft.length} 字</span>
-          <button type="button" className="btn-secondary btn-sm" onClick={onClose}>
-            取消
-          </button>
-          <button
-            type="button"
-            className="btn-primary btn-sm"
-            onClick={() => onSave(draft)}
-          >
-            保存
-          </button>
-        </footer>
+      <div className="text-editor__toolbar">
+        {view === 'edit' ? (
+          TOOLBAR.map((item) => (
+            <Button
+              key={item.label}
+              type="button"
+              className="text-editor__tool"
+              onClick={() => insert(item.before, item.after ?? '')}
+              unstyled
+            >
+              {item.label}
+            </Button>
+          ))
+        ) : (
+          <span className="text-editor__preview-label">Markdown 预览</span>
+        )}
+        <Button
+          type="button"
+          className="text-editor__mode"
+          onClick={() =>
+            setView((current) => (current === 'edit' ? 'preview' : 'edit'))
+          }
+          unstyled
+        >
+          {view === 'edit' ? '预览' : 'Markdown'}
+        </Button>
+        <span className="text-editor__hint">
+          支持 Markdown · Ctrl+Enter 保存
+        </span>
       </div>
-    </div>,
-    document.body
+
+      <div className="text-editor__body">
+        {view === 'edit' ? (
+          <Textarea
+            ref={textareaRef}
+            className="text-editor__input"
+            value={draft}
+            spellCheck={false}
+            placeholder="在这里输入文本，支持 Markdown…"
+            onChange={(event) => setDraft(event.target.value)}
+            unstyled
+          />
+        ) : (
+          <div className="text-editor__preview">
+            <div
+              className="cnode__text cnode__text--markdown"
+              dangerouslySetInnerHTML={{ __html: preview }}
+            />
+          </div>
+        )}
+      </div>
+
+      <footer className="text-editor__footer">
+        <span className="text-editor__count">{draft.length} 字</span>
+        <Button
+          type="button"
+          className="btn-secondary btn-sm"
+          onClick={onClose}
+          unstyled
+        >
+          取消
+        </Button>
+        <Button
+          type="button"
+          className="btn-primary btn-sm"
+          onClick={() => onSave(draft)}
+          unstyled
+        >
+          保存
+        </Button>
+      </footer>
+    </Dialog>
   )
 }

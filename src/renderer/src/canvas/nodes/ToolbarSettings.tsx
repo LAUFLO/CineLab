@@ -4,6 +4,7 @@ import { Icon } from '../../components/Icon'
 import { TOOLBAR_MAX_PRIMARY, useToolbarStore } from '../../stores/toolbar'
 import { useUIStore } from '../../stores/ui'
 import { defaultPrimaryForKind, operationsForKind } from './node-operations'
+import { Button } from '../../components/ui'
 
 const KIND_LABEL: Record<string, string> = {
   image: '图片节点',
@@ -56,17 +57,19 @@ export function ToolbarSettings() {
           <div>
             <div className="toolbar-settings__title">自定义工具栏</div>
             <div className="toolbar-settings__subtitle">
-              {KIND_LABEL[kind] ?? kind} · 已固定 {pinnedIds.length}/{TOOLBAR_MAX_PRIMARY}
+              {KIND_LABEL[kind] ?? kind} · 已固定 {pinnedIds.length}/
+              {TOOLBAR_MAX_PRIMARY}
             </div>
           </div>
-          <button
+          <Button
             type="button"
             className="toolbar-settings__close"
             title="关闭"
             onClick={closeSettings}
+            unstyled
           >
             <Icon name="close" size={14} />
-          </button>
+          </Button>
         </div>
 
         <div className="toolbar-settings__hint">
@@ -79,37 +82,48 @@ export function ToolbarSettings() {
 
             return (
               <div className="toolbar-settings__row" key={op.id}>
-                <Icon name={op.icon} size={15} className="toolbar-settings__icon" />
+                <Icon
+                  name={op.icon}
+                  size={15}
+                  className="toolbar-settings__icon"
+                />
                 <div className="toolbar-settings__meta">
                   <span className="toolbar-settings__name">{op.label}</span>
                   <span className="toolbar-settings__desc">
                     {op.implemented ? '已接入' : '待接入'}
                   </span>
                 </div>
-                <button
+                <Button
                   type="button"
                   className={`toolbar-switch ${isPinned ? 'is-on' : ''}`}
                   aria-pressed={isPinned}
                   onClick={() => handleToggle(op.id)}
+                  unstyled
                 >
                   <span />
-                </button>
+                </Button>
               </div>
             )
           })}
         </div>
 
         <div className="toolbar-settings__footer">
-          <button
+          <Button
             type="button"
             className="btn-secondary"
             onClick={() => resetPinned(kind)}
+            unstyled
           >
             恢复默认
-          </button>
-          <button type="button" className="btn-primary" onClick={closeSettings}>
+          </Button>
+          <Button
+            type="button"
+            className="btn-primary"
+            onClick={closeSettings}
+            unstyled
+          >
             完成
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

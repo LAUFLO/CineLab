@@ -44,7 +44,11 @@ function toOutput(asset: LibraryAsset): OutputRef {
 function addAssetToCanvas(asset: LibraryAsset): void {
   const store = useCanvasStore.getState()
   const kind: NodeKind =
-    asset.kind === 'video' ? 'video' : asset.kind === 'audio' ? 'audio' : 'image'
+    asset.kind === 'video'
+      ? 'video'
+      : asset.kind === 'audio'
+        ? 'audio'
+        : 'image'
   const meta = NODE_META[kind]
   const { viewport } = store
   const center = {
@@ -93,7 +97,8 @@ function syncCanvasAssetPath(oldPath: string, nextPath: string): void {
     })
 
     if (!changed) continue
-    if (node.type === 'cine') store.patchNodeData(node.id, { outputs: nextOutputs })
+    if (node.type === 'cine')
+      store.patchNodeData(node.id, { outputs: nextOutputs })
     else if (node.type === 'studio') {
       store.patchStudioNode(node.id, { outputs: nextOutputs })
     }
@@ -133,7 +138,9 @@ export function LibraryWindow() {
 
   const [query, setQuery] = useState('')
   const [nameDialog, setNameDialog] = useState<NameDialogState>(null)
-  const [templateDialog, setTemplateDialog] = useState<TemplateInput | null>(null)
+  const [templateDialog, setTemplateDialog] = useState<TemplateInput | null>(
+    null
+  )
   const [moveTargets, setMoveTargets] = useState<LibraryAsset[]>([])
   const [moveFolder, setMoveFolder] = useState('')
   const [selectionMode, setSelectionMode] = useState(false)
@@ -218,9 +225,7 @@ export function LibraryWindow() {
     showToast(`已移动 ${targets.length} 个素材到 ${moveFolder}`)
   }
 
-  const selectedAssets = assets.filter((asset) =>
-    selectedPaths.has(asset.path)
-  )
+  const selectedAssets = assets.filter((asset) => selectedPaths.has(asset.path))
   const selectedVideos = selectedAssets.filter(
     (asset) => asset.kind === 'video'
   )
@@ -319,7 +324,8 @@ export function LibraryWindow() {
       .asset(asset.path, asset.name, 'global')
       .then((result) => {
         if (result.ok) showToast(`已导出：${result.path ?? ''}`)
-        else if (!result.canceled) showToast(result.error ?? '导出失败', 'error')
+        else if (!result.canceled)
+          showToast(result.error ?? '导出失败', 'error')
       })
   }
 
@@ -382,7 +388,10 @@ export function LibraryWindow() {
 
   return createPortal(
     <div className="library-layer" onPointerDown={close}>
-      <div className="library-window" onPointerDown={(event) => event.stopPropagation()}>
+      <div
+        className="library-window"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
         <header className="library-window__head">
           <div className="library-window__title">
             <Icon name="library" size={16} />
@@ -400,10 +409,11 @@ export function LibraryWindow() {
           <div className="library-window__head-actions">
             <div className="library-search">
               <Icon name="search" size={13} />
-              <input
+              <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="搜索当前文件夹"
+                unstyled
               />
             </div>
             {mode === 'browse' && !isTemplateFolder ? (
@@ -450,23 +460,33 @@ export function LibraryWindow() {
 
           <main className="library-window__main">
             <div className="library-breadcrumb">
-              <button type="button" onClick={() => handleSelectFolder('')}>
+              <Button
+                type="button"
+                onClick={() => handleSelectFolder('')}
+                unstyled
+              >
                 全部
-              </button>
+              </Button>
               {segments.map((segment, index) => {
                 const path = segments.slice(0, index + 1).join('/')
                 return (
                   <span key={path}>
                     <Icon name="chevron-right" size={10} />
-                    <button type="button" onClick={() => handleSelectFolder(path)}>
+                    <Button
+                      type="button"
+                      onClick={() => handleSelectFolder(path)}
+                      unstyled
+                    >
                       {segment}
-                    </button>
+                    </Button>
                   </span>
                 )
               })}
             </div>
 
-            {error ? <div className="form-message is-error">{error}</div> : null}
+            {error ? (
+              <div className="form-message is-error">{error}</div>
+            ) : null}
             {loading ? <div className="library-loading">加载中…</div> : null}
 
             {!loading && isTemplateFolder ? (
@@ -680,179 +700,191 @@ export function LibraryWindow() {
           }
         >
           <div className="concat-form">
-              <div className="concat-form__row">
-                <span>分辨率</span>
-                <div className="concat-form__options">
-                  {(['720p', '1080p'] as const).map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={concatResolution === value ? 'is-active' : ''}
-                      onClick={() => setConcatResolution(value)}
-                    >
-                      {value === '720p' ? '720P' : '1080P'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="concat-form__row">
-                <span>画质</span>
-                <div className="concat-form__options">
-                  {(
-                    [
-                      ['standard', '标准'],
-                      ['high', '高画质']
-                    ] as const
-                  ).map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={concatQuality === value ? 'is-active' : ''}
-                      onClick={() => setConcatQuality(value)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="concat-form__row">
-                <span>字幕</span>
-                <div className="concat-form__file">
-                  <button
+            <div className="concat-form__row">
+              <span>分辨率</span>
+              <div className="concat-form__options">
+                {(['720p', '1080p'] as const).map((value) => (
+                  <Button
+                    key={value}
                     type="button"
-                    onClick={() =>
-                      void window.api.export
-                        .pickFile('subtitle')
-                        .then((path) => path && setConcatSubtitle(path))
-                    }
+                    className={concatResolution === value ? 'is-active' : ''}
+                    onClick={() => setConcatResolution(value)}
+                    unstyled
                   >
-                    {concatSubtitle ? '更换 SRT' : '选择 SRT'}
-                  </button>
-                  <span title={concatSubtitle ?? ''}>
-                    {concatSubtitle
-                      ? concatSubtitle.split(/[\\/]/).pop()
-                      : '无（可选）'}
-                  </span>
-                  {concatSubtitle ? (
-                    <button
-                      type="button"
-                      onClick={() => setConcatSubtitle(null)}
-                    >
-                      清除
-                    </button>
-                  ) : null}
-                </div>
+                    {value === '720p' ? '720P' : '1080P'}
+                  </Button>
+                ))}
               </div>
+            </div>
 
-              <div className="concat-form__row">
-                <span>背景音乐</span>
-                <div className="concat-form__file">
-                  <button
+            <div className="concat-form__row">
+              <span>画质</span>
+              <div className="concat-form__options">
+                {(
+                  [
+                    ['standard', '标准'],
+                    ['high', '高画质']
+                  ] as const
+                ).map(([value, label]) => (
+                  <Button
+                    key={value}
                     type="button"
-                    onClick={() =>
-                      void window.api.export
-                        .pickFile('audio')
-                        .then((path) => path && setConcatBgm(path))
-                    }
+                    className={concatQuality === value ? 'is-active' : ''}
+                    onClick={() => setConcatQuality(value)}
+                    unstyled
                   >
-                    {concatBgm ? '更换音频' : '选择音频'}
-                  </button>
-                  <span title={concatBgm ?? ''}>
-                    {concatBgm
-                      ? concatBgm.split(/[\\/]/).pop()
-                      : '无（可选）'}
-                  </span>
-                  {concatBgm ? (
-                    <button type="button" onClick={() => setConcatBgm(null)}>
-                      清除
-                    </button>
-                  ) : null}
-                </div>
+                    {label}
+                  </Button>
+                ))}
               </div>
+            </div>
 
-              <div className="concat-form__row">
-                <span>旁白</span>
-                <div className="concat-form__file">
-                  <button
+            <div className="concat-form__row">
+              <span>字幕</span>
+              <div className="concat-form__file">
+                <Button
+                  type="button"
+                  onClick={() =>
+                    void window.api.export
+                      .pickFile('subtitle')
+                      .then((path) => path && setConcatSubtitle(path))
+                  }
+                  unstyled
+                >
+                  {concatSubtitle ? '更换 SRT' : '选择 SRT'}
+                </Button>
+                <span title={concatSubtitle ?? ''}>
+                  {concatSubtitle
+                    ? concatSubtitle.split(/[\\/]/).pop()
+                    : '无（可选）'}
+                </span>
+                {concatSubtitle ? (
+                  <Button
                     type="button"
-                    onClick={() =>
-                      void window.api.export
-                        .pickFile('audio')
-                        .then((path) => path && setConcatNarration(path))
-                    }
+                    onClick={() => setConcatSubtitle(null)}
+                    unstyled
                   >
-                    {concatNarration ? '更换音频' : '选择音频'}
-                  </button>
-                  <span title={concatNarration ?? ''}>
-                    {concatNarration
-                      ? concatNarration.split(/[\\/]/).pop()
-                      : '无（可选）'}
-                  </span>
-                  {concatNarration ? (
-                    <button
-                      type="button"
-                      onClick={() => setConcatNarration(null)}
-                    >
-                      清除
-                    </button>
-                  ) : null}
-                </div>
+                    清除
+                  </Button>
+                ) : null}
               </div>
+            </div>
 
-              <div className="concat-form__row">
-                <span>音量</span>
-                <div className="concat-form__volumes">
-                  <label>
-                    原声
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={concatOriginalVolume}
-                      onChange={(event) =>
-                        setConcatOriginalVolume(Number(event.target.value))
-                      }
-                    />
-                    <em>{concatOriginalVolume}%</em>
-                  </label>
-                  <label>
-                    BGM
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={concatBgmVolume}
-                      onChange={(event) =>
-                        setConcatBgmVolume(Number(event.target.value))
-                      }
-                    />
-                    <em>{concatBgmVolume}%</em>
-                  </label>
-                  <label>
-                    旁白
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={concatNarrationVolume}
-                      onChange={(event) =>
-                        setConcatNarrationVolume(Number(event.target.value))
-                      }
-                    />
-                    <em>{concatNarrationVolume}%</em>
-                  </label>
-                </div>
+            <div className="concat-form__row">
+              <span>背景音乐</span>
+              <div className="concat-form__file">
+                <Button
+                  type="button"
+                  onClick={() =>
+                    void window.api.export
+                      .pickFile('audio')
+                      .then((path) => path && setConcatBgm(path))
+                  }
+                  unstyled
+                >
+                  {concatBgm ? '更换音频' : '选择音频'}
+                </Button>
+                <span title={concatBgm ?? ''}>
+                  {concatBgm ? concatBgm.split(/[\\/]/).pop() : '无（可选）'}
+                </span>
+                {concatBgm ? (
+                  <Button
+                    type="button"
+                    onClick={() => setConcatBgm(null)}
+                    unstyled
+                  >
+                    清除
+                  </Button>
+                ) : null}
               </div>
+            </div>
 
-              <div className="concat-form__hint">
-                按资产列表顺序拼接 {selectedVideos.length} 段视频，统一为 H.264 /
-                AAC，输出 MP4
-                {concatBgm ? '；背景音乐循环' : ''}
-                {concatNarration ? '；旁白混入' : ''}
-                {concatSubtitle ? '；字幕烧录进画面' : ''}。
+            <div className="concat-form__row">
+              <span>旁白</span>
+              <div className="concat-form__file">
+                <Button
+                  type="button"
+                  onClick={() =>
+                    void window.api.export
+                      .pickFile('audio')
+                      .then((path) => path && setConcatNarration(path))
+                  }
+                  unstyled
+                >
+                  {concatNarration ? '更换音频' : '选择音频'}
+                </Button>
+                <span title={concatNarration ?? ''}>
+                  {concatNarration
+                    ? concatNarration.split(/[\\/]/).pop()
+                    : '无（可选）'}
+                </span>
+                {concatNarration ? (
+                  <Button
+                    type="button"
+                    onClick={() => setConcatNarration(null)}
+                    unstyled
+                  >
+                    清除
+                  </Button>
+                ) : null}
               </div>
+            </div>
+
+            <div className="concat-form__row">
+              <span>音量</span>
+              <div className="concat-form__volumes">
+                <label>
+                  原声
+                  <Input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={concatOriginalVolume}
+                    onChange={(event) =>
+                      setConcatOriginalVolume(Number(event.target.value))
+                    }
+                    unstyled
+                  />
+                  <em>{concatOriginalVolume}%</em>
+                </label>
+                <label>
+                  BGM
+                  <Input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={concatBgmVolume}
+                    onChange={(event) =>
+                      setConcatBgmVolume(Number(event.target.value))
+                    }
+                    unstyled
+                  />
+                  <em>{concatBgmVolume}%</em>
+                </label>
+                <label>
+                  旁白
+                  <Input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={concatNarrationVolume}
+                    onChange={(event) =>
+                      setConcatNarrationVolume(Number(event.target.value))
+                    }
+                    unstyled
+                  />
+                  <em>{concatNarrationVolume}%</em>
+                </label>
+              </div>
+            </div>
+
+            <div className="concat-form__hint">
+              按资产列表顺序拼接 {selectedVideos.length} 段视频，统一为 H.264 /
+              AAC，输出 MP4
+              {concatBgm ? '；背景音乐循环' : ''}
+              {concatNarration ? '；旁白混入' : ''}
+              {concatSubtitle ? '；字幕烧录进画面' : ''}。
+            </div>
           </div>
         </Dialog>
       ) : null}

@@ -15,6 +15,7 @@ import {
   pasteAt
 } from './context-actions'
 import { requestDeleteSelection } from './delete-actions'
+import { Button } from '../components/ui'
 
 const MENU_WIDTH = 224
 const MENU_MAX_HEIGHT = 520
@@ -109,7 +110,7 @@ export function NodeContextMenu() {
             <div className="ctx-menu__section">{section.title}</div>
           ) : null}
           {section.actions.map((action) => (
-            <button
+            <Button
               key={action.label}
               type="button"
               className={`ctx-menu__item${action.danger ? ' is-danger' : ''}`}
@@ -118,12 +119,13 @@ export function NodeContextMenu() {
                 close()
                 action.run()
               }}
+              unstyled
             >
               <span>{action.label}</span>
               {action.hint ? (
                 <span className="ctx-menu__shortcut">{action.hint}</span>
               ) : null}
-            </button>
+            </Button>
           ))}
         </div>
       ))}
@@ -141,10 +143,7 @@ interface MenuContext {
   close: () => void
 }
 
-function buildSections(
-  node: CanvasNode,
-  ctx: MenuContext
-): MenuSection[] {
+function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
   const sections: MenuSection[] = []
   const command = (
     action: 'expand' | 'download' | 'library' | 'operation',
@@ -358,8 +357,7 @@ function buildSections(
         },
         {
           label: '竖排',
-          run: () =>
-            useCanvasStore.getState().arrangeGroup(group.id, 'column')
+          run: () => useCanvasStore.getState().arrangeGroup(group.id, 'column')
         },
         {
           label: '网格排列',

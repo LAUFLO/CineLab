@@ -6,6 +6,7 @@ import { ProjectCard } from '../components/ProjectCard'
 import { PROJECT_TEMPLATES } from '@shared/project-templates'
 import { useProjectStore } from '../stores/project'
 import { useSettingsStore } from '../stores/settings'
+import { Button } from '../components/ui'
 
 export function ProjectCenter() {
   const startNew = useProjectStore((state) => state.startNew)
@@ -56,7 +57,9 @@ export function ProjectCenter() {
 
   return (
     <div className="welcome-screen">
-      <div className={`project-center${recent.length > 0 ? ' project-center--has-recent' : ''}`}>
+      <div
+        className={`project-center${recent.length > 0 ? ' project-center--has-recent' : ''}`}
+      >
         <div className="project-center__brand">
           <BrandWordmark height={64} />
         </div>
@@ -65,28 +68,31 @@ export function ProjectCenter() {
         </p>
 
         <div className="project-center__actions">
-          <button
+          <Button
             type="button"
             className="project-center__new"
             onClick={() => setTemplateOpen(true)}
+            unstyled
           >
             <Icon name="plus" size={20} />
             新建项目
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className="project-center__open"
             onClick={() => void openExisting()}
+            unstyled
           >
             打开已有项目
-          </button>
+          </Button>
         </div>
 
         {settingsLoaded && !hasUsableModel ? (
-          <button
+          <Button
             type="button"
             className="project-center__model-hint"
             onClick={() => openSettings('models')}
+            unstyled
           >
             <Icon name="settings" size={16} />
             <span className="project-center__model-copy">
@@ -94,7 +100,7 @@ export function ProjectCenter() {
               <small>添加一个模型供应商后即可开始生成</small>
             </span>
             <span className="project-center__model-action">配置模型 →</span>
-          </button>
+          </Button>
         ) : null}
 
         {error ? <div className="form-message is-error">{error}</div> : null}
@@ -113,9 +119,13 @@ export function ProjectCenter() {
             </div>
           </div>
         ) : loading ? (
-          <div className="project-center__empty is-loading">正在读取最近项目…</div>
+          <div className="project-center__empty is-loading">
+            正在读取最近项目…
+          </div>
         ) : (
-          <div className="project-center__empty">还没有项目，新建一个开始创作</div>
+          <div className="project-center__empty">
+            还没有项目，新建一个开始创作
+          </div>
         )}
       </div>
 
@@ -135,19 +145,20 @@ export function ProjectCenter() {
                   模板只生成画布结构，不会预置模型或素材
                 </div>
               </div>
-              <button
+              <Button
                 type="button"
                 className="icon-btn settings-dialog__close"
                 title="关闭"
                 onClick={() => setTemplateOpen(false)}
+                unstyled
               >
                 <Icon name="close" size={14} />
-              </button>
+              </Button>
             </header>
 
             <div className="template-picker__grid">
               {PROJECT_TEMPLATES.map((template) => (
-                <button
+                <Button
                   key={template.id}
                   type="button"
                   className="template-picker__card"
@@ -155,12 +166,13 @@ export function ProjectCenter() {
                     setTemplateOpen(false)
                     void startNew(template.id)
                   }}
+                  unstyled
                 >
                   <span className="template-picker__name">{template.name}</span>
                   <span className="template-picker__desc">
                     {template.description}
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>

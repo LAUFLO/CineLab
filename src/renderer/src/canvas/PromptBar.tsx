@@ -19,7 +19,14 @@ import {
 } from '@shared/provider-schema'
 import type { ReferenceInput, ReferenceRole } from '@shared/generation'
 import { Icon } from '../components/Icon'
-import { IconButton, Input, MenuItem, Switch } from '../components/ui'
+import {
+  IconButton,
+  Input,
+  MenuItem,
+  Switch,
+  Button,
+  Textarea
+} from '../components/ui'
 import {
   absolutePosition,
   isGroupNode,
@@ -40,7 +47,8 @@ const HEIGHT = 132
 
 const PLACEHOLDER: Record<NodeKind, string> = {
   text: '写下你想讲的故事、场景或角色设定。例如：一个来自未来的机器人，在城市屋顶看星星。',
-  image: '可直接文生图，或上传图片输入文字指令对图片进行编辑，如：将背景改为雪夜',
+  image:
+    '可直接文生图，或上传图片输入文字指令对图片进行编辑，如：将背景改为雪夜',
   video: '描述你想要生成的画面内容，@引用素材',
   audio: '输入要朗读的文本，或描述想要的音乐',
   study: '拉片节点'
@@ -65,7 +73,10 @@ function paramLabel(param: ParamDef, value: unknown): string {
     return value ? '开' : '关'
   }
   if (param.type === 'select') {
-    return param.options?.find((option) => option.value === value)?.label ?? String(value ?? '')
+    return (
+      param.options?.find((option) => option.value === value)?.label ??
+      String(value ?? '')
+    )
   }
   return String(value ?? '')
 }
@@ -347,7 +358,8 @@ export function PromptBar() {
     const onPointerDown = (event: PointerEvent): void => {
       const target = event.target
       if (!(target instanceof Element)) return
-      if (paramMenuKey && !target.closest('.param-picker')) setParamMenuKey(null)
+      if (paramMenuKey && !target.closest('.param-picker'))
+        setParamMenuKey(null)
       if (
         advancedOpen &&
         !target.closest('.promptbar__advanced') &&
@@ -459,9 +471,11 @@ export function PromptBar() {
     const matches = (capability: Capability): boolean => {
       if (kind === 'study') return false
       if (kind === 'video') return capability === 'video.t2v'
-      if (kind === 'image') return capability === 'image.t2i' || capability === 'image.i2i'
+      if (kind === 'image')
+        return capability === 'image.t2i' || capability === 'image.i2i'
       if (kind === 'text') return capability === 'text.chat'
-      if (kind === 'audio') return capability === 'audio.tts' || capability === 'audio.music'
+      if (kind === 'audio')
+        return capability === 'audio.tts' || capability === 'audio.music'
       return true
     }
 
@@ -482,7 +496,9 @@ export function PromptBar() {
     models.find((item) => item.key === preferredModels[capabilityGroup]) ??
     models[0] ??
     null
-  const values = active ? { ...defaultParams(active.model), ...paramValues } : {}
+  const values = active
+    ? { ...defaultParams(active.model), ...paramValues }
+    : {}
 
   useEffect(() => {
     setCustomParamKeys(new Set())
@@ -515,10 +531,7 @@ export function PromptBar() {
     setParamValues((current) => ({
       ...current,
       [param.key]:
-        current[param.key] ??
-        values[param.key] ??
-        param.defaultValue ??
-        ''
+        current[param.key] ?? values[param.key] ?? param.defaultValue ?? ''
     }))
   }
 
@@ -557,16 +570,23 @@ export function PromptBar() {
     const absolute = absolutePosition(node, nodes)
     const position = flowToScreenPosition(absolute)
     const width = node.measured?.width ?? NODE_META[node.data.kind].width
-    const height = node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
+    const height =
+      node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
     const zoom = viewport.zoom
 
     const left = Math.max(
       16,
-      Math.min(position.x + (width * zoom) / 2 - WIDTH / 2, window.innerWidth - WIDTH - 16)
+      Math.min(
+        position.x + (width * zoom) / 2 - WIDTH / 2,
+        window.innerWidth - WIDTH - 16
+      )
     )
     const top = Math.max(
       16,
-      Math.min(position.y + height * zoom + 16, window.innerHeight - HEIGHT - 16)
+      Math.min(
+        position.y + height * zoom + 16,
+        window.innerHeight - HEIGHT - 16
+      )
     )
 
     return { left, top }
@@ -884,7 +904,8 @@ export function PromptBar() {
     for (const entry of nodes) {
       if (entry.id === node.id || isGroupNode(entry)) continue
       const output = selectedNodeOutput(entry)
-      if (!output || (output.kind !== 'image' && output.kind !== 'video')) continue
+      if (!output || (output.kind !== 'image' && output.kind !== 'video'))
+        continue
       if (output.kind === 'video' && kind !== 'video') continue
 
       push({
@@ -1018,7 +1039,9 @@ export function PromptBar() {
     })
   }
 
-  const handlePromptChange = (event: ChangeEvent<HTMLTextAreaElement>): void => {
+  const handlePromptChange = (
+    event: ChangeEvent<HTMLTextAreaElement>
+  ): void => {
     const value = event.target.value
     updatePromptText(value)
 
@@ -1064,7 +1087,9 @@ export function PromptBar() {
       )
     })
     if (linked.length > 0) {
-      onEdgesChange(linked.map((edge) => ({ type: 'remove' as const, id: edge.id })))
+      onEdgesChange(
+        linked.map((edge) => ({ type: 'remove' as const, id: edge.id }))
+      )
     }
   }
 
@@ -1130,16 +1155,17 @@ export function PromptBar() {
           <Icon name="frame" size={14} />
           <span>从画布选择节点作为参考</span>
           <span className="canvas-pick-bar__hint">Esc 退出</span>
-          <button
+          <Button
             type="button"
             className="canvas-pick-bar__cancel"
             onClick={(event) => {
               event.stopPropagation()
               setPicking(false)
             }}
+            unstyled
           >
             取消
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -1152,646 +1178,673 @@ export function PromptBar() {
         }
         onPointerDown={(event) => event.stopPropagation()}
       >
-      {pickHint ? (
-        <div className="promptbar__pick-hint is-warn">{pickHint}</div>
-      ) : null}
+        {pickHint ? (
+          <div className="promptbar__pick-hint is-warn">{pickHint}</div>
+        ) : null}
 
-      <div className="promptbar__tools">
-        <div className="promptbar__upload-wrap" ref={uploadRef}>
-          <button
+        <div className="promptbar__tools">
+          <div className="promptbar__upload-wrap" ref={uploadRef}>
+            <Button
+              type="button"
+              className={`promptbar__tool ${uploadMenuOpen ? 'is-active' : ''}`}
+              onClick={() => setUploadMenuOpen((open) => !open)}
+              unstyled
+            >
+              <Icon name="plus" size={13} />
+              上传
+            </Button>
+
+            {uploadMenuOpen ? (
+              <div className="promptbar__upload-menu">
+                <MenuItem
+                  icon={<Icon name="folder-plus" size={14} />}
+                  onSelect={() => void handleLocalUpload()}
+                >
+                  本地上传
+                </MenuItem>
+                <MenuItem
+                  icon={<Icon name="library" size={14} />}
+                  onSelect={() => {
+                    setUploadMenuOpen(false)
+                    openLibrary('场景')
+                  }}
+                >
+                  资产库上传
+                </MenuItem>
+              </div>
+            ) : null}
+          </div>
+          <Button
             type="button"
-            className={`promptbar__tool ${uploadMenuOpen ? 'is-active' : ''}`}
-            onClick={() => setUploadMenuOpen((open) => !open)}
+            className={`promptbar__tool ${picking ? 'is-active' : ''}`}
+            onClick={() => {
+              setPickHint(null)
+              setPicking((open) => !open)
+            }}
+            unstyled
           >
-            <Icon name="plus" size={13} />
-            上传
-          </button>
+            <Icon name="frame" size={13} />
+            画布参考
+          </Button>
+          <div className="promptbar__spacer" />
+          {mergedRefs.length > 0 ? (
+            <div className="promptbar__picked">
+              {mergedRefs.map((ref) => {
+                const auto = autoRefs.some(
+                  (item) =>
+                    item.path === ref.path &&
+                    (item.scope ?? 'project') === (ref.scope ?? 'project')
+                )
 
-          {uploadMenuOpen ? (
-            <div className="promptbar__upload-menu">
-              <MenuItem
-                icon={<Icon name="folder-plus" size={14} />}
-                onSelect={() => void handleLocalUpload()}
-              >
-                本地上传
-              </MenuItem>
-              <MenuItem
-                icon={<Icon name="library" size={14} />}
-                onSelect={() => {
-                  setUploadMenuOpen(false)
-                  openLibrary('场景')
-                }}
-              >
-                资产库上传
-              </MenuItem>
+                return (
+                  <Button
+                    key={`${ref.scope ?? 'project'}:${ref.path}`}
+                    type="button"
+                    className={`promptbar__picked-item${
+                      auto ? ' is-auto' : ''
+                    }`}
+                    onPointerEnter={(event) => {
+                      const rect = event.currentTarget.getBoundingClientRect()
+                      setRefPreview({
+                        path: ref.path,
+                        kind: ref.kind,
+                        scope: ref.scope,
+                        x: rect.left + rect.width / 2,
+                        y: rect.top - 8
+                      })
+                    }}
+                    onPointerLeave={() => setRefPreview(null)}
+                    onClick={() => handleRefClick(ref)}
+                    onDoubleClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      handleRefDoubleClick(ref)
+                    }}
+                    unstyled
+                  >
+                    {ref.kind === 'video' ? (
+                      <video
+                        src={`${assetUrl(ref.path, ref.scope)}#t=0.1`}
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      <img src={assetUrl(ref.path, ref.scope)} alt="" />
+                    )}
+                    <Icon name="close" size={10} />
+                  </Button>
+                )
+              })}
+            </div>
+          ) : null}
+          {autoRefs.length > 0 ? (
+            <span
+              className="promptbar__autolink"
+              title="智能引用 AutoLink 自动匹配的素材，可在高级设置中关闭"
+            >
+              <Icon name="sparkles" size={10} />
+              AutoLink {autoRefs.length}
+            </span>
+          ) : null}
+          {mergedRefs.length > 0 ? (
+            <span
+              className="promptbar__refs"
+              title="来自画布参考、上游连线与智能引用"
+            >
+              素材 {mergedRefs.length}
+            </span>
+          ) : null}
+          <IconButton
+            label={expanded ? '收起输入框' : '展开输入框'}
+            size="xs"
+            onClick={() => setExpanded((open) => !open)}
+          >
+            <Icon name="expand" size={13} />
+          </IconButton>
+        </div>
+
+        <div className="promptbar__input-wrap">
+          <div className="promptbar__mirror" ref={mirrorRef} aria-hidden>
+            {renderMentionText(promptText, mentionNames)}
+            {'\u200b'}
+          </div>
+
+          <Textarea
+            ref={inputRef}
+            className="promptbar__input"
+            placeholder={PLACEHOLDER[kind]}
+            rows={2}
+            value={promptText}
+            onChange={handlePromptChange}
+            onScroll={(event) => {
+              if (mirrorRef.current) {
+                mirrorRef.current.scrollTop = event.currentTarget.scrollTop
+              }
+            }}
+            onKeyDown={(event) => {
+              if (mentionOpen) {
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                  if (flatMentions.length === 0) return
+                  event.preventDefault()
+                  setMentionIndex((current) => {
+                    const delta = event.key === 'ArrowDown' ? 1 : -1
+                    return (
+                      (current + delta + flatMentions.length) %
+                      flatMentions.length
+                    )
+                  })
+                  return
+                }
+
+                if (event.key === 'Enter') {
+                  if (event.nativeEvent.isComposing) return
+                  event.preventDefault()
+                  const item =
+                    flatMentions[
+                      Math.min(mentionIndex, flatMentions.length - 1)
+                    ]
+                  if (item) {
+                    applyMention(item)
+                  } else {
+                    setMentionOpen(false)
+                  }
+                  return
+                }
+
+                if (event.key === 'Escape') {
+                  event.preventDefault()
+                  setMentionOpen(false)
+                  return
+                }
+              }
+
+              if (event.key === 'Enter' && !event.shiftKey) {
+                if (event.nativeEvent.isComposing) return
+                event.preventDefault()
+                handleSend()
+              }
+            }}
+            unstyled
+          />
+
+          {mentionOpen ? (
+            <div className="mention-menu">
+              <div className="mention-menu__head">
+                <Icon name="search" size={12} />
+                <span>{mentionQuery || '搜索画布、资产库和角色'}</span>
+              </div>
+
+              <div className="mention-menu__list">
+                {mentionGroups.map((group) => (
+                  <div className="mention-menu__section" key={group.name}>
+                    <div className="mention-menu__title">{group.name}</div>
+
+                    {group.items.map((item) => {
+                      const index = flatMentions.findIndex(
+                        (entry) => entry.key === item.key
+                      )
+
+                      return (
+                        <MenuItem
+                          key={item.key}
+                          className="mention-menu__item"
+                          icon={
+                            <span className="mention-menu__thumb">
+                              {item.thumb ? (
+                                item.kind === 'video' &&
+                                isVideoPath(item.thumb) ? (
+                                  <video
+                                    src={`${assetUrl(item.thumb, item.scope)}#t=0.1`}
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                  />
+                                ) : (
+                                  <img
+                                    src={assetUrl(item.thumb, item.scope)}
+                                    alt=""
+                                  />
+                                )
+                              ) : (
+                                <Icon
+                                  name={
+                                    item.kind === 'video' ? 'video' : 'image'
+                                  }
+                                  size={12}
+                                />
+                              )}
+                            </span>
+                          }
+                          active={index === mentionIndex}
+                          onMouseDown={(event) => event.preventDefault()}
+                          onMouseEnter={() => setMentionIndex(index)}
+                          onSelect={() => applyMention(item)}
+                          trailing={
+                            <span className="mention-menu__kind">
+                              {item.group === '角色'
+                                ? '角色卡'
+                                : item.kind === 'video'
+                                  ? '视频'
+                                  : '图片'}
+                            </span>
+                          }
+                        >
+                          <span className="mention-menu__name">
+                            {item.name}
+                          </span>
+                        </MenuItem>
+                      )
+                    })}
+                  </div>
+                ))}
+
+                {flatMentions.length === 0 ? (
+                  <div className="mention-menu__empty">没有匹配的素材</div>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>
-        <button
-          type="button"
-          className={`promptbar__tool ${picking ? 'is-active' : ''}`}
-          onClick={() => {
-            setPickHint(null)
-            setPicking((open) => !open)
-          }}
-        >
-          <Icon name="frame" size={13} />
-          画布参考
-        </button>
-        <div className="promptbar__spacer" />
-        {mergedRefs.length > 0 ? (
-          <div className="promptbar__picked">
-            {mergedRefs.map((ref) => {
-              const auto = autoRefs.some(
-                (item) =>
-                  item.path === ref.path &&
-                  (item.scope ?? 'project') === (ref.scope ?? 'project')
-              )
 
-              return (
-                <button
-                  key={`${ref.scope ?? 'project'}:${ref.path}`}
-                  type="button"
-                  className={`promptbar__picked-item${
-                    auto ? ' is-auto' : ''
-                  }`}
-                  onPointerEnter={(event) => {
-                    const rect = event.currentTarget.getBoundingClientRect()
-                    setRefPreview({
-                      path: ref.path,
-                      kind: ref.kind,
-                      scope: ref.scope,
-                      x: rect.left + rect.width / 2,
-                      y: rect.top - 8
-                    })
-                  }}
-                  onPointerLeave={() => setRefPreview(null)}
-                  onClick={() => handleRefClick(ref)}
-                  onDoubleClick={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    handleRefDoubleClick(ref)
-                  }}
-                >
-                  {ref.kind === 'video' ? (
-                    <video
-                      src={`${assetUrl(ref.path, ref.scope)}#t=0.1`}
-                      muted
-                      playsInline
-                      preload="metadata"
-                    />
-                  ) : (
-                    <img src={assetUrl(ref.path, ref.scope)} alt="" />
-                  )}
-                  <Icon name="close" size={10} />
-                </button>
-              )
-            })}
-          </div>
-        ) : null}
-        {autoRefs.length > 0 ? (
-          <span
-            className="promptbar__autolink"
-            title="智能引用 AutoLink 自动匹配的素材，可在高级设置中关闭"
-          >
-            <Icon name="sparkles" size={10} />
-            AutoLink {autoRefs.length}
-          </span>
-        ) : null}
-        {mergedRefs.length > 0 ? (
-          <span className="promptbar__refs" title="来自画布参考、上游连线与智能引用">
-            素材 {mergedRefs.length}
-          </span>
-        ) : null}
-        <IconButton
-          label={expanded ? '收起输入框' : '展开输入框'}
-          size="xs"
-          onClick={() => setExpanded((open) => !open)}
-        >
-          <Icon name="expand" size={13} />
-        </IconButton>
-      </div>
-
-      <div className="promptbar__input-wrap">
-        <div className="promptbar__mirror" ref={mirrorRef} aria-hidden>
-          {renderMentionText(promptText, mentionNames)}
-          {'\u200b'}
-        </div>
-
-        <textarea
-          ref={inputRef}
-          className="promptbar__input"
-          placeholder={PLACEHOLDER[kind]}
-          rows={2}
-          value={promptText}
-          onChange={handlePromptChange}
-          onScroll={(event) => {
-            if (mirrorRef.current) {
-              mirrorRef.current.scrollTop = event.currentTarget.scrollTop
-            }
-          }}
-          onKeyDown={(event) => {
-            if (mentionOpen) {
-              if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                if (flatMentions.length === 0) return
-                event.preventDefault()
-                setMentionIndex((current) => {
-                  const delta = event.key === 'ArrowDown' ? 1 : -1
-                  return (current + delta + flatMentions.length) % flatMentions.length
-                })
-                return
-              }
-
-              if (event.key === 'Enter') {
-                if (event.nativeEvent.isComposing) return
-                event.preventDefault()
-                const item =
-                  flatMentions[Math.min(mentionIndex, flatMentions.length - 1)]
-                if (item) {
-                  applyMention(item)
-                } else {
-                  setMentionOpen(false)
+        <div className="promptbar__footer">
+          {models.length === 0 ? (
+            <Button
+              type="button"
+              className="promptbar__chip"
+              onClick={() => openSettings('models')}
+              unstyled
+            >
+              未配置模型
+              <Icon name="chevron-down" size={11} />
+            </Button>
+          ) : (
+            <div className="model-picker">
+              <Button
+                type="button"
+                className={`promptbar__chip${
+                  activeMissing.length > 0 ? ' is-warning' : ''
+                }`}
+                title={
+                  activeMissing.length > 0
+                    ? `当前模型不支持${inputLabel(activeMissing)}输入`
+                    : undefined
                 }
-                return
-              }
+                onClick={() => setMenuOpen((open) => !open)}
+                unstyled
+              >
+                {active?.model.name ?? '选择模型'}
+                {activeMissing.length > 0 ? (
+                  <span className="promptbar__model-warning">
+                    不支持{inputLabel(activeMissing)}
+                  </span>
+                ) : null}
+                <Icon name="chevron-down" size={11} />
+              </Button>
 
-              if (event.key === 'Escape') {
-                event.preventDefault()
-                setMentionOpen(false)
-                return
-              }
-            }
-
-            if (event.key === 'Enter' && !event.shiftKey) {
-              if (event.nativeEvent.isComposing) return
-              event.preventDefault()
-              handleSend()
-            }
-          }}
-        />
-
-        {mentionOpen ? (
-          <div className="mention-menu">
-            <div className="mention-menu__head">
-              <Icon name="search" size={12} />
-              <span>{mentionQuery || '搜索画布、资产库和角色'}</span>
-            </div>
-
-            <div className="mention-menu__list">
-              {mentionGroups.map((group) => (
-                <div className="mention-menu__section" key={group.name}>
-                  <div className="mention-menu__title">{group.name}</div>
-
-                  {group.items.map((item) => {
-                    const index = flatMentions.findIndex(
-                      (entry) => entry.key === item.key
-                    )
+              {menuOpen ? (
+                <div className="model-menu">
+                  {models.map((item) => {
+                    const missing = missingInputsFor(item.model, requiredInputs)
+                    const unavailable = missing.length > 0
 
                     return (
                       <MenuItem
                         key={item.key}
-                        className="mention-menu__item"
-                        icon={
-                          <span className="mention-menu__thumb">
-                            {item.thumb ? (
-                              item.kind === 'video' &&
-                              isVideoPath(item.thumb) ? (
-                                <video
-                                  src={`${assetUrl(item.thumb, item.scope)}#t=0.1`}
-                                  muted
-                                  playsInline
-                                  preload="metadata"
-                                />
-                              ) : (
-                                <img
-                                  src={assetUrl(item.thumb, item.scope)}
-                                  alt=""
-                                />
-                              )
-                            ) : (
-                              <Icon
-                                name={item.kind === 'video' ? 'video' : 'image'}
-                                size={12}
-                              />
-                            )}
-                          </span>
+                        active={item.key === active?.key}
+                        className={unavailable ? 'opacity-50' : undefined}
+                        title={
+                          unavailable
+                            ? `该模型不支持${inputLabel(missing)}输入`
+                            : undefined
                         }
-                        active={index === mentionIndex}
-                        onMouseDown={(event) => event.preventDefault()}
-                        onMouseEnter={() => setMentionIndex(index)}
-                        onSelect={() => applyMention(item)}
+                        onSelect={() => {
+                          if (unavailable) {
+                            showToast(
+                              `「${item.model.name}」不支持${inputLabel(missing)}输入`,
+                              'error'
+                            )
+                            return
+                          }
+
+                          setModelKey(item.key)
+                          setParamValues({})
+                          setMenuOpen(false)
+                          void setDefaultModel(capabilityGroup, item.key)
+                        }}
                         trailing={
-                          <span className="mention-menu__kind">
-                            {item.group === '角色'
-                              ? '角色卡'
-                              : item.kind === 'video'
-                                ? '视频'
-                                : '图片'}
+                          <span className="flex flex-col items-end gap-0.5">
+                            {unavailable ? (
+                              <span className="model-menu__reason">
+                                不支持
+                                {missing
+                                  .map((input) => MEDIA_INPUT_LABEL[input])
+                                  .join('·')}
+                              </span>
+                            ) : null}
+                            <span className="model-menu__provider">
+                              {item.providerName}
+                            </span>
                           </span>
                         }
                       >
-                        <span className="mention-menu__name">{item.name}</span>
+                        <span className="model-menu__name">
+                          {item.model.name}
+                        </span>
                       </MenuItem>
                     )
                   })}
                 </div>
-              ))}
-
-              {flatMentions.length === 0 ? (
-                <div className="mention-menu__empty">没有匹配的素材</div>
               ) : null}
+            </div>
+          )}
+
+          {active ? (
+            <div className="promptbar__param-group">
+              <div className="param-picker">
+                <Button
+                  type="button"
+                  className="promptbar__chip promptbar__param-summary"
+                  onClick={() =>
+                    setParamMenuKey((open) =>
+                      open === '__all__' ? null : '__all__'
+                    )
+                  }
+                  title="生成设置"
+                  unstyled
+                >
+                  <span className="promptbar__param-summary-text">
+                    {paramSummary || '生成设置'}
+                  </span>
+                  <Icon name="chevron-down" size={10} />
+                </Button>
+
+                {paramMenuKey === '__all__' ? (
+                  <div className="param-panel">
+                    {paramGroups.map((group) => (
+                      <div className="param-panel__section" key={group.name}>
+                        <div className="param-panel__title">{group.name}</div>
+
+                        {group.params.map((param) => {
+                          if (param.type === 'select' && param.options) {
+                            const ratioGrid = param.options.every((option) =>
+                              ratioOf(option.label)
+                            )
+                            const custom = isParamCustom(param)
+                            const allowCustom = paramAllowsCustom(param)
+
+                            return (
+                              <div
+                                key={param.key}
+                                className={`param-panel__grid${ratioGrid ? ' is-ratio' : ''}`}
+                              >
+                                {param.options.map((option) => {
+                                  const ratio = ratioOf(option.label)
+
+                                  return (
+                                    <Button
+                                      key={option.value}
+                                      type="button"
+                                      className={`param-panel__option${
+                                        ratio
+                                          ? ' param-panel__option--ratio'
+                                          : ''
+                                      }${
+                                        String(option.value) ===
+                                          String(values[param.key]) && !custom
+                                          ? ' is-active'
+                                          : ''
+                                      }`}
+                                      onClick={() =>
+                                        selectPreset(param, option.value)
+                                      }
+                                      unstyled
+                                    >
+                                      {ratio ? (
+                                        <span
+                                          className="param-panel__ratio"
+                                          style={{ aspectRatio: ratio }}
+                                        />
+                                      ) : null}
+                                      {option.label}
+                                    </Button>
+                                  )
+                                })}
+
+                                {allowCustom ? (
+                                  <Button
+                                    type="button"
+                                    className={`param-panel__option param-panel__option--custom${
+                                      custom ? ' is-active' : ''
+                                    }`}
+                                    onClick={() => enableCustomParam(param)}
+                                    unstyled
+                                  >
+                                    自定义
+                                  </Button>
+                                ) : null}
+
+                                {custom ? (
+                                  <Input
+                                    className="param-panel__custom-input"
+                                    value={String(values[param.key] ?? '')}
+                                    placeholder={
+                                      param.key === 'ratio'
+                                        ? '例如 2:1'
+                                        : param.key === 'size'
+                                          ? '例如 2048x1152'
+                                          : '输入自定义值'
+                                    }
+                                    onChange={(event) =>
+                                      setParamValues((current) => ({
+                                        ...current,
+                                        [param.key]: event.target.value
+                                      }))
+                                    }
+                                  />
+                                ) : null}
+                              </div>
+                            )
+                          }
+
+                          if (param.type === 'boolean') {
+                            return (
+                              <div
+                                key={param.key}
+                                className="param-panel__grid is-two"
+                              >
+                                {[true, false].map((value) => (
+                                  <Button
+                                    key={String(value)}
+                                    type="button"
+                                    className={`param-panel__option${
+                                      Boolean(values[param.key]) === value
+                                        ? ' is-active'
+                                        : ''
+                                    }`}
+                                    onClick={() =>
+                                      setParamValues((prev) => ({
+                                        ...prev,
+                                        [param.key]: value
+                                      }))
+                                    }
+                                    unstyled
+                                  >
+                                    {value ? '开启' : '关闭'}
+                                  </Button>
+                                ))}
+                              </div>
+                            )
+                          }
+
+                          if (
+                            param.key === 'duration' &&
+                            param.type === 'number'
+                          ) {
+                            const value = Number(
+                              values[param.key] ?? param.defaultValue ?? 5
+                            )
+
+                            return (
+                              <div
+                                key={param.key}
+                                className="param-panel__range"
+                              >
+                                <Input
+                                  type="range"
+                                  min={param.min ?? 1}
+                                  max={param.max ?? 30}
+                                  step={1}
+                                  value={value}
+                                  onChange={(event) =>
+                                    setParamValues((prev) => ({
+                                      ...prev,
+                                      [param.key]: Number(event.target.value)
+                                    }))
+                                  }
+                                  unstyled
+                                />
+                                <span className="param-panel__range-value">
+                                  {value}s
+                                </span>
+                              </div>
+                            )
+                          }
+
+                          return (
+                            <div
+                              key={param.key}
+                              className="param-panel__input-row"
+                            >
+                              <span>{param.label}</span>
+                              <Input
+                                className="param-input nodrag nopan"
+                                type={
+                                  param.type === 'number' ? 'number' : 'text'
+                                }
+                                value={String(values[param.key] ?? '')}
+                                onChange={(event) => {
+                                  const raw = event.target.value
+                                  const next =
+                                    param.type === 'number' ? Number(raw) : raw
+                                  if (
+                                    param.type === 'number' &&
+                                    !Number.isFinite(next as number)
+                                  ) {
+                                    return
+                                  }
+                                  setParamValues((prev) => ({
+                                    ...prev,
+                                    [param.key]: next
+                                  }))
+                                }}
+                              />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ))}
+
+                    <div className="param-panel__switch-row">
+                      <span>AI 水印</span>
+                      <Switch
+                        label="AI 水印"
+                        checked={watermark}
+                        onChange={(next) => {
+                          setWatermark(next)
+                          void updateGeneration({ watermark: next })
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <span className="promptbar__params">
+              配置模型后生成参数会出现在这里
+            </span>
+          )}
+
+          <div className="promptbar__spacer" />
+          <IconButton
+            label="高级设置"
+            size="xs"
+            className={advancedOpen ? 'bg-surface-hover text-fg' : undefined}
+            onClick={() => setAdvancedOpen((open) => !open)}
+          >
+            <Icon name="settings" size={16} />
+          </IconButton>
+
+          {isRunning ? (
+            <IconButton
+              label="停止生成"
+              size="sm"
+              className="promptbar__send is-stop"
+              onClick={() => void cancelGeneration(node.id)}
+            >
+              <span className="promptbar__stop-icon" />
+            </IconButton>
+          ) : (
+            <IconButton
+              label="生成"
+              size="sm"
+              className="promptbar__send"
+              disabled={!canSend}
+              onClick={handleSend}
+            >
+              <Icon name="arrow-up" size={15} />
+            </IconButton>
+          )}
+        </div>
+
+        {advancedOpen ? (
+          <div className="promptbar__advanced">
+            <div className="promptbar__advanced-title">高级设置</div>
+            <div className="promptbar__advanced-row">
+              <div>
+                <div className="promptbar__advanced-label">
+                  智能引用 AutoLink
+                </div>
+                <div className="promptbar__advanced-desc">
+                  自动匹配提示词中的节点、素材和角色名称，匹配结果会显示在素材缩略图中
+                </div>
+              </div>
+              <Switch
+                label="智能引用 AutoLink"
+                checked={autoLink}
+                onChange={(next) => {
+                  setAutoLink(next)
+                  void updateGeneration({ autoLink: next })
+                }}
+              />
             </div>
           </div>
         ) : null}
       </div>
 
-      <div className="promptbar__footer">
-        {models.length === 0 ? (
-          <button type="button" className="promptbar__chip" onClick={() => openSettings('models')}>
-            未配置模型
-            <Icon name="chevron-down" size={11} />
-          </button>
-        ) : (
-          <div className="model-picker">
-            <button
-              type="button"
-              className={`promptbar__chip${
-                activeMissing.length > 0 ? ' is-warning' : ''
-              }`}
-              title={
-                activeMissing.length > 0
-                  ? `当前模型不支持${inputLabel(activeMissing)}输入`
-                  : undefined
-              }
-              onClick={() => setMenuOpen((open) => !open)}
+      {refPreview
+        ? createPortal(
+            <div
+              className="ref-preview"
+              style={{ left: refPreview.x, top: refPreview.y }}
             >
-              {active?.model.name ?? '选择模型'}
-              {activeMissing.length > 0 ? (
-                <span className="promptbar__model-warning">
-                  不支持{inputLabel(activeMissing)}
-                </span>
-              ) : null}
-              <Icon name="chevron-down" size={11} />
-            </button>
-
-            {menuOpen ? (
-              <div className="model-menu">
-                {models.map((item) => {
-                  const missing = missingInputsFor(item.model, requiredInputs)
-                  const unavailable = missing.length > 0
-
-                  return (
-                    <MenuItem
-                      key={item.key}
-                      active={item.key === active?.key}
-                      className={unavailable ? 'opacity-50' : undefined}
-                      title={
-                        unavailable
-                          ? `该模型不支持${inputLabel(missing)}输入`
-                          : undefined
-                      }
-                      onSelect={() => {
-                        if (unavailable) {
-                          showToast(
-                            `「${item.model.name}」不支持${inputLabel(missing)}输入`,
-                            'error'
-                          )
-                          return
-                        }
-
-                        setModelKey(item.key)
-                        setParamValues({})
-                        setMenuOpen(false)
-                        void setDefaultModel(capabilityGroup, item.key)
-                      }}
-                      trailing={
-                        <span className="flex flex-col items-end gap-0.5">
-                          {unavailable ? (
-                            <span className="model-menu__reason">
-                              不支持
-                              {missing
-                                .map((input) => MEDIA_INPUT_LABEL[input])
-                                .join('·')}
-                            </span>
-                          ) : null}
-                          <span className="model-menu__provider">
-                            {item.providerName}
-                          </span>
-                        </span>
-                      }
-                    >
-                      <span className="model-menu__name">{item.model.name}</span>
-                    </MenuItem>
-                  )
-                })}
-              </div>
-            ) : null}
-          </div>
-        )}
-
-        {active ? (
-          <div className="promptbar__param-group">
-            <div className="param-picker">
-              <button
-                type="button"
-                className="promptbar__chip promptbar__param-summary"
-                onClick={() =>
-                  setParamMenuKey((open) =>
-                    open === '__all__' ? null : '__all__'
-                  )
-                }
-                title="生成设置"
-              >
-                <span className="promptbar__param-summary-text">
-                  {paramSummary || '生成设置'}
-                </span>
-                <Icon name="chevron-down" size={10} />
-              </button>
-
-              {paramMenuKey === '__all__' ? (
-                <div className="param-panel">
-                  {paramGroups.map((group) => (
-                    <div className="param-panel__section" key={group.name}>
-                      <div className="param-panel__title">{group.name}</div>
-
-                      {group.params.map((param) => {
-                        if (param.type === 'select' && param.options) {
-                          const ratioGrid = param.options.every((option) =>
-                            ratioOf(option.label)
-                          )
-                          const custom = isParamCustom(param)
-                          const allowCustom = paramAllowsCustom(param)
-
-                          return (
-                            <div
-                              key={param.key}
-                              className={`param-panel__grid${ratioGrid ? ' is-ratio' : ''}`}
-                            >
-                              {param.options.map((option) => {
-                                const ratio = ratioOf(option.label)
-
-                                return (
-                                  <button
-                                    key={option.value}
-                                    type="button"
-                                    className={`param-panel__option${
-                                      ratio
-                                        ? ' param-panel__option--ratio'
-                                        : ''
-                                    }${
-                                      String(option.value) ===
-                                      String(values[param.key]) &&
-                                      !custom
-                                        ? ' is-active'
-                                        : ''
-                                    }`}
-                                    onClick={() =>
-                                      selectPreset(param, option.value)
-                                    }
-                                  >
-                                    {ratio ? (
-                                      <span
-                                        className="param-panel__ratio"
-                                        style={{ aspectRatio: ratio }}
-                                      />
-                                    ) : null}
-                                    {option.label}
-                                  </button>
-                                )
-                              })}
-
-                              {allowCustom ? (
-                                <button
-                                  type="button"
-                                  className={`param-panel__option param-panel__option--custom${
-                                    custom ? ' is-active' : ''
-                                  }`}
-                                  onClick={() => enableCustomParam(param)}
-                                >
-                                  自定义
-                                </button>
-                              ) : null}
-
-                              {custom ? (
-                                <Input
-                                  className="param-panel__custom-input"
-                                  value={String(values[param.key] ?? '')}
-                                  placeholder={
-                                    param.key === 'ratio'
-                                      ? '例如 2:1'
-                                      : param.key === 'size'
-                                        ? '例如 2048x1152'
-                                        : '输入自定义值'
-                                  }
-                                  onChange={(event) =>
-                                    setParamValues((current) => ({
-                                      ...current,
-                                      [param.key]: event.target.value
-                                    }))
-                                  }
-                                />
-                              ) : null}
-                            </div>
-                          )
-                        }
-
-                        if (param.type === 'boolean') {
-                          return (
-                            <div
-                              key={param.key}
-                              className="param-panel__grid is-two"
-                            >
-                              {[true, false].map((value) => (
-                                <button
-                                  key={String(value)}
-                                  type="button"
-                                  className={`param-panel__option${
-                                    Boolean(values[param.key]) === value
-                                      ? ' is-active'
-                                      : ''
-                                  }`}
-                                  onClick={() =>
-                                    setParamValues((prev) => ({
-                                      ...prev,
-                                      [param.key]: value
-                                    }))
-                                  }
-                                >
-                                  {value ? '开启' : '关闭'}
-                                </button>
-                              ))}
-                            </div>
-                          )
-                        }
-
-                        if (
-                          param.key === 'duration' &&
-                          param.type === 'number'
-                        ) {
-                          const value = Number(
-                            values[param.key] ?? param.defaultValue ?? 5
-                          )
-
-                          return (
-                            <div
-                              key={param.key}
-                              className="param-panel__range"
-                            >
-                              <input
-                                type="range"
-                                min={param.min ?? 1}
-                                max={param.max ?? 30}
-                                step={1}
-                                value={value}
-                                onChange={(event) =>
-                                  setParamValues((prev) => ({
-                                    ...prev,
-                                    [param.key]: Number(event.target.value)
-                                  }))
-                                }
-                              />
-                              <span className="param-panel__range-value">
-                                {value}s
-                              </span>
-                            </div>
-                          )
-                        }
-
-                        return (
-                          <div
-                            key={param.key}
-                            className="param-panel__input-row"
-                          >
-                            <span>{param.label}</span>
-                            <Input
-                              className="param-input nodrag nopan"
-                              type={
-                                param.type === 'number' ? 'number' : 'text'
-                              }
-                              value={String(values[param.key] ?? '')}
-                              onChange={(event) => {
-                                const raw = event.target.value
-                                const next =
-                                  param.type === 'number'
-                                    ? Number(raw)
-                                    : raw
-                                if (
-                                  param.type === 'number' &&
-                                  !Number.isFinite(next as number)
-                                ) {
-                                  return
-                                }
-                                setParamValues((prev) => ({
-                                  ...prev,
-                                  [param.key]: next
-                                }))
-                              }}
-                            />
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ))}
-
-                  <div className="param-panel__switch-row">
-                    <span>AI 水印</span>
-                    <Switch
-                      label="AI 水印"
-                      checked={watermark}
-                      onChange={(next) => {
-                        setWatermark(next)
-                        void updateGeneration({ watermark: next })
-                      }}
-                    />
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          <span className="promptbar__params">配置模型后生成参数会出现在这里</span>
-        )}
-
-        <div className="promptbar__spacer" />
-        <IconButton
-          label="高级设置"
-          size="xs"
-          className={advancedOpen ? 'bg-surface-hover text-fg' : undefined}
-          onClick={() => setAdvancedOpen((open) => !open)}
-        >
-          <Icon name="settings" size={16} />
-        </IconButton>
-
-        {isRunning ? (
-          <IconButton
-            label="停止生成"
-            size="sm"
-            className="promptbar__send is-stop"
-            onClick={() => void cancelGeneration(node.id)}
-          >
-            <span className="promptbar__stop-icon" />
-          </IconButton>
-        ) : (
-          <IconButton
-            label="生成"
-            size="sm"
-            className="promptbar__send"
-            disabled={!canSend}
-            onClick={handleSend}
-          >
-            <Icon name="arrow-up" size={15} />
-          </IconButton>
-        )}
-      </div>
-
-      {advancedOpen ? (
-        <div className="promptbar__advanced">
-          <div className="promptbar__advanced-title">高级设置</div>
-          <div className="promptbar__advanced-row">
-            <div>
-              <div className="promptbar__advanced-label">智能引用 AutoLink</div>
-              <div className="promptbar__advanced-desc">
-                自动匹配提示词中的节点、素材和角色名称，匹配结果会显示在素材缩略图中
-              </div>
-            </div>
-            <Switch
-              label="智能引用 AutoLink"
-              checked={autoLink}
-              onChange={(next) => {
-                setAutoLink(next)
-                void updateGeneration({ autoLink: next })
-              }}
-            />
-          </div>
-        </div>
-      ) : null}
-    </div>
-
-    {refPreview
-      ? createPortal(
-          <div
-            className="ref-preview"
-            style={{ left: refPreview.x, top: refPreview.y }}
-          >
-            {refPreview.kind === 'video' ? (
-              <video
-                src={`${assetUrl(refPreview.path, refPreview.scope)}#t=0.1`}
-                muted
-                playsInline
-                autoPlay
-                loop
-                preload="metadata"
-              />
-            ) : (
-              <img
-                src={assetUrl(refPreview.path, refPreview.scope)}
-                alt=""
-              />
-            )}
-          </div>,
-          document.body
-        )
-      : null}
+              {refPreview.kind === 'video' ? (
+                <video
+                  src={`${assetUrl(refPreview.path, refPreview.scope)}#t=0.1`}
+                  muted
+                  playsInline
+                  autoPlay
+                  loop
+                  preload="metadata"
+                />
+              ) : (
+                <img src={assetUrl(refPreview.path, refPreview.scope)} alt="" />
+              )}
+            </div>,
+            document.body
+          )
+        : null}
     </>
   )
 }

@@ -7,6 +7,8 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg'
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
   size?: ButtonSize
+  /** Preserve an existing custom class without applying primitive styles. */
+  unstyled?: boolean
 }
 
 const VARIANTS: Record<ButtonVariant, string> = {
@@ -30,6 +32,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       className,
       variant = 'secondary',
       size = 'md',
+      unstyled,
       type = 'button',
       ...props
     },
@@ -39,14 +42,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         type={type}
-        className={cn(
-          'inline-flex items-center justify-center rounded-card font-medium transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
-          'disabled:pointer-events-none disabled:opacity-50',
-          VARIANTS[variant],
-          SIZES[size],
-          className
-        )}
+        className={
+          unstyled
+            ? className
+            : cn(
+                'inline-flex items-center justify-center rounded-card font-medium transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
+                'disabled:pointer-events-none disabled:opacity-50',
+                VARIANTS[variant],
+                SIZES[size],
+                className
+              )
+        }
         {...props}
       />
     )

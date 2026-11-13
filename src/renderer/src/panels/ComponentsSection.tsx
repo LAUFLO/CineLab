@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ComponentKind, ComponentStatus } from '@shared/components'
 import { useUIStore } from '../stores/ui'
+import { Button } from '../components/ui'
 
 const KIND_ORDER: ComponentKind[] = [
   'depth-runtime',
@@ -199,45 +200,49 @@ export function ComponentsSection() {
 
             <div className="component-card__actions">
               {item.state === 'not-installed' || item.state === 'error' ? (
-                <button
+                <Button
                   type="button"
                   className="btn-primary"
                   disabled={pending === item.kind}
                   onClick={() => void install(item.kind)}
+                  unstyled
                 >
                   {item.state === 'error' ? '重试' : '下载'}
-                </button>
+                </Button>
               ) : null}
 
               {item.state === 'paused' ? (
-                <button
+                <Button
                   type="button"
                   className="btn-primary"
                   disabled={pending === item.kind}
                   onClick={() => void install(item.kind)}
+                  unstyled
                 >
                   继续
-                </button>
+                </Button>
               ) : null}
 
               {item.state === 'downloading' ? (
-                <button
+                <Button
                   type="button"
                   className="btn-secondary"
                   onClick={() => void pause(item.kind)}
+                  unstyled
                 >
                   暂停
-                </button>
+                </Button>
               ) : null}
 
               {item.state === 'installed' ? (
-                <button
+                <Button
                   type="button"
                   className="btn-secondary"
                   onClick={() => uninstall(item)}
+                  unstyled
                 >
                   卸载
-                </button>
+                </Button>
               ) : null}
             </div>
           </div>

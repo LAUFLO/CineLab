@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Icon } from '../components/Icon'
 import { useUIStore } from '../stores/ui'
+import { Button } from '../components/ui'
 
 const GROUPS: { title: string; items: [string, string][] }[] = [
   {
@@ -57,14 +58,15 @@ export function ShortcutPanel() {
       >
         <header className="shortcuts-dialog__head">
           <span>快捷键</span>
-          <button
+          <Button
             type="button"
             className="icon-btn settings-dialog__close"
             title="关闭"
             onClick={close}
+            unstyled
           >
             <Icon name="close" size={14} />
-          </button>
+          </Button>
         </header>
 
         <div className="shortcuts-dialog__body">

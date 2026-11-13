@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '../../components/Icon'
+import { Button, Input } from '../../components/ui'
 
 export type AudioActionMode = 'trim' | 'speed'
 
@@ -120,14 +121,15 @@ export function AudioActionBar({
       onPointerDown={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}
     >
-      <button
+      <Button
         type="button"
         className="audio-bar__close"
         title="关闭"
         onClick={onClose}
+        unstyled
       >
         <Icon name="close" size={14} />
-      </button>
+      </Button>
 
       <span className="audio-bar__label">
         {mode === 'trim' ? '截取' : '变速'}
@@ -135,7 +137,7 @@ export function AudioActionBar({
 
       {mode === 'trim' ? (
         <div className="audio-bar__range">
-          <input
+          <Input
             className="audio-bar__time-input"
             value={startText}
             spellCheck={false}
@@ -149,9 +151,10 @@ export function AudioActionBar({
               }
               if (event.key === 'Escape') onClose()
             }}
+            unstyled
           />
           <span className="audio-bar__dash">–</span>
-          <input
+          <Input
             className="audio-bar__time-input"
             value={endText}
             spellCheck={false}
@@ -165,12 +168,13 @@ export function AudioActionBar({
               }
               if (event.key === 'Escape') onClose()
             }}
+            unstyled
           />
         </div>
       ) : (
         <div className="audio-bar__speed">
           <span className="audio-bar__limit">0.1x</span>
-          <input
+          <Input
             className="audio-bar__slider"
             type="range"
             min={0.1}
@@ -178,9 +182,10 @@ export function AudioActionBar({
             step={0.05}
             value={rate}
             onChange={(event) => onRateChange(Number(event.target.value))}
+            unstyled
           />
           <span className="audio-bar__limit">4.0x</span>
-          <input
+          <Input
             className="audio-bar__rate-input"
             type="number"
             min={0.1}
@@ -196,19 +201,21 @@ export function AudioActionBar({
               }
               if (event.key === 'Escape') onClose()
             }}
+            unstyled
           />
           <span className="audio-bar__unit">x</span>
         </div>
       )}
 
-      <button
+      <Button
         type="button"
         className="audio-bar__go"
         disabled={busy}
         onClick={onSubmit}
+        unstyled
       >
         {busy ? '生成中…' : '生成'}
-      </button>
+      </Button>
     </div>,
     document.body
   )

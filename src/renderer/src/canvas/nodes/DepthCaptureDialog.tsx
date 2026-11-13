@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import type { ComponentStatus } from '@shared/components'
 import { Icon } from '../../components/Icon'
-import { Select } from '../../components/Select'
+import { Button, Dialog, Select } from '../../components/ui'
 
 type Quality = 'fast' | 'standard' | 'long'
 
@@ -41,14 +40,7 @@ export function DepthCaptureDialog({
       .then(setComponents)
       .catch(() => setComponents([]))
       .finally(() => setChecking(false))
-
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') onClose()
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
@@ -61,89 +53,91 @@ export function DepthCaptureDialog({
   const estimatedFrames = Math.round(duration * (fpsMode === '24' ? 24 : 24))
   const estimatedMinutes = Math.max(1, Math.round((estimatedFrames * 1.4) / 60))
 
-  return createPortal(
-    <div
-      className="operation-dialog-overlay"
-      onPointerDown={() => {
-        if (!checking) onClose()
-      }}
+  return (
+    <Dialog
+      open={open}
+      onClose={checking ? () => {} : onClose}
+      bare
+      ariaLabel="深度捕捉"
+      overlayClassName="operation-dialog-overlay"
+      panelClassName="operation-dialog"
     >
-      <div
-        className="operation-dialog"
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <div className="operation-dialog__header">
-          <div>
-            <div className="operation-dialog__title">深度动作捕捉</div>
-            <div className="operation-dialog__subtitle">
-              源视频 {duration.toFixed(1)} 秒 · 输出比例跟随源视频
-            </div>
+      <div className="operation-dialog__header">
+        <div>
+          <div className="operation-dialog__title">深度动作捕捉</div>
+          <div className="operation-dialog__subtitle">
+            源视频 {duration.toFixed(1)} 秒 · 输出比例跟随源视频
           </div>
-          <button
-            type="button"
-            className="operation-dialog__close"
-            title="关闭"
-            onClick={onClose}
-          >
-            <Icon name="close" size={14} />
-          </button>
         </div>
-
-        <div className="operation-dialog__row">
-          <label className="operation-dialog__field">
-            <span>档位</span>
-            <Select
-              value={quality}
-              options={QUALITY_OPTIONS}
-              onChange={(next) => setQuality(next)}
-            />
-          </label>
-          <label className="operation-dialog__field">
-            <span>帧率</span>
-            <Select
-              value={fpsMode}
-              options={[
-                { value: 'source', label: '跟随源视频' },
-                { value: '24', label: '固定 24fps' }
-              ]}
-              onChange={(next) => setFpsMode(next)}
-            />
-          </label>
-        </div>
-
-        <div className="operation-dialog__hint">
-          预计耗时约 {estimatedMinutes} 分钟。任务在后台执行，完成后会自动创建节点。
-        </div>
-
-        {!checking && !installed ? (
-          <div className="operation-dialog__hint">
-            深度组件未安装。请先在设置中下载「深度运行时」和「VDA Small 模型」。
-          </div>
-        ) : null}
-
-        {tooLong ? (
-          <div className="operation-dialog__hint">
-            当前档位最长支持 {maxSeconds} 秒，请先裁短视频。
-          </div>
-        ) : null}
-
-        <div className="operation-dialog__footer">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            取消
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={checking || !installed || tooLong}
-            onClick={() =>
-              onConfirm(quality, fpsMode === '24' ? 24 : 0)
-            }
-          >
-            开始提取
-          </button>
-        </div>
+        <Button
+          type="button"
+          className="operation-dialog__close"
+          title="关闭"
+          onClick={onClose}
+          unstyled
+        >
+          <Icon name="close" size={14} />
+        </Button>
       </div>
-    </div>,
-    document.body
+
+      <div className="operation-dialog__row">
+        <label className="operation-dialog__field">
+          <span>档位</span>
+          <Select
+            value={quality}
+            options={QUALITY_OPTIONS}
+            onChange={(next) => setQuality(next)}
+          />
+        </label>
+        <label className="operation-dialog__field">
+          <span>帧率</span>
+          <Select
+            value={fpsMode}
+            options={[
+              { value: 'source', label: '跟随源视频' },
+              { value: '24', label: '固定 24fps' }
+            ]}
+            onChange={(next) => setFpsMode(next)}
+          />
+        </label>
+      </div>
+
+      <div className="operation-dialog__hint">
+        预计耗时约 {estimatedMinutes}{' '}
+        分钟。任务在后台执行，完成后会自动创建节点。
+      </div>
+
+      {!checking && !installed ? (
+        <div className="operation-dialog__hint">
+          深度组件未安装。请先在设置中下载「深度运行时」和「VDA Small 模型」。
+        </div>
+      ) : null}
+
+      {tooLong ? (
+        <div className="operation-dialog__hint">
+          当前档位最长支持 {maxSeconds} 秒，请先裁短视频。
+        </div>
+      ) : null}
+
+      <div className="operation-dialog__footer">
+        <Button
+          type="button"
+          className="btn-secondary"
+          onClick={onClose}
+          unstyled
+        >
+          取消
+        </Button>
+        <Button
+          type="button"
+          className="btn-primary"
+          disabled={checking || !installed || tooLong}
+          onClick={() => onConfirm(quality, fpsMode === '24' ? 24 : 0)}
+          unstyled
+        >
+          开始提取
+        </Button>
+      </div>
+    </Dialog>
   )
 }

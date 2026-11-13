@@ -8,6 +8,7 @@ import { useUIStore } from '../stores/ui'
 import { duplicateSelectionDeep } from './context-actions'
 import { requestDeleteSelection } from './delete-actions'
 import { createStudioFromNodes } from '../studio/nodes'
+import { Button } from '../components/ui'
 
 export function MultiSelectBar() {
   const nodes = useCanvasStore((state) => state.nodes)
@@ -19,15 +20,13 @@ export function MultiSelectBar() {
   const studioOpen = useStudioStore((state) => state.open)
   const viewport = useCanvasStore((state) => state.viewport)
 
-  const selected = useMemo(
-    () => nodes.filter((node) => node.selected),
-    [nodes]
-  )
+  const selected = useMemo(() => nodes.filter((node) => node.selected), [nodes])
   const selectionKey = selected.map((node) => node.id).join('|')
 
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(
-    null
-  )
+  const [position, setPosition] = useState<{
+    left: number
+    top: number
+  } | null>(null)
   const [groupMenuOpen, setGroupMenuOpen] = useState(false)
   const groupMenuRef = useRef<HTMLDivElement>(null)
 
@@ -171,9 +170,7 @@ export function MultiSelectBar() {
     selected.length <= 25 &&
     selected.every(
       (node) =>
-        !isGroupNode(node) &&
-        !node.parentId &&
-        node.data.kind === 'image'
+        !isGroupNode(node) && !node.parentId && node.data.kind === 'image'
     )
 
   const canStudio = selected.some((node) => {
@@ -216,93 +213,123 @@ export function MultiSelectBar() {
       {canGroup ? (
         canStoryboard ? (
           <div className="multi-bar__menu-wrap" ref={groupMenuRef}>
-            <button
+            <Button
               type="button"
               className={`multi-bar__btn ${groupMenuOpen ? 'is-open' : ''}`}
               onClick={() => setGroupMenuOpen((open) => !open)}
+              unstyled
             >
               <Icon name="layers" size={14} />
               <span>打组</span>
               <Icon name="chevron-down" size={12} />
-            </button>
+            </Button>
             {groupMenuOpen ? (
               <div className="multi-bar__pop">
-                <button
+                <Button
                   type="button"
                   className="multi-bar__pop-item"
                   onClick={() => {
                     group()
                     setGroupMenuOpen(false)
                   }}
+                  unstyled
                 >
                   打组
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="multi-bar__pop-item"
                   onClick={() => {
                     storyboard()
                     setGroupMenuOpen(false)
                   }}
+                  unstyled
                 >
                   合并分镜组
-                </button>
+                </Button>
               </div>
             ) : null}
           </div>
         ) : (
-          <button type="button" className="multi-bar__btn" onClick={group}>
+          <Button
+            type="button"
+            className="multi-bar__btn"
+            onClick={group}
+            unstyled
+          >
             <Icon name="layers" size={14} />
             <span>打组</span>
-          </button>
+          </Button>
         )
       ) : null}
 
       {canMerge ? (
-        <button type="button" className="multi-bar__btn" onClick={merge}>
+        <Button
+          type="button"
+          className="multi-bar__btn"
+          onClick={merge}
+          unstyled
+        >
           <Icon name="layers" size={14} />
           <span>合并分组</span>
-        </button>
+        </Button>
       ) : null}
 
       {canGroup || canMerge ? <div className="multi-bar__divider" /> : null}
 
       {canStudio ? (
-        <button type="button" className="multi-bar__btn" onClick={makeStudio}>
+        <Button
+          type="button"
+          className="multi-bar__btn"
+          onClick={makeStudio}
+          unstyled
+        >
           <Icon name="film" size={14} />
           <span>剪辑室</span>
-        </button>
+        </Button>
       ) : null}
 
-      <button
+      <Button
         type="button"
         className="multi-bar__btn"
         onClick={() => void saveToLibrary()}
+        unstyled
       >
         <Icon name="folder" size={14} />
         <span>保存到资产</span>
-      </button>
+      </Button>
 
-      <button type="button" className="multi-bar__btn" onClick={duplicate}>
+      <Button
+        type="button"
+        className="multi-bar__btn"
+        onClick={duplicate}
+        unstyled
+      >
         <Icon name="plus" size={14} />
         <span>创建副本</span>
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         className="multi-bar__btn"
         onClick={() => void exportAssets()}
+        unstyled
       >
         <Icon name="download" size={14} />
         <span>导出选中</span>
-      </button>
+      </Button>
 
       <div className="multi-bar__divider" />
 
-      <button type="button" className="multi-bar__btn" onClick={remove}>
+      <Button
+        type="button"
+        className="multi-bar__btn"
+        onClick={remove}
+        unstyled
+      >
         <Icon name="close" size={14} />
         <span>删除</span>
-      </button>
+      </Button>
     </div>
   )
 }

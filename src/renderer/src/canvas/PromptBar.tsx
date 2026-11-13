@@ -19,7 +19,7 @@ import {
 } from '@shared/provider-schema'
 import type { ReferenceInput, ReferenceRole } from '@shared/generation'
 import { Icon } from '../components/Icon'
-import { IconButton, MenuItem, Switch } from '../components/ui'
+import { IconButton, Input, MenuItem, Switch } from '../components/ui'
 import {
   absolutePosition,
   isGroupNode,
@@ -1348,47 +1348,49 @@ export function PromptBar() {
                     )
 
                     return (
-                      <button
+                      <MenuItem
                         key={item.key}
-                        type="button"
-                        className={`mention-menu__item${
-                          index === mentionIndex ? ' is-active' : ''
-                        }`}
+                        icon={
+                          <span className="mention-menu__thumb">
+                            {item.thumb ? (
+                              item.kind === 'video' &&
+                              isVideoPath(item.thumb) ? (
+                                <video
+                                  src={`${assetUrl(item.thumb, item.scope)}#t=0.1`}
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                />
+                              ) : (
+                                <img
+                                  src={assetUrl(item.thumb, item.scope)}
+                                  alt=""
+                                />
+                              )
+                            ) : (
+                              <Icon
+                                name={item.kind === 'video' ? 'video' : 'image'}
+                                size={12}
+                              />
+                            )}
+                          </span>
+                        }
+                        active={index === mentionIndex}
                         onMouseDown={(event) => event.preventDefault()}
                         onMouseEnter={() => setMentionIndex(index)}
-                        onClick={() => applyMention(item)}
+                        onSelect={() => applyMention(item)}
+                        trailing={
+                          <span className="mention-menu__kind">
+                            {item.group === '角色'
+                              ? '角色卡'
+                              : item.kind === 'video'
+                                ? '视频'
+                                : '图片'}
+                          </span>
+                        }
                       >
-                        <span className="mention-menu__thumb">
-                          {item.thumb ? (
-                            item.kind === 'video' && isVideoPath(item.thumb) ? (
-                              <video
-                                src={`${assetUrl(item.thumb, item.scope)}#t=0.1`}
-                                muted
-                                playsInline
-                                preload="metadata"
-                              />
-                            ) : (
-                              <img
-                                src={assetUrl(item.thumb, item.scope)}
-                                alt=""
-                              />
-                            )
-                          ) : (
-                            <Icon
-                              name={item.kind === 'video' ? 'video' : 'image'}
-                              size={12}
-                            />
-                          )}
-                        </span>
                         <span className="mention-menu__name">{item.name}</span>
-                        <span className="mention-menu__kind">
-                          {item.group === '角色'
-                            ? '角色卡'
-                            : item.kind === 'video'
-                              ? '视频'
-                              : '图片'}
-                        </span>
-                      </button>
+                      </MenuItem>
                     )
                   })}
                 </div>
@@ -1570,7 +1572,7 @@ export function PromptBar() {
                               ) : null}
 
                               {custom ? (
-                                <input
+                                <Input
                                   className="param-panel__custom-input"
                                   value={String(values[param.key] ?? '')}
                                   placeholder={
@@ -1660,7 +1662,7 @@ export function PromptBar() {
                             className="param-panel__input-row"
                           >
                             <span>{param.label}</span>
-                            <input
+                            <Input
                               className="param-input nodrag nopan"
                               type={
                                 param.type === 'number' ? 'number' : 'text'

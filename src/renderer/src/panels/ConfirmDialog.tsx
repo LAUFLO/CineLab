@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button } from '../components/ui'
+import { Button, Dialog } from '../components/ui'
 import { useUIStore } from '../stores/ui'
 
 export function ConfirmDialog() {
@@ -31,14 +31,13 @@ export function ConfirmDialog() {
   }
 
   return (
-    <div className="confirm-overlay" onPointerDown={closeConfirm}>
-      <div
-        className="confirm-dialog"
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <div className="confirm-dialog__title">{confirm.title}</div>
-        <p className="confirm-dialog__message">{confirm.message}</p>
-        <div className="confirm-dialog__actions">
+    <Dialog
+      open
+      onClose={closeConfirm}
+      title={confirm.title}
+      description={confirm.message}
+      footer={
+        <>
           <Button variant="secondary" onClick={closeConfirm} disabled={busy}>
             取消
           </Button>
@@ -48,7 +47,7 @@ export function ConfirmDialog() {
               onClick={() => void handleSecondary()}
               disabled={busy}
             >
-              {busy ? '处理中…' : confirm.secondaryLabel ?? '其他操作'}
+              {busy ? '处理中…' : (confirm.secondaryLabel ?? '其他操作')}
             </Button>
           ) : null}
           <Button
@@ -56,10 +55,10 @@ export function ConfirmDialog() {
             onClick={() => void handleConfirm()}
             disabled={busy}
           >
-            {busy ? '处理中…' : confirm.confirmLabel ?? '确认'}
+            {busy ? '处理中…' : (confirm.confirmLabel ?? '确认')}
           </Button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    />
   )
 }

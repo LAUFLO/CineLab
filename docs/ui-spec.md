@@ -796,11 +796,14 @@ CineBot 是全局浮层，不占用画布布局。
 | `Select` | 自定义下拉选择 |
 | `Switch` | 开关 |
 | `Field` / `SettingRow` | 表单字段与设置行布局 |
+| `Dialog` | 模态对话框、焦点圈定与 Escape 关闭 |
+| `Menu` / `MenuItem` / `MenuSeparator` | 固定定位浮动菜单 |
+| `Toast` | 页面底部状态提示 |
 
 规则：
 
 - 新代码只能从 `components/ui` 导入这些组件，不再手写同类按钮、开关或设置行。
 - 组件使用 Tailwind 语义类（`bg-surface`、`text-fg`、`border-border`、`bg-accent` 等），不硬编码色值。
 - 旧页面按「设置页 → 资产库 → 剪辑室 → 画布」逐步迁移。
-- 当前设置页已迁移 `Switch`、`SettingRow`、`Input`、`Select`；确认弹窗已迁移 `Button`。
-- `Dialog`、`Menu`、`Toast` 等组件在后续批次补齐。
+- 当前设置页已迁移 `Switch`、`SettingRow`、`Input`、`Select`；确认弹窗已迁移 `Dialog` 和 `Button`；全局提示已迁移 `Toast`。
+- `Menu` 已提供，但节点/工具栏菜单会在后续批次逐步迁移。

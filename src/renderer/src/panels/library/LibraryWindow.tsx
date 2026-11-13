@@ -14,7 +14,7 @@ import type {
 } from '@shared/library-schema'
 import { PROMPT_FOLDER } from '@shared/library-schema'
 import { Icon } from '../../components/Icon'
-import { Button, IconButton } from '../../components/ui'
+import { Button, Dialog, IconButton, Input } from '../../components/ui'
 import { isGroupNode, useCanvasStore } from '../../stores/canvas'
 import { useLibraryStore } from '../../stores/library'
 import { useUIStore } from '../../stores/ui'
@@ -616,30 +616,17 @@ export function LibraryWindow() {
       </div>
 
       {moveTargets.length > 0 ? (
-        <div className="library-modal" onPointerDown={() => setMoveTargets([])}>
-          <div
-            className="library-modal__panel library-modal__panel--wide"
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <div className="library-modal__title">
-              {moveTargets.length === 1
-                ? `移动「${moveTargets[0].name}」到`
-                : `移动 ${moveTargets.length} 个素材到`}
-            </div>
-
-            <div className="library-move-tree">
-              <FolderTree
-                tree={tree}
-                current={moveFolder}
-                onSelect={(path) => setMoveFolder(path)}
-                onCreate={() => {}}
-                onRename={() => {}}
-                onDelete={() => {}}
-                readOnly
-              />
-            </div>
-
-            <div className="library-modal__actions">
+        <Dialog
+          open
+          onClose={() => setMoveTargets([])}
+          title={
+            moveTargets.length === 1
+              ? `移动「${moveTargets[0].name}」到`
+              : `移动 ${moveTargets.length} 个素材到`
+          }
+          size="md"
+          footer={
+            <>
               <Button variant="secondary" onClick={() => setMoveTargets([])}>
                 取消
               </Button>
@@ -650,20 +637,49 @@ export function LibraryWindow() {
               >
                 移动到此处
               </Button>
-            </div>
+            </>
+          }
+        >
+          <div className="library-move-tree">
+            <FolderTree
+              tree={tree}
+              current={moveFolder}
+              onSelect={(path) => setMoveFolder(path)}
+              onCreate={() => {}}
+              onRename={() => {}}
+              onDelete={() => {}}
+              readOnly
+            />
           </div>
-        </div>
+        </Dialog>
       ) : null}
 
       {concatOpen ? (
-        <div className="library-modal" onPointerDown={() => setConcatOpen(false)}>
-          <div
-            className="library-modal__panel"
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <div className="library-modal__title">合成视频</div>
-
-            <div className="concat-form">
+        <Dialog
+          open
+          onClose={() => setConcatOpen(false)}
+          title="合成视频"
+          size="lg"
+          footer={
+            <>
+              <Button
+                variant="secondary"
+                disabled={concatBusy}
+                onClick={() => setConcatOpen(false)}
+              >
+                取消
+              </Button>
+              <Button
+                variant="primary"
+                disabled={concatBusy}
+                onClick={() => void handleConcat()}
+              >
+                {concatBusy ? '合成中…' : '选择位置并合成'}
+              </Button>
+            </>
+          }
+        >
+          <div className="concat-form">
               <div className="concat-form__row">
                 <span>分辨率</span>
                 <div className="concat-form__options">
@@ -837,62 +853,43 @@ export function LibraryWindow() {
                 {concatNarration ? '；旁白混入' : ''}
                 {concatSubtitle ? '；字幕烧录进画面' : ''}。
               </div>
-            </div>
-
-            <div className="library-modal__actions">
-              <Button
-                variant="secondary"
-                disabled={concatBusy}
-                onClick={() => setConcatOpen(false)}
-              >
-                取消
-              </Button>
-              <Button
-                variant="primary"
-                disabled={concatBusy}
-                onClick={() => void handleConcat()}
-              >
-                {concatBusy ? '合成中…' : '选择位置并合成'}
-              </Button>
-            </div>
           </div>
-        </div>
+        </Dialog>
       ) : null}
 
       {tagTarget ? (
-        <div className="library-modal" onPointerDown={() => setTagTarget(null)}>
-          <div
-            className="library-modal__panel"
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <div className="library-modal__title">标签「{tagTarget.name}」</div>
-
-            <input
-              className="tag-input"
-              value={tagDraft}
-              placeholder="多个标签用逗号分隔，例如：人物, 夜景"
-              autoFocus
-              onChange={(event) => setTagDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') void handleSaveTags()
-                if (event.key === 'Escape') setTagTarget(null)
-              }}
-            />
-
-            <div className="tag-hint">
-              标签保存在资产库根目录的 .tags.json，不修改原文件。
-            </div>
-
-            <div className="library-modal__actions">
+        <Dialog
+          open
+          onClose={() => setTagTarget(null)}
+          title={`标签「${tagTarget.name}」`}
+          size="sm"
+          footer={
+            <>
               <Button variant="secondary" onClick={() => setTagTarget(null)}>
                 取消
               </Button>
               <Button variant="primary" onClick={() => void handleSaveTags()}>
                 保存标签
               </Button>
+            </>
+          }
+        >
+          <div className="flex flex-col gap-3">
+            <Input
+              value={tagDraft}
+              placeholder="多个标签用逗号分隔，例如：人物, 夜景"
+              autoFocus
+              onChange={(event) => setTagDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void handleSaveTags()
+              }}
+            />
+
+            <div className="tag-hint">
+              标签保存在资产库根目录的 .tags.json，不修改原文件。
             </div>
           </div>
-        </div>
+        </Dialog>
       ) : null}
 
       {nameDialog ? (

@@ -1,5 +1,6 @@
 import type { LibraryAsset } from '@shared/library-schema'
 import { Icon } from '../../components/Icon'
+import { IconButton } from '../../components/ui'
 import { assetUrl } from '../../lib/asset-url'
 
 interface AssetGridProps {
@@ -134,55 +135,56 @@ export function AssetGrid({
           <div className="library-asset-card__actions">
             {selectionMode ? null : (
               <>
-                <button
-                  type="button"
-                  title="添加到画布"
+                <IconButton
+                  label="添加到画布"
+                  size="xs"
                   onClick={() => onAddToCanvas(asset)}
                 >
                   <Icon name="plus" size={13} />
-                </button>
-                <button
-                  type="button"
-                  title="导出到本地"
+                </IconButton>
+                <IconButton
+                  label="导出到本地"
+                  size="xs"
                   onClick={() => onExport(asset)}
                 >
                   <Icon name="download" size={13} />
-                </button>
-                <button
-                  type="button"
-                  title="移动到文件夹"
+                </IconButton>
+                <IconButton
+                  label="移动到文件夹"
+                  size="xs"
                   onClick={() => onMove(asset)}
                 >
                   <Icon name="move" size={13} />
-                </button>
-                <button
-                  type="button"
-                  title="重命名"
+                </IconButton>
+                <IconButton
+                  label="重命名"
+                  size="xs"
                   onClick={() => onRename(asset)}
                 >
                   <Icon name="edit" size={13} />
-                </button>
-                <button
-                  type="button"
-                  title="编辑标签"
+                </IconButton>
+                <IconButton
+                  label="编辑标签"
+                  size="xs"
                   onClick={() => onEditTags(asset)}
                 >
                   <Icon name="pin" size={13} />
-                </button>
-                <button
-                  type="button"
-                  title="在资源管理器中显示"
+                </IconButton>
+                <IconButton
+                  label="在资源管理器中显示"
+                  size="xs"
                   onClick={() => onReveal(asset)}
                 >
                   <Icon name="folder" size={13} />
-                </button>
-                <button
-                  type="button"
-                  title="删除"
+                </IconButton>
+                <IconButton
+                  label="删除"
+                  size="xs"
+                  className="text-danger hover:text-danger"
                   onClick={() => onDelete(asset)}
                 >
                   <Icon name="trash" size={13} />
-                </button>
+                </IconButton>
               </>
             )}
           </div>

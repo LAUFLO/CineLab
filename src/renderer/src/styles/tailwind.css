@@ -25,6 +25,7 @@
 
   --color-media-bg: var(--media-bg);
   --color-media-text: var(--media-text);
+  --color-overlay: var(--overlay);
 
   --color-group-blue: var(--group-blue);
   --color-group-cyan: var(--group-cyan);

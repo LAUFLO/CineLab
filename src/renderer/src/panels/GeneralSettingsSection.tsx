@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ModelDef } from '@shared/provider-schema'
 import type { ThumbCacheInfo } from '@shared/library-schema'
 import {
@@ -12,7 +12,7 @@ import {
   type CapabilityGroup,
   type Preferences
 } from '@shared/preferences'
-import { Select } from '../components/Select'
+import { Input, Select, SettingRow, Switch } from '../components/ui'
 import { useGenerationHistoryStore } from '../stores/generation-history'
 import { usePreferencesStore } from '../stores/preferences'
 import { useSettingsStore } from '../stores/settings'
@@ -42,45 +42,6 @@ function formatBytes(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
-}
-
-function SettingRow({
-  title,
-  hint,
-  children
-}: {
-  title: string
-  hint?: string
-  children: ReactNode
-}) {
-  return (
-    <div className="settings-row">
-      <div className="settings-row__text">
-        <div className="settings-row__title">{title}</div>
-        {hint ? <div className="settings-row__hint">{hint}</div> : null}
-      </div>
-      <div className="settings-row__control">{children}</div>
-    </div>
-  )
-}
-
-function Toggle({
-  checked,
-  onChange
-}: {
-  checked: boolean
-  onChange: (next: boolean) => void
-}) {
-  return (
-    <button
-      type="button"
-      className={`settings-toggle${checked ? ' is-on' : ''}`}
-      aria-pressed={checked}
-      onClick={() => onChange(!checked)}
-    >
-      <span />
-    </button>
-  )
 }
 
 export function GeneralSettingsSection() {
@@ -281,7 +242,7 @@ export function GeneralSettingsSection() {
           title="启动时打开最近项目"
           hint="关闭后启动进入项目中心，不自动打开上次的项目"
         >
-          <Toggle
+          <Switch
             checked={preferences.startup.openRecentProject}
             onChange={(next) => void updateStartup({ openRecentProject: next })}
           />
@@ -302,7 +263,7 @@ export function GeneralSettingsSection() {
           title="关闭前确认"
           hint="有未保存修改时先提示，并在退出前保存"
         >
-          <Toggle
+          <Switch
             checked={preferences.project.confirmBeforeClose}
             onChange={(next) =>
               void updateProject({ confirmBeforeClose: next })
@@ -336,21 +297,21 @@ export function GeneralSettingsSection() {
       <div className="settings-group-title">画布与交互</div>
       <div className="settings-group">
         <SettingRow title="网格吸附" hint="拖动节点时按 16px 网格对齐">
-          <Toggle
+          <Switch
             checked={preferences.canvas.snapToGrid}
             onChange={(next) => void updateCanvas({ snapToGrid: next })}
           />
         </SettingRow>
 
         <SettingRow title="显示连线" hint="关闭后隐藏所有节点连线">
-          <Toggle
+          <Switch
             checked={preferences.canvas.edgesVisible}
             onChange={(next) => void updateCanvas({ edgesVisible: next })}
           />
         </SettingRow>
 
         <SettingRow title="显示小地图" hint="在画布左下角显示节点缩略图">
-          <Toggle
+          <Switch
             checked={preferences.canvas.minimapVisible}
             onChange={(next) => void updateCanvas({ minimapVisible: next })}
           />
@@ -365,7 +326,7 @@ export function GeneralSettingsSection() {
         </SettingRow>
 
         <SettingRow title="双击画布缩放" hint="双击空白区域放大画布">
-          <Toggle
+          <Switch
             checked={preferences.canvas.zoomOnDoubleClick}
             onChange={(next) =>
               void updateCanvas({ zoomOnDoubleClick: next })
@@ -382,7 +343,7 @@ export function GeneralSettingsSection() {
         </SettingRow>
 
         <SettingRow title="减少动效" hint="关闭菜单、面板和提示的过渡动画">
-          <Toggle
+          <Switch
             checked={preferences.canvas.reduceMotion}
             onChange={(next) => void updateCanvas({ reduceMotion: next })}
           />
@@ -419,7 +380,7 @@ export function GeneralSettingsSection() {
           title="智能引用 AutoLink"
           hint="默认开启提示词中的节点、素材和角色自动匹配"
         >
-          <Toggle
+          <Switch
             checked={preferences.generation.autoLink}
             onChange={(next) => void updateGeneration({ autoLink: next })}
           />
@@ -439,7 +400,7 @@ export function GeneralSettingsSection() {
         </SettingRow>
 
         <SettingRow title="默认 AI 水印" hint="新建生成任务时默认开启水印">
-          <Toggle
+          <Switch
             checked={preferences.generation.watermark}
             onChange={(next) => void updateGeneration({ watermark: next })}
           />
@@ -465,7 +426,7 @@ export function GeneralSettingsSection() {
           title="生成完成通知"
           hint="窗口不在前台时，生成完成会发送系统通知"
         >
-          <Toggle
+          <Switch
             checked={preferences.generation.notifyOnComplete}
             onChange={(next) =>
               void updateGeneration({ notifyOnComplete: next })
@@ -474,7 +435,7 @@ export function GeneralSettingsSection() {
         </SettingRow>
 
         <SettingRow title="启动时检查更新" hint="启动 8 秒后静默检查一次">
-          <Toggle
+          <Switch
             checked={preferences.updates.checkOnStartup}
             onChange={(next) => void updateUpdates({ checkOnStartup: next })}
           />
@@ -585,8 +546,8 @@ export function GeneralSettingsSection() {
             title="代理地址"
             hint="例如 http://127.0.0.1:7890，支持 HTTP/SOCKS"
           >
-            <input
-              className="settings-input"
+            <Input
+              className="w-64"
               value={proxyDraft}
               placeholder="http://127.0.0.1:7890"
               onChange={(event) => setProxyDraft(event.target.value)}

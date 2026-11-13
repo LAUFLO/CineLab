@@ -4,6 +4,7 @@ import type { RecentProject } from '@shared/project-schema'
 import { BrandWordmark } from '../components/Brand'
 import { Icon } from '../components/Icon'
 import { ProjectCard } from '../components/ProjectCard'
+import { Toast } from '../components/ui'
 import { useProjectStore } from '../stores/project'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
@@ -449,7 +450,9 @@ export function TopBar() {
         </div>
       ) : null}
 
-      {exportNotice ? <div className="export-toast">{exportNotice}</div> : null}
+      {exportNotice ? (
+        <Toast className="bottom-[72px]">{exportNotice}</Toast>
+      ) : null}
   </>
 )
 }

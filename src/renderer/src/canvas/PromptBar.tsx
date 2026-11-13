@@ -1350,6 +1350,7 @@ export function PromptBar() {
                     return (
                       <MenuItem
                         key={item.key}
+                        className="mention-menu__item"
                         icon={
                           <span className="mention-menu__thumb">
                             {item.thumb ? (

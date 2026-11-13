@@ -1,7 +1,7 @@
 # CineBot 能力扩展方案
 
 日期：2026-11-10
-状态：**Phase 1–4 已实施**
+状态：历史（2026-11-13 归档）
 适用版本：`main` @ `b76a064`
 关联：`docs/agent-architecture-plan.md`、`docs/agent-capabilities.md`、`docs/agent-full-scope.md`、`docs/agent-plan.md`
 

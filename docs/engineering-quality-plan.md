@@ -339,7 +339,7 @@ Tailwind 在静态 UI、组件化、设计约束方面更有优势；CineLab 的
 | 问题 | 证据 |
 |---|---|
 | 版本戳过期 | 18 份文档写 `main @ b76a064`，当前 `HEAD` 落后 18 个提交 |
-| 引用失效 | `docs/skills-plan.md`、`docs/agent-rollout-plan.md`、`.github/workflows/depth-runtime-windows-check.yml` 不存在 |
+| 引用失效 | skills-plan、agent-rollout-plan、depth-runtime-windows-check 三个引用不存在（已在本轮修复） |
 | 数字过期 | `docs/architecture.md`、`docs/roadmap-plan.md` 写 42 文件 / 312 用例，实际 43 / 317 |
 | 技术栈失真 | `README.md` 写 Tailwind CSS 4，实际只有 21 处 utility |
 | 分类冲突 | `CURRENT_DOCS` 有 17 份，README 现行表只有 8 份 |

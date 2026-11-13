@@ -1,7 +1,7 @@
 # CineBot Phase 4：模型类节点操作接入生成提案
 
 日期：2026-11-11
-状态：**已实施**
+状态：历史（2026-11-13 归档）
 分支：`feat/agent-generation-ops`
 适用版本：`main` @ `b76a064`
 关联：`docs/node-operation-bridge-plan.md`、`docs/agent-capabilities.md`

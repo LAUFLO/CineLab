@@ -1,7 +1,7 @@
 # CineBot Phase 3 方案与实施记录
 
 日期：2026-11-11
-状态：**已实施**
+状态：历史（2026-11-13 归档）
 分支：`feat/agent-phase3`
 适用版本：`main` @ `b76a064`
 关联：`docs/agent-capability-plan.md`、`docs/agent-capabilities.md`、`docs/node-operation-bridge-plan.md`

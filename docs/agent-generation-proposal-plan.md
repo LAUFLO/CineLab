@@ -1,6 +1,6 @@
 # Agent 生成提案方案（propose / submit）
 
-状态：已完成（真实 Agnes 验证）
+状态：历史（2026-11-13 归档）
 日期：2026-11-08
 适用版本：`main` @ `b76a064`
 关联：`docs/agent-architecture-plan.md` 4.4 确认、5.x 回合事务

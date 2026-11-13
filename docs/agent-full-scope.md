@@ -580,7 +580,7 @@ Agent 是 CineLab 的创作搭档，与用户共用同一套项目、画布、�
 - `docs/clip-studio-plan.md`：剪辑室内核与 P0-P4 能力，是 C2 的现状基础。
 - `docs/film-study-plan.md`：拉片室能力，是 C3 的现状基础。
 - `docs/director-stage-plan.md`：导演台详细方案，已定稿「3D 片场 + 本地白模预演」；手动与 Agent 共用 `StageCommand`，白模预演是本地渲染，不是白模风格视频。
-- `docs/skills-plan.md`（待落）：技能子系统详细方案，定义三级目录、SKILL.md 格式、导入校验、版本 pin、跨轮保持、脚本权限和安全边界。
+- `docs/agent-capabilities.md`：技能子系统已实现的工具与限制（`skill_list` / `skill_read` / 技能管理）。
 - `docs/architecture.md`：主进程/渲染进程、IPC、数据结构的硬性约定，Agent 实现必须遵守。
 
 ## 12. 参考项目
@@ -594,6 +594,6 @@ Agent 是 CineLab 的创作搭档，与用户共用同一套项目、画布、�
 
 1. 确认本文的完整版范围与优先级。
 2. 拆 `docs/agent-architecture-plan.md`：运行时、工具协议、数据结构、IPC、权限、确认、撤销、恢复；把 `StageCommand`、`stage.*` 和技能子系统纳入架构。
-3. 拆 `docs/skills-plan.md`：三级技能目录、SKILL.md 格式、导入校验、版本 pin、跨轮保持、脚本权限和安全边界。
-4. 拆 `docs/agent-rollout-plan.md`：批次 1-8 的任务分解、依赖、验收与排期；导演台 P0/P1 与批次 1-3 并行。
+3. 技能子系统已实现，见 `docs/agent-capabilities.md`。
+4. 批次实施记录见 `docs/agent-architecture-plan.md` 与 `docs/roadmap-plan.md`。
 5. 先落批次 1 的工具注册表、画布操作层、`StageCommand` 骨架和技能目录骨架，再进入画布助手与导演台。

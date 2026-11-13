@@ -21,7 +21,7 @@ CUDA 失败自动回退 CPU 一次。
 
 ## 构建与发布
 
-- `.github/workflows/depth-runtime-windows-check.yml`：Windows 2022，矩阵 cpu/cuda
+- `.github/workflows/depth-runtime.yml`：Windows 2022，矩阵 cpu/cuda
 - `uv` 固定 Python 3.11
 - 固定版本：torch 2.8.0、torchvision 0.23.0、numpy 2.1.3、opencv 4.10 等
 - VDA 源码固定 commit `4f5ae23`

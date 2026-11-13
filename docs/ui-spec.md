@@ -808,4 +808,5 @@ CineBot 是全局浮层，不占用画布布局。
 - 当前设置页已迁移 `Switch`、`SettingRow`、`Input`、`Select`；确认弹窗已迁移 `Dialog` 和 `Button`；全局提示已迁移 `Toast`。
 - 资产库的命名/模板、移动/合成/标签弹窗已迁移 `Dialog`、`Field`、`Input`、`Textarea`、`Select`；工具栏、底部操作、`AssetGrid` 和 `FolderTree` 图标按钮已迁移 `Button`、`IconButton`。
 - 剪辑室顶部栏/时间线工具栏、检查器字幕与操作按钮已迁移 `Button` / `IconButton` / `Input` / `Textarea` / `Select`；关键帧的紧凑数字输入和两个紧凑 select 留待后续。
+- 画布节点工具栏的编辑、音频、剪辑室、下载、展开、入库操作已迁移 `Button` / `IconButton`；操作菜单的浮层仍保留自定义定位，后续再迁移到 `Menu`。
 - `Menu` 已提供，但节点/工具栏菜单会在后续批次逐步迁移。

@@ -137,7 +137,7 @@ export function MenuItem({
       className={cn(
         'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
         'hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none',
-        active ? 'bg-surface-hover text-fg' : '',
+        active ? 'is-active bg-surface-hover text-fg' : '',
         danger ? 'text-danger' : 'text-fg',
         'disabled:pointer-events-none disabled:opacity-40',
         className

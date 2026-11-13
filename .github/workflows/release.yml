@@ -1,0 +1,76 @@
+name: Release Windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify tag matches package version
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          if ("v$version" -ne "${{ github.ref_name }}") {
+            throw "Tag ${{ github.ref_name }} does not match package.json version v$version"
+          }
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:coverage
+      - run: pnpm audit --prod --audit-level high
+      - run: pnpm check:encryption
+      - run: pnpm check:docs
+      - run: pnpm build
+
+      - name: Build Windows installer
+        run: pnpm exec electron-builder --win --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Create or update GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --title "CineLab $tag" --generate-notes
+          }
+
+          if (-not (Test-Path "release/latest.yml")) {
+            throw "release/latest.yml is missing"
+          }
+
+          $assets = Get-ChildItem release -File | Where-Object {
+            $_.Extension -in ".exe", ".zip", ".blockmap" -or $_.Name -eq "latest.yml"
+          }
+          if (-not $assets) {
+            throw "No release assets found"
+          }
+
+          foreach ($asset in $assets) {
+            gh release upload $tag $asset.FullName --clobber
+          }

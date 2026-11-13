@@ -1438,18 +1438,16 @@ export function PromptBar() {
                   const unavailable = missing.length > 0
 
                   return (
-                    <button
+                    <MenuItem
                       key={item.key}
-                      type="button"
-                      className={`model-menu__item${
-                        item.key === active?.key ? ' is-active' : ''
-                      }${unavailable ? ' is-disabled' : ''}`}
+                      active={item.key === active?.key}
+                      className={unavailable ? 'opacity-50' : undefined}
                       title={
                         unavailable
                           ? `该模型不支持${inputLabel(missing)}输入`
                           : undefined
                       }
-                      onClick={() => {
+                      onSelect={() => {
                         if (unavailable) {
                           showToast(
                             `「${item.model.name}」不支持${inputLabel(missing)}输入`,
@@ -1463,22 +1461,24 @@ export function PromptBar() {
                         setMenuOpen(false)
                         void setDefaultModel(capabilityGroup, item.key)
                       }}
+                      trailing={
+                        <span className="flex flex-col items-end gap-0.5">
+                          {unavailable ? (
+                            <span className="model-menu__reason">
+                              不支持
+                              {missing
+                                .map((input) => MEDIA_INPUT_LABEL[input])
+                                .join('·')}
+                            </span>
+                          ) : null}
+                          <span className="model-menu__provider">
+                            {item.providerName}
+                          </span>
+                        </span>
+                      }
                     >
                       <span className="model-menu__name">{item.model.name}</span>
-                      <span className="model-menu__meta">
-                        {unavailable ? (
-                          <span className="model-menu__reason">
-                            不支持
-                            {missing
-                              .map((input) => MEDIA_INPUT_LABEL[input])
-                              .join('·')}
-                          </span>
-                        ) : null}
-                        <span className="model-menu__provider">
-                          {item.providerName}
-                        </span>
-                      </span>
-                    </button>
+                    </MenuItem>
                   )
                 })}
               </div>
@@ -1720,24 +1720,24 @@ export function PromptBar() {
         </IconButton>
 
         {isRunning ? (
-          <button
-            type="button"
+          <IconButton
+            label="停止生成"
+            size="sm"
             className="promptbar__send is-stop"
-            title="停止生成"
             onClick={() => void cancelGeneration(node.id)}
           >
             <span className="promptbar__stop-icon" />
-          </button>
+          </IconButton>
         ) : (
-          <button
-            type="button"
+          <IconButton
+            label="生成"
+            size="sm"
             className="promptbar__send"
             disabled={!canSend}
-            title="生成"
             onClick={handleSend}
           >
             <Icon name="arrow-up" size={15} />
-          </button>
+          </IconButton>
         )}
       </div>
 

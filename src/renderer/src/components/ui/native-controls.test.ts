@@ -1,29 +1,19 @@
-import { readdirSync, readFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const root = join(process.cwd(), 'src/renderer/src')
-const uiDir = join(root, 'components/ui')
-const nativeTag = /<(button|input|textarea|select)\b/
+const sources = import.meta.glob('/src/renderer/src/**/*.tsx', {
+  query: '?raw',
+  import: 'default',
+  eager: true
+}) as Record<string, string>
 
-function collectTsx(dir: string, files: string[] = []): string[] {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      if (full === uiDir) continue
-      collectTsx(full, files)
-    } else if (entry.isFile() && entry.name.endsWith('.tsx')) {
-      files.push(full)
-    }
-  }
-  return files
-}
+const nativeTag = /<(button|input|textarea|select)\b/
 
 describe('native controls', () => {
   it('feature code only uses shared UI controls', () => {
-    const offenders = collectTsx(root)
-      .filter((file) => nativeTag.test(readFileSync(file, 'utf8')))
-      .map((file) => relative(root, file).replace(/\\/g, '/'))
+    const offenders = Object.entries(sources)
+      .filter(([file]) => !file.includes('/components/ui/'))
+      .filter(([, code]) => nativeTag.test(code))
+      .map(([file]) => file.replace('/src/renderer/src/', ''))
 
     expect(offenders).toEqual([])
   })

@@ -38,7 +38,8 @@ export function Select<T extends string>({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const selected = options.find((option) => option.value === value) ?? options[0]
+  const selected =
+    options.find((option) => option.value === value) ?? options[0]
 
   const updatePosition = (): void => {
     const trigger = triggerRef.current
@@ -111,9 +112,9 @@ export function Select<T extends string>({
         ref={triggerRef}
         type="button"
         className={cn(
-          'inline-flex h-9 min-w-[120px] items-center justify-between gap-2 rounded-card border border-border bg-surface px-3 text-sm text-fg transition-colors',
-          'hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
-          'disabled:pointer-events-none disabled:opacity-50',
+          'inline-flex h-[34px] min-w-[120px] items-center justify-between gap-2 rounded-[8px] border border-border bg-surface-hover px-[10px] text-[13px] text-fg transition-colors',
+          'hover:border-border-selected focus-visible:border-border-selected focus-visible:outline-none',
+          'disabled:pointer-events-none disabled:opacity-55',
           className
         )}
         disabled={disabled}
@@ -131,7 +132,7 @@ export function Select<T extends string>({
             <div
               ref={menuRef}
               className={cn(
-                'fixed z-[1000] max-h-72 overflow-y-auto rounded-card border border-border bg-surface-raised p-1 shadow-menu',
+                'fixed z-[1000] max-h-[280px] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 shadow-menu',
                 position?.placement === 'top' ? 'is-top' : ''
               )}
               role="listbox"
@@ -152,12 +153,12 @@ export function Select<T extends string>({
                   role="option"
                   aria-selected={option.value === value}
                   className={cn(
-                    'flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm transition-colors',
+                    'flex min-h-8 w-full items-center rounded-[7px] px-2 text-left text-[13px] leading-8 transition-colors',
                     'hover:bg-surface-hover hover:text-fg',
                     option.value === value
-                      ? 'bg-surface-hover text-fg'
+                      ? 'bg-surface-hover font-medium text-fg'
                       : 'text-fg-muted',
-                    'disabled:pointer-events-none disabled:opacity-40'
+                    'disabled:pointer-events-none disabled:opacity-50'
                   )}
                   disabled={option.disabled}
                   title={option.label}

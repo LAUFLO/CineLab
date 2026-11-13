@@ -1197,12 +1197,14 @@ export function PromptBar() {
             {uploadMenuOpen ? (
               <div className="promptbar__upload-menu">
                 <MenuItem
+                  className="promptbar__upload-item"
                   icon={<Icon name="folder-plus" size={14} />}
                   onSelect={() => void handleLocalUpload()}
                 >
                   本地上传
                 </MenuItem>
                 <MenuItem
+                  className="promptbar__upload-item"
                   icon={<Icon name="library" size={14} />}
                   onSelect={() => {
                     setUploadMenuOpen(false)
@@ -1298,6 +1300,7 @@ export function PromptBar() {
           <IconButton
             label={expanded ? '收起输入框' : '展开输入框'}
             size="xs"
+            className="h-6 w-6 rounded-[6px]"
             onClick={() => setExpanded((open) => !open)}
           >
             <Icon name="expand" size={13} />
@@ -1492,7 +1495,9 @@ export function PromptBar() {
                       <MenuItem
                         key={item.key}
                         active={item.key === active?.key}
-                        className={unavailable ? 'opacity-50' : undefined}
+                        className={`model-menu__item ${
+                          unavailable ? 'is-disabled' : ''
+                        }`}
                         title={
                           unavailable
                             ? `该模型不支持${inputLabel(missing)}输入`
@@ -1749,6 +1754,7 @@ export function PromptBar() {
                       <span>AI 水印</span>
                       <Switch
                         label="AI 水印"
+                        size="sm"
                         checked={watermark}
                         onChange={(next) => {
                           setWatermark(next)
@@ -1769,7 +1775,7 @@ export function PromptBar() {
           <div className="promptbar__spacer" />
           <IconButton
             label="高级设置"
-            size="xs"
+            size="sm"
             className={advancedOpen ? 'bg-surface-hover text-fg' : undefined}
             onClick={() => setAdvancedOpen((open) => !open)}
           >
@@ -1812,6 +1818,7 @@ export function PromptBar() {
               </div>
               <Switch
                 label="智能引用 AutoLink"
+                size="sm"
                 checked={autoLink}
                 onChange={(next) => {
                   setAutoLink(next)

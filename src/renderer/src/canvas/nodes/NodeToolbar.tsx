@@ -748,6 +748,7 @@ export function NodeToolbar({
                   {op.menu.map((item) => (
                     <MenuItem
                       key={item.id}
+                      className="cnode__toolbar-menu__item"
                       onSelect={() => activate(op, item)}
                       trailing={
                         item.hint ? (
@@ -803,7 +804,9 @@ export function NodeToolbar({
                           <MenuItem
                             icon={<Icon name={op.icon} size={14} />}
                             title={reason ?? op.label}
-                            className={reason ? 'opacity-50' : undefined}
+                            className={`cnode__toolbar-menu__item ${
+                              reason ? 'is-disabled' : ''
+                            }`}
                             onSelect={(event) => {
                               if (reason) {
                                 showToast(reason, 'error')
@@ -852,6 +855,7 @@ export function NodeToolbar({
 
                 <div className="cnode__toolbar-menu__footer">
                   <MenuItem
+                    className="cnode__toolbar-menu__item"
                     icon={<Icon name="settings" size={14} />}
                     trailing={<Icon name="chevron-right" size={11} />}
                     onSelect={() => {
@@ -984,6 +988,7 @@ export function NodeToolbar({
                 ?.menu?.map((item) => (
                   <MenuItem
                     key={item.id}
+                    className="cnode__toolbar-menu__item"
                     onSelect={() => {
                       const op = ops.find((entry) => entry.id === moreSub.opId)
                       if (op) activate(op, item)

@@ -34,31 +34,34 @@ export function ConfirmDialog() {
     <Dialog
       open
       onClose={closeConfirm}
-      title={confirm.title}
-      description={confirm.message}
-      footer={
-        <>
-          <Button variant="secondary" onClick={closeConfirm} disabled={busy}>
-            取消
-          </Button>
-          {confirm.onSecondary ? (
-            <Button
-              variant={confirm.secondaryDanger ? 'danger' : 'primary'}
-              onClick={() => void handleSecondary()}
-              disabled={busy}
-            >
-              {busy ? '处理中…' : (confirm.secondaryLabel ?? '其他操作')}
-            </Button>
-          ) : null}
+      bare
+      ariaLabel={confirm.title}
+      overlayClassName="confirm-overlay"
+      panelClassName="confirm-dialog"
+    >
+      <div className="confirm-dialog__title">{confirm.title}</div>
+      <p className="confirm-dialog__message">{confirm.message}</p>
+      <div className="confirm-dialog__actions">
+        <Button variant="secondary" onClick={closeConfirm} disabled={busy}>
+          取消
+        </Button>
+        {confirm.onSecondary ? (
           <Button
-            variant={confirm.danger ? 'danger' : 'primary'}
-            onClick={() => void handleConfirm()}
+            variant={confirm.secondaryDanger ? 'danger' : 'primary'}
+            onClick={() => void handleSecondary()}
             disabled={busy}
           >
-            {busy ? '处理中…' : (confirm.confirmLabel ?? '确认')}
+            {busy ? '处理中…' : (confirm.secondaryLabel ?? '其他操作')}
           </Button>
-        </>
-      }
-    />
+        ) : null}
+        <Button
+          variant={confirm.danger ? 'danger' : 'primary'}
+          onClick={() => void handleConfirm()}
+          disabled={busy}
+        >
+          {busy ? '处理中…' : (confirm.confirmLabel ?? '确认')}
+        </Button>
+      </div>
+    </Dialog>
   )
 }

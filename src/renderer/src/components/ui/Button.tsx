@@ -12,17 +12,17 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-fg-inverse hover:bg-accent-hover',
+  primary: 'bg-fg text-fg-inverse',
   secondary:
-    'border border-border bg-surface-raised text-fg hover:bg-surface-hover',
+    'border border-border text-fg-muted hover:border-border-strong hover:text-fg',
   ghost: 'text-fg-muted hover:bg-surface-hover hover:text-fg',
-  danger: 'bg-danger text-media-text hover:opacity-90'
+  danger: 'bg-danger text-fg-inverse'
 }
 
 const SIZES: Record<ButtonSize, string> = {
-  xs: 'h-7 gap-1 px-2 text-xs',
-  sm: 'h-8 gap-1.5 px-3 text-xs',
-  md: 'h-9 gap-2 px-3.5 text-sm',
+  xs: 'h-[26px] gap-1 rounded-[7px] px-[10px] text-xs',
+  sm: 'h-7 gap-1.5 px-[10px] text-xs',
+  md: 'h-[34px] gap-1.5 px-4 text-[13px]',
   lg: 'h-10 gap-2 px-4 text-sm'
 }
 
@@ -46,7 +46,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           unstyled
             ? className
             : cn(
-                'inline-flex items-center justify-center rounded-card font-medium transition-colors',
+                'inline-flex items-center justify-center rounded-[8px] font-medium transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
                 'disabled:pointer-events-none disabled:opacity-50',
                 VARIANTS[variant],

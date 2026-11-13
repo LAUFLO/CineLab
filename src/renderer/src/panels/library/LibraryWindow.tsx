@@ -908,6 +908,7 @@ export function LibraryWindow() {
         >
           <div className="flex flex-col gap-3">
             <Input
+              className="tag-input"
               value={tagDraft}
               placeholder="多个标签用逗号分隔，例如：人物, 夜景"
               autoFocus
@@ -915,6 +916,7 @@ export function LibraryWindow() {
               onKeyDown={(event) => {
                 if (event.key === 'Enter') void handleSaveTags()
               }}
+              unstyled
             />
 
             <div className="tag-hint">

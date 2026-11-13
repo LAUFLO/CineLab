@@ -839,17 +839,19 @@ export function TimelinePane() {
         <span className="studio-toolbar-divider" />
         <IconButton
           label="撤销 (Ctrl+Z)"
-          size="sm"
+          className="studio-icon-btn"
           onClick={undo}
           disabled={history.past.length === 0}
+          unstyled
         >
           ↶
         </IconButton>
         <IconButton
           label="重做 (Ctrl+Shift+Z)"
-          size="sm"
+          className="studio-icon-btn"
           onClick={redo}
           disabled={history.future.length === 0}
+          unstyled
         >
           ↷
         </IconButton>
@@ -875,18 +877,20 @@ export function TimelinePane() {
         <span className="studio-toolbar-spacer" />
         <IconButton
           label="缩小"
-          size="sm"
+          className="studio-icon-btn"
           onClick={() => zoomAt(zoom / 1.6, width / 2)}
           disabled={zoom <= 0.5}
+          unstyled
         >
           −
         </IconButton>
         <span className="studio-zoom">{Math.round(zoom * 100)}%</span>
         <IconButton
           label="放大"
-          size="sm"
+          className="studio-icon-btn"
           onClick={() => zoomAt(zoom * 1.6, width / 2)}
           disabled={zoom >= 4}
+          unstyled
         >
           ＋
         </IconButton>

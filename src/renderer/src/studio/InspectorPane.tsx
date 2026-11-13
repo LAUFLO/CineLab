@@ -132,6 +132,7 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
       <label className="studio-field">
         <span>内容</span>
         <Textarea
+          className="studio-textarea"
           rows={4}
           value={content}
           onChange={(event) => setContent(event.target.value)}
@@ -142,6 +143,7 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
               commit({ content })
             }
           }}
+          unstyled
         />
       </label>
       <small className="studio-field-hint">失焦或 Ctrl+Enter 保存</small>
@@ -323,27 +325,27 @@ function AnalysisSection({ clip }: { clip: TimelineClip }) {
       <div className="studio-field-row">
         {canShots ? (
           <Button
-            variant="ghost"
-            size="sm"
+            className="studio-ghost-btn"
             disabled={running !== null}
             onClick={() => void run('shots')}
+            unstyled
           >
             {running === 'shots' ? '检测中…' : '镜头'}
           </Button>
         ) : null}
         <Button
-          variant="ghost"
-          size="sm"
+          className="studio-ghost-btn"
           disabled={running !== null}
           onClick={() => void run('silences')}
+          unstyled
         >
           {running === 'silences' ? '检测中…' : '静音'}
         </Button>
         <Button
-          variant="ghost"
-          size="sm"
+          className="studio-ghost-btn"
           disabled={running !== null}
           onClick={() => void run('beats')}
+          unstyled
         >
           {running === 'beats' ? '检测中…' : '节拍'}
         </Button>
@@ -458,7 +460,7 @@ function KeyframeSection({
             unstyled
           />
         )}
-        <Button variant="ghost" size="sm" onClick={addKey}>
+        <Button className="studio-ghost-btn" onClick={addKey} unstyled>
           添加
         </Button>
       </div>
@@ -572,12 +574,13 @@ function KeyframeSection({
                 </NativeSelect>
                 <IconButton
                   label="删除关键帧"
-                  size="sm"
+                  className="studio-icon-btn"
                   onClick={() =>
                     updateKeys(
                       clip.keys.filter((_, itemIndex) => itemIndex !== index)
                     )
                   }
+                  unstyled
                 >
                   ×
                 </IconButton>
@@ -1007,8 +1010,7 @@ export function InspectorPane() {
               />
               {clip.kind === 'video' || clip.kind === 'image' ? (
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  className="studio-ghost-btn"
                   title="缩放为 35% 并移到右下角；放到 V2 轨叠加在 V1 上"
                   onClick={() =>
                     changeTransform({
@@ -1018,6 +1020,7 @@ export function InspectorPane() {
                       rotation: 0
                     })
                   }
+                  unstyled
                 >
                   画中画预设
                 </Button>
@@ -1276,9 +1279,9 @@ export function InspectorPane() {
               ) : null}
               {clip.kind === 'video' && clip.media ? (
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  className="studio-ghost-btn"
                   onClick={() => void detachAudio()}
+                  unstyled
                 >
                   分离音频
                 </Button>
@@ -1295,36 +1298,36 @@ export function InspectorPane() {
           clip.media ? (
             <Section title="自动粗剪">
               <Button
-                variant="ghost"
-                size="sm"
+                className="studio-ghost-btn"
                 disabled={runningAction !== null}
                 onClick={() => void runRemoveSilence()}
+                unstyled
               >
                 {runningAction === 'silence' ? '检测中…' : '删除静音'}
               </Button>
               {clip.kind === 'video' ? (
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  className="studio-ghost-btn"
                   disabled={runningAction !== null}
                   onClick={() => void runSplitByShots()}
+                  unstyled
                 >
                   {runningAction === 'shots' ? '检测中…' : '按镜头切分'}
                 </Button>
               ) : null}
               <Button
-                variant="ghost"
-                size="sm"
+                className="studio-ghost-btn"
                 disabled={runningAction !== null}
                 onClick={() => void runBeatAction('markers')}
+                unstyled
               >
                 {runningAction === 'beats' ? '检测中…' : '节拍标记'}
               </Button>
               <Button
-                variant="ghost"
-                size="sm"
+                className="studio-ghost-btn"
                 disabled={runningAction !== null}
                 onClick={() => void runBeatAction('split')}
+                unstyled
               >
                 {runningAction === 'beat-split' ? '检测中…' : '节拍切分'}
               </Button>
@@ -1399,17 +1402,16 @@ export function InspectorPane() {
           <Field label="轨道" value={`${doc.tracks.length} 条`} />
           <Field label="标记" value={`${doc.markers.length} 个`} />
           <Button
-            variant="ghost"
-            size="sm"
+            className="studio-ghost-btn"
             disabled={runningAction !== null}
             onClick={() => void runRemoveSilence()}
+            unstyled
           >
             {runningAction === 'silence' ? '检测中…' : '整条时间线删静音'}
           </Button>
           {doc.markers.length > 0 ? (
             <Button
-              variant="ghost"
-              size="sm"
+              className="studio-ghost-btn"
               onClick={() =>
                 dispatch({
                   op: 'batch',
@@ -1420,6 +1422,7 @@ export function InspectorPane() {
                   }))
                 })
               }
+              unstyled
             >
               清除全部标记
             </Button>

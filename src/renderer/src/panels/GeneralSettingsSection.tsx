@@ -536,11 +536,12 @@ export function GeneralSettingsSection() {
             hint="例如 http://127.0.0.1:7890，支持 HTTP/SOCKS"
           >
             <Input
-              className="w-64"
+              className="settings-input"
               value={proxyDraft}
               placeholder="http://127.0.0.1:7890"
               onChange={(event) => setProxyDraft(event.target.value)}
               onBlur={() => void updateNetwork({ proxyUrl: proxyDraft.trim() })}
+              unstyled
             />
           </SettingRow>
         ) : null}

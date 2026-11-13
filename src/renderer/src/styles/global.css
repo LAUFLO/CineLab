@@ -3465,6 +3465,27 @@ body.is-exporting .react-flow__minimap {
   z-index: 20;
 }
 
+.promptbar__upload-item {
+  width: 100%;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.promptbar__upload-item:hover {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
+.promptbar__upload-item > span:first-child {
+  color: inherit;
+}
+
 .promptbar__picked {
   display: flex;
   align-items: center;
@@ -3693,6 +3714,28 @@ body.is-picking .react-flow__node:hover .cnode__card {
   padding: 5px 8px;
   font-size: 10.5px;
   color: var(--text-3);
+}
+
+.mention-menu__item {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  color: var(--text-2);
+  text-align: left;
+}
+
+.mention-menu__item:hover,
+.mention-menu__item.is-active {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
+.mention-menu__item > span:first-child {
+  color: inherit;
 }
 
 .mention-menu__thumb {
@@ -4370,6 +4413,22 @@ body.is-picking .react-flow__node:hover .cnode__card {
   white-space: nowrap;
   font-size: 11px;
   color: var(--text-2);
+}
+
+.settings-input {
+  width: 240px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-1);
+  font-size: 12px;
+  outline: none;
+}
+
+.settings-input:focus {
+  border-color: var(--border-selected);
 }
 
 .settings-actions--inline {
@@ -5640,6 +5699,46 @@ body.is-picking .react-flow__node:hover .cnode__card {
   border-top: 1px solid var(--divider);
 }
 
+/* ===== 确认弹窗 ===== */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.confirm-dialog {
+  width: min(420px, 100%);
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-float);
+}
+
+.confirm-dialog__title {
+  font-size: 16px;
+  color: var(--text-1);
+  margin-bottom: 10px;
+}
+
+.confirm-dialog__message {
+  margin: 0 0 22px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-2);
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .btn-primary.is-danger {
   background: var(--danger);
   color: var(--text-inverse);
@@ -6243,6 +6342,76 @@ body.is-picking .react-flow__node:hover .cnode__card {
   color: var(--text-3);
 }
 
+/* ===== 资产库弹窗 ===== */
+.library-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.library-modal__panel {
+  width: 420px;
+  padding: 18px 20px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-menu);
+}
+
+.library-modal__panel--wide {
+  width: 560px;
+}
+
+.library-modal__title {
+  margin-bottom: 14px;
+  font-size: 14px;
+  color: var(--text-1);
+}
+
+.library-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.library-textarea {
+  min-height: 76px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--text-1);
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+}
+
+.library-textarea:focus {
+  border-color: var(--border-strong);
+}
+
+.tag-input {
+  width: 100%;
+  height: 38px;
+  margin-top: 14px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text-1);
+  font-size: 13px;
+  outline: none;
+}
+
+.tag-input:focus {
+  border-color: var(--border-selected);
+}
+
 .concat-form {
   display: flex;
   flex-direction: column;
@@ -6502,6 +6671,39 @@ body.is-node-menu-open .react-flow {
 
 .cnode__toolbar-menu.is-more {
   min-width: 232px;
+}
+
+.cnode__toolbar-menu__item {
+  width: 100%;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+  text-align: left;
+}
+
+.cnode__toolbar-menu__item:hover {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+
+.cnode__toolbar-menu__item.is-disabled {
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+
+.cnode__toolbar-menu__item.is-disabled:hover {
+  background: transparent;
+  color: var(--text-3);
+}
+
+.cnode__toolbar-menu__item > span:first-child,
+.cnode__toolbar-menu__item > span:last-child {
+  color: inherit;
 }
 
 .cnode__toolbar-menu__hint {

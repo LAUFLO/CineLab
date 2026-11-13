@@ -49,15 +49,19 @@ export function SettingRow({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4 border-b border-border py-3 last:border-b-0',
+        'flex min-h-14 items-center justify-between gap-[18px] border-b border-divider px-[14px] py-[10px] last:border-b-0',
         className
       )}
     >
       <div className="min-w-0">
-        <div className="text-sm text-fg">{title}</div>
-        {hint ? <div className="mt-0.5 text-xs text-fg-subtle">{hint}</div> : null}
+        <div className="text-[12.5px] text-fg">{title}</div>
+        {hint ? (
+          <div className="mt-[3px] text-[11px] leading-[1.5] text-fg-subtle">
+            {hint}
+          </div>
+        ) : null}
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="flex shrink-0 items-center gap-2">{children}</div>
     </div>
   )
 }

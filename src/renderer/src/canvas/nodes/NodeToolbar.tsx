@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { NODE_META, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
-import { Button, IconButton } from '../../components/ui'
+import { Button, IconButton, MenuItem } from '../../components/ui'
 import { assetUrl } from '../../lib/asset-url'
 import {
   absolutePosition,
@@ -734,20 +734,19 @@ export function NodeToolbar({
             {openId === op.id && op.menu ? (
               <div className="cnode__toolbar-menu">
                 {op.menu.map((item) => (
-                  <button
+                  <MenuItem
                     key={item.id}
-                    type="button"
-                    className="cnode__toolbar-menu__item"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      activate(op, item)
-                    }}
+                    onSelect={() => activate(op, item)}
+                    trailing={
+                      item.hint ? (
+                        <span className="cnode__toolbar-menu__hint">
+                          {item.hint}
+                        </span>
+                      ) : undefined
+                    }
                   >
-                    <span>{item.label}</span>
-                    {item.hint ? (
-                      <span className="cnode__toolbar-menu__hint">{item.hint}</span>
-                    ) : null}
-                  </button>
+                    {item.label}
+                  </MenuItem>
                 ))}
               </div>
             ) : null}
@@ -785,14 +784,11 @@ export function NodeToolbar({
 
                     return (
                       <div key={op.id}>
-                        <button
-                          type="button"
-                          className={`cnode__toolbar-menu__item ${
-                            reason ? 'is-disabled' : ''
-                          }`}
+                        <MenuItem
+                          icon={<Icon name={op.icon} size={14} />}
                           title={reason ?? op.label}
-                          onClick={(event) => {
-                            event.stopPropagation()
+                          className={reason ? 'opacity-50' : undefined}
+                          onSelect={(event) => {
                             if (reason) {
                               showToast(reason, 'error')
                               return
@@ -815,14 +811,21 @@ export function NodeToolbar({
                             openSubMenu(op, event.currentTarget)
                           }}
                           onMouseLeave={hasMenu ? scheduleSubClose : undefined}
+                          trailing={
+                            <>
+                              {op.hint ? (
+                                <span className="cnode__toolbar-menu__hint">
+                                  {op.hint}
+                                </span>
+                              ) : null}
+                              {hasMenu ? (
+                                <Icon name="chevron-right" size={11} />
+                              ) : null}
+                            </>
+                          }
                         >
-                          <Icon name={op.icon} size={14} />
-                          <span>{op.label}</span>
-                          {op.hint ? (
-                            <span className="cnode__toolbar-menu__hint">{op.hint}</span>
-                          ) : null}
-                          {hasMenu ? <Icon name="chevron-right" size={11} /> : null}
-                        </button>
+                          {op.label}
+                        </MenuItem>
                       </div>
                     )
                   })}
@@ -830,19 +833,16 @@ export function NodeToolbar({
               ))}
 
               <div className="cnode__toolbar-menu__footer">
-                <button
-                  type="button"
-                  className="cnode__toolbar-menu__item"
-                  onClick={(event) => {
-                    event.stopPropagation()
+                <MenuItem
+                  icon={<Icon name="settings" size={14} />}
+                  trailing={<Icon name="chevron-right" size={11} />}
+                  onSelect={() => {
                     closeMenus()
                     openSettings(kind)
                   }}
                 >
-                  <Icon name="settings" size={14} />
-                  <span>自定义工具栏</span>
-                  <Icon name="chevron-right" size={11} />
-                </button>
+                  自定义工具栏
+                </MenuItem>
               </div>
             </div>
           ) : null}
@@ -964,25 +964,24 @@ export function NodeToolbar({
               {ops
                 .find((entry) => entry.id === moreSub.opId)
                 ?.menu?.map((item) => (
-                  <button
+                  <MenuItem
                     key={item.id}
-                    type="button"
-                    className="cnode__toolbar-menu__item"
-                    onClick={(event) => {
-                      event.stopPropagation()
+                    onSelect={() => {
                       const op = ops.find(
                         (entry) => entry.id === moreSub.opId
                       )
                       if (op) activate(op, item)
                     }}
+                    trailing={
+                      item.hint ? (
+                        <span className="cnode__toolbar-menu__hint">
+                          {item.hint}
+                        </span>
+                      ) : undefined
+                    }
                   >
-                    <span>{item.label}</span>
-                    {item.hint ? (
-                      <span className="cnode__toolbar-menu__hint">
-                        {item.hint}
-                      </span>
-                    ) : null}
-                  </button>
+                    {item.label}
+                  </MenuItem>
                 ))}
             </div>,
             document.body

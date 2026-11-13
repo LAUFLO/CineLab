@@ -156,6 +156,26 @@
 
 > 深色模式不用阴影分层，靠亮度差；浅色模式靠 1px 边框 + 淡阴影。
 
+### 3.5 Tailwind 主题映射
+
+`styles/tailwind.css` 用 `@theme` 把现有 tokens 映射为 Tailwind 主题；`styles/base.css` 负责 `color-scheme` 和文本选择；`global.css` 保留现有手写样式，迁移期逐步删除。
+
+| Tailwind token | 来源 CSS 变量 | 典型类 |
+|---|---|---|
+| `--color-canvas` | `--canvas-bg` | `bg-canvas` |
+| `--color-surface` | `--surface` | `bg-surface` |
+| `--color-surface-raised` | `--surface-raised` | `bg-surface-raised` |
+| `--color-fg` | `--text-1` | `text-fg` |
+| `--color-fg-muted` | `--text-2` | `text-fg-muted` |
+| `--color-fg-subtle` | `--text-3` | `text-fg-subtle` |
+| `--color-border` | `--border` | `border-border` |
+| `--color-accent` | `--accent` | `bg-accent` / `text-accent` |
+| `--color-success/warning/danger` | 同名状态色 | `text-success` 等 |
+| `--radius-card/panel/pill` | 新增圆角尺度 | `rounded-card` 等 |
+| `--shadow-float/menu/node` | 同名阴影 | `shadow-float` 等 |
+
+新组件优先使用上述语义类，不要使用 Tailwind 默认色板（如 `bg-slate-800`）或硬编码色值。动态画布尺寸、时间线定位和 3D 参数继续使用 CSS 变量/inline style。
+
 ---
 
 ## 4. 节点规格
@@ -762,3 +782,28 @@ CineBot 是全局浮层，不占用画布布局。
 - 8 个模型类操作走 `generation_propose`，自动复用操作提示词。
 - 3 个蒙版操作（重绘 / 擦除 / 元素编辑）仍需界面涂抹。
 - 高风险操作显示确认卡；同一轮操作合并为一条撤销记录。
+
+---
+
+## 19. 公共组件
+
+基础组件位于 `src/renderer/src/components/ui/`：
+
+| 组件 | 用途 |
+|---|---|
+| `Button` / `IconButton` | 主按钮、次按钮、图标按钮 |
+| `Input` / `Textarea` | 表单输入 |
+| `Select` | 自定义下拉选择 |
+| `Switch` | 开关 |
+| `Field` / `SettingRow` | 表单字段与设置行布局 |
+| `Dialog` | 模态对话框、焦点圈定与 Escape 关闭 |
+| `Menu` / `MenuItem` / `MenuSeparator` | 固定定位浮动菜单 |
+| `Toast` | 页面底部状态提示 |
+
+规则：
+
+- 新代码只能从 `components/ui` 导入这些组件，不再手写同类按钮、开关或设置行。
+- 组件使用 Tailwind 语义类（`bg-surface`、`text-fg`、`border-border`、`bg-accent` 等），不硬编码色值。
+- 旧页面按「设置页 → 资产库 → 剪辑室 → 画布」逐步迁移。
+- 当前设置页已迁移 `Switch`、`SettingRow`、`Input`、`Select`；确认弹窗已迁移 `Dialog` 和 `Button`；全局提示已迁移 `Toast`。
+- `Menu` 已提供，但节点/工具栏菜单会在后续批次逐步迁移。

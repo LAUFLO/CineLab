@@ -20,6 +20,19 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # Stay on ESLint 9 until ESLint 10 and @eslint/js 10 are upgraded
+      # together with a dedicated compatibility pass.
+      - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
+      - dependency-name: '@eslint/js'
+        update-types:
+          - version-update:semver-major
+      # Runtime is Node.js 24; @types/node 26 describes newer APIs.
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
     labels:
       - dependencies
 

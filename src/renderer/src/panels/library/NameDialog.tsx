@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { Button, Dialog, Field, Input } from '../../components/ui'
 
 interface NameDialogProps {
   title: string
@@ -31,39 +31,35 @@ export function NameDialog({
     if (trimmed) onConfirm(trimmed)
   }
 
-  return createPortal(
-    <div className="library-modal" onPointerDown={onCancel}>
-      <div className="library-modal__panel" onPointerDown={(event) => event.stopPropagation()}>
-        <div className="library-modal__title">{title}</div>
-
-        <label className="field">
-          <span>{label}</span>
-          <input
-            ref={inputRef}
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') submit()
-              if (event.key === 'Escape') onCancel()
-            }}
-          />
-        </label>
-
-        <div className="library-modal__actions">
-          <button type="button" className="btn-secondary" onClick={onCancel}>
+  return (
+    <Dialog
+      open
+      onClose={onCancel}
+      title={title}
+      size="sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onCancel}>
             取消
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={submit}
-            disabled={!value.trim()}
-          >
+          </Button>
+          <Button variant="primary" onClick={submit} disabled={!value.trim()}>
             {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
+          </Button>
+        </>
+      }
+    >
+      <Field label={label} htmlFor="library-name-dialog">
+        <Input
+          ref={inputRef}
+          id="library-name-dialog"
+          value={value}
+          autoFocus
+          onChange={(event) => setValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') submit()
+          }}
+        />
+      </Field>
+    </Dialog>
   )
 }

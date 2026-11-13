@@ -50,7 +50,13 @@ export function Dialog({
         : null
 
     const panel = panelRef.current
-    panel?.querySelector<HTMLElement>(FOCUSABLE)?.focus()
+    const initialFocus =
+      panel?.querySelector<HTMLElement>('[autofocus]') ??
+      panel?.querySelector<HTMLElement>(
+        'input:not([disabled]), textarea:not([disabled]), select:not([disabled])'
+      ) ??
+      panel?.querySelector<HTMLElement>(FOCUSABLE)
+    initialFocus?.focus()
 
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {

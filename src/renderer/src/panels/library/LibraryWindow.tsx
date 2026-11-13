@@ -14,6 +14,7 @@ import type {
 } from '@shared/library-schema'
 import { PROMPT_FOLDER } from '@shared/library-schema'
 import { Icon } from '../../components/Icon'
+import { Button, IconButton } from '../../components/ui'
 import { isGroupNode, useCanvasStore } from '../../stores/canvas'
 import { useLibraryStore } from '../../stores/library'
 import { useUIStore } from '../../stores/ui'
@@ -406,28 +407,27 @@ export function LibraryWindow() {
               />
             </div>
             {mode === 'browse' && !isTemplateFolder ? (
-              <button
-                type="button"
-                className="btn-secondary btn-small"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   setSelectionMode((current) => !current)
                   setSelectedPaths(new Set())
                 }}
               >
                 {selectionMode ? '退出选择' : '选择'}
-              </button>
+              </Button>
             ) : null}
-            <button
-              type="button"
-              className="icon-btn"
-              title="在资源管理器中打开资产库"
+            <IconButton
+              label="在资源管理器中打开资产库"
+              size="sm"
               onClick={() => void revealRoot()}
             >
               <Icon name="folder" size={14} />
-            </button>
-            <button type="button" className="icon-btn" title="关闭" onClick={close}>
+            </IconButton>
+            <IconButton label="关闭" size="sm" onClick={close}>
               <Icon name="close" size={14} />
-            </button>
+            </IconButton>
           </div>
         </header>
 
@@ -510,22 +510,22 @@ export function LibraryWindow() {
           <div className="library-window__foot-left">
             {selectionMode ? (
               <>
-                <button
-                  type="button"
-                  className="btn-secondary btn-small"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() =>
                     setSelectedPaths(new Set(assets.map((asset) => asset.path)))
                   }
                 >
                   全选
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary btn-small"
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setSelectedPaths(new Set())}
                 >
                   清空
-                </button>
+                </Button>
                 <span className="library-window__count">
                   已选 {selectedAssets.length} 个
                 </span>
@@ -533,19 +533,18 @@ export function LibraryWindow() {
             ) : (
               <>
                 {mode === 'browse' ? (
-                  <button type="button" className="btn-secondary" onClick={handleImport}>
+                  <Button variant="secondary" onClick={handleImport}>
                     <Icon name="plus" size={13} />
                     上传
-                  </button>
+                  </Button>
                 ) : null}
-                <button
-                  type="button"
-                  className="btn-secondary"
+                <Button
+                  variant="secondary"
                   onClick={() => handleCreateFolder(folder)}
                 >
                   <Icon name="folder-plus" size={13} />
                   新建文件夹
-                </button>
+                </Button>
                 <span className="library-window__count">
                   {assets.length} 个素材 · {templates.length} 个模板
                 </span>
@@ -556,9 +555,9 @@ export function LibraryWindow() {
           <div className="library-window__foot-right">
             {selectionMode ? (
               <>
-                <button
-                  type="button"
-                  className="btn-secondary btn-small"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   disabled={selectedAssets.length === 0}
                   onClick={() => {
                     setMoveTargets(selectedAssets)
@@ -566,52 +565,51 @@ export function LibraryWindow() {
                   }}
                 >
                   移动到
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary btn-small"
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   disabled={!canConcat}
                   onClick={() => setConcatOpen(true)}
                 >
                   合成视频
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary btn-small is-danger"
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
                   disabled={selectedAssets.length === 0}
                   onClick={handleBatchDelete}
                 >
                   删除
-                </button>
-                <button
-                  type="button"
-                  className="btn-primary btn-small"
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={() => {
                     setSelectionMode(false)
                     setSelectedPaths(new Set())
                   }}
                 >
                   完成
-                </button>
+                </Button>
               </>
             ) : mode === 'pick' ? (
               <>
-                <button type="button" className="btn-secondary" onClick={close}>
+                <Button variant="secondary" onClick={close}>
                   取消
-                </button>
-                <button
-                  type="button"
-                  className="btn-primary"
+                </Button>
+                <Button
+                  variant="primary"
                   onClick={handleConfirmAdd}
                   disabled={!folder || pendingAdds.length === 0}
                 >
                   加入到这里
-                </button>
+                </Button>
               </>
             ) : (
-              <button type="button" className="btn-secondary" onClick={close}>
+              <Button variant="secondary" onClick={close}>
                 关闭
-              </button>
+              </Button>
             )}
           </div>
         </footer>
@@ -642,21 +640,16 @@ export function LibraryWindow() {
             </div>
 
             <div className="library-modal__actions">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setMoveTargets([])}
-              >
+              <Button variant="secondary" onClick={() => setMoveTargets([])}>
                 取消
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={() => void handleConfirmMove()}
                 disabled={!moveFolder}
               >
                 移动到此处
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -847,22 +840,20 @@ export function LibraryWindow() {
             </div>
 
             <div className="library-modal__actions">
-              <button
-                type="button"
-                className="btn-secondary"
+              <Button
+                variant="secondary"
                 disabled={concatBusy}
                 onClick={() => setConcatOpen(false)}
               >
                 取消
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 disabled={concatBusy}
                 onClick={() => void handleConcat()}
               >
                 {concatBusy ? '合成中…' : '选择位置并合成'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -893,20 +884,12 @@ export function LibraryWindow() {
             </div>
 
             <div className="library-modal__actions">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setTagTarget(null)}
-              >
+              <Button variant="secondary" onClick={() => setTagTarget(null)}>
                 取消
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => void handleSaveTags()}
-              >
+              </Button>
+              <Button variant="primary" onClick={() => void handleSaveTags()}>
                 保存标签
-              </button>
+              </Button>
             </div>
           </div>
         </div>

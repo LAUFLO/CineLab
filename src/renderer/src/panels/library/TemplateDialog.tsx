@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { createPortal } from 'react-dom'
 import { NODE_KINDS, NODE_META, type NodeKind } from '@shared/canvas-schema'
 import type { TemplateInput } from '@shared/library-schema'
-import { Select } from '../../components/Select'
+import { Button, Dialog, Field, Input, Select, Textarea } from '../../components/ui'
 
 interface TemplateDialogProps {
   initial: TemplateInput | null
@@ -25,28 +24,39 @@ export function TemplateDialog({ initial, onCancel, onSave }: TemplateDialogProp
     })
   }
 
-  return createPortal(
-    <div className="library-modal" onPointerDown={onCancel}>
-      <div
-        className="library-modal__panel library-modal__panel--wide"
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <div className="library-modal__title">
-          {initial ? '编辑提示词模板' : '新建提示词模板'}
-        </div>
-
-        <label className="field">
-          <span>名称</span>
-          <input
+  return (
+    <Dialog
+      open
+      onClose={onCancel}
+      title={initial ? '编辑提示词模板' : '新建提示词模板'}
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onCancel}>
+            取消
+          </Button>
+          <Button
+            variant="primary"
+            onClick={submit}
+            disabled={!name.trim() || !prompt.trim()}
+          >
+            保存
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <Field label="名称" htmlFor="template-name">
+          <Input
+            id="template-name"
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="例如：雪夜电影感"
             autoFocus
           />
-        </label>
+        </Field>
 
-        <label className="field">
-          <span>适用节点</span>
+        <Field label="适用节点">
           <Select
             value={kind}
             options={NODE_KINDS.map((item) => ({
@@ -55,34 +65,18 @@ export function TemplateDialog({ initial, onCancel, onSave }: TemplateDialogProp
             }))}
             onChange={(next) => setKind(next)}
           />
-        </label>
+        </Field>
 
-        <label className="field">
-          <span>提示词</span>
-          <textarea
-            className="library-textarea"
+        <Field label="提示词" htmlFor="template-prompt">
+          <Textarea
+            id="template-prompt"
             rows={6}
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
             placeholder="模板会直接填入 prompt bar"
           />
-        </label>
-
-        <div className="library-modal__actions">
-          <button type="button" className="btn-secondary" onClick={onCancel}>
-            取消
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={submit}
-            disabled={!name.trim() || !prompt.trim()}
-          >
-            保存
-          </button>
-        </div>
+        </Field>
       </div>
-    </div>,
-    document.body
+    </Dialog>
   )
 }

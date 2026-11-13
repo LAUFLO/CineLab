@@ -1,8 +1,9 @@
 # CineLab Agent 架构方案（设计 + 实施状态）
 
-日期：2026-11-08
-状态：**已实施 Phase 1–4**（2026-11-11，`main` @ `b76a064`）
-适用版本：`main` @ `b76a064`
+日期：2026-11-13
+状态：现行
+适用版本：v0.1.0
+最后核对：2026-11-13
 范围：Agent 运行时、工具协议、权限、确认、回合事务、会话、上下文、技能、IPC
 关联文档：`docs/agent-capabilities.md`（当前工具清单）、`docs/agent-capability-plan.md`（分阶段记录）、`docs/agent-full-scope.md`、`docs/agent-plan.md`、`docs/director-stage-plan.md`
 
@@ -848,6 +849,6 @@ Key、`models.json` 和启动说明存放在仓库外的本地测试目录，不
 
 1. 2026-11-08 已完成 Spike：S1–S9 通过，S10 因 Agnes 视频队列 503 阻塞。
 2. Agnes Video 2.5 Flash 队列恢复后重试；有外网代理服务时补一次真实代理复测。
-3. 拆 `docs/skills-plan.md`：技能子系统详细设计。
-4. 拆 `docs/agent-rollout-plan.md`：批次 1-8 任务分解。
+3. 技能子系统已实现，工具与限制见 `docs/agent-capabilities.md`。
+4. 批次实施记录见本文件；剩余项见 `docs/roadmap-plan.md`。
 5. 进入批次 1 实现。

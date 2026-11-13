@@ -1,7 +1,7 @@
 # 导演台方案：3D 片场 + 本地白模预演
 
 日期：2026-11-09
-状态：**已实施**（2026-11-11 合并入 main）
+状态：历史（2026-11-13 归档）
 适用版本：`main` @ `b76a064`
 关联：LibTV 3D 导演台 / 3D-BOX、TapNow CineMap
 关联文档：`docs/agent-capabilities.md`、`docs/ui-spec.md` 第 16 节、`docs/agent-full-scope.md`、`docs/clip-studio-plan.md`

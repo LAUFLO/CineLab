@@ -1,8 +1,9 @@
 # CineBot 能力清单
 
-日期：2026-11-11
-状态：**Phase 1–4 已实施**
-适用版本：`main` @ `b76a064`
+日期：2026-11-13
+状态：现行
+适用版本：v0.1.0
+最后核对：2026-11-13
 关联：`docs/agent-capability-plan.md`、`docs/agent-architecture-plan.md`
 
 当前注册 56 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库和技能。

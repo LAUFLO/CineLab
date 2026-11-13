@@ -1,8 +1,9 @@
 # CineLab 文档索引
 
-日期：2026-11-12
+日期：2026-11-13
 状态：现行
-适用版本：`main` @ `b76a064`
+适用版本：v0.1.0
+最后核对：2026-11-13
 
 > 本索引用于区分“现行系统文档”和“历史方案”。未列入现行文档的旧方案默认只作为设计参考，不再代表当前实现。
 
@@ -10,14 +11,14 @@
 
 | 文档 | 内容 | 最后更新 |
 |---|---|---|
-| [README](../README.md) | 产品介绍、功能、技术栈、快速开始、路线图 | 2026-11-11 |
-| [architecture.md](architecture.md) | 主进程架构、项目文件格式、Provider、IPC、存储 | 2026-11-11 |
-| [ui-spec.md](ui-spec.md) | 布局、节点、Prompt Bar、工具栏、主题、CineBot/剪辑/导演台/拉片 | 2026-11-12 |
-| [models.md](models.md) | `models.json` 格式与 Provider 配置 | 2026-11-12 |
-| [agent-architecture-plan.md](agent-architecture-plan.md) | AgentRuntime 设计 + Phase 1–4 实施状态 | 2026-11-11 |
-| [agent-capabilities.md](agent-capabilities.md) | CineBot 当前工具、参数、确认和撤销 | 2026-11-11 |
-| [roadmap-plan.md](roadmap-plan.md) | 当前状态与剩余 backlog | 2026-11-11 |
-| [branch-policy.md](branch-policy.md) | 分支类型、main 保护、PR 与清理流程 | 2026-11-12 |
+| [README](../README.md) | 产品介绍、功能、技术栈、快速开始、路线图 | 2026-11-13 |
+| [architecture.md](architecture.md) | 主进程架构、项目文件格式、Provider、IPC、存储 | 2026-11-13 |
+| [ui-spec.md](ui-spec.md) | 布局、节点、Prompt Bar、工具栏、主题、CineBot/剪辑/导演台/拉片 | 2026-11-13 |
+| [models.md](models.md) | `models.json` 格式与 Provider 配置 | 2026-11-13 |
+| [agent-architecture-plan.md](agent-architecture-plan.md) | AgentRuntime 设计 + Phase 1–4 实施状态 | 2026-11-13 |
+| [agent-capabilities.md](agent-capabilities.md) | CineBot 当前工具、参数、确认和撤销 | 2026-11-13 |
+| [roadmap-plan.md](roadmap-plan.md) | 当前状态与剩余 backlog | 2026-11-13 |
+| [branch-policy.md](branch-policy.md) | 分支类型、main 保护、PR 与清理流程 | 2026-11-13 |
 
 ## 2. 已实施功能方案
 
@@ -77,8 +78,8 @@
 
 ## 5. 维护约定
 
-1. 新增功能方案必须在文件头部写清：状态、日期、适用版本。
-2. 已实施方案不再改设计细节，只补“实施记录”和 evidence。
-3. 现行系统文档（README / architecture / ui-spec / models / agent-capabilities / roadmap）每次功能合并后同步更新。
+1. 现行文档头部必须写清：日期、状态（现行）、适用版本（`vX.Y.Z`）、最后核对（`YYYY-MM-DD`）。
+2. 已完成的方案改为「状态：历史」，并在头部写明归档日期；历史文档不再要求版本戳与代码同步。
+3. 现行系统文档（README / architecture / ui-spec / models / agent-architecture-plan / agent-capabilities / roadmap / branch-policy）每次功能合并后同步更新。
 4. 不确定是否仍有效的旧文档，移到“历史与参考”，不要继续写成待实施。
-5. 修改文档后执行 `corepack pnpm check:docs`，检查状态头、相对链接、索引收录和 Agent 工具清单；CI 也会执行。
+5. 修改文档后执行 `corepack pnpm check:docs`，检查状态头、相对链接、索引、现行/历史分类、路径引用和 Agent 工具清单；CI 也会执行。

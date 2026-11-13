@@ -1,8 +1,9 @@
 # CineLab 技术架构
 
-日期：2026-11-11
+日期：2026-11-13
 状态：现行
-适用版本：`main` @ `b76a064`
+适用版本：v0.1.0
+最后核对：2026-11-13
 
 > 本文定义 Electron 桌面应用的整体结构、数据格式、模型接入层与执行引擎。
 > 与 `ui-spec.md` 配套：前者定实现，后者定界面。
@@ -336,7 +337,7 @@ Prompt Bar / Agent proposal
 
 ## 15. 测试与 CI
 
-- Vitest：`src/**/*.test.ts`，当前 42 个文件、312 个用例。
+- Vitest：`src/**/*.test.ts`，当前 43 个文件、317 个用例。
 - 覆盖：项目/画布 schema、画布命令、时间线编辑、场景命令、生成提案、Agent 工具校验、能力注册表、拉片分析、媒体参数。
 - GitHub Actions `Build Windows`：install → typecheck → test → check:encryption → build → electron-builder → artifact。
 - 本地 `dev:isolated` 提供独立 userData 和 CDP 端口，用于 UI 烟测。

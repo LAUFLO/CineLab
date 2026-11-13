@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useUIStore } from '../stores/ui'
+import { Toast as ToastView } from './ui/Toast'
 
 export function Toast() {
   const toast = useUIStore((state) => state.toast)
@@ -14,8 +15,8 @@ export function Toast() {
   if (!toast) return null
 
   return (
-    <div className={`export-toast ${toast.tone === 'error' ? 'is-error' : ''}`}>
+    <ToastView tone={toast.tone === 'error' ? 'error' : 'default'}>
       {toast.message}
-    </div>
+    </ToastView>
   )
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '../components/ui'
 import { useUIStore } from '../stores/ui'
 
 export function ConfirmDialog() {
@@ -38,34 +39,25 @@ export function ConfirmDialog() {
         <div className="confirm-dialog__title">{confirm.title}</div>
         <p className="confirm-dialog__message">{confirm.message}</p>
         <div className="confirm-dialog__actions">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={closeConfirm}
-            disabled={busy}
-          >
+          <Button variant="secondary" onClick={closeConfirm} disabled={busy}>
             取消
-          </button>
+          </Button>
           {confirm.onSecondary ? (
-            <button
-              type="button"
-              className={`btn-primary ${
-                confirm.secondaryDanger ? 'is-danger' : ''
-              }`}
+            <Button
+              variant={confirm.secondaryDanger ? 'danger' : 'primary'}
               onClick={() => void handleSecondary()}
               disabled={busy}
             >
               {busy ? '处理中…' : confirm.secondaryLabel ?? '其他操作'}
-            </button>
+            </Button>
           ) : null}
-          <button
-            type="button"
-            className={`btn-primary ${confirm.danger ? 'is-danger' : ''}`}
+          <Button
+            variant={confirm.danger ? 'danger' : 'primary'}
             onClick={() => void handleConfirm()}
             disabled={busy}
           >
             {busy ? '处理中…' : confirm.confirmLabel ?? '确认'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -782,3 +782,25 @@ CineBot 是全局浮层，不占用画布布局。
 - 8 个模型类操作走 `generation_propose`，自动复用操作提示词。
 - 3 个蒙版操作（重绘 / 擦除 / 元素编辑）仍需界面涂抹。
 - 高风险操作显示确认卡；同一轮操作合并为一条撤销记录。
+
+---
+
+## 19. 公共组件
+
+基础组件位于 `src/renderer/src/components/ui/`：
+
+| 组件 | 用途 |
+|---|---|
+| `Button` / `IconButton` | 主按钮、次按钮、图标按钮 |
+| `Input` / `Textarea` | 表单输入 |
+| `Select` | 自定义下拉选择 |
+| `Switch` | 开关 |
+| `Field` / `SettingRow` | 表单字段与设置行布局 |
+
+规则：
+
+- 新代码只能从 `components/ui` 导入这些组件，不再手写同类按钮、开关或设置行。
+- 组件使用 Tailwind 语义类（`bg-surface`、`text-fg`、`border-border`、`bg-accent` 等），不硬编码色值。
+- 旧页面按「设置页 → 资产库 → 剪辑室 → 画布」逐步迁移。
+- 当前设置页已迁移 `Switch`、`SettingRow`、`Input`、`Select`；确认弹窗已迁移 `Button`。
+- `Dialog`、`Menu`、`Toast` 等组件在后续批次补齐。

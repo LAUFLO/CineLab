@@ -337,7 +337,7 @@ Prompt Bar / Agent proposal
 
 ## 15. 测试与 CI
 
-- Vitest：`src/**/*.test.ts`，当前 43 个文件、317 个用例。
+- Vitest：`src/**/*.test.ts`，当前 48 个文件、344 个用例。
 - 覆盖：项目/画布 schema、画布命令、时间线编辑、场景命令、生成提案、Agent 工具校验、能力注册表、拉片分析、媒体参数。
 - GitHub Actions `Build Windows`：install → typecheck → test → check:encryption → build → electron-builder → artifact。
 - 本地 `dev:isolated` 提供独立 userData 和 CDP 端口，用于 UI 烟测。

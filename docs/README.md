@@ -76,7 +76,15 @@
 | [agent-full-scope.md](agent-full-scope.md) | Agent 早期范围草案，作为历史参考 |
 | [agent-architecture-plan.md](agent-architecture-plan.md) | 架构设计部分保留，实施状态见文首 |
 
-## 5. 维护约定
+## 5. 工程与协作
+
+| 文档 | 内容 |
+|---|---|
+| [doc-impact.md](doc-impact.md) | 代码路径 → 文档影响映射 |
+| [../SECURITY.md](../SECURITY.md) | 漏洞报告与支持范围 |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | 开发、测试、PR 与发布约定 |
+
+## 6. 维护约定
 
 1. 现行文档头部必须写清：日期、状态（现行）、适用版本（`vX.Y.Z`）、最后核对（`YYYY-MM-DD`）。
 2. 已完成的方案改为「状态：历史」，并在头部写明归档日期；历史文档不再要求版本戳与代码同步。

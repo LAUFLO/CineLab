@@ -102,6 +102,7 @@ export interface MenuItemProps {
   title?: string
   className?: string
   onSelect: (event: MouseEvent<HTMLButtonElement>) => void
+  onMouseDown?: (event: MouseEvent<HTMLButtonElement>) => void
   onMouseEnter?: (event: MouseEvent<HTMLButtonElement>) => void
   onMouseLeave?: (event: MouseEvent<HTMLButtonElement>) => void
 }
@@ -116,6 +117,7 @@ export function MenuItem({
   title,
   className,
   onSelect,
+  onMouseDown,
   onMouseEnter,
   onMouseLeave
 }: MenuItemProps) {
@@ -129,6 +131,7 @@ export function MenuItem({
         event.stopPropagation()
         onSelect(event)
       }}
+      onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       className={cn(

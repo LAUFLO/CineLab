@@ -1455,29 +1455,29 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     if (all.length === 0) return
     get().pushHistory()
 
+    const styleSize = (value: string | number | undefined): number | undefined => {
+      if (value === undefined || value === '') return undefined
+      const parsed = Number(value)
+      return Number.isFinite(parsed) ? parsed : undefined
+    }
+
     const layoutSize = (node: CanvasNode): { width: number; height: number } => {
+      const measuredWidth = node.measured?.width
+      const measuredHeight = node.measured?.height
+      const styleWidth = styleSize(node.style?.width)
+      const styleHeight = styleSize(node.style?.height)
+
       if (isGroupNode(node)) {
         return {
-          width:
-            node.measured?.width ??
-            Number(node.style?.width ?? 0) ??
-            320,
-          height:
-            node.measured?.height ??
-            Number(node.style?.height ?? 0) ??
-            200
+          width: measuredWidth ?? styleWidth ?? 320,
+          height: measuredHeight ?? styleHeight ?? 200
         }
       }
+
       const meta = NODE_META[node.data.kind]
       return {
-        width:
-          node.measured?.width ??
-          Number(node.style?.width ?? 0) ??
-          meta.width,
-        height:
-          node.measured?.height ??
-          Number(node.style?.height ?? 0) ??
-          meta.height + TITLE_HEIGHT
+        width: measuredWidth ?? styleWidth ?? meta.width,
+        height: measuredHeight ?? styleHeight ?? meta.height + TITLE_HEIGHT
       }
     }
 

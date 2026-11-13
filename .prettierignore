@@ -1,0 +1,9 @@
+node_modules
+out
+release
+coverage
+.opencode
+.tmp
+pnpm-lock.yaml
+docs
+*.md

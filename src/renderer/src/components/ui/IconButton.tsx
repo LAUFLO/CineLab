@@ -5,7 +5,7 @@ export interface IconButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
   label: string
   variant?: 'ghost' | 'secondary'
-  size?: 'sm' | 'md'
+  size?: 'xs' | 'sm' | 'md'
 }
 
 const VARIANTS = {
@@ -15,6 +15,7 @@ const VARIANTS = {
 } as const
 
 const SIZES = {
+  xs: 'h-6 w-6',
   sm: 'h-7 w-7',
   md: 'h-8 w-8'
 } as const

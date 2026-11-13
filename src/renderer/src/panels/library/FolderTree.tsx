@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { LibraryFolderNode } from '@shared/library-schema'
 import { DEFAULT_LIBRARY_FOLDERS } from '@shared/library-schema'
 import { Icon } from '../../components/Icon'
+import { IconButton } from '../../components/ui'
 
 interface FolderTreeProps {
   tree: LibraryFolderNode[]
@@ -77,29 +78,30 @@ function TreeRow({
 
         {readOnly ? null : (
           <div className="library-tree__actions">
-            <button
-              type="button"
-              title="新建子文件夹"
+            <IconButton
+              label="新建子文件夹"
+              size="xs"
               onClick={() => onCreate(node.path)}
             >
               <Icon name="folder-plus" size={13} />
-            </button>
+            </IconButton>
             {fixed ? null : (
               <>
-                <button
-                  type="button"
-                  title="重命名"
+                <IconButton
+                  label="重命名"
+                  size="xs"
                   onClick={() => onRename(node)}
                 >
                   <Icon name="edit" size={13} />
-                </button>
-                <button
-                  type="button"
-                  title="删除空文件夹"
+                </IconButton>
+                <IconButton
+                  label="删除空文件夹"
+                  size="xs"
+                  className="text-danger hover:text-danger"
                   onClick={() => onDelete(node)}
                 >
                   <Icon name="trash" size={13} />
-                </button>
+                </IconButton>
               </>
             )}
           </div>
@@ -168,9 +170,13 @@ export function FolderTree(props: FolderTreeProps) {
         </button>
         {props.readOnly ? null : (
           <div className="library-tree__actions">
-            <button type="button" title="新建文件夹" onClick={() => onCreate('')}>
+            <IconButton
+              label="新建文件夹"
+              size="xs"
+              onClick={() => onCreate('')}
+            >
               <Icon name="folder-plus" size={13} />
-            </button>
+            </IconButton>
           </div>
         )}
       </div>

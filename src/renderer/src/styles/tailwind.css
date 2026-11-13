@@ -1,0 +1,52 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-canvas: var(--canvas-bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-selected: var(--border-selected);
+  --color-divider: var(--divider);
+
+  --color-fg: var(--text-1);
+  --color-fg-muted: var(--text-2);
+  --color-fg-subtle: var(--text-3);
+  --color-fg-inverse: var(--text-inverse);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-pick-bar: var(--pick-bar);
+  --color-link: var(--link);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --color-media-bg: var(--media-bg);
+  --color-media-text: var(--media-text);
+  --color-overlay: var(--overlay);
+
+  --color-group-blue: var(--group-blue);
+  --color-group-cyan: var(--group-cyan);
+  --color-group-teal: var(--group-teal);
+  --color-group-green: var(--group-green);
+  --color-group-lime: var(--group-lime);
+  --color-group-amber: var(--group-amber);
+  --color-group-orange: var(--group-orange);
+  --color-group-rose: var(--group-rose);
+  --color-group-violet: var(--group-violet);
+  --color-group-slate: var(--group-slate);
+
+  --font-sans:
+    'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system,
+    sans-serif;
+
+  --radius-card: 12px;
+  --radius-panel: 16px;
+  --radius-pill: 999px;
+
+  --shadow-float: var(--shadow-float);
+  --shadow-menu: var(--shadow-menu);
+  --shadow-node: var(--shadow-node);
+}

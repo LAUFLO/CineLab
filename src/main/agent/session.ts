@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs'
 import { randomUUID } from 'node:crypto'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import type {
   AgentSessionEntry,
   AgentSessionInfo,
@@ -11,6 +11,14 @@ import type {
 import { getCurrentProjectRoot } from '../project/manager'
 
 const SESSION_ID_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/
+const SESSION_INDEX_FILE = '.index.json'
+
+interface SessionIndexEntry extends AgentSessionInfo {
+  mtimeMs: number
+  size: number
+}
+
+type SessionIndex = Record<string, SessionIndexEntry>
 
 export function sessionDirectory(root: string): string {
   return join(root, '.cinelab', 'agent', 'sessions')
@@ -128,6 +136,75 @@ async function readSessionEntries(
   return entries
 }
 
+function buildSessionInfo(
+  entries: AgentSessionEntry[],
+  sessionId: string
+): AgentSessionInfo | null {
+  if (entries.length === 0) return null
+
+  let title = '新对话'
+  let updatedAt = entries[entries.length - 1]?.timestamp ?? ''
+  let preview: string | undefined
+  let messageCount = 0
+
+  for (const entry of entries) {
+    if (entry.type === 'meta') title = entry.title
+    if (entry.type === 'message') {
+      if (entry.message.role === 'user') {
+        messageCount += 1
+        preview = entry.message.content.slice(0, 80)
+      }
+      if (entry.message.role === 'assistant') messageCount += 1
+    }
+  }
+
+  if (title === '新对话') {
+    const firstUser = entries.find(
+      (entry) => entry.type === 'message' && entry.message.role === 'user'
+    )
+    if (firstUser && firstUser.type === 'message') {
+      title = firstUser.message.content.slice(0, 40) || title
+    }
+  }
+
+  return {
+    sessionId,
+    title,
+    updatedAt,
+    messageCount,
+    ...(preview ? { preview } : {})
+  }
+}
+
+async function readSessionIndex(root: string): Promise<SessionIndex> {
+  try {
+    const raw = JSON.parse(
+      await fs.readFile(join(sessionDirectory(root), SESSION_INDEX_FILE), 'utf8')
+    ) as unknown
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+    return raw as SessionIndex
+  } catch {
+    return {}
+  }
+}
+
+async function writeSessionIndex(
+  root: string,
+  index: SessionIndex
+): Promise<void> {
+  const file = join(sessionDirectory(root), SESSION_INDEX_FILE)
+  await fs.mkdir(dirname(file), { recursive: true })
+  const tmp = `${file}.${process.pid}.${randomUUID().slice(0, 8)}.tmp`
+  await fs.writeFile(tmp, JSON.stringify(index), 'utf8')
+
+  try {
+    await fs.rename(tmp, file)
+  } catch {
+    await fs.rm(file, { force: true })
+    await fs.rename(tmp, file)
+  }
+}
+
 export async function loadSession(
   root: string,
   sessionId: string
@@ -186,49 +263,58 @@ export async function listSessions(root: string): Promise<AgentSessionInfo[]> {
     return []
   }
 
+  const cached = await readSessionIndex(root)
+  const nextIndex: SessionIndex = {}
   const sessions: AgentSessionInfo[] = []
+
   for (const file of files) {
     if (!file.endsWith('.jsonl')) continue
     const sessionId = file.slice(0, -'.jsonl'.length)
     if (!SESSION_ID_PATTERN.test(sessionId)) continue
 
-    const entries = await readSessionEntries(root, sessionId)
-    if (entries.length === 0) continue
-
-    let title = '新对话'
-    let updatedAt = entries[entries.length - 1]?.timestamp ?? ''
-    let preview: string | undefined
-    let messageCount = 0
-
-    for (const entry of entries) {
-      if (entry.type === 'meta') title = entry.title
-      if (entry.type === 'message') {
-        if (entry.message.role === 'user') {
-          messageCount += 1
-          preview = entry.message.content.slice(0, 80)
-        }
-        if (entry.message.role === 'assistant') messageCount += 1
-      }
+    let stat
+    try {
+      stat = await fs.stat(join(directory, file))
+    } catch {
+      continue
     }
 
-    if (title === '新对话') {
-      const firstUser = entries.find(
-        (entry) =>
-          entry.type === 'message' && entry.message.role === 'user'
-      )
-      if (firstUser && firstUser.type === 'message') {
-        title = firstUser.message.content.slice(0, 40) || title
-      }
-    }
+    const previous = cached[sessionId]
+    const info =
+      previous &&
+      previous.mtimeMs === stat.mtimeMs &&
+      previous.size === stat.size
+        ? previous
+        : buildSessionInfo(
+            await readSessionEntries(root, sessionId),
+            sessionId
+          )
 
-    sessions.push({
-      sessionId,
-      title,
-      updatedAt,
-      messageCount,
-      ...(preview ? { preview } : {})
-    })
+    if (!info) continue
+
+    const session: AgentSessionInfo = {
+      sessionId: info.sessionId,
+      title: info.title,
+      updatedAt: info.updatedAt,
+      messageCount: info.messageCount,
+      ...(info.preview ? { preview: info.preview } : {})
+    }
+    nextIndex[sessionId] = {
+      ...session,
+      mtimeMs: stat.mtimeMs,
+      size: stat.size
+    }
+    sessions.push(session)
   }
+
+  const changed =
+    Object.keys(cached).length !== Object.keys(nextIndex).length ||
+    Object.keys(nextIndex).some(
+      (sessionId) =>
+        cached[sessionId]?.mtimeMs !== nextIndex[sessionId].mtimeMs ||
+        cached[sessionId]?.size !== nextIndex[sessionId].size
+    )
+  if (changed) await writeSessionIndex(root, nextIndex)
 
   return sessions.sort((left, right) =>
     right.updatedAt.localeCompare(left.updatedAt)

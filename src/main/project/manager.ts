@@ -1,7 +1,7 @@
 import { app, nativeImage } from 'electron'
 import { promises as fs } from 'node:fs'
 import { basename, dirname, join, resolve, sep } from 'node:path'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import {
   canvasDataSchema,
   projectMetaSchema,
@@ -43,9 +43,9 @@ async function readJson(file: string): Promise<unknown> {
   return JSON.parse(text) as unknown
 }
 
-async function writeJsonAtomic(file: string, data: unknown): Promise<void> {
+async function writeTextAtomic(file: string, text: string): Promise<void> {
   const tmp = `${file}.${process.pid}.${randomUUID().slice(0, 8)}.tmp`
-  await fs.writeFile(tmp, JSON.stringify(data, null, 2), 'utf8')
+  await fs.writeFile(tmp, text, 'utf8')
 
   try {
     await fs.rename(tmp, file)
@@ -54,6 +54,12 @@ async function writeJsonAtomic(file: string, data: unknown): Promise<void> {
     await fs.rename(tmp, file)
   }
 }
+
+async function writeJsonAtomic(file: string, data: unknown): Promise<void> {
+  await writeTextAtomic(file, JSON.stringify(data, null, 2))
+}
+
+const savedCanvasHashes = new Map<string, string>()
 
 function assertProjectPath(path: string): string {
   const resolved = resolve(path)
@@ -259,7 +265,15 @@ export async function saveCanvas(projectPath: string, canvas: CanvasData): Promi
   }
 
   const validated = canvasDataSchema.parse(canvas)
-  await writeJsonAtomic(join(path, entry.file), validated)
+  const file = join(path, entry.file)
+  const text = JSON.stringify(validated, null, 2)
+  const hash = createHash('sha1').update(text).digest('hex')
+
+  // 自动保存可能在没有改动时反复触发，内容未变时不重复写画布和项目元数据。
+  if (savedCanvasHashes.get(file) === hash) return
+
+  await writeTextAtomic(file, text)
+  savedCanvasHashes.set(file, hash)
 
   meta.updatedAt = new Date().toISOString()
   await writeJsonAtomic(join(path, 'project.json'), meta)

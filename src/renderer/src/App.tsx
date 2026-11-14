@@ -31,6 +31,7 @@ import { useUpdateStore } from './stores/update'
 import { subscribeDepthTasks } from './stores/depth-tasks'
 import { subscribeVisionTasks } from './stores/vision-tasks'
 import { useTheme } from './theme/useTheme'
+import { Button, Toast as ToastView } from './components/ui'
 
 export default function App() {
   const { resolved, toggle } = useTheme()
@@ -125,11 +126,7 @@ export default function App() {
     })
     const unsubscribeBridge = initAgentCanvasBridge()
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (
-        event.ctrlKey &&
-        event.shiftKey &&
-        event.key.toLowerCase() === 'a'
-      ) {
+      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'a') {
         event.preventDefault()
         useAgentStore.getState().toggle()
       }
@@ -171,7 +168,8 @@ export default function App() {
       capture: true,
       passive: true
     })
-    return () => document.removeEventListener('wheel', onWheel, { capture: true })
+    return () =>
+      document.removeEventListener('wheel', onWheel, { capture: true })
   }, [])
 
   let content: ReactNode
@@ -191,9 +189,14 @@ export default function App() {
         <BrandWordmark height={22} className="boot-screen__logo" />
         <div className="boot-screen__hint">项目打开失败</div>
         <div className="boot-screen__error">{error}</div>
-        <button type="button" className="empty-action" onClick={() => void bootstrap()}>
+        <Button
+          type="button"
+          className="empty-action"
+          onClick={() => void bootstrap()}
+          unstyled
+        >
           重试
-        </button>
+        </Button>
       </div>
     )
   } else {
@@ -206,7 +209,11 @@ export default function App() {
         <LibraryPanel />
         <ToolbarSettings />
         <ConfirmDialog />
-        {error ? <div className="toast">{error}</div> : null}
+        {error ? (
+          <ToastView unstyled className="toast">
+            {error}
+          </ToastView>
+        ) : null}
       </div>
     )
   }

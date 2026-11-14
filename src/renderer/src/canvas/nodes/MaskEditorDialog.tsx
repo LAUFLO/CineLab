@@ -1,6 +1,11 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { createPortal } from 'react-dom'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent
+} from 'react'
 import { Icon } from '../../components/Icon'
+import { Button, Dialog, Input } from '../../components/ui'
 
 interface MaskEditorDialogProps {
   open: boolean
@@ -58,17 +63,6 @@ export function MaskEditorDialog({
     setBrushSize(28)
   }, [open, imageWidth, imageHeight])
 
-  useEffect(() => {
-    if (!open) return
-
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape' && !busy) onClose()
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open, busy, onClose])
-
   if (!open) return null
 
   const pushHistory = (): void => {
@@ -121,9 +115,7 @@ export function MaskEditorDialog({
     }
   }
 
-  const beginStroke = (
-    event: ReactPointerEvent<HTMLCanvasElement>
-  ): void => {
+  const beginStroke = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
     if (busy) return
     const canvas = canvasRef.current
     const context = canvas?.getContext('2d')
@@ -161,9 +153,7 @@ export function MaskEditorDialog({
     setHasMask(true)
   }
 
-  const moveStroke = (
-    event: ReactPointerEvent<HTMLCanvasElement>
-  ): void => {
+  const moveStroke = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
     if (!drawingRef.current) return
     const canvas = canvasRef.current
     const context = canvas?.getContext('2d')
@@ -246,124 +236,124 @@ export function MaskEditorDialog({
     onConfirm(output.toDataURL('image/png'))
   }
 
-  return createPortal(
-    <div
-      className="mask-editor-overlay"
-      onPointerDown={() => {
-        if (!busy) onClose()
-      }}
+  return (
+    <Dialog
+      open={open}
+      onClose={busy ? () => {} : onClose}
+      bare
+      ariaLabel={title}
+      overlayClassName="mask-editor-overlay"
+      panelClassName="mask-editor"
     >
-      <div
-        className="mask-editor"
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <div className="mask-editor__header">
-          <div>
-            <div className="mask-editor__title">{title}</div>
-            <div className="mask-editor__subtitle">
-              {subtitle ?? '涂抹需要修改的区域，透明区域会交给模型编辑'}
-            </div>
+      <div className="mask-editor__header">
+        <div>
+          <div className="mask-editor__title">{title}</div>
+          <div className="mask-editor__subtitle">
+            {subtitle ?? '涂抹需要修改的区域，透明区域会交给模型编辑'}
           </div>
-          <button
-            type="button"
-            className="mask-editor__close"
-            title="关闭"
-            disabled={busy}
-            onClick={onClose}
-          >
-            <Icon name="close" size={14} />
-          </button>
         </div>
-
-        <div className="mask-editor__toolbar">
-          <button
-            type="button"
-            className={tool === 'brush' ? 'is-active' : ''}
-            onClick={() => setTool('brush')}
-          >
-            画笔
-          </button>
-          <button
-            type="button"
-            className={tool === 'rect' ? 'is-active' : ''}
-            onClick={() => setTool('rect')}
-          >
-            矩形
-          </button>
-          <button
-            type="button"
-            className={tool === 'eraser' ? 'is-active' : ''}
-            onClick={() => setTool('eraser')}
-          >
-            橡皮
-          </button>
-          <label className="mask-editor__size">
-            笔刷
-            <input
-              type="range"
-              min={4}
-              max={96}
-              value={brushSize}
-              onChange={(event) => setBrushSize(Number(event.target.value))}
-            />
-            <span>{brushSize}</span>
-          </label>
-          <button
-            type="button"
-            disabled={historySize === 0}
-            onClick={undo}
-          >
-            撤销
-          </button>
-          <button
-            type="button"
-            disabled={!hasMask}
-            onClick={clear}
-          >
-            清空
-          </button>
-        </div>
-
-        <div
-          className="mask-editor__stage"
-          style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
+        <Button
+          type="button"
+          className="mask-editor__close"
+          title="关闭"
+          disabled={busy}
+          onClick={onClose}
+          unstyled
         >
-          <img src={src} alt="" draggable={false} />
-          <canvas
-            ref={canvasRef}
-            className="mask-editor__canvas"
-            onPointerDown={beginStroke}
-            onPointerMove={moveStroke}
-            onPointerUp={endStroke}
-            onPointerCancel={endStroke}
-            onPointerLeave={endStroke}
-          />
-        </div>
-
-        <div className="mask-editor__hint">
-          红色区域为编辑范围。建议先把主体或要修改的部分完整涂到。
-        </div>
-
-        <div className="mask-editor__footer">
-          <button
-            type="button"
-            className="btn-secondary"
-            disabled={busy}
-            onClick={onClose}
-          >
-            取消
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={!hasMask || busy}
-            onClick={confirm}
-          >
-            下一步
-          </button>
-        </div>
+          <Icon name="close" size={14} />
+        </Button>
       </div>
-    </div>,
-    document.body
+
+      <div className="mask-editor__toolbar">
+        <Button
+          type="button"
+          className={tool === 'brush' ? 'is-active' : ''}
+          onClick={() => setTool('brush')}
+          unstyled
+        >
+          画笔
+        </Button>
+        <Button
+          type="button"
+          className={tool === 'rect' ? 'is-active' : ''}
+          onClick={() => setTool('rect')}
+          unstyled
+        >
+          矩形
+        </Button>
+        <Button
+          type="button"
+          className={tool === 'eraser' ? 'is-active' : ''}
+          onClick={() => setTool('eraser')}
+          unstyled
+        >
+          橡皮
+        </Button>
+        <label className="mask-editor__size">
+          笔刷
+          <Input
+            type="range"
+            min={4}
+            max={96}
+            value={brushSize}
+            onChange={(event) => setBrushSize(Number(event.target.value))}
+            unstyled
+          />
+          <span>{brushSize}</span>
+        </label>
+        <Button
+          type="button"
+          disabled={historySize === 0}
+          onClick={undo}
+          unstyled
+        >
+          撤销
+        </Button>
+        <Button type="button" disabled={!hasMask} onClick={clear} unstyled>
+          清空
+        </Button>
+      </div>
+
+      <div
+        className="mask-editor__stage"
+        style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
+      >
+        <img src={src} alt="" draggable={false} />
+        <canvas
+          ref={canvasRef}
+          className="mask-editor__canvas"
+          onPointerDown={beginStroke}
+          onPointerMove={moveStroke}
+          onPointerUp={endStroke}
+          onPointerCancel={endStroke}
+          onPointerLeave={endStroke}
+        />
+      </div>
+
+      <div className="mask-editor__hint">
+        红色区域为编辑范围。建议先把主体或要修改的部分完整涂到。
+      </div>
+
+      <div className="mask-editor__footer">
+        <Button
+          type="button"
+          className="btn-secondary"
+          disabled={busy}
+          onClick={onClose}
+          unstyled
+        >
+          取消
+        </Button>
+        <Button
+          type="button"
+          className="btn-primary"
+          disabled={!hasMask || busy}
+          onClick={confirm}
+          unstyled
+        >
+          下一步
+        </Button>
+      </div>
+    </Dialog>
   )
 }

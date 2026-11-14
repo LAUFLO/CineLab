@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import type { OutputRef } from '@shared/canvas-schema'
-import {
-  modelSupportsOperation,
-  type ModelDef
-} from '@shared/provider-schema'
+import { modelSupportsOperation, type ModelDef } from '@shared/provider-schema'
 import {
   VIDEO_OPERATIONS,
   type VideoOperationId
@@ -24,6 +21,7 @@ import { useGenerationStore } from '../../stores/generation'
 import { useLibraryStore } from '../../stores/library'
 import { useSettingsStore } from '../../stores/settings'
 import { useUIStore } from '../../stores/ui'
+import { Button, Input, Textarea } from '../../components/ui'
 
 interface ImageOption {
   path: string
@@ -67,7 +65,11 @@ function sourceOutputOf(node: CanvasNode | undefined): OutputRef | undefined {
   )
 }
 
-export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) {
+export function VideoOpNodeView({
+  id,
+  data,
+  selected
+}: NodeProps<VideoOpNode>) {
   const nodes = useCanvasStore((state) => state.nodes)
   const patchVideoOpNode = useCanvasStore((state) => state.patchVideoOpNode)
   const addNode = useCanvasStore((state) => state.addNode)
@@ -123,7 +125,9 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
     const load = async (): Promise<void> => {
       if (sourceOutput.duration && sourceOutput.duration > 0) {
         setDuration(sourceOutput.duration)
-        setEnd((current) => (current > 0 ? current : sourceOutput.duration ?? 0))
+        setEnd((current) =>
+          current > 0 ? current : (sourceOutput.duration ?? 0)
+        )
         return
       }
       try {
@@ -131,7 +135,7 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
         if (cancelled) return
         if (info.duration) {
           setDuration(info.duration)
-          setEnd((current) => (current > 0 ? current : info.duration ?? 0))
+          setEnd((current) => (current > 0 ? current : (info.duration ?? 0)))
         }
       } catch {
         // 保留 0，使用视频元数据兜底
@@ -161,8 +165,8 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
     ).then((items) => {
       if (cancelled) return
       setThumbs(
-        items.filter(
-          (item): item is { at: number; url: string } => Boolean(item)
+        items.filter((item): item is { at: number; url: string } =>
+          Boolean(item)
         )
       )
     })
@@ -195,7 +199,8 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
     return null
   }
 
-  const active = videoModels.find((item) => item.key === modelKey)?.model ?? null
+  const active =
+    videoModels.find((item) => item.key === modelKey)?.model ?? null
 
   useEffect(() => {
     if (!data.expanded) return
@@ -245,7 +250,10 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
       setReference(null)
       return
     }
-    const found = [...imageOptions.fromCanvas, ...imageOptions.fromLibrary].find(
+    const found = [
+      ...imageOptions.fromCanvas,
+      ...imageOptions.fromLibrary
+    ].find(
       (item) =>
         item.path === data.referencePath &&
         (item.scope ?? 'project') === (data.referenceScope ?? 'project')
@@ -271,9 +279,7 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
   const endValue = Math.min(Math.max(end, startValue + 0.1), max)
   const activeMissing = active ? availability(active) : '没有可用模型'
   const pickerOptions =
-    pickerTab === 'canvas'
-      ? imageOptions.fromCanvas
-      : imageOptions.fromLibrary
+    pickerTab === 'canvas' ? imageOptions.fromCanvas : imageOptions.fromLibrary
 
   const handleUpload = async (): Promise<void> => {
     setUploading(true)
@@ -366,9 +372,7 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
         : {}),
       videoOptions: {
         operation: data.operation,
-        ...(needsRange
-          ? { range: { start: startValue, end: endValue } }
-          : {}),
+        ...(needsRange ? { range: { start: startValue, end: endValue } } : {}),
         ...(data.operation === 'extend'
           ? { duration: extendDuration, direction }
           : {})
@@ -400,13 +404,14 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
           <span>{active?.name ?? '未选择模型'}</span>
         </div>
 
-        <button
+        <Button
           type="button"
           className="video-op-node__toggle nodrag nopan"
           onClick={() => patchVideoOpNode(id, { expanded: !data.expanded })}
+          unstyled
         >
           {data.expanded ? '收起参数' : '设置参数'}
-        </button>
+        </Button>
 
         {data.expanded ? (
           <div className="video-op-node__form nodrag nopan">
@@ -456,7 +461,7 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
 
                 <label className="video-edit-panel__field">
                   <span>开始</span>
-                  <input
+                  <Input
                     type="range"
                     min={0}
                     max={max}
@@ -467,8 +472,9 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                         Math.min(Number(event.target.value), endValue - 0.1)
                       )
                     }
+                    unstyled
                   />
-                  <input
+                  <Input
                     type="number"
                     min={0}
                     max={max}
@@ -482,12 +488,13 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                         )
                       )
                     }
+                    unstyled
                   />
                 </label>
 
                 <label className="video-edit-panel__field">
                   <span>结束</span>
-                  <input
+                  <Input
                     type="range"
                     min={0}
                     max={max}
@@ -498,8 +505,9 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                         Math.max(Number(event.target.value), startValue + 0.1)
                       )
                     }
+                    unstyled
                   />
-                  <input
+                  <Input
                     type="number"
                     min={0}
                     max={max}
@@ -516,6 +524,7 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                         )
                       )
                     }
+                    unstyled
                   />
                 </label>
               </div>
@@ -526,26 +535,28 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                 <div className="video-op-node__section-head">
                   <span>续写方向</span>
                   <div className="video-edit-panel__direction">
-                    <button
+                    <Button
                       type="button"
                       className={direction === 'forward' ? 'is-active' : ''}
                       onClick={() => setDirection('forward')}
+                      unstyled
                     >
                       向后
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       className={direction === 'backward' ? 'is-active' : ''}
                       onClick={() => setDirection('backward')}
+                      unstyled
                     >
                       向前
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
                 <label className="video-edit-panel__field">
                   <span>新增时长</span>
-                  <input
+                  <Input
                     type="range"
                     min={1}
                     max={10}
@@ -554,8 +565,9 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                     onChange={(event) =>
                       setExtendDuration(Number(event.target.value))
                     }
+                    unstyled
                   />
-                  <input
+                  <Input
                     type="number"
                     min={1}
                     max={10}
@@ -566,6 +578,7 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                         Math.min(10, Math.max(1, Number(event.target.value)))
                       )
                     }
+                    unstyled
                   />
                 </label>
               </div>
@@ -575,13 +588,14 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
               <div className="video-op-node__section">
                 <div className="video-op-node__section-head">
                   <span>替换素材</span>
-                  <button
+                  <Button
                     type="button"
                     className="video-edit-panel__link"
                     onClick={() => setPickerOpen((value) => !value)}
+                    unstyled
                   >
                     {reference ? '更换' : '选择图片'}
-                  </button>
+                  </Button>
                 </div>
 
                 {reference ? (
@@ -591,14 +605,15 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                       alt=""
                     />
                     <span>{reference.name}</span>
-                    <button
+                    <Button
                       type="button"
                       className="icon-btn"
                       title="移除"
                       onClick={() => setReference(null)}
+                      unstyled
                     >
                       <Icon name="close" size={11} />
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <div className="video-edit-ref__empty">
@@ -610,34 +625,37 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                   <div className="video-edit-picker">
                     <div className="video-edit-picker__head">
                       <div className="video-edit-picker__tabs">
-                        <button
+                        <Button
                           type="button"
                           className={pickerTab === 'canvas' ? 'is-active' : ''}
                           onClick={() => setPickerTab('canvas')}
+                          unstyled
                         >
                           画布
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
                           className={pickerTab === 'library' ? 'is-active' : ''}
                           onClick={() => setPickerTab('library')}
+                          unstyled
                         >
                           资产库
-                        </button>
+                        </Button>
                       </div>
-                      <button
+                      <Button
                         type="button"
                         className="btn-secondary btn-small"
                         disabled={uploading}
                         onClick={() => void handleUpload()}
+                        unstyled
                       >
                         {uploading ? '上传中…' : '上传'}
-                      </button>
+                      </Button>
                     </div>
 
                     <div className="video-edit-picker__grid">
                       {pickerOptions.slice(0, 30).map((item) => (
-                        <button
+                        <Button
                           key={`${item.scope ?? 'project'}:${item.path}`}
                           type="button"
                           className={`video-edit-picker__item${
@@ -652,12 +670,10 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                             setReference(item)
                             setPickerOpen(false)
                           }}
+                          unstyled
                         >
-                          <img
-                            src={assetUrl(item.thumb, item.scope)}
-                            alt=""
-                          />
-                        </button>
+                          <img src={assetUrl(item.thumb, item.scope)} alt="" />
+                        </Button>
                       ))}
                     </div>
 
@@ -687,7 +703,7 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                 {videoModels.map((item) => {
                   const reason = availability(item.model)
                   return (
-                    <button
+                    <Button
                       key={item.key}
                       type="button"
                       className={`video-edit-model${
@@ -701,12 +717,13 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                         }
                         setModelKey(item.key)
                       }}
+                      unstyled
                     >
                       <span>{item.model.name}</span>
                       <span className="video-edit-model__meta">
                         {reason ? reason : item.providerName}
                       </span>
-                    </button>
+                    </Button>
                   )
                 })}
                 {videoModels.length === 0 ? (
@@ -719,7 +736,7 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
 
             <label className="video-edit-panel__field video-edit-panel__field--stack">
               <span>描述</span>
-              <textarea
+              <Textarea
                 rows={4}
                 value={prompt}
                 placeholder={
@@ -730,17 +747,19 @@ export function VideoOpNodeView({ id, data, selected }: NodeProps<VideoOpNode>) 
                       : '描述这一段应该怎么重拍'
                 }
                 onChange={(event) => setPrompt(event.target.value)}
+                unstyled
               />
             </label>
 
-            <button
+            <Button
               type="button"
               className="btn-primary video-op-node__generate nodrag nopan"
               disabled={Boolean(activeMissing) || !prompt.trim()}
               onClick={handleGenerate}
+              unstyled
             >
               开始生成
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>

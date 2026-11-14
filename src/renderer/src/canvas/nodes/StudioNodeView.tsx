@@ -7,7 +7,7 @@ import type { TimelineVideoCodec } from '@shared/ipc-contract'
 import type { TimelineDoc } from '@shared/timeline-schema'
 import { assetUrl } from '../../lib/asset-url'
 import { Icon } from '../../components/Icon'
-import { Select } from '../../components/Select'
+
 import {
   isStudioNode,
   useCanvasStore,
@@ -18,6 +18,7 @@ import { useTimelineStore } from '../../stores/timeline'
 import { useUIStore } from '../../stores/ui'
 import { referencesFromDoc, upstreamSignature } from '../../studio/references'
 import { VideoPlayer } from './VideoPlayer'
+import { Input, Button, Select } from '../../components/ui'
 
 const FILM_STATUS_LABEL: Record<string, string> = {
   pending: '待生成',
@@ -101,7 +102,8 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
         : null
 
     try {
-      const doc = openDoc ?? (await window.api.timeline.load(studio.data.timelineId))
+      const doc =
+        openDoc ?? (await window.api.timeline.load(studio.data.timelineId))
       return { studio, doc }
     } catch (error) {
       setStudioFilmStatus(id, current ? 'stale' : 'pending')
@@ -176,8 +178,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
       const hasAudio =
         videoHasAudio ||
         doc.clips.some(
-          (clip) =>
-            clip.kind === 'audio' && !clip.muted && Boolean(clip.media)
+          (clip) => clip.kind === 'audio' && !clip.muted && Boolean(clip.media)
         )
 
       const output: OutputRef = {
@@ -245,7 +246,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
         >
           <Icon name="film" size={12} />
           {editingTitle ? (
-            <input
+            <Input
               className="cnode__title-input nodrag nopan"
               value={titleDraft}
               autoFocus
@@ -256,6 +257,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                 if (event.key === 'Escape') setEditingTitle(false)
               }}
               onClick={(event) => event.stopPropagation()}
+              unstyled
             />
           ) : (
             <span>{data.title}</span>
@@ -284,7 +286,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                     video.currentTime = Math.min(0.1, video.duration || 0)
                   }}
                 />
-                <button
+                <Button
                   type="button"
                   className="studio-node__play nodrag nopan"
                   title="播放成片"
@@ -292,15 +294,17 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                     event.stopPropagation()
                     setPreviewOpen(true)
                   }}
+                  unstyled
                 >
                   ▶
-                </button>
+                </Button>
               </>
             ) : (
-              <button
+              <Button
                 type="button"
                 className="studio-node__empty nodrag nopan"
                 onClick={open}
+                unstyled
               >
                 <Icon name="film" size={34} />
                 <span>{clipCount > 0 ? '成片待生成' : '还没有素材'}</span>
@@ -309,7 +313,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                     ? '点下方「生成成片」'
                     : '双击进入剪辑室添加素材'}
                 </span>
-              </button>
+              </Button>
             )}
 
             {busy ? (
@@ -340,7 +344,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
 
             {outputs.length > 1 ? (
               <span className="studio-node__versions nodrag nopan">
-                <button
+                <Button
                   type="button"
                   className="cnode__version-btn"
                   title="更早的版本"
@@ -349,13 +353,14 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                     event.stopPropagation()
                     shiftVersion(1)
                   }}
+                  unstyled
                 >
                   ‹
-                </button>
+                </Button>
                 <span className="cnode__version-label">
                   {outputs.length - currentIndex}/{outputs.length}
                 </span>
-                <button
+                <Button
                   type="button"
                   className="cnode__version-btn"
                   title="更新的版本"
@@ -364,31 +369,34 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                     event.stopPropagation()
                     shiftVersion(-1)
                   }}
+                  unstyled
                 >
                   ›
-                </button>
+                </Button>
               </span>
             ) : null}
           </div>
 
           <div className="studio-node__actions nodrag nopan">
-            <button
+            <Button
               type="button"
               className="studio-node__btn"
               title="进入剪辑室"
               onClick={open}
+              unstyled
             >
               <Icon name="film" size={12} />
               剪辑室
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="studio-node__btn"
               title="导出字幕轨为 VTT"
               onClick={(event) => void exportSubtitles(event)}
+              unstyled
             >
               VTT
-            </button>
+            </Button>
             <Select
               className="studio-node__codec nodrag nopan"
               title="导出编码"
@@ -401,14 +409,15 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
               ]}
               onChange={(value) => setCodec(value as TimelineVideoCodec)}
             />
-            <button
+            <Button
               type="button"
               className="studio-node__btn is-primary"
               onClick={(event) => void exportFilm(event)}
               disabled={filmStatus === 'empty' || filmStatus === 'missing'}
+              unstyled
             >
               {busy ? '取消' : current ? '重新生成' : '生成成片'}
-            </button>
+            </Button>
           </div>
         </div>
 

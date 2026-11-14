@@ -1,6 +1,7 @@
 import type { PromptTemplate } from '@shared/library-schema'
 import { NODE_META } from '@shared/canvas-schema'
 import { Icon } from '../../components/Icon'
+import { Button } from '../../components/ui'
 
 interface TemplateGridProps {
   templates: PromptTemplate[]
@@ -41,22 +42,35 @@ export function TemplateGrid({
             </span>
           </div>
 
-          <p className="library-template-card__prompt">{template.prompt || '空模板'}</p>
+          <p className="library-template-card__prompt">
+            {template.prompt || '空模板'}
+          </p>
 
           <div className="library-template-card__actions">
-            <button
+            <Button
               type="button"
               className="btn-primary library-template-card__use"
               onClick={() => onUse(template)}
+              unstyled
             >
               使用
-            </button>
-            <button type="button" title="编辑" onClick={() => onEdit(template)}>
+            </Button>
+            <Button
+              type="button"
+              title="编辑"
+              onClick={() => onEdit(template)}
+              unstyled
+            >
               <Icon name="edit" size={13} />
-            </button>
-            <button type="button" title="删除" onClick={() => onDelete(template)}>
+            </Button>
+            <Button
+              type="button"
+              title="删除"
+              onClick={() => onDelete(template)}
+              unstyled
+            >
               <Icon name="trash" size={13} />
-            </button>
+            </Button>
           </div>
         </div>
       ))}
@@ -68,15 +82,22 @@ export function TemplateGrid({
             {keyword ? '没有匹配的模板' : '还没有提示词模板'}
           </div>
           <div className="library-empty__desc">
-            {keyword ? '换个关键词试试' : '把常用提示词存成模板，跨项目直接复用'}
+            {keyword
+              ? '换个关键词试试'
+              : '把常用提示词存成模板，跨项目直接复用'}
           </div>
         </div>
       ) : null}
 
-      <button type="button" className="library-add-btn" onClick={onCreate}>
+      <Button
+        type="button"
+        className="library-add-btn"
+        onClick={onCreate}
+        unstyled
+      >
         <Icon name="plus" size={14} />
         新建模板
-      </button>
+      </Button>
     </div>
   )
 }

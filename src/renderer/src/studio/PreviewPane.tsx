@@ -1,6 +1,7 @@
 import { docDurationMs, formatTimecode } from '@shared/timeline-layout'
 import { useTimelineStore } from '../stores/timeline'
 import { PreviewStage } from './PreviewStage'
+import { Button } from '../components/ui'
 
 export function PreviewPane() {
   const playheadMs = useTimelineStore((state) => state.playheadMs)
@@ -29,7 +30,7 @@ export function PreviewPane() {
       </div>
 
       <div className="studio-transport">
-        <button
+        <Button
           type="button"
           className="studio-icon-btn"
           onClick={() => {
@@ -37,20 +38,24 @@ export function PreviewPane() {
             setPlayhead(0)
           }}
           title="回到开头"
+          unstyled
         >
           ⏮
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className="studio-icon-btn"
           onClick={toggle}
           title={playing ? '暂停' : '播放'}
+          unstyled
         >
           {playing ? '⏸' : '▶'}
-        </button>
+        </Button>
         <span className="studio-transport__time">
           {formatTimecode(playheadMs)}{' '}
-          <span className="studio-transport__dim">/ {formatTimecode(totalMs)}</span>
+          <span className="studio-transport__dim">
+            / {formatTimecode(totalMs)}
+          </span>
         </span>
         <span className="studio-transport__spacer" />
         <span className="studio-transport__dim" title="预览与导出均已混音">

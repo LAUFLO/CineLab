@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode
-} from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type {
   AgentModelInfo,
@@ -32,6 +26,7 @@ import {
 } from './agentStore'
 import agentIcon from '../assets/agent-icon.svg'
 import '../styles/agent.css'
+import { Button, Input, Textarea } from '../components/ui'
 
 const TOOL_LABELS: Record<string, string> = {
   canvas_get: '读取画布',
@@ -134,14 +129,13 @@ function ContextRing({
   onClick: () => void
 }) {
   return (
-    <button
+    <Button
       type="button"
-      className={`agent-context-ring ${
-        percent >= 80 ? 'is-high' : ''
-      }`}
+      className={`agent-context-ring ${percent >= 80 ? 'is-high' : ''}`}
       title={title}
       onClick={onClick}
       disabled={disabled}
+      unstyled
     >
       <svg viewBox="0 0 32 32" aria-hidden="true">
         <circle className="agent-context-ring__track" cx="16" cy="16" r="13" />
@@ -157,20 +151,16 @@ function ContextRing({
         />
       </svg>
       <span>{compacting ? '…' : `${percent}%`}</span>
-    </button>
+    </Button>
   )
 }
 
-function MessageActions({
-  content
-}: {
-  content: string
-}) {
+function MessageActions({ content }: { content: string }) {
   const [copied, setCopied] = useState(false)
 
   return (
     <div className="agent-message__actions">
-      <button
+      <Button
         type="button"
         title="复制"
         onClick={() => {
@@ -182,9 +172,10 @@ function MessageActions({
             })
             .catch(() => undefined)
         }}
+        unstyled
       >
         <Icon name={copied ? 'history' : 'copy'} size={12} />
-      </button>
+      </Button>
     </div>
   )
 }
@@ -336,7 +327,10 @@ function ProposalCard({
       (ref) => ref.path.split('/').pop() ?? ref.path
     ),
     ...(proposal.request.video
-      ? [proposal.request.video.path.split('/').pop() ?? proposal.request.video.path]
+      ? [
+          proposal.request.video.path.split('/').pop() ??
+            proposal.request.video.path
+        ]
       : [])
   ]
 
@@ -355,9 +349,7 @@ function ProposalCard({
       <div className="agent-proposal__row">
         <span>输出</span>
         <strong>
-          {outputTarget === 'new-node'
-            ? '新建节点并连线'
-            : '写回当前节点版本'}
+          {outputTarget === 'new-node' ? '新建节点并连线' : '写回当前节点版本'}
         </strong>
       </div>
       <div className="agent-proposal__row">
@@ -389,22 +381,24 @@ function ProposalCard({
       ) : null}
       {pending ? (
         <div className="agent-proposal__actions">
-          <button
+          <Button
             type="button"
             className="agent-proposal__confirm"
             onClick={onSubmit}
             disabled={busy}
+            unstyled
           >
             {busy ? '提交中…' : '确认生成'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className="agent-proposal__cancel"
             onClick={onCancel}
             disabled={busy}
+            unstyled
           >
             取消
-          </button>
+          </Button>
         </div>
       ) : proposal.status === 'submitted' ? (
         <div className="agent-proposal__hint">
@@ -593,8 +587,7 @@ export function AgentPanel() {
   }
   const renderItems = useMemo(() => buildRenderItems(messages), [messages])
   const visibleSessions = sessions.filter(
-    (session) =>
-      session.messageCount > 0 || session.sessionId === sessionId
+    (session) => session.messageCount > 0 || session.sessionId === sessionId
   )
   const filteredSessions = visibleSessions.filter((session) => {
     const query = sessionSearch.trim().toLowerCase()
@@ -629,7 +622,10 @@ export function AgentPanel() {
     setSkillSearch('')
     setSkillIndex(0)
     setMentionOpen(false)
-    void window.api.skills.list().then(setSkills).catch(() => setSkills([]))
+    void window.api.skills
+      .list()
+      .then(setSkills)
+      .catch(() => setSkills([]))
   }
 
   const loadMentionItems = async (): Promise<void> => {
@@ -658,9 +654,7 @@ export function AgentPanel() {
       }
       push({
         key: `node:${node.id}`,
-        name: String(
-          (node.data as { title?: unknown }).title ?? '未命名素材'
-        ),
+        name: String((node.data as { title?: unknown }).title ?? '未命名素材'),
         kind: output.kind,
         path: output.path,
         scope: output.scope ?? 'project',
@@ -708,7 +702,10 @@ export function AgentPanel() {
       if (!skillPickerOpen) {
         setSkillPickerOpen(true)
         setSkillIndex(0)
-        void window.api.skills.list().then(setSkills).catch(() => setSkills([]))
+        void window.api.skills
+          .list()
+          .then(setSkills)
+          .catch(() => setSkills([]))
       }
       setSkillSearch(slashMatch[2] ?? '')
     }
@@ -733,9 +730,7 @@ export function AgentPanel() {
 
   const insertSkill = (skill: SkillAdminEntry): void => {
     setDraft((current) => {
-      const cleaned = current
-        .replace(/(^|[^\w/])\/[^\s/]*$/, '$1')
-        .trimEnd()
+      const cleaned = current.replace(/(^|[^\w/])\/[^\s/]*$/, '$1').trimEnd()
       return cleaned
         ? `${cleaned} 使用技能：${skill.name}`
         : `使用技能：${skill.name}`
@@ -744,9 +739,7 @@ export function AgentPanel() {
     textareaRef.current?.focus()
   }
 
-  const confirmDeleteSession = (
-    session: (typeof sessions)[number]
-  ): void => {
+  const confirmDeleteSession = (session: (typeof sessions)[number]): void => {
     requestConfirm({
       title: '删除对话',
       message: `确定删除「${session.title}」？该对话的消息和生成提案会被删除，无法恢复。`,
@@ -813,11 +806,12 @@ export function AgentPanel() {
       {visible ? (
         <section className="agent-panel" aria-label="CineBot" ref={panelRef}>
           <header className="agent-panel__head">
-            <button
+            <Button
               type="button"
               className="agent-session-trigger"
               onClick={() => setSessionMenuOpen((open) => !open)}
               title="CineBot 历史对话"
+              unstyled
             >
               <span className="agent-session-brand">CineBot</span>
               <span className="agent-session-divider">·</span>
@@ -825,26 +819,28 @@ export function AgentPanel() {
                 {sessionTitle || '新对话'}
               </span>
               <Icon name="chevron-down" size={12} />
-            </button>
+            </Button>
             <div className="agent-panel__head-actions">
               {running ? <span className="agent-running-dot" /> : null}
-              <button
+              <Button
                 type="button"
                 className="agent-icon-button"
                 title="新对话"
                 onClick={() => void newSession()}
                 disabled={running}
+                unstyled
               >
                 <Icon name="plus" size={15} />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 className="agent-icon-button"
                 title="收起 CineBot"
                 onClick={close}
+                unstyled
               >
                 <Icon name="chevron-down" size={15} />
-              </button>
+              </Button>
             </div>
           </header>
 
@@ -853,14 +849,15 @@ export function AgentPanel() {
               <div className="agent-popover__title">历史对话</div>
               <div className="agent-popover__search">
                 <Icon name="search" size={13} />
-                <input
+                <Input
                   autoFocus
                   value={sessionSearch}
                   onChange={(event) => setSessionSearch(event.target.value)}
                   placeholder="搜索历史对话"
+                  unstyled
                 />
               </div>
-              <button
+              <Button
                 type="button"
                 className="agent-session-new"
                 onClick={() => {
@@ -868,10 +865,11 @@ export function AgentPanel() {
                   void newSession()
                 }}
                 disabled={running}
+                unstyled
               >
                 <Icon name="plus" size={13} />
                 新对话
-              </button>
+              </Button>
               <div className="agent-session-list">
                 {filteredSessions.length === 0 ? (
                   <div className="agent-session-empty">没有匹配的对话</div>
@@ -883,7 +881,7 @@ export function AgentPanel() {
                         session.sessionId === sessionId ? 'is-active' : ''
                       }`}
                     >
-                      <button
+                      <Button
                         type="button"
                         className="agent-session-item__main"
                         onClick={() => {
@@ -891,11 +889,12 @@ export function AgentPanel() {
                           void selectSession(session.sessionId)
                         }}
                         disabled={running}
+                        unstyled
                       >
                         <span>{session.title}</span>
                         <small>{relativeTime(session.updatedAt)}</small>
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         className="agent-session-item__delete"
                         title="删除对话"
@@ -904,9 +903,10 @@ export function AgentPanel() {
                           event.stopPropagation()
                           confirmDeleteSession(session)
                         }}
+                        unstyled
                       >
                         <Icon name="trash" size={12} />
-                      </button>
+                      </Button>
                     </div>
                   ))
                 )}
@@ -924,16 +924,17 @@ export function AgentPanel() {
                     ? '我可以读取时间线、移动片段、自动字幕、删静音、设置转场或导出成片。'
                     : '我可以整理画布、引用画布或资产库素材、登记生成提案，也可以读取你的技能。先点下方「上传」添加本地素材。'}
                 </div>
-                <button
+                <Button
                   type="button"
                   className="agent-suggestion"
                   onClick={() => {
                     setDraft(suggestion)
                     textareaRef.current?.focus()
                   }}
+                  unstyled
                 >
                   {suggestion}
-                </button>
+                </Button>
               </div>
             ) : (
               renderItems.map((item) =>
@@ -958,22 +959,24 @@ export function AgentPanel() {
                 {pendingConfirm.reason}
               </div>
               <div className="agent-confirm__actions">
-                <button
+                <Button
                   type="button"
                   className="agent-confirm__approve"
                   disabled={confirming}
                   onClick={() => void confirmTool(true)}
+                  unstyled
                 >
                   {confirming ? '处理中…' : '允许一次'}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="agent-confirm__reject"
                   disabled={confirming}
                   onClick={() => void confirmTool(false)}
+                  unstyled
                 >
                   取消
-                </button>
+                </Button>
               </div>
             </section>
           ) : null}
@@ -990,18 +993,23 @@ export function AgentPanel() {
           {error ? (
             <div className="agent-error" role="status">
               <span>{error}</span>
-              <button type="button" onClick={clearError}>
+              <Button type="button" onClick={clearError} unstyled>
                 知道了
-              </button>
+              </Button>
             </div>
           ) : null}
 
           {changedCount > 0 ? (
             <div className="agent-change">
               <span>本轮修改了 {changedCount} 处</span>
-              <button type="button" onClick={undoLastTurn} disabled={running}>
+              <Button
+                type="button"
+                onClick={undoLastTurn}
+                disabled={running}
+                unstyled
+              >
                 撤销这一轮
-              </button>
+              </Button>
             </div>
           ) : null}
 
@@ -1021,14 +1029,15 @@ export function AgentPanel() {
                       size={11}
                     />
                     <span className="agent-attachment__name">{item.name}</span>
-                    <button
+                    <Button
                       type="button"
                       title="移除附件"
                       disabled={running}
                       onClick={() => removeAttachment(item.nodeId)}
+                      unstyled
                     >
                       <Icon name="close" size={10} />
-                    </button>
+                    </Button>
                   </span>
                 ))}
                 {references.map((item) => (
@@ -1046,17 +1055,16 @@ export function AgentPanel() {
                       }
                       size={11}
                     />
-                    <span className="agent-attachment__name">
-                      @{item.name}
-                    </span>
-                    <button
+                    <span className="agent-attachment__name">@{item.name}</span>
+                    <Button
                       type="button"
                       title="移除引用"
                       disabled={running}
                       onClick={() => removeReference(item)}
+                      unstyled
                     >
                       <Icon name="close" size={10} />
-                    </button>
+                    </Button>
                   </span>
                 ))}
               </div>
@@ -1066,12 +1074,10 @@ export function AgentPanel() {
                 <div className="agent-popover__title">引用素材</div>
                 <div className="agent-mention-list">
                   {filteredMentionItems.length === 0 ? (
-                    <div className="agent-modal__empty">
-                      没有匹配的素材
-                    </div>
+                    <div className="agent-modal__empty">没有匹配的素材</div>
                   ) : (
                     filteredMentionItems.map((item, index) => (
-                      <button
+                      <Button
                         key={item.key}
                         type="button"
                         className={`agent-mention-item ${
@@ -1079,6 +1085,7 @@ export function AgentPanel() {
                         }`}
                         onMouseEnter={() => setMentionIndex(index)}
                         onClick={() => insertReference(item)}
+                        unstyled
                       >
                         <Icon
                           name={
@@ -1091,16 +1098,14 @@ export function AgentPanel() {
                           size={13}
                         />
                         <span>{item.name}</span>
-                        <small>
-                          {item.nodeId ? '画布' : '资产库'}
-                        </small>
-                      </button>
+                        <small>{item.nodeId ? '画布' : '资产库'}</small>
+                      </Button>
                     ))
                   )}
                 </div>
               </div>
             ) : null}
-            <textarea
+            <Textarea
               ref={textareaRef}
               value={draft}
               onChange={(event) => {
@@ -1155,20 +1160,22 @@ export function AgentPanel() {
                 if (skillPickerOpen) setSkillPickerOpen(false)
                 if (permissionMenuOpen) setPermissionMenuOpen(false)
               }}
+              unstyled
             />
             <div className="agent-composer__bar">
               <div className="agent-composer__chips">
-                <button
+                <Button
                   type="button"
                   className="agent-chip"
                   onClick={() => void attachLocalAssets()}
                   disabled={running}
                   title="上传本地素材到画布"
+                  unstyled
                 >
                   <Icon name="paperclip" size={12} />
                   上传
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="agent-chip"
                   onClick={() => {
@@ -1176,23 +1183,25 @@ export function AgentPanel() {
                     setModelPickerOpen(true)
                   }}
                   title="选择模型"
+                  unstyled
                 >
                   <Icon name="robot" size={12} />
                   {modelNameOf(modelInfo)}
-                </button>
+                </Button>
                 <span className="agent-chip-anchor">
-                  <button
+                  <Button
                     type="button"
                     className="agent-chip"
                     onClick={() => setPermissionMenuOpen((open) => !open)}
                     title="权限范围"
+                    unstyled
                   >
                     <Icon name="target" size={12} />
                     {permissionMode === 'read-only' ? '只读' : '当前空间'}
-                  </button>
+                  </Button>
                   {permissionMenuOpen ? (
                     <div className="agent-permission-menu">
-                      <button
+                      <Button
                         type="button"
                         className={
                           permissionMode === 'read-only' ? 'is-active' : ''
@@ -1201,11 +1210,12 @@ export function AgentPanel() {
                           setPermissionMode('read-only')
                           setPermissionMenuOpen(false)
                         }}
+                        unstyled
                       >
                         <span>只读</span>
                         <small>只读取，不修改画布或时间线</small>
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         className={
                           permissionMode === 'current' ? 'is-active' : ''
@@ -1214,29 +1224,31 @@ export function AgentPanel() {
                           setPermissionMode('current')
                           setPermissionMenuOpen(false)
                         }}
+                        unstyled
                       >
                         <span>当前空间</span>
                         <small>允许修改当前画布或时间线</small>
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
                 </span>
                 <span className="agent-chip-anchor agent-chip-anchor--skill">
-                  <button
+                  <Button
                     type="button"
                     className="agent-chip"
                     onClick={openSkillPicker}
                     title="选择技能"
+                    unstyled
                   >
                     <Icon name="sparkles" size={12} />
                     技能
-                  </button>
+                  </Button>
                   {skillPickerOpen ? (
                     <div className="agent-skill-popover">
                       <div className="agent-popover__title">选择技能</div>
                       <div className="agent-popover__search">
                         <Icon name="search" size={13} />
-                        <input
+                        <Input
                           autoFocus
                           value={skillSearch}
                           onChange={(event) => {
@@ -1256,9 +1268,7 @@ export function AgentPanel() {
                             }
                             if (event.key === 'ArrowUp') {
                               event.preventDefault()
-                              setSkillIndex((index) =>
-                                Math.max(0, index - 1)
-                              )
+                              setSkillIndex((index) => Math.max(0, index - 1))
                               return
                             }
                             if (event.key === 'Enter') {
@@ -1275,16 +1285,15 @@ export function AgentPanel() {
                             }
                           }}
                           placeholder="搜索技能"
+                          unstyled
                         />
                       </div>
                       <div className="agent-skill-list">
                         {filteredSkills.length === 0 ? (
-                          <div className="agent-modal__empty">
-                            没有可用技能
-                          </div>
+                          <div className="agent-modal__empty">没有可用技能</div>
                         ) : (
                           filteredSkills.map((skill, index) => (
-                            <button
+                            <Button
                               key={`${skill.scope}:${skill.name}`}
                               type="button"
                               className={`agent-skill-item ${
@@ -1292,6 +1301,7 @@ export function AgentPanel() {
                               }`}
                               onMouseEnter={() => setSkillIndex(index)}
                               onClick={() => insertSkill(skill)}
+                              unstyled
                             >
                               <div>
                                 <span>{skill.name}</span>
@@ -1300,21 +1310,22 @@ export function AgentPanel() {
                               <span className="agent-skill-scope">
                                 {skill.scope}
                               </span>
-                            </button>
+                            </Button>
                           ))
                         )}
                       </div>
-                      <button
+                      <Button
                         type="button"
                         className="agent-skill-manage"
                         onClick={() => {
                           setSkillPickerOpen(false)
                           openSettings('skills')
                         }}
+                        unstyled
                       >
                         <Icon name="settings" size={12} />
                         管理技能
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
                 </span>
@@ -1327,24 +1338,26 @@ export function AgentPanel() {
                 onClick={requestCompact}
               />
               {running ? (
-                <button
+                <Button
                   type="button"
                   className="agent-send agent-send--stop"
                   onClick={() => void cancel()}
                   title="停止"
+                  unstyled
                 >
                   <Icon name="stop" size={14} />
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
                   className="agent-send agent-send--round"
                   onClick={submit}
                   disabled={!draft.trim()}
                   title="发送"
+                  unstyled
                 >
                   <Icon name="arrow-up" size={14} />
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -1365,17 +1378,18 @@ export function AgentPanel() {
                       文本模型用于对话，图片 / 视频 / 音频模型用于 CineBot 生成
                     </div>
                   </div>
-                  <button
+                  <Button
                     type="button"
                     className="agent-icon-button"
                     onClick={() => setModelPickerOpen(false)}
+                    unstyled
                   >
                     <Icon name="close" size={14} />
-                  </button>
+                  </Button>
                 </header>
                 <div className="agent-model-tabs" role="tablist">
                   {modelGroups.map((group) => (
-                    <button
+                    <Button
                       key={group.key}
                       type="button"
                       role="tab"
@@ -1384,12 +1398,13 @@ export function AgentPanel() {
                         modelTab === group.key ? 'is-active' : ''
                       }`}
                       onClick={() => setModelTab(group.key)}
+                      unstyled
                     >
                       {group.tabLabel}
                       {group.selected ? (
                         <span className="agent-model-tab__dot" />
                       ) : null}
-                    </button>
+                    </Button>
                   ))}
                 </div>
                 <div className="agent-modal__list">
@@ -1398,7 +1413,7 @@ export function AgentPanel() {
                       <span>{activeModelGroup.label}</span>
                       <small>{activeModelGroup.desc}</small>
                     </header>
-                    <button
+                    <Button
                       type="button"
                       className={`agent-model-item ${
                         !activeModelGroup.selected ? 'is-active' : ''
@@ -1406,6 +1421,7 @@ export function AgentPanel() {
                       onClick={() => {
                         void activeModelGroup.setModel(null)
                       }}
+                      unstyled
                     >
                       <div>
                         <span>自动选择</span>
@@ -1414,11 +1430,11 @@ export function AgentPanel() {
                       {!activeModelGroup.selected ? (
                         <Icon name="target" size={14} />
                       ) : null}
-                    </button>
+                    </Button>
                     {activeModelGroup.models.map((model) => {
                       const key = `${model.providerId}/${model.modelId}`
                       return (
-                        <button
+                        <Button
                           key={`${activeModelGroup.key}:${key}`}
                           type="button"
                           className={`agent-model-item ${
@@ -1427,6 +1443,7 @@ export function AgentPanel() {
                           onClick={() => {
                             void activeModelGroup.setModel(key)
                           }}
+                          unstyled
                         >
                           <div>
                             <span>{model.name}</span>
@@ -1437,7 +1454,7 @@ export function AgentPanel() {
                           {activeModelGroup.selected === key ? (
                             <Icon name="target" size={14} />
                           ) : null}
-                        </button>
+                        </Button>
                       )
                     })}
                     {activeModelGroup.models.length === 0 ? (
@@ -1450,18 +1467,18 @@ export function AgentPanel() {
               </div>
             </div>
           ) : null}
-
         </section>
       ) : (
-        <button
+        <Button
           type="button"
           className="agent-fab"
           onClick={toggle}
           aria-label="打开 CineBot"
           title="CineBot（Ctrl+Shift+A）"
+          unstyled
         >
           <img className="agent-fab__icon" src={agentIcon} alt="" />
-        </button>
+        </Button>
       )}
     </>,
     document.body

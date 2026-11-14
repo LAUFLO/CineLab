@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { StageObjectType } from '@shared/stage-schema'
 import { Icon } from '../components/Icon'
-import {
-  isStageNode,
-  nodeSize,
-  useCanvasStore
-} from '../stores/canvas'
+import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 import { StageInspector } from './StageInspector'
 import { StageTimeline } from './StageTimeline'
@@ -14,6 +10,7 @@ import { StageViewport } from './StageViewport'
 import { useStageStore } from './stageStore'
 import { exportStagePreviewToCanvas } from './preview-runner'
 import '../styles/stage.css'
+import { Button } from '../components/ui'
 
 const OBJECT_OPTIONS: Array<{ type: StageObjectType; label: string }> = [
   { type: 'human', label: '人物' },
@@ -155,7 +152,9 @@ export function StageWindow() {
   if (!open) return null
 
   const activeCameraId = selectedCameraId ?? doc?.activeCameraId ?? null
-  const activeCamera = doc?.cameras.find((camera) => camera.id === activeCameraId)
+  const activeCamera = doc?.cameras.find(
+    (camera) => camera.id === activeCameraId
+  )
 
   const handleExportPreview = async (): Promise<void> => {
     if (exporting) return
@@ -236,8 +235,7 @@ export function StageWindow() {
         .showToast(ids.length > 0 ? '截图已添加到画布' : '截图已保存')
     } catch (captureError) {
       useStageStore.setState({
-        error:
-          captureError instanceof Error ? captureError.message : '截图失败'
+        error: captureError instanceof Error ? captureError.message : '截图失败'
       })
     } finally {
       setCapturing(false)
@@ -253,18 +251,24 @@ export function StageWindow() {
         : '已保存'
 
   return createPortal(
-    <div className="stage-overlay" role="dialog" aria-label="导演台" data-scope="stage">
+    <div
+      className="stage-overlay"
+      role="dialog"
+      aria-label="导演台"
+      data-scope="stage"
+    >
       <div className="stage-window">
         <header className="stage-topbar">
           <div className="stage-topbar__left">
-            <button
+            <Button
               type="button"
               className="stage-icon-button"
               onClick={closeStage}
               title="返回画布"
+              unstyled
             >
               <Icon name="chevron-left" size={16} />
-            </button>
+            </Button>
             <div className="stage-topbar__title">
               <span>{doc?.name ?? '导演台'}</span>
               <small>{saveLabel}</small>
@@ -273,21 +277,23 @@ export function StageWindow() {
 
           <div className="stage-topbar__center">
             <div className="stage-view-switch" role="group" aria-label="视角">
-              <button
+              <Button
                 type="button"
                 className={viewMode === 'director' ? 'is-active' : ''}
                 onClick={() => setViewMode('director')}
+                unstyled
               >
                 导演视角
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 className={viewMode === 'camera' ? 'is-active' : ''}
                 onClick={() => setViewMode('camera')}
                 disabled={!doc || doc.cameras.length === 0}
+                unstyled
               >
                 机位视角
-              </button>
+              </Button>
             </div>
             {activeCamera ? (
               <span className="stage-topbar__camera">
@@ -299,34 +305,37 @@ export function StageWindow() {
           </div>
 
           <div className="stage-topbar__right">
-            <button
+            <Button
               type="button"
               className="stage-text-button"
               onClick={() => void handleExportPreview()}
               disabled={!doc || !selectedShotId || exporting}
+              unstyled
             >
               <Icon name="video" size={14} />
               {exporting
                 ? `导出中 ${Math.round(exportProgress * 100)}%`
                 : '导出预演'}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="stage-text-button"
               onClick={() => void handleCapture()}
               disabled={!doc || capturing}
+              unstyled
             >
               <Icon name="image" size={14} />
               {capturing ? '截图中…' : '截图到画布'}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="stage-icon-button"
               onClick={closeStage}
               title="关闭导演台"
+              unstyled
             >
               <Icon name="close" size={16} />
-            </button>
+            </Button>
           </div>
         </header>
 
@@ -336,47 +345,50 @@ export function StageWindow() {
               <span>对象</span>
               <div className="stage-sidebar__title-actions">
                 <small>{doc?.objects.length ?? 0}</small>
-                <button
+                <Button
                   type="button"
                   className="stage-mini-button"
                   title="添加对象"
                   onClick={() => setAddObjectOpen((open) => !open)}
+                  unstyled
                 >
                   +
-                </button>
+                </Button>
               </div>
             </div>
             {addObjectOpen ? (
               <div className="stage-add-menu">
                 {OBJECT_OPTIONS.map((option) => (
-                  <button
+                  <Button
                     key={option.type}
                     type="button"
                     onClick={() => {
                       addObject(option.type)
                       setAddObjectOpen(false)
                     }}
+                    unstyled
                   >
                     {option.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             ) : null}
             <div className="stage-sidebar__list">
               {doc?.objects.length ? (
                 doc.objects.map((object) => (
-                  <button
+                  <Button
                     key={object.id}
                     type="button"
                     className={`stage-list-item ${
                       object.id === selectedObjectId ? 'is-selected' : ''
                     }`}
                     onClick={() => selectObject(object.id)}
+                    unstyled
                   >
                     <Icon name="grid" size={13} />
                     <span>{object.name}</span>
                     <small>{object.type}</small>
-                  </button>
+                  </Button>
                 ))
               ) : (
                 <div className="stage-sidebar__empty">还没有对象</div>
@@ -389,31 +401,33 @@ export function StageWindow() {
               <span>机位</span>
               <div className="stage-sidebar__title-actions">
                 <small>{doc?.cameras.length ?? 0}</small>
-                <button
+                <Button
                   type="button"
                   className="stage-mini-button"
                   title="添加机位"
                   onClick={() => addCamera()}
+                  unstyled
                 >
                   +
-                </button>
+                </Button>
               </div>
             </div>
             <div className="stage-sidebar__list">
               {doc?.cameras.length ? (
                 doc.cameras.map((camera) => (
-                  <button
+                  <Button
                     key={camera.id}
                     type="button"
                     className={`stage-list-item ${
                       camera.id === activeCameraId ? 'is-selected' : ''
                     }`}
                     onClick={() => selectCamera(camera.id)}
+                    unstyled
                   >
                     <Icon name="frame" size={13} />
                     <span>{camera.name}</span>
                     <small>{camera.fov}°</small>
-                  </button>
+                  </Button>
                 ))
               ) : (
                 <div className="stage-sidebar__empty">还没有机位</div>
@@ -429,18 +443,19 @@ export function StageWindow() {
             <div className="stage-sidebar__list">
               {doc?.shots.length ? (
                 doc.shots.map((shot) => (
-                  <button
+                  <Button
                     key={shot.id}
                     type="button"
                     className={`stage-list-item ${
                       shot.id === selectedShotId ? 'is-selected' : ''
                     }`}
                     onClick={() => selectShot(shot.id)}
+                    unstyled
                   >
                     <Icon name="video" size={13} />
                     <span>{shot.name ?? shot.id}</span>
                     <small>{Math.round(shot.durationMs / 1000)}s</small>
-                  </button>
+                  </Button>
                 ))
               ) : (
                 <div className="stage-sidebar__empty">还没有镜头</div>
@@ -452,16 +467,21 @@ export function StageWindow() {
         <main className="stage-viewport-wrap">
           <StageViewport />
           {viewMode === 'director' && selectedObjectId ? (
-            <div className="stage-transform-tools" role="group" aria-label="变换工具">
+            <div
+              className="stage-transform-tools"
+              role="group"
+              aria-label="变换工具"
+            >
               {TRANSFORM_OPTIONS.map((option) => (
-                <button
+                <Button
                   key={option.mode}
                   type="button"
                   className={transformMode === option.mode ? 'is-active' : ''}
                   onClick={() => setTransformMode(option.mode)}
+                  unstyled
                 >
                   {option.label}
-                </button>
+                </Button>
               ))}
             </div>
           ) : null}
@@ -487,9 +507,9 @@ export function StageWindow() {
         {error ? (
           <div className="stage-error" role="status">
             <span>{error}</span>
-            <button type="button" onClick={clearError}>
+            <Button type="button" onClick={clearError} unstyled>
               知道了
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>

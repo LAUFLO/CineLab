@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, Dialog, Field, Input } from '../../components/ui'
+import { Button, Dialog, Input } from '../../components/ui'
 
 interface NameDialogProps {
   title: string
@@ -35,31 +35,35 @@ export function NameDialog({
     <Dialog
       open
       onClose={onCancel}
-      title={title}
-      size="sm"
-      footer={
-        <>
-          <Button variant="secondary" onClick={onCancel}>
-            取消
-          </Button>
-          <Button variant="primary" onClick={submit} disabled={!value.trim()}>
-            {confirmLabel}
-          </Button>
-        </>
-      }
+      bare
+      ariaLabel={title}
+      overlayClassName="library-modal"
+      panelClassName="library-modal__panel"
     >
-      <Field label={label} htmlFor="library-name-dialog">
+      <div className="library-modal__title">{title}</div>
+
+      <label className="field">
+        <span>{label}</span>
         <Input
           ref={inputRef}
-          id="library-name-dialog"
           value={value}
           autoFocus
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') submit()
           }}
+          unstyled
         />
-      </Field>
+      </label>
+
+      <div className="library-modal__actions">
+        <Button variant="secondary" onClick={onCancel}>
+          取消
+        </Button>
+        <Button variant="primary" onClick={submit} disabled={!value.trim()}>
+          {confirmLabel}
+        </Button>
+      </div>
     </Dialog>
   )
 }

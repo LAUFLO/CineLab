@@ -5,6 +5,7 @@ import {
   type MouseEvent,
   type PointerEvent
 } from 'react'
+import { Button } from '../../components/ui'
 
 interface AudioPlayerProps {
   src: string | null
@@ -135,7 +136,8 @@ export function AudioPlayer({
     if (!audio) return
 
     const onTime = (): void => setCurrentTime(audio.currentTime)
-    const onMeta = (): void => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
+    const onMeta = (): void =>
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
     const onEnded = (): void => setPlaying(false)
     const onPlay = (): void => setPlaying(true)
     const onPause = (): void => setPlaying(false)
@@ -164,7 +166,9 @@ export function AudioPlayer({
     else audio.pause()
   }
 
-  const ratioAt = (event: MouseEvent<HTMLDivElement> | PointerEvent<HTMLDivElement>): number => {
+  const ratioAt = (
+    event: MouseEvent<HTMLDivElement> | PointerEvent<HTMLDivElement>
+  ): number => {
     const rect = event.currentTarget.getBoundingClientRect()
     return Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
   }
@@ -277,28 +281,30 @@ export function AudioPlayer({
         <div className="audio-node__busy">
           <div className="audio-node__pill">
             <span>生成中…</span>
-            <button
+            <Button
               type="button"
               className="audio-node__cancel nodrag nopan"
               onClick={(event) => {
                 event.stopPropagation()
                 onCancel?.()
               }}
+              unstyled
             >
               取消
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
 
       <div className="audio-node__controls">
         <span className="audio-node__time">{timeLabel(currentTime)}</span>
-        <button
+        <Button
           type="button"
           className="audio-node__play nodrag nopan"
           onClick={toggle}
           disabled={busy || !src}
           title={playing ? '暂停' : '播放'}
+          unstyled
         >
           {playing ? (
             <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
@@ -310,14 +316,10 @@ export function AudioPlayer({
             </svg>
           ) : (
             <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-              <path
-                d="M8 5v14l11-7z"
-                fill="currentColor"
-                stroke="none"
-              />
+              <path d="M8 5v14l11-7z" fill="currentColor" stroke="none" />
             </svg>
           )}
-        </button>
+        </Button>
         <span className="audio-node__time">
           {timeLabel(Math.round(duration || 0))}
         </span>

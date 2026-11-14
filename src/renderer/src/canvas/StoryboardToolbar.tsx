@@ -13,6 +13,7 @@ import {
 import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
 import { createStudioFromNodes } from '../studio/nodes'
+import { Button } from '../components/ui'
 
 type MenuKind = 'ratio' | 'grid' | null
 
@@ -53,9 +54,10 @@ export function StoryboardToolbar() {
       ? selected[0]
       : undefined
 
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(
-    null
-  )
+  const [position, setPosition] = useState<{
+    left: number
+    top: number
+  } | null>(null)
   const [menu, setMenu] = useState<MenuKind>(null)
   const [stitching, setStitching] = useState(false)
   const groupId = group?.id
@@ -183,19 +185,20 @@ export function StoryboardToolbar() {
       onPointerDown={(event) => event.stopPropagation()}
     >
       <div className="group-toolbar__menu-wrap">
-        <button
+        <Button
           type="button"
           className={`group-toolbar__btn ${menu === 'ratio' ? 'is-open' : ''}`}
           onClick={() => setMenu(menu === 'ratio' ? null : 'ratio')}
+          unstyled
         >
           <Icon name="frame" size={14} />
           <span>{GROUP_RATIO_LABEL[ratio]}</span>
           <Icon name="chevron-down" size={12} />
-        </button>
+        </Button>
         {menu === 'ratio' ? (
           <div className="group-toolbar__pop">
             {GROUP_RATIOS.map((value) => (
-              <button
+              <Button
                 key={value}
                 type="button"
                 className={`group-toolbar__pop-item ${
@@ -205,30 +208,32 @@ export function StoryboardToolbar() {
                   setStoryboardRatio(group.id, value as GroupRatio)
                   setMenu(null)
                 }}
+                unstyled
               >
                 {GROUP_RATIO_LABEL[value]}
-              </button>
+              </Button>
             ))}
           </div>
         ) : null}
       </div>
 
       <div className="group-toolbar__menu-wrap">
-        <button
+        <Button
           type="button"
           className={`group-toolbar__btn ${menu === 'grid' ? 'is-open' : ''}`}
           onClick={() => setMenu(menu === 'grid' ? null : 'grid')}
+          unstyled
         >
           <Icon name="grid" size={14} />
           <span>
             宫格 {cols}×{rows}
           </span>
           <Icon name="chevron-down" size={12} />
-        </button>
+        </Button>
         {menu === 'grid' ? (
           <div className="group-toolbar__pop">
             {GRID_OPTIONS.map(([nextCols, nextRows]) => (
-              <button
+              <Button
                 key={`${nextCols}x${nextRows}`}
                 type="button"
                 className={`group-toolbar__pop-item ${
@@ -238,75 +243,82 @@ export function StoryboardToolbar() {
                   setStoryboardGrid(group.id, nextCols, nextRows)
                   setMenu(null)
                 }}
+                unstyled
               >
                 {nextCols}×{nextRows}
-              </button>
+              </Button>
             ))}
           </div>
         ) : null}
       </div>
 
-      <button
+      <Button
         type="button"
         className="group-toolbar__btn"
         title="按分镜比例与当前宫格（含间距）拼接，默认 2K 分辨率"
         disabled={stitching}
         onClick={() => void stitch()}
+        unstyled
       >
         <Icon name="layers" size={14} />
         <span>{stitching ? '拼接中…' : '拼接(2K)'}</span>
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         className="group-toolbar__btn"
         title="把分镜组内素材送入剪辑室"
         onClick={makeStudio}
+        unstyled
       >
         <Icon name="film" size={14} />
         <span>剪辑室</span>
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         className={`group-toolbar__btn ${
           group.data.showIndex === false ? '' : 'is-open'
         }`}
         title="显示或隐藏序号"
         onClick={() => toggleStoryboardIndex(group.id)}
+        unstyled
       >
         <Icon name="text" size={14} />
         <span>序号</span>
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         className="group-toolbar__btn"
         onClick={clearChildren}
+        unstyled
       >
         <Icon name="trash" size={14} />
         <span>清空</span>
-      </button>
+      </Button>
 
       <div className="group-toolbar__divider" />
 
-      <button
+      <Button
         type="button"
         className="group-toolbar__btn"
         onClick={() => setGroupMode(group.id, 'normal')}
+        unstyled
       >
         <Icon name="grid" size={14} />
         <span>转普通组</span>
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         className="group-toolbar__btn group-toolbar__btn--danger"
         onClick={() => ungroup(group.id)}
+        unstyled
       >
         <Icon name="minimize" size={14} />
         <span>解组</span>
-      </button>
+      </Button>
     </div>
   )
 }

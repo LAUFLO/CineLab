@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { docDurationMs, formatTimecode, rulerSteps } from '@shared/timeline-layout'
+import {
+  docDurationMs,
+  formatTimecode,
+  rulerSteps
+} from '@shared/timeline-layout'
 import {
   MIN_CLIP_MS,
   clipEnd,
@@ -14,7 +18,7 @@ import {
 import type { TimelineCommand } from '@shared/timeline-commands'
 import { snapTargets, snapValue } from '@shared/timeline-snap'
 import { Icon } from '../components/Icon'
-import { IconButton } from '../components/ui'
+import { IconButton, Button } from '../components/ui'
 import { useTimelineStore } from '../stores/timeline'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
@@ -246,10 +250,7 @@ export function TimelinePane() {
         return
       }
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : String(error),
-        'error'
-      )
+      showToast(error instanceof Error ? error.message : String(error), 'error')
       return
     }
 
@@ -354,10 +355,7 @@ export function TimelinePane() {
       latest.select([clips[0].id])
       showToast(`已从 ${result.name} 导入 ${clips.length} 条字幕`)
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : String(error),
-        'error'
-      )
+      showToast(error instanceof Error ? error.message : String(error), 'error')
     }
   }
 
@@ -584,7 +582,8 @@ export function TimelinePane() {
       if (current) {
         if (
           drag.mode === 'move' &&
-          (Math.round(current.startMs) !== drag.startMs || current.trackId !== drag.trackId)
+          (Math.round(current.startMs) !== drag.startMs ||
+            current.trackId !== drag.trackId)
         ) {
           dispatch({
             op: 'moveClips',
@@ -650,7 +649,8 @@ export function TimelinePane() {
         ? doc.clips.filter((clip) => state.selectedIds.includes(clip.id))
         : doc.clips.filter(
             (clip) =>
-              clip.startMs < state.playheadMs && clipEnd(clip) > state.playheadMs
+              clip.startMs < state.playheadMs &&
+              clipEnd(clip) > state.playheadMs
           )
 
       if (event.key === 'Delete' || event.key === 'Backspace') {
@@ -771,39 +771,44 @@ export function TimelinePane() {
 
   const isSelected = (id: string): boolean => selectedIds.includes(id)
   const dragClip =
-    drag && preview ? doc.clips.find((clip) => clip.id === drag.clipId) ?? null : null
+    drag && preview
+      ? (doc.clips.find((clip) => clip.id === drag.clipId) ?? null)
+      : null
 
   return (
     <section className="studio-timeline">
       <div className="studio-timeline__toolbar">
-        <button
+        <Button
           type="button"
           className={`studio-tool-btn ${tool === 'select' ? 'is-active' : ''}`}
           onClick={() => setTool('select')}
           title="选择 (V)"
+          unstyled
         >
           <Icon name="cursor" size={13} />
           选择
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className={`studio-tool-btn ${tool === 'cut' ? 'is-active' : ''}`}
           onClick={() => setTool('cut')}
           title="切割 (C)"
+          unstyled
         >
           <Icon name="scissors" size={13} />
           切割
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className="studio-tool-btn"
           onClick={addSubtitle}
           title="在播放头添加字幕"
+          unstyled
         >
           <Icon name="text" size={13} />
           字幕
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className={`studio-tool-btn ${transcribing ? 'is-active' : ''}`}
           onClick={() => void runAutoSubtitles()}
@@ -812,6 +817,7 @@ export function TimelinePane() {
               ? '点击取消转写'
               : '选中片段时转写该片段；未选中时转写整条时间线'
           }
+          unstyled
         >
           <Icon name="sparkles" size={13} />
           {transcribing
@@ -819,65 +825,72 @@ export function TimelinePane() {
               ? `转写 ${transcribePercent}%`
               : '转写中…'
             : '自动字幕'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className="studio-tool-btn"
           onClick={() => void importSubtitles()}
           title="导入 SRT / VTT 字幕文件"
+          unstyled
         >
           <Icon name="download" size={13} />
           导入字幕
-        </button>
+        </Button>
         <span className="studio-toolbar-divider" />
         <IconButton
           label="撤销 (Ctrl+Z)"
-          size="sm"
+          className="studio-icon-btn"
           onClick={undo}
           disabled={history.past.length === 0}
+          unstyled
         >
           ↶
         </IconButton>
         <IconButton
           label="重做 (Ctrl+Shift+Z)"
-          size="sm"
+          className="studio-icon-btn"
           onClick={redo}
           disabled={history.future.length === 0}
+          unstyled
         >
           ↷
         </IconButton>
         <span className="studio-toolbar-divider" />
-        <button
+        <Button
           type="button"
           className={`studio-tool-btn ${snap ? 'is-active' : ''}`}
           onClick={toggleSnap}
+          unstyled
         >
           <Icon name="target" size={13} />
           吸附
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className={`studio-tool-btn ${magnet ? 'is-active' : ''}`}
           onClick={toggleMagnet}
+          unstyled
         >
           <Icon name="magnet" size={13} />
           磁性
-        </button>
+        </Button>
         <span className="studio-toolbar-spacer" />
         <IconButton
           label="缩小"
-          size="sm"
+          className="studio-icon-btn"
           onClick={() => zoomAt(zoom / 1.6, width / 2)}
           disabled={zoom <= 0.5}
+          unstyled
         >
           −
         </IconButton>
         <span className="studio-zoom">{Math.round(zoom * 100)}%</span>
         <IconButton
           label="放大"
-          size="sm"
+          className="studio-icon-btn"
           onClick={() => zoomAt(zoom * 1.6, width / 2)}
           disabled={zoom >= 4}
+          unstyled
         >
           ＋
         </IconButton>
@@ -893,7 +906,9 @@ export function TimelinePane() {
               style={{ height: trackHeight(track) }}
             >
               <div className="studio-track-head__main">
-                <span className={`studio-track-kind studio-track-kind--${track.kind}`}>
+                <span
+                  className={`studio-track-kind studio-track-kind--${track.kind}`}
+                >
                   {KIND_LETTER[track.kind]}
                 </span>
                 <span className="studio-track-head__name">{track.name}</span>
@@ -902,12 +917,22 @@ export function TimelinePane() {
                 ) : null}
               </div>
               <div className="studio-track-head__tools">
-                <button type="button" className="studio-track-tool" title="可见">
+                <Button
+                  type="button"
+                  className="studio-track-tool"
+                  title="可见"
+                  unstyled
+                >
                   ◉
-                </button>
-                <button type="button" className="studio-track-tool" title="锁定">
+                </Button>
+                <Button
+                  type="button"
+                  className="studio-track-tool"
+                  title="锁定"
+                  unstyled
+                >
                   ▣
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -938,7 +963,7 @@ export function TimelinePane() {
                 </span>
               ))}
               {doc.markers.map((marker) => (
-                <button
+                <Button
                   key={marker.id}
                   type="button"
                   className={`studio-ruler__marker ${
@@ -960,17 +985,26 @@ export function TimelinePane() {
                     event.stopPropagation()
                     setPlayhead(marker.atMs)
                   }}
+                  unstyled
                 >
                   <span
                     className="studio-ruler__marker-dot"
-                    style={marker.color ? { background: marker.color } : undefined}
+                    style={
+                      marker.color ? { background: marker.color } : undefined
+                    }
                   />
-                  <span className="studio-ruler__marker-label">{marker.label}</span>
-                </button>
+                  <span className="studio-ruler__marker-label">
+                    {marker.label}
+                  </span>
+                </Button>
               ))}
             </div>
 
-            <div className="studio-lanes" ref={lanesRef} onPointerDown={seekLanes}>
+            <div
+              className="studio-lanes"
+              ref={lanesRef}
+              onPointerDown={seekLanes}
+            >
               {doc.tracks.map((track) => {
                 const ghost =
                   dragClip &&
@@ -1001,7 +1035,10 @@ export function TimelinePane() {
                       }
                       if (!asset?.path) return
                       const rect = event.currentTarget.getBoundingClientRect()
-                      const atMs = Math.max(0, (event.clientX - rect.left) / pxPerMs)
+                      const atMs = Math.max(
+                        0,
+                        (event.clientX - rect.left) / pxPerMs
+                      )
                       dispatch({
                         op: 'addClipsInSequence',
                         clips: [assetToClip(asset, track.id, 0)],
@@ -1013,57 +1050,76 @@ export function TimelinePane() {
                   >
                     {clipsOfTrack(doc, track.id).map((clip) => {
                       const active = drag?.clipId === clip.id
-                      if (active && preview && preview.trackId !== track.id) return null
-                      const startMs = active && preview ? preview.startMs : clip.startMs
-                      const durationMs = active && preview ? preview.durationMs : clip.durationMs
+                      if (active && preview && preview.trackId !== track.id)
+                        return null
+                      const startMs =
+                        active && preview ? preview.startMs : clip.startMs
+                      const durationMs =
+                        active && preview ? preview.durationMs : clip.durationMs
                       const issue = referenceIssues[clip.id]
                       return (
                         <div
                           key={clip.id}
-                          className={clipClass(clip, isSelected(clip.id), issue)}
+                          className={clipClass(
+                            clip,
+                            isSelected(clip.id),
+                            issue
+                          )}
                           style={{
                             left: startMs * pxPerMs,
                             width: Math.max(2, durationMs * pxPerMs)
                           }}
-                          onPointerDown={(event) => handleClipPointerDown(event, clip)}
+                          onPointerDown={(event) =>
+                            handleClipPointerDown(event, clip)
+                          }
                         >
-                        <span className="studio-clip__label">
-                          {clip.kind === 'text'
-                            ? clip.text?.content || clip.name
-                            : clip.name}
-                        </span>
-                        {issue?.missing ? (
-                          <span className="studio-clip__issue is-missing">素材缺失</span>
-                        ) : issue?.updateAvailable ? (
-                          <span className="studio-clip__issue is-update">有新版本</span>
-                        ) : null}
-                        {clip.speed !== 1 ? (
-                          <span className="studio-clip__speed">{clip.speed}×</span>
-                        ) : null}
-                        {clip.transitionIn ? (
-                          <span className="studio-clip__transition">
-                            {{
-                              fade: '淡',
-                              'dip-black': '黑',
-                              'wipe-left': '擦',
-                              'wipe-right': '擦',
-                              'slide-left': '滑',
-                              'slide-right': '滑',
-                              'zoom-in': '缩'
-                            }[clip.transitionIn.type] ?? '转'}
+                          <span className="studio-clip__label">
+                            {clip.kind === 'text'
+                              ? clip.text?.content || clip.name
+                              : clip.name}
                           </span>
-                        ) : null}
-                        <ClipMedia
-                          clip={clip}
-                          widthPx={Math.max(2, durationMs * pxPerMs)}
-                        />
+                          {issue?.missing ? (
+                            <span className="studio-clip__issue is-missing">
+                              素材缺失
+                            </span>
+                          ) : issue?.updateAvailable ? (
+                            <span className="studio-clip__issue is-update">
+                              有新版本
+                            </span>
+                          ) : null}
+                          {clip.speed !== 1 ? (
+                            <span className="studio-clip__speed">
+                              {clip.speed}×
+                            </span>
+                          ) : null}
+                          {clip.transitionIn ? (
+                            <span className="studio-clip__transition">
+                              {{
+                                fade: '淡',
+                                'dip-black': '黑',
+                                'wipe-left': '擦',
+                                'wipe-right': '擦',
+                                'slide-left': '滑',
+                                'slide-right': '滑',
+                                'zoom-in': '缩'
+                              }[clip.transitionIn.type] ?? '转'}
+                            </span>
+                          ) : null}
+                          <ClipMedia
+                            clip={clip}
+                            widthPx={Math.max(2, durationMs * pxPerMs)}
+                          />
                           <div
                             className="studio-clip__handle studio-clip__handle--left"
-                            onPointerDown={(event) => beginDrag(event, clip, 'trim-start')}
+                            onPointerDown={(event) =>
+                              beginDrag(event, clip, 'trim-start')
+                            }
                           />
                           <div
                             className="studio-clip__handle studio-clip__handle--right"
-                            onPointerDown={(event) => beginDrag(event, clip, 'trim-end')}
+                            onPointerDown={(event) =>
+                              beginDrag(event, clip, 'trim-end')
+                            }
                           />
                         </div>
                       )

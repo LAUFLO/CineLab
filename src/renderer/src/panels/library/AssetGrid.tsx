@@ -1,6 +1,6 @@
 import type { LibraryAsset } from '@shared/library-schema'
 import { Icon } from '../../components/Icon'
-import { IconButton } from '../../components/ui'
+import { IconButton, Button } from '../../components/ui'
 import { assetUrl } from '../../lib/asset-url'
 
 interface AssetGridProps {
@@ -43,9 +43,7 @@ export function AssetGrid({
     ? assets.filter(
         (asset) =>
           asset.name.toLowerCase().includes(keyword) ||
-          (asset.tags ?? []).some((tag) =>
-            tag.toLowerCase().includes(keyword)
-          )
+          (asset.tags ?? []).some((tag) => tag.toLowerCase().includes(keyword))
       )
     : assets
 
@@ -57,7 +55,9 @@ export function AssetGrid({
           {keyword ? '没有匹配的素材' : '这个文件夹还是空的'}
         </div>
         <div className="library-empty__desc">
-          {keyword ? '换个关键词试试' : '从画布节点入库，或点击下方「上传」导入本地文件'}
+          {keyword
+            ? '换个关键词试试'
+            : '从画布节点入库，或点击下方「上传」导入本地文件'}
         </div>
       </div>
     )
@@ -77,13 +77,14 @@ export function AssetGrid({
               {selectedPaths.has(asset.path) ? '✓' : ''}
             </span>
           ) : null}
-          <button
+          <Button
             type="button"
             className="library-asset-card__preview"
             onClick={() =>
               selectionMode ? onToggleSelect(asset) : onAddToCanvas(asset)
             }
             title={selectionMode ? '选择素材' : '添加到画布'}
+            unstyled
           >
             {asset.thumbnail ? (
               <img
@@ -114,7 +115,7 @@ export function AssetGrid({
                 <span>{asset.kind === 'video' ? '视频' : '音频'}</span>
               </span>
             )}
-          </button>
+          </Button>
 
           <div className="library-asset-card__body">
             <div className="library-asset-card__name" title={asset.fileName}>

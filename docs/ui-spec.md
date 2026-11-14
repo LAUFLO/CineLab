@@ -794,6 +794,7 @@ CineBot 是全局浮层，不占用画布布局。
 | `Button` / `IconButton` | 主按钮、次按钮、图标按钮 |
 | `Input` / `Textarea` | 表单输入 |
 | `Select` | 自定义下拉选择 |
+| `NativeSelect` | 原生 `select` 的统一包装 |
 | `Switch` | 开关 |
 | `Field` / `SettingRow` | 表单字段与设置行布局 |
 | `Dialog` | 模态对话框、焦点圈定与 Escape 关闭 |
@@ -802,12 +803,10 @@ CineBot 是全局浮层，不占用画布布局。
 
 规则：
 
-- 新代码只能从 `components/ui` 导入这些组件，不再手写同类按钮、开关或设置行。
+- 新代码只能从 `components/ui` 导入这些组件，不再手写同类按钮、开关、输入框、下拉或设置行。
 - 组件使用 Tailwind 语义类（`bg-surface`、`text-fg`、`border-border`、`bg-accent` 等），不硬编码色值。
-- 旧页面按「设置页 → 资产库 → 剪辑室 → 画布」逐步迁移。
-- 当前设置页已迁移 `Switch`、`SettingRow`、`Input`、`Select`；确认弹窗已迁移 `Dialog` 和 `Button`；全局提示已迁移 `Toast`。
-- 资产库的命名/模板、移动/合成/标签弹窗已迁移 `Dialog`、`Field`、`Input`、`Textarea`、`Select`；工具栏、底部操作、`AssetGrid` 和 `FolderTree` 图标按钮已迁移 `Button`、`IconButton`。
-- 剪辑室顶部栏/时间线工具栏、检查器字幕与操作按钮已迁移 `Button` / `IconButton` / `Input` / `Textarea` / `Select`；关键帧的紧凑数字输入和两个紧凑 select 留待后续。
-- 画布节点工具栏的编辑、音频、剪辑室、下载、展开、入库操作已迁移 `Button` / `IconButton`；主操作菜单、更多分组和二级浮层的菜单项已迁移 `MenuItem`，浮层容器仍由工具栏自己的定位逻辑控制。
-- Prompt Bar 的上传菜单项、模型菜单项、@ 提及菜单项、发送/停止按钮、展开按钮、高级设置入口、水印与 AutoLink 开关已迁移 `MenuItem` / `IconButton` / `Switch`；参数面板的自定义/数字输入已迁移 `Input`，比例宫格、滑块、布尔二选一和引用 chip 保留自定义布局。
-- `Menu` 已提供，但节点/工具栏菜单会在后续批次逐步迁移。
+- `Button`、`Input`、`Textarea`、`NativeSelect` 提供 `unstyled` 变体：只保留原生元素语义与事件，className 完全由调用方控制，用于迁移期保持既有视觉。
+- `Dialog` 提供 `bare` 模式：调用方保留自己的 overlay/panel 类和内部结构，`Dialog` 只负责 portal、焦点圈定、Escape 与遮罩点击。
+- P2 已完成全量迁移：`src/renderer/src` 下除 `components/ui` 外，不再有原生 `<button>`、`<input>`、`<textarea>`、`<select>` 标签。
+- 节点类弹窗（裁剪、截取、字幕框选、遮罩、深度捕捉、模型参数/能力、AI 操作、光位/机位、文本编辑）统一由 `Dialog` 的 `bare` 模式承载。
+- 浮层菜单、节点工具栏、参数面板、时间线等仍保留各自的定位逻辑，但内部交互元素已切换到公共组件。

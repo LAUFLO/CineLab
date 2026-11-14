@@ -3,10 +3,11 @@ import type { CineNodeData } from '@shared/canvas-schema'
 import type { FilmStudyOutputOptions } from '@shared/film-study'
 import { modelInputs, type ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
-import { Select } from '../../components/Select'
+
 import { useCanvasStore } from '../../stores/canvas'
 import { useFilmStudyStore } from '../../stores/film-study'
 import { useSettingsStore } from '../../stores/settings'
+import { Button, Select } from '../../components/ui'
 
 interface StudyNodeCardProps {
   nodeId: string
@@ -100,9 +101,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
           {Math.round(summary.duration)}s
         </div>
       ) : (
-        <div className="study-node-card__meta">
-          连到视频节点后开始拆解分镜
-        </div>
+        <div className="study-node-card__meta">连到视频节点后开始拆解分镜</div>
       )}
 
       {busy ? (
@@ -113,16 +112,17 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
               style={{ width: `${Math.max(2, data.progress ?? 0)}%` }}
             />
           </div>
-          <button
+          <Button
             type="button"
             className="btn-secondary btn-sm nodrag nopan"
             onClick={(event) => {
               event.stopPropagation()
               void cancel(nodeId)
             }}
+            unstyled
           >
             取消拉片
-          </button>
+          </Button>
         </>
       ) : (
         <>
@@ -136,7 +136,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
           </label>
 
           <div className="study-node-card__chips nodrag nopan">
-            <button
+            <Button
               type="button"
               className={`study-node-card__chip${
                 storyboard ? ' is-active' : ''
@@ -145,39 +145,43 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
                 event.stopPropagation()
                 setStoryboard((value) => !value)
               }}
+              unstyled
             >
               分镜组
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className={`study-node-card__chip${sheet ? ' is-active' : ''}`}
               onClick={(event) => {
                 event.stopPropagation()
                 setSheet((value) => !value)
               }}
+              unstyled
             >
               分镜表
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className={`study-node-card__chip${motion ? ' is-active' : ''}`}
               onClick={(event) => {
                 event.stopPropagation()
                 setMotion((value) => !value)
               }}
+              unstyled
             >
               动态切片
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className={`study-node-card__chip${music ? ' is-active' : ''}`}
               onClick={(event) => {
                 event.stopPropagation()
                 setMusic((value) => !value)
               }}
+              unstyled
             >
               BGM
-            </button>
+            </Button>
           </div>
         </>
       )}
@@ -197,7 +201,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
       <div className="study-node-card__actions">
         {busy ? null : ready ? (
           <>
-            <button
+            <Button
               type="button"
               className="study-node-card__enter nodrag nopan"
               disabled={opening}
@@ -205,39 +209,42 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
                 event.stopPropagation()
                 void openSheet(nodeId)
               }}
+              unstyled
             >
               <Icon name="film" size={12} />
               {opening ? '正在打开…' : '查看分镜表'}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="btn-secondary btn-sm nodrag nopan"
               onClick={(event) => {
                 event.stopPropagation()
                 start()
               }}
+              unstyled
             >
               重新拉片
-            </button>
+            </Button>
           </>
         ) : (
-          <button
+          <Button
             type="button"
             className="btn-primary btn-sm nodrag nopan"
             onClick={(event) => {
               event.stopPropagation()
               start()
             }}
+            unstyled
           >
             <Icon name="play" size={12} />
             开始拉片
-          </button>
+          </Button>
         )}
       </div>
 
       {data.status === 'error' ? (
         <div className="study-node-card__actions">
-          <button
+          <Button
             type="button"
             className="btn-secondary btn-sm nodrag nopan"
             onClick={(event) => {
@@ -247,9 +254,10 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
               })
               start()
             }}
+            unstyled
           >
             重试拉片
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

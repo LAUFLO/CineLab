@@ -7,13 +7,18 @@ import { cn } from './cn'
 export interface DialogProps {
   open: boolean
   onClose: () => void
-  title: ReactNode
+  title?: ReactNode
   description?: ReactNode
   children?: ReactNode
   footer?: ReactNode
   size?: 'sm' | 'md' | 'lg'
   className?: string
   closeLabel?: string
+  /** Render children inside a caller-styled panel without the default header. */
+  bare?: boolean
+  overlayClassName?: string
+  panelClassName?: string
+  ariaLabel?: string
 }
 
 const SIZES = {
@@ -34,12 +39,18 @@ export function Dialog({
   footer,
   size = 'md',
   className,
-  closeLabel = '关闭'
+  closeLabel = '关闭',
+  bare = false,
+  overlayClassName,
+  panelClassName,
+  ariaLabel
 }: DialogProps) {
   const titleId = useId()
   const descriptionId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
   const previousFocus = useRef<HTMLElement | null>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
   useEffect(() => {
     if (!open) return
@@ -61,7 +72,7 @@ export function Dialog({
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         event.stopPropagation()
-        onClose()
+        onCloseRef.current()
         return
       }
       if (event.key !== 'Tab' || !panel) return
@@ -87,9 +98,27 @@ export function Dialog({
       document.removeEventListener('keydown', onKeyDown, true)
       previousFocus.current?.focus?.()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
+
+  if (bare) {
+    return createPortal(
+      <div className={overlayClassName} onPointerDown={onClose}>
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={ariaLabel}
+          className={panelClassName}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          {children}
+        </div>
+      </div>,
+      document.body
+    )
+  }
 
   return createPortal(
     <div

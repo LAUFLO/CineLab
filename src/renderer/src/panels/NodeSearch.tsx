@@ -4,6 +4,7 @@ import { NODE_META, type CanvasNodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../components/Icon'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
+import { Input, Button } from '../components/ui'
 
 const ICONS: Record<CanvasNodeKind, IconName> = {
   text: 'text',
@@ -70,7 +71,7 @@ export function NodeSearch() {
       >
         <div className="search-input-wrap">
           <Icon name="search" size={15} />
-          <input
+          <Input
             autoFocus
             className="search-input"
             value={query}
@@ -99,6 +100,7 @@ export function NodeSearch() {
                 pick(active)
               }
             }}
+            unstyled
           />
           <kbd className="search-kbd">Esc</kbd>
         </div>
@@ -108,19 +110,20 @@ export function NodeSearch() {
             <div className="search-empty">没有匹配的节点</div>
           ) : (
             results.map((node, index) => (
-              <button
+              <Button
                 key={node.id}
                 type="button"
                 className={`search-item ${index === active ? 'is-active' : ''}`}
                 onPointerEnter={() => setActive(index)}
                 onClick={() => pick(index)}
+                unstyled
               >
                 <Icon name={ICONS[node.data.kind]} size={14} />
                 <span className="search-item__title">{node.data.title}</span>
                 <span className="search-item__kind">
                   {NODE_META[node.data.kind].label}
                 </span>
-              </button>
+              </Button>
             ))
           )}
         </div>

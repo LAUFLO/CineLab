@@ -1,5 +1,6 @@
 import { Icon } from './Icon'
 import { useSettingsStore } from '../stores/settings'
+import { Button } from './ui'
 
 interface WindowControlsProps {
   theme: 'light' | 'dark'
@@ -11,42 +12,52 @@ export function WindowControls({ theme, onToggleTheme }: WindowControlsProps) {
 
   return (
     <div className="window-controls">
-      <button
+      <Button
         type="button"
         className="icon-btn"
         title="切换主题"
         onClick={onToggleTheme}
+        unstyled
       >
         <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
-      </button>
-      <button type="button" className="icon-btn" title="设置" onClick={() => openSettings()}>
+      </Button>
+      <Button
+        type="button"
+        className="icon-btn"
+        title="设置"
+        onClick={() => openSettings()}
+        unstyled
+      >
         <Icon name="settings" />
-      </button>
+      </Button>
       <span className="window-controls__divider" />
-      <button
+      <Button
         type="button"
         className="icon-btn icon-btn--window"
         title="最小化"
         onClick={() => window.api.app.minimize()}
+        unstyled
       >
         <Icon name="minimize" size={14} />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         className="icon-btn icon-btn--window"
         title="最大化"
         onClick={() => window.api.app.maximize()}
+        unstyled
       >
         <Icon name="maximize" size={12} />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         className="icon-btn icon-btn--window icon-btn--close"
         title="关闭"
         onClick={() => window.api.app.close()}
+        unstyled
       >
         <Icon name="close" size={14} />
-      </button>
+      </Button>
     </div>
   )
 }

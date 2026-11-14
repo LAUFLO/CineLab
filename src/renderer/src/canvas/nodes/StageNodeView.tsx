@@ -3,6 +3,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { Icon } from '../../components/Icon'
 import { useCanvasStore, type StageNode } from '../../stores/canvas'
 import { useStageStore } from '../../stage/stageStore'
+import { Input, Button } from '../../components/ui'
 
 export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
   const patchStageNode = useCanvasStore((state) => state.patchStageNode)
@@ -28,7 +29,7 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
       >
         <Icon name="frame" size={12} />
         {editingTitle ? (
-          <input
+          <Input
             className="cnode__title-input nodrag nopan"
             value={titleDraft}
             autoFocus
@@ -39,6 +40,7 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
               if (event.key === 'Escape') setEditingTitle(false)
             }}
             onClick={(event) => event.stopPropagation()}
+            unstyled
           />
         ) : (
           <span>{data.title}</span>
@@ -66,17 +68,18 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
           <span>{data.shotCount ?? 0} 镜头</span>
         </div>
 
-        <button
+        <Button
           type="button"
           className="stage-node__open nodrag nopan"
           onClick={(event) => {
             event.stopPropagation()
             void openStage(id)
           }}
+          unstyled
         >
           <Icon name="frame" size={13} />
           打开导演台
-        </button>
+        </Button>
       </div>
 
       <Handle

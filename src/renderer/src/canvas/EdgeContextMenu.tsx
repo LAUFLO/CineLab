@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
+import { Button } from '../components/ui'
 
 const MENU_WIDTH = 168
 
@@ -50,17 +51,18 @@ export function EdgeContextMenu() {
       onPointerDown={(event) => event.stopPropagation()}
       onContextMenu={(event) => event.preventDefault()}
     >
-      <button
+      <Button
         type="button"
         className="ctx-menu__item is-danger"
         onClick={() => {
           removeEdges([menu.edgeId])
           close()
         }}
+        unstyled
       >
         <span>删除连线</span>
         <span className="ctx-menu__shortcut">Delete</span>
-      </button>
+      </Button>
     </div>
   )
 }

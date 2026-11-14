@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { useStageStore } from './stageStore'
+import { NativeSelect, Button, Input } from '../components/ui'
 
 function formatTime(ms: number): string {
   const seconds = Math.max(0, ms) / 1000
@@ -73,12 +74,11 @@ export function StageTimeline() {
       <header className="stage-timeline__head">
         <div className="stage-timeline__group">
           <span className="stage-timeline__label">镜头</span>
-          <select
+          <NativeSelect
             className="stage-timeline__select"
             value={selectedShotId ?? ''}
-            onChange={(event) =>
-              selectShot(event.target.value || null)
-            }
+            onChange={(event) => selectShot(event.target.value || null)}
+            unstyled
           >
             <option value="">未选择</option>
             {doc?.shots.map((item) => (
@@ -86,36 +86,39 @@ export function StageTimeline() {
                 {item.name ?? item.id}
               </option>
             ))}
-          </select>
-          <button
+          </NativeSelect>
+          <Button
             type="button"
             className="stage-mini-button"
             title="添加镜头"
             onClick={() => addShot()}
+            unstyled
           >
             +
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className="stage-mini-button"
             title="删除镜头"
             disabled={!shot}
             onClick={() => removeSelectedShot()}
+            unstyled
           >
             <Icon name="trash" size={11} />
-          </button>
+          </Button>
         </div>
 
         <div className="stage-timeline__group">
-          <button
+          <Button
             type="button"
             className="stage-text-button"
             onClick={() => (playing ? pause() : play())}
             disabled={!shot}
+            unstyled
           >
             <Icon name={playing ? 'pause' : 'play'} size={12} />
             {playing ? '暂停' : '播放'}
-          </button>
+          </Button>
           <span className="stage-timeline__time">
             {formatTime(playbackMs)} / {formatTime(duration)}
           </span>
@@ -124,7 +127,7 @@ export function StageTimeline() {
         <div className="stage-timeline__group">
           <label className="stage-timeline__duration">
             时长
-            <input
+            <Input
               value={durationDraft}
               inputMode="decimal"
               onChange={(event) => setDurationDraft(event.target.value)}
@@ -132,6 +135,7 @@ export function StageTimeline() {
               onKeyDown={(event) => {
                 if (event.key === 'Enter') event.currentTarget.blur()
               }}
+              unstyled
             />
             秒
           </label>
@@ -140,26 +144,26 @@ export function StageTimeline() {
         <div className="stage-timeline__spacer" />
 
         <div className="stage-timeline__group">
-          <button
+          <Button
             type="button"
             className="stage-text-button"
             onClick={handleCapture}
             disabled={!shot}
+            unstyled
           >
             <Icon name="pin" size={12} />
             捕获关键帧
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className="stage-text-button"
-            onClick={() =>
-              removeKeyframe(selectedKeyframeIndex ?? -1)
-            }
+            onClick={() => removeKeyframe(selectedKeyframeIndex ?? -1)}
             disabled={selectedKeyframeIndex === null}
+            unstyled
           >
             <Icon name="trash" size={12} />
             删除关键帧
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -167,18 +171,19 @@ export function StageTimeline() {
         <div className="stage-timeline__shots">
           {doc?.shots.length ? (
             doc.shots.map((item) => (
-              <button
+              <Button
                 key={item.id}
                 type="button"
                 className={`stage-timeline__shot ${
                   item.id === selectedShotId ? 'is-selected' : ''
                 }`}
                 onClick={() => selectShot(item.id)}
+                unstyled
               >
                 <Icon name="video" size={12} />
                 <span>{item.name ?? item.id}</span>
                 <small>{formatTime(item.durationMs)}</small>
-              </button>
+              </Button>
             ))
           ) : (
             <div className="stage-timeline__empty">
@@ -187,10 +192,7 @@ export function StageTimeline() {
           )}
         </div>
 
-        <div
-          className="stage-timeline__track"
-          onPointerDown={handleTrackClick}
-        >
+        <div className="stage-timeline__track" onPointerDown={handleTrackClick}>
           <div className="stage-timeline__ruler">
             {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
               <span key={ratio} style={{ left: `${ratio * 100}%` }}>
@@ -201,7 +203,7 @@ export function StageTimeline() {
 
           <div className="stage-timeline__lane">
             {track.map((key, index) => (
-              <button
+              <Button
                 key={`${key.timeMs}-${index}`}
                 type="button"
                 className={`stage-keyframe ${
@@ -219,6 +221,7 @@ export function StageTimeline() {
                   })
                   seek(key.timeMs)
                 }}
+                unstyled
               />
             ))}
             <div

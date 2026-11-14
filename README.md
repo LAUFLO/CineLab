@@ -123,6 +123,7 @@ CineLab 是一个面向 AIGC 创作者的本地创作工作台。图片、视频
 
 - 系统要求：macOS 12+，Apple Silicon
 - 安装包未签名、未公证，首次打开需右键 → 打开，或在「系统设置 → 隐私与安全性」放行
+- 深度捕捉、视觉增强和本地字幕组件会按平台自动下载
 - macOS 首版暂不支持自动更新，需要手动下载新版本
 - 配置保存在 `~/Library/Application Support/CineLab`
 

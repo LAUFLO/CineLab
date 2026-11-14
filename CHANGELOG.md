@@ -22,6 +22,7 @@
 ### 已知限制
 
 - 提供 Windows x64 和 macOS Apple Silicon 安装包
+- macOS 的深度捕捉、视觉增强和本地字幕组件与 Windows 一致，首次使用时按平台下载
 - 安装包未做代码签名：Windows 会出现 SmartScreen 提示，macOS 需要手动放行 Gatekeeper
 - macOS 首版暂不支持自动更新，需要手动下载新版本
 - 自动更新依赖 GitHub Releases，国内网络可能较慢

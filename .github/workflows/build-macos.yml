@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - feat/macos-b1
+      - main
 
 jobs:
   build:
@@ -49,7 +49,11 @@ jobs:
             echo "CineLab.app not found"
             exit 1
           fi
-          node scripts/macos-smoke.mjs "$APP" --install-depth --install-vision --install-whisper
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            node scripts/macos-smoke.mjs "$APP" --install-depth --install-vision --install-whisper
+          else
+            node scripts/macos-smoke.mjs "$APP"
+          fi
 
       - uses: actions/upload-artifact@v7
         with:

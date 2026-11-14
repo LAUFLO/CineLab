@@ -13,7 +13,7 @@
 - 当前注册 56 个 Agent 工具；单元测试 55 个文件、365 个用例。
 - GitHub Actions `Build Windows` 已跑通：typecheck、test、check:encryption、build、electron-builder、artifact 上传。
 - 版本为 `0.1.0`，准备首次公开发布；暂未做代码签名。
-- macOS arm64 安装包随首版提供，未签名；Intel 包、签名、公证和自动更新后续补齐。
+- macOS arm64 安装包随首版提供，未签名；depth / vision / whisper 组件已移植并通过 CI smoke；Intel 包、签名、公证和自动更新后续补齐。
 
 ## 2. 已完成（2026-11-11 基线）
 

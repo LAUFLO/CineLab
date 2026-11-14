@@ -2,9 +2,6 @@ name: Build depth runtime macOS
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feat/macos-depth
 
 jobs:
   depth:

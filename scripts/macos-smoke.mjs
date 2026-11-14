@@ -163,10 +163,13 @@ async function main() {
       return 'started'
     })()`)
 
-    for (let attempt = 0; attempt < 450; attempt += 1) {
+    for (let attempt = 0; attempt < 150; attempt += 1) {
       const raw = await evaluate(
         `(async () => JSON.stringify(await window.api.components.status()))()`
       )
+      if (attempt === 0) {
+        console.log('components status raw:', raw)
+      }
       const list = JSON.parse(raw)
       const status = list.find((item) => item.kind === '${kind}')
       if (status?.state === 'installed') return status

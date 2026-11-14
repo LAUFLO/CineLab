@@ -523,6 +523,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
       <ReactFlow
         nodes={nodes}
         edges={edgesVisible ? edges : []}
+        onlyRenderVisibleElements
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}

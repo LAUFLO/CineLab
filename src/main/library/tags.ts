@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import { getLibraryRoot } from './config'
+import { normalizeTags } from './tag-utils'
 
 const TAGS_FILE = '.tags.json'
 
@@ -50,10 +51,7 @@ export async function setAssetTags(
   tags: string[]
 ): Promise<string[]> {
   const map = await readAssetTags()
-  const cleaned = [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))].slice(
-    0,
-    20
-  )
+  const cleaned = normalizeTags(tags)
 
   if (cleaned.length > 0) map[path] = cleaned
   else delete map[path]

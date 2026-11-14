@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { BottomBar } from './canvas/BottomBar'
 import { Canvas } from './canvas/Canvas'
 import { StatusBar } from './canvas/StatusBar'
@@ -12,10 +12,26 @@ import { LibraryPanel } from './panels/LibraryPanel'
 import { ToolbarSettings } from './canvas/nodes/ToolbarSettings'
 import { ProjectCenter } from './panels/ProjectCenter'
 import { SettingsPanel } from './panels/SettingsPanel'
-import { StudioWindow } from './studio/StudioWindow'
-import { StageWindow } from './stage/StageWindow'
-import { FilmStudyRoom } from './canvas/nodes/FilmStudyRoom'
-import { FilmStudySheet } from './canvas/nodes/FilmStudySheet'
+const StudioWindow = lazy(() =>
+  import('./studio/StudioWindow').then((module) => ({
+    default: module.StudioWindow
+  }))
+)
+const StageWindow = lazy(() =>
+  import('./stage/StageWindow').then((module) => ({
+    default: module.StageWindow
+  }))
+)
+const FilmStudyRoom = lazy(() =>
+  import('./canvas/nodes/FilmStudyRoom').then((module) => ({
+    default: module.FilmStudyRoom
+  }))
+)
+const FilmStudySheet = lazy(() =>
+  import('./canvas/nodes/FilmStudySheet').then((module) => ({
+    default: module.FilmStudySheet
+  }))
+)
 import { AgentPanel } from './agent/AgentPanel'
 import { initAgentCanvasBridge } from './agent/canvasBridge'
 import { useAgentStore } from './agent/agentStore'
@@ -31,6 +47,8 @@ import { useUpdateStore } from './stores/update'
 import { subscribeDepthTasks } from './stores/depth-tasks'
 import { subscribeVisionTasks } from './stores/vision-tasks'
 import { useTheme } from './theme/useTheme'
+import { useStudioStore } from './stores/studio'
+import { useStageStore } from './stage/stageStore'
 import { Button, Toast as ToastView } from './components/ui'
 
 export default function App() {
@@ -45,6 +63,11 @@ export default function App() {
   const nodes = useCanvasStore((state) => state.nodes)
   const edges = useCanvasStore((state) => state.edges)
   const hydrated = useCanvasStore((state) => state.hydrated)
+
+  const studioOpen = useStudioStore((state) => state.open)
+  const stageOpen = useStageStore((state) => state.open)
+  const studyOpen = useFilmStudyStore((state) => Boolean(state.study))
+  const sheetOpen = useFilmStudyStore((state) => Boolean(state.sheetNodeId))
 
   const loadProviders = useSettingsStore((state) => state.load)
   const subscribeGeneration = useGenerationStore((state) => state.subscribe)
@@ -223,10 +246,26 @@ export default function App() {
       {content}
       {phase === 'ready' ? null : <div className="window-drag-strip" />}
       <SettingsPanel />
-      <StudioWindow />
-      <StageWindow />
-      <FilmStudyRoom />
-      <FilmStudySheet />
+      {studioOpen ? (
+        <Suspense fallback={null}>
+          <StudioWindow />
+        </Suspense>
+      ) : null}
+      {stageOpen ? (
+        <Suspense fallback={null}>
+          <StageWindow />
+        </Suspense>
+      ) : null}
+      {studyOpen ? (
+        <Suspense fallback={null}>
+          <FilmStudyRoom />
+        </Suspense>
+      ) : null}
+      {sheetOpen ? (
+        <Suspense fallback={null}>
+          <FilmStudySheet />
+        </Suspense>
+      ) : null}
       {phase === 'ready' ? <AgentPanel /> : null}
       <WindowControls theme={resolved} onToggleTheme={toggle} />
       <Toast />

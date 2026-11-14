@@ -298,7 +298,7 @@ Prompt Bar / Agent proposal
 ## 12. AgentRuntime
 
 - 自研循环：模型请求 → 工具调用 → 工具结果 → 继续请求，直到最终回复/预算耗尽/取消。
-- 工具定义在 `src/main/agent/tools.ts`，当前 56 个；`capabilities/` 提供只读投影和关键词搜索。
+- 工具定义在 `src/main/agent/tools/`，当前 56 个；`capabilities/` 提供只读投影和关键词搜索。
 - Profile：`canvas` / `clip` / `film` / `stage`。
 - 权限：`read-only` / `current` / `full-access`。
 - 确认：`toolConfirmationReason` + `agent:confirm`，60 秒超时。

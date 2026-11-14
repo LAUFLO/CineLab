@@ -74,6 +74,7 @@
 |---|---|
 | [beef-tv-depth-research.md](beef-tv-depth-research.md) | BeefTV 深度组件调研 |
 | [p2-acceptance.md](p2-acceptance.md) | P2 UI 基础设施迁移与视觉验收记录 |
+| [p3-refactor-plan.md](p3-refactor-plan.md) | P3 架构拆分计划与进度 |
 | [agent-full-scope.md](agent-full-scope.md) | Agent 早期范围草案，作为历史参考 |
 | [agent-architecture-plan.md](agent-architecture-plan.md) | 架构设计部分保留，实施状态见文首 |
 

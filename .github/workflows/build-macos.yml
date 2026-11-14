@@ -23,6 +23,16 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Fix macOS arm64 ffprobe
+        shell: bash
+        run: |
+          curl -L --fail --retry 3 -o /tmp/ffprobe-arm64.gz \
+            https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffprobe-darwin-arm64.gz
+          gunzip -f /tmp/ffprobe-arm64.gz
+          cp /tmp/ffprobe-arm64 node_modules/ffprobe-static/bin/darwin/arm64/ffprobe
+          chmod +x node_modules/ffprobe-static/bin/darwin/arm64/ffprobe
+
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build

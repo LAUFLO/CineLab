@@ -79,6 +79,33 @@ describe('canvas store', () => {
     expect(useCanvasStore.getState().past.length).toBeLessThanOrEqual(20)
   })
 
+  it('keeps history snapshots stable across immutable updates', () => {
+    const id = useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
+    useCanvasStore.getState().pushHistory()
+    useCanvasStore.getState().patchNodeData(id, { title: 'changed' })
+
+    useCanvasStore.getState().undo()
+    expect(useCanvasStore.getState().nodes[0]?.data.title).not.toBe('changed')
+  })
+
+  it('undoes a node drag', () => {
+    const id = useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
+    useCanvasStore.getState().pushHistory()
+    useCanvasStore.getState().onNodesChange([
+      { id, type: 'position', position: { x: 40, y: 60 }, dragging: false }
+    ])
+    expect(useCanvasStore.getState().nodes[0]?.position).toEqual({
+      x: 40,
+      y: 60
+    })
+
+    useCanvasStore.getState().undo()
+    expect(useCanvasStore.getState().nodes[0]?.position).toEqual({
+      x: 0,
+      y: 0
+    })
+  })
+
   it('copies and pastes the selection', () => {
     useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
     expect(useCanvasStore.getState().copySelection()).toBe(1)

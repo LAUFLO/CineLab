@@ -137,7 +137,9 @@ export interface NodeClipboard {
 export const HISTORY_LIMIT = 60
 
 export function cloneSnapshot(nodes: CanvasNode[], edges: CineEdge[]): Snapshot {
-  return structuredClone({ nodes, edges })
+  // store 的所有更新都保持不可变（未变化的节点/边对象直接复用），
+  // 因此快照只需复制数组本身，避免每次操作深拷贝整张画布。
+  return { nodes: nodes.slice(), edges: edges.slice() }
 }
 
 export type GroupArrangeMode = 'row' | 'column' | 'grid'

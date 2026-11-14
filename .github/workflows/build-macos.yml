@@ -42,6 +42,15 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      - name: Smoke test macOS app
+        run: |
+          APP=$(find release -maxdepth 2 -name 'CineLab.app' -type d | head -1)
+          if [ -z "$APP" ]; then
+            echo "CineLab.app not found"
+            exit 1
+          fi
+          node scripts/macos-smoke.mjs "$APP"
+
       - uses: actions/upload-artifact@v7
         with:
           name: cinelab-macos-arm64

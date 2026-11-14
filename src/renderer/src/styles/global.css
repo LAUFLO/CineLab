@@ -6758,9 +6758,14 @@ body.is-node-menu-open .react-flow {
 }
 
 .cnode__toolbar-menu__hint {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 118px;
+  overflow: hidden;
   color: var(--text-3);
   font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cnode__toolbar-menu__section-title {

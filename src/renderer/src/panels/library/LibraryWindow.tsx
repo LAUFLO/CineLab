@@ -595,10 +595,10 @@ export function LibraryWindow() {
                   合成视频
                 </Button>
                 <Button
-                  variant="danger"
-                  size="xs"
+                  className="btn-secondary btn-small is-danger"
                   disabled={selectedAssets.length === 0}
                   onClick={handleBatchDelete}
+                  unstyled
                 >
                   删除
                 </Button>

@@ -99,8 +99,8 @@ The canvas interaction is modelled after LibTV's infinite canvas, with the goal 
 
 Download the latest release from [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest):
 
-- Windows x64: `CineLab Setup 0.1.0.exe`
-- macOS Apple Silicon: `CineLab-0.1.0-arm64.dmg`
+- Windows x64: `CineLab-0.1.1-x64.exe`
+- macOS Apple Silicon: `CineLab-0.1.1-arm64.dmg`
 
 ### Windows
 

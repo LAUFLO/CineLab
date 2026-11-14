@@ -1,6 +1,6 @@
 {
   "name": "cinelab",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CineLab — AI 创作无限画布",
   "main": "./out/main/index.js",
   "private": true,

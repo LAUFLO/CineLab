@@ -49,7 +49,7 @@ jobs:
             echo "CineLab.app not found"
             exit 1
           fi
-          node scripts/macos-smoke.mjs "$APP" --install-depth
+          node scripts/macos-smoke.mjs "$APP" --install-depth --install-vision --install-whisper
 
       - uses: actions/upload-artifact@v7
         with:

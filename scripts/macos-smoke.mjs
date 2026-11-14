@@ -4,6 +4,8 @@ import { join } from 'node:path'
 
 const appPath = process.argv[2]
 const installDepth = process.argv.includes('--install-depth')
+const installVision = process.argv.includes('--install-vision')
+const installWhisper = process.argv.includes('--install-whisper')
 if (!appPath) {
   throw new Error(
     'usage: node scripts/macos-smoke.mjs <CineLab.app> [--install-depth]'
@@ -154,35 +156,38 @@ async function main() {
   }
   if (!parsed.projectCenter) throw new Error('project center not rendered')
 
-  if (installDepth) {
-    console.log('installing depth-runtime...')
+  async function install(kind) {
+    console.log(`installing ${kind}...`)
     await evaluate(`(async () => {
-      await window.api.components.install('depth-runtime')
+      await window.api.components.install('${kind}')
       return 'started'
     })()`)
 
-    let depth = null
-    for (let attempt = 0; attempt < 300; attempt += 1) {
+    for (let attempt = 0; attempt < 450; attempt += 1) {
       const raw = await evaluate(
         `(async () => JSON.stringify(await window.api.components.status()))()`
       )
       const list = JSON.parse(raw)
-      depth = list.find((item) => item.kind === 'depth-runtime')
-      if (depth?.state === 'installed') break
-      if (depth?.state === 'error') {
-        throw new Error(`depth install failed: ${depth.error}`)
+      const status = list.find((item) => item.kind === '${kind}')
+      if (status?.state === 'installed') return status
+      if (status?.state === 'error') {
+        throw new Error(`${kind} install failed: ${status.error}`)
       }
       if (attempt % 15 === 0) {
-        console.log('depth state:', depth?.state, depth?.percent ?? '')
+        console.log(`${kind} state:`, status?.state, status?.percent ?? '')
       }
       await new Promise((resolve) => setTimeout(resolve, 2000))
     }
-    if (depth?.state !== 'installed') {
-      throw new Error('depth install timeout')
-    }
-    console.log('depth installed:', depth.path)
+    throw new Error(`${kind} install timeout`)
+  }
 
-    const python = join(depth.path, 'python', 'bin', 'python3')
+  let depthPath = null
+  if (installDepth) {
+    const depth = await install('depth-runtime')
+    depthPath = depth.path
+    console.log('depth installed:', depthPath)
+
+    const python = join(depthPath, 'python', 'bin', 'python3')
     const version = execFileSync(
       python,
       ['-c', 'import torch, cv2, numpy; print(torch.__version__, cv2.__version__)'],
@@ -201,9 +206,33 @@ ensure_torchvision_compose()
 from video_depth_anything.video_depth import VideoDepthAnything
 print('WORKER_OK')`
       ],
-      { cwd: depth.path, encoding: 'utf8' }
+      { cwd: depthPath, encoding: 'utf8' }
     )
     console.log('depth worker:', worker.trim())
+  }
+
+  if (installVision) {
+    if (!depthPath) throw new Error('--install-vision requires --install-depth')
+    const vision = await install('vision-models')
+    console.log('vision installed:', vision.path)
+    const python = join(depthPath, 'python', 'bin', 'python3')
+    const worker = execFileSync(
+      python,
+      [
+        '-c',
+        "import sys; sys.path.insert(0, '.'); import worker; print('VISION_WORKER_OK')"
+      ],
+      { cwd: vision.path, encoding: 'utf8' }
+    )
+    console.log('vision worker:', worker.trim())
+  }
+
+  if (installWhisper) {
+    const whisper = await install('whisper-runtime')
+    console.log('whisper installed:', whisper.path)
+    const cli = join(whisper.path, 'Release', 'whisper-cli')
+    const help = execFileSync(cli, ['--help'], { encoding: 'utf8' })
+    console.log('whisper-cli:', help.split('\n')[0])
   }
 
   ws.close()

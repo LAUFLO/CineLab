@@ -43,7 +43,7 @@ export function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex shrink-0 items-center rounded-pill border border-transparent transition-colors',
+        'relative inline-flex shrink-0 items-center rounded-pill transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
         metrics.root,
         checked ? 'bg-pick-bar' : 'bg-border-strong',

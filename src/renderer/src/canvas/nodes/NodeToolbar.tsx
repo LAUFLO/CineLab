@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { NODE_META, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
-import { Button, IconButton, MenuItem } from '../../components/ui'
+import { Button, MenuItem } from '../../components/ui'
 import { assetUrl } from '../../lib/asset-url'
 import {
   absolutePosition,
@@ -878,13 +878,13 @@ export function NodeToolbar({
         {onEdit ? (
           <>
             <Button
-              variant="ghost"
-              size="xs"
+              className="cnode__toolbar-btn"
               title="编辑文本（支持 Markdown）"
               onClick={(event) => {
                 event.stopPropagation()
                 onEdit()
               }}
+              unstyled
             >
               <Icon name="edit" size={14} />
               <span>编辑</span>
@@ -896,25 +896,25 @@ export function NodeToolbar({
         {kind === 'audio' ? (
           <>
             <Button
-              variant="ghost"
-              size="xs"
+              className="cnode__toolbar-btn"
               title="截取音频片段"
               onClick={(event) => {
                 event.stopPropagation()
                 onAudioTrim?.()
               }}
+              unstyled
             >
               <Icon name="scissors" size={14} />
               <span>截取</span>
             </Button>
             <Button
-              variant="ghost"
-              size="xs"
+              className="cnode__toolbar-btn"
               title="调整播放速度"
               onClick={(event) => {
                 event.stopPropagation()
                 onAudioSpeed?.()
               }}
+              unstyled
             >
               <Icon name="audio" size={14} />
               <span>变速</span>
@@ -924,54 +924,59 @@ export function NodeToolbar({
         ) : null}
 
         <Button
-          variant="ghost"
-          size="xs"
+          className="cnode__toolbar-btn"
           title="用当前节点创建剪辑室"
           onClick={(event) => {
             event.stopPropagation()
             openStudioFromNode()
           }}
+          unstyled
         >
           <Icon name="film" size={14} />
           <span>剪辑室</span>
         </Button>
 
-        <IconButton
-          label="下载素材"
-          size="xs"
+        <Button
+          className="cnode__toolbar-btn"
+          title="下载素材"
+          aria-label="下载素材"
           onClick={(event) => {
             event.stopPropagation()
             onDownload()
           }}
+          unstyled
         >
           <Icon name="download" size={14} />
-        </IconButton>
+        </Button>
 
         {kind !== 'audio' ? (
-          <IconButton
-            label={kind === 'text' ? '放大编辑' : '查看大图'}
-            size="xs"
+          <Button
+            className="cnode__toolbar-btn"
+            title={kind === 'text' ? '放大编辑' : '查看大图'}
+            aria-label={kind === 'text' ? '放大编辑' : '查看大图'}
             onClick={(event) => {
               event.stopPropagation()
               onExpand()
             }}
+            unstyled
           >
             <Icon name="expand" size={14} />
-          </IconButton>
+          </Button>
         ) : null}
 
         {libraryAction ? (
-          <IconButton
-            label={libraryAction.label}
-            size="xs"
-            title={libraryAction.title}
+          <Button
+            className="cnode__toolbar-btn"
+            title={libraryAction.title ?? libraryAction.label}
+            aria-label={libraryAction.label}
             onClick={(event) => {
               event.stopPropagation()
               libraryAction.onClick()
             }}
+            unstyled
           >
             <Icon name="folder" size={14} />
-          </IconButton>
+          </Button>
         ) : null}
       </div>
 

@@ -124,7 +124,14 @@ export function Select<T extends string>({
         onClick={() => setOpen((current) => !current)}
       >
         <span className="truncate">{selected?.label}</span>
-        <Icon name="chevron-down" size={12} className="text-fg-subtle" />
+        <Icon
+          name="chevron-down"
+          size={12}
+          className={cn(
+            'text-fg-muted transition-transform duration-150',
+            open && 'rotate-180'
+          )}
+        />
       </button>
 
       {open

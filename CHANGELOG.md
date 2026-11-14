@@ -3,6 +3,15 @@
 本项目的版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循语义化版本。
 
+## [0.1.1] - 2026-11-14
+
+### 修复
+
+- Windows 主窗口恢复无边框，修复 v0.1.0 出现的双标题栏。
+- macOS 隐藏自绘的最小化 / 最大化 / 关闭按钮，避免与原生红绿灯重复。
+- 修复 tag 发布时 publish job 缺少 Git checkout 的问题。
+- 安装包改为无空格文件名，确保 `latest.yml` 与 GitHub Release asset 一致。
+
 ## [0.1.0] - 2026-11-14
 
 首个公开版本（Early Access）。

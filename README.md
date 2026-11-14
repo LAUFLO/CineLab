@@ -99,8 +99,8 @@ CineLab 是一个面向 AIGC 创作者的本地创作工作台。图片、视频
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
 
-- Windows x64：`CineLab Setup 0.1.0.exe`
-- macOS Apple Silicon：`CineLab-0.1.0-arm64.dmg`
+- Windows x64：`CineLab-0.1.1-x64.exe`
+- macOS Apple Silicon：`CineLab-0.1.1-arm64.dmg`
 
 ### Windows
 

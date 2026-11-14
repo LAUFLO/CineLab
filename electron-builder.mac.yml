@@ -1,5 +1,6 @@
 appId: com.cinelab.app
 productName: CineLab
+artifactName: ${productName}-${version}-${arch}.${ext}
 directories:
   buildResources: resources
   output: release

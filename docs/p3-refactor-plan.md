@@ -26,7 +26,7 @@
 | `AgentPanel.tsx` | todo | 会话菜单、模型选择、消息列表和输入区待拆 |
 | Studio / Stage / three 懒加载 | done | 首屏 index gzip 364KB + canvas 115KB；three 252KB 延迟加载 |
 | 性能优化 | todo | React Flow 视口裁剪、撤销栈增量、缩略图并发 |
-| 测试与 e2e | todo | protocol / project / library / IPC / runtime + Playwright 三条链路 |
+| 测试与 e2e | done | 新增 library store、asset protocol、IPC 注册测试；Playwright 覆盖项目中心、创建项目/画布、资产库、CineBot 四条链路 |
 
 ## 约束
 
@@ -41,4 +41,4 @@
 - Studio / Stage / three 懒加载。
 - React Flow 视口裁剪、撤销栈增量、缩略图并发。
 - protocol / project / library / IPC / runtime 测试。
-- Playwright e2e 三条链路。
+- Playwright e2e 三条链路：`pnpm test:e2e`（先构建 `out/`，使用临时 userData）。

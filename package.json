@@ -21,7 +21,8 @@
     "check:docs": "node scripts/check-docs.mjs",
     "models:check": "node scripts/models-check.mjs",
     "dist": "electron-vite build && electron-builder",
-    "dist:win": "electron-vite build && electron-builder --win"
+    "dist:win": "electron-vite build && electron-builder --win",
+    "test:e2e": "electron-vite build && playwright test"
   },
   "dependencies": {
     "@xyflow/react": "^12.12.1",
@@ -45,6 +46,7 @@
     "@babel/preset-react": "8.0.1",
     "@babel/preset-typescript": "8.0.7",
     "@eslint/js": "9.39.5",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",

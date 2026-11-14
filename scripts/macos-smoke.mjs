@@ -1,5 +1,5 @@
 import { execFileSync, spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const appPath = process.argv[2]
@@ -26,34 +26,58 @@ console.log('ffmpeg:', execFileSync(ffmpeg, ['-version'], { encoding: 'utf8' }).
 console.log('ffprobe:', execFileSync(ffprobe, ['-version'], { encoding: 'utf8' }).split('\n')[0])
 
 const port = 9333
+const userData = '/tmp/cinelab-macos-smoke'
 const child = spawn(bin, [], {
   env: {
     ...process.env,
-    CINELAB_USER_DATA: '/tmp/cinelab-macos-smoke',
+    CINELAB_USER_DATA: userData,
     CINELAB_DEBUG_PORT: String(port)
   },
   stdio: 'ignore'
 })
 
-async function waitForTargets() {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+let exitInfo = null
+child.on('exit', (code, signal) => {
+  exitInfo = { code, signal }
+})
+
+let lastTargets = []
+
+async function waitForPage() {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    if (exitInfo) {
+      throw new Error(`app exited before CDP: ${JSON.stringify(exitInfo)}`)
+    }
     try {
       const response = await fetch(`http://127.0.0.1:${port}/json/list`)
-      if (response.ok) return await response.json()
+      if (response.ok) {
+        const targets = await response.json()
+        lastTargets = targets
+        const page = targets.find((target) => target.type === 'page')
+        if (page) return page
+      }
     } catch {
       // renderer not ready yet
     }
     await new Promise((resolve) => setTimeout(resolve, 500))
   }
-  throw new Error('CDP timeout')
+  throw new Error(`CDP timeout; targets=${JSON.stringify(lastTargets)}`)
+}
+
+function printLogs() {
+  for (const name of ['logs/main.log', 'window-error.log']) {
+    try {
+      console.log(`--- ${name} ---`)
+      console.log(readFileSync(join(userData, name), 'utf8'))
+    } catch {
+      // log file may not exist
+    }
+  }
 }
 
 try {
-  const targets = await waitForTargets()
-  const page = targets.find(
-    (target) => target.type === 'page' && target.url.includes('index.html')
-  )
-  if (!page) throw new Error('no renderer page')
+  const page = await waitForPage()
+  console.log('page:', page.title, page.url)
 
   const ws = new WebSocket(page.webSocketDebuggerUrl)
   await new Promise((resolve, reject) => {
@@ -99,6 +123,9 @@ try {
   if (parsed.version !== '0.1.0') throw new Error(`unexpected version ${parsed.version}`)
   if (parsed.platform !== 'darwin') throw new Error(`unexpected platform ${parsed.platform}`)
   if (!parsed.projectCenter) throw new Error('project center not rendered')
+} catch (error) {
+  printLogs()
+  throw error
 } finally {
   child.kill('SIGTERM')
   await new Promise((resolve) => setTimeout(resolve, 2000))

@@ -16,6 +16,18 @@
 | 3 | `src/renderer/src/canvas/PromptBar.tsx` | 1,681 | 拆提及菜单、模型菜单、参数面板、上传菜单和输入区 |
 | 4 | `src/renderer/src/agent/AgentPanel.tsx` | 约 1,500 | 拆会话菜单、模型选择、消息列表和输入区 |
 
+## 进度
+
+| 项 | 状态 | 结果 |
+|---|---|---|
+| `tools.ts` | done | 3,287 → `tools/index.ts` 162 行 + 8 个域文件；工具定义和参数校验都按域拆分 |
+| `canvas.ts` | done | 2,502 → `canvas.ts` 204 行 + `canvas-model.ts` 341 行 + 5 个 slice；新增 4 个 store 测试 |
+| `PromptBar.tsx` | partial | 纯函数与类型拆到 `promptbar-model.tsx`；菜单和参数面板拆分待续 |
+| `AgentPanel.tsx` | todo | 会话菜单、模型选择、消息列表和输入区待拆 |
+| Studio / Stage / three 懒加载 | done | 首屏 index gzip 364KB + canvas 115KB；three 252KB 延迟加载 |
+| 性能优化 | todo | React Flow 视口裁剪、撤销栈增量、缩略图并发 |
+| 测试与 e2e | todo | protocol / project / library / IPC / runtime + Playwright 三条链路 |
+
 ## 约束
 
 - 不改工具名、参数 schema、权限模式、确认文案。

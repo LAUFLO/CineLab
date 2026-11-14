@@ -171,7 +171,7 @@ async function main() {
         console.log('components status raw:', raw)
       }
       const list = JSON.parse(raw)
-      const status = list.find((item) => item.kind === '${kind}')
+      const status = list.find((item) => item.kind === kind)
       if (status?.state === 'installed') return status
       if (status?.state === 'error') {
         throw new Error(`${kind} install failed: ${status.error}`)

@@ -10,11 +10,14 @@ import {
 } from '@shared/provider-schema'
 import type { ModelsConfigStatus } from '@shared/models-file'
 import { VIDEO_OPERATIONS } from '@shared/operation-schema'
-import { PROVIDER_PRESETS, providerPresetModels } from '@shared/provider-presets'
+import {
+  PROVIDER_PRESETS,
+  providerPresetModels
+} from '@shared/provider-presets'
 import type { UpdateStatus } from '@shared/update'
 import { BrandIcon, BrandWordmark } from '../components/Brand'
 import { Icon, type IconName } from '../components/Icon'
-import { Select } from '../components/Select'
+
 import { useSettingsStore } from '../stores/settings'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
@@ -27,6 +30,7 @@ import {
   ModelInputsDialog,
   type ModelCapabilityValue
 } from '../canvas/nodes/ModelInputsDialog'
+import { Button, Input, Select } from '../components/ui'
 
 type SectionId =
   | 'general'
@@ -55,9 +59,7 @@ const SECTIONS: SectionDef[] = [
   { id: 'about', label: '关于', icon: 'logo' }
 ]
 
-function emptyDraft(
-  preset?: (typeof PROVIDER_PRESETS)[number]
-): ProviderInput {
+function emptyDraft(preset?: (typeof PROVIDER_PRESETS)[number]): ProviderInput {
   return {
     name: preset?.name ?? '',
     type: preset?.type ?? 'openai-compat',
@@ -84,7 +86,9 @@ function inferCapability(remoteModel: string): ModelDef['capability'] {
   const value = remoteModel.toLowerCase()
   if (/(tts|audio|music|speech|voice)/.test(value)) return 'audio.tts'
   if (
-    /(video|veo|kling|seedance|sora|hailuo|vidu|cogvideo|wan2|runway)/.test(value)
+    /(video|veo|kling|seedance|sora|hailuo|vidu|cogvideo|wan2|runway)/.test(
+      value
+    )
   ) {
     return 'video.t2v'
   }
@@ -117,7 +121,9 @@ function ModelsSection() {
 
   const [draft, setDraft] = useState<ProviderInput | null>(null)
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
+    null
+  )
   const [config, setConfig] = useState<ModelsConfigStatus | null>(null)
   const [remoteModels, setRemoteModels] = useState<string[]>([])
   const [fetching, setFetching] = useState(false)
@@ -362,20 +368,22 @@ function ModelsSection() {
   if (draft) {
     return (
       <div className="settings-section">
-        <button
+        <Button
           type="button"
           className="provider-form__back"
           onClick={() => setDraft(null)}
+          unstyled
         >
           ← 返回列表
-        </button>
+        </Button>
 
         <label className="field">
           <span>名称</span>
-          <input
+          <Input
             value={draft.name}
             onChange={(event) => updateField('name', event.target.value)}
             placeholder="例如：我的中转站"
+            unstyled
           />
         </label>
 
@@ -394,10 +402,11 @@ function ModelsSection() {
 
         <label className="field">
           <span>Base URL</span>
-          <input
+          <Input
             value={draft.baseUrl}
             onChange={(event) => updateField('baseUrl', event.target.value)}
             placeholder="https://api.example.com/v1"
+            unstyled
           />
         </label>
 
@@ -406,11 +415,14 @@ function ModelsSection() {
             {draft.type === 'kling' ? 'Access Key / API Key' : 'API Key'}
             {draft.id ? '（留空则不修改）' : ''}
           </span>
-          <input
+          <Input
             type="password"
             value={draft.apiKey ?? ''}
             onChange={(event) => updateField('apiKey', event.target.value)}
-            placeholder={draft.type === 'kling' ? 'Access Key 或 API Key' : 'sk-...'}
+            placeholder={
+              draft.type === 'kling' ? 'Access Key 或 API Key' : 'sk-...'
+            }
+            unstyled
           />
         </label>
 
@@ -420,11 +432,12 @@ function ModelsSection() {
               Secret Key（填了则生成 JWT，留空使用 API Key）
               {draft.id ? '（留空则不修改）' : ''}
             </span>
-            <input
+            <Input
               type="password"
               value={draft.secretKey ?? ''}
               onChange={(event) => updateField('secretKey', event.target.value)}
               placeholder="可灵 Secret Key"
+              unstyled
             />
           </label>
         ) : null}
@@ -432,13 +445,14 @@ function ModelsSection() {
         <div className="field">
           <div className="field__head">
             <span>自定义请求头</span>
-            <button
+            <Button
               type="button"
               className="btn-secondary btn-small"
               onClick={addHeaderRow}
+              unstyled
             >
               + 添加
-            </button>
+            </Button>
           </div>
           {headerRows.length === 0 ? (
             <div className="field__hint">
@@ -448,28 +462,31 @@ function ModelsSection() {
             <div className="header-list">
               {headerRows.map((row, index) => (
                 <div className="header-row" key={index}>
-                  <input
+                  <Input
                     value={row.key}
                     placeholder="Header 名称"
                     onChange={(event) =>
                       updateHeaderRow(index, { key: event.target.value })
                     }
+                    unstyled
                   />
-                  <input
+                  <Input
                     value={row.value}
                     placeholder="值，支持 ${ENV_NAME}"
                     onChange={(event) =>
                       updateHeaderRow(index, { value: event.target.value })
                     }
+                    unstyled
                   />
-                  <button
+                  <Button
                     type="button"
                     className="icon-btn"
                     title="删除请求头"
                     onClick={() => removeHeaderRow(index)}
+                    unstyled
                   >
                     <Icon name="close" size={12} />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
@@ -479,14 +496,15 @@ function ModelsSection() {
         <div className="field">
           <div className="field__head">
             <span>模型</span>
-            <button
+            <Button
               type="button"
               className="btn-secondary btn-small"
               onClick={() => void handleFetchModels()}
               disabled={fetching || busy}
+              unstyled
             >
               {fetching ? '获取中…' : '获取模型列表'}
-            </button>
+            </Button>
           </div>
           <div className="model-list">
             {draft.models.map((model) => (
@@ -503,8 +521,8 @@ function ModelsSection() {
                       ? ` · 操作 ${modelOperations(model)
                           .map(
                             (id) =>
-                              VIDEO_OPERATIONS.find((op) => op.id === id)?.label ??
-                              id
+                              VIDEO_OPERATIONS.find((op) => op.id === id)
+                                ?.label ?? id
                           )
                           .join('/')}`
                       : ''}
@@ -512,37 +530,38 @@ function ModelsSection() {
                       ? ` · 参数 ${model.params
                           .slice(0, 3)
                           .map((param) => param.label)
-                          .join(' · ')}${
-                          model.params.length > 3 ? ' 等' : ''
-                        }`
+                          .join(' · ')}${model.params.length > 3 ? ' 等' : ''}`
                       : ''}
                   </div>
                 </div>
                 <div className="model-item__actions">
-                  <button
+                  <Button
                     type="button"
                     className="icon-btn"
                     title="输入能力"
                     onClick={() => setInputsModel(model)}
+                    unstyled
                   >
                     <Icon name="layers" size={13} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     className="icon-btn"
                     title="配置参数"
                     onClick={() => setParamModel(model)}
+                    unstyled
                   >
                     <Icon name="settings" size={13} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     className="icon-btn"
                     title="删除模型"
                     onClick={() => removeModel(model.id)}
+                    unstyled
                   >
                     <Icon name="close" size={12} />
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -552,7 +571,7 @@ function ModelsSection() {
           </div>
 
           <div className="manual-model">
-            <input
+            <Input
               value={manualModel}
               placeholder="没有想要的模型？手动输入模型 ID"
               onChange={(event) => setManualModel(event.target.value)}
@@ -562,14 +581,16 @@ function ModelsSection() {
                   addManualModel()
                 }
               }}
+              unstyled
             />
-            <button
+            <Button
               type="button"
               className="btn-secondary btn-small"
               onClick={addManualModel}
+              unstyled
             >
               添加
-            </button>
+            </Button>
           </div>
 
           {remoteModels.length > 0 ? (
@@ -579,16 +600,17 @@ function ModelsSection() {
                   (model) => model.remoteModel === remote
                 )
                 return (
-                  <button
+                  <Button
                     key={remote}
                     type="button"
                     className={`remote-model-chip ${added ? 'is-added' : ''}`}
                     disabled={added}
                     title={added ? '已添加' : `添加 ${remote}`}
                     onClick={() => addRemoteModel(remote)}
+                    unstyled
                   >
                     {remote}
-                  </button>
+                  </Button>
                 )
               })}
             </div>
@@ -602,22 +624,24 @@ function ModelsSection() {
         ) : null}
 
         <div className="provider-form__actions">
-          <button
+          <Button
             type="button"
             className="btn-secondary"
             onClick={() => void handleTest()}
             disabled={busy}
+            unstyled
           >
             测试连接
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className="btn-primary"
             onClick={() => void handleSave()}
             disabled={busy}
+            unstyled
           >
             保存
-          </button>
+          </Button>
         </div>
 
         <ModelParamsDialog
@@ -630,9 +654,7 @@ function ModelsSection() {
                 ? {
                     ...current,
                     models: current.models.map((item) =>
-                      item.id === paramModel.id
-                        ? { ...item, params }
-                        : item
+                      item.id === paramModel.id ? { ...item, params } : item
                     )
                   }
                 : current
@@ -665,7 +687,6 @@ function ModelsSection() {
             setInputsModel(null)
           }}
         />
-
       </div>
     )
   }
@@ -685,20 +706,22 @@ function ModelsSection() {
               </div>
             </div>
             <div className="models-config__actions">
-              <button
+              <Button
                 type="button"
                 className="btn-secondary btn-sm"
                 onClick={() => void handleReload()}
+                unstyled
               >
                 重新加载
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 className="btn-secondary btn-sm"
                 onClick={() => void handleOpenModelsFile()}
+                unstyled
               >
                 打开文件
-              </button>
+              </Button>
             </div>
           </div>
           <div className="models-config__meta">
@@ -735,21 +758,23 @@ function ModelsSection() {
               </div>
             </div>
             <div className="provider-card__actions">
-              <button
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={() => openDraft(toDraft(provider))}
+                unstyled
               >
                 <Icon name="settings" size={14} />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={() => handleDelete(provider.id)}
                 disabled={busy}
+                unstyled
               >
                 <Icon name="close" size={14} />
-              </button>
+              </Button>
             </div>
           </div>
         ))}
@@ -766,7 +791,7 @@ function ModelsSection() {
           <div className="provider-presets__label">快速预设</div>
           <div className="provider-presets__grid">
             {PROVIDER_PRESETS.map((preset) => (
-              <button
+              <Button
                 key={preset.id}
                 type="button"
                 className="provider-preset"
@@ -774,24 +799,28 @@ function ModelsSection() {
                   setMessage(null)
                   openDraft(emptyDraft(preset))
                 }}
+                unstyled
               >
                 <span className="provider-preset__name">{preset.name}</span>
-                <span className="provider-preset__desc">{preset.description}</span>
-              </button>
+                <span className="provider-preset__desc">
+                  {preset.description}
+                </span>
+              </Button>
             ))}
           </div>
         </div>
 
-        <button
+        <Button
           type="button"
           className="btn-primary btn-block"
           onClick={() => {
             setMessage(null)
             openDraft(emptyDraft())
           }}
+          unstyled
         >
           + 添加供应商
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -814,7 +843,8 @@ function LibrarySection() {
       <div className="settings-group-title">全局资产库</div>
       <p className="settings-hint">
         所有项目共用这个文件夹。删除项目不会删除资产库，图片、视频和提示词模板都可以跨项目使用。
-        建议选择空目录，应用会自动创建「角色 / 场景 / 道具 / 风格 / 音频 / 提示词」。
+        建议选择空目录，应用会自动创建「角色 / 场景 / 道具 / 风格 / 音频 /
+        提示词」。
       </p>
 
       <div className="library-root-card">
@@ -822,32 +852,36 @@ function LibrarySection() {
       </div>
 
       <div className="settings-actions">
-        <button
+        <Button
           type="button"
           className="btn-secondary"
           onClick={() => void chooseRoot()}
+          unstyled
         >
           选择文件夹
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className="btn-secondary"
           onClick={() => void revealRoot()}
+          unstyled
         >
           打开目录
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className="btn-secondary"
           onClick={() => void resetRoot()}
           disabled={isDefault}
+          unstyled
         >
           恢复默认
-        </button>
+        </Button>
       </div>
 
       <p className="settings-hint">
-        默认路径是「文档 / CineLab Assets」。可以直接在资源管理器里整理文件夹和文件，应用以磁盘内容为准。
+        默认路径是「文档 / CineLab
+        Assets」。可以直接在资源管理器里整理文件夹和文件，应用以磁盘内容为准。
       </p>
     </div>
   )
@@ -856,7 +890,9 @@ function LibrarySection() {
 function AppearanceSection() {
   const [mode, setMode] = useState<'light' | 'dark' | 'system'>(() => {
     const saved = localStorage.getItem('cinelab.theme.v1')
-    return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'dark'
+    return saved === 'light' || saved === 'dark' || saved === 'system'
+      ? saved
+      : 'dark'
   })
 
   const apply = (next: 'light' | 'dark' | 'system'): void => {
@@ -883,22 +919,29 @@ function AppearanceSection() {
           { id: 'light', label: '浅色', hint: '明亮环境使用' },
           { id: 'system', label: '跟随系统', hint: '随系统外观切换' }
         ].map((option) => (
-          <button
+          <Button
             key={option.id}
             type="button"
             className={`theme-option ${mode === option.id ? 'is-active' : ''}`}
             onClick={() => apply(option.id as 'light' | 'dark' | 'system')}
+            unstyled
           >
             <span className="theme-option__label">{option.label}</span>
             <span className="theme-option__hint">{option.hint}</span>
-          </button>
+          </Button>
         ))}
       </div>
     </div>
   )
 }
 
-function PlaceholderSection({ title, description }: { title: string; description: string }) {
+function PlaceholderSection({
+  title,
+  description
+}: {
+  title: string
+  description: string
+}) {
   return (
     <div className="settings-section">
       <div className="settings-group-title">{title}</div>
@@ -963,26 +1006,28 @@ function AboutSection() {
       </div>
       <div className="about-row">
         <span>日志</span>
-        <button
+        <Button
           type="button"
           className="btn-secondary btn-sm"
           onClick={() => void window.api.app.openLogs()}
+          unstyled
         >
           打开日志目录
-        </button>
+        </Button>
       </div>
 
       <div className="update-card">
         <div className="update-card__head">
           <span className="update-card__title">软件更新</span>
-          <button
+          <Button
             type="button"
             className="btn-secondary btn-sm"
             disabled={!canCheck || busy}
             onClick={() => void check()}
+            unstyled
           >
             {status?.state === 'checking' ? '检查中…' : '检查更新'}
-          </button>
+          </Button>
         </div>
         <div
           className={`update-card__status ${
@@ -1000,22 +1045,24 @@ function AboutSection() {
           </div>
         ) : null}
         {status?.state === 'available' ? (
-          <button
+          <Button
             type="button"
             className="btn-primary btn-sm update-card__action"
             onClick={() => void download()}
+            unstyled
           >
             下载更新
-          </button>
+          </Button>
         ) : null}
         {status?.state === 'downloaded' ? (
-          <button
+          <Button
             type="button"
             className="btn-primary btn-sm update-card__action"
             onClick={() => void install()}
+            unstyled
           >
             重启并安装
-          </button>
+          </Button>
         ) : null}
         {status?.releaseNotes ? (
           <div className="update-card__notes">{status.releaseNotes}</div>
@@ -1056,26 +1103,28 @@ export function SettingsPanel() {
       >
         <header className="settings-dialog__head">
           <span>设置</span>
-          <button
+          <Button
             type="button"
             className="icon-btn settings-dialog__close"
             onClick={close}
             title="关闭"
+            unstyled
           >
             <Icon name="close" size={14} />
-          </button>
+          </Button>
         </header>
 
         <div className="settings-dialog__body">
           <nav className="settings-nav">
             {SECTIONS.map((section) => (
-              <button
+              <Button
                 key={section.id}
                 type="button"
                 className={`settings-nav__item ${
                   active === section.id ? 'is-active' : ''
                 }`}
                 onClick={() => setActive(section.id)}
+                unstyled
               >
                 {section.id === 'about' ? (
                   <BrandIcon size={15} />
@@ -1083,7 +1132,7 @@ export function SettingsPanel() {
                   <Icon name={section.icon} size={15} />
                 )}
                 <span>{section.label}</span>
-              </button>
+              </Button>
             ))}
           </nav>
 

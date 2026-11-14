@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { LibraryFolderNode } from '@shared/library-schema'
 import { DEFAULT_LIBRARY_FOLDERS } from '@shared/library-schema'
 import { Icon } from '../../components/Icon'
-import { IconButton } from '../../components/ui'
+import { IconButton, Button } from '../../components/ui'
 
 interface FolderTreeProps {
   tree: LibraryFolderNode[]
@@ -50,31 +50,33 @@ function TreeRow({
         className={`library-tree__row ${current === node.path ? 'is-active' : ''}`}
         style={{ paddingLeft: `${8 + depth * 14}px` }}
       >
-        <button
+        <Button
           type="button"
           className="library-tree__toggle"
           onClick={() => toggle(node.path)}
           aria-label={open ? '折叠' : '展开'}
+          unstyled
         >
           {hasChildren ? (
             <Icon name={open ? 'chevron-down' : 'chevron-right'} size={11} />
           ) : (
             <span className="library-tree__dot" />
           )}
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           className="library-tree__label"
           onClick={() => onSelect(node.path)}
           onDoubleClick={() => toggle(node.path)}
+          unstyled
         >
           <Icon name="folder" size={14} />
           <span className="library-tree__name">{node.name}</span>
           {node.assetCount > 0 ? (
             <span className="library-tree__count">{node.assetCount}</span>
           ) : null}
-        </button>
+        </Button>
 
         {readOnly ? null : (
           <div className="library-tree__actions">
@@ -137,7 +139,9 @@ export function FolderTree(props: FolderTreeProps) {
   useEffect(() => {
     if (!current) return
     const parts = current.split('/')
-    const ancestors = parts.map((_, index) => parts.slice(0, index + 1).join('/'))
+    const ancestors = parts.map((_, index) =>
+      parts.slice(0, index + 1).join('/')
+    )
     setExpanded((previous) => {
       const next = new Set(previous)
       for (const path of ancestors) next.add(path)
@@ -160,14 +164,15 @@ export function FolderTree(props: FolderTreeProps) {
         <span className="library-tree__toggle">
           <span className="library-tree__dot" />
         </span>
-        <button
+        <Button
           type="button"
           className="library-tree__label"
           onClick={() => onSelect('')}
+          unstyled
         >
           <Icon name="grid" size={13} />
           <span className="library-tree__name">全部素材</span>
-        </button>
+        </Button>
         {props.readOnly ? null : (
           <div className="library-tree__actions">
             <IconButton

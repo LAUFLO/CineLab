@@ -17,3 +17,6 @@ models.json
 .opencode/
 coverage/
 lint.json
+test-results/
+playwright-report/
+blob-report/

@@ -21,7 +21,8 @@ import {
   ensureSessionTitle,
   listSessions,
   loadSession,
-  renameSession
+  renameSession,
+  sessionDirectory
 } from '../session'
 
 describe('agent sessions', () => {
@@ -76,5 +77,32 @@ describe('agent sessions', () => {
     const sessions = await listSessions(root)
     expect(sessions[0]?.messageCount).toBe(2)
     expect(sessions[0]?.preview).toBe('把片段前移一秒')
+  })
+
+  it('writes and reuses the session index', async () => {
+    const created = await createSession(root, '索引会话')
+    await appendMessage(root, created.sessionId, {
+      id: 'm1',
+      role: 'user',
+      content: '索引测试'
+    })
+
+    const first = await listSessions(root)
+    expect(first).toHaveLength(1)
+
+    const indexFile = join(sessionDirectory(root), '.index.json')
+    const index = JSON.parse(await fs.readFile(indexFile, 'utf8')) as Record<
+      string,
+      { title: string; messageCount: number }
+    >
+    expect(index[created.sessionId]?.title).toBe('索引会话')
+
+    await appendMessage(root, created.sessionId, {
+      id: 'm2',
+      role: 'assistant',
+      content: '已完成'
+    })
+    const second = await listSessions(root)
+    expect(second[0]?.messageCount).toBe(2)
   })
 })

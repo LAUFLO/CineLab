@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import * as THREE from 'three'
 import { Icon } from '../../components/Icon'
+import { Button } from '../../components/ui'
 
 interface PanoramaViewerProps {
   open: boolean
@@ -163,14 +164,15 @@ export function PanoramaViewer({ open, src, onClose }: PanoramaViewerProps) {
 
       <div className="panorama-viewer__head">
         <div className="panorama-viewer__title">720 度全景预览</div>
-        <button
+        <Button
           type="button"
           className="panorama-viewer__close"
           title="退出全景"
           onClick={onClose}
+          unstyled
         >
           <Icon name="close" size={16} />
-        </button>
+        </Button>
       </div>
 
       {loading ? (

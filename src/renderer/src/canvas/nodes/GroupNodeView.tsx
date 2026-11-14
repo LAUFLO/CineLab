@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  Handle,
-  Position,
-  useReactFlow,
-  type NodeProps
-} from '@xyflow/react'
+import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
 import { Icon } from '../../components/Icon'
 import { useCanvasStore, type GroupNode } from '../../stores/canvas'
 import { useUIStore } from '../../stores/ui'
+import { Input } from '../../components/ui'
 
 export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
   const childCount = useCanvasStore(
@@ -76,7 +72,7 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
         }}
       >
         {editing ? (
-          <input
+          <Input
             ref={inputRef}
             className="group-node__input nodrag"
             value={draft}
@@ -87,6 +83,7 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
               if (event.key === 'Escape') cancel()
             }}
             onBlur={commit}
+            unstyled
           />
         ) : (
           <span className="group-node__title">{data.title}</span>

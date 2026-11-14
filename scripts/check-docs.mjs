@@ -168,9 +168,14 @@ function checkPathRefs() {
 }
 
 function checkAgentTools() {
-  const source = read('src/main/agent/tools.ts')
-  const names = [...source.matchAll(/^    name: '([^']+)'/gm)].map(
-    (match) => match[1]
+  const toolsDir = 'src/main/agent/tools'
+  const files = readdirSync(join(root, toolsDir)).filter((file) =>
+    file.endsWith('.ts')
+  )
+  const names = files.flatMap((file) =>
+    [...read(`${toolsDir}/${file}`).matchAll(/^    name: '([^']+)'/gm)].map(
+      (match) => match[1]
+    )
   )
   const doc = read('docs/agent-capabilities.md')
   const count = doc.match(/当前注册\s+(\d+)\s+个工具/)

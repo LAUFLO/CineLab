@@ -9,6 +9,7 @@ import { Icon } from '../components/Icon'
 import { useProjectStore } from '../stores/project'
 import { useUIStore } from '../stores/ui'
 import '../styles/skills.css'
+import { Button, NativeSelect, Input, Textarea } from '../components/ui'
 
 const SCOPE_LABEL: Record<SkillScope, string> = {
   builtin: '内置',
@@ -111,9 +112,7 @@ export function SkillsSection() {
       }
     } catch (refreshError) {
       setError(
-        refreshError instanceof Error
-          ? refreshError.message
-          : '读取技能失败'
+        refreshError instanceof Error ? refreshError.message : '读取技能失败'
       )
     } finally {
       setLoading(false)
@@ -160,9 +159,7 @@ export function SkillsSection() {
 
   const updateEntry = (entry: SkillAdminEntry): void => {
     setSkills((current) =>
-      current.map((item) =>
-        entryKey(item) === entryKey(entry) ? entry : item
-      )
+      current.map((item) => (entryKey(item) === entryKey(entry) ? entry : item))
     )
   }
 
@@ -206,9 +203,7 @@ export function SkillsSection() {
       setDraft(emptyDraft())
       await refresh({ scope: created.scope, name: created.name })
     } catch (createError) {
-      setError(
-        createError instanceof Error ? createError.message : '创建失败'
-      )
+      setError(createError instanceof Error ? createError.message : '创建失败')
     } finally {
       setSaving(false)
     }
@@ -228,9 +223,7 @@ export function SkillsSection() {
       setSelectedKey(null)
       await refresh()
     } catch (removeError) {
-      setError(
-        removeError instanceof Error ? removeError.message : '删除失败'
-      )
+      setError(removeError instanceof Error ? removeError.message : '删除失败')
     } finally {
       setSaving(false)
     }
@@ -255,9 +248,7 @@ export function SkillsSection() {
     }
   }
 
-  const upload = async (
-    folder: 'references' | 'assets'
-  ): Promise<void> => {
+  const upload = async (folder: 'references' | 'assets'): Promise<void> => {
     if (!selected || !selected.editable || uploading) return
     setUploading(true)
     setError(null)
@@ -303,18 +294,14 @@ export function SkillsSection() {
           if (preview?.path === file.path) setPreview(null)
         } catch (removeError) {
           setError(
-            removeError instanceof Error
-              ? removeError.message
-              : '删除文件失败'
+            removeError instanceof Error ? removeError.message : '删除文件失败'
           )
         }
       }
     })
   }
 
-  const cloneTo = async (
-    targetScope: 'global' | 'project'
-  ): Promise<void> => {
+  const cloneTo = async (targetScope: 'global' | 'project'): Promise<void> => {
     if (!selected || cloning) return
     if (targetScope === 'project' && !projectPath) {
       setError('请先打开项目，再创建项目覆盖')
@@ -357,9 +344,7 @@ export function SkillsSection() {
         )
       }
     } catch (openError) {
-      setError(
-        openError instanceof Error ? openError.message : '读取文件失败'
-      )
+      setError(openError instanceof Error ? openError.message : '读取文件失败')
     }
   }
 
@@ -372,7 +357,7 @@ export function SkillsSection() {
             内置技能随应用提供；全局技能在本机所有项目可用；项目技能只属于当前项目。
           </div>
         </div>
-        <button
+        <Button
           type="button"
           className="btn-primary btn-small"
           onClick={() => {
@@ -380,10 +365,11 @@ export function SkillsSection() {
             setDraft(emptyDraft())
             setError(null)
           }}
+          unstyled
         >
           <Icon name="plus" size={13} />
           新建技能
-        </button>
+        </Button>
       </div>
 
       {error ? <div className="form-message is-error">{error}</div> : null}
@@ -394,7 +380,7 @@ export function SkillsSection() {
           <div className="skills-form-row">
             <label className="field">
               <span>作用域</span>
-              <select
+              <NativeSelect
                 className="skills-input"
                 value={draft.scope}
                 onChange={(event) =>
@@ -403,16 +389,17 @@ export function SkillsSection() {
                     scope: event.target.value as 'global' | 'project'
                   }))
                 }
+                unstyled
               >
                 <option value="global">全局技能</option>
                 <option value="project" disabled={!projectPath}>
                   项目技能{projectPath ? '' : '（未打开项目）'}
                 </option>
-              </select>
+              </NativeSelect>
             </label>
             <label className="field">
               <span>名称</span>
-              <input
+              <Input
                 className="skills-input"
                 value={draft.name}
                 placeholder="例如 shot-lighting"
@@ -422,11 +409,12 @@ export function SkillsSection() {
                     name: event.target.value
                   }))
                 }
+                unstyled
               />
             </label>
             <label className="field">
               <span>版本</span>
-              <input
+              <Input
                 className="skills-input"
                 value={draft.version}
                 placeholder="可选，例如 1.0"
@@ -436,12 +424,13 @@ export function SkillsSection() {
                     version: event.target.value
                   }))
                 }
+                unstyled
               />
             </label>
           </div>
           <label className="field">
             <span>描述</span>
-            <input
+            <Input
               className="skills-input"
               value={draft.description}
               placeholder="一句话说明这个技能做什么"
@@ -452,11 +441,12 @@ export function SkillsSection() {
                   description: event.target.value
                 }))
               }
+              unstyled
             />
           </label>
           <label className="field">
             <span>SKILL.md 正文</span>
-            <textarea
+            <Textarea
               className="skills-textarea"
               value={draft.body}
               rows={10}
@@ -466,29 +456,30 @@ export function SkillsSection() {
                   body: event.target.value
                 }))
               }
+              unstyled
             />
           </label>
           <div className="skills-create__actions">
-            <button
+            <Button
               type="button"
               className="btn-secondary btn-small"
               onClick={() => setCreating(false)}
               disabled={saving}
+              unstyled
             >
               取消
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="btn-primary btn-small"
               onClick={() => void create()}
               disabled={
-                saving ||
-                !draft.name.trim() ||
-                !draft.description.trim()
+                saving || !draft.name.trim() || !draft.description.trim()
               }
+              unstyled
             >
               {saving ? '创建中…' : '创建技能'}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -506,26 +497,28 @@ export function SkillsSection() {
                   <span>
                     {SCOPE_LABEL[group.scope]} · {group.entries.length}
                   </span>
-                  <button
+                  <Button
                     type="button"
                     className="skills-link"
                     onClick={() =>
                       void window.api.skills.openDirectory(group.scope)
                     }
+                    unstyled
                   >
                     打开目录
-                  </button>
+                  </Button>
                 </div>
                 {group.entries.map((entry) => {
                   const key = entryKey(entry)
                   return (
-                    <button
+                    <Button
                       key={key}
                       type="button"
                       className={`skills-item ${
                         key === selectedKey ? 'is-active' : ''
                       } ${entry.enabled ? '' : 'is-disabled'}`}
                       onClick={() => setSelectedKey(key)}
+                      unstyled
                     >
                       <div className="skills-item__row">
                         <span className="skills-item__name">{entry.name}</span>
@@ -541,7 +534,7 @@ export function SkillsSection() {
                       <div className="skills-item__desc">
                         {entry.description}
                       </div>
-                    </button>
+                    </Button>
                   )
                 })}
               </div>
@@ -572,9 +565,7 @@ export function SkillsSection() {
                       </span>
                     ) : null}
                     {selected.version ? (
-                      <span className="skills-badge">
-                        v{selected.version}
-                      </span>
+                      <span className="skills-badge">v{selected.version}</span>
                     ) : null}
                   </div>
                 </div>
@@ -582,36 +573,36 @@ export function SkillsSection() {
                   {selected.scope !== 'project' &&
                   !skills.some(
                     (entry) =>
-                      entry.scope === 'project' &&
-                      entry.name === selected.name
+                      entry.scope === 'project' && entry.name === selected.name
                   ) ? (
-                    <button
+                    <Button
                       type="button"
                       className="btn-secondary btn-small"
                       onClick={() => void cloneTo('project')}
                       disabled={!projectPath || cloning}
+                      unstyled
                     >
                       <Icon name="copy" size={13} />
                       创建项目覆盖
-                    </button>
+                    </Button>
                   ) : null}
                   {selected.scope === 'builtin' &&
                   !skills.some(
                     (entry) =>
-                      entry.scope === 'global' &&
-                      entry.name === selected.name
+                      entry.scope === 'global' && entry.name === selected.name
                   ) ? (
-                    <button
+                    <Button
                       type="button"
                       className="btn-secondary btn-small"
                       onClick={() => void cloneTo('global')}
                       disabled={cloning}
+                      unstyled
                     >
                       <Icon name="copy" size={13} />
                       创建全局覆盖
-                    </button>
+                    </Button>
                   ) : null}
-                  <button
+                  <Button
                     type="button"
                     className="btn-secondary btn-small"
                     onClick={() =>
@@ -620,29 +611,31 @@ export function SkillsSection() {
                         selected.name
                       )
                     }
+                    unstyled
                   >
                     <Icon name="folder" size={13} />
                     打开目录
-                  </button>
+                  </Button>
                   {selected.editable ? (
-                    <button
+                    <Button
                       type="button"
                       className={`btn-secondary btn-small ${
                         confirmRemove ? 'is-danger' : ''
                       }`}
                       onClick={() => void remove()}
                       disabled={saving}
+                      unstyled
                     >
                       <Icon name="trash" size={13} />
                       {confirmRemove ? '确认删除' : '删除'}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               </header>
 
               <div className="skills-toggles">
                 <label className="skills-switch">
-                  <input
+                  <Input
                     type="checkbox"
                     checked={selected.enabled}
                     onChange={(event) =>
@@ -650,11 +643,12 @@ export function SkillsSection() {
                         enabled: event.target.checked
                       })
                     }
+                    unstyled
                   />
                   <span>启用</span>
                 </label>
                 <label className="skills-switch">
-                  <input
+                  <Input
                     type="checkbox"
                     checked={Boolean(selected.disableModelInvocation)}
                     onChange={(event) =>
@@ -662,6 +656,7 @@ export function SkillsSection() {
                         disableModelInvocation: event.target.checked
                       })
                     }
+                    unstyled
                   />
                   <span>禁止模型自动调用</span>
                 </label>
@@ -670,43 +665,47 @@ export function SkillsSection() {
               <div className="skills-editor">
                 <label className="field">
                   <span>描述</span>
-                  <input
+                  <Input
                     className="skills-input"
                     value={description}
                     disabled={!selected.editable}
                     maxLength={500}
                     onChange={(event) => setDescription(event.target.value)}
+                    unstyled
                   />
                 </label>
                 <label className="field">
                   <span>版本</span>
-                  <input
+                  <Input
                     className="skills-input"
                     value={version}
                     disabled={!selected.editable}
                     onChange={(event) => setVersion(event.target.value)}
+                    unstyled
                   />
                 </label>
                 <label className="field">
                   <span>SKILL.md 正文</span>
-                  <textarea
+                  <Textarea
                     className="skills-textarea"
                     value={body}
                     disabled={!selected.editable}
                     rows={14}
                     onChange={(event) => setBody(event.target.value)}
+                    unstyled
                   />
                 </label>
                 {selected.editable ? (
                   <div className="skills-editor__actions">
-                    <button
+                    <Button
                       type="button"
                       className="btn-primary btn-small"
                       onClick={() => void save()}
                       disabled={saving}
+                      unstyled
                     >
                       {saving ? '保存中…' : '保存技能'}
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <div className="skills-readonly">
@@ -722,24 +721,26 @@ export function SkillsSection() {
                     <small>{files.length} 个</small>
                     {selected.editable ? (
                       <>
-                        <button
+                        <Button
                           type="button"
                           className="skills-link"
                           onClick={() => void upload('references')}
                           disabled={uploading}
+                          unstyled
                         >
                           <Icon name="plus" size={11} />
                           references
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
                           className="skills-link"
                           onClick={() => void upload('assets')}
                           disabled={uploading}
+                          unstyled
                         >
                           <Icon name="plus" size={11} />
                           assets
-                        </button>
+                        </Button>
                       </>
                     ) : null}
                   </div>
@@ -752,24 +753,26 @@ export function SkillsSection() {
                         preview?.path === file.path ? 'is-active' : ''
                       }`}
                     >
-                      <button
+                      <Button
                         type="button"
                         className="skills-file__main"
                         onClick={() => void openFile(file)}
+                        unstyled
                       >
                         <Icon name={fileIcon(file.path)} size={13} />
                         <span>{file.path}</span>
                         <small>{formatSize(file.size)}</small>
-                      </button>
+                      </Button>
                       {selected.editable && file.path !== 'SKILL.md' ? (
-                        <button
+                        <Button
                           type="button"
                           className="skills-file__delete"
                           title="删除文件"
                           onClick={() => removeFile(file)}
+                          unstyled
                         >
                           <Icon name="trash" size={12} />
-                        </button>
+                        </Button>
                       ) : null}
                     </div>
                   ))}
@@ -778,7 +781,7 @@ export function SkillsSection() {
                   <div className="skills-preview">
                     <div className="skills-preview__head">
                       <span>{preview.path}</span>
-                      <button
+                      <Button
                         type="button"
                         className="skills-link"
                         onClick={() =>
@@ -788,12 +791,15 @@ export function SkillsSection() {
                             preview.path
                           )
                         }
+                        unstyled
                       >
                         用系统打开
-                      </button>
+                      </Button>
                     </div>
                     {preview.binary ? (
-                      <div className="skills-empty">二进制文件，请用系统打开。</div>
+                      <div className="skills-empty">
+                        二进制文件，请用系统打开。
+                      </div>
                     ) : (
                       <pre>{preview.content}</pre>
                     )}

@@ -9,6 +9,7 @@ import {
   segmentMetaLine,
   studyClock
 } from './study-sheet'
+import { Button } from '../../components/ui'
 
 export function FilmStudySheet() {
   const nodeId = useFilmStudyStore((state) => state.sheetNodeId)
@@ -83,25 +84,20 @@ export function FilmStudySheet() {
                   {segment.imagePrompt ?? '—'}
                 </td>
                 <td className="film-study-sheet__text">
-                  {segment.voiceOver ? (
-                    <p>人声：{segment.voiceOver}</p>
-                  ) : null}
-                  {segment.musicCue ? (
-                    <p>音乐：{segment.musicCue}</p>
-                  ) : null}
+                  {segment.voiceOver ? <p>人声：{segment.voiceOver}</p> : null}
+                  {segment.musicCue ? <p>音乐：{segment.musicCue}</p> : null}
                   {!segment.voiceOver && !segment.musicCue ? '—' : null}
                 </td>
                 <td>
-                  <button
+                  <Button
                     type="button"
                     className="icon-btn"
                     title="复制这一镜的提示词"
-                    onClick={() =>
-                      void copy(segmentCopyText(segment, index))
-                    }
+                    onClick={() => void copy(segmentCopyText(segment, index))}
+                    unstyled
                   >
                     <Icon name="copy" size={12} />
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -133,15 +129,18 @@ export function FilmStudySheet() {
                 <span>{studyClock(study.duration)}</span>
               </>
             ) : null}
-            <button
+            <Button
               type="button"
               className="btn-secondary btn-sm"
               disabled={!study}
-              onClick={() => void copy(study ? buildStudyTableMarkdown(study) : '')}
+              onClick={() =>
+                void copy(study ? buildStudyTableMarkdown(study) : '')
+              }
+              unstyled
             >
               复制整表
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="btn-secondary btn-sm"
               disabled={!study}
@@ -159,10 +158,11 @@ export function FilmStudySheet() {
                       )
                   : undefined
               }
+              unstyled
             >
               导出 Markdown
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="btn-secondary btn-sm"
               onClick={() => {
@@ -170,17 +170,19 @@ export function FilmStudySheet() {
                 close()
                 void openRoom(target)
               }}
+              unstyled
             >
               高级编辑
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="icon-btn"
               title="关闭"
               onClick={close}
+              unstyled
             >
               <Icon name="close" size={14} />
-            </button>
+            </Button>
           </div>
         </header>
 

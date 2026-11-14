@@ -3,6 +3,7 @@ import type { RecentProject } from '@shared/project-schema'
 import { assetUrl } from '../lib/asset-url'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { Icon } from './Icon'
+import { Button } from './ui'
 
 interface ProjectCardProps {
   project: RecentProject
@@ -39,7 +40,11 @@ function useCanvasImages(enabled: boolean): CanvasImage[] {
         if (output.kind !== 'image' || output.scope === 'global') continue
         if (seen.has(output.path)) continue
         seen.add(output.path)
-        images.push({ id: output.id, path: output.path, title: node.data.title })
+        images.push({
+          id: output.id,
+          path: output.path,
+          title: node.data.title
+        })
       }
     }
 
@@ -107,7 +112,10 @@ export function ProjectCard({
     setPickerOpen(false)
     setBusy(true)
     try {
-      const result = await window.api.project.setCoverFromAsset(project.path, assetPath)
+      const result = await window.api.project.setCoverFromAsset(
+        project.path,
+        assetPath
+      )
       if (result.ok) {
         await refreshCover()
         onChanged?.()
@@ -131,19 +139,21 @@ export function ProjectCard({
 
   return (
     <div className="project-center__card">
-      <button
+      <Button
         type="button"
         className="project-center__cover"
         onClick={() => onOpen(project.path)}
         title={`打开 ${project.name}`}
+        unstyled
       >
         {cover ? <img src={cover} alt="" /> : <Icon name="folder" size={22} />}
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         className="project-center__card-info"
         onClick={() => onOpen(project.path)}
+        unstyled
       >
         <span className="project-center__card-name">{project.name}</span>
         <span className="project-center__card-path" title={project.path}>
@@ -152,75 +162,92 @@ export function ProjectCard({
         <span className="project-center__card-time">
           {new Date(project.lastOpenedAt).toLocaleString('zh-CN')}
         </span>
-      </button>
+      </Button>
 
       <div className="project-card__menu-wrap" ref={menuRef}>
-        <button
+        <Button
           type="button"
           className="project-card__edit"
           title="更换封面"
           onClick={() => setMenuOpen((open) => !open)}
           disabled={busy}
+          unstyled
         >
           <Icon name="image" size={14} />
-        </button>
+        </Button>
 
         {menuOpen ? (
           <div className="project-card__menu">
-            <button type="button" onClick={() => void setLocal()}>
+            <Button type="button" onClick={() => void setLocal()} unstyled>
               从本地选择
-            </button>
+            </Button>
             {canPickCanvas ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   setMenuOpen(false)
                   setPickerOpen(true)
                 }}
+                unstyled
               >
                 从画布选择
-              </button>
+              </Button>
             ) : null}
             {cover ? (
-              <button type="button" className="is-danger" onClick={() => void removeCover()}>
+              <Button
+                type="button"
+                className="is-danger"
+                onClick={() => void removeCover()}
+                unstyled
+              >
                 移除封面
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : null}
       </div>
 
       {pickerOpen ? (
-        <div className="cover-picker-overlay" onPointerDown={() => setPickerOpen(false)}>
-          <div className="cover-picker" onPointerDown={(event) => event.stopPropagation()}>
+        <div
+          className="cover-picker-overlay"
+          onPointerDown={() => setPickerOpen(false)}
+        >
+          <div
+            className="cover-picker"
+            onPointerDown={(event) => event.stopPropagation()}
+          >
             <header className="cover-picker__head">
               <span>选择画布图片</span>
-              <button
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={() => setPickerOpen(false)}
+                unstyled
               >
                 <Icon name="close" size={14} />
-              </button>
+              </Button>
             </header>
 
             <div className="cover-picker__body">
               {canvasImages.length > 0 ? (
                 <div className="cover-picker__grid">
                   {canvasImages.map((image) => (
-                    <button
+                    <Button
                       key={image.id}
                       type="button"
                       className="cover-picker__item"
                       onClick={() => void setAsset(image.path)}
+                      unstyled
                     >
                       <img src={assetUrl(image.path)} alt="" />
                       <span>{image.title}</span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               ) : (
-                <div className="cover-picker__empty">当前画布没有可用的图片素材</div>
+                <div className="cover-picker__empty">
+                  当前画布没有可用的图片素材
+                </div>
               )}
             </div>
           </div>

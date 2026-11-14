@@ -12,6 +12,7 @@ import {
 } from '../stores/generation-history'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
+import { Button } from '../components/ui'
 
 interface HistoryItem {
   key: string
@@ -160,14 +161,15 @@ export function HistoryPanel() {
           <span className="history-dialog__count">
             {items.length + failures.length} 条
           </span>
-          <button
+          <Button
             type="button"
             className="icon-btn settings-dialog__close"
             title="关闭"
             onClick={close}
+            unstyled
           >
             <Icon name="close" size={14} />
-          </button>
+          </Button>
         </header>
 
         <div className="history-dialog__body">
@@ -192,7 +194,7 @@ export function HistoryPanel() {
                       <span>
                         {entry.status === 'cancelled'
                           ? '已取消'
-                          : entry.error ?? '生成失败'}
+                          : (entry.error ?? '生成失败')}
                       </span>
                     </div>
                     <div className="history-row__sub">
@@ -202,94 +204,100 @@ export function HistoryPanel() {
                   </div>
                   <div className="history-row__actions">
                     {entry.status === 'error' ? (
-                      <button
+                      <Button
                         type="button"
                         className="history-action history-action--text"
                         title="重试"
                         onClick={() => retry(entry)}
+                        unstyled
                       >
                         重试
-                      </button>
+                      </Button>
                     ) : null}
-                    <button
+                    <Button
                       type="button"
                       className="history-action"
                       title="移除记录"
                       onClick={() => removeHistory(entry.nodeId)}
+                      unstyled
                     >
                       <Icon name="trash" size={14} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
               {items.map((item) => (
-              <div key={item.key} className="history-row">
-                <div className="history-row__thumb">
-                  {item.output.kind === 'image' ? (
-                    <img
-                      src={assetUrl(item.output.path, item.output.scope)}
-                      alt={item.title}
-                      draggable={false}
-                    />
-                  ) : (
-                    <Icon
-                      name={
-                        item.output.kind === 'video'
-                          ? 'video'
-                          : item.output.kind === 'audio'
-                            ? 'audio'
-                            : 'text'
-                      }
-                      size={20}
-                    />
-                  )}
-                </div>
+                <div key={item.key} className="history-row">
+                  <div className="history-row__thumb">
+                    {item.output.kind === 'image' ? (
+                      <img
+                        src={assetUrl(item.output.path, item.output.scope)}
+                        alt={item.title}
+                        draggable={false}
+                      />
+                    ) : (
+                      <Icon
+                        name={
+                          item.output.kind === 'video'
+                            ? 'video'
+                            : item.output.kind === 'audio'
+                              ? 'audio'
+                              : 'text'
+                        }
+                        size={20}
+                      />
+                    )}
+                  </div>
 
-                <div className="history-row__meta">
-                  <div className="history-row__title">{item.title}</div>
-                  <div className="history-row__sub">
-                    <span>{item.output.kind}</span>
-                    <span>{item.output.model}</span>
-                    <span>{formatTime(item.output.createdAt)}</span>
+                  <div className="history-row__meta">
+                    <div className="history-row__title">{item.title}</div>
+                    <div className="history-row__sub">
+                      <span>{item.output.kind}</span>
+                      <span>{item.output.model}</span>
+                      <span>{formatTime(item.output.createdAt)}</span>
+                    </div>
+                  </div>
+
+                  <div className="history-row__actions">
+                    <Button
+                      type="button"
+                      className="history-action"
+                      title="定位节点"
+                      onClick={() => locate(item)}
+                      unstyled
+                    >
+                      <Icon name="target" size={14} />
+                    </Button>
+                    <Button
+                      type="button"
+                      className="history-action"
+                      title="添加到画布"
+                      onClick={() => addToCanvas(item)}
+                      unstyled
+                    >
+                      <Icon name="plus" size={14} />
+                    </Button>
+                    <Button
+                      type="button"
+                      className="history-action"
+                      title="保存到资产库"
+                      onClick={() => saveToLibrary(item)}
+                      unstyled
+                    >
+                      <Icon name="folder" size={14} />
+                    </Button>
+                    <Button
+                      type="button"
+                      className="history-action"
+                      title="导出"
+                      onClick={() => void exportItem(item)}
+                      unstyled
+                    >
+                      <Icon name="download" size={14} />
+                    </Button>
                   </div>
                 </div>
-
-                <div className="history-row__actions">
-                  <button
-                    type="button"
-                    className="history-action"
-                    title="定位节点"
-                    onClick={() => locate(item)}
-                  >
-                    <Icon name="target" size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    className="history-action"
-                    title="添加到画布"
-                    onClick={() => addToCanvas(item)}
-                  >
-                    <Icon name="plus" size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    className="history-action"
-                    title="保存到资产库"
-                    onClick={() => saveToLibrary(item)}
-                  >
-                    <Icon name="folder" size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    className="history-action"
-                    title="导出"
-                    onClick={() => void exportItem(item)}
-                  >
-                    <Icon name="download" size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
             </>
           )}
         </div>

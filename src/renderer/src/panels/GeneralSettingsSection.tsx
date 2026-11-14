@@ -12,7 +12,7 @@ import {
   type CapabilityGroup,
   type Preferences
 } from '@shared/preferences'
-import { Input, Select, SettingRow, Switch } from '../components/ui'
+import { Input, Select, SettingRow, Switch, Button } from '../components/ui'
 import { useGenerationHistoryStore } from '../stores/generation-history'
 import { usePreferencesStore } from '../stores/preferences'
 import { useSettingsStore } from '../stores/settings'
@@ -56,15 +56,15 @@ export function GeneralSettingsSection() {
   const updateStorage = usePreferencesStore((state) => state.updateStorage)
   const updateUi = usePreferencesStore((state) => state.updateUi)
   const updateNetwork = usePreferencesStore((state) => state.updateNetwork)
-  const setDefaultModel = usePreferencesStore(
-    (state) => state.setDefaultModel
-  )
+  const setDefaultModel = usePreferencesStore((state) => state.setDefaultModel)
   const refreshPreferences = usePreferencesStore((state) => state.refresh)
   const reset = usePreferencesStore((state) => state.reset)
   const providers = useSettingsStore((state) => state.providers)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   const showToast = useUIStore((state) => state.showToast)
-  const historyCount = useGenerationHistoryStore((state) => state.entries.length)
+  const historyCount = useGenerationHistoryStore(
+    (state) => state.entries.length
+  )
 
   const [thumbInfo, setThumbInfo] = useState<ThumbCacheInfo | null>(null)
   const [cacheBusy, setCacheBusy] = useState(false)
@@ -80,7 +80,10 @@ export function GeneralSettingsSection() {
   }, [preferences.network.proxyUrl])
 
   const modelOptions = useMemo(() => {
-    const groups: Record<CapabilityGroup, Array<{ value: string; label: string }>> = {
+    const groups: Record<
+      CapabilityGroup,
+      Array<{ value: string; label: string }>
+    > = {
       image: [],
       video: [],
       text: [],
@@ -184,10 +187,7 @@ export function GeneralSettingsSection() {
       setThumbInfo({ bytes: 0, files: 0 })
       showToast(`已清理缩略图缓存 ${formatBytes(removed.bytes)}`)
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : String(error),
-        'error'
-      )
+      showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setCacheBusy(false)
     }
@@ -204,10 +204,7 @@ export function GeneralSettingsSection() {
       const result = await window.api.settings.exportPreferences()
       if (result.path) showToast('通用设置已导出')
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : String(error),
-        'error'
-      )
+      showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setIoBusy(false)
     }
@@ -222,17 +219,13 @@ export function GeneralSettingsSection() {
         showToast('通用设置已导入')
       }
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : String(error),
-        'error'
-      )
+      showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setIoBusy(false)
     }
   }
 
-  const projectDir =
-    preferences.project.defaultDir || '文档 / CineLab（默认）'
+  const projectDir = preferences.project.defaultDir || '文档 / CineLab（默认）'
 
   return (
     <div className="settings-section">
@@ -248,14 +241,13 @@ export function GeneralSettingsSection() {
           />
         </SettingRow>
 
-        <SettingRow
-          title="自动保存间隔"
-          hint="画布变化后延迟多久写入磁盘"
-        >
+        <SettingRow title="自动保存间隔" hint="画布变化后延迟多久写入磁盘">
           <Select
             value={String(preferences.project.autoSaveDelay)}
             options={autoSaveOptions}
-            onChange={(next) => void updateProject({ autoSaveDelay: Number(next) })}
+            onChange={(next) =>
+              void updateProject({ autoSaveDelay: Number(next) })
+            }
           />
         </SettingRow>
 
@@ -274,21 +266,23 @@ export function GeneralSettingsSection() {
         <SettingRow title="默认项目目录" hint="新建项目时的默认位置">
           <div className="settings-path-control">
             <code title={projectDir}>{projectDir}</code>
-            <button
+            <Button
               type="button"
               className="btn-secondary btn-sm"
               onClick={() => void chooseProjectDir()}
+              unstyled
             >
               选择
-            </button>
+            </Button>
             {preferences.project.defaultDir ? (
-              <button
+              <Button
                 type="button"
                 className="btn-secondary btn-sm"
                 onClick={() => void updateProject({ defaultDir: '' })}
+                unstyled
               >
                 恢复默认
-              </button>
+              </Button>
             ) : null}
           </div>
         </SettingRow>
@@ -328,9 +322,7 @@ export function GeneralSettingsSection() {
         <SettingRow title="双击画布缩放" hint="双击空白区域放大画布">
           <Switch
             checked={preferences.canvas.zoomOnDoubleClick}
-            onChange={(next) =>
-              void updateCanvas({ zoomOnDoubleClick: next })
-            }
+            onChange={(next) => void updateCanvas({ zoomOnDoubleClick: next })}
           />
         </SettingRow>
 
@@ -386,10 +378,7 @@ export function GeneralSettingsSection() {
           />
         </SettingRow>
 
-        <SettingRow
-          title="失败自动重试"
-          hint="只对标记为可重试的生成错误生效"
-        >
+        <SettingRow title="失败自动重试" hint="只对标记为可重试的生成错误生效">
           <Select
             value={String(preferences.generation.autoRetry)}
             options={retryOptions}
@@ -463,14 +452,15 @@ export function GeneralSettingsSection() {
               : '正在读取…'
           }
         >
-          <button
+          <Button
             type="button"
             className="btn-secondary btn-sm"
             disabled={cacheBusy || !thumbInfo || thumbInfo.files === 0}
             onClick={() => void clearThumbCache()}
+            unstyled
           >
             {cacheBusy ? '清理中…' : '清理缓存'}
-          </button>
+          </Button>
         </SettingRow>
 
         <SettingRow
@@ -486,11 +476,8 @@ export function GeneralSettingsSection() {
           />
         </SettingRow>
 
-        <SettingRow
-          title="生成历史"
-          hint={`当前 ${historyCount} 条记录`}
-        >
-          <button
+        <SettingRow title="生成历史" hint={`当前 ${historyCount} 条记录`}>
+          <Button
             type="button"
             className="btn-secondary btn-sm"
             disabled={historyCount === 0}
@@ -498,31 +485,30 @@ export function GeneralSettingsSection() {
               useGenerationHistoryStore.getState().clear()
               showToast('已清空生成历史')
             }}
+            unstyled
           >
             清空历史
-          </button>
+          </Button>
         </SettingRow>
 
         <SettingRow
           title="数据目录"
           hint="包含 models.json、settings.json、preferences.json 和日志"
         >
-          <button
+          <Button
             type="button"
             className="btn-secondary btn-sm"
             onClick={() => void window.api.settings.openDataDir()}
+            unstyled
           >
             打开目录
-          </button>
+          </Button>
         </SettingRow>
       </div>
 
       <div className="settings-group-title">界面</div>
       <div className="settings-group">
-        <SettingRow
-          title="界面缩放"
-          hint="主题仍在「外观」分区调整"
-        >
+        <SettingRow title="界面缩放" hint="主题仍在「外观」分区调整">
           <Select
             value={String(preferences.ui.scale)}
             options={scaleOptions}
@@ -533,7 +519,10 @@ export function GeneralSettingsSection() {
 
       <div className="settings-group-title">网络与请求</div>
       <div className="settings-group">
-        <SettingRow title="模型请求代理" hint="模型接口和素材下载使用的网络代理">
+        <SettingRow
+          title="模型请求代理"
+          hint="模型接口和素材下载使用的网络代理"
+        >
           <Select
             value={preferences.network.proxyMode}
             options={proxyModeOptions}
@@ -547,13 +536,12 @@ export function GeneralSettingsSection() {
             hint="例如 http://127.0.0.1:7890，支持 HTTP/SOCKS"
           >
             <Input
-              className="w-64"
+              className="settings-input"
               value={proxyDraft}
               placeholder="http://127.0.0.1:7890"
               onChange={(event) => setProxyDraft(event.target.value)}
-              onBlur={() =>
-                void updateNetwork({ proxyUrl: proxyDraft.trim() })
-              }
+              onBlur={() => void updateNetwork({ proxyUrl: proxyDraft.trim() })}
+              unstyled
             />
           </SettingRow>
         ) : null}
@@ -576,22 +564,24 @@ export function GeneralSettingsSection() {
           hint="导出或导入 preferences.json，不含模型密钥"
         >
           <div className="settings-actions settings-actions--inline">
-            <button
+            <Button
               type="button"
               className="btn-secondary btn-sm"
               disabled={ioBusy}
               onClick={() => void exportPreferences()}
+              unstyled
             >
               导出
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="btn-secondary btn-sm"
               disabled={ioBusy}
               onClick={() => void importPreferences()}
+              unstyled
             >
               导入
-            </button>
+            </Button>
           </div>
         </SettingRow>
 
@@ -599,7 +589,7 @@ export function GeneralSettingsSection() {
           title="重置通用设置"
           hint="恢复默认值；模型配置和资产库路径不受影响"
         >
-          <button
+          <Button
             type="button"
             className="btn-secondary btn-sm"
             onClick={() =>
@@ -614,9 +604,10 @@ export function GeneralSettingsSection() {
                 }
               })
             }
+            unstyled
           >
             重置
-          </button>
+          </Button>
         </SettingRow>
       </div>
     </div>

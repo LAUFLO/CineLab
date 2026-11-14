@@ -1,9 +1,9 @@
 # P2 UI 基础设施验收记录
 
-日期：2026-11-13
-状态：历史（2026-11-13 验收）
+日期：2026-11-14
+状态：现行
 适用版本：v0.1.0
-最后核对：2026-11-13
+最后核对：2026-11-14
 
 ## 完成范围
 
@@ -11,53 +11,110 @@
 - `components/ui/` primitives：
   - Button / IconButton
   - Input / Textarea
-  - Select
+  - Select / NativeSelect
   - Switch
   - Field / SettingRow
   - Dialog
   - Menu / MenuItem / MenuSeparator
   - Toast
-- 迁移页面：
-  - 设置页
-  - 资产库（工具栏、卡片操作、文件夹树、命名/模板/移动/合成/标签弹窗）
-  - 剪辑室（顶栏、时间线工具栏、检查器主要控件）
-  - 画布节点工具栏（操作按钮与菜单项）
-  - Prompt Bar（上传/模型/提及菜单、开关、发送/停止）
+- 全量控件迁移：`src/renderer/src` 下除 `components/ui` 外，原生 `<button>`、`<input>`、`<textarea>`、`<select>` 已清零，共替换 510 处、覆盖 60 个文件。
+- `Button`、`Input`、`Textarea`、`NativeSelect` 增加 `unstyled` 变体，迁移期保留既有视觉。
+- `Dialog` 增加 `bare` 模式，调用方保留 overlay/panel 类和内部结构，公共组件负责 portal、焦点圈定、Escape 和遮罩点击。
+- 节点弹窗统一由 `Dialog` 承载：
+  - 裁剪 `CropDialog`
+  - 片段截取 `TrimDialog`
+  - 字幕框选 `SubtitleDialog`
+  - 遮罩编辑 `MaskEditorDialog`
+  - 深度捕捉 `DepthCaptureDialog`
+  - 模型参数 `ModelParamsDialog`
+  - 模型能力 `ModelInputsDialog`
+  - AI 操作 `AiOperationDialog`
+  - 光位/机位 `SphereDialog`
+  - 文本编辑 `TextEditorDialog`
+- 删除 `components/Select.tsx` 转发层，全部改为从 `components/ui` 导入。
+- TopBar 导出提示、App 启动错误提示改为共享 `Toast`。
 
 ## CSS 清理
 
-| 指标 | 清理前 | 清理后 |
+| 指标 | P2 基础完成 | 全量迁移后 |
 |---|---:|---:|
-| `global.css` 行数 | 8,467 | 8,070 |
-| 构建后 CSS | 299.7 KB | 291.3 KB |
+| `global.css` 行数 | 8,467 | 8,122 |
+| 构建后 CSS | 299.7 KB | 281.9 KB |
 
-已删除且确认 TSX 引用为 0 的类：
+已删除且确认引用为 0 的类：
 
 - `app-select*`
 - `settings-row*`、`settings-toggle*`、`settings-input`
 - `confirm-overlay`、`confirm-dialog*`
 - `library-modal*`、`library-textarea`、`tag-input`
-- `export-toast`
+- `export-toast`、`toast`
 - `cnode__toolbar-menu__item*`
 - `promptbar__upload-item`、`promptbar__switch`
 - `mention-menu__item*`
 
+说明：`global.css` 行数相比上一轮略有增加，是因为 Prettier 展开了部分单行规则；实际构建体积继续下降。
+
+## 视觉还原修正
+
+P2 早期迁移曾直接用公共组件的默认 Tailwind 样式替换原 CSS 类，导致按钮高度、字号、菜单行高、弹窗面板和输入框尺寸与原版不一致。本轮已按迁移前基线逐项还原：
+
+- `Button`：恢复 34px 高、13px 字号、8px 圆角、`.btn-*` 的边框与悬停行为；`xs` 对应 26px 的 `btn-small`，`sm` 对应 28px。
+- `IconButton`：默认 28px，恢复 `.icon-btn` 的尺寸和悬停。
+- `Select`：恢复 `.app-select` 的 34px 高度、13px 字号、`surface-hover` 背景和 280px 菜单。
+- `Switch`：默认 30×17（设置页），`sm` 为 22×12（Prompt Bar）。
+- `SettingRow`：恢复 56px 最小高度、12.5px 标题、11px 提示和 14px 横向内边距。
+- `Input`：恢复 `settings-input` 的 240×30 样式；设置行 Select 恢复 210×30。
+- 节点工具栏菜单：恢复 `.cnode__toolbar-menu__item` 的 12px 字号、32px 行高和 `text-2` 颜色。
+- Prompt Bar：恢复上传菜单、模型菜单、提及菜单的原始字号和行高，恢复 22×12 开关。
+- 弹窗：确认、命名、模板、移动、合成、标签弹窗恢复原 `.confirm-dialog` / `.library-modal` 结构；节点弹窗继续使用 `Dialog` 的 `bare` 模式。
+- 剪辑室：恢复 `.studio-icon-btn`、`.studio-ghost-btn`、`.studio-textarea` 和原生 select 的 30px 视觉。
+- Toast：恢复 `.export-toast` 和 `.toast` 的原样式。
+
+根因修正：`global.css` 里的 `button`、`input`、`textarea` 重置原先不在 layer 中，优先级高于 Tailwind utilities，导致公共组件的 `padding`、`font-size`、`line-height` 被覆盖。现已移入 `@layer base`，组件默认样式和自定义类都能正确生效。
+
+与迁移前基线的并排对比结果：
+
+- 设置页的开关、设置行、下拉框尺寸一致
+- 资产库的搜索框、工具栏、按钮层级一致
+- 剪辑室的顶栏、检查器、时间线工具栏一致
+- 文本编辑弹窗的面板、工具栏、底部按钮一致
+- 节点工具栏菜单的字号、行高、颜色一致
+- 菜单长文本保持单行：左侧名称优先显示，右侧提示限宽 118px 后省略，不回退到原版换行
+- 资产库删除按钮恢复为 `btn-secondary is-danger` 的白底红字，而不是红底白字
+
 ## 视觉回归
 
-环境：生产预览构建，临时 userData，打开本地 `AgentSpike.cinelab` 测试项目（4 个节点）。
+环境：生产预览构建，临时 userData，打开本地 `AgentSpike.cinelab` 测试项目。
 
 检查结果：
 
-- 顶栏、画布、节点、连线正常
-- 节点工具栏「编辑 / 剪辑室」正常显示
-- Prompt Bar 上传、画布参考、模型入口、参数提示、发送按钮布局正常
-- 底部工具栏、资产管理入口、CineBot 悬浮按钮正常
-- 未发现删除 CSS 导致的明显布局破损
+- 画布、节点、连线、节点工具栏正常
+- Prompt Bar 的上传、画布参考、模型入口、发送按钮正常
+- 设置页的 Switch、Select、输入框正常
+- 资产库的搜索框、文件夹树、底部操作正常
+- 剪辑室的顶栏、检查器输入框、时间线工具栏正常
+- 文本编辑弹窗（Dialog bare）正常打开，Escape 可关闭
+- 节点工具栏「更多」菜单与迁移前截图逐项对比：字号、行高、颜色、图标间距一致
+- 设置页的 Switch、Select、设置行高度与迁移前 CSS 一致
+- 遮罩、聚焦和弹窗层级未发现明显回归
+
+AgentPanel 的模型选择浮层保留原有面板内定位，不套用全屏 Dialog，避免遮罩范围和宽度变化。
 
 截图保存在本机临时目录，未提交到仓库，避免把测试项目画面和本地路径带入公开仓库。
 
+## 验证
+
+```text
+typecheck:  通过
+lint:       0 errors
+test:       49 文件 / 345 用例
+build:      通过
+check:docs: 通过
+grep:       components/ui 之外原生控件标签 0 处
+```
+
 ## 剩余事项
 
-- 设置页、资产库、剪辑室的组合截图复核
-- 未迁移页面仍在使用的 `.btn-*`、`.studio-*` 等类保留
-- 下一阶段再处理画布/时间线的动态样式与更细粒度视觉回归
+- P3：拆分 `agent/tools.ts`、`canvas.ts`、`PromptBar.tsx`
+- P3：Studio / Stage / three 懒加载与性能基线
+- P3：补齐 protocol、project、library、IPC 测试

@@ -6,6 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { useStudioStore } from '../stores/studio'
 import { createStudioAt } from '../studio/nodes'
 import { uploadMaterialsAt } from './context-actions'
+import { Input, Button } from '../components/ui'
 
 const ICONS: Record<NodeKind, IconName> = {
   text: 'text',
@@ -69,7 +70,9 @@ export function AddNodeMenu() {
       ? nodes.filter((node) => node.parentId === sourceNode.id).length
       : 0
 
-  const kinds = NODE_KINDS.filter((kind) => NODE_META[kind].label.includes(query))
+  const kinds = NODE_KINDS.filter((kind) =>
+    NODE_META[kind].label.includes(query)
+  )
   const stageMatches = !query.trim() || '导演台'.includes(query.trim())
 
   const addStage = async (): Promise<void> => {
@@ -163,107 +166,113 @@ export function AddNodeMenu() {
         style={style}
         onPointerDown={(event) => event.stopPropagation()}
       >
-      <div className="add-menu__title">
-        {menu.source
-          ? sourceIsGroup
-            ? `引用组内 ${sourceChildren} 个节点`
-            : '引用该节点生成'
-          : '添加节点'}
-      </div>
+        <div className="add-menu__title">
+          {menu.source
+            ? sourceIsGroup
+              ? `引用组内 ${sourceChildren} 个节点`
+              : '引用该节点生成'
+            : '添加节点'}
+        </div>
 
-      <div className="add-menu__search">
-        <Icon name="search" size={13} />
-        <input
-          autoFocus
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="搜索节点…"
-        />
-      </div>
+        <div className="add-menu__search">
+          <Icon name="search" size={13} />
+          <Input
+            autoFocus
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="搜索节点…"
+            unstyled
+          />
+        </div>
 
-      <div className="add-menu__list">
-        {kinds.map((kind) => (
-          <button
-            key={kind}
-            type="button"
-            className="add-menu__item"
-            onClick={() => pick(kind)}
-          >
-            <Icon name={ICONS[kind]} size={16} />
-            <span>{NODE_META[kind].label}</span>
-          </button>
-        ))}
-        {kinds.length === 0 && !stageMatches && (
-          <div className="add-menu__empty">没有匹配的节点</div>
-        )}
-      </div>
+        <div className="add-menu__list">
+          {kinds.map((kind) => (
+            <Button
+              key={kind}
+              type="button"
+              className="add-menu__item"
+              onClick={() => pick(kind)}
+              unstyled
+            >
+              <Icon name={ICONS[kind]} size={16} />
+              <span>{NODE_META[kind].label}</span>
+            </Button>
+          ))}
+          {kinds.length === 0 && !stageMatches && (
+            <div className="add-menu__empty">没有匹配的节点</div>
+          )}
+        </div>
 
-      {!menu.source && stageMatches ? (
-        <>
-          <div className="add-menu__divider" />
-          <div className="add-menu__title">场景</div>
-          <button
-            type="button"
-            className="add-menu__item"
-            onClick={() => void addStage()}
-            disabled={creatingStage}
-          >
-            <Icon name="frame" size={16} />
-            <span>{creatingStage ? '创建中…' : '导演台'}</span>
-          </button>
-        </>
-      ) : null}
+        {!menu.source && stageMatches ? (
+          <>
+            <div className="add-menu__divider" />
+            <div className="add-menu__title">场景</div>
+            <Button
+              type="button"
+              className="add-menu__item"
+              onClick={() => void addStage()}
+              disabled={creatingStage}
+              unstyled
+            >
+              <Icon name="frame" size={16} />
+              <span>{creatingStage ? '创建中…' : '导演台'}</span>
+            </Button>
+          </>
+        ) : null}
 
-      {!menu.source && query.trim() === '' ? (
-        <>
-          <div className="add-menu__divider" />
-          <div className="add-menu__title">添加资源</div>
-          <button
-            type="button"
-            className="add-menu__item"
-            onClick={() => {
-              closeMenu()
-              const studioId = createStudioAt(menu.flow)
-              useStudioStore.getState().openStudio(studioId)
-            }}
-          >
-            <Icon name="film" size={16} />
-            <span>剪辑室</span>
-          </button>
-          <button
-            type="button"
-            className="add-menu__item"
-            onClick={() => {
-              closeMenu()
-              void uploadMaterialsAt(menu.flow)
-            }}
-          >
-            <Icon name="folder-plus" size={16} />
-            <span>上传素材</span>
-          </button>
-          <button
-            type="button"
-            className="add-menu__item"
-            onClick={() => {
-              closeMenu()
-              useUIStore.getState().openHistory()
-            }}
-          >
-            <Icon name="history" size={16} />
-            <span>从生成历史选择</span>
-          </button>
-        </>
-      ) : null}
+        {!menu.source && query.trim() === '' ? (
+          <>
+            <div className="add-menu__divider" />
+            <div className="add-menu__title">添加资源</div>
+            <Button
+              type="button"
+              className="add-menu__item"
+              onClick={() => {
+                closeMenu()
+                const studioId = createStudioAt(menu.flow)
+                useStudioStore.getState().openStudio(studioId)
+              }}
+              unstyled
+            >
+              <Icon name="film" size={16} />
+              <span>剪辑室</span>
+            </Button>
+            <Button
+              type="button"
+              className="add-menu__item"
+              onClick={() => {
+                closeMenu()
+                void uploadMaterialsAt(menu.flow)
+              }}
+              unstyled
+            >
+              <Icon name="folder-plus" size={16} />
+              <span>上传素材</span>
+            </Button>
+            <Button
+              type="button"
+              className="add-menu__item"
+              onClick={() => {
+                closeMenu()
+                useUIStore.getState().openHistory()
+              }}
+              unstyled
+            >
+              <Icon name="history" size={16} />
+              <span>从生成历史选择</span>
+            </Button>
+          </>
+        ) : null}
 
-      {menu.source ? (
-        <>
-          <div className="add-menu__divider" />
-          <button type="button" className="add-menu__item" disabled>
-            <Icon name="cursor" size={16} />
-            <span>参考节点</span>
-          </button>
-        </>
-      ) : null}
+        {menu.source ? (
+          <>
+            <div className="add-menu__divider" />
+            <Button type="button" className="add-menu__item" disabled unstyled>
+              <Icon name="cursor" size={16} />
+              <span>参考节点</span>
+            </Button>
+          </>
+        ) : null}
       </div>
     </>
   )

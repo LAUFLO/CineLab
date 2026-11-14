@@ -3,6 +3,7 @@ import { GROUP_COLORS, GROUP_LABELS } from '@shared/canvas-schema'
 import { Icon } from '../components/Icon'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
+import { Button } from '../components/ui'
 
 type MenuKind = 'arrange' | 'color'
 
@@ -27,9 +28,10 @@ export function GroupToolbar() {
       ? selected[0]
       : undefined
 
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(
-    null
-  )
+  const [position, setPosition] = useState<{
+    left: number
+    top: number
+  } | null>(null)
   const [menu, setMenu] = useState<MenuKind | null>(null)
   const groupId = group?.id
 
@@ -52,10 +54,7 @@ export function GroupToolbar() {
     setPosition({
       left: Math.max(
         halfWidth,
-        Math.min(
-          rect.left + rect.width / 2,
-          window.innerWidth - halfWidth
-        )
+        Math.min(rect.left + rect.width / 2, window.innerWidth - halfWidth)
       ),
       top: Math.max(56, rect.top - 56)
     })
@@ -82,24 +81,26 @@ export function GroupToolbar() {
       style={{ left: position.left, top: position.top }}
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <button
+      <Button
         type="button"
         className="group-toolbar__btn"
         onClick={() => startGroupRename(group.id)}
+        unstyled
       >
         <Icon name="text" size={14} />
         <span>重命名</span>
-      </button>
+      </Button>
 
       <div className="group-toolbar__menu-wrap">
-        <button
+        <Button
           type="button"
           className={`group-toolbar__btn ${menu === 'arrange' ? 'is-open' : ''}`}
           onClick={() => setMenu(menu === 'arrange' ? null : 'arrange')}
+          unstyled
         >
           <Icon name="grid" size={14} />
           <span>排列</span>
-        </button>
+        </Button>
         {menu === 'arrange' ? (
           <div className="group-toolbar__pop">
             {(
@@ -109,7 +110,7 @@ export function GroupToolbar() {
                 ['grid', '网格']
               ] as const
             ).map(([mode, label]) => (
-              <button
+              <Button
                 key={mode}
                 type="button"
                 className="group-toolbar__pop-item"
@@ -117,29 +118,31 @@ export function GroupToolbar() {
                   arrangeGroup(group.id, mode)
                   setMenu(null)
                 }}
+                unstyled
               >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
         ) : null}
       </div>
 
       <div className="group-toolbar__menu-wrap">
-        <button
+        <Button
           type="button"
           className={`group-toolbar__btn ${menu === 'color' ? 'is-open' : ''}`}
           onClick={() => setMenu(menu === 'color' ? null : 'color')}
+          unstyled
         >
           <span
             className={`group-toolbar__dot group-color-${group.data.color}`}
           />
           <span>颜色</span>
-        </button>
+        </Button>
         {menu === 'color' ? (
           <div className="group-toolbar__pop group-color-grid">
             {GROUP_COLORS.map((color) => (
-              <button
+              <Button
                 key={color}
                 type="button"
                 title={GROUP_LABELS[color]}
@@ -150,6 +153,7 @@ export function GroupToolbar() {
                   setGroupColor(group.id, color)
                   setMenu(null)
                 }}
+                unstyled
               />
             ))}
           </div>
@@ -158,23 +162,25 @@ export function GroupToolbar() {
 
       <div className="group-toolbar__divider" />
 
-      <button
+      <Button
         type="button"
         className="group-toolbar__btn"
         onClick={() => ungroup(group.id)}
+        unstyled
       >
         <Icon name="minimize" size={14} />
         <span>解组</span>
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         className="group-toolbar__btn group-toolbar__btn--danger"
         onClick={remove}
+        unstyled
       >
         <Icon name="close" size={14} />
         <span>删除</span>
-      </button>
+      </Button>
     </div>
   )
 }

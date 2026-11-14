@@ -16,6 +16,7 @@ import {
   type PoolAsset
 } from './assets'
 import { uploadToStudio } from './nodes'
+import { Button } from '../components/ui'
 
 const TABS: { id: StudioTab; label: string }[] = [
   { id: 'linked', label: '画布素材' },
@@ -190,14 +191,15 @@ export function MaterialPool() {
     <aside className="studio-pool">
       <div className="studio-pool__tabs">
         {TABS.map((item) => (
-          <button
+          <Button
             key={item.id}
             type="button"
             className={`studio-pool__tab ${tab === item.id ? 'is-active' : ''}`}
             onClick={() => setTab(item.id)}
+            unstyled
           >
             {item.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -206,14 +208,15 @@ export function MaterialPool() {
           <Icon name="plus" size={18} />
           <span>{uploading ? '正在导入…' : '上传本地素材'}</span>
           <small>导入后自动创建节点、成组并连线到剪辑室</small>
-          <button
+          <Button
             type="button"
             className="studio-ghost-btn"
             disabled={uploading || !studioNodeId}
             onClick={() => void upload()}
+            unstyled
           >
             选择文件
-          </button>
+          </Button>
         </div>
       ) : tab === 'sounds' ? (
         sounds.length === 0 ? (
@@ -246,7 +249,9 @@ export function MaterialPool() {
       ) : assets.length === 0 ? (
         <div className="studio-pool__empty">
           <Icon name="library" size={18} />
-          <span>{tab === 'linked' ? '剪辑室还没有连线素材' : '资产库是空的'}</span>
+          <span>
+            {tab === 'linked' ? '剪辑室还没有连线素材' : '资产库是空的'}
+          </span>
           <small>
             {tab === 'linked'
               ? '把素材节点连到剪辑室后会出现在这里'
@@ -270,7 +275,9 @@ export function MaterialPool() {
               }}
               onDoubleClick={() => addToMain(item)}
             >
-              <div className={`studio-pool__thumb studio-pool__thumb--${item.kind}`}>
+              <div
+                className={`studio-pool__thumb studio-pool__thumb--${item.kind}`}
+              >
                 <AssetThumbnail asset={item} />
                 <span className="studio-pool__duration">
                   {formatDuration(item.durationMs)}
@@ -291,14 +298,15 @@ export function MaterialPool() {
       )}
 
       <div className="studio-pool__foot">
-        <button
+        <Button
           type="button"
           className="studio-ghost-btn"
           disabled={uploading || !studioNodeId}
           onClick={() => void upload()}
+          unstyled
         >
           <Icon name="plus" size={14} /> {uploading ? '导入中…' : '上传素材'}
-        </button>
+        </Button>
       </div>
     </aside>
   )

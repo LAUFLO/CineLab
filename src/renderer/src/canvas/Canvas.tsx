@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties
+} from 'react'
 import {
   Background,
   BackgroundVariant,
@@ -13,11 +19,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon } from '../components/Icon'
-import {
-  isGroupNode,
-  useCanvasStore,
-  type CanvasNode
-} from '../stores/canvas'
+import { isGroupNode, useCanvasStore, type CanvasNode } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 import { usePreferencesStore } from '../stores/preferences'
 import { studioOpen } from '../studio/scope'
@@ -44,6 +46,7 @@ import { UpstreamWatcher } from './UpstreamWatcher'
 import { HistoryPanel } from '../panels/HistoryPanel'
 import { NodeSearch } from '../panels/NodeSearch'
 import { ShortcutPanel } from '../panels/ShortcutPanel'
+import { Button } from '../components/ui'
 
 type Theme = 'light' | 'dark'
 
@@ -65,22 +68,42 @@ function EmptyState({ onCreate }: { onCreate: (kind: NodeKind) => void }) {
         双击画布 自由生成节点
       </div>
       <div className="empty-state__actions">
-        <button type="button" className="empty-action" onClick={() => onCreate('image')}>
+        <Button
+          type="button"
+          className="empty-action"
+          onClick={() => onCreate('image')}
+          unstyled
+        >
           <Icon name="image" size={18} />
           图片生成
-        </button>
-        <button type="button" className="empty-action" onClick={() => onCreate('video')}>
+        </Button>
+        <Button
+          type="button"
+          className="empty-action"
+          onClick={() => onCreate('video')}
+          unstyled
+        >
           <Icon name="video" size={18} />
           视频生成
-        </button>
-        <button type="button" className="empty-action" onClick={() => onCreate('audio')}>
+        </Button>
+        <Button
+          type="button"
+          className="empty-action"
+          onClick={() => onCreate('audio')}
+          unstyled
+        >
           <Icon name="audio" size={18} />
           音频生成
-        </button>
-        <button type="button" className="empty-action" onClick={() => onCreate('text')}>
+        </Button>
+        <Button
+          type="button"
+          className="empty-action"
+          onClick={() => onCreate('text')}
+          unstyled
+        >
           <Icon name="text" size={18} />
           剧本生成
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -111,11 +134,19 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const snapToGrid = useUIStore((state) => state.snapToGrid)
   const edgesVisible = useUIStore((state) => state.edgesVisible)
   const minimapVisible = useUIStore((state) => state.minimapVisible)
-  const canvasPreferences = usePreferencesStore((state) => state.preferences.canvas)
+  const canvasPreferences = usePreferencesStore(
+    (state) => state.preferences.canvas
+  )
   const fitViewToken = useUIStore((state) => state.fitViewToken)
   const arrangeToken = useUIStore((state) => state.arrangeToken)
-  const { screenToFlowPosition, fitView, getNodes, setNodes, flowToScreenPosition, getZoom } =
-    useReactFlow()
+  const {
+    screenToFlowPosition,
+    fitView,
+    getNodes,
+    setNodes,
+    flowToScreenPosition,
+    getZoom
+  } = useReactFlow()
 
   const connectStart = useRef<{ x: number; y: number } | null>(null)
   const addMenuHandled = useRef(0)
@@ -244,7 +275,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
       }
 
       if (key === 'c' && !event.shiftKey) {
-        if (!useCanvasStore.getState().nodes.some((node) => node.selected)) return
+        if (!useCanvasStore.getState().nodes.some((node) => node.selected))
+          return
         event.preventDefault()
         copySelection()
         return
@@ -272,7 +304,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
       connectStart.current = null
 
       if (!start) return
-      const moved = Math.hypot(point.clientX - start.x, point.clientY - start.y) > 6
+      const moved =
+        Math.hypot(point.clientX - start.x, point.clientY - start.y) > 6
       if (!moved || state.toNode || !state.fromNode) return
       if (state.fromHandle?.type !== 'source') return
 
@@ -352,10 +385,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
     (draggedNodes: CanvasNode[]) => {
       const draggedIds = new Set(draggedNodes.map((node) => node.id))
       const others = (getNodes() as CanvasNode[]).filter(
-        (node) =>
-          !draggedIds.has(node.id) &&
-          !node.hidden &&
-          !isGroupNode(node)
+        (node) => !draggedIds.has(node.id) && !node.hidden && !isGroupNode(node)
       )
 
       return { draggedIds, others }
@@ -485,13 +515,15 @@ function CanvasInner({ theme }: { theme: Theme }) {
     [screenToFlowPosition, addNode]
   )
 
-  const dotColor = theme === 'light' ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.24)'
+  const dotColor =
+    theme === 'light' ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.24)'
 
   return (
     <>
       <ReactFlow
         nodes={nodes}
         edges={edgesVisible ? edges : []}
+        onlyRenderVisibleElements
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
@@ -516,12 +548,14 @@ function CanvasInner({ theme }: { theme: Theme }) {
         maxZoom={4}
         defaultViewport={viewport}
         onMove={(_event, next) => setViewport(next)}
-        className={[
-          handMode ? 'is-hand-tool' : '',
-          singleGroupSelected ? 'is-single-group' : ''
-        ]
-          .filter(Boolean)
-          .join(' ') || undefined}
+        className={
+          [
+            handMode ? 'is-hand-tool' : '',
+            singleGroupSelected ? 'is-single-group' : ''
+          ]
+            .filter(Boolean)
+            .join(' ') || undefined
+        }
         style={
           {
             '--canvas-zoom': viewport.zoom,
@@ -563,7 +597,9 @@ function CanvasInner({ theme }: { theme: Theme }) {
             nodeColor={() =>
               theme === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'
             }
-            maskColor={theme === 'dark' ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.08)'}
+            maskColor={
+              theme === 'dark' ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.08)'
+            }
             style={{
               left: 16,
               bottom: 72,

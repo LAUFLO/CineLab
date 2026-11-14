@@ -23,7 +23,14 @@ import {
 import { useTimelineStore } from '../stores/timeline'
 import { applyTimelinePlan } from './timeline-plan-runner'
 import { useUIStore } from '../stores/ui'
-import { Button, IconButton, Input, Select, Textarea } from '../components/ui'
+import {
+  Button,
+  IconButton,
+  Input,
+  Select,
+  Textarea,
+  NativeSelect
+} from '../components/ui'
 import { BezierEditor } from './BezierEditor'
 
 const BLEND_LABEL: Record<string, string> = {
@@ -51,7 +58,7 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <label className="studio-field">
       <span>{label}</span>
-      <input readOnly value={value} />
+      <Input readOnly value={value} unstyled />
     </label>
   )
 }
@@ -106,25 +113,28 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
     <Section title="字幕">
       <label className="studio-field">
         <span>预设</span>
-        <Select
-          className="w-full"
+        <NativeSelect
           value=""
-          options={[
-            { value: '', label: '选择样式' },
-            ...SUBTITLE_PRESETS.map((preset) => ({
-              value: preset.id,
-              label: preset.name
-            }))
-          ]}
-          onChange={(value) => {
-            const preset = SUBTITLE_PRESETS.find((item) => item.id === value)
+          onChange={(event) => {
+            const preset = SUBTITLE_PRESETS.find(
+              (item) => item.id === event.target.value
+            )
             if (preset) commit(preset.style)
           }}
-        />
+          unstyled
+        >
+          <option value="">选择样式</option>
+          {SUBTITLE_PRESETS.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.name}
+            </option>
+          ))}
+        </NativeSelect>
       </label>
       <label className="studio-field">
         <span>内容</span>
         <Textarea
+          className="studio-textarea"
           rows={4}
           value={content}
           onChange={(event) => setContent(event.target.value)}
@@ -135,6 +145,7 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
               commit({ content })
             }
           }}
+          unstyled
         />
       </label>
       <small className="studio-field-hint">失焦或 Ctrl+Enter 保存</small>
@@ -163,47 +174,51 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
 
       <label className="studio-field">
         <span>颜色</span>
-        <input
+        <Input
           type="color"
           value={color}
           onChange={(event) => setColor(event.target.value)}
           onBlur={() => commit({ color })}
+          unstyled
         />
       </label>
 
       <label className="studio-field">
         <span>对齐</span>
-        <Select<TextStyle['align']>
-          className="w-full"
+        <NativeSelect
           value={text.align}
-          options={[
-            { value: 'left', label: '左' },
-            { value: 'center', label: '中' },
-            { value: 'right', label: '右' }
-          ]}
-          onChange={(value) => commit({ align: value })}
-        />
+          onChange={(event) =>
+            commit({ align: event.target.value as TextStyle['align'] })
+          }
+          unstyled
+        >
+          <option value="left">左</option>
+          <option value="center">中</option>
+          <option value="right">右</option>
+        </NativeSelect>
       </label>
 
       <div className="studio-field-row">
         <label className="studio-check">
-          <input
+          <Input
             type="checkbox"
             checked={text.bold}
             onChange={(event) => commit({ bold: event.target.checked })}
+            unstyled
           />
           粗体
         </label>
         <label className="studio-check">
-          <input
+          <Input
             type="checkbox"
             checked={text.italic}
             onChange={(event) => commit({ italic: event.target.checked })}
+            unstyled
           />
           斜体
         </label>
         <label className="studio-check">
-          <input
+          <Input
             type="checkbox"
             checked={Boolean(text.shadow)}
             onChange={(event) =>
@@ -218,6 +233,7 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
                   : undefined
               })
             }
+            unstyled
           />
           阴影
         </label>
@@ -301,10 +317,7 @@ function AnalysisSection({ clip }: { clip: TimelineClip }) {
       })
       showToast(`已添加 ${markers.length} 个${ANALYSIS_LABEL[kind]}标记`)
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : String(error),
-        'error'
-      )
+      showToast(error instanceof Error ? error.message : String(error), 'error')
     } finally {
       setRunning(null)
     }
@@ -315,27 +328,27 @@ function AnalysisSection({ clip }: { clip: TimelineClip }) {
       <div className="studio-field-row">
         {canShots ? (
           <Button
-            variant="ghost"
-            size="sm"
+            className="studio-ghost-btn"
             disabled={running !== null}
             onClick={() => void run('shots')}
+            unstyled
           >
             {running === 'shots' ? '检测中…' : '镜头'}
           </Button>
         ) : null}
         <Button
-          variant="ghost"
-          size="sm"
+          className="studio-ghost-btn"
           disabled={running !== null}
           onClick={() => void run('silences')}
+          unstyled
         >
           {running === 'silences' ? '检测中…' : '静音'}
         </Button>
         <Button
-          variant="ghost"
-          size="sm"
+          className="studio-ghost-btn"
           disabled={running !== null}
           onClick={() => void run('beats')}
+          unstyled
         >
           {running === 'beats' ? '检测中…' : '节拍'}
         </Button>
@@ -408,51 +421,57 @@ function KeyframeSection({
   return (
     <Section title="关键帧">
       <div className="studio-field-row">
-        <select
+        <NativeSelect
           value={property}
           onChange={(event) =>
             selectProperty(event.target.value as ClipKey['property'])
           }
+          unstyled
         >
           <option value="position">位置</option>
           <option value="scale">缩放</option>
           <option value="rotation">旋转</option>
           <option value="opacity">透明度</option>
           <option value="volume">音量</option>
-        </select>
+        </NativeSelect>
         {property === 'position' ? (
           <>
-            <input
+            <Input
               className="studio-keyframe-input"
               type="number"
               step={0.01}
               value={x}
               onChange={(event) => setX(Number(event.target.value) || 0)}
+              unstyled
             />
-            <input
+            <Input
               className="studio-keyframe-input"
               type="number"
               step={0.01}
               value={y}
               onChange={(event) => setY(Number(event.target.value) || 0)}
+              unstyled
             />
           </>
         ) : (
-          <input
+          <Input
             className="studio-keyframe-input"
             type="number"
             step={property === 'rotation' ? 1 : 0.01}
             value={value}
             onChange={(event) => setValue(Number(event.target.value) || 0)}
+            unstyled
           />
         )}
-        <Button variant="ghost" size="sm" onClick={addKey}>
+        <Button className="studio-ghost-btn" onClick={addKey} unstyled>
           添加
         </Button>
       </div>
 
       {clip.keys.length === 0 ? (
-        <small className="studio-field-hint">把播放头移到片段内，再添加关键帧</small>
+        <small className="studio-field-hint">
+          把播放头移到片段内，再添加关键帧
+        </small>
       ) : (
         <div className="studio-keyframes">
           {clip.keys.map((key, index) => (
@@ -461,105 +480,113 @@ function KeyframeSection({
               key={`${key.property}-${index}`}
             >
               <div className="studio-keyframe">
-              <span className="studio-keyframe__prop">
-                {
+                <span className="studio-keyframe__prop">
                   {
-                    position: '位置',
-                    scale: '缩放',
-                    rotation: '旋转',
-                    opacity: '透明度',
-                    volume: '音量'
-                  }[key.property]
-                }
-              </span>
-              <input
-                className="studio-keyframe-input"
-                type="number"
-                min={0}
-                max={100}
-                step={0.1}
-                value={Math.round(key.at * 1000) / 10}
-                title="片段内百分比"
-                onChange={(event) =>
-                  patchKey(index, {
-                    at: Math.min(
-                      1,
-                      Math.max(0, (Number(event.target.value) || 0) / 100)
-                    )
-                  })
-                }
-              />
-              {typeof key.value === 'object' ? (
-                <>
-                  <input
-                    className="studio-keyframe-input"
-                    type="number"
-                    step={0.01}
-                    value={key.value.x}
-                    onChange={(event) =>
-                      patchKey(index, {
-                        value: {
-                          x: Number(event.target.value) || 0,
-                          y: (key.value as { x: number; y: number }).y
-                        }
-                      })
-                    }
-                  />
-                  <input
-                    className="studio-keyframe-input"
-                    type="number"
-                    step={0.01}
-                    value={key.value.y}
-                    onChange={(event) =>
-                      patchKey(index, {
-                        value: {
-                          x: (key.value as { x: number; y: number }).x,
-                          y: Number(event.target.value) || 0
-                        }
-                      })
-                    }
-                  />
-                </>
-              ) : (
-                <input
+                    {
+                      position: '位置',
+                      scale: '缩放',
+                      rotation: '旋转',
+                      opacity: '透明度',
+                      volume: '音量'
+                    }[key.property]
+                  }
+                </span>
+                <Input
                   className="studio-keyframe-input"
                   type="number"
-                  step={0.01}
-                  value={key.value}
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  value={Math.round(key.at * 1000) / 10}
+                  title="片段内百分比"
                   onChange={(event) =>
                     patchKey(index, {
-                      value: Number(event.target.value) || 0
+                      at: Math.min(
+                        1,
+                        Math.max(0, (Number(event.target.value) || 0) / 100)
+                      )
                     })
                   }
+                  unstyled
                 />
-              )}
-              <select
-                value={key.ease}
-                onChange={(event) =>
-                  patchKey(index, {
-                    ease: event.target.value as ClipKey['ease'],
-                    bezier:
-                      event.target.value === 'bezier'
-                        ? (key.bezier ?? [0.42, 0, 0.58, 1])
-                        : undefined
-                  })
-                }
-              >
-                <option value="linear">线性</option>
-                <option value="ease-in">缓入</option>
-                <option value="ease-out">缓出</option>
-                <option value="ease-in-out">缓入缓出</option>
-                <option value="bezier">曲线</option>
-              </select>
-              <IconButton
-                label="删除关键帧"
-                size="sm"
-                onClick={() =>
-                  updateKeys(clip.keys.filter((_, itemIndex) => itemIndex !== index))
-                }
-              >
-                ×
-              </IconButton>
+                {typeof key.value === 'object' ? (
+                  <>
+                    <Input
+                      className="studio-keyframe-input"
+                      type="number"
+                      step={0.01}
+                      value={key.value.x}
+                      onChange={(event) =>
+                        patchKey(index, {
+                          value: {
+                            x: Number(event.target.value) || 0,
+                            y: (key.value as { x: number; y: number }).y
+                          }
+                        })
+                      }
+                      unstyled
+                    />
+                    <Input
+                      className="studio-keyframe-input"
+                      type="number"
+                      step={0.01}
+                      value={key.value.y}
+                      onChange={(event) =>
+                        patchKey(index, {
+                          value: {
+                            x: (key.value as { x: number; y: number }).x,
+                            y: Number(event.target.value) || 0
+                          }
+                        })
+                      }
+                      unstyled
+                    />
+                  </>
+                ) : (
+                  <Input
+                    className="studio-keyframe-input"
+                    type="number"
+                    step={0.01}
+                    value={key.value}
+                    onChange={(event) =>
+                      patchKey(index, {
+                        value: Number(event.target.value) || 0
+                      })
+                    }
+                    unstyled
+                  />
+                )}
+                <NativeSelect
+                  value={key.ease}
+                  onChange={(event) =>
+                    patchKey(index, {
+                      ease: event.target.value as ClipKey['ease'],
+                      bezier:
+                        event.target.value === 'bezier'
+                          ? (key.bezier ?? [0.42, 0, 0.58, 1])
+                          : undefined
+                    })
+                  }
+                  unstyled
+                >
+                  <option value="linear">线性</option>
+                  <option value="ease-in">缓入</option>
+                  <option value="ease-out">缓出</option>
+                  <option value="ease-in-out">缓入缓出</option>
+                  <option value="bezier">曲线</option>
+                </NativeSelect>
+                <IconButton
+                  label="删除关键帧"
+                  className="studio-icon-btn"
+                  onClick={() =>
+                    updateKeys(
+                      clip.keys.filter((_, itemIndex) => itemIndex !== index)
+                    )
+                  }
+                  unstyled
+                >
+                  ×
+                </IconButton>
               </div>
               {key.ease === 'bezier' ? (
                 <BezierEditor
@@ -771,7 +798,9 @@ export function InspectorPane() {
 
   const detachAudio = async (): Promise<void> => {
     if (!clip?.media || clip.kind !== 'video') return
-    const probe = await window.api.media.probe(clip.media.path).catch(() => null)
+    const probe = await window.api.media
+      .probe(clip.media.path)
+      .catch(() => null)
     if (!probe?.hasAudio) {
       showToast('该视频没有音轨', 'error')
       return
@@ -838,154 +867,172 @@ export function InspectorPane() {
   return (
     <aside className="studio-inspector">
       <div className="studio-inspector__tabs">
-        <button
+        <Button
           type="button"
           className={`studio-inspector__tab ${pane === 'props' ? 'is-active' : ''}`}
           onClick={() => setPane('props')}
+          unstyled
         >
           属性
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className={`studio-inspector__tab ${pane === 'visual' ? 'is-active' : ''}`}
           onClick={() => setPane('visual')}
+          unstyled
         >
           画面
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className={`studio-inspector__tab ${pane === 'audio' ? 'is-active' : ''}`}
           onClick={() => setPane('audio')}
+          unstyled
         >
           音频
-        </button>
+        </Button>
       </div>
 
       {clip ? (
         <>
           {pane === 'props' ? (
-          <Section title="基础">
-            <Field label="名称" value={clip.name || '—'} />
-            <Field label="起点" value={formatTimecode(clip.startMs)} />
-            <Field label="时长" value={formatTimecode(clip.durationMs)} />
-            {clip.kind !== 'text' ? (
-              <label className="studio-field">
-                <span>速度</span>
-                <Select
-                  value={String(clip.speed)}
-                  options={[0.25, 0.5, 1, 1.5, 2, 4].map((speed) => ({
-                    value: String(speed),
-                    label: `${speed}×`
-                  }))}
-                  onChange={(value) => changeSpeed(Number(value))}
-                />
-              </label>
-            ) : (
-              <Field label="速度" value={`${clip.speed.toFixed(1)}×`} />
-            )}
-          </Section>
+            <Section title="基础">
+              <Field label="名称" value={clip.name || '—'} />
+              <Field label="起点" value={formatTimecode(clip.startMs)} />
+              <Field label="时长" value={formatTimecode(clip.durationMs)} />
+              {clip.kind !== 'text' ? (
+                <label className="studio-field">
+                  <span>速度</span>
+                  <Select
+                    value={String(clip.speed)}
+                    options={[0.25, 0.5, 1, 1.5, 2, 4].map((speed) => ({
+                      value: String(speed),
+                      label: `${speed}×`
+                    }))}
+                    onChange={(value) => changeSpeed(Number(value))}
+                  />
+                </label>
+              ) : (
+                <Field label="速度" value={`${clip.speed.toFixed(1)}×`} />
+              )}
+            </Section>
           ) : null}
 
           {pane === 'visual' ? (
-          <Section title="画面">
-            <label className="studio-field">
-              <span>缩放</span>
-              <input
-                type="number"
-                min={0.01}
-                max={20}
-                step={0.05}
-                value={clip.transform?.scale ?? 1}
-                onChange={(event) =>
-                  changeTransform({
-                    scale: Math.max(0.01, Number(event.target.value) || 1)
-                  })
-                }
+            <Section title="画面">
+              <label className="studio-field">
+                <span>缩放</span>
+                <Input
+                  type="number"
+                  min={0.01}
+                  max={20}
+                  step={0.05}
+                  value={clip.transform?.scale ?? 1}
+                  onChange={(event) =>
+                    changeTransform({
+                      scale: Math.max(0.01, Number(event.target.value) || 1)
+                    })
+                  }
+                  unstyled
+                />
+              </label>
+              <label className="studio-field">
+                <span>X 偏移</span>
+                <Input
+                  type="number"
+                  min={-10}
+                  max={10}
+                  step={0.01}
+                  value={clip.transform?.offsetX ?? 0}
+                  onChange={(event) =>
+                    changeTransform({
+                      offsetX: Number(event.target.value) || 0
+                    })
+                  }
+                  unstyled
+                />
+              </label>
+              <label className="studio-field">
+                <span>Y 偏移</span>
+                <Input
+                  type="number"
+                  min={-10}
+                  max={10}
+                  step={0.01}
+                  value={clip.transform?.offsetY ?? 0}
+                  onChange={(event) =>
+                    changeTransform({
+                      offsetY: Number(event.target.value) || 0
+                    })
+                  }
+                  unstyled
+                />
+              </label>
+              <label className="studio-field">
+                <span>旋转</span>
+                <Input
+                  type="number"
+                  min={-360}
+                  max={360}
+                  step={1}
+                  value={clip.transform?.rotation ?? 0}
+                  onChange={(event) =>
+                    changeTransform({
+                      rotation: Number(event.target.value) || 0
+                    })
+                  }
+                  unstyled
+                />
+              </label>
+              <label className="studio-field">
+                <span>不透明度</span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Math.round(clip.opacity * 100)}
+                  onChange={(event) =>
+                    dispatch({
+                      op: 'updateClip',
+                      clipId: clip.id,
+                      patch: {
+                        opacity: Math.min(
+                          1,
+                          Math.max(0, (Number(event.target.value) || 0) / 100)
+                        )
+                      }
+                    })
+                  }
+                  unstyled
+                />
+              </label>
+              <Field
+                label="混合"
+                value={BLEND_LABEL[clip.blend] ?? clip.blend}
               />
-            </label>
-            <label className="studio-field">
-              <span>X 偏移</span>
-              <input
-                type="number"
-                min={-10}
-                max={10}
-                step={0.01}
-                value={clip.transform?.offsetX ?? 0}
-                onChange={(event) =>
-                  changeTransform({ offsetX: Number(event.target.value) || 0 })
-                }
-              />
-            </label>
-            <label className="studio-field">
-              <span>Y 偏移</span>
-              <input
-                type="number"
-                min={-10}
-                max={10}
-                step={0.01}
-                value={clip.transform?.offsetY ?? 0}
-                onChange={(event) =>
-                  changeTransform({ offsetY: Number(event.target.value) || 0 })
-                }
-              />
-            </label>
-            <label className="studio-field">
-              <span>旋转</span>
-              <input
-                type="number"
-                min={-360}
-                max={360}
-                step={1}
-                value={clip.transform?.rotation ?? 0}
-                onChange={(event) =>
-                  changeTransform({ rotation: Number(event.target.value) || 0 })
-                }
-              />
-            </label>
-            <label className="studio-field">
-              <span>不透明度</span>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                value={Math.round(clip.opacity * 100)}
-                onChange={(event) =>
-                  dispatch({
-                    op: 'updateClip',
-                    clipId: clip.id,
-                    patch: {
-                      opacity: Math.min(
-                        1,
-                        Math.max(0, (Number(event.target.value) || 0) / 100)
-                      )
-                    }
-                  })
-                }
-              />
-            </label>
-            <Field label="混合" value={BLEND_LABEL[clip.blend] ?? clip.blend} />
-            {clip.kind === 'video' || clip.kind === 'image' ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                title="缩放为 35% 并移到右下角；放到 V2 轨叠加在 V1 上"
-                onClick={() =>
-                  changeTransform({
-                    scale: 0.35,
-                    offsetX: 0.28,
-                    offsetY: 0.28,
-                    rotation: 0
-                  })
-                }
-              >
-                画中画预设
-              </Button>
-            ) : null}
-          </Section>
+              {clip.kind === 'video' || clip.kind === 'image' ? (
+                <Button
+                  className="studio-ghost-btn"
+                  title="缩放为 35% 并移到右下角；放到 V2 轨叠加在 V1 上"
+                  onClick={() =>
+                    changeTransform({
+                      scale: 0.35,
+                      offsetX: 0.28,
+                      offsetY: 0.28,
+                      rotation: 0
+                    })
+                  }
+                  unstyled
+                >
+                  画中画预设
+                </Button>
+              ) : null}
+            </Section>
           ) : null}
 
-          {pane === 'visual' && (clip.kind === 'video' || clip.kind === 'image') ? (
+          {pane === 'visual' &&
+          (clip.kind === 'video' || clip.kind === 'image') ? (
             <Section title="滤镜">
               <label className="studio-field">
                 <span>预设</span>
@@ -1013,7 +1060,7 @@ export function InspectorPane() {
               </label>
               <label className="studio-field">
                 <span>亮度</span>
-                <input
+                <Input
                   type="range"
                   min={0.5}
                   max={1.5}
@@ -1022,11 +1069,12 @@ export function InspectorPane() {
                   onChange={(event) =>
                     changeFilter({ brightness: Number(event.target.value) })
                   }
+                  unstyled
                 />
               </label>
               <label className="studio-field">
                 <span>对比度</span>
-                <input
+                <Input
                   type="range"
                   min={0.5}
                   max={1.8}
@@ -1035,11 +1083,12 @@ export function InspectorPane() {
                   onChange={(event) =>
                     changeFilter({ contrast: Number(event.target.value) })
                   }
+                  unstyled
                 />
               </label>
               <label className="studio-field">
                 <span>饱和度</span>
-                <input
+                <Input
                   type="range"
                   min={0}
                   max={2}
@@ -1048,11 +1097,12 @@ export function InspectorPane() {
                   onChange={(event) =>
                     changeFilter({ saturation: Number(event.target.value) })
                   }
+                  unstyled
                 />
               </label>
               <label className="studio-field">
                 <span>模糊</span>
-                <input
+                <Input
                   type="range"
                   min={0}
                   max={12}
@@ -1061,11 +1111,12 @@ export function InspectorPane() {
                   onChange={(event) =>
                     changeFilter({ blur: Number(event.target.value) })
                   }
+                  unstyled
                 />
               </label>
               <label className="studio-field">
                 <span>暗角</span>
-                <input
+                <Input
                   type="range"
                   min={0}
                   max={1}
@@ -1074,32 +1125,36 @@ export function InspectorPane() {
                   onChange={(event) =>
                     changeFilter({ vignette: Number(event.target.value) })
                   }
+                  unstyled
                 />
               </label>
               <label className="studio-check">
-                <input
+                <Input
                   type="checkbox"
                   checked={(clip.filter?.grayscale ?? 0) > 0}
                   onChange={(event) =>
                     changeFilter({ grayscale: event.target.checked ? 1 : 0 })
                   }
+                  unstyled
                 />
                 黑白
               </label>
               <label className="studio-check">
-                <input
+                <Input
                   type="checkbox"
                   checked={(clip.filter?.sepia ?? 0) > 0}
                   onChange={(event) =>
                     changeFilter({ sepia: event.target.checked ? 0.55 : 0 })
                   }
+                  unstyled
                 />
                 复古
               </label>
             </Section>
           ) : null}
 
-          {pane === 'visual' && (clip.kind === 'video' || clip.kind === 'image') ? (
+          {pane === 'visual' &&
+          (clip.kind === 'video' || clip.kind === 'image') ? (
             <Section title="转场">
               <label className="studio-field">
                 <span>类型</span>
@@ -1127,7 +1182,7 @@ export function InspectorPane() {
               </label>
               <label className="studio-field">
                 <span>时长</span>
-                <input
+                <Input
                   type="number"
                   min={200}
                   max={3000}
@@ -1140,96 +1195,101 @@ export function InspectorPane() {
                       Number(event.target.value) || 500
                     )
                   }
+                  unstyled
                 />
               </label>
             </Section>
           ) : null}
 
           {pane === 'audio' ? (
-          <Section title="声音">
-            <Field label="音量" value={`${Math.round(clip.volume * 100)}%`} />
-            <Field label="淡入" value={`${clip.fadeInMs} ms`} />
-            <Field label="淡出" value={`${clip.fadeOutMs} ms`} />
-            {clip.kind !== 'text' ? (
-              <label className="studio-check">
-                <input
-                  type="checkbox"
-                  checked={clip.preservePitch}
-                  onChange={(event) =>
-                    dispatch({
-                      op: 'updateClip',
-                      clipId: clip.id,
-                      patch: { preservePitch: event.target.checked }
-                    })
-                  }
-                />
-                变速时保持音高
-              </label>
-            ) : null}
-            {clip.kind !== 'text' ? (
-              <>
+            <Section title="声音">
+              <Field label="音量" value={`${Math.round(clip.volume * 100)}%`} />
+              <Field label="淡入" value={`${clip.fadeInMs} ms`} />
+              <Field label="淡出" value={`${clip.fadeOutMs} ms`} />
+              {clip.kind !== 'text' ? (
                 <label className="studio-check">
-                  <input
+                  <Input
                     type="checkbox"
-                    checked={clip.audioFx?.denoise ?? false}
+                    checked={clip.preservePitch}
                     onChange={(event) =>
-                      updateAudioFx({ denoise: event.target.checked })
-                    }
-                  />
-                  降噪
-                </label>
-                <label className="studio-check">
-                  <input
-                    type="checkbox"
-                    checked={clip.audioFx?.enhanceVoice ?? false}
-                    onChange={(event) =>
-                      updateAudioFx({ enhanceVoice: event.target.checked })
-                    }
-                  />
-                  增强人声
-                </label>
-                <label className="studio-check">
-                  <input
-                    type="checkbox"
-                    checked={clip.audioFx?.loudness ?? false}
-                    onChange={(event) =>
-                      updateAudioFx({ loudness: event.target.checked })
-                    }
-                  />
-                  响度均衡
-                </label>
-                <label className="studio-field">
-                  <span>变声</span>
-                  <Select
-                    value={clip.audioFx?.voiceEffect ?? 'none'}
-                    options={[
-                      { value: 'none', label: '无' },
-                      { value: 'chipmunk', label: '花栗鼠' },
-                      { value: 'robot', label: '机器人' },
-                      { value: 'telephone', label: '电话' }
-                    ]}
-                    onChange={(value) =>
-                      updateAudioFx({
-                        voiceEffect: value as AudioFxSettings['voiceEffect']
+                      dispatch({
+                        op: 'updateClip',
+                        clipId: clip.id,
+                        patch: { preservePitch: event.target.checked }
                       })
                     }
+                    unstyled
                   />
+                  变速时保持音高
                 </label>
-                <small className="studio-field-hint">
-                  音频清理在导出时生效
-                </small>
-              </>
-            ) : null}
-            {clip.kind === 'video' && clip.media ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void detachAudio()}
-              >
-                分离音频
-              </Button>
-            ) : null}
-          </Section>
+              ) : null}
+              {clip.kind !== 'text' ? (
+                <>
+                  <label className="studio-check">
+                    <Input
+                      type="checkbox"
+                      checked={clip.audioFx?.denoise ?? false}
+                      onChange={(event) =>
+                        updateAudioFx({ denoise: event.target.checked })
+                      }
+                      unstyled
+                    />
+                    降噪
+                  </label>
+                  <label className="studio-check">
+                    <Input
+                      type="checkbox"
+                      checked={clip.audioFx?.enhanceVoice ?? false}
+                      onChange={(event) =>
+                        updateAudioFx({ enhanceVoice: event.target.checked })
+                      }
+                      unstyled
+                    />
+                    增强人声
+                  </label>
+                  <label className="studio-check">
+                    <Input
+                      type="checkbox"
+                      checked={clip.audioFx?.loudness ?? false}
+                      onChange={(event) =>
+                        updateAudioFx({ loudness: event.target.checked })
+                      }
+                      unstyled
+                    />
+                    响度均衡
+                  </label>
+                  <label className="studio-field">
+                    <span>变声</span>
+                    <Select
+                      value={clip.audioFx?.voiceEffect ?? 'none'}
+                      options={[
+                        { value: 'none', label: '无' },
+                        { value: 'chipmunk', label: '花栗鼠' },
+                        { value: 'robot', label: '机器人' },
+                        { value: 'telephone', label: '电话' }
+                      ]}
+                      onChange={(value) =>
+                        updateAudioFx({
+                          voiceEffect: value as AudioFxSettings['voiceEffect']
+                        })
+                      }
+                    />
+                  </label>
+                  <small className="studio-field-hint">
+                    音频清理在导出时生效
+                  </small>
+                </>
+              ) : null}
+              {clip.kind === 'video' && clip.media ? (
+                <Button
+                  className="studio-ghost-btn"
+                  onClick={() => void detachAudio()}
+                  unstyled
+                >
+                  分离音频
+                </Button>
+              ) : null}
+            </Section>
           ) : null}
 
           {pane === 'props' && clip.kind !== 'text' ? (
@@ -1241,36 +1301,36 @@ export function InspectorPane() {
           clip.media ? (
             <Section title="自动粗剪">
               <Button
-                variant="ghost"
-                size="sm"
+                className="studio-ghost-btn"
                 disabled={runningAction !== null}
                 onClick={() => void runRemoveSilence()}
+                unstyled
               >
                 {runningAction === 'silence' ? '检测中…' : '删除静音'}
               </Button>
               {clip.kind === 'video' ? (
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  className="studio-ghost-btn"
                   disabled={runningAction !== null}
                   onClick={() => void runSplitByShots()}
+                  unstyled
                 >
                   {runningAction === 'shots' ? '检测中…' : '按镜头切分'}
                 </Button>
               ) : null}
               <Button
-                variant="ghost"
-                size="sm"
+                className="studio-ghost-btn"
                 disabled={runningAction !== null}
                 onClick={() => void runBeatAction('markers')}
+                unstyled
               >
                 {runningAction === 'beats' ? '检测中…' : '节拍标记'}
               </Button>
               <Button
-                variant="ghost"
-                size="sm"
+                className="studio-ghost-btn"
                 disabled={runningAction !== null}
                 onClick={() => void runBeatAction('split')}
+                unstyled
               >
                 {runningAction === 'beat-split' ? '检测中…' : '节拍切分'}
               </Button>
@@ -1310,7 +1370,7 @@ export function InspectorPane() {
                 { label: '4:3', width: 1440, height: 1080 },
                 { label: '1:1', width: 1080, height: 1080 }
               ].map((item) => (
-                <button
+                <Button
                   key={item.label}
                   type="button"
                   className={`studio-ratio-btn${
@@ -1329,29 +1389,32 @@ export function InspectorPane() {
                       }
                     })
                   }
+                  unstyled
                 >
                   {item.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
-          <Field label="分辨率" value={`${doc.video.width} × ${doc.video.height}`} />
+          <Field
+            label="分辨率"
+            value={`${doc.video.width} × ${doc.video.height}`}
+          />
           <Field label="帧率" value={`${doc.video.fps} fps`} />
           <Field label="片段" value={`${doc.clips.length} 个`} />
           <Field label="轨道" value={`${doc.tracks.length} 条`} />
           <Field label="标记" value={`${doc.markers.length} 个`} />
           <Button
-            variant="ghost"
-            size="sm"
+            className="studio-ghost-btn"
             disabled={runningAction !== null}
             onClick={() => void runRemoveSilence()}
+            unstyled
           >
             {runningAction === 'silence' ? '检测中…' : '整条时间线删静音'}
           </Button>
           {doc.markers.length > 0 ? (
             <Button
-              variant="ghost"
-              size="sm"
+              className="studio-ghost-btn"
               onClick={() =>
                 dispatch({
                   op: 'batch',
@@ -1362,6 +1425,7 @@ export function InspectorPane() {
                   }))
                 })
               }
+              unstyled
             >
               清除全部标记
             </Button>

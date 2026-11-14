@@ -28,10 +28,17 @@ export function StudioTopBar() {
   return (
     <header className="studio-top">
       <div className="studio-top__left">
-        <IconButton label="返回画布" size="sm" onClick={close}>
+        <IconButton
+          label="返回画布"
+          className="studio-icon-btn"
+          onClick={close}
+          unstyled
+        >
           <Icon name="chevron-left" size={14} />
         </IconButton>
-        <span className="studio-top__title">剪辑室 · {doc?.name ?? '未命名项目'}</span>
+        <span className="studio-top__title">
+          剪辑室 · {doc?.name ?? '未命名项目'}
+        </span>
       </div>
 
       <div className="studio-top__meta">
@@ -47,7 +54,12 @@ export function StudioTopBar() {
             options={[
               ...(ratio
                 ? []
-                : [{ value: '', label: `${doc.video.width}×${doc.video.height}` }]),
+                : [
+                    {
+                      value: '',
+                      label: `${doc.video.width}×${doc.video.height}`
+                    }
+                  ]),
               ...RATIOS.map((item) => ({
                 value: `${item.width}x${item.height}`,
                 label: item.label
@@ -67,14 +79,29 @@ export function StudioTopBar() {
       </div>
 
       <div className="studio-top__right">
-        <IconButton label="切换素材池" size="sm" onClick={toggleLeft}>
+        <IconButton
+          label="切换素材池"
+          className="studio-icon-btn"
+          onClick={toggleLeft}
+          unstyled
+        >
           <Icon name="library" size={14} />
         </IconButton>
-        <IconButton label="切换检查器" size="sm" onClick={toggleRight}>
+        <IconButton
+          label="切换检查器"
+          className="studio-icon-btn"
+          onClick={toggleRight}
+          unstyled
+        >
           <Icon name="layers" size={14} />
         </IconButton>
         <span className="studio-top__hint">成片在画布节点生成</span>
-        <IconButton label="关闭" size="sm" onClick={close}>
+        <IconButton
+          label="关闭"
+          className="studio-icon-btn"
+          onClick={close}
+          unstyled
+        >
           <Icon name="close" size={14} />
         </IconButton>
       </div>

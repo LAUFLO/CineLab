@@ -7,6 +7,7 @@ import {
   type StageVec3
 } from '@shared/stage-schema'
 import { useStageStore } from './stageStore'
+import { Input, NativeSelect, Button } from '../components/ui'
 
 const TYPE_LABEL: Record<StageObject['type'], string> = {
   human: '人物',
@@ -75,7 +76,7 @@ function Vec3Field({
       </span>
       <div className="stage-field__vec">
         {draft.map((item, index) => (
-          <input
+          <Input
             key={index}
             value={item}
             inputMode="decimal"
@@ -88,6 +89,7 @@ function Vec3Field({
             onKeyDown={(event) => {
               if (event.key === 'Enter') event.currentTarget.blur()
             }}
+            unstyled
           />
         ))}
       </div>
@@ -131,7 +133,7 @@ function NumberField({
           {min}-{max}
         </small>
       </span>
-      <input
+      <Input
         className="stage-field__single"
         value={draft}
         inputMode="decimal"
@@ -140,6 +142,7 @@ function NumberField({
         onKeyDown={(event) => {
           if (event.key === 'Enter') event.currentTarget.blur()
         }}
+        unstyled
       />
     </label>
   )
@@ -163,7 +166,7 @@ function TextField({
   return (
     <label className="stage-field">
       <span className="stage-field__label">{label}</span>
-      <input
+      <Input
         className="stage-field__single"
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
@@ -175,6 +178,7 @@ function TextField({
         onKeyDown={(event) => {
           if (event.key === 'Enter') event.currentTarget.blur()
         }}
+        unstyled
       />
     </label>
   )
@@ -197,7 +201,9 @@ function ObjectInspector({ object }: { object: StageObject }) {
       <Vec3Field
         label="位置"
         value={object.transform.position}
-        onCommit={(position) => updateObject(object.id, { transform: { position } })}
+        onCommit={(position) =>
+          updateObject(object.id, { transform: { position } })
+        }
       />
       <Vec3Field
         label="旋转"
@@ -222,51 +228,55 @@ function ObjectInspector({ object }: { object: StageObject }) {
 
       <label className="stage-field">
         <span className="stage-field__label">姿势</span>
-        <select
+        <NativeSelect
           className="stage-field__single"
           value={object.pose ?? 'stand'}
           onChange={(event) =>
             updateObject(object.id, { pose: event.target.value })
           }
+          unstyled
         >
           {STAGE_POSE_PRESETS.map((pose) => (
             <option key={pose} value={pose}>
               {pose}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </label>
 
       <label className="stage-field">
         <span className="stage-field__label">颜色</span>
-        <input
+        <Input
           className="stage-field__color"
           type="color"
           value={object.color ?? '#9ca3af'}
           onChange={(event) =>
             updateObject(object.id, { color: event.target.value })
           }
+          unstyled
         />
       </label>
 
       <label className="stage-field stage-field--check">
         <span className="stage-field__label">可见</span>
-        <input
+        <Input
           type="checkbox"
           checked={object.visible !== false}
           onChange={(event) =>
             updateObject(object.id, { visible: event.target.checked })
           }
+          unstyled
         />
       </label>
 
-      <button
+      <Button
         type="button"
         className="stage-inspector__danger"
         onClick={() => removeSelectedObject()}
+        unstyled
       >
         删除对象
-      </button>
+      </Button>
     </section>
   )
 }
@@ -310,7 +320,7 @@ function CameraInspector({ camera }: { camera: StageCamera }) {
 
       <label className="stage-field">
         <span className="stage-field__label">画幅</span>
-        <select
+        <NativeSelect
           className="stage-field__single"
           value={camera.aspect ?? '16:9'}
           onChange={(event) =>
@@ -318,29 +328,32 @@ function CameraInspector({ camera }: { camera: StageCamera }) {
               aspect: event.target.value as StageAspect
             })
           }
+          unstyled
         >
           {ASPECTS.map((aspect) => (
             <option key={aspect} value={aspect}>
               {aspect}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </label>
 
-      <button
+      <Button
         type="button"
         className="stage-inspector__action"
         onClick={() => selectCamera(camera.id)}
+        unstyled
       >
         切换到此机位
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         className="stage-inspector__danger"
         onClick={() => removeSelectedCamera()}
+        unstyled
       >
         删除机位
-      </button>
+      </Button>
     </section>
   )
 }

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
 import {
   CAPABILITY_LABEL,
   type ModelDef,
@@ -8,7 +7,7 @@ import {
 } from '@shared/provider-schema'
 import { paramTemplatesFor, type ParamTemplate } from '@shared/param-presets'
 import { Icon } from '../../components/Icon'
-import { Select } from '../../components/Select'
+import { Button, Dialog, Input, Select } from '../../components/ui'
 
 interface ModelParamsDialogProps {
   model: ModelDef | null
@@ -185,8 +184,7 @@ export function ModelParamsDialog({
         options,
         defaultValue: options[0]?.value,
         allowCustom:
-          row.allowCustom ??
-          ['size', 'ratio', 'resolution'].includes(row.key)
+          row.allowCustom ?? ['size', 'ratio', 'resolution'].includes(row.key)
       })
       return
     }
@@ -366,116 +364,121 @@ export function ModelParamsDialog({
     onSave(params)
   }
 
-  return createPortal(
-    <div className="settings-overlay" onPointerDown={onCancel}>
-      <div
-        className="operation-dialog model-params-dialog"
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <header className="operation-dialog__header">
-          <div>
-            <div className="operation-dialog__title">模型参数</div>
-            <div className="operation-dialog__subtitle">
-              {model.name} · {CAPABILITY_LABEL[model.capability]}
+  return (
+    <Dialog
+      open
+      onClose={onCancel}
+      bare
+      ariaLabel="模型参数"
+      overlayClassName="settings-overlay"
+      panelClassName="operation-dialog model-params-dialog"
+    >
+      <header className="operation-dialog__header">
+        <div>
+          <div className="operation-dialog__title">模型参数</div>
+          <div className="operation-dialog__subtitle">
+            {model.name} · {CAPABILITY_LABEL[model.capability]}
+          </div>
+        </div>
+        <Button
+          type="button"
+          className="operation-dialog__close"
+          title="关闭"
+          onClick={onCancel}
+          unstyled
+        >
+          <Icon name="close" size={14} />
+        </Button>
+      </header>
+
+      <div className="model-params__intro">
+        这些参数会显示在 Prompt Bar
+        的「生成设置」里。第一次配置可以直接添加常用参数，不需要了解接口字段名。
+      </div>
+
+      {templates.length > 0 ? (
+        <>
+          <div className="model-params__templates-head">
+            <Button
+              type="button"
+              className="model-params__templates-toggle"
+              onClick={() => setTemplatesOpen((value) => !value)}
+              unstyled
+            >
+              <Icon
+                name={templatesOpen ? 'chevron-down' : 'chevron-right'}
+                size={12}
+              />
+              <span className="model-params__templates-title">常用参数</span>
+              <span className="model-params__templates-count">
+                {addedCount}/{templates.length}
+              </span>
+            </Button>
+            <div className="model-params__templates-actions">
+              <span className="model-params__templates-desc">点击标签添加</span>
+              <Button
+                type="button"
+                className="btn-secondary btn-small"
+                disabled={addedCount === templates.length}
+                onClick={addAllTemplates}
+                unstyled
+              >
+                全部添加
+              </Button>
             </div>
           </div>
-          <button
-            type="button"
-            className="operation-dialog__close"
-            title="关闭"
-            onClick={onCancel}
-          >
-            <Icon name="close" size={14} />
-          </button>
-        </header>
 
-        <div className="model-params__intro">
-          这些参数会显示在 Prompt Bar 的「生成设置」里。第一次配置可以直接添加常用参数，不需要了解接口字段名。
-        </div>
-
-        {templates.length > 0 ? (
-          <>
-            <div className="model-params__templates-head">
-              <button
-                type="button"
-                className="model-params__templates-toggle"
-                onClick={() => setTemplatesOpen((value) => !value)}
-              >
-                <Icon
-                  name={templatesOpen ? 'chevron-down' : 'chevron-right'}
-                  size={12}
-                />
-                <span className="model-params__templates-title">常用参数</span>
-                <span className="model-params__templates-count">
-                  {addedCount}/{templates.length}
-                </span>
-              </button>
-              <div className="model-params__templates-actions">
-                <span className="model-params__templates-desc">
-                  点击标签添加
-                </span>
-                <button
-                  type="button"
-                  className="btn-secondary btn-small"
-                  disabled={addedCount === templates.length}
-                  onClick={addAllTemplates}
-                >
-                  全部添加
-                </button>
-              </div>
+          {templatesOpen ? (
+            <div className="model-params__template-chips">
+              {templates.map((template) => {
+                const added = existingKeys.has(template.def.key)
+                return (
+                  <Button
+                    key={template.id}
+                    type="button"
+                    className={`model-params__chip${added ? ' is-added' : ''}`}
+                    disabled={added}
+                    title={`${template.description}\n${optionSummary(
+                      template.def
+                    )}`}
+                    onClick={() => addTemplate(template)}
+                    unstyled
+                  >
+                    <span>{template.def.label}</span>
+                    <span className="model-params__chip-meta">
+                      {chipSummary(template.def)}
+                    </span>
+                    <span className="model-params__chip-action">
+                      {added ? '✓' : '+'}
+                    </span>
+                  </Button>
+                )
+              })}
             </div>
+          ) : null}
+        </>
+      ) : null}
 
-            {templatesOpen ? (
-              <div className="model-params__template-chips">
-                {templates.map((template) => {
-                  const added = existingKeys.has(template.def.key)
-                  return (
-                    <button
-                      key={template.id}
-                      type="button"
-                      className={`model-params__chip${
-                        added ? ' is-added' : ''
-                      }`}
-                      disabled={added}
-                      title={`${template.description}\n${optionSummary(
-                        template.def
-                      )}`}
-                      onClick={() => addTemplate(template)}
-                    >
-                      <span>{template.def.label}</span>
-                      <span className="model-params__chip-meta">
-                        {chipSummary(template.def)}
-                      </span>
-                      <span className="model-params__chip-action">
-                        {added ? '✓' : '+'}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            ) : null}
-          </>
-        ) : null}
-
-        <div className="model-params__list">
-          {rows.length === 0 ? (
-            <div className="model-params__empty">
-              <div>还没有参数</div>
-              <div>从上方常用参数添加，或点底部「自定义参数」</div>
-            </div>
-          ) : (
-            rows.map((row, index) => {
-              const expanded = openRow === index
-              return (
+      <div className="model-params__list">
+        {rows.length === 0 ? (
+          <div className="model-params__empty">
+            <div>还没有参数</div>
+            <div>从上方常用参数添加，或点底部「自定义参数」</div>
+          </div>
+        ) : (
+          rows.map((row, index) => {
+            const expanded = openRow === index
+            return (
               <div
                 className={`model-param${expanded ? ' is-open' : ''}`}
                 key={`${row.key}-${index}`}
               >
                 <div className="model-param__summary-row">
-                  <button
+                  <Button
                     type="button"
                     className="model-param__summary"
                     onClick={() => setOpenRow(expanded ? null : index)}
+                    unstyled
                   >
                     <Icon
                       name={expanded ? 'chevron-down' : 'chevron-right'}
@@ -490,264 +493,293 @@ export function ModelParamsDialog({
                     <span className="model-param__value">
                       {optionSummary(row)}
                     </span>
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     className="icon-btn"
                     title="删除参数"
                     onClick={() => removeRow(index)}
+                    unstyled
                   >
                     <Icon name="close" size={12} />
-                  </button>
+                  </Button>
                 </div>
 
                 {expanded ? (
-                <div className="model-param__body">
-                <div className="model-param__head">
-                  <input
-                    className="model-param__label"
-                    value={row.label}
-                    placeholder="参数显示名，例如「画面比例」"
-                    onChange={(event) =>
-                      updateRow(index, { label: event.target.value })
-                    }
-                  />
-                  <Select
-                    value={row.type}
-                    options={[
-                      { value: 'select', label: TYPE_LABEL.select },
-                      { value: 'number', label: TYPE_LABEL.number },
-                      { value: 'text', label: TYPE_LABEL.text },
-                      { value: 'boolean', label: TYPE_LABEL.boolean }
-                    ]}
-                    onChange={(next) =>
-                      changeType(index, next as ParamDef['type'])
-                    }
-                  />
-                </div>
-                <div className="model-param__type-hint">
-                  {TYPE_HINT[row.type]}
-                </div>
-
-                <div className="model-param__grid is-single">
-                  <label>
-                    <span>分组</span>
-                    <input
-                      value={row.group ?? ''}
-                      placeholder="例如：比例 / 画质 / 数量"
-                      onChange={(event) =>
-                        updateRow(index, { group: event.target.value })
-                      }
-                    />
-                  </label>
-                </div>
-
-                <details className="model-param__advanced">
-                  <summary>高级：接口字段名（通常不需要改）</summary>
-                  <label>
-                    <span>接口字段名</span>
-                    <input
-                      value={row.key}
-                      placeholder="例如：ratio"
-                      onChange={(event) =>
-                        updateRow(index, { key: event.target.value })
-                      }
-                    />
-                  </label>
-                </details>
-
-                {row.key === 'duration' && row.type === 'select' ? (
-                  <div className="model-param__duration-hint">
-                    <span>
-                      如果模型支持 4–12 秒这类连续秒数，可以改为滑条；只支持固定档位的模型请保留下拉。
-                    </span>
-                    <button
-                      type="button"
-                      className="model-param__convert"
-                      onClick={() => convertDurationToRange(index)}
-                    >
-                      改为时长滑条
-                    </button>
-                  </div>
-                ) : null}
-
-                {row.type === 'select' ? (
-                  <div className="model-param__options">
-                    <div className="model-param__options-head">
-                      <span>可选项</span>
-                      <button
-                        type="button"
-                        className="model-param__add-option"
-                        onClick={() => addOption(index)}
-                      >
-                        + 添加选项
-                      </button>
-                    </div>
-
-                    {(row.options ?? []).map((option, optionIndex) => (
-                      <div
-                        className="model-param__option"
-                        key={`${index}-${optionIndex}`}
-                      >
-                        <input
-                          value={option.label}
-                          placeholder="显示名，例如 16:9"
-                          onChange={(event) =>
-                            updateOption(index, optionIndex, {
-                              label: event.target.value
-                            })
-                          }
-                        />
-                        <input
-                          value={option.value}
-                          placeholder="接口值，例如 16:9"
-                          onChange={(event) =>
-                            updateOption(index, optionIndex, {
-                              value: event.target.value
-                            })
-                          }
-                        />
-                        <button
-                          type="button"
-                          className="icon-btn"
-                          title="删除选项"
-                          disabled={(row.options?.length ?? 0) <= 1}
-                          onClick={() => removeOption(index, optionIndex)}
-                        >
-                          <Icon name="close" size={11} />
-                        </button>
-                      </div>
-                    ))}
-
-                    <div className="model-param__default">
-                      <span>默认选项</span>
+                  <div className="model-param__body">
+                    <div className="model-param__head">
+                      <Input
+                        className="model-param__label"
+                        value={row.label}
+                        placeholder="参数显示名，例如「画面比例」"
+                        onChange={(event) =>
+                          updateRow(index, { label: event.target.value })
+                        }
+                        unstyled
+                      />
                       <Select
-                        value={String(row.defaultValue ?? '')}
-                        options={(row.options ?? []).map((option) => ({
-                          value: option.value,
-                          label: option.label
-                        }))}
+                        value={row.type}
+                        options={[
+                          { value: 'select', label: TYPE_LABEL.select },
+                          { value: 'number', label: TYPE_LABEL.number },
+                          { value: 'text', label: TYPE_LABEL.text },
+                          { value: 'boolean', label: TYPE_LABEL.boolean }
+                        ]}
                         onChange={(next) =>
-                          updateRow(index, { defaultValue: next })
+                          changeType(index, next as ParamDef['type'])
                         }
                       />
                     </div>
+                    <div className="model-param__type-hint">
+                      {TYPE_HINT[row.type]}
+                    </div>
 
-                    <label className="model-param__check">
-                      <input
-                        type="checkbox"
-                        checked={row.allowCustom === true}
-                        onChange={(event) =>
-                          updateRow(index, {
-                            allowCustom: event.target.checked
-                          })
-                        }
-                      />
-                      <span>允许在生成设置中自定义值</span>
-                    </label>
-                  </div>
-                ) : null}
+                    <div className="model-param__grid is-single">
+                      <label>
+                        <span>分组</span>
+                        <Input
+                          value={row.group ?? ''}
+                          placeholder="例如：比例 / 画质 / 数量"
+                          onChange={(event) =>
+                            updateRow(index, { group: event.target.value })
+                          }
+                          unstyled
+                        />
+                      </label>
+                    </div>
 
-                {row.type === 'number' ? (
-                  <div className="model-param__grid is-three">
-                    <label>
-                      <span>默认值</span>
-                      <input
-                        type="number"
-                        value={String(row.defaultValue ?? '')}
-                        placeholder="默认值"
-                        onChange={(event) =>
-                          updateRow(index, { defaultValue: event.target.value })
-                        }
-                      />
-                    </label>
-                    <label>
-                      <span>最小值</span>
-                      <input
-                        type="number"
-                        value={row.min ?? ''}
-                        placeholder="最小值"
-                        onChange={(event) =>
-                          updateRow(index, {
-                            min:
-                              event.target.value === ''
-                                ? undefined
-                                : Number(event.target.value)
-                          })
-                        }
-                      />
-                    </label>
-                    <label>
-                      <span>最大值</span>
-                      <input
-                        type="number"
-                        value={row.max ?? ''}
-                        placeholder="最大值"
-                        onChange={(event) =>
-                          updateRow(index, {
-                            max:
-                              event.target.value === ''
-                                ? undefined
-                                : Number(event.target.value)
-                          })
-                        }
-                      />
-                    </label>
-                  </div>
-                ) : null}
+                    <details className="model-param__advanced">
+                      <summary>高级：接口字段名（通常不需要改）</summary>
+                      <label>
+                        <span>接口字段名</span>
+                        <Input
+                          value={row.key}
+                          placeholder="例如：ratio"
+                          onChange={(event) =>
+                            updateRow(index, { key: event.target.value })
+                          }
+                          unstyled
+                        />
+                      </label>
+                    </details>
 
-                {row.type === 'text' ? (
-                  <div className="model-param__default">
-                    <span>默认值</span>
-                    <input
-                      value={String(row.defaultValue ?? '')}
-                      placeholder="默认文本"
-                      onChange={(event) =>
-                        updateRow(index, { defaultValue: event.target.value })
-                      }
-                    />
-                  </div>
-                ) : null}
+                    {row.key === 'duration' && row.type === 'select' ? (
+                      <div className="model-param__duration-hint">
+                        <span>
+                          如果模型支持 4–12
+                          秒这类连续秒数，可以改为滑条；只支持固定档位的模型请保留下拉。
+                        </span>
+                        <Button
+                          type="button"
+                          className="model-param__convert"
+                          onClick={() => convertDurationToRange(index)}
+                          unstyled
+                        >
+                          改为时长滑条
+                        </Button>
+                      </div>
+                    ) : null}
 
-                {row.type === 'boolean' ? (
-                  <div className="model-param__default">
-                    <span>默认值</span>
-                    <Select
-                      value={row.defaultValue === true ? 'true' : 'false'}
-                      options={[
-                        { value: 'false', label: '关闭' },
-                        { value: 'true', label: '开启' }
-                      ]}
-                      onChange={(next) =>
-                        updateRow(index, { defaultValue: next === 'true' })
-                      }
-                    />
+                    {row.type === 'select' ? (
+                      <div className="model-param__options">
+                        <div className="model-param__options-head">
+                          <span>可选项</span>
+                          <Button
+                            type="button"
+                            className="model-param__add-option"
+                            onClick={() => addOption(index)}
+                            unstyled
+                          >
+                            + 添加选项
+                          </Button>
+                        </div>
+
+                        {(row.options ?? []).map((option, optionIndex) => (
+                          <div
+                            className="model-param__option"
+                            key={`${index}-${optionIndex}`}
+                          >
+                            <Input
+                              value={option.label}
+                              placeholder="显示名，例如 16:9"
+                              onChange={(event) =>
+                                updateOption(index, optionIndex, {
+                                  label: event.target.value
+                                })
+                              }
+                              unstyled
+                            />
+                            <Input
+                              value={option.value}
+                              placeholder="接口值，例如 16:9"
+                              onChange={(event) =>
+                                updateOption(index, optionIndex, {
+                                  value: event.target.value
+                                })
+                              }
+                              unstyled
+                            />
+                            <Button
+                              type="button"
+                              className="icon-btn"
+                              title="删除选项"
+                              disabled={(row.options?.length ?? 0) <= 1}
+                              onClick={() => removeOption(index, optionIndex)}
+                              unstyled
+                            >
+                              <Icon name="close" size={11} />
+                            </Button>
+                          </div>
+                        ))}
+
+                        <div className="model-param__default">
+                          <span>默认选项</span>
+                          <Select
+                            value={String(row.defaultValue ?? '')}
+                            options={(row.options ?? []).map((option) => ({
+                              value: option.value,
+                              label: option.label
+                            }))}
+                            onChange={(next) =>
+                              updateRow(index, { defaultValue: next })
+                            }
+                          />
+                        </div>
+
+                        <label className="model-param__check">
+                          <Input
+                            type="checkbox"
+                            checked={row.allowCustom === true}
+                            onChange={(event) =>
+                              updateRow(index, {
+                                allowCustom: event.target.checked
+                              })
+                            }
+                            unstyled
+                          />
+                          <span>允许在生成设置中自定义值</span>
+                        </label>
+                      </div>
+                    ) : null}
+
+                    {row.type === 'number' ? (
+                      <div className="model-param__grid is-three">
+                        <label>
+                          <span>默认值</span>
+                          <Input
+                            type="number"
+                            value={String(row.defaultValue ?? '')}
+                            placeholder="默认值"
+                            onChange={(event) =>
+                              updateRow(index, {
+                                defaultValue: event.target.value
+                              })
+                            }
+                            unstyled
+                          />
+                        </label>
+                        <label>
+                          <span>最小值</span>
+                          <Input
+                            type="number"
+                            value={row.min ?? ''}
+                            placeholder="最小值"
+                            onChange={(event) =>
+                              updateRow(index, {
+                                min:
+                                  event.target.value === ''
+                                    ? undefined
+                                    : Number(event.target.value)
+                              })
+                            }
+                            unstyled
+                          />
+                        </label>
+                        <label>
+                          <span>最大值</span>
+                          <Input
+                            type="number"
+                            value={row.max ?? ''}
+                            placeholder="最大值"
+                            onChange={(event) =>
+                              updateRow(index, {
+                                max:
+                                  event.target.value === ''
+                                    ? undefined
+                                    : Number(event.target.value)
+                              })
+                            }
+                            unstyled
+                          />
+                        </label>
+                      </div>
+                    ) : null}
+
+                    {row.type === 'text' ? (
+                      <div className="model-param__default">
+                        <span>默认值</span>
+                        <Input
+                          value={String(row.defaultValue ?? '')}
+                          placeholder="默认文本"
+                          onChange={(event) =>
+                            updateRow(index, {
+                              defaultValue: event.target.value
+                            })
+                          }
+                          unstyled
+                        />
+                      </div>
+                    ) : null}
+
+                    {row.type === 'boolean' ? (
+                      <div className="model-param__default">
+                        <span>默认值</span>
+                        <Select
+                          value={row.defaultValue === true ? 'true' : 'false'}
+                          options={[
+                            { value: 'false', label: '关闭' },
+                            { value: 'true', label: '开启' }
+                          ]}
+                          onChange={(next) =>
+                            updateRow(index, {
+                              defaultValue: next === 'true'
+                            })
+                          }
+                        />
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-                </div>
                 ) : null}
               </div>
-              )
-            })
-          )}
-        </div>
-
-        {error ? <div className="form-message is-error">{error}</div> : null}
-
-        <footer className="model-params__footer">
-          <button type="button" className="btn-secondary" onClick={addCustom}>
-            + 自定义参数
-          </button>
-          <div className="model-params__spacer" />
-          <button type="button" className="btn-secondary" onClick={onCancel}>
-            取消
-          </button>
-          <button type="button" className="btn-primary" onClick={submit}>
-            保存参数
-          </button>
-        </footer>
+            )
+          })
+        )}
       </div>
-    </div>,
-    document.body
+
+      {error ? <div className="form-message is-error">{error}</div> : null}
+
+      <footer className="model-params__footer">
+        <Button
+          type="button"
+          className="btn-secondary"
+          onClick={addCustom}
+          unstyled
+        >
+          + 自定义参数
+        </Button>
+        <div className="model-params__spacer" />
+        <Button
+          type="button"
+          className="btn-secondary"
+          onClick={onCancel}
+          unstyled
+        >
+          取消
+        </Button>
+        <Button type="button" className="btn-primary" onClick={submit} unstyled>
+          保存参数
+        </Button>
+      </footer>
+    </Dialog>
   )
 }

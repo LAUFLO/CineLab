@@ -3,6 +3,7 @@ import type {
   FilmStudyAudiencePoint,
   FilmStudySegment
 } from '@shared/film-study'
+import { Button } from '../../components/ui'
 
 function studyTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60)
@@ -11,9 +12,7 @@ function studyTime(seconds: number): string {
 }
 
 function emotionColor(type: string): string {
-  if (
-    ['tension', 'anxiety', 'conflict', 'sadness'].includes(type)
-  ) {
+  if (['tension', 'anxiety', 'conflict', 'sadness'].includes(type)) {
     return 'var(--danger)'
   }
   if (['warmth', 'romance', 'hope', 'release'].includes(type)) {
@@ -36,9 +35,7 @@ export function StructurePanel({
   selectedSegmentId,
   onSelectSegment
 }: StructurePanelProps) {
-  const segments = [...study.segments].sort(
-    (a, b) => a.startTime - b.startTime
-  )
+  const segments = [...study.segments].sort((a, b) => a.startTime - b.startTime)
 
   const configuredLines = study.storyLines ?? []
   const lineGroups = configuredLines.map((line) => ({
@@ -86,8 +83,7 @@ export function StructurePanel({
       .map(([title, list]) => ({ title, segments: list }))
       .sort(
         (a, b) =>
-          (a.segments[0]?.startTime ?? 0) -
-          (b.segments[0]?.startTime ?? 0)
+          (a.segments[0]?.startTime ?? 0) - (b.segments[0]?.startTime ?? 0)
       )
   })()
 
@@ -107,17 +103,18 @@ export function StructurePanel({
               <div className="film-study-lane__empty">暂无段落</div>
             ) : (
               group.segments.map((segment) => (
-                <button
+                <Button
                   key={segment.id}
                   type="button"
                   className={`film-study-insight-row${
                     segment.id === selectedSegmentId ? ' is-active' : ''
                   }`}
                   onClick={() => onSelectSegment(segment)}
+                  unstyled
                 >
                   <span>{studyTime(segment.startTime)}</span>
                   <strong>{segment.title}</strong>
-                </button>
+                </Button>
               ))
             )}
           </div>
@@ -141,17 +138,18 @@ export function StructurePanel({
               <span>{group.segments.length}</span>
             </summary>
             {group.segments.map((segment) => (
-              <button
+              <Button
                 key={segment.id}
                 type="button"
                 className={`film-study-insight-row${
                   segment.id === selectedSegmentId ? ' is-active' : ''
                 }`}
                 onClick={() => onSelectSegment(segment)}
+                unstyled
               >
                 <span>{studyTime(segment.startTime)}</span>
                 <strong>{segment.title}</strong>
-              </button>
+              </Button>
             ))}
           </details>
         ))
@@ -166,11 +164,7 @@ interface EmotionPanelProps {
   onSeek: (time: number) => void
 }
 
-export function EmotionPanel({
-  points,
-  duration,
-  onSeek
-}: EmotionPanelProps) {
+export function EmotionPanel({ points, duration, onSeek }: EmotionPanelProps) {
   const sorted = [...points].sort((a, b) => a.time - b.time)
   if (sorted.length === 0) {
     return (
@@ -193,11 +187,7 @@ export function EmotionPanel({
     <div className="film-study-insights">
       <div className="film-study-room__side-title">观众情绪曲线</div>
       <div className="film-study-emotion">
-        <svg
-          viewBox="0 0 100 50"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
+        <svg viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden="true">
           <line
             x1="0"
             y1="50"
@@ -235,18 +225,17 @@ export function EmotionPanel({
       </div>
       <div className="film-study-emotion__list">
         {sorted.map((point) => (
-          <button
+          <Button
             key={point.id}
             type="button"
             className="film-study-insight-row"
             onClick={() => onSeek(point.time)}
+            unstyled
           >
             <span>{studyTime(point.time)}</span>
             <strong>{point.title}</strong>
-            <span className="film-study-emotion__value">
-              {point.intensity}
-            </span>
-          </button>
+            <span className="film-study-emotion__value">{point.intensity}</span>
+          </Button>
         ))}
       </div>
     </div>

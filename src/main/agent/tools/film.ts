@@ -1,3 +1,7 @@
+import type { AgentScope, AgentToolCall } from '@shared/agent'
+import { AgentToolError } from './errors'
+import { assertSelectedNode } from './scope'
+
 import type { AgentToolDefinition } from '@shared/agent-tools'
 
 export const FILM_TOOLS: AgentToolDefinition[] = [
@@ -180,3 +184,172 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
+export function validateFilmToolArgs(
+  call: AgentToolCall,
+  scope: AgentScope
+): void {
+  if (call.name.startsWith('film_')) {
+    const nodeId = call.args.nodeId
+    const studyId = call.args.studyId
+
+    if (nodeId !== undefined) {
+      if (typeof nodeId !== 'string' || !nodeId.trim()) {
+        throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+      }
+    }
+    if (studyId !== undefined) {
+      if (typeof studyId !== 'string' || !studyId.trim()) {
+        throw new AgentToolError('invalid_params', 'studyId 必须是非空字符串')
+      }
+    }
+
+    if (
+      call.name === 'film_study_get' ||
+      call.name === 'film_study_export' ||
+      call.name === 'film_study_update_segment' ||
+      call.name === 'film_study_extract_subtitles'
+    ) {
+      if (!nodeId && !studyId) {
+        throw new AgentToolError(
+          'invalid_params',
+          '需要 nodeId 或 studyId'
+        )
+      }
+    }
+
+    if (call.name === 'film_study_auto') {
+      if (typeof nodeId !== 'string' || !nodeId.trim()) {
+        throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+      }
+      assertSelectedNode(scope, nodeId)
+      if (call.args.interval !== undefined) {
+        const interval = call.args.interval
+        if (
+          typeof interval !== 'number' ||
+          !Number.isFinite(interval) ||
+          interval < 0 ||
+          interval > 300
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            'interval 必须是 0-300 的秒数'
+          )
+        }
+      }
+      if (
+        call.args.modelKey !== undefined &&
+        (typeof call.args.modelKey !== 'string' ||
+          call.args.modelKey.length > 300)
+      ) {
+        throw new AgentToolError('invalid_params', 'modelKey 无效')
+      }
+      if (call.args.outputs !== undefined) {
+        const outputs = call.args.outputs
+        if (
+          !outputs ||
+          typeof outputs !== 'object' ||
+          Array.isArray(outputs)
+        ) {
+          throw new AgentToolError('invalid_params', 'outputs 必须是对象')
+        }
+        for (const [key, value] of Object.entries(outputs)) {
+          if (!['storyboard', 'sheet', 'motion', 'music'].includes(key)) {
+            throw new AgentToolError(
+              'invalid_params',
+              `不支持的拉片输出 ${key}`
+            )
+          }
+          if (typeof value !== 'boolean') {
+            throw new AgentToolError(
+              'invalid_params',
+              `outputs.${key} 必须是布尔值`
+            )
+          }
+        }
+      }
+    }
+
+    if (call.name === 'film_study_update_segment') {
+      const segmentId = call.args.segmentId
+      if (typeof segmentId !== 'string' || !segmentId.trim()) {
+        throw new AgentToolError('invalid_params', 'segmentId 必须是非空字符串')
+      }
+      const patch = call.args.patch
+      if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+        throw new AgentToolError('invalid_params', 'patch 必须是对象')
+      }
+      const allowed = new Set([
+        'title',
+        'type',
+        'startTime',
+        'endTime',
+        'segmentFunction',
+        'keyBeats',
+        'creativeIntent',
+        'techniques',
+        'audienceExperience',
+        'notes',
+        'primaryLine',
+        'structureRole',
+        'shotSize',
+        'cameraAngle',
+        'cameraMove',
+        'lighting',
+        'visualDescription',
+        'imagePrompt',
+        'voiceOver',
+        'musicCue'
+      ])
+      const entries = Object.entries(patch as Record<string, unknown>)
+      if (entries.length === 0) {
+        throw new AgentToolError('invalid_params', 'patch 不能为空')
+      }
+      for (const [key, value] of entries) {
+        if (!allowed.has(key)) {
+          throw new AgentToolError('invalid_params', `不支持修改 ${key}`)
+        }
+        if (key === 'startTime' || key === 'endTime') {
+          if (
+            typeof value !== 'number' ||
+            !Number.isFinite(value) ||
+            value < 0 ||
+            value > 86_400
+          ) {
+            throw new AgentToolError(
+              'invalid_params',
+              `${key} 必须是 0-86400 的秒数`
+            )
+          }
+        } else if (
+          typeof value !== 'string' ||
+          value.length > 8000
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `${key} 必须是不超过 8000 字符的字符串`
+          )
+        }
+      }
+      const start = (patch as Record<string, unknown>).startTime
+      const end = (patch as Record<string, unknown>).endTime
+      if (
+        typeof start === 'number' &&
+        typeof end === 'number' &&
+        end <= start
+      ) {
+        throw new AgentToolError('invalid_params', 'endTime 必须大于 startTime')
+      }
+    }
+
+    if (call.name === 'film_study_export') {
+      if (
+        call.args.format !== undefined &&
+        !['markdown', 'analysis', 'bundle'].includes(
+          String(call.args.format)
+        )
+      ) {
+        throw new AgentToolError('invalid_params', 'format 无效')
+      }
+    }
+  }
+}

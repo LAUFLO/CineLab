@@ -1,3 +1,8 @@
+import type { AgentScope, AgentToolCall } from '@shared/agent'
+import { AgentToolError } from './errors'
+import { nodeOperationAgentSpec } from '@shared/node-operation-specs'
+import { assertSelectedNode } from './scope'
+
 import type { AgentToolDefinition } from '@shared/agent-tools'
 
 export const GENERATION_TOOLS: AgentToolDefinition[] = [
@@ -151,3 +156,209 @@ const stageNodeIdParameter = {
   description: '导演台画布节点 ID，必须来自 canvas_get 的 selectedNodes'
 }
 
+export function validateGenerationToolArgs(
+  call: AgentToolCall,
+  scope: AgentScope
+): void {
+  if (call.name === 'generation_propose') {
+    const nodeId = call.args.nodeId
+    const modelKey = call.args.modelKey
+    const prompt = call.args.prompt
+    const operationId = call.args.operationId
+    const itemId = call.args.itemId
+    const mask = call.args.mask
+
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, nodeId)
+
+    if (
+      typeof modelKey !== 'string' ||
+      modelKey.indexOf('/') <= 0 ||
+      modelKey.length > 300
+    ) {
+      throw new AgentToolError('invalid_params', 'modelKey 格式无效')
+    }
+
+    if (operationId !== undefined) {
+      if (
+        typeof operationId !== 'string' ||
+        !operationId.trim() ||
+        operationId.length > 100
+      ) {
+        throw new AgentToolError('invalid_params', 'operationId 无效')
+      }
+      const spec = nodeOperationAgentSpec(operationId)
+      if (!spec) {
+        throw new AgentToolError(
+          'invalid_params',
+          `未知节点操作：${operationId}`
+        )
+      }
+      if (!spec.generationProposable) {
+        throw new AgentToolError(
+          'unsupported',
+          `${operationId} 不能通过 generation_propose 执行`
+        )
+      }
+      if (spec.itemRequired && typeof itemId !== 'string') {
+        throw new AgentToolError(
+          'invalid_params',
+          `操作 ${operationId} 需要 itemId`
+        )
+      }
+      if (
+        typeof itemId === 'string' &&
+        spec.itemOptions &&
+        !spec.itemOptions.includes(itemId)
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          `操作 ${operationId} 不支持 itemId=${itemId}`
+        )
+      }
+    }
+    if (
+      itemId !== undefined &&
+      (typeof itemId !== 'string' || !itemId.trim() || itemId.length > 100)
+    ) {
+      throw new AgentToolError('invalid_params', 'itemId 无效')
+    }
+
+    if (
+      prompt !== undefined &&
+      (typeof prompt !== 'string' || prompt.length > 8000)
+    ) {
+      throw new AgentToolError(
+        'invalid_params',
+        'prompt 不能超过 8000 个字符'
+      )
+    }
+    if (
+      (typeof prompt !== 'string' || !prompt.trim()) &&
+      typeof operationId !== 'string'
+    ) {
+      throw new AgentToolError(
+        'invalid_params',
+        '需要 prompt，或提供 operationId 以复用操作提示词'
+      )
+    }
+    if (mask !== undefined) {
+      if (
+        typeof mask !== 'string' ||
+        !mask.startsWith('data:image/png;base64,') ||
+        mask.length > 12_000_000
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          'mask 必须是 12MB 以内的 PNG data URL'
+        )
+      }
+    }
+    if (
+      call.args.params !== undefined &&
+      (typeof call.args.params !== 'object' ||
+        call.args.params === null ||
+        Array.isArray(call.args.params))
+    ) {
+      throw new AgentToolError('invalid_params', 'params 必须是对象')
+    }
+
+    if (call.args.count !== undefined) {
+      const count = call.args.count
+      if (
+        typeof count !== 'number' ||
+        !Number.isInteger(count) ||
+        count < 1 ||
+        count > 8
+      ) {
+        throw new AgentToolError('invalid_params', 'count 必须是 1-8 的整数')
+      }
+    }
+
+    if (call.args.refNodeIds !== undefined) {
+      const ids = call.args.refNodeIds
+      if (!Array.isArray(ids) || ids.length > 4) {
+        throw new AgentToolError('invalid_params', 'refNodeIds 最多 4 个')
+      }
+      const unique = new Set(ids)
+      if (unique.size !== ids.length) {
+        throw new AgentToolError('invalid_params', 'refNodeIds 不能重复')
+      }
+      for (const id of ids) {
+        if (typeof id !== 'string' || !id.trim()) {
+          throw new AgentToolError('invalid_params', 'refNodeIds 必须是非空字符串')
+        }
+      }
+    }
+
+    if (call.args.libraryRefs !== undefined) {
+      const refs = call.args.libraryRefs
+      if (!Array.isArray(refs) || refs.length > 4) {
+        throw new AgentToolError('invalid_params', 'libraryRefs 最多 4 个')
+      }
+      const seen = new Set<string>()
+      for (const ref of refs) {
+        if (!ref || typeof ref !== 'object' || Array.isArray(ref)) {
+          throw new AgentToolError('invalid_params', 'libraryRefs 格式无效')
+        }
+        const item = ref as Record<string, unknown>
+        if (
+          typeof item.path !== 'string' ||
+          !item.path.trim() ||
+          item.path.length > 2000
+        ) {
+          throw new AgentToolError('invalid_params', 'libraryRefs.path 无效')
+        }
+        if (
+          item.path.includes('..') ||
+          item.path.startsWith('/') ||
+          item.path.startsWith('\\') ||
+          /^[a-zA-Z]:/.test(item.path)
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            'libraryRefs.path 必须是资产库相对路径'
+          )
+        }
+        if (!['image', 'video'].includes(String(item.kind))) {
+          throw new AgentToolError('invalid_params', 'libraryRefs.kind 无效')
+        }
+        if (
+          item.role !== undefined &&
+          !['firstFrame', 'lastFrame', 'reference'].includes(String(item.role))
+        ) {
+          throw new AgentToolError('invalid_params', 'libraryRefs.role 无效')
+        }
+        const key = `${item.kind}:${item.path}`
+        if (seen.has(key)) {
+          throw new AgentToolError('invalid_params', 'libraryRefs 不能重复')
+        }
+        seen.add(key)
+      }
+    }
+
+    if (
+      call.args.negativePrompt !== undefined &&
+      (typeof call.args.negativePrompt !== 'string' ||
+        call.args.negativePrompt.length > 4000)
+    ) {
+      throw new AgentToolError(
+        'invalid_params',
+        'negativePrompt 不能超过 4000 个字符'
+      )
+    }
+  }
+
+  if (call.name === 'generation_catalog') {
+    if (
+      call.args.capability !== undefined &&
+      !['image', 'video', 'audio', 'text'].includes(
+        String(call.args.capability)
+      )
+    ) {
+      throw new AgentToolError('invalid_params', 'capability 无效')
+    }
+  }
+}

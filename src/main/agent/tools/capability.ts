@@ -1,3 +1,6 @@
+import type { AgentToolCall } from '@shared/agent'
+import { AgentToolError } from './errors'
+
 import type { AgentToolDefinition } from '@shared/agent-tools'
 
 export const CAPABILITY_TOOLS: AgentToolDefinition[] = [
@@ -53,3 +56,73 @@ export const CAPABILITY_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
+export function validateCapabilityToolArgs(
+  call: AgentToolCall
+): void {
+  if (call.name === 'capability_search') {
+    if (
+      typeof call.args.query !== 'string' ||
+      !call.args.query.trim() ||
+      call.args.query.length > 100
+    ) {
+      throw new AgentToolError(
+        'invalid_params',
+        'query 必须是非空字符串且不超过 100 字'
+      )
+    }
+    if (call.args.limit !== undefined) {
+      const limit = call.args.limit
+      if (
+        typeof limit !== 'number' ||
+        !Number.isInteger(limit) ||
+        limit < 1 ||
+        limit > 30
+      ) {
+        throw new AgentToolError('invalid_params', 'limit 必须是 1-30 的整数')
+      }
+    }
+  }
+
+  if (call.name === 'capability_catalog') {
+    if (
+      call.args.space !== undefined &&
+      !['canvas', 'clip', 'stage', 'film'].includes(
+        String(call.args.space)
+      )
+    ) {
+      throw new AgentToolError('invalid_params', 'space 无效')
+    }
+    if (
+      call.args.nodeId !== undefined &&
+      (typeof call.args.nodeId !== 'string' ||
+        !call.args.nodeId.trim())
+    ) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+  }
+  if (call.name === 'library_search') {
+    if (
+      call.args.query !== undefined &&
+      (typeof call.args.query !== 'string' || call.args.query.length > 100)
+    ) {
+      throw new AgentToolError('invalid_params', 'query 不能超过 100 个字符')
+    }
+    if (
+      call.args.kind !== undefined &&
+      !['image', 'video', 'audio'].includes(String(call.args.kind))
+    ) {
+      throw new AgentToolError('invalid_params', 'kind 无效')
+    }
+    if (call.args.limit !== undefined) {
+      const limit = call.args.limit
+      if (
+        typeof limit !== 'number' ||
+        !Number.isInteger(limit) ||
+        limit < 1 ||
+        limit > 30
+      ) {
+        throw new AgentToolError('invalid_params', 'limit 必须是 1-30 的整数')
+      }
+    }
+  }
+}

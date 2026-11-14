@@ -1,3 +1,6 @@
+import type { AgentToolCall } from '@shared/agent'
+import { AgentToolError } from './errors'
+
 import type { AgentToolDefinition } from '@shared/agent-tools'
 
 export const SKILL_TOOLS: AgentToolDefinition[] = [
@@ -55,3 +58,32 @@ export const SKILL_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
+export function validateSkillToolArgs(
+  call: AgentToolCall
+): void {
+  if (call.name === 'skill_read') {
+    if (typeof call.args.name !== 'string' || !call.args.name.trim()) {
+      throw new AgentToolError('invalid_params', 'name 必须是非空字符串')
+    }
+    if (
+      call.args.path !== undefined &&
+      typeof call.args.path !== 'string'
+    ) {
+      throw new AgentToolError('invalid_params', 'path 必须是字符串')
+    }
+    for (const key of ['offset', 'limit'] as const) {
+      const value = call.args[key]
+      if (
+        value !== undefined &&
+        (typeof value !== 'number' ||
+          !Number.isFinite(value) ||
+          value < 0)
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          `${key} 必须是非负有限数字`
+        )
+      }
+    }
+  }
+}

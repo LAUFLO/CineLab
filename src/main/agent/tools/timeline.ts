@@ -1,3 +1,6 @@
+import type { AgentScope, AgentToolCall } from '@shared/agent'
+import { AgentToolError } from './errors'
+
 import type { AgentToolDefinition } from '@shared/agent-tools'
 import { TIMELINE_TRANSITION_TYPES } from '@shared/timeline-schema'
 
@@ -441,3 +444,486 @@ export function isTimelineWriteTool(name: string): boolean {
   return TIMELINE_WRITE_TOOL_NAMES.has(name)
 }
 
+export function validateTimelineToolArgs(
+  call: AgentToolCall,
+  scope: AgentScope
+): void {
+  if (call.name.startsWith('timeline_')) {
+    if (!scope.timelineId) {
+      throw new AgentToolError('scope_denied', '请先打开剪辑室')
+    }
+
+    const assertClipIds = (value: unknown, allowEmpty = false): void => {
+      if (!Array.isArray(value)) {
+        throw new AgentToolError('invalid_params', 'clipIds 必须是数组')
+      }
+      if (allowEmpty && value.length === 0) return
+      if (
+        value.length < 1 ||
+        value.length > 100 ||
+        value.some(
+          (id) => typeof id !== 'string' || !id.trim()
+        ) ||
+        new Set(value).size !== value.length
+      ) {
+        throw new AgentToolError('invalid_params', 'clipIds 无效')
+      }
+    }
+
+    if (call.name === 'timeline_select_clips') {
+      assertClipIds(call.args.clipIds, true)
+      if (
+        Array.isArray(call.args.clipIds) &&
+        call.args.clipIds.length > 200
+      ) {
+        throw new AgentToolError('invalid_params', '一次最多选择 200 个片段')
+      }
+    }
+
+    if (call.name === 'timeline_set_video') {
+      const width = call.args.width
+      const height = call.args.height
+      const fps = call.args.fps
+      const background = call.args.background
+
+      if (
+        (width === undefined) !== (height === undefined)
+      ) {
+        throw new AgentToolError('invalid_params', 'width 和 height 必须同时提供')
+      }
+      for (const [key, value, max] of [
+        ['width', width, 7680],
+        ['height', height, 4320]
+      ] as const) {
+        if (value === undefined) continue
+        if (
+          typeof value !== 'number' ||
+          !Number.isInteger(value) ||
+          value < 16 ||
+          value > max ||
+          value % 2 !== 0
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `${key} 必须是 16-${max} 之间的偶数`
+          )
+        }
+      }
+      if (fps !== undefined) {
+        if (
+          typeof fps !== 'number' ||
+          !Number.isFinite(fps) ||
+          fps < 1 ||
+          fps > 120
+        ) {
+          throw new AgentToolError('invalid_params', 'fps 必须在 1-120 之间')
+        }
+      }
+      if (background !== undefined) {
+        if (
+          !background ||
+          typeof background !== 'object' ||
+          Array.isArray(background)
+        ) {
+          throw new AgentToolError('invalid_params', 'background 必须是对象')
+        }
+        const item = background as Record<string, unknown>
+        if (!['none', 'color', 'image'].includes(String(item.type))) {
+          throw new AgentToolError('invalid_params', 'background.type 无效')
+        }
+        if (
+          item.color !== undefined &&
+          (typeof item.color !== 'string' || item.color.length > 50)
+        ) {
+          throw new AgentToolError('invalid_params', 'background.color 无效')
+        }
+        if (
+          item.path !== undefined &&
+          (typeof item.path !== 'string' ||
+            !item.path.trim() ||
+            item.path.length > 2000 ||
+            item.path.includes('..') ||
+            item.path.startsWith('/') ||
+            item.path.startsWith('\\') ||
+            /^[a-zA-Z]:/.test(item.path))
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            'background.path 必须是项目内相对路径'
+          )
+        }
+        if (item.type === 'image' && typeof item.path !== 'string') {
+          throw new AgentToolError(
+            'invalid_params',
+            'background.type=image 时必须提供 path'
+          )
+        }
+        if (item.type === 'color' && typeof item.color !== 'string') {
+          throw new AgentToolError(
+            'invalid_params',
+            'background.type=color 时必须提供 color'
+          )
+        }
+      }
+      if (
+        width === undefined &&
+        fps === undefined &&
+        background === undefined
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '至少需要 width/height、fps 或 background'
+        )
+      }
+    }
+
+    if (call.name === 'timeline_move_clips') {
+      assertClipIds(call.args.clipIds)
+      if (
+        call.args.deltaMs === undefined &&
+        call.args.startMs === undefined
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '需要 deltaMs 或 startMs'
+        )
+      }
+      if (
+        call.args.deltaMs !== undefined &&
+        (typeof call.args.deltaMs !== 'number' ||
+          !Number.isFinite(call.args.deltaMs))
+      ) {
+        throw new AgentToolError('invalid_params', 'deltaMs 必须是有限数字')
+      }
+      if (
+        call.args.startMs !== undefined &&
+        (typeof call.args.startMs !== 'number' ||
+          !Number.isFinite(call.args.startMs) ||
+          call.args.startMs < 0)
+      ) {
+        throw new AgentToolError('invalid_params', 'startMs 必须是非负数字')
+      }
+      if (
+        call.args.mode !== undefined &&
+        !['insert', 'overwrite'].includes(String(call.args.mode))
+      ) {
+        throw new AgentToolError('invalid_params', 'mode 无效')
+      }
+    }
+
+    if (call.name === 'timeline_trim_clip') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      if (!['start', 'end'].includes(String(call.args.edge))) {
+        throw new AgentToolError('invalid_params', 'edge 必须是 start 或 end')
+      }
+      if (
+        typeof call.args.deltaMs !== 'number' ||
+        !Number.isFinite(call.args.deltaMs)
+      ) {
+        throw new AgentToolError('invalid_params', 'deltaMs 必须是有限数字')
+      }
+      if (
+        call.args.ripple !== undefined &&
+        typeof call.args.ripple !== 'boolean'
+      ) {
+        throw new AgentToolError('invalid_params', 'ripple 必须是布尔值')
+      }
+    }
+
+    if (call.name === 'timeline_split_clips') {
+      assertClipIds(call.args.clipIds)
+      if (
+        typeof call.args.atMs !== 'number' ||
+        !Number.isFinite(call.args.atMs) ||
+        call.args.atMs < 0
+      ) {
+        throw new AgentToolError('invalid_params', 'atMs 必须是非负数字')
+      }
+    }
+
+    if (call.name === 'timeline_remove_clips') {
+      assertClipIds(call.args.clipIds)
+      if (
+        call.args.ripple !== undefined &&
+        typeof call.args.ripple !== 'boolean'
+      ) {
+        throw new AgentToolError('invalid_params', 'ripple 必须是布尔值')
+      }
+    }
+
+    if (call.name === 'timeline_update_clip') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      const patch = call.args.patch
+      if (
+        typeof patch !== 'object' ||
+        patch === null ||
+        Array.isArray(patch)
+      ) {
+        throw new AgentToolError('invalid_params', 'patch 必须是对象')
+      }
+
+      const allowed = new Set([
+        'name',
+        'volume',
+        'muted',
+        'opacity',
+        'fadeInMs',
+        'fadeOutMs',
+        'speed'
+      ])
+      const entries = Object.entries(patch)
+      if (entries.length === 0) {
+        throw new AgentToolError('invalid_params', 'patch 不能为空')
+      }
+      for (const [key, value] of entries) {
+        if (!allowed.has(key)) {
+          throw new AgentToolError('invalid_params', `不支持修改 ${key}`)
+        }
+        if (key === 'name' && (typeof value !== 'string' || value.length > 200)) {
+          throw new AgentToolError('invalid_params', 'name 无效')
+        }
+        if (key === 'muted' && typeof value !== 'boolean') {
+          throw new AgentToolError('invalid_params', 'muted 必须是布尔值')
+        }
+        if (
+          (key === 'volume' ||
+            key === 'opacity' ||
+            key === 'fadeInMs' ||
+            key === 'fadeOutMs' ||
+            key === 'speed') &&
+          (typeof value !== 'number' || !Number.isFinite(value))
+        ) {
+          throw new AgentToolError('invalid_params', `${key} 必须是数字`)
+        }
+        if (
+          key === 'volume' &&
+          typeof value === 'number' &&
+          (value < 0 || value > 4)
+        ) {
+          throw new AgentToolError('invalid_params', 'volume 必须在 0-4 之间')
+        }
+        if (
+          key === 'opacity' &&
+          typeof value === 'number' &&
+          (value < 0 || value > 1)
+        ) {
+          throw new AgentToolError('invalid_params', 'opacity 必须在 0-1 之间')
+        }
+        if (
+          (key === 'fadeInMs' || key === 'fadeOutMs') &&
+          typeof value === 'number' &&
+          value < 0
+        ) {
+          throw new AgentToolError('invalid_params', `${key} 不能为负`)
+        }
+        if (
+          key === 'speed' &&
+          typeof value === 'number' &&
+          (value < 0.1 || value > 10)
+        ) {
+          throw new AgentToolError('invalid_params', 'speed 必须在 0.1-10 之间')
+        }
+      }
+    }
+
+    if (call.name === 'timeline_set_track') {
+      if (
+        typeof call.args.trackId !== 'string' ||
+        !call.args.trackId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'trackId 必须是非空字符串')
+      }
+      if (
+        !['visible', 'muted', 'locked'].includes(String(call.args.flag))
+      ) {
+        throw new AgentToolError('invalid_params', 'track flag 无效')
+      }
+      if (typeof call.args.value !== 'boolean') {
+        throw new AgentToolError('invalid_params', 'value 必须是布尔值')
+      }
+    }
+
+    if (call.name === 'timeline_add_marker') {
+      if (
+        typeof call.args.atMs !== 'number' ||
+        !Number.isFinite(call.args.atMs) ||
+        call.args.atMs < 0
+      ) {
+        throw new AgentToolError('invalid_params', 'atMs 必须是非负数字')
+      }
+      if (
+        call.args.label !== undefined &&
+        (typeof call.args.label !== 'string' ||
+          call.args.label.length > 200)
+      ) {
+        throw new AgentToolError('invalid_params', 'label 过长')
+      }
+      if (
+        call.args.color !== undefined &&
+        (typeof call.args.color !== 'string' ||
+          call.args.color.length > 50)
+      ) {
+        throw new AgentToolError('invalid_params', 'color 无效')
+      }
+    }
+
+    if (call.name === 'timeline_auto_subtitles') {
+      if (
+        call.args.clipId !== undefined &&
+        (typeof call.args.clipId !== 'string' ||
+          !call.args.clipId.trim())
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+    }
+
+    if (call.name === 'timeline_remove_silence') {
+      if (call.args.clipIds !== undefined) {
+        assertClipIds(call.args.clipIds)
+      }
+      for (const key of ['paddingMs', 'minDurationMs'] as const) {
+        const value = call.args[key]
+        if (
+          value !== undefined &&
+          (typeof value !== 'number' ||
+            !Number.isFinite(value) ||
+            value < 0 ||
+            value > 10_000)
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `${key} 必须是 0-10000 的数字`
+          )
+        }
+      }
+      if (
+        call.args.ripple !== undefined &&
+        typeof call.args.ripple !== 'boolean'
+      ) {
+        throw new AgentToolError('invalid_params', 'ripple 必须是布尔值')
+      }
+    }
+
+    if (call.name === 'timeline_set_transition') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      if (
+        ![...TIMELINE_TRANSITION_TYPES, 'none'].includes(
+          String(call.args.type)
+        )
+      ) {
+        throw new AgentToolError('invalid_params', '转场类型无效')
+      }
+      if (
+        call.args.durationMs !== undefined &&
+        (typeof call.args.durationMs !== 'number' ||
+          !Number.isFinite(call.args.durationMs) ||
+          call.args.durationMs < 100 ||
+          call.args.durationMs > 10_000)
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          'durationMs 必须在 100-10000 之间'
+        )
+      }
+    }
+
+    if (call.name === 'timeline_split_by_shots') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      for (const key of ['minShotMs', 'edgePaddingMs'] as const) {
+        const value = call.args[key]
+        if (
+          value !== undefined &&
+          (typeof value !== 'number' ||
+            !Number.isFinite(value) ||
+            value < 0 ||
+            value > 10_000)
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `${key} 必须是 0-10000 的数字`
+          )
+        }
+      }
+    }
+
+    if (call.name === 'timeline_beat_markers') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      if (
+        call.args.label !== undefined &&
+        (typeof call.args.label !== 'string' ||
+          call.args.label.length > 200)
+      ) {
+        throw new AgentToolError('invalid_params', 'label 过长')
+      }
+      if (
+        call.args.color !== undefined &&
+        (typeof call.args.color !== 'string' ||
+          call.args.color.length > 50)
+      ) {
+        throw new AgentToolError('invalid_params', 'color 无效')
+      }
+    }
+
+    if (call.name === 'timeline_beat_split') {
+      if (
+        typeof call.args.clipId !== 'string' ||
+        !call.args.clipId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'clipId 必须是非空字符串')
+      }
+      if (
+        call.args.trackId !== undefined &&
+        (typeof call.args.trackId !== 'string' ||
+          !call.args.trackId.trim())
+      ) {
+        throw new AgentToolError('invalid_params', 'trackId 必须是非空字符串')
+      }
+      if (
+        call.args.minGapMs !== undefined &&
+        (typeof call.args.minGapMs !== 'number' ||
+          !Number.isFinite(call.args.minGapMs) ||
+          call.args.minGapMs < 0 ||
+          call.args.minGapMs > 10_000)
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          'minGapMs 必须是 0-10000 的数字'
+        )
+      }
+    }
+
+    if (call.name === 'timeline_export') {
+      if (
+        call.args.codec !== undefined &&
+        !['h264', 'hevc', 'av1'].includes(String(call.args.codec))
+      ) {
+        throw new AgentToolError('invalid_params', 'codec 无效')
+      }
+    }
+  }
+}

@@ -1,3 +1,8 @@
+import type { AgentScope, AgentToolCall } from '@shared/agent'
+import { nodeOperationAgentSpec, validateNodeOperationParams } from '@shared/node-operation-specs'
+import { AgentToolError } from './errors'
+import { assertSelectedNode } from './scope'
+
 import type { AgentToolDefinition } from '@shared/agent-tools'
 
 export const CANVAS_TOOLS: AgentToolDefinition[] = [
@@ -293,3 +298,247 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
+export function validateCanvasToolArgs(
+  call: AgentToolCall,
+  scope: AgentScope
+): void {
+  if (call.name === 'canvas_update_title') {
+    const nodeId = call.args.nodeId
+    const title = call.args.title
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    if (typeof title !== 'string' || !title.trim()) {
+      throw new AgentToolError('invalid_params', 'title 必须是非空字符串')
+    }
+    if (title.length > 200) {
+      throw new AgentToolError('invalid_params', 'title 不能超过 200 个字符')
+    }
+    assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'canvas_update_text') {
+    const nodeId = call.args.nodeId
+    const text = call.args.text
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    if (typeof text !== 'string') {
+      throw new AgentToolError('invalid_params', 'text 必须是字符串')
+    }
+    if (text.length > 100_000) {
+      throw new AgentToolError('invalid_params', 'text 不能超过 100000 个字符')
+    }
+    assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'canvas_node_operations') {
+    const nodeId = call.args.nodeId
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'canvas_node_operation') {
+    const nodeId = call.args.nodeId
+    const operationId = call.args.operationId
+    const itemId = call.args.itemId
+    const params = call.args.params
+
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, nodeId)
+
+    if (typeof operationId !== 'string' || !operationId.trim()) {
+      throw new AgentToolError(
+        'invalid_params',
+        'operationId 必须是非空字符串'
+      )
+    }
+    const spec = nodeOperationAgentSpec(operationId)
+    if (!spec) {
+      throw new AgentToolError(
+        'invalid_params',
+        `未知节点操作：${operationId}`
+      )
+    }
+    if (!spec.executable) {
+      throw new AgentToolError(
+        'unsupported',
+        spec.reason ?? `${operationId} 不能由 Agent 直接执行`
+      )
+    }
+    if (
+      itemId !== undefined &&
+      (typeof itemId !== 'string' || !itemId.trim())
+    ) {
+      throw new AgentToolError('invalid_params', 'itemId 必须是非空字符串')
+    }
+    let paramRecord: Record<string, unknown> = {}
+    if (params !== undefined) {
+      if (
+        !params ||
+        typeof params !== 'object' ||
+        Array.isArray(params)
+      ) {
+        throw new AgentToolError('invalid_params', 'params 必须是对象')
+      }
+      paramRecord = params as Record<string, unknown>
+    }
+    const paramError = validateNodeOperationParams(
+      operationId,
+      typeof itemId === 'string' ? itemId : undefined,
+      paramRecord
+    )
+    if (paramError) {
+      throw new AgentToolError('invalid_params', paramError)
+    }
+  }
+  if (call.name === 'canvas_move_node') {
+    const nodeId = call.args.nodeId
+    const x = call.args.x
+    const y = call.args.y
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    if (
+      typeof x !== 'number' ||
+      !Number.isFinite(x) ||
+      typeof y !== 'number' ||
+      !Number.isFinite(y)
+    ) {
+      throw new AgentToolError('invalid_params', 'x 和 y 必须是有限数字')
+    }
+    assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'canvas_add_node') {
+    const kind = call.args.kind
+    if (
+      typeof kind !== 'string' ||
+      !['text', 'image', 'video', 'audio'].includes(kind)
+    ) {
+      throw new AgentToolError('invalid_params', '节点类型无效')
+    }
+    const nearNodeId = call.args.nearNodeId
+    if (nearNodeId !== undefined) {
+      if (typeof nearNodeId !== 'string' || !nearNodeId.trim()) {
+        throw new AgentToolError('invalid_params', 'nearNodeId 必须是非空字符串')
+      }
+    } else {
+      const x = call.args.x
+      const y = call.args.y
+      if (
+        typeof x !== 'number' ||
+        !Number.isFinite(x) ||
+        typeof y !== 'number' ||
+        !Number.isFinite(y)
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '需要 nearNodeId，或同时提供 x 和 y'
+        )
+      }
+    }
+    if (
+      call.args.title !== undefined &&
+      (typeof call.args.title !== 'string' || call.args.title.length > 200)
+    ) {
+      throw new AgentToolError('invalid_params', 'title 不能超过 200 个字符')
+    }
+  }
+
+  if (call.name === 'canvas_connect') {
+    const source = call.args.sourceNodeId
+    const target = call.args.targetNodeId
+    if (typeof source !== 'string' || !source.trim()) {
+      throw new AgentToolError('invalid_params', 'sourceNodeId 必须是非空字符串')
+    }
+    if (typeof target !== 'string' || !target.trim()) {
+      throw new AgentToolError('invalid_params', 'targetNodeId 必须是非空字符串')
+    }
+    if (source === target) {
+      throw new AgentToolError('invalid_params', '不能把节点连接到自身')
+    }
+    assertSelectedNode(scope, source)
+    assertSelectedNode(scope, target)
+  }
+
+  if (call.name === 'canvas_remove_edge') {
+    const edgeId = call.args.edgeId
+    const source = call.args.sourceNodeId
+    const target = call.args.targetNodeId
+    const hasEdgeId = edgeId !== undefined
+    const hasEndpoints = source !== undefined || target !== undefined
+
+    if (hasEdgeId) {
+      if (typeof edgeId !== 'string' || !edgeId.trim()) {
+        throw new AgentToolError('invalid_params', 'edgeId 必须是非空字符串')
+      }
+    }
+    if (hasEndpoints) {
+      if (typeof source !== 'string' || !source.trim()) {
+        throw new AgentToolError(
+          'invalid_params',
+          'sourceNodeId 必须是非空字符串'
+        )
+      }
+      if (typeof target !== 'string' || !target.trim()) {
+        throw new AgentToolError(
+          'invalid_params',
+          'targetNodeId 必须是非空字符串'
+        )
+      }
+      if (source === target) {
+        throw new AgentToolError('invalid_params', '连线的上下游不能相同')
+      }
+      assertSelectedNode(scope, source)
+      assertSelectedNode(scope, target)
+    }
+    if (!hasEdgeId && !hasEndpoints) {
+      throw new AgentToolError(
+        'invalid_params',
+        '需要 edgeId，或同时提供 sourceNodeId 和 targetNodeId'
+      )
+    }
+  }
+
+  if (call.name === 'canvas_delete_node') {
+    const nodeId = call.args.nodeId
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'canvas_group') {
+    const nodeIds = call.args.nodeIds
+    if (
+      !Array.isArray(nodeIds) ||
+      nodeIds.length < 2 ||
+      nodeIds.length > 20
+    ) {
+      throw new AgentToolError('invalid_params', 'nodeIds 需要 2-20 个节点')
+    }
+    const unique = new Set(nodeIds)
+    if (unique.size !== nodeIds.length) {
+      throw new AgentToolError('invalid_params', 'nodeIds 不能重复')
+    }
+    for (const id of nodeIds) {
+      if (typeof id !== 'string' || !id.trim()) {
+        throw new AgentToolError('invalid_params', 'nodeIds 必须是非空字符串')
+      }
+      assertSelectedNode(scope, id)
+    }
+  }
+
+  if (call.name === 'canvas_ungroup') {
+    const groupId = call.args.groupId
+    if (typeof groupId !== 'string' || !groupId.trim()) {
+      throw new AgentToolError('invalid_params', 'groupId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, groupId)
+  }
+}

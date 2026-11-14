@@ -1,5 +1,9 @@
+import type { AgentScope, AgentToolCall } from '@shared/agent'
+import { AgentToolError } from './errors'
+import { assertSelectedNode } from './scope'
+
 import type { AgentToolDefinition } from '@shared/agent-tools'
-import { STAGE_OBJECT_TYPES } from '@shared/stage-schema'
+import { STAGE_EASINGS, STAGE_LIMITS, STAGE_OBJECT_TYPES } from '@shared/stage-schema'
 
 const stageNodeIdParameter = {
   type: 'string',
@@ -372,3 +376,418 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
   }
 ]
 
+function isStageVec3(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length === 3 &&
+    value.every(
+      (item) => typeof item === 'number' && Number.isFinite(item)
+    )
+  )
+}
+
+function assertStageVec3(value: unknown, label: string): void {
+  if (value !== undefined && !isStageVec3(value)) {
+    throw new AgentToolError(
+      'invalid_params',
+      `${label} 必须是 3 个有限数字`
+    )
+  }
+}
+
+export function validateStageToolArgs(
+  call: AgentToolCall,
+  scope: AgentScope
+): void {
+  if (call.name === 'stage_capabilities') {
+    return
+  }
+
+  if (call.name.startsWith('stage_')) {
+    const nodeId = call.args.nodeId
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, nodeId)
+
+    if (call.name === 'stage_add_object') {
+      if (
+        typeof call.args.type !== 'string' ||
+        !STAGE_OBJECT_TYPES.includes(
+          call.args.type as (typeof STAGE_OBJECT_TYPES)[number]
+        )
+      ) {
+        throw new AgentToolError('invalid_params', '对象类型无效')
+      }
+      if (
+        call.args.name !== undefined &&
+        (typeof call.args.name !== 'string' ||
+          !call.args.name.trim() ||
+          call.args.name.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'name 无效')
+      }
+      assertStageVec3(call.args.position, 'position')
+      assertStageVec3(call.args.rotation, 'rotation')
+      assertStageVec3(call.args.scale, 'scale')
+      if (
+        call.args.pose !== undefined &&
+        (typeof call.args.pose !== 'string' ||
+          call.args.pose.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'pose 无效')
+      }
+      if (
+        call.args.color !== undefined &&
+        (typeof call.args.color !== 'string' ||
+          call.args.color.length > 40)
+      ) {
+        throw new AgentToolError('invalid_params', 'color 无效')
+      }
+      if (call.args.count !== undefined) {
+        const count = call.args.count
+        if (
+          typeof count !== 'number' ||
+          !Number.isInteger(count) ||
+          count < 1 ||
+          count > 100
+        ) {
+          throw new AgentToolError('invalid_params', 'count 必须是 1-100 的整数')
+        }
+      }
+    }
+
+    if (call.name === 'stage_transform_object') {
+      if (typeof call.args.objectId !== 'string' || !call.args.objectId.trim()) {
+        throw new AgentToolError('invalid_params', 'objectId 必须是非空字符串')
+      }
+      if (
+        call.args.position === undefined &&
+        call.args.rotation === undefined &&
+        call.args.scale === undefined
+      ) {
+        throw new AgentToolError('invalid_params', '至少需要 position、rotation 或 scale')
+      }
+      assertStageVec3(call.args.position, 'position')
+      assertStageVec3(call.args.rotation, 'rotation')
+      assertStageVec3(call.args.scale, 'scale')
+    }
+
+    if (call.name === 'stage_add_camera') {
+      if (
+        call.args.name !== undefined &&
+        (typeof call.args.name !== 'string' ||
+          !call.args.name.trim() ||
+          call.args.name.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'name 无效')
+      }
+      assertStageVec3(call.args.position, 'position')
+      assertStageVec3(call.args.target, 'target')
+      if (call.args.fov !== undefined) {
+        const fov = call.args.fov
+        if (
+          typeof fov !== 'number' ||
+          !Number.isFinite(fov) ||
+          fov < 10 ||
+          fov > 120
+        ) {
+          throw new AgentToolError('invalid_params', 'fov 必须在 10-120 之间')
+        }
+      }
+      if (
+        call.args.aspect !== undefined &&
+        !['16:9', '9:16', '1:1'].includes(String(call.args.aspect))
+      ) {
+        throw new AgentToolError('invalid_params', 'aspect 无效')
+      }
+    }
+
+    if (call.name === 'stage_transform_camera') {
+      if (
+        typeof call.args.cameraId !== 'string' ||
+        !call.args.cameraId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'cameraId 必须是非空字符串')
+      }
+      if (
+        call.args.name === undefined &&
+        call.args.position === undefined &&
+        call.args.target === undefined &&
+        call.args.fov === undefined &&
+        call.args.aspect === undefined
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '至少需要 name、position、target、fov 或 aspect'
+        )
+      }
+      if (
+        call.args.name !== undefined &&
+        (typeof call.args.name !== 'string' ||
+          !call.args.name.trim() ||
+          call.args.name.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'name 无效')
+      }
+      assertStageVec3(call.args.position, 'position')
+      assertStageVec3(call.args.target, 'target')
+      if (call.args.fov !== undefined) {
+        const fov = call.args.fov
+        if (
+          typeof fov !== 'number' ||
+          !Number.isFinite(fov) ||
+          fov < 10 ||
+          fov > 120
+        ) {
+          throw new AgentToolError('invalid_params', 'fov 必须在 10-120 之间')
+        }
+      }
+      if (
+        call.args.aspect !== undefined &&
+        !['16:9', '9:16', '1:1'].includes(String(call.args.aspect))
+      ) {
+        throw new AgentToolError('invalid_params', 'aspect 无效')
+      }
+    }
+
+    if (call.name === 'stage_add_shot') {
+      if (
+        typeof call.args.cameraId !== 'string' ||
+        !call.args.cameraId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'cameraId 必须是非空字符串')
+      }
+      if (
+        typeof call.args.durationMs !== 'number' ||
+        !Number.isFinite(call.args.durationMs) ||
+        call.args.durationMs < 100 ||
+        call.args.durationMs > 600_000
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          'durationMs 必须在 100-600000 之间'
+        )
+      }
+      if (!['16:9', '9:16', '1:1'].includes(String(call.args.aspect))) {
+        throw new AgentToolError('invalid_params', 'aspect 无效')
+      }
+      if (
+        call.args.name !== undefined &&
+        (typeof call.args.name !== 'string' ||
+          !call.args.name.trim() ||
+          call.args.name.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'name 无效')
+      }
+    }
+
+    if (call.name === 'stage_update_shot') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+      if (
+        call.args.name === undefined &&
+        call.args.cameraId === undefined &&
+        call.args.durationMs === undefined &&
+        call.args.aspect === undefined
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '至少需要 name、cameraId、durationMs 或 aspect'
+        )
+      }
+      if (
+        call.args.name !== undefined &&
+        (typeof call.args.name !== 'string' ||
+          call.args.name.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'name 无效')
+      }
+      if (
+        call.args.cameraId !== undefined &&
+        (typeof call.args.cameraId !== 'string' ||
+          !call.args.cameraId.trim())
+      ) {
+        throw new AgentToolError('invalid_params', 'cameraId 无效')
+      }
+      if (
+        call.args.durationMs !== undefined &&
+        (typeof call.args.durationMs !== 'number' ||
+          !Number.isFinite(call.args.durationMs) ||
+          call.args.durationMs < 100 ||
+          call.args.durationMs > 600_000)
+      ) {
+        throw new AgentToolError('invalid_params', 'durationMs 无效')
+      }
+      if (
+        call.args.aspect !== undefined &&
+        !['16:9', '9:16', '1:1'].includes(String(call.args.aspect))
+      ) {
+        throw new AgentToolError('invalid_params', 'aspect 无效')
+      }
+    }
+
+    if (call.name === 'stage_remove_shot') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+    }
+
+    if (call.name === 'stage_set_camera_track') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+      const keyframes = call.args.keyframes
+      if (
+        !Array.isArray(keyframes) ||
+        keyframes.length < 1 ||
+        keyframes.length > 60
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          'keyframes 需要 1-60 个关键帧'
+        )
+      }
+      for (const frame of keyframes) {
+        if (!frame || typeof frame !== 'object' || Array.isArray(frame)) {
+          throw new AgentToolError('invalid_params', '关键帧格式无效')
+        }
+        const item = frame as Record<string, unknown>
+        if (
+          typeof item.timeMs !== 'number' ||
+          !Number.isFinite(item.timeMs) ||
+          item.timeMs < 0 ||
+          item.timeMs > 600_000
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            '关键帧 timeMs 必须在 0-600000 之间'
+          )
+        }
+        assertStageVec3(item.position, 'position')
+        assertStageVec3(item.target, 'target')
+        if (
+          typeof item.fov !== 'number' ||
+          !Number.isFinite(item.fov) ||
+          item.fov < 10 ||
+          item.fov > 120
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            '关键帧 fov 必须在 10-120 之间'
+          )
+        }
+        if (
+          item.easing !== undefined &&
+          !STAGE_EASINGS.includes(
+            item.easing as (typeof STAGE_EASINGS)[number]
+          )
+        ) {
+          throw new AgentToolError('invalid_params', '关键帧 easing 无效')
+        }
+      }
+    }
+
+    if (call.name === 'stage_set_background') {
+      if (!['color', 'panorama', 'model'].includes(String(call.args.kind))) {
+        throw new AgentToolError('invalid_params', '背景 kind 无效')
+      }
+      if (
+        typeof call.args.value !== 'string' ||
+        !call.args.value.trim() ||
+        call.args.value.length > 2000
+      ) {
+        throw new AgentToolError('invalid_params', '背景 value 无效')
+      }
+    }
+
+    if (call.name === 'stage_update_object') {
+      if (
+        typeof call.args.objectId !== 'string' ||
+        !call.args.objectId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'objectId 必须是非空字符串')
+      }
+      if (
+        call.args.pose === undefined &&
+        call.args.color === undefined &&
+        call.args.visible === undefined
+      ) {
+        throw new AgentToolError(
+          'invalid_params',
+          '至少需要 pose、color 或 visible'
+        )
+      }
+      if (
+        call.args.pose !== undefined &&
+        (typeof call.args.pose !== 'string' ||
+          call.args.pose.length > STAGE_LIMITS.maxNameLength)
+      ) {
+        throw new AgentToolError('invalid_params', 'pose 无效')
+      }
+      if (
+        call.args.color !== undefined &&
+        (typeof call.args.color !== 'string' ||
+          call.args.color.length > 40)
+      ) {
+        throw new AgentToolError('invalid_params', 'color 无效')
+      }
+      if (
+        call.args.visible !== undefined &&
+        typeof call.args.visible !== 'boolean'
+      ) {
+        throw new AgentToolError('invalid_params', 'visible 必须是布尔值')
+      }
+    }
+
+    if (call.name === 'stage_set_active_camera') {
+      if (
+        typeof call.args.cameraId !== 'string' ||
+        !call.args.cameraId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'cameraId 必须是非空字符串')
+      }
+    }
+
+    if (call.name === 'stage_remove_object') {
+      if (
+        typeof call.args.objectId !== 'string' ||
+        !call.args.objectId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'objectId 必须是非空字符串')
+      }
+    }
+
+    if (call.name === 'stage_export_preview') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+      if (
+        call.args.resolution !== undefined &&
+        !['720p', '1080p'].includes(String(call.args.resolution))
+      ) {
+        throw new AgentToolError('invalid_params', 'resolution 无效')
+      }
+      if (
+        call.args.fps !== undefined &&
+        call.args.fps !== 24 &&
+        call.args.fps !== 30
+      ) {
+        throw new AgentToolError('invalid_params', 'fps 只能是 24 或 30')
+      }
+    }
+  }
+}

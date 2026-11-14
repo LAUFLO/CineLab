@@ -12,6 +12,7 @@ import type {
 import { CHARACTER_FOLDER, DEFAULT_LIBRARY_FOLDERS } from '@shared/library-schema'
 import { getCurrentProjectRoot } from '../project/manager'
 import { getLibraryRoot } from './config'
+import { mapLimit } from './concurrency'
 import { runFfmpeg } from '../media/ffmpeg'
 import {
   deleteAssetTags,
@@ -192,18 +193,22 @@ export async function listAssets(folder: string): Promise<LibraryAsset[]> {
     return []
   }
 
-  const assets: LibraryAsset[] = []
   const tags = await readAssetTags()
-  for (const entry of entries) {
-    if (!entry.isFile() || isIgnored(entry.name)) continue
-    if (!kindFromExt(extname(entry.name).toLowerCase())) continue
+  const files = entries.filter(
+    (entry) =>
+      entry.isFile() &&
+      !isIgnored(entry.name) &&
+      Boolean(kindFromExt(extname(entry.name).toLowerCase()))
+  )
 
+  // 缩略图解码和写盘较重，限制并发，避免一次打开文件夹时占满主进程。
+  const assets = await mapLimit(files, 4, async (entry) => {
     const relPath = toPosix(join(toNative(folder), entry.name))
-    assets.push({
+    return {
       ...(await pathToAsset(root, relPath)),
       tags: tags[relPath] ?? []
-    })
-  }
+    }
+  })
 
   return assets.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
 }

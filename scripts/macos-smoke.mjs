@@ -3,8 +3,11 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const appPath = process.argv[2]
+const installDepth = process.argv.includes('--install-depth')
 if (!appPath) {
-  throw new Error('usage: node scripts/macos-smoke.mjs <CineLab.app>')
+  throw new Error(
+    'usage: node scripts/macos-smoke.mjs <CineLab.app> [--install-depth]'
+  )
 }
 
 const bin = join(appPath, 'Contents/MacOS/CineLab')
@@ -22,8 +25,14 @@ for (const file of [bin, ffmpeg, ffprobe]) {
   if (!existsSync(file)) throw new Error(`missing ${file}`)
 }
 
-console.log('ffmpeg:', execFileSync(ffmpeg, ['-version'], { encoding: 'utf8' }).split('\n')[0])
-console.log('ffprobe:', execFileSync(ffprobe, ['-version'], { encoding: 'utf8' }).split('\n')[0])
+console.log(
+  'ffmpeg:',
+  execFileSync(ffmpeg, ['-version'], { encoding: 'utf8' }).split('\n')[0]
+)
+console.log(
+  'ffprobe:',
+  execFileSync(ffprobe, ['-version'], { encoding: 'utf8' }).split('\n')[0]
+)
 
 const port = 9333
 const userData = '/tmp/cinelab-macos-smoke'
@@ -75,7 +84,7 @@ function printLogs() {
   }
 }
 
-try {
+async function main() {
   const page = await waitForPage()
   console.log('page:', page.title, page.url)
 
@@ -85,44 +94,118 @@ try {
     ws.onerror = reject
   })
 
-  const result = await new Promise((resolve, reject) => {
-    const id = 1
-    const timer = setTimeout(() => reject(new Error('evaluate timeout')), 10000)
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data)
-      if (message.id === id) {
-        clearTimeout(timer)
-        resolve(message)
-      }
+  let seq = 0
+  const pending = new Map()
+  ws.onmessage = (event) => {
+    const message = JSON.parse(event.data)
+    if (message.id && pending.has(message.id)) {
+      pending.get(message.id)(message)
+      pending.delete(message.id)
     }
-    ws.send(
-      JSON.stringify({
-        id,
-        method: 'Runtime.evaluate',
-        params: {
-          expression: `(async () => {
-            const info = await window.api.app.getInfo()
-            return JSON.stringify({
-              version: info.version,
-              platform: info.platform,
-              projectCenter: Boolean(document.querySelector('.project-center')),
-              text: document.body.innerText.slice(0, 80)
-            })
-          })()`,
-          returnByValue: true,
-          awaitPromise: true
+  }
+
+  function evaluate(expression) {
+    return new Promise((resolve, reject) => {
+      const id = ++seq
+      const timer = setTimeout(() => {
+        pending.delete(id)
+        reject(new Error('evaluate timeout'))
+      }, 20000)
+      pending.set(id, (message) => {
+        clearTimeout(timer)
+        const result = message.result?.result
+        if (result?.subtype === 'error') {
+          reject(new Error(result.description ?? 'evaluate error'))
+        } else {
+          resolve(result?.value)
         }
       })
-    )
-  })
-  ws.close()
+      ws.send(
+        JSON.stringify({
+          id,
+          method: 'Runtime.evaluate',
+          params: { expression, returnByValue: true, awaitPromise: true }
+        })
+      )
+    })
+  }
 
-  const value = result.result?.result?.value
-  console.log('renderer:', value)
-  const parsed = JSON.parse(value)
-  if (parsed.version !== '0.1.0') throw new Error(`unexpected version ${parsed.version}`)
-  if (parsed.platform !== 'darwin') throw new Error(`unexpected platform ${parsed.platform}`)
+  const renderer = await evaluate(`(async () => {
+    const info = await window.api.app.getInfo()
+    return JSON.stringify({
+      version: info.version,
+      platform: info.platform,
+      projectCenter: Boolean(document.querySelector('.project-center')),
+      text: document.body.innerText.slice(0, 80)
+    })
+  })()`)
+  console.log('renderer:', renderer)
+  const parsed = JSON.parse(renderer)
+  if (parsed.version !== '0.1.0') {
+    throw new Error(`unexpected version ${parsed.version}`)
+  }
+  if (parsed.platform !== 'darwin') {
+    throw new Error(`unexpected platform ${parsed.platform}`)
+  }
   if (!parsed.projectCenter) throw new Error('project center not rendered')
+
+  if (installDepth) {
+    console.log('installing depth-runtime...')
+    await evaluate(`(async () => {
+      await window.api.components.install('depth-runtime')
+      return 'started'
+    })()`)
+
+    let depth = null
+    for (let attempt = 0; attempt < 300; attempt += 1) {
+      const raw = await evaluate(
+        `(async () => JSON.stringify(await window.api.components.status()))()`
+      )
+      const list = JSON.parse(raw)
+      depth = list.find((item) => item.kind === 'depth-runtime')
+      if (depth?.state === 'installed') break
+      if (depth?.state === 'error') {
+        throw new Error(`depth install failed: ${depth.error}`)
+      }
+      if (attempt % 15 === 0) {
+        console.log('depth state:', depth?.state, depth?.percent ?? '')
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+    }
+    if (depth?.state !== 'installed') {
+      throw new Error('depth install timeout')
+    }
+    console.log('depth installed:', depth.path)
+
+    const python = join(depth.path, 'python', 'bin', 'python3')
+    const version = execFileSync(
+      python,
+      ['-c', 'import torch, cv2, numpy; print(torch.__version__, cv2.__version__)'],
+      { encoding: 'utf8' }
+    )
+    console.log('depth python:', version.trim())
+
+    const worker = execFileSync(
+      python,
+      [
+        '-c',
+        `import sys
+sys.path.insert(0, '.')
+from worker import ensure_torchvision_compose
+ensure_torchvision_compose()
+from video_depth_anything.video_depth import VideoDepthAnything
+print('WORKER_OK')`
+      ],
+      { cwd: depth.path, encoding: 'utf8' }
+    )
+    console.log('depth worker:', worker.trim())
+  }
+
+  ws.close()
+}
+
+try {
+  await main()
 } catch (error) {
   printLogs()
   throw error

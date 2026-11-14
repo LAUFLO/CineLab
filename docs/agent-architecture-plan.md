@@ -14,7 +14,7 @@
 ### 已落地
 
 - **运行时**：`src/main/agent/runtime.ts`，自研循环、SSE 流式、工具调用、取消、超时、会话历史。
-- **工具注册**：`src/main/agent/tools.ts`，当前注册 56 个工具；`src/main/agent/capabilities/` 提供能力投影和关键词搜索。
+- **工具注册**：`src/main/agent/tools/`，当前注册 56 个工具；`src/main/agent/capabilities/` 提供能力投影和关键词搜索。
 - **Profile**：`canvas` / `clip` / `film` / `stage`。当前主入口使用 `canvas` 和 `clip`；拉片和导演台能力挂在对应 scope。
 - **工具桥**：`src/renderer/src/agent/canvasBridge.ts`、`timelineBridge.ts`、`stageBridge.ts`、`filmBridge.ts`。
 - **节点操作桥**：`node-operation-runner.ts`，UI 和 Agent 共用；17 个操作可直接执行，8 个模型类操作通过 `generation_propose`，3 个蒙版操作保留 UI。

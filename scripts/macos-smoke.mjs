@@ -130,17 +130,22 @@ async function main() {
     })
   }
 
-  const renderer = await evaluate(`(async () => {
-    const info = await window.api.app.getInfo()
-    return JSON.stringify({
-      version: info.version,
-      platform: info.platform,
-      projectCenter: Boolean(document.querySelector('.project-center')),
-      text: document.body.innerText.slice(0, 80)
-    })
-  })()`)
-  console.log('renderer:', renderer)
-  const parsed = JSON.parse(renderer)
+  let parsed = null
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    const renderer = await evaluate(`(async () => {
+      const info = await window.api.app.getInfo()
+      return JSON.stringify({
+        version: info.version,
+        platform: info.platform,
+        projectCenter: Boolean(document.querySelector('.project-center')),
+        text: document.body.innerText.slice(0, 80)
+      })
+    })()`)
+    parsed = JSON.parse(renderer)
+    if (parsed.projectCenter) break
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  console.log('renderer:', JSON.stringify(parsed))
   if (parsed.version !== '0.1.0') {
     throw new Error(`unexpected version ${parsed.version}`)
   }

@@ -6140,6 +6140,8 @@ body.is-picking .react-flow__node:hover .cnode__card {
   background: var(--surface-raised);
   border: 1px solid var(--border);
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 220px;
 }
 
 .library-asset-card:hover {

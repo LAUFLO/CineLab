@@ -48,7 +48,11 @@ export function StudioWindow() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'e') {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.shiftKey &&
+        event.key.toLowerCase() === 'e'
+      ) {
         event.preventDefault()
         const selected = useCanvasStore
           .getState()

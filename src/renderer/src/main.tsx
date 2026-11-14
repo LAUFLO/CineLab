@@ -6,6 +6,10 @@ import './styles/base.css'
 import './styles/global.css'
 import './styles/studio.css'
 
+if (navigator.userAgent.includes('Mac')) {
+  document.documentElement.dataset.platform = 'darwin'
+}
+
 window.addEventListener('error', (event) => {
   const message = `${event.message} @ ${event.filename ?? ''}:${event.lineno ?? 0}`
   void window.api.app.log('error', message).catch(() => undefined)

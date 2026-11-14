@@ -149,7 +149,11 @@ export default function App() {
     })
     const unsubscribeBridge = initAgentCanvasBridge()
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'a') {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.shiftKey &&
+        event.key.toLowerCase() === 'a'
+      ) {
         event.preventDefault()
         useAgentStore.getState().toggle()
       }

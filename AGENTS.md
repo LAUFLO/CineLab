@@ -65,6 +65,7 @@ corepack pnpm check:encryption # 检查透明加密文件与 Git blob 是否为�
 corepack pnpm check:docs   # 检查文档状态、链接、索引和 Agent 工具清单
 corepack pnpm build        # 构建
 corepack pnpm dist:win     # 打包 Windows 安装包
+corepack pnpm dist:mac     # 打包 macOS 安装包（需在 macOS 上运行）
 ```
 
 > `pnpm` 不在 PATH 时统一用 `corepack pnpm`。

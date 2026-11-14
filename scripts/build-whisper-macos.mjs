@@ -62,6 +62,9 @@ async function main() {
     cmakeBuild,
     '-DCMAKE_BUILD_TYPE=Release',
     '-DBUILD_SHARED_LIBS=OFF',
+    // GitHub macOS runners do not consistently expose i8mm; use the portable
+    // ARMv8.2 baseline instead of host-specific code generation.
+    '-DGGML_NATIVE=OFF',
     '-DWHISPER_BUILD_TESTS=OFF',
     '-DWHISPER_BUILD_EXAMPLES=ON'
   ])

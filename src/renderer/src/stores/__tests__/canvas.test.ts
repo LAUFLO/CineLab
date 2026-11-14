@@ -60,6 +60,25 @@ describe('canvas store', () => {
     expect(useCanvasStore.getState().nodes).toHaveLength(1)
   })
 
+  it('keeps a shorter history for large canvases', () => {
+    useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
+    const node = useCanvasStore.getState().nodes[0]
+    useCanvasStore.setState({
+      nodes: Array.from({ length: 201 }, (_, index) => ({
+        ...node,
+        id: `large-${index}`
+      })),
+      past: [],
+      future: []
+    })
+
+    for (let index = 0; index < 25; index += 1) {
+      useCanvasStore.getState().pushHistory()
+    }
+
+    expect(useCanvasStore.getState().past.length).toBeLessThanOrEqual(20)
+  })
+
   it('copies and pastes the selection', () => {
     useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
     expect(useCanvasStore.getState().copySelection()).toBe(1)

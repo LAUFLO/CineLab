@@ -174,7 +174,9 @@ pushHistory: () => {
     if (externalWrite.depth > 0) return
     const { nodes, edges, past } = get()
     const next = [...past, cloneSnapshot(nodes, edges)]
-    if (next.length > HISTORY_LIMIT) next.shift()
+    // 大画布的全量快照更占内存，降低保留步数，避免撤销栈拖慢主线程。
+    const limit = nodes.length > 200 ? 20 : HISTORY_LIMIT
+    if (next.length > limit) next.splice(0, next.length - limit)
     set({ past: next, future: [] })
   },
 undo: () => {

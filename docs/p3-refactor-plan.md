@@ -28,6 +28,22 @@
 | 性能优化 | todo | React Flow 视口裁剪、撤销栈增量、缩略图并发 |
 | 测试与 e2e | done | 新增 library store、asset protocol、IPC 注册测试；Playwright 覆盖项目中心、创建项目/画布、资产库、CineBot 四条链路 |
 
+## 覆盖率基线
+
+日期：2026-11-14
+命令：`pnpm test:coverage`
+
+| 指标 | 当前 | 阈值 |
+|---|---:|---:|
+| Statements | 34.72%（3,641 / 10,484） | 30% |
+| Branches | 36.20%（2,661 / 7,350） | 30% |
+| Functions | 35.59%（593 / 1,666） | 30% |
+| Lines | 36.56%（3,379 / 9,242） | 30% |
+
+统计范围：`src/shared/**/*.ts`、`src/main/**/*.ts`，排除 `__tests__` 和类型声明。
+
+下一步：每月提升 2–3 个百分点，优先补 protocol、library、IPC 和 runtime 的边界分支。
+
 ## 约束
 
 - 不改工具名、参数 schema、权限模式、确认文案。

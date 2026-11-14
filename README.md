@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  本地运行的 AI 创作工作台 · 无限画布 + CineBot + 剪辑室 + 导演台 + 逐帧拉片 · 数据存在你自己的硬盘上
+  本地运行的 AI 创作工作台 · 无限画布 + CineBot + 剪辑室 + 导演台 + 逐帧拉片
 </p>
 
 <p align="center">
@@ -14,6 +14,11 @@
   <img alt="Electron" src="https://img.shields.io/badge/Electron-45-1f1f1f.svg">
   <img alt="React" src="https://img.shields.io/badge/React-19-1f1f1f.svg">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-7-1f1f1f.svg">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-1f1f1f.svg">
+</p>
+
+<p align="center">
+  简体中文 | <a href="README.en.md">English</a>
 </p>
 
 ## 简介
@@ -90,20 +95,6 @@ CineLab 是一个面向 AIGC 创作者的本地创作工作台。图片、视频
 - **深浅双主题**：黑白灰视觉体系，只通过 CSS 变量切换
 - **统一 tooltip**：超出可视区域的提示会自动避让
 
-## 技术栈
-
-| 层 | 选择 |
-|---|---|
-| 桌面端 | Electron 45，无边框窗口，主进程隔离 |
-| 前端 | React 19 + TypeScript 7 + Vite 8 |
-| 画布 | React Flow 12（`@xyflow/react`） |
-| 状态 | Zustand 5 |
-| 样式 | Tailwind CSS 4 + CSS 变量（深浅双主题） |
-| 校验 | Zod 4 |
-| 媒体 | ffmpeg-static + ffprobe-static |
-| 存储 | 项目文件夹 + JSON / JSONL，不使用 SQLite |
-| Agent | 自研 AgentRuntime，OpenAI 兼容 function calling，SSE 流式 |
-
 ## 下载与安装
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
@@ -128,6 +119,20 @@ CineLab 是一个面向 AIGC 创作者的本地创作工作台。图片、视频
 - 配置保存在 `~/Library/Application Support/CineLab`
 
 源码运行方式见下方「快速开始」。
+
+## 技术栈
+
+| 层 | 选择 |
+|---|---|
+| 桌面端 | Electron 45，无边框窗口，主进程隔离 |
+| 前端 | React 19 + TypeScript 7 + Vite 8 |
+| 画布 | React Flow 12（`@xyflow/react`） |
+| 状态 | Zustand 5 |
+| 样式 | Tailwind CSS 4 + CSS 变量（深浅双主题） |
+| 校验 | Zod 4 |
+| 媒体 | ffmpeg-static + ffprobe-static |
+| 存储 | 项目文件夹 + JSON / JSONL，不使用 SQLite |
+| Agent | 自研 AgentRuntime，OpenAI 兼容 function calling，SSE 流式 |
 
 ## 快速开始
 
@@ -154,8 +159,11 @@ corepack pnpm dev              # 启动 Electron + Vite
 corepack pnpm dev:isolated     # 独立测试实例：独立 userData + 自动分配 CDP 端口
 corepack pnpm typecheck        # 主进程 + 渲染进程类型检查
 corepack pnpm test             # Vitest 单元测试
+corepack pnpm test:coverage    # 覆盖率
+corepack pnpm test:e2e         # Playwright 桌面端 e2e
 corepack pnpm build            # 生产构建
 corepack pnpm dist:win         # 打包 Windows 安装包
+corepack pnpm dist:mac         # 打包 macOS 安装包（需在 macOS 上运行）
 corepack pnpm check:encryption # 检查透明加密文件与 Git blob 是否为明文
 corepack pnpm check:docs       # 检查文档状态、链接、索引和 Agent 工具清单
 corepack pnpm models:check     # 校验 models.json
@@ -213,17 +221,20 @@ src/
 - [x] 导演台：3D 场景、机位、镜头、运镜、背景、白模预演
 - [x] 逐帧拉片：自动分镜、AI 描述、段落编辑、字幕提取、导出
 - [x] CineBot Phase 1–4：画布 / 剪辑 / 导演台 / 拉片工具、节点操作桥、能力目录、生成提案
-- [x] Git 工作流、Vitest、GitHub Actions Windows 打包
+- [x] Windows x64 与 macOS Apple Silicon 安装包
+- [x] macOS depth / vision / whisper 组件 runtime
+- [x] Git 工作流、Vitest、Playwright、GitHub Actions 双平台打包
 
 计划中：
 
-- [ ] 安装包进一步瘦身（ffprobe 仅保留目标平台）
+- [ ] macOS 代码签名、公证与自动更新
+- [ ] macOS Intel（x64）安装包
 - [ ] 蒙版类节点操作的 Agent 化（重绘 / 擦除 / 元素编辑）
 - [ ] 拉片分析包导入（Agent 指定项目内路径）
 - [ ] 导演台对象动作轨和独立灯光实体
 - [ ] 真实 tokenizer、动态工具暴露和上下文预算
 - [ ] Agnes 视频队列恢复后补测
-- [ ] 代码签名和正式发布流程
+- [ ] 应用界面英文化
 
 ## 贡献
 

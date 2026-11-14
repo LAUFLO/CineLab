@@ -70,6 +70,8 @@ P2 早期迁移曾直接用公共组件的默认 Tailwind 样式替换原 CSS �
 - 剪辑室：恢复 `.studio-icon-btn`、`.studio-ghost-btn`、`.studio-textarea` 和原生 select 的 30px 视觉。
 - Toast：恢复 `.export-toast` 和 `.toast` 的原样式。
 
+根因修正：`global.css` 里的 `button`、`input`、`textarea` 重置原先不在 layer 中，优先级高于 Tailwind utilities，导致公共组件的 `padding`、`font-size`、`line-height` 被覆盖。现已移入 `@layer base`，组件默认样式和自定义类都能正确生效。
+
 ## 视觉回归
 
 环境：生产预览构建，临时 userData，打开本地 `AgentSpike.cinelab` 测试项目。

@@ -10,6 +10,10 @@ export interface ComponentDefinition {
 }
 
 const platform = `${process.platform}-${process.arch}`
+const isWindows = process.platform === 'win32'
+const depthManifestName = isWindows
+  ? 'depth-runtime-manifest.json'
+  : `depth-runtime-manifest-${platform}.json`
 
 // runtime 没有官方现成包，需要自建；开发期可用 CINELAB_COMPONENT_BASE_URL 指向本地 mock。
 const runtimeBaseUrl =
@@ -52,9 +56,9 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
     kind: 'depth-runtime',
     label: '深度运行时',
     directory: 'depth-runtime',
-    manifestUrl: `${runtimeBaseUrl}/depth-runtime-manifest.json`,
+    manifestUrl: `${runtimeBaseUrl}/${depthManifestName}`,
     fallback: fallback('depth-runtime', [
-      `${runtimeBaseUrl}/depth-runtime-win32-x64-v1.zip`
+      `${runtimeBaseUrl}/depth-runtime-${platform}-v1.zip`
     ])
   },
   'depth-model': {
@@ -76,16 +80,20 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
     // 官方 whisper.cpp v1.7.6 Windows x64 包
     fallback: fallback(
       'whisper-runtime',
-      [
-        'https://github.com/ggml-org/whisper.cpp/releases/download/v1.7.6/whisper-bin-x64.zip'
-      ],
-      {
-        size: 3_675_974,
-        expandedSize: 12_000_000,
-        sha256:
-          '0d2eca299c248f965bd0341bcb219db4b433c7f0c0ce2200d4df85765e8156a9',
-        files: 22
-      }
+      isWindows
+        ? [
+            'https://github.com/ggml-org/whisper.cpp/releases/download/v1.7.6/whisper-bin-x64.zip'
+          ]
+        : [`${runtimeBaseUrl}/whisper-runtime-${platform}-v1.zip`],
+      isWindows
+        ? {
+            size: 3_675_974,
+            expandedSize: 12_000_000,
+            sha256:
+              '0d2eca299c248f965bd0341bcb219db4b433c7f0c0ce2200d4df85765e8156a9',
+            files: 22
+          }
+        : { size: 0, expandedSize: 0, sha256: '', files: 0 }
     )
   },
   'whisper-model': {
@@ -111,7 +119,9 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
     kind: 'vision-models',
     label: '视觉模型（InSPyReNet + LaMa）',
     directory: 'vision-models',
-    manifestUrl: `${visionBaseUrl}/vision-models-manifest.json`,
+    manifestUrl: isWindows
+      ? `${visionBaseUrl}/vision-models-manifest.json`
+      : undefined,
     fallback: fallback('vision-models', [
       `${visionBaseUrl}/vision-models-win32-x64-v1.zip`
     ], {

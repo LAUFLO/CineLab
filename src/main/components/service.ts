@@ -37,13 +37,19 @@ async function readInstalled(kind: ComponentKind): Promise<ComponentManifest | n
       await fs.readFile(join(dir, 'manifest.json'), 'utf8')
     ) as ComponentManifest
     const modelFile = MODEL_FILES[kind]
+    const whisperBinary =
+      process.platform === 'win32' ? 'whisper-cli.exe' : 'whisper-cli'
+    const pythonBinary =
+      process.platform === 'win32'
+        ? join(dir, 'python', 'python.exe')
+        : join(dir, 'python', 'bin', 'python3')
     const required = modelFile
       ? join(dir, modelFile)
       : kind === 'whisper-runtime'
-        ? join(dir, 'Release', 'whisper-cli.exe')
+        ? join(dir, 'Release', whisperBinary)
         : kind === 'vision-models'
           ? join(dir, 'models', 'big-lama.pt')
-          : join(dir, 'python', 'python.exe')
+          : pythonBinary
     await fs.stat(required)
     if (kind === 'vision-models') {
       await fs.stat(join(dir, 'worker.py'))

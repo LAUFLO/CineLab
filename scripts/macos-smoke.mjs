@@ -140,6 +140,9 @@ async function main() {
         version: info.version,
         platform: info.platform,
         projectCenter: Boolean(document.querySelector('.project-center')),
+        windowButtons: document.querySelectorAll(
+          '.window-controls .icon-btn--window'
+        ).length,
         text: document.body.innerText.slice(0, 80)
       })
     })()`)
@@ -155,6 +158,11 @@ async function main() {
     throw new Error(`unexpected platform ${parsed.platform}`)
   }
   if (!parsed.projectCenter) throw new Error('project center not rendered')
+  if (parsed.windowButtons !== 0) {
+    throw new Error(
+      `window controls should be hidden on macOS, found ${parsed.windowButtons}`
+    )
+  }
 
   async function install(kind) {
     console.log(`installing ${kind}...`)

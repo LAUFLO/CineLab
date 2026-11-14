@@ -111,6 +111,10 @@ body {
   padding-left: 68px;
 }
 
+[data-platform='darwin'] .topbar__group:last-child {
+  padding-right: 12px;
+}
+
 .topbar__group:last-child {
   padding-top: 6px;
   padding-right: 192px;

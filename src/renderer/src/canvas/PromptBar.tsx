@@ -41,6 +41,10 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { assetUrl } from '../lib/asset-url'
 import { studioOpen } from '../studio/scope'
+import { MentionMenu } from './promptbar/MentionMenu'
+import { ModelMenu } from './promptbar/ModelMenu'
+import { ParamPanel } from './promptbar/ParamPanel'
+import { UploadMenu } from './promptbar/UploadMenu'
 
 import {
   WIDTH,
@@ -1104,27 +1108,14 @@ export function PromptBar() {
               上传
             </Button>
 
-            {uploadMenuOpen ? (
-              <div className="promptbar__upload-menu">
-                <MenuItem
-                  className="promptbar__upload-item"
-                  icon={<Icon name="folder-plus" size={14} />}
-                  onSelect={() => void handleLocalUpload()}
-                >
-                  本地上传
-                </MenuItem>
-                <MenuItem
-                  className="promptbar__upload-item"
-                  icon={<Icon name="library" size={14} />}
-                  onSelect={() => {
-                    setUploadMenuOpen(false)
-                    openLibrary('场景')
-                  }}
-                >
-                  资产库上传
-                </MenuItem>
-              </div>
-            ) : null}
+            <UploadMenu
+              open={uploadMenuOpen}
+              onLocalUpload={() => void handleLocalUpload()}
+              onLibraryUpload={() => {
+                setUploadMenuOpen(false)
+                openLibrary('场景')
+              }}
+            />
           </div>
           <Button
             type="button"
@@ -1281,83 +1272,15 @@ export function PromptBar() {
             unstyled
           />
 
-          {mentionOpen ? (
-            <div className="mention-menu">
-              <div className="mention-menu__head">
-                <Icon name="search" size={12} />
-                <span>{mentionQuery || '搜索画布、资产库和角色'}</span>
-              </div>
-
-              <div className="mention-menu__list">
-                {mentionGroups.map((group) => (
-                  <div className="mention-menu__section" key={group.name}>
-                    <div className="mention-menu__title">{group.name}</div>
-
-                    {group.items.map((item) => {
-                      const index = flatMentions.findIndex(
-                        (entry) => entry.key === item.key
-                      )
-
-                      return (
-                        <MenuItem
-                          key={item.key}
-                          className="mention-menu__item"
-                          icon={
-                            <span className="mention-menu__thumb">
-                              {item.thumb ? (
-                                item.kind === 'video' &&
-                                isVideoPath(item.thumb) ? (
-                                  <video
-                                    src={`${assetUrl(item.thumb, item.scope)}#t=0.1`}
-                                    muted
-                                    playsInline
-                                    preload="metadata"
-                                  />
-                                ) : (
-                                  <img
-                                    src={assetUrl(item.thumb, item.scope)}
-                                    alt=""
-                                  />
-                                )
-                              ) : (
-                                <Icon
-                                  name={
-                                    item.kind === 'video' ? 'video' : 'image'
-                                  }
-                                  size={12}
-                                />
-                              )}
-                            </span>
-                          }
-                          active={index === mentionIndex}
-                          onMouseDown={(event) => event.preventDefault()}
-                          onMouseEnter={() => setMentionIndex(index)}
-                          onSelect={() => applyMention(item)}
-                          trailing={
-                            <span className="mention-menu__kind">
-                              {item.group === '角色'
-                                ? '角色卡'
-                                : item.kind === 'video'
-                                  ? '视频'
-                                  : '图片'}
-                            </span>
-                          }
-                        >
-                          <span className="mention-menu__name">
-                            {item.name}
-                          </span>
-                        </MenuItem>
-                      )
-                    })}
-                  </div>
-                ))}
-
-                {flatMentions.length === 0 ? (
-                  <div className="mention-menu__empty">没有匹配的素材</div>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
+          <MentionMenu
+            open={mentionOpen}
+            query={mentionQuery}
+            groups={mentionGroups}
+            flat={flatMentions}
+            activeIndex={mentionIndex}
+            onHover={setMentionIndex}
+            onSelect={applyMention}
+          />
         </div>
 
         <div className="promptbar__footer">
@@ -1395,62 +1318,26 @@ export function PromptBar() {
                 <Icon name="chevron-down" size={11} />
               </Button>
 
-              {menuOpen ? (
-                <div className="model-menu">
-                  {models.map((item) => {
-                    const missing = missingInputsFor(item.model, requiredInputs)
-                    const unavailable = missing.length > 0
-
-                    return (
-                      <MenuItem
-                        key={item.key}
-                        active={item.key === active?.key}
-                        className={`model-menu__item ${
-                          unavailable ? 'is-disabled' : ''
-                        }`}
-                        title={
-                          unavailable
-                            ? `该模型不支持${inputLabel(missing)}输入`
-                            : undefined
-                        }
-                        onSelect={() => {
-                          if (unavailable) {
-                            showToast(
-                              `「${item.model.name}」不支持${inputLabel(missing)}输入`,
-                              'error'
-                            )
-                            return
-                          }
-
-                          setModelKey(item.key)
-                          setParamValues({})
-                          setMenuOpen(false)
-                          void setDefaultModel(capabilityGroup, item.key)
-                        }}
-                        trailing={
-                          <span className="flex flex-col items-end gap-0.5">
-                            {unavailable ? (
-                              <span className="model-menu__reason">
-                                不支持
-                                {missing
-                                  .map((input) => MEDIA_INPUT_LABEL[input])
-                                  .join('·')}
-                              </span>
-                            ) : null}
-                            <span className="model-menu__provider">
-                              {item.providerName}
-                            </span>
-                          </span>
-                        }
-                      >
-                        <span className="model-menu__name">
-                          {item.model.name}
-                        </span>
-                      </MenuItem>
+              <ModelMenu
+                open={menuOpen}
+                models={models}
+                activeKey={active?.key}
+                requiredInputs={requiredInputs}
+                onSelect={(item, missing, unavailable) => {
+                  if (unavailable) {
+                    showToast(
+                      `「${item.model.name}」不支持${inputLabel(missing)}输入`,
+                      'error'
                     )
-                  })}
-                </div>
-              ) : null}
+                    return
+                  }
+
+                  setModelKey(item.key)
+                  setParamValues({})
+                  setMenuOpen(false)
+                  void setDefaultModel(capabilityGroup, item.key)
+                }}
+              />
             </div>
           )}
 
@@ -1474,206 +1361,24 @@ export function PromptBar() {
                   <Icon name="chevron-down" size={10} />
                 </Button>
 
-                {paramMenuKey === '__all__' ? (
-                  <div className="param-panel">
-                    {paramGroups.map((group) => (
-                      <div className="param-panel__section" key={group.name}>
-                        <div className="param-panel__title">{group.name}</div>
-
-                        {group.params.map((param) => {
-                          if (param.type === 'select' && param.options) {
-                            const ratioGrid = param.options.every((option) =>
-                              ratioOf(option.label)
-                            )
-                            const custom = isParamCustom(param)
-                            const allowCustom = paramAllowsCustom(param)
-
-                            return (
-                              <div
-                                key={param.key}
-                                className={`param-panel__grid${ratioGrid ? ' is-ratio' : ''}`}
-                              >
-                                {param.options.map((option) => {
-                                  const ratio = ratioOf(option.label)
-
-                                  return (
-                                    <Button
-                                      key={option.value}
-                                      type="button"
-                                      className={`param-panel__option${
-                                        ratio
-                                          ? ' param-panel__option--ratio'
-                                          : ''
-                                      }${
-                                        String(option.value) ===
-                                          String(values[param.key]) && !custom
-                                          ? ' is-active'
-                                          : ''
-                                      }`}
-                                      onClick={() =>
-                                        selectPreset(param, option.value)
-                                      }
-                                      unstyled
-                                    >
-                                      {ratio ? (
-                                        <span
-                                          className="param-panel__ratio"
-                                          style={{ aspectRatio: ratio }}
-                                        />
-                                      ) : null}
-                                      {option.label}
-                                    </Button>
-                                  )
-                                })}
-
-                                {allowCustom ? (
-                                  <Button
-                                    type="button"
-                                    className={`param-panel__option param-panel__option--custom${
-                                      custom ? ' is-active' : ''
-                                    }`}
-                                    onClick={() => enableCustomParam(param)}
-                                    unstyled
-                                  >
-                                    自定义
-                                  </Button>
-                                ) : null}
-
-                                {custom ? (
-                                  <Input
-                                    className="param-panel__custom-input"
-                                    value={String(values[param.key] ?? '')}
-                                    placeholder={
-                                      param.key === 'ratio'
-                                        ? '例如 2:1'
-                                        : param.key === 'size'
-                                          ? '例如 2048x1152'
-                                          : '输入自定义值'
-                                    }
-                                    onChange={(event) =>
-                                      setParamValues((current) => ({
-                                        ...current,
-                                        [param.key]: event.target.value
-                                      }))
-                                    }
-                                  />
-                                ) : null}
-                              </div>
-                            )
-                          }
-
-                          if (param.type === 'boolean') {
-                            return (
-                              <div
-                                key={param.key}
-                                className="param-panel__grid is-two"
-                              >
-                                {[true, false].map((value) => (
-                                  <Button
-                                    key={String(value)}
-                                    type="button"
-                                    className={`param-panel__option${
-                                      Boolean(values[param.key]) === value
-                                        ? ' is-active'
-                                        : ''
-                                    }`}
-                                    onClick={() =>
-                                      setParamValues((prev) => ({
-                                        ...prev,
-                                        [param.key]: value
-                                      }))
-                                    }
-                                    unstyled
-                                  >
-                                    {value ? '开启' : '关闭'}
-                                  </Button>
-                                ))}
-                              </div>
-                            )
-                          }
-
-                          if (
-                            param.key === 'duration' &&
-                            param.type === 'number'
-                          ) {
-                            const value = Number(
-                              values[param.key] ?? param.defaultValue ?? 5
-                            )
-
-                            return (
-                              <div
-                                key={param.key}
-                                className="param-panel__range"
-                              >
-                                <Input
-                                  type="range"
-                                  min={param.min ?? 1}
-                                  max={param.max ?? 30}
-                                  step={1}
-                                  value={value}
-                                  onChange={(event) =>
-                                    setParamValues((prev) => ({
-                                      ...prev,
-                                      [param.key]: Number(event.target.value)
-                                    }))
-                                  }
-                                  unstyled
-                                />
-                                <span className="param-panel__range-value">
-                                  {value}s
-                                </span>
-                              </div>
-                            )
-                          }
-
-                          return (
-                            <div
-                              key={param.key}
-                              className="param-panel__input-row"
-                            >
-                              <span>{param.label}</span>
-                              <Input
-                                className="param-input nodrag nopan"
-                                type={
-                                  param.type === 'number' ? 'number' : 'text'
-                                }
-                                value={String(values[param.key] ?? '')}
-                                onChange={(event) => {
-                                  const raw = event.target.value
-                                  const next =
-                                    param.type === 'number' ? Number(raw) : raw
-                                  if (
-                                    param.type === 'number' &&
-                                    !Number.isFinite(next as number)
-                                  ) {
-                                    return
-                                  }
-                                  setParamValues((prev) => ({
-                                    ...prev,
-                                    [param.key]: next
-                                  }))
-                                }}
-                              />
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ))}
-
-                    <div className="param-panel__switch-row">
-                      <span>AI 水印</span>
-                      <Switch
-                        label="AI 水印"
-                        size="sm"
-                        checked={watermark}
-                        onChange={(next) => {
-                          setWatermark(next)
-                          void updateGeneration({ watermark: next })
-                        }}
-                      />
-                    </div>
-                  </div>
-                ) : null}
+          {paramMenuKey === '__all__' ? (
+            <ParamPanel
+              groups={paramGroups}
+              values={values}
+              watermark={watermark}
+              isCustom={isParamCustom}
+              allowsCustom={paramAllowsCustom}
+              onSelectPreset={selectPreset}
+              onEnableCustom={enableCustomParam}
+              onChangeValue={(key, value) =>
+                setParamValues((current) => ({ ...current, [key]: value }))
+              }
+              onWatermarkChange={(next) => {
+                setWatermark(next)
+                void updateGeneration({ watermark: next })
+              }}
+            />
+          ) : null}
               </div>
             </div>
           ) : (

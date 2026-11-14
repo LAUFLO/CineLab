@@ -104,6 +104,10 @@ export async function extractZipSafely(
         await fs.mkdir(dirname(target), { recursive: true })
         const stream = await openEntryStream(zip, entry)
         await pipeline(stream, createWriteStream(target))
+        const mode = (entry.externalFileAttributes >>> 16) & 0o777
+        if (process.platform !== 'win32' && mode) {
+          await fs.chmod(target, mode)
+        }
         zip.readEntry()
       })().catch(fail)
     })

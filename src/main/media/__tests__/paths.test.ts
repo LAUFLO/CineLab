@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
@@ -8,7 +9,7 @@ vi.mock('electron', () => ({
 
 import { resolveInside } from '../paths'
 
-const root = 'C:\\projects\\demo'
+const root = resolve('projects', 'demo')
 
 describe('resolveInside', () => {
   it('resolves a relative path inside the project', () => {
@@ -24,8 +25,8 @@ describe('resolveInside', () => {
   })
 
   it('rejects absolute paths outside the project', () => {
-    expect(() => resolveInside(root, 'C:\\Windows\\win.ini')).toThrow(
-      '路径不在当前项目内'
-    )
+    expect(() =>
+      resolveInside(root, resolve(root, '..', 'outside.txt'))
+    ).toThrow('路径不在当前项目内')
   })
 })

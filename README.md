@@ -104,9 +104,34 @@ CineLab 是一个面向 AIGC 创作者的本地创作工作台。图片、视频
 | 存储 | 项目文件夹 + JSON / JSONL，不使用 SQLite |
 | Agent | 自研 AgentRuntime，OpenAI 兼容 function calling，SSE 流式 |
 
+## 下载与安装
+
+从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
+
+- Windows x64：`CineLab Setup 0.1.0.exe`
+- macOS Apple Silicon：`CineLab-0.1.0-arm64.dmg`
+
+### Windows
+
+- 系统要求：Windows 10 / 11 x64
+- 安装包未做代码签名，SmartScreen 提示时选择「更多信息 → 仍要运行」
+- 下载后可对照 Release 页的 `SHA256SUMS.txt` 校验安装包
+- 项目数据保存在你选择的项目文件夹，配置保存在 `%APPDATA%\CineLab`
+- 卸载：Windows 设置 → 应用 → CineLab
+
+### macOS
+
+- 系统要求：macOS 12+，Apple Silicon
+- 安装包未签名、未公证，首次打开需右键 → 打开，或在「系统设置 → 隐私与安全性」放行
+- 深度捕捉、视觉增强和本地字幕组件会按平台自动下载
+- macOS 首版暂不支持自动更新，需要手动下载新版本
+- 配置保存在 `~/Library/Application Support/CineLab`
+
+源码运行方式见下方「快速开始」。
+
 ## 快速开始
 
-需要 Node.js 22+（CI 使用 Node 24）和 pnpm 12。如果 `pnpm` 不在 PATH 中，先执行 `corepack enable`。
+需要 Node.js 24 和 pnpm 12。如果 `pnpm` 不在 PATH 中，先执行 `corepack enable`。
 
 ```bash
 corepack pnpm install

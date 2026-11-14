@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import { registerIpc } from './ipc'
 import { registerAssetProtocol, registerAssetScheme } from './protocol'
 import { createMainWindow, allowAllWindowClose } from './window'
+import { installApplicationMenu } from './menu'
 import { ensureLibrary } from './library/config'
 import { cleanupThumbCache } from './library/thumbs'
 import { ensureMigrated } from './settings/store'
@@ -87,6 +88,7 @@ if (!hasLock) {
   app.whenReady().then(async () => {
     diagLog('whenReady')
     log.info('app ready')
+    installApplicationMenu()
 
     try {
       await ensureLibrary()

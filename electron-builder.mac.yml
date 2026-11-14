@@ -1,0 +1,47 @@
+appId: com.cinelab.app
+productName: CineLab
+directories:
+  buildResources: resources
+  output: release
+files:
+  - out/**/*
+  - package.json
+  # macOS 构建只保留 darwin 的 ffprobe；Windows 构建见 electron-builder.yml
+  - "!node_modules/ffprobe-static/bin/win32/**"
+  - "!node_modules/ffprobe-static/bin/linux/**"
+  # ffprobe-static 的 darwin/arm64 实际是 x86_64，构建前会替换为原生 arm64
+  - "!node_modules/ffprobe-static/bin/darwin/x64/**"
+asar: true
+asarUnpack:
+  - node_modules/ffmpeg-static/ffmpeg
+  - node_modules/ffprobe-static/bin/darwin/**/ffprobe
+mac:
+  icon: icon.png
+  category: public.app-category.video
+  target:
+    - dmg
+    - zip
+  # 未配置 Apple Developer 证书：跳过签名与公证，由用户手动放行 Gatekeeper
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  notarize: false
+  darkModeSupport: true
+  extendInfo:
+    LSMinimumSystemVersion: "12.0"
+dmg:
+  title: CineLab ${version}
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+publish:
+  provider: generic
+  url: https://github.com/LAUFLO/CineLab/releases/latest/download
+extraResources:
+  - from: resources/sounds
+    to: sounds
+  - from: resources/skills
+    to: skills

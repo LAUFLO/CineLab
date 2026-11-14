@@ -1,12 +1,14 @@
 # 自动更新方案
 
-> 状态：实施中（先做好功能，暂不正式发包）
+> 状态：已实现（随 v0.1.0 首发启用）
 > 日期：2026-11-06
+> 适用版本：v0.1.0
+> 最后核对：2026-11-14
 > 关联：`electron-builder.yml`、`src/main/update/`、`src/renderer/src/panels/SettingsPanel.tsx`
 
 ## 0. 结论
 
-使用 `electron-updater` + electron-builder 的 NSIS 安装包做自动更新。更新源按 GitHub Releases 的 `latest/download` 配置，本地测试通过环境变量覆盖为 mock 服务器。当前不创建 Release、不配置发布 token，功能代码和 UI 先落地。
+使用 `electron-updater` + electron-builder 的 NSIS 安装包做自动更新。更新源按 GitHub Releases 的 `latest/download` 配置，本地测试通过环境变量覆盖为 mock 服务器。发布由 `.github/workflows/release.yml` 在 `v*` tag 时自动构建并上传；默认只检查版本，下载和安装需要用户手动确认。
 
 ## 1. 用户交互
 
@@ -82,13 +84,13 @@ publish:
   url: https://github.com/LAUFLO/CineLab/releases/latest/download
 ```
 
-这会让打包产物生成 `app-update.yml`，但不会发布。CI 仍使用 `--publish never`，只上传 artifact。
+这会让打包产物生成 `app-update.yml`。CI 使用 `--publish never` 构建，再由 `release.yml` 上传 exe、zip、`latest.yml`、blockmap 和 `SHA256SUMS.txt`。
 
 正式发版时：
 
 1. 提升 `package.json` 版本号。
 2. 打 tag（如 `v0.1.1`）。
-3. CI 使用 `--publish always` 创建 GitHub Release，上传 exe、zip、latest.yml、blockmap。
+3. `release.yml` 创建 GitHub Release，上传 exe、zip、`latest.yml`、blockmap 和 `SHA256SUMS.txt`。
 4. 应用即可从 `releases/latest/download/latest.yml` 检查更新。
 
 ## 5. 本地测试
@@ -100,8 +102,8 @@ publish:
 
 ## 6. 暂不做
 
-- 真实 GitHub Release 发布。
 - 代码签名（未签名会有 SmartScreen 提示，但更新流程可用）。
+- macOS 自动更新（Squirrel.Mac 要求 Apple 签名；首版未签名，关闭自动更新）。
 - 灰度发布、强制更新、差分更新。
 - 国内镜像/备用更新源。
 - 自动下载和自动安装（当前均为手动触发）。

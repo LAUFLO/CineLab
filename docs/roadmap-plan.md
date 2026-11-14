@@ -3,16 +3,17 @@
 日期：2026-11-13
 状态：现行
 适用版本：v0.1.0
-最后核对：2026-11-13
+最后核对：2026-11-14
 
 ## 1. 当前状态
 
 - 无限画布、多项目 / 多画布、资产库、分组/分镜、节点工具栏、生成队列、导出均已完成。
 - 剪辑室、导演台、逐帧拉片已进入 main。
 - CineBot Phase 1–4 已完成：画布、剪辑、导演台、拉片工具，节点操作桥，能力目录，生成提案。
-- 当前注册 56 个 Agent 工具；单元测试 48 个文件、344 个用例。
+- 当前注册 56 个 Agent 工具；单元测试 55 个文件、365 个用例。
 - GitHub Actions `Build Windows` 已跑通：typecheck、test、check:encryption、build、electron-builder、artifact 上传。
-- 版本仍为 `0.1.0`，尚未做代码签名和正式发布。
+- 版本为 `0.1.0`，准备首次公开发布；暂未做代码签名。
+- macOS arm64 安装包随首版提供，未签名；depth / vision / whisper 组件已移植并通过 CI smoke；Intel 包、签名、公证和自动更新后续补齐。
 
 ## 2. 已完成（2026-11-11 基线）
 
@@ -65,9 +66,9 @@
 
 ## 3. P0：发布前
 
-### P0-1 安装包瘦身
+### P0-1 安装包瘦身（已完成）
 
-现状：`ffprobe-static` 带全平台二进制，安装包约 157MB，zip 约 200MB。
+`electron-builder.yml` 已排除非 win32 平台的 ffprobe；当前安装包约 157MB，zip 约 200MB。
 
 动作：
 
@@ -82,10 +83,10 @@
 
 ### P0-2 正式发布流程
 
-- 代码签名证书 / 发布渠道确认
-- 自动更新正式启用
-- GitHub Release 自动上传安装包和 latest.yml
-- 版本号与 CHANGELOG 规范
+- [x] GitHub Release 自动上传安装包、`latest.yml` 和 `SHA256SUMS.txt`（`.github/workflows/release.yml`）
+- [x] 版本号与 CHANGELOG 规范（`package.json` + `CHANGELOG.md`）
+- [x] 自动更新代码与 UI（默认只检查，下载和安装需手动确认）
+- [ ] 代码签名证书 / 发布渠道确认
 
 ### P0-3 真实素材复测
 

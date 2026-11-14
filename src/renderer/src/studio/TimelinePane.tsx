@@ -683,7 +683,7 @@ export function TimelinePane() {
         return
       }
 
-      if (event.ctrlKey && event.key.toLowerCase() === 'k') {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         if (state.selectedIds.length === 0) return
         event.preventDefault()
         dispatch({

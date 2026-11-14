@@ -51,7 +51,10 @@ export function createMainWindow(): BrowserWindow {
     center: true,
     show: false,
     autoHideMenuBar: true,
-    frame: false,
+    frame: process.platform !== 'darwin',
+    ...(process.platform === 'darwin'
+      ? { titleBarStyle: 'hiddenInset' as const }
+      : {}),
     backgroundColor: '#0a0a0a',
     ...(app.isPackaged
       ? {}

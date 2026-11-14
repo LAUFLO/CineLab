@@ -153,7 +153,7 @@ async function resolveWhisper(): Promise<{ binary: string; model: string }> {
   const binary = join(
     componentDirectory('whisper-runtime'),
     'Release',
-    'whisper-cli.exe'
+    process.platform === 'win32' ? 'whisper-cli.exe' : 'whisper-cli'
   )
   const model = join(componentDirectory('whisper-model'), 'ggml-base.bin')
 

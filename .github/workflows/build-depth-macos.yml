@@ -1,0 +1,47 @@
+name: Build depth runtime macOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  depth:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Build depth runtime
+        run: node scripts/build-depth-runtime-macos.mjs build/components
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: depth-runtime-macos-arm64
+          path: |
+            build/components/depth-runtime-darwin-arm64-v1.zip
+            build/components/depth-runtime-manifest-darwin-arm64.json
+          if-no-files-found: error
+
+  whisper:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Build whisper runtime
+        run: node scripts/build-whisper-macos.mjs build/components
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: whisper-runtime-macos-arm64
+          path: |
+            build/components/whisper-runtime-darwin-arm64-v1.zip
+            build/components/whisper-runtime-manifest-darwin-arm64.json
+          if-no-files-found: error

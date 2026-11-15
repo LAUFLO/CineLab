@@ -13,6 +13,19 @@ interface MentionMenuProps {
   onSelect: (item: MentionItem) => void
 }
 
+const MENU =
+  'mention-menu absolute left-0 top-[calc(100%+8px)] z-20 flex max-h-[340px] w-[330px] flex-col overflow-hidden rounded-[12px] border border-border bg-surface-raised shadow-menu animate-[menu-in_120ms_ease-out]'
+const HEAD =
+  'flex h-9 shrink-0 items-center gap-[7px] border-b border-divider px-3 text-xs text-fg-subtle'
+const LIST = 'flex-1 overflow-y-auto p-[5px]'
+const SECTION = '[&+&]:mt-1'
+const SECTION_TITLE = 'px-2 py-[5px] text-[10.5px] text-fg-subtle'
+const ITEM =
+  'mention-menu__item !min-h-[34px] !rounded-[7px] !px-2 !py-1 text-xs [&>span:first-child]:text-current'
+const ITEM_IDLE = '!text-fg-muted hover:!text-fg'
+const ITEM_ACTIVE = '!text-fg'
+const EMPTY = 'px-2.5 py-[18px] text-center text-xs text-fg-subtle'
+
 export function MentionMenu({
   open,
   query,
@@ -25,16 +38,16 @@ export function MentionMenu({
   if (!open) return null
 
   return (
-    <div className="mention-menu">
-      <div className="mention-menu__head">
+    <div className={MENU}>
+      <div className={HEAD}>
         <Icon name="search" size={12} />
         <span>{query || '搜索画布、资产库和角色'}</span>
       </div>
 
-      <div className="mention-menu__list">
+      <div className={LIST}>
         {groups.map((group) => (
-          <div className="mention-menu__section" key={group.name}>
-            <div className="mention-menu__title">{group.name}</div>
+          <div className={SECTION} key={group.name}>
+            <div className={SECTION_TITLE}>{group.name}</div>
 
             {group.items.map((item) => {
               const index = flat.findIndex((entry) => entry.key === item.key)
@@ -42,19 +55,26 @@ export function MentionMenu({
               return (
                 <MenuItem
                   key={item.key}
-                  className="mention-menu__item"
+                  className={`${ITEM} ${
+                    index === activeIndex ? ITEM_ACTIVE : ITEM_IDLE
+                  }`}
                   icon={
-                    <span className="mention-menu__thumb">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-[6px] bg-surface-hover">
                       {item.thumb ? (
                         item.kind === 'video' && isVideoPath(item.thumb) ? (
                           <video
+                            className="h-full w-full object-cover"
                             src={`${assetUrl(item.thumb, item.scope)}#t=0.1`}
                             muted
                             playsInline
                             preload="metadata"
                           />
                         ) : (
-                          <img src={assetUrl(item.thumb, item.scope)} alt="" />
+                          <img
+                            className="h-full w-full object-cover"
+                            src={assetUrl(item.thumb, item.scope)}
+                            alt=""
+                          />
                         )
                       ) : (
                         <Icon
@@ -69,7 +89,7 @@ export function MentionMenu({
                   onMouseEnter={() => onHover(index)}
                   onSelect={() => onSelect(item)}
                   trailing={
-                    <span className="mention-menu__kind">
+                    <span className="shrink-0 text-[10px] text-fg-subtle">
                       {item.group === '角色'
                         ? '角色卡'
                         : item.kind === 'video'
@@ -78,16 +98,14 @@ export function MentionMenu({
                     </span>
                   }
                 >
-                  <span className="mention-menu__name">{item.name}</span>
+                  <span className="text-xs">{item.name}</span>
                 </MenuItem>
               )
             })}
           </div>
         ))}
 
-        {flat.length === 0 ? (
-          <div className="mention-menu__empty">没有匹配的素材</div>
-        ) : null}
+        {flat.length === 0 ? <div className={EMPTY}>没有匹配的素材</div> : null}
       </div>
     </div>
   )

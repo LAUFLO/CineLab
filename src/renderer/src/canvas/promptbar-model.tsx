@@ -106,7 +106,10 @@ export function renderMentionText(text: string, names: string[]): ReactNode[] {
       part.startsWith('@') && names.some((name) => part === `@${name}`)
 
     return mentioned ? (
-      <span key={index} className="promptbar__mention">
+      <span
+        key={index}
+        className="rounded-[4px] bg-[color-mix(in_srgb,var(--link)_16%,transparent)] text-link"
+      >
         {part}
       </span>
     ) : (

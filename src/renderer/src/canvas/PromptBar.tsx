@@ -87,6 +87,39 @@ interface ModeSlotView {
   mask?: string | null
 }
 
+const TOOL_CLASS =
+  'inline-flex h-6 items-center gap-[5px] whitespace-nowrap !rounded-[6px] px-[7px] text-xs !font-normal transition-colors'
+const TOOL_ACTIVE_CLASS =
+  'bg-fg !text-fg-inverse hover:!bg-fg hover:!text-fg-inverse'
+
+const CHIP_CLASS =
+  'inline-flex h-[26px] items-center gap-1 whitespace-nowrap !rounded-[6px] px-2 text-xs !font-normal'
+const CHIP_IDLE_CLASS = 'bg-surface-hover'
+const CHIP_WARN_CLASS =
+  'bg-[color-mix(in_srgb,var(--danger)_12%,var(--surface-hover))] !text-danger hover:!text-danger'
+
+const SLOT_FRAME_CLASS =
+  '!flex h-10 w-10 overflow-hidden !rounded-[6px] border border-border p-0'
+const SLOT_THUMB_CLASS = `${SLOT_FRAME_CLASS} bg-surface-hover`
+const SLOT_THUMB_MASK_CLASS = `${SLOT_FRAME_CLASS} bg-[color-mix(in_srgb,var(--danger)_26%,transparent)] hover:!bg-[color-mix(in_srgb,var(--danger)_26%,transparent)]`
+const SLOT_MEDIA_CLASS = 'block h-full w-full object-cover'
+const SLOT_EMPTY_CLASS =
+  'flex h-10 w-10 items-center justify-center overflow-hidden rounded-[6px] border border-border bg-surface-hover text-[10px] text-fg-subtle'
+const SLOT_EMPTY_ACTION_CLASS =
+  '!flex h-10 w-10 overflow-hidden !rounded-[6px] border border-dashed border-border bg-surface-hover p-0 text-[10px] !font-normal !text-fg-subtle enabled:hover:border-link enabled:hover:!text-link disabled:cursor-not-allowed disabled:!pointer-events-auto disabled:hover:!text-fg-subtle disabled:!opacity-60'
+
+const MIRROR_CLASS =
+  'pointer-events-none absolute inset-0 h-full w-full overflow-hidden whitespace-pre-wrap break-words bg-transparent px-1.5 py-2 text-sm leading-5 text-fg [word-break:break-word]'
+const INPUT_CLASS =
+  'absolute inset-0 h-full w-full !min-h-0 !resize-none !rounded-none !border-0 !bg-transparent !px-1.5 py-2 !text-transparent caret-fg text-sm leading-5 outline-none overflow-y-auto placeholder:text-fg-subtle'
+
+const SEND_CLASS = '!rounded-full'
+const SEND_IDLE_CLASS = 'bg-surface-hover !text-fg-subtle'
+const SEND_READY_CLASS =
+  'bg-fg !text-fg-inverse hover:!bg-fg hover:!text-fg-inverse'
+const SEND_STOP_CLASS =
+  'bg-danger !text-media-text hover:!bg-danger hover:!text-media-text'
+
 export function PromptBar() {
   const nodes = useCanvasStore((state) => state.nodes)
   const edges = useCanvasStore((state) => state.edges)
@@ -1408,18 +1441,19 @@ export function PromptBar() {
   return (
     <>
       {picking ? (
-        <div className="canvas-pick-bar">
+        <div className="canvas-pick-bar fixed left-1/2 top-3 z-[120] flex h-10 -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-[12px] bg-pick-bar px-2 pl-3.5 text-[13px] text-fg-inverse shadow-float [-webkit-app-region:no-drag]">
           <Icon name="frame" size={14} />
           <span>从画布选择节点作为参考</span>
-          <span className="canvas-pick-bar__hint">Esc 退出</span>
+          <span className="text-[11px] opacity-[0.72]">Esc 退出</span>
           <Button
             type="button"
-            className="canvas-pick-bar__cancel"
+            variant="secondary"
+            size="none"
+            className="!h-[26px] !rounded-[7px] !border-current !px-2.5 !py-0 text-xs !font-normal !text-inherit opacity-[0.85] hover:!border-current hover:!text-inherit hover:opacity-100"
             onClick={(event) => {
               event.stopPropagation()
               setPicking(false)
             }}
-            unstyled
           >
             取消
           </Button>
@@ -1427,7 +1461,11 @@ export function PromptBar() {
       ) : null}
 
       <div
-        className={`promptbar ${expanded ? 'is-expanded' : ''}`}
+        className={`promptbar flex flex-col rounded-[14px] border border-border bg-surface shadow-float ${
+          expanded
+            ? 'fixed left-1/2 top-1/2 z-[240] h-auto min-h-[320px] max-h-[calc(100vh-120px)] w-[min(920px,calc(100vw-96px))] -translate-x-1/2 -translate-y-1/2 px-3 pb-3 pt-2'
+            : 'absolute z-50 h-[196px] animate-[promptbar-in_180ms_ease-out] px-2.5 pb-2 pt-1'
+        }`}
         style={
           expanded
             ? undefined
@@ -1436,16 +1474,21 @@ export function PromptBar() {
         onPointerDown={(event) => event.stopPropagation()}
       >
         {pickHint ? (
-          <div className="promptbar__pick-hint is-warn">{pickHint}</div>
+          <div className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-[5] whitespace-nowrap rounded-[8px] bg-danger px-3 py-[7px] text-xs text-media-text">
+            {pickHint}
+          </div>
         ) : null}
 
-        <div className="promptbar__tools">
-          <div className="promptbar__upload-wrap" ref={uploadRef}>
+        <div className="flex h-7 shrink-0 items-center gap-0.5">
+          <div className="relative inline-flex" ref={uploadRef}>
             <Button
               type="button"
-              className={`promptbar__tool ${uploadMenuOpen ? 'is-active' : ''}`}
+              variant="ghost"
+              size="none"
+              className={`${TOOL_CLASS} ${
+                uploadMenuOpen ? TOOL_ACTIVE_CLASS : ''
+              }`}
               onClick={() => setUploadMenuOpen((open) => !open)}
-              unstyled
             >
               <Icon name="plus" size={13} />
               上传
@@ -1462,20 +1505,21 @@ export function PromptBar() {
           </div>
           <Button
             type="button"
-            className={`promptbar__tool ${picking ? 'is-active' : ''}`}
+            variant="ghost"
+            size="none"
+            className={`${TOOL_CLASS} ${picking ? TOOL_ACTIVE_CLASS : ''}`}
             onClick={() => {
               setPickHint(null)
               setPicking((open) => !open)
             }}
-            unstyled
           >
             <Icon name="frame" size={13} />
             画布参考
           </Button>
-          <div className="promptbar__spacer" />
+          <div className="flex-1" />
           {autoRefs.length > 0 ? (
             <span
-              className="promptbar__autolink"
+              className="inline-flex h-5 items-center gap-[3px] whitespace-nowrap rounded-full border border-dashed border-[color-mix(in_srgb,var(--link)_55%,transparent)] px-[7px] text-[10.5px] text-link"
               title="智能引用 AutoLink 自动匹配的素材，可在高级设置中关闭"
             >
               <Icon name="sparkles" size={10} />
@@ -1493,31 +1537,39 @@ export function PromptBar() {
         </div>
 
         {modeSlots.length > 0 ? (
-          <div className="promptbar__slots">
+          <div className="flex gap-2 overflow-x-auto overflow-y-hidden px-2.5 pt-2">
             {modeSlots.map((slot) => (
-              <div className="promptbar__slot" key={slot.id}>
-                <span className="promptbar__slot-label">{slot.label}</span>
+              <div className="relative h-10 w-10 shrink-0" key={slot.id}>
+                <span className="pointer-events-none absolute left-0.5 top-0.5 z-[1] max-w-[calc(100%-4px)] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg">
+                  {slot.label}
+                </span>
                 {slot.role === 'mask' ? (
-                  <div className="promptbar__slot-mask">
+                  <div className="relative h-full w-full">
                     {slot.mask ? (
                       <>
                         <Button
                           type="button"
-                          className="promptbar__slot-thumb promptbar__slot-thumb--mask"
+                          variant="ghost"
+                          size="none"
+                          className={SLOT_THUMB_MASK_CLASS}
                           title="点击重新涂抹"
                           onClick={() => {
                             if (maskSource) openMaskEditor(maskSource)
                           }}
-                          unstyled
                         >
-                          <img src={slot.mask} alt="" />
+                          <img
+                            className={SLOT_MEDIA_CLASS}
+                            src={slot.mask}
+                            alt=""
+                          />
                         </Button>
                         <Button
                           type="button"
-                          className="promptbar__slot-clear"
+                          variant="ghost"
+                          size="none"
+                          className="absolute right-0.5 top-0.5 h-4 w-4 !rounded-full border border-border bg-surface p-0 text-[11px] leading-none !font-normal text-fg-muted hover:bg-surface-hover hover:text-fg"
                           title="清除蒙版"
                           onClick={() => setMaskDraft(null)}
-                          unstyled
                         >
                           ×
                         </Button>
@@ -1525,7 +1577,9 @@ export function PromptBar() {
                     ) : (
                       <Button
                         type="button"
-                        className="promptbar__slot-empty promptbar__slot-empty--action"
+                        variant="ghost"
+                        size="none"
+                        className={SLOT_EMPTY_ACTION_CLASS}
                         title={
                           maskSource ? '涂抹要编辑的区域' : '先添加一张参考图'
                         }
@@ -1533,7 +1587,6 @@ export function PromptBar() {
                         onClick={() => {
                           if (maskSource) openMaskEditor(maskSource)
                         }}
-                        unstyled
                       >
                         {maskSource ? '涂抹' : '缺参考图'}
                       </Button>
@@ -1542,7 +1595,9 @@ export function PromptBar() {
                 ) : slot.ref ? (
                   <Button
                     type="button"
-                    className="promptbar__slot-thumb"
+                    variant="ghost"
+                    size="none"
+                    className={SLOT_THUMB_CLASS}
                     title="拖动交换位置，双击在画布上定位"
                     draggable
                     onDragStart={() => {
@@ -1577,10 +1632,10 @@ export function PromptBar() {
                       event.stopPropagation()
                       if (slot.ref) handleRefDoubleClick(slot.ref)
                     }}
-                    unstyled
                   >
                     {slot.ref.kind === 'video' ? (
                       <video
+                        className={SLOT_MEDIA_CLASS}
                         src={`${assetUrl(slot.ref.path, slot.ref.scope)}#t=0.1`}
                         muted
                         playsInline
@@ -1588,28 +1643,34 @@ export function PromptBar() {
                       />
                     ) : (
                       <img
+                        className={SLOT_MEDIA_CLASS}
                         src={assetUrl(slot.ref.path, slot.ref.scope)}
                         alt=""
                       />
                     )}
                   </Button>
                 ) : (
-                  <div className="promptbar__slot-empty">空</div>
+                  <div className={SLOT_EMPTY_CLASS}>空</div>
                 )}
               </div>
             ))}
           </div>
         ) : null}
 
-        <div className="promptbar__input-wrap">
-          <div className="promptbar__mirror" ref={mirrorRef} aria-hidden>
+        {/* 保留 promptbar__input-wrap 类名：提及菜单用 closest 判定点击是否在输入区内 */}
+        <div
+          className={`promptbar__input-wrap relative flex-1 ${
+            expanded ? 'min-h-[200px]' : 'min-h-0'
+          }`}
+        >
+          <div className={MIRROR_CLASS} ref={mirrorRef} aria-hidden>
             {renderMentionText(promptText, mentionNames)}
             {'\u200b'}
           </div>
 
           <Textarea
             ref={inputRef}
-            className="promptbar__input"
+            className={INPUT_CLASS}
             placeholder={PLACEHOLDER[kind]}
             rows={2}
             value={promptText}
@@ -1662,7 +1723,6 @@ export function PromptBar() {
                 handleSend()
               }
             }}
-            unstyled
           />
 
           <MentionMenu
@@ -1676,10 +1736,11 @@ export function PromptBar() {
           />
         </div>
 
-        <div className="promptbar__footer">
+        <div className="relative z-[2] flex h-8 shrink-0 items-center gap-2">
           {availableModes.length > 0 && slotMode ? (
-            <div className="promptbar__mode">
+            <div className="flex shrink-0">
               <Select
+                className="!h-[26px] !w-28 !min-w-0 !rounded-[6px] !border-0 !px-2 !text-xs !text-fg-muted hover:!text-fg"
                 value={slotMode}
                 options={availableModes.map((option) => ({
                   value: option.id,
@@ -1695,19 +1756,22 @@ export function PromptBar() {
           {models.length === 0 ? (
             <Button
               type="button"
-              className="promptbar__chip"
+              variant="ghost"
+              size="none"
+              className={`${CHIP_CLASS} ${CHIP_IDLE_CLASS}`}
               onClick={() => openSettings('models')}
-              unstyled
             >
               未配置模型
               <Icon name="chevron-down" size={11} />
             </Button>
           ) : (
-            <div className="model-picker">
+            <div className="relative">
               <Button
                 type="button"
-                className={`promptbar__chip${
-                  activeMissing.length > 0 ? ' is-warning' : ''
+                variant="ghost"
+                size="none"
+                className={`${CHIP_CLASS} ${
+                  activeMissing.length > 0 ? CHIP_WARN_CLASS : CHIP_IDLE_CLASS
                 }`}
                 title={
                   activeMissing.length > 0
@@ -1715,11 +1779,10 @@ export function PromptBar() {
                     : undefined
                 }
                 onClick={() => setMenuOpen((open) => !open)}
-                unstyled
               >
                 {active?.model.name ?? '选择模型'}
                 {activeMissing.length > 0 ? (
-                  <span className="promptbar__model-warning">
+                  <span className="rounded-[4px] bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] px-1 py-px text-[10px] text-danger">
                     不支持{inputLabel(activeMissing)}
                   </span>
                 ) : null}
@@ -1751,20 +1814,21 @@ export function PromptBar() {
           )}
 
           {active ? (
-            <div className="promptbar__param-group">
-              <div className="param-picker">
+            <div className="flex min-w-0 items-center gap-1 overflow-visible">
+              <div className="param-picker relative">
                 <Button
                   type="button"
-                  className="promptbar__chip promptbar__param-summary"
+                  variant="ghost"
+                  size="none"
+                  className={`${CHIP_CLASS} ${CHIP_IDLE_CLASS} !gap-1.5`}
                   onClick={() =>
                     setParamMenuKey((open) =>
                       open === '__all__' ? null : '__all__'
                     )
                   }
                   title="生成设置"
-                  unstyled
                 >
-                  <span className="promptbar__param-summary-text">
+                  <span className="max-w-[320px] overflow-hidden text-ellipsis whitespace-nowrap">
                     {paramSummary || '生成设置'}
                   </span>
                   <Icon name="chevron-down" size={10} />
@@ -1791,12 +1855,12 @@ export function PromptBar() {
               </div>
             </div>
           ) : (
-            <span className="promptbar__params">
+            <span className="overflow-hidden text-ellipsis whitespace-nowrap text-xs text-fg-subtle">
               配置模型后生成参数会出现在这里
             </span>
           )}
 
-          <div className="promptbar__spacer" />
+          <div className="flex-1" />
           <IconButton
             label="高级设置"
             size="sm"
@@ -1810,16 +1874,18 @@ export function PromptBar() {
             <IconButton
               label="停止生成"
               size="sm"
-              className="promptbar__send is-stop"
+              className={`${SEND_CLASS} ${SEND_STOP_CLASS}`}
               onClick={() => void cancelGeneration(node.id)}
             >
-              <span className="promptbar__stop-icon" />
+              <span className="h-3 w-3 rounded-[2px] bg-current" />
             </IconButton>
           ) : (
             <IconButton
               label="生成"
               size="sm"
-              className="promptbar__send"
+              className={`${SEND_CLASS} ${
+                canSend ? SEND_READY_CLASS : SEND_IDLE_CLASS
+              }`}
               disabled={!canSend}
               onClick={handleSend}
             >
@@ -1829,14 +1895,12 @@ export function PromptBar() {
         </div>
 
         {advancedOpen ? (
-          <div className="promptbar__advanced">
-            <div className="promptbar__advanced-title">高级设置</div>
-            <div className="promptbar__advanced-row">
+          <div className="promptbar__advanced absolute right-0 top-[calc(100%+8px)] z-[70] w-[268px] rounded-[12px] border border-border bg-surface p-3 shadow-menu">
+            <div className="mb-2.5 text-xs text-fg-muted">高级设置</div>
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="promptbar__advanced-label">
-                  智能引用 AutoLink
-                </div>
-                <div className="promptbar__advanced-desc">
+                <div className="text-[13px] text-fg">智能引用 AutoLink</div>
+                <div className="mt-[3px] text-[11px] leading-normal text-fg-subtle">
                   自动匹配提示词中的节点、素材和角色名称，匹配结果会显示在素材缩略图中
                 </div>
               </div>

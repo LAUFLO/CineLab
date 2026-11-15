@@ -25,6 +25,14 @@ interface ModelMenuProps {
 const inputLabel = (inputs: MediaInput[]): string =>
   inputs.map((input) => MEDIA_INPUT_LABEL[input]).join('·')
 
+const MENU =
+  'absolute bottom-8 left-0 z-[60] max-h-[280px] w-60 overflow-y-auto rounded-[10px] border border-border bg-surface p-1 shadow-menu'
+const ITEM = '!h-8 !rounded-[6px] !px-2 !py-0 text-xs'
+const ITEM_IDLE = '!text-fg-muted hover:!text-fg'
+const ITEM_ACTIVE = '!text-fg'
+const ITEM_DISABLED =
+  'cursor-not-allowed !text-fg-muted opacity-55 hover:!bg-transparent hover:!text-fg-muted'
+
 export function ModelMenu({
   open,
   models,
@@ -36,7 +44,7 @@ export function ModelMenu({
   if (!open) return null
 
   return (
-    <div className="model-menu">
+    <div className={MENU}>
       {models.map((item) => {
         const missing = missingInputsFor(item.model, requiredInputs)
         const compatibility = modelModeCompatibility(item.model, modeContext)
@@ -45,26 +53,31 @@ export function ModelMenu({
           missing.length > 0
             ? `该模型不支持${inputLabel(missing)}输入`
             : compatibility.reason
+        const active = item.key === activeKey
 
         return (
           <MenuItem
             key={item.key}
-            active={item.key === activeKey}
-            className={`model-menu__item ${unavailable ? 'is-disabled' : ''}`}
+            active={active}
+            className={`${ITEM} ${
+              unavailable ? ITEM_DISABLED : active ? ITEM_ACTIVE : ITEM_IDLE
+            }`}
             title={reason}
             onSelect={() => onSelect(item, missing, unavailable, reason)}
             trailing={
-              <span className="flex flex-col items-end gap-0.5">
+              <span className="flex flex-col items-end gap-px">
                 {unavailable ? (
-                  <span className="model-menu__reason">
+                  <span className="whitespace-nowrap text-[10px] text-danger">
                     {reason ?? '不支持当前输入'}
                   </span>
                 ) : null}
-                <span className="model-menu__provider">{item.providerName}</span>
+                <span className="text-[11px] text-fg-subtle">
+                  {item.providerName}
+                </span>
               </span>
             }
           >
-            <span className="model-menu__name">{item.model.name}</span>
+            <span className="text-xs">{item.model.name}</span>
           </MenuItem>
         )
       })}

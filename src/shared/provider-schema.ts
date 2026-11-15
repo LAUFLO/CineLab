@@ -357,7 +357,7 @@ export function modelModeCompatibility(
     : { ok: false, reason: '该模型不支持文生视频' }
 }
 
-/** 根据当前素材推断一个「最可能正在使用」的模式，用于参数约束 */
+/** 根据当前素材推断默认模式：无素材走文生，有素材走全能参考 */
 export function inferActiveMode(
   model: ModelDef,
   context: ModeContext
@@ -380,17 +380,7 @@ export function inferActiveMode(
     return modes.includes('reference') ? 'reference' : undefined
   }
 
-  if (
-    context.imageCount >= 2 &&
-    context.hasFirstFrame &&
-    context.hasLastFrame &&
-    modes.includes('first-last')
-  ) {
-    return 'first-last'
-  }
-
   if (context.imageCount > 0) {
-    if (modes.includes('first-frame')) return 'first-frame'
     return modes.includes('reference') ? 'reference' : undefined
   }
 

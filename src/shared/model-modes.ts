@@ -128,7 +128,7 @@ export const MODEL_MODE_DEFINITIONS: ModelModeDefinition[] = [
   },
   {
     id: 'reference',
-    label: '参考生视频',
+    label: '全能参考',
     description: '用参考图、参考视频或参考音频引导生成新视频。',
     output: 'video',
     slots: [

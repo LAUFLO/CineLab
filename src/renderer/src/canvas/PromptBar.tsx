@@ -124,20 +124,7 @@ export function PromptBar() {
   const [modelKey, setModelKey] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [paramValues, setParamValues] = useState<Record<string, unknown>>({})
-  const [inputMode, setInputMode] = useState<ModelModeId | 'auto'>('auto')
-  const [modeUndo, setModeUndo] = useState<ModelModeId | null>(null)
-  const [roleOverrides, setRoleOverrides] = useState<
-    Record<string, ReferenceRole>
-  >({})
-  const [slotMenu, setSlotMenu] = useState<{
-    key: string
-    x: number
-    y: number
-  } | null>(null)
-  const [draggedSlot, setDraggedSlot] = useState<{
-    key: string
-    role: ReferenceRole
-  } | null>(null)
+  const [inputMode, setInputMode] = useState<ModelModeId | null>(null)
   const [maskDraft, setMaskDraft] = useState<{
     dataUrl: string
     sourceKey: string
@@ -225,11 +212,7 @@ export function PromptBar() {
     setMaskDraft(null)
     setMaskEditor(null)
     setRefPreview(null)
-    setSlotMenu(null)
-    setDraggedSlot(null)
-    setInputMode('auto')
-    setRoleOverrides({})
-    setModeUndo(null)
+    setInputMode(null)
 
     return () => {
       if (!currentId) return
@@ -494,9 +477,10 @@ export function PromptBar() {
   })()
 
   const activeMode =
-    active && node
+    inputMode ??
+    (active && node
       ? inferActiveMode(active.model, quickModeContext)
-      : undefined
+      : undefined)
   const constrained = active
     ? applyParamConstraints(active.model.params, {
         mode: activeMode,
@@ -618,12 +602,24 @@ export function PromptBar() {
   })()
 
   useEffect(() => {
-    if (kind !== 'video' || inputMode !== 'first-last') return
-    if (incomingImageCount <= 2) return
-
-    setInputMode('reference')
-    setModeUndo('first-last')
-    showToast('首尾帧最多 2 张，已切换为参考图')
+    if (kind !== 'video' || !inputMode) return
+    if (inputMode === 'first-frame' && incomingImageCount !== 1) {
+      setInputMode(null)
+      showToast(
+        incomingImageCount === 0
+          ? '首帧模式需要 1 张图片，已切换为文生视频'
+          : '首帧模式只能 1 张图片，已切换为全能参考'
+      )
+      return
+    }
+    if (inputMode === 'first-last' && incomingImageCount !== 2) {
+      setInputMode(null)
+      showToast(
+        incomingImageCount < 2
+          ? '首尾帧需要 2 张图片，已切换回默认模式'
+          : '首尾帧最多 2 张，已切换为全能参考'
+      )
+    }
   }, [kind, inputMode, incomingImageCount, showToast])
 
   if (!node || !layout) return null
@@ -819,30 +815,7 @@ export function PromptBar() {
     return result
   })()
 
-  const supportsFirstLast = active
-    ? modelModeIds(active.model).includes('first-last')
-    : false
-
-  const modeImageRole = (index: number): ReferenceRole => {
-    if (kind !== 'video') return 'reference'
-    if (inputMode === 'first-frame') {
-      return index === 0 ? 'firstFrame' : 'reference'
-    }
-    if (inputMode === 'first-last') {
-      return index === 0
-        ? 'firstFrame'
-        : index === 1
-          ? 'lastFrame'
-          : 'reference'
-    }
-    if (inputMode === 'reference') return 'reference'
-    // 自动：首张作首帧；第二张只在模型支持首尾帧时作尾帧，否则降为参考图
-    if (index === 0) return 'firstFrame'
-    if (index === 1) return supportsFirstLast ? 'lastFrame' : 'reference'
-    return 'reference'
-  }
-
-  const mergedRefs = (() => {
+  const rawRefs = (() => {
     const seen = new Set<string>()
     const result: PickedRef[] = []
     let imageCount = 0
@@ -864,22 +837,48 @@ export function PromptBar() {
       result.push(ref)
     }
 
-    let imageIndex = 0
-    for (const ref of result) {
-      if (ref.kind !== 'image') continue
-      ref.role = modeImageRole(imageIndex)
-      imageIndex += 1
-    }
-
-    for (const ref of result) {
-      const override =
-        roleOverrides[`${ref.scope ?? 'project'}:${ref.path}`]
-      if (override) ref.role = override
-    }
-
     return result
   })()
 
+  const rawImageCount = rawRefs.filter((ref) => ref.kind === 'image').length
+  const rawVideoCount = rawRefs.filter((ref) => ref.kind === 'video').length
+
+  const inferModeContext: ModeContext = {
+    kind: kind === 'image' || kind === 'video' ? kind : null,
+    imageCount: rawImageCount,
+    videoCount: rawVideoCount,
+    hasFirstFrame: rawImageCount >= 1,
+    hasLastFrame: rawImageCount >= 2
+  }
+
+  const slotMode: ModelModeId | undefined =
+    inputMode ??
+    (active ? inferActiveMode(active.model, inferModeContext) : undefined)
+
+  const mergedRefs: PickedRef[] = (() => {
+    let imageIndex = 0
+    return rawRefs.map((ref): PickedRef => {
+      if (ref.kind === 'video') {
+        return { ...ref, role: 'reference' as ReferenceRole }
+      }
+
+      const index = imageIndex
+      imageIndex += 1
+
+      if (kind !== 'video') {
+        return { ...ref, role: 'reference' as ReferenceRole }
+      }
+      if (slotMode === 'first-frame') {
+        return { ...ref, role: index === 0 ? 'firstFrame' : 'reference' }
+      }
+      if (slotMode === 'first-last') {
+        const role: ReferenceRole =
+          index === 0 ? 'firstFrame' : index === 1 ? 'lastFrame' : 'reference'
+        return { ...ref, role }
+      }
+      return { ...ref, role: 'reference' as ReferenceRole }
+    })
+  })()
   const textContexts = (() => {
     const result: TextContext[] = []
     const seen = new Set<string>()
@@ -932,17 +931,55 @@ export function PromptBar() {
     : []
 
   const availableModes = (() => {
-    if (!active) return [] as Array<ModelModeId | 'auto'>
+    if (!active) {
+      return [] as Array<{ id: ModelModeId; disabled: boolean; hint?: string }>
+    }
     const supported = modelModeIds(active.model)
-    const candidates: Array<ModelModeId | 'auto'> =
+    const candidates: ModelModeId[] =
       kind === 'image'
-        ? ['auto', 't2i', 'i2i', 'layer']
+        ? ['t2i', 'i2i', 'layer']
         : kind === 'video'
-          ? ['auto', 't2v', 'first-frame', 'first-last', 'reference']
+          ? ['t2v', 'first-frame', 'first-last', 'reference']
           : []
-    return candidates.filter(
-      (id) => id === 'auto' || supported.includes(id as ModelModeId)
-    )
+
+    return candidates
+      .filter((id) => supported.includes(id))
+      .map((id) => {
+        if (kind === 'video') {
+          if (id === 't2v' && rawImageCount > 0) {
+            return { id, disabled: true, hint: '已连接图片，文生视频不可用' }
+          }
+          if (id === 'first-frame' && rawImageCount !== 1) {
+            return {
+              id,
+              disabled: true,
+              hint:
+                rawImageCount === 0
+                  ? '需要 1 张图片'
+                  : `已连接 ${rawImageCount} 张，首帧模式只能 1 张`
+            }
+          }
+          if (id === 'first-last' && rawImageCount !== 2) {
+            return {
+              id,
+              disabled: true,
+              hint:
+                rawImageCount < 2
+                  ? '需要 2 张图片'
+                  : `已连接 ${rawImageCount} 张，首尾帧只能 2 张`
+            }
+          }
+        }
+        if (kind === 'image') {
+          if (id === 't2i' && rawImageCount > 0) {
+            return { id, disabled: true, hint: '已连接图片，文生图不可用' }
+          }
+          if (id === 'layer' && rawImageCount !== 1) {
+            return { id, disabled: true, hint: '需要 1 张源图' }
+          }
+        }
+        return { id, disabled: false }
+      })
   })()
 
   const modeContext: ModeContext = {
@@ -987,13 +1024,6 @@ export function PromptBar() {
     image.src = src
   }
 
-  const slotMode =
-    inputMode === 'auto'
-      ? active
-        ? inferActiveMode(active.model, modeContext)
-        : undefined
-      : inputMode
-
   const modeSlots: ModeSlotView[] = (() => {
     const empty: ModeSlotView[] = []
     if (!slotMode) return empty
@@ -1023,15 +1053,17 @@ export function PromptBar() {
     const list = slots.flatMap<ModeSlotView>((slot) => {
       if (slot.media === 'text') return []
       if (slot.media === 'video') {
+        if (videos.length === 0) return []
         return [
           {
             id: slot.id,
             label: slot.label,
-            ref: videos[0] ?? null,
+            ref: videos[0],
             role: 'reference' as ReferenceRole
           }
         ]
       }
+      if (slot.media === 'audio') return []
       if (slot.role === 'mask') {
         return [
           {
@@ -1048,7 +1080,7 @@ export function PromptBar() {
         const count = Math.max(1, Math.min(refs.length, slot.max))
         return Array.from({ length: count }, (_, index) => ({
           id: `${slot.id}-${index}`,
-          label: slot.max > 1 ? `${slot.label} ${index + 1}` : slot.label,
+          label: slot.max > 1 ? String(index + 1) : slot.label,
           ref: refs[index] ?? null,
           role: 'reference' as ReferenceRole
         }))
@@ -1085,29 +1117,6 @@ export function PromptBar() {
 
     return list
   })()
-
-  const handleSlotDrop = (target: (typeof modeSlots)[number]): void => {
-    if (!draggedSlot) return
-    if (target.role === 'mask') {
-      setDraggedSlot(null)
-      return
-    }
-    const targetKey = target.ref
-      ? `${target.ref.scope ?? 'project'}:${target.ref.path}`
-      : null
-
-    setRoleOverrides((current) => {
-      const next = { ...current }
-      if (targetKey && targetKey !== draggedSlot.key) {
-        next[draggedSlot.key] = target.role
-        next[targetKey] = draggedSlot.role
-      } else {
-        next[draggedSlot.key] = target.role
-      }
-      return next
-    })
-    setDraggedSlot(null)
-  }
 
   const inputLabel = (inputs: MediaInput[]): string =>
     inputs.map((input) => MEDIA_INPUT_LABEL[input]).join('、')
@@ -1305,34 +1314,6 @@ export function PromptBar() {
     (promptText.trim().length > 0 || textContexts.length > 0) &&
     !isRunning
 
-  const removeRef = (ref: PickedRef): void => {
-    setPickedRefs((prev) =>
-      prev.filter(
-        (item) =>
-          !(
-            item.path === ref.path &&
-            (item.scope ?? 'project') === (ref.scope ?? 'project')
-          )
-      )
-    )
-
-    const linked = edges.filter((edge) => {
-      if (edge.target !== node.id) return false
-      const source = nodes.find((item) => item.id === edge.source)
-      if (!source || isGroupNode(source)) return false
-      const output = selectedNodeOutput(source)
-      return (
-        output?.path === ref.path &&
-        (output?.scope ?? 'project') === (ref.scope ?? 'project')
-      )
-    })
-    if (linked.length > 0) {
-      onEdgesChange(
-        linked.map((edge) => ({ type: 'remove' as const, id: edge.id }))
-      )
-    }
-  }
-
   const handleSend = (): void => {
     if (!active || !canSend) return
 
@@ -1527,20 +1508,7 @@ export function PromptBar() {
                   <Button
                     type="button"
                     className="promptbar__slot-thumb"
-                    title="点击设置角色，拖拽可交换"
-                    draggable
-                    onDragStart={() => {
-                      if (!slot.ref) return
-                      setDraggedSlot({
-                        key: `${slot.ref.scope ?? 'project'}:${slot.ref.path}`,
-                        role: slot.role
-                      })
-                    }}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault()
-                      handleSlotDrop(slot)
-                    }}
+                    title="双击在画布上定位"
                     onPointerEnter={(event) => {
                       if (!slot.ref) return
                       const rect = event.currentTarget.getBoundingClientRect()
@@ -1556,16 +1524,7 @@ export function PromptBar() {
                     onDoubleClick={(event) => {
                       event.preventDefault()
                       event.stopPropagation()
-                      setSlotMenu(null)
                       if (slot.ref) handleRefDoubleClick(slot.ref)
-                    }}
-                    onClick={(event) => {
-                      const rect = event.currentTarget.getBoundingClientRect()
-                      setSlotMenu({
-                        key: `${slot.ref?.scope ?? 'project'}:${slot.ref?.path ?? ''}`,
-                        x: rect.left,
-                        y: rect.bottom + 4
-                      })
                     }}
                     unstyled
                   >
@@ -1584,80 +1543,10 @@ export function PromptBar() {
                     )}
                   </Button>
                 ) : (
-                  <div
-                    className="promptbar__slot-empty"
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault()
-                      handleSlotDrop(slot)
-                    }}
-                  >
-                    空
-                  </div>
+                  <div className="promptbar__slot-empty">空</div>
                 )}
               </div>
             ))}
-          </div>
-        ) : null}
-
-        {slotMenu ? (
-          <div
-            className="promptbar__slot-menu"
-            style={{ left: slotMenu.x, top: slotMenu.y }}
-          >
-            {(
-              [
-                ['firstFrame', '设为首帧'],
-                ['lastFrame', '设为尾帧'],
-                ['reference', '设为参考图']
-              ] as Array<[ReferenceRole, string]>
-            ).map(([role, label]) => (
-              <Button
-                key={role}
-                type="button"
-                className="promptbar__slot-menu-item"
-                onClick={() => {
-                  setRoleOverrides((current) => ({
-                    ...current,
-                    [slotMenu.key]: role
-                  }))
-                  setSlotMenu(null)
-                }}
-                unstyled
-              >
-                {label}
-              </Button>
-            ))}
-            <Button
-              type="button"
-              className="promptbar__slot-menu-item"
-              onClick={() => {
-                setRoleOverrides((current) => {
-                  const next = { ...current }
-                  delete next[slotMenu.key]
-                  return next
-                })
-                setSlotMenu(null)
-              }}
-              unstyled
-            >
-              恢复自动
-            </Button>
-            <Button
-              type="button"
-              className="promptbar__slot-menu-item"
-              onClick={() => {
-                const ref = mergedRefs.find(
-                  (item) =>
-                    `${item.scope ?? 'project'}:${item.path}` === slotMenu.key
-                )
-                if (ref) removeRef(ref)
-                setSlotMenu(null)
-              }}
-              unstyled
-            >
-              移除
-            </Button>
           </div>
         ) : null}
 
@@ -1737,34 +1626,20 @@ export function PromptBar() {
         </div>
 
         <div className="promptbar__footer">
-          {availableModes.length > 1 ? (
+          {availableModes.length > 0 && slotMode ? (
             <div className="promptbar__mode">
               <Select
-                value={inputMode}
-                options={availableModes.map((id) => ({
-                  value: id,
-                  label: id === 'auto' ? '自动' : MODEL_MODE_LABEL[id]
+                value={slotMode}
+                options={availableModes.map((option) => ({
+                  value: option.id,
+                  label: MODEL_MODE_LABEL[option.id],
+                  disabled: option.disabled,
+                  hint: option.hint
                 }))}
                 menuWidth="trigger"
-                onChange={(value) => {
-                  setInputMode(value as ModelModeId | 'auto')
-                  setModeUndo(null)
-                }}
+                onChange={(value) => setInputMode(value)}
               />
             </div>
-          ) : null}
-          {modeUndo ? (
-            <Button
-              type="button"
-              className="promptbar__mode-undo"
-              onClick={() => {
-                setInputMode(modeUndo)
-                setModeUndo(null)
-              }}
-              unstyled
-            >
-              撤销切换
-            </Button>
           ) : null}
           {models.length === 0 ? (
             <Button

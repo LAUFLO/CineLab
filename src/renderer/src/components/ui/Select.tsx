@@ -7,6 +7,8 @@ export interface SelectOption<T extends string> {
   value: T
   label: string
   disabled?: boolean
+  /** 置灰时显示的原因 */
+  hint?: string
 }
 
 interface SelectProps<T extends string> {
@@ -199,7 +201,7 @@ export function Select<T extends string>({
                     'disabled:pointer-events-none disabled:opacity-50'
                   )}
                   disabled={option.disabled}
-                  title={option.label}
+                  title={option.hint ?? option.label}
                   onClick={() => {
                     onChange(option.value)
                     setOpen(false)

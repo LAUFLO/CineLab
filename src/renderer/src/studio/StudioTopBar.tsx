@@ -26,30 +26,29 @@ export function StudioTopBar() {
   )
 
   return (
-    <header className="studio-top">
-      <div className="studio-top__left">
+    <header className="flex min-w-0 items-center justify-between gap-3 rounded-[10px] border border-border bg-surface px-3 [grid-area:top]">
+      <div className="flex min-w-0 items-center gap-1.5">
         <IconButton
           label="返回画布"
-          className="studio-icon-btn"
+          className="studio-icon-btn !w-auto"
           onClick={close}
-          unstyled
         >
           <Icon name="chevron-left" size={14} />
         </IconButton>
-        <span className="studio-top__title">
+        <span className="truncate text-[13px] font-semibold">
           剪辑室 · {doc?.name ?? '未命名项目'}
         </span>
       </div>
 
-      <div className="studio-top__meta">
-        <span className="studio-saved-dot" />
+      <div className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-xs text-fg-muted">
+        <span className="size-1.5 rounded-full bg-fg-subtle" />
         <span>已保存</span>
-        <span className="studio-top__sep" />
+        <span className="h-3 w-px bg-divider" />
         <span>{formatTimecode(totalMs)}</span>
-        <span className="studio-top__sep" />
+        <span className="h-3 w-px bg-divider" />
         {doc ? (
           <Select
-            className="studio-top__ratio"
+            className="!h-6 !w-[86px] !rounded-[6px] !px-[7px] !text-[11px]"
             value={ratio ? `${ratio.width}x${ratio.height}` : ''}
             options={[
               ...(ratio
@@ -78,29 +77,28 @@ export function StudioTopBar() {
         <span>{doc ? `${doc.video.fps}fps` : '—'}</span>
       </div>
 
-      <div className="studio-top__right">
+      <div className="flex min-w-0 items-center gap-1.5">
         <IconButton
           label="切换素材池"
-          className="studio-icon-btn"
+          className="studio-icon-btn !w-auto !text-fg"
           onClick={toggleLeft}
-          unstyled
         >
           <Icon name="library" size={14} />
         </IconButton>
         <IconButton
           label="切换检查器"
-          className="studio-icon-btn"
+          className="studio-icon-btn !w-auto !text-fg"
           onClick={toggleRight}
-          unstyled
         >
           <Icon name="layers" size={14} />
         </IconButton>
-        <span className="studio-top__hint">成片在画布节点生成</span>
+        <span className="mx-1.5 whitespace-nowrap text-xs text-fg-muted">
+          成片在画布节点生成
+        </span>
         <IconButton
           label="关闭"
-          className="studio-icon-btn"
+          className="studio-icon-btn !w-auto !text-fg"
           onClick={close}
-          unstyled
         >
           <Icon name="close" size={14} />
         </IconButton>

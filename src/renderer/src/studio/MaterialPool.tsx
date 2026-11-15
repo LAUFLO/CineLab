@@ -25,6 +25,16 @@ const TABS: { id: StudioTab; label: string }[] = [
   { id: 'upload', label: '上传' }
 ]
 
+/** 缩略图渐变按素材类型静态映射，Tailwind 需要完整类名才会生成 */
+const THUMB_GRADIENT: Record<PoolAsset['kind'], string> = {
+  video:
+    '[background:linear-gradient(135deg,rgba(99,102,241,0.35),rgba(14,165,233,0.2))]',
+  image:
+    '[background:linear-gradient(135deg,rgba(244,114,182,0.3),rgba(251,191,36,0.2))]',
+  audio:
+    '[background:repeating-linear-gradient(90deg,rgba(148,163,184,0.35)_0_2px,transparent_2px_5px)]'
+}
+
 function AssetThumbnail({ asset }: { asset: PoolAsset }) {
   const [src, setSrc] = useState<string | null>(null)
 
@@ -50,7 +60,7 @@ function AssetThumbnail({ asset }: { asset: PoolAsset }) {
   if (!src) return null
   return (
     <img
-      className="studio-pool__thumb-img"
+      className="absolute inset-0 h-full w-full bg-media-bg object-contain"
       src={src}
       alt=""
       onError={() => setSrc(null)}
@@ -188,15 +198,18 @@ export function MaterialPool() {
   }
 
   return (
-    <aside className="studio-pool">
-      <div className="studio-pool__tabs">
+    <aside className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[10px] border border-border bg-surface [grid-area:left]">
+      <div className="flex shrink-0 gap-0.5 border-b border-divider p-2">
         {TABS.map((item) => (
           <Button
             key={item.id}
             type="button"
-            className={`studio-pool__tab ${tab === item.id ? 'is-active' : ''}`}
+            variant="ghost"
+            size="none"
+            className={`h-[26px] min-w-0 flex-1 !rounded-[6px] !font-normal text-xs ${
+              tab === item.id ? '!bg-surface-hover !text-fg' : ''
+            }`}
             onClick={() => setTab(item.id)}
-            unstyled
           >
             {item.label}
           </Button>
@@ -204,66 +217,77 @@ export function MaterialPool() {
       </div>
 
       {tab === 'upload' ? (
-        <div className="studio-pool__empty">
+        <div className="flex flex-1 flex-col items-center justify-center gap-1.5 p-5 text-center text-xs text-fg-subtle">
           <Icon name="plus" size={18} />
           <span>{uploading ? '正在导入…' : '上传本地素材'}</span>
-          <small>导入后自动创建节点、成组并连线到剪辑室</small>
+          <small className="text-[11px] opacity-70">
+            导入后自动创建节点、成组并连线到剪辑室
+          </small>
           <Button
             type="button"
+            variant="ghost"
+            size="none"
             className="studio-ghost-btn"
             disabled={uploading || !studioNodeId}
             onClick={() => void upload()}
-            unstyled
           >
             选择文件
           </Button>
         </div>
       ) : tab === 'sounds' ? (
         sounds.length === 0 ? (
-          <div className="studio-pool__empty">
+          <div className="flex flex-1 flex-col items-center justify-center gap-1.5 p-5 text-center text-xs text-fg-subtle">
             <Icon name="audio" size={18} />
             <span>音效库为空</span>
-            <small>安装包应包含 resources/sounds</small>
+            <small className="text-[11px] opacity-70">
+              安装包应包含 resources/sounds
+            </small>
           </div>
         ) : (
-          <div className="studio-pool__grid">
+          <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-x-2 gap-y-2.5 overflow-y-auto p-2">
             {sounds.map((sound) => (
               <div
                 key={sound.id}
-                className="studio-pool__card"
+                className="group flex min-w-0 cursor-grab flex-col gap-1"
                 title={`${sound.name} · ${sound.category} · 双击添加到音效轨`}
                 onDoubleClick={() => void addSound(sound)}
               >
-                <div className="studio-pool__thumb studio-pool__thumb--audio">
+                <div
+                  className={`relative aspect-[16/10] w-full overflow-hidden rounded-[6px] border border-border bg-surface-raised group-hover:border-border-strong group-hover:brightness-[1.08] ${THUMB_GRADIENT.audio}`}
+                >
                   <Icon name="audio" size={16} />
-                  <span className="studio-pool__duration">
+                  <span className="absolute bottom-1 right-1 rounded-[3px] bg-black/66 px-1 py-px text-[10px] tabular-nums text-media-text">
                     {formatDuration(Math.round(sound.duration * 1000))}
                   </span>
                 </div>
-                <span className="studio-pool__name">{sound.name}</span>
-                <span className="studio-pool__category">{sound.category}</span>
+                <span className="truncate text-[11px] text-fg-muted">
+                  {sound.name}
+                </span>
+                <span className="text-[10px] text-fg-subtle">
+                  {sound.category}
+                </span>
               </div>
             ))}
           </div>
         )
       ) : assets.length === 0 ? (
-        <div className="studio-pool__empty">
+        <div className="flex flex-1 flex-col items-center justify-center gap-1.5 p-5 text-center text-xs text-fg-subtle">
           <Icon name="library" size={18} />
           <span>
             {tab === 'linked' ? '剪辑室还没有连线素材' : '资产库是空的'}
           </span>
-          <small>
+          <small className="text-[11px] opacity-70">
             {tab === 'linked'
               ? '把素材节点连到剪辑室后会出现在这里'
               : '在资产库导入素材'}
           </small>
         </div>
       ) : (
-        <div className="studio-pool__grid">
+        <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-x-2 gap-y-2.5 overflow-y-auto p-2">
           {assets.map((item) => (
             <div
               key={item.id}
-              className="studio-pool__card"
+              className="group flex min-w-0 cursor-grab flex-col gap-1"
               title={`${item.name} · 双击或拖到时间线`}
               draggable
               onDragStart={(event) => {
@@ -276,34 +300,39 @@ export function MaterialPool() {
               onDoubleClick={() => addToMain(item)}
             >
               <div
-                className={`studio-pool__thumb studio-pool__thumb--${item.kind}`}
+                className={`relative aspect-[16/10] w-full overflow-hidden rounded-[6px] border border-border bg-surface-raised group-hover:border-border-strong group-hover:brightness-[1.08] ${THUMB_GRADIENT[item.kind]}`}
               >
                 <AssetThumbnail asset={item} />
-                <span className="studio-pool__duration">
+                <span className="absolute bottom-1 right-1 rounded-[3px] bg-black/66 px-1 py-px text-[10px] tabular-nums text-media-text">
                   {formatDuration(item.durationMs)}
                 </span>
                 {item.kind === 'audio' ? (
-                  <span className="studio-pool__kind">
+                  <span className="absolute left-1.5 top-1.5 text-fg-muted">
                     <Icon name="audio" size={16} />
                   </span>
                 ) : null}
                 {item.nodeId && updateNodeIds.has(item.nodeId) ? (
-                  <span className="studio-pool__update">有新版本</span>
+                  <span className="absolute right-1.5 top-1.5 rounded-full px-1.5 py-px text-[10px] leading-4 text-fg-inverse [background:color-mix(in_srgb,var(--pick-bar)_80%,transparent)]">
+                    有新版本
+                  </span>
                 ) : null}
               </div>
-              <span className="studio-pool__name">{item.name}</span>
+              <span className="truncate text-[11px] text-fg-muted">
+                {item.name}
+              </span>
             </div>
           ))}
         </div>
       )}
 
-      <div className="studio-pool__foot">
+      <div className="shrink-0 border-t border-divider p-2">
         <Button
           type="button"
-          className="studio-ghost-btn"
+          variant="ghost"
+          size="none"
+          className="studio-ghost-btn w-full !border-border"
           disabled={uploading || !studioNodeId}
           onClick={() => void upload()}
-          unstyled
         >
           <Icon name="plus" size={14} /> {uploading ? '导入中…' : '上传素材'}
         </Button>

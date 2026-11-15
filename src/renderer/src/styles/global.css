@@ -6087,25 +6087,6 @@ body.is-node-menu-open .react-flow {
   color: var(--text-3);
 }
 
-.studio-top__hint {
-  margin: 0 6px;
-  font-size: 11px;
-  color: var(--text-3);
-  white-space: nowrap;
-}
-
-.studio-pool__update {
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--pick-bar) 80%, transparent);
-  color: var(--text-inverse);
-  font-size: 10px;
-  line-height: 16px;
-}
-
 .studio-clip__issue {
   position: absolute;
   right: 6px;

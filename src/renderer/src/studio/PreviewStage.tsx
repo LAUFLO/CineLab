@@ -221,5 +221,7 @@ export function PreviewStage() {
     }
   }, [playing, doc])
 
-  return <canvas ref={canvasRef} className="studio-preview__canvas" />
+  return (
+    <canvas ref={canvasRef} className="block max-h-full max-w-full" />
+  )
 }

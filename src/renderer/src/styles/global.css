@@ -3520,8 +3520,23 @@ body.is-exporting .react-flow__minimap {
 }
 
 .promptbar__mode {
-  width: 96px;
   flex-shrink: 0;
+  display: flex;
+}
+
+.promptbar__mode > button {
+  width: 112px;
+  height: 26px;
+  min-width: 0;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+  background: var(--surface-hover);
+}
+
+.promptbar__mode > button:hover {
+  color: var(--text-1);
 }
 
 .promptbar__mode-undo {

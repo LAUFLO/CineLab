@@ -1430,34 +1430,6 @@ export function PromptBar() {
             <Icon name="frame" size={13} />
             画布参考
           </Button>
-          {availableModes.length > 1 ? (
-            <div className="promptbar__mode">
-              <Select
-                value={inputMode}
-                options={availableModes.map((id) => ({
-                  value: id,
-                  label: id === 'auto' ? '自动' : MODEL_MODE_LABEL[id]
-                }))}
-                onChange={(value) => {
-                  setInputMode(value as ModelModeId | 'auto')
-                  setModeUndo(null)
-                }}
-              />
-            </div>
-          ) : null}
-          {modeUndo ? (
-            <Button
-              type="button"
-              className="promptbar__mode-undo"
-              onClick={() => {
-                setInputMode(modeUndo)
-                setModeUndo(null)
-              }}
-              unstyled
-            >
-              撤销切换
-            </Button>
-          ) : null}
           <div className="promptbar__spacer" />
           {mergedRefs.length > 0 ? (
             <div className="promptbar__picked">
@@ -1765,6 +1737,35 @@ export function PromptBar() {
         </div>
 
         <div className="promptbar__footer">
+          {availableModes.length > 1 ? (
+            <div className="promptbar__mode">
+              <Select
+                value={inputMode}
+                options={availableModes.map((id) => ({
+                  value: id,
+                  label: id === 'auto' ? '自动' : MODEL_MODE_LABEL[id]
+                }))}
+                menuWidth="trigger"
+                onChange={(value) => {
+                  setInputMode(value as ModelModeId | 'auto')
+                  setModeUndo(null)
+                }}
+              />
+            </div>
+          ) : null}
+          {modeUndo ? (
+            <Button
+              type="button"
+              className="promptbar__mode-undo"
+              onClick={() => {
+                setInputMode(modeUndo)
+                setModeUndo(null)
+              }}
+              unstyled
+            >
+              撤销切换
+            </Button>
+          ) : null}
           {models.length === 0 ? (
             <Button
               type="button"

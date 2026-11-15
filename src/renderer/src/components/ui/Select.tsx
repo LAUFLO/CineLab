@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '../Icon'
 import { cn } from './cn'
@@ -16,6 +16,8 @@ interface SelectProps<T extends string> {
   disabled?: boolean
   className?: string
   title?: string
+  /** trigger: 菜单与按钮同宽；auto: 至少 180px */
+  menuWidth?: 'trigger' | 'auto'
 }
 
 interface MenuPosition {
@@ -31,7 +33,8 @@ export function Select<T extends string>({
   onChange,
   disabled,
   className,
-  title
+  title,
+  menuWidth = 'auto'
 }: SelectProps<T>) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState<MenuPosition | null>(null)
@@ -41,16 +44,19 @@ export function Select<T extends string>({
   const selected =
     options.find((option) => option.value === value) ?? options[0]
 
-  const updatePosition = (): void => {
+  const updatePosition = useCallback((): void => {
     const trigger = triggerRef.current
     const menu = menuRef.current
     if (!trigger) return
 
     const rect = trigger.getBoundingClientRect()
-    const width = Math.min(
-      Math.max(rect.width, 180),
-      Math.max(180, window.innerWidth - 16)
-    )
+    const width =
+      menuWidth === 'trigger'
+        ? Math.max(rect.width, 96)
+        : Math.min(
+            Math.max(rect.width, 180),
+            Math.max(180, window.innerWidth - 16)
+          )
     const menuHeight = menu?.offsetHeight ?? 0
     const placement =
       rect.bottom + 6 + menuHeight > window.innerHeight &&
@@ -58,7 +64,7 @@ export function Select<T extends string>({
         ? 'top'
         : 'bottom'
 
-    setPosition({
+    const next: MenuPosition = {
       left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
       top:
         placement === 'bottom'
@@ -66,13 +72,38 @@ export function Select<T extends string>({
           : Math.max(8, rect.top - menuHeight - 6),
       width,
       placement
-    })
-  }
+    }
+
+    setPosition((current) =>
+      current &&
+      current.left === next.left &&
+      current.top === next.top &&
+      current.width === next.width &&
+      current.placement === next.placement
+        ? current
+        : next
+    )
+  }, [menuWidth])
 
   useLayoutEffect(() => {
     if (!open) return
+
     updatePosition()
-  }, [open, options.length])
+
+    // PromptBar 会跟随节点移动并带入 180ms 入场动画，菜单需要持续跟住，
+    // 否则打开后再移动会停在旧位置。
+    let frame = 0
+    const started = performance.now()
+    const track = (): void => {
+      updatePosition()
+      if (performance.now() - started < 320) {
+        frame = requestAnimationFrame(track)
+      }
+    }
+    frame = requestAnimationFrame(track)
+
+    return () => cancelAnimationFrame(frame)
+  }, [open, options.length, updatePosition])
 
   useEffect(() => {
     if (!open) return
@@ -104,7 +135,7 @@ export function Select<T extends string>({
       window.removeEventListener('resize', onReflow)
       window.removeEventListener('scroll', onReflow, true)
     }
-  }, [open, options.length])
+  }, [open, options.length, updatePosition])
 
   return (
     <>

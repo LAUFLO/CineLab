@@ -6,7 +6,7 @@ import { ProjectCard } from '../components/ProjectCard'
 import { PROJECT_TEMPLATES } from '@shared/project-templates'
 import { useProjectStore } from '../stores/project'
 import { useSettingsStore } from '../stores/settings'
-import { Button } from '../components/ui'
+import { Button, IconButton } from '../components/ui'
 
 export function ProjectCenter() {
   const startNew = useProjectStore((state) => state.startNew)
@@ -162,15 +162,13 @@ export function ProjectCenter() {
                   模板只生成画布结构，不会预置模型或素材
                 </div>
               </div>
-              <Button
-                type="button"
-                className="icon-btn settings-dialog__close"
-                title="关闭"
+              <IconButton
+                label="关闭"
+                size="sm"
                 onClick={() => setTemplateOpen(false)}
-                unstyled
               >
                 <Icon name="close" size={14} />
-              </Button>
+              </IconButton>
             </header>
 
             <div className="grid grid-cols-2 gap-2.5">

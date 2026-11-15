@@ -1,6 +1,6 @@
 import { Icon } from '../../components/Icon'
 import { useBoxEditor } from './useBoxEditor'
-import { Button, Dialog } from '../../components/ui'
+import { Button, Dialog, IconButton } from '../../components/ui'
 
 interface SubtitleDialogProps {
   open: boolean
@@ -68,41 +68,40 @@ export function SubtitleDialog({
       onClose={busy ? () => {} : onClose}
       bare
       ariaLabel={title}
-      overlayClassName="box-dialog-overlay"
-      panelClassName="box-dialog"
+      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-black/55 px-6 py-12"
+      panelClassName="max-w-[calc(100vw-48px)] rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
     >
-      <div className="box-dialog__header">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="box-dialog__title">{title}</div>
-          <div className="box-dialog__subtitle">
+          <div className="text-[15px] font-semibold">{title}</div>
+          <div className="mt-1 text-xs text-fg-subtle">
             框住字幕区域，使用区域擦除处理
           </div>
         </div>
-        <Button
-          type="button"
-          className="box-dialog__close"
-          title="关闭"
+        <IconButton
+          label="关闭"
+          size="sm"
+          className="disabled:!opacity-100"
           disabled={busy}
           onClick={onClose}
-          unstyled
         >
           <Icon name="close" size={14} />
-        </Button>
+        </IconButton>
       </div>
 
       <div
-        className="box-dialog__stage"
+        className="relative mt-3.5 overflow-hidden rounded-[10px] bg-canvas select-none touch-none"
         style={{ width: displayWidth, height: displayHeight }}
       >
         <video
           src={src}
-          className="box-dialog__video"
+          className="absolute inset-0 block h-full w-full object-fill"
           controls
           muted
           playsInline
         />
         <div
-          className="box-dialog__box"
+          className="absolute cursor-move border border-pick-bar shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]"
           style={{
             left: box.x,
             top: box.y,
@@ -112,48 +111,46 @@ export function SubtitleDialog({
           onPointerDown={startDrag('move')}
         >
           <span
-            className="box-dialog__handle is-nw"
+            className="absolute h-2.5 w-2.5 rounded-[2px] border border-pick-bar bg-surface -left-[5px] -top-[5px] cursor-nwse-resize"
             onPointerDown={startDrag('nw')}
           />
           <span
-            className="box-dialog__handle is-ne"
+            className="absolute h-2.5 w-2.5 rounded-[2px] border border-pick-bar bg-surface -right-[5px] -top-[5px] cursor-nesw-resize"
             onPointerDown={startDrag('ne')}
           />
           <span
-            className="box-dialog__handle is-sw"
+            className="absolute h-2.5 w-2.5 rounded-[2px] border border-pick-bar bg-surface -left-[5px] -bottom-[5px] cursor-nesw-resize"
             onPointerDown={startDrag('sw')}
           />
           <span
-            className="box-dialog__handle is-se"
+            className="absolute h-2.5 w-2.5 rounded-[2px] border border-pick-bar bg-surface -right-[5px] -bottom-[5px] cursor-nwse-resize"
             onPointerDown={startDrag('se')}
           />
         </div>
       </div>
 
-      <div className="box-dialog__meta">
+      <div className="mt-2.5 text-xs text-fg-muted">
         字幕区域 {rect.width} × {rect.height} px
       </div>
 
-      <div className="box-dialog__hint">
+      <div className="mt-1.5 text-[11px] text-fg-subtle">
         使用 delogo 区域擦除，背景复杂时效果有限。
       </div>
 
-      <div className="box-dialog__footer">
+      <div className="mt-3.5 flex justify-end gap-2 border-t border-divider pt-3.5">
         <Button
           type="button"
-          className="btn-secondary"
+          variant="secondary"
           disabled={busy}
           onClick={onClose}
-          unstyled
         >
           取消
         </Button>
         <Button
           type="button"
-          className="btn-primary"
+          variant="primary"
           disabled={busy || rect.width < 2 || rect.height < 2}
           onClick={() => onConfirm(rect)}
-          unstyled
         >
           {busy ? '处理中…' : '开始处理'}
         </Button>

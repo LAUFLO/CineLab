@@ -3,7 +3,13 @@ import type { ModelDef } from '@shared/provider-schema'
 import { modelInputs } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
 import { useSettingsStore } from '../../stores/settings'
-import { Button, Dialog, Select, Textarea } from '../../components/ui'
+import {
+  Button,
+  Dialog,
+  IconButton,
+  Select,
+  Textarea
+} from '../../components/ui'
 
 interface AiOperationDialogProps {
   open: boolean
@@ -81,13 +87,13 @@ export function AiOperationDialog({
       onClose={busy ? () => {} : onClose}
       bare
       ariaLabel={title}
-      overlayClassName="operation-dialog-overlay"
-      panelClassName="operation-dialog is-wide"
+      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-black/55 px-6 py-12"
+      panelClassName="w-[520px] rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
     >
-      <div className="operation-dialog__header">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="operation-dialog__title">{title}</div>
-          <div className="operation-dialog__subtitle">
+          <div className="text-[15px] font-semibold">{title}</div>
+          <div className="mt-1 text-xs text-fg-subtle">
             {masked
               ? '只修改涂抹区域，结果作为当前节点的新版本'
               : createsNode
@@ -95,37 +101,36 @@ export function AiOperationDialog({
                 : '结果作为当前节点的新版本，保留原图'}
           </div>
         </div>
-        <Button
-          type="button"
-          className="operation-dialog__close"
-          title="关闭"
+        <IconButton
+          label="关闭"
+          size="sm"
+          className="disabled:!opacity-100"
           disabled={busy}
           onClick={onClose}
-          unstyled
         >
           <Icon name="close" size={14} />
-        </Button>
+        </IconButton>
       </div>
 
       {models.length === 0 ? (
-        <div className="operation-dialog__empty">
+        <div className="mt-4 flex flex-col gap-2 rounded-[9px] border border-border bg-surface-hover p-[14px] text-xs text-fg-muted">
           <p>还没有可用的图片模型。</p>
           <p>P1 操作需要支持图生图的模型，请先在设置中添加。</p>
           <Button
             type="button"
-            className="btn-primary"
+            variant="primary"
+            className="mt-1 self-start"
             onClick={() => {
               onClose()
               openSettings()
             }}
-            unstyled
           >
             打开设置
           </Button>
         </div>
       ) : (
         <>
-          <label className="operation-dialog__field">
+          <label className="flex flex-col gap-1.5 text-xs text-fg-muted">
             <span>使用模型</span>
             <Select
               value={modelKey}
@@ -143,19 +148,18 @@ export function AiOperationDialog({
             />
           </label>
 
-          <label className="operation-dialog__field">
+          <label className="flex flex-col gap-1.5 text-xs text-fg-muted">
             <span>提示词</span>
             <Textarea
-              className="operation-dialog__textarea"
+              className="!min-h-[132px] !rounded-[7px] !border-border-strong !bg-surface-hover !px-2 !py-2 !text-xs leading-[1.6] focus:!border-border-selected"
               rows={7}
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
               disabled={busy}
-              unstyled
             />
           </label>
 
-          <div className="operation-dialog__hint">
+          <div className="mt-3 text-[11px] leading-[1.6] text-fg-subtle">
             建议选择支持图生图的模型；提示词可以按需微调。
             {masked
               ? ' 当前操作会把蒙版一起提交，模型需要支持 /images/edits mask。'
@@ -164,25 +168,23 @@ export function AiOperationDialog({
         </>
       )}
 
-      <div className="operation-dialog__footer">
+      <div className="mt-4 flex justify-end gap-2 border-t border-divider pt-3.5">
         <Button
           type="button"
-          className="btn-secondary"
+          variant="secondary"
           disabled={busy}
           onClick={onClose}
-          unstyled
         >
           取消
         </Button>
         <Button
           type="button"
-          className="btn-primary"
+          variant="primary"
           disabled={!valid || busy}
           onClick={() => {
             if (!active || !prompt.trim()) return
             onConfirm(prompt.trim(), modelKey, active.model)
           }}
-          unstyled
         >
           {busy ? '提交中…' : '开始生成'}
         </Button>

@@ -36,7 +36,8 @@ export function PanoramaViewer({ open, src, onClose }: PanoramaViewerProps) {
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     host.appendChild(renderer.domElement)
-    renderer.domElement.className = 'panorama-viewer__canvas'
+    renderer.domElement.className =
+      'block h-full w-full cursor-grab active:cursor-grabbing'
 
     const textureLoader = new THREE.TextureLoader()
     let texture: THREE.Texture | null = null
@@ -159,30 +160,37 @@ export function PanoramaViewer({ open, src, onClose }: PanoramaViewerProps) {
   if (!open) return null
 
   return createPortal(
-    <div className="panorama-viewer">
-      <div ref={hostRef} className="panorama-viewer__host" />
+    <div className="fixed inset-0 z-[260] overflow-hidden bg-media-bg">
+      <div ref={hostRef} className="absolute inset-0" />
 
-      <div className="panorama-viewer__head">
-        <div className="panorama-viewer__title">720 度全景预览</div>
+      <div className="pointer-events-none absolute top-[18px] right-5 left-5 z-[2] flex items-center justify-between">
+        <div className="text-[13px] tracking-[0.04em] text-white/80">
+          720 度全景预览
+        </div>
         <Button
           type="button"
-          className="panorama-viewer__close"
+          variant="ghost"
+          size="none"
+          className="pointer-events-auto h-[34px] w-[34px] !rounded-[9px] border border-white/20 !bg-black/45 !text-white hover:!bg-black/70 hover:!text-white"
           title="退出全景"
           onClick={onClose}
-          unstyled
         >
           <Icon name="close" size={16} />
         </Button>
       </div>
 
       {loading ? (
-        <div className="panorama-viewer__status">正在加载全景图…</div>
+        <div className="absolute top-1/2 left-1/2 z-[2] -translate-x-1/2 -translate-y-1/2 rounded-[8px] bg-black/60 px-3.5 py-2 text-xs text-white/75">
+          正在加载全景图…
+        </div>
       ) : null}
       {error ? (
-        <div className="panorama-viewer__status is-error">{error}</div>
+        <div className="absolute top-1/2 left-1/2 z-[2] -translate-x-1/2 -translate-y-1/2 rounded-[8px] bg-black/60 px-3.5 py-2 text-xs text-[#ff9aa9]">
+          {error}
+        </div>
       ) : null}
 
-      <div className="panorama-viewer__hint">
+      <div className="pointer-events-none absolute bottom-5 left-1/2 z-[2] -translate-x-1/2 rounded-pill bg-black/45 px-3 py-1.5 text-[11px] text-white/55">
         拖拽旋转视角 · 滚轮缩放 · ESC 退出
       </div>
     </div>,

@@ -5,7 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent
 } from 'react'
 import { Icon } from '../../components/Icon'
-import { Button, Dialog, Input } from '../../components/ui'
+import { Button, Dialog, IconButton, Input } from '../../components/ui'
 
 interface MaskEditorDialogProps {
   open: boolean
@@ -242,54 +242,59 @@ export function MaskEditorDialog({
       onClose={busy ? () => {} : onClose}
       bare
       ariaLabel={title}
-      overlayClassName="mask-editor-overlay"
-      panelClassName="mask-editor"
+      overlayClassName="fixed inset-0 z-[250] flex items-center justify-center bg-black/[0.62] px-6 py-10"
+      panelClassName="flex w-[min(760px,calc(100vw-48px))] max-h-[calc(100vh-80px)] flex-col gap-3 rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
     >
-      <div className="mask-editor__header">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="mask-editor__title">{title}</div>
-          <div className="mask-editor__subtitle">
+          <div className="text-[15px] font-semibold">{title}</div>
+          <div className="mt-1 text-xs text-fg-subtle">
             {subtitle ?? '涂抹需要修改的区域，透明区域会交给模型编辑'}
           </div>
         </div>
-        <Button
-          type="button"
-          className="mask-editor__close"
-          title="关闭"
+        <IconButton
+          label="关闭"
+          size="sm"
+          className="disabled:!opacity-100"
           disabled={busy}
           onClick={onClose}
-          unstyled
         >
           <Icon name="close" size={14} />
-        </Button>
+        </IconButton>
       </div>
 
-      <div className="mask-editor__toolbar">
+      <div className="flex flex-wrap items-center gap-1.5">
         <Button
           type="button"
-          className={tool === 'brush' ? 'is-active' : ''}
+          variant="secondary"
+          size="none"
+          className="h-[30px] !rounded-[7px] bg-surface-hover px-3 text-xs disabled:!opacity-45 data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
+          data-active={tool === 'brush' ? '' : undefined}
           onClick={() => setTool('brush')}
-          unstyled
         >
           画笔
         </Button>
         <Button
           type="button"
-          className={tool === 'rect' ? 'is-active' : ''}
+          variant="secondary"
+          size="none"
+          className="h-[30px] !rounded-[7px] bg-surface-hover px-3 text-xs disabled:!opacity-45 data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
+          data-active={tool === 'rect' ? '' : undefined}
           onClick={() => setTool('rect')}
-          unstyled
         >
           矩形
         </Button>
         <Button
           type="button"
-          className={tool === 'eraser' ? 'is-active' : ''}
+          variant="secondary"
+          size="none"
+          className="h-[30px] !rounded-[7px] bg-surface-hover px-3 text-xs disabled:!opacity-45 data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
+          data-active={tool === 'eraser' ? '' : undefined}
           onClick={() => setTool('eraser')}
-          unstyled
         >
           橡皮
         </Button>
-        <label className="mask-editor__size">
+        <label className="ml-1.5 inline-flex items-center gap-1.5 text-xs text-fg-subtle">
           笔刷
           <Input
             type="range"
@@ -297,31 +302,45 @@ export function MaskEditorDialog({
             max={96}
             value={brushSize}
             onChange={(event) => setBrushSize(Number(event.target.value))}
-            unstyled
+            className="!h-6 !w-[110px] !border-0 !bg-transparent !px-0"
           />
-          <span>{brushSize}</span>
+          <span className="min-w-[22px] text-right">{brushSize}</span>
         </label>
         <Button
           type="button"
+          variant="secondary"
+          size="none"
+          className="h-[30px] !rounded-[7px] bg-surface-hover px-3 text-xs disabled:!opacity-45"
           disabled={historySize === 0}
           onClick={undo}
-          unstyled
         >
           撤销
         </Button>
-        <Button type="button" disabled={!hasMask} onClick={clear} unstyled>
+        <Button
+          type="button"
+          variant="secondary"
+          size="none"
+          className="h-[30px] !rounded-[7px] bg-surface-hover px-3 text-xs disabled:!opacity-45"
+          disabled={!hasMask}
+          onClick={clear}
+        >
           清空
         </Button>
       </div>
 
       <div
-        className="mask-editor__stage"
+        className="relative w-full max-h-[56vh] overflow-hidden rounded-[10px] border border-border bg-canvas"
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
       >
-        <img src={src} alt="" draggable={false} />
+        <img
+          src={src}
+          alt=""
+          className="block h-full w-full max-h-[56vh] object-contain select-none"
+          draggable={false}
+        />
         <canvas
           ref={canvasRef}
-          className="mask-editor__canvas"
+          className="absolute inset-0 h-full w-full cursor-crosshair touch-none"
           onPointerDown={beginStroke}
           onPointerMove={moveStroke}
           onPointerUp={endStroke}
@@ -330,26 +349,24 @@ export function MaskEditorDialog({
         />
       </div>
 
-      <div className="mask-editor__hint">
+      <div className="text-[11px] leading-[1.6] text-fg-subtle">
         红色区域为编辑范围。建议先把主体或要修改的部分完整涂到。
       </div>
 
-      <div className="mask-editor__footer">
+      <div className="flex justify-end gap-2">
         <Button
           type="button"
-          className="btn-secondary"
+          variant="secondary"
           disabled={busy}
           onClick={onClose}
-          unstyled
         >
           取消
         </Button>
         <Button
           type="button"
-          className="btn-primary"
+          variant="primary"
           disabled={!hasMask || busy}
           onClick={confirm}
-          unstyled
         >
           下一步
         </Button>

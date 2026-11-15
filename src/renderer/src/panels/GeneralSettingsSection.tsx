@@ -228,9 +228,9 @@ export function GeneralSettingsSection() {
   const projectDir = preferences.project.defaultDir || '文档 / CineLab（默认）'
 
   return (
-    <div className="settings-section">
-      <div className="settings-group-title">启动与项目</div>
-      <div className="settings-group">
+    <div className="flex flex-col">
+      <div className="mb-3 text-[13px] font-semibold text-fg">启动与项目</div>
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
         <SettingRow
           title="启动时打开最近项目"
           hint="关闭后启动进入项目中心，不自动打开上次的项目"
@@ -264,22 +264,27 @@ export function GeneralSettingsSection() {
         </SettingRow>
 
         <SettingRow title="默认项目目录" hint="新建项目时的默认位置">
-          <div className="settings-path-control">
-            <code title={projectDir}>{projectDir}</code>
+          <div className="flex max-w-[330px] items-center gap-1.5">
+            <code
+              className="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-fg-muted"
+              title={projectDir}
+            >
+              {projectDir}
+            </code>
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               onClick={() => void chooseProjectDir()}
-              unstyled
             >
               选择
             </Button>
             {preferences.project.defaultDir ? (
               <Button
                 type="button"
-                className="btn-secondary btn-sm"
+                variant="secondary"
+                size="sm"
                 onClick={() => void updateProject({ defaultDir: '' })}
-                unstyled
               >
                 恢复默认
               </Button>
@@ -288,8 +293,8 @@ export function GeneralSettingsSection() {
         </SettingRow>
       </div>
 
-      <div className="settings-group-title">画布与交互</div>
-      <div className="settings-group">
+      <div className="mb-3 text-[13px] font-semibold text-fg">画布与交互</div>
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
         <SettingRow title="网格吸附" hint="拖动节点时按 16px 网格对齐">
           <Switch
             checked={preferences.canvas.snapToGrid}
@@ -342,8 +347,8 @@ export function GeneralSettingsSection() {
         </SettingRow>
       </div>
 
-      <div className="settings-group-title">生成与提示词</div>
-      <div className="settings-group">
+      <div className="mb-3 text-[13px] font-semibold text-fg">生成与提示词</div>
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
         {MODEL_GROUPS.map((group) => (
           <SettingRow
             key={group.key}
@@ -409,8 +414,8 @@ export function GeneralSettingsSection() {
         </SettingRow>
       </div>
 
-      <div className="settings-group-title">通知与更新</div>
-      <div className="settings-group">
+      <div className="mb-3 text-[13px] font-semibold text-fg">通知与更新</div>
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
         <SettingRow
           title="生成完成通知"
           hint="窗口不在前台时，生成完成会发送系统通知"
@@ -442,8 +447,8 @@ export function GeneralSettingsSection() {
         </SettingRow>
       </div>
 
-      <div className="settings-group-title">存储与数据</div>
-      <div className="settings-group">
+      <div className="mb-3 text-[13px] font-semibold text-fg">存储与数据</div>
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
         <SettingRow
           title="缩略图缓存"
           hint={
@@ -454,10 +459,10 @@ export function GeneralSettingsSection() {
         >
           <Button
             type="button"
-            className="btn-secondary btn-sm"
+            variant="secondary"
+            size="sm"
             disabled={cacheBusy || !thumbInfo || thumbInfo.files === 0}
             onClick={() => void clearThumbCache()}
-            unstyled
           >
             {cacheBusy ? '清理中…' : '清理缓存'}
           </Button>
@@ -479,13 +484,13 @@ export function GeneralSettingsSection() {
         <SettingRow title="生成历史" hint={`当前 ${historyCount} 条记录`}>
           <Button
             type="button"
-            className="btn-secondary btn-sm"
+            variant="secondary"
+            size="sm"
             disabled={historyCount === 0}
             onClick={() => {
               useGenerationHistoryStore.getState().clear()
               showToast('已清空生成历史')
             }}
-            unstyled
           >
             清空历史
           </Button>
@@ -497,17 +502,17 @@ export function GeneralSettingsSection() {
         >
           <Button
             type="button"
-            className="btn-secondary btn-sm"
+            variant="secondary"
+            size="sm"
             onClick={() => void window.api.settings.openDataDir()}
-            unstyled
           >
             打开目录
           </Button>
         </SettingRow>
       </div>
 
-      <div className="settings-group-title">界面</div>
-      <div className="settings-group">
+      <div className="mb-3 text-[13px] font-semibold text-fg">界面</div>
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
         <SettingRow title="界面缩放" hint="主题仍在「外观」分区调整">
           <Select
             value={String(preferences.ui.scale)}
@@ -517,8 +522,8 @@ export function GeneralSettingsSection() {
         </SettingRow>
       </div>
 
-      <div className="settings-group-title">网络与请求</div>
-      <div className="settings-group">
+      <div className="mb-3 text-[13px] font-semibold text-fg">网络与请求</div>
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
         <SettingRow
           title="模型请求代理"
           hint="模型接口和素材下载使用的网络代理"
@@ -536,12 +541,11 @@ export function GeneralSettingsSection() {
             hint="例如 http://127.0.0.1:7890，支持 HTTP/SOCKS"
           >
             <Input
-              className="settings-input"
+              className="!h-[30px] w-60 !rounded-md border-border-strong !px-2 !text-xs"
               value={proxyDraft}
               placeholder="http://127.0.0.1:7890"
               onChange={(event) => setProxyDraft(event.target.value)}
               onBlur={() => void updateNetwork({ proxyUrl: proxyDraft.trim() })}
-              unstyled
             />
           </SettingRow>
         ) : null}
@@ -557,28 +561,28 @@ export function GeneralSettingsSection() {
         </SettingRow>
       </div>
 
-      <div className="settings-group-title">高级</div>
-      <div className="settings-group">
+      <div className="mb-3 text-[13px] font-semibold text-fg">高级</div>
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
         <SettingRow
           title="备份通用设置"
           hint="导出或导入 preferences.json，不含模型密钥"
         >
-          <div className="settings-actions settings-actions--inline">
+          <div className="mt-0 flex items-center gap-2">
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               disabled={ioBusy}
               onClick={() => void exportPreferences()}
-              unstyled
             >
               导出
             </Button>
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               disabled={ioBusy}
               onClick={() => void importPreferences()}
-              unstyled
             >
               导入
             </Button>
@@ -591,7 +595,8 @@ export function GeneralSettingsSection() {
         >
           <Button
             type="button"
-            className="btn-secondary btn-sm"
+            variant="secondary"
+            size="sm"
             onClick={() =>
               requestConfirm({
                 title: '重置通用设置',
@@ -604,7 +609,6 @@ export function GeneralSettingsSection() {
                 }
               })
             }
-            unstyled
           >
             重置
           </Button>

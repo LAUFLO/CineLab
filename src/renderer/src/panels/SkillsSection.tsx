@@ -8,7 +8,6 @@ import type {
 import { Icon } from '../components/Icon'
 import { useProjectStore } from '../stores/project'
 import { useUIStore } from '../stores/ui'
-import '../styles/skills.css'
 import { Button, NativeSelect, Input, Textarea } from '../components/ui'
 
 const SCOPE_LABEL: Record<SkillScope, string> = {
@@ -349,39 +348,44 @@ export function SkillsSection() {
   }
 
   return (
-    <div className="settings-section skills-section">
-      <div className="skills-head">
+    <div className="flex min-h-0 flex-col gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="skills-head__title">技能</div>
-          <div className="skills-head__desc">
+          <div className="text-[15px] font-semibold">技能</div>
+          <div className="mt-1 max-w-[560px] text-[11px] leading-[1.6] text-fg-subtle">
             内置技能随应用提供；全局技能在本机所有项目可用；项目技能只属于当前项目。
           </div>
         </div>
         <Button
           type="button"
-          className="btn-primary btn-small"
+          variant="primary"
+          size="xs"
+          className="inline-flex shrink-0 items-center gap-[5px]"
           onClick={() => {
             setCreating(true)
             setDraft(emptyDraft())
             setError(null)
           }}
-          unstyled
         >
           <Icon name="plus" size={13} />
           新建技能
         </Button>
       </div>
 
-      {error ? <div className="form-message is-error">{error}</div> : null}
+      {error ? (
+        <div className="break-all rounded-md bg-[rgba(239,68,68,0.08)] px-2.5 py-2 text-xs leading-[1.6] text-danger">
+          {error}
+        </div>
+      ) : null}
 
       {creating ? (
-        <div className="skills-create">
-          <div className="skills-create__title">新建技能</div>
-          <div className="skills-form-row">
-            <label className="field">
+        <div className="flex flex-col gap-2 rounded-[9px] border border-border-strong bg-surface p-2.5">
+          <div className="text-xs font-semibold">新建技能</div>
+          <div className="grid grid-cols-[1fr_1.2fr_0.7fr] gap-2 max-[900px]:grid-cols-2">
+            <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
               <span>作用域</span>
               <NativeSelect
-                className="skills-input"
+                className="!h-auto w-full !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] text-fg focus:border-border-strong"
                 value={draft.scope}
                 onChange={(event) =>
                   setDraft((current) => ({
@@ -389,7 +393,6 @@ export function SkillsSection() {
                     scope: event.target.value as 'global' | 'project'
                   }))
                 }
-                unstyled
               >
                 <option value="global">全局技能</option>
                 <option value="project" disabled={!projectPath}>
@@ -397,10 +400,10 @@ export function SkillsSection() {
                 </option>
               </NativeSelect>
             </label>
-            <label className="field">
+            <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
               <span>名称</span>
               <Input
-                className="skills-input"
+                className="!h-auto w-full !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] text-fg focus:border-border-strong"
                 value={draft.name}
                 placeholder="例如 shot-lighting"
                 onChange={(event) =>
@@ -409,13 +412,12 @@ export function SkillsSection() {
                     name: event.target.value
                   }))
                 }
-                unstyled
               />
             </label>
-            <label className="field">
+            <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
               <span>版本</span>
               <Input
-                className="skills-input"
+                className="!h-auto w-full !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] text-fg focus:border-border-strong"
                 value={draft.version}
                 placeholder="可选，例如 1.0"
                 onChange={(event) =>
@@ -424,14 +426,13 @@ export function SkillsSection() {
                     version: event.target.value
                   }))
                 }
-                unstyled
               />
             </label>
           </div>
-          <label className="field">
+          <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
             <span>描述</span>
             <Input
-              className="skills-input"
+              className="!h-auto w-full !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] text-fg focus:border-border-strong"
               value={draft.description}
               placeholder="一句话说明这个技能做什么"
               maxLength={500}
@@ -441,13 +442,12 @@ export function SkillsSection() {
                   description: event.target.value
                 }))
               }
-              unstyled
             />
           </label>
-          <label className="field">
+          <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
             <span>SKILL.md 正文</span>
             <Textarea
-              className="skills-textarea"
+              className="min-h-[120px] w-full resize-y !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] font-mono leading-[1.55] text-fg focus:border-border-strong"
               value={draft.body}
               rows={10}
               onChange={(event) =>
@@ -456,27 +456,26 @@ export function SkillsSection() {
                   body: event.target.value
                 }))
               }
-              unstyled
             />
           </label>
-          <div className="skills-create__actions">
+          <div className="flex justify-end gap-2">
             <Button
               type="button"
-              className="btn-secondary btn-small"
+              variant="secondary"
+              size="xs"
               onClick={() => setCreating(false)}
               disabled={saving}
-              unstyled
             >
               取消
             </Button>
             <Button
               type="button"
-              className="btn-primary btn-small"
+              variant="primary"
+              size="xs"
               onClick={() => void create()}
               disabled={
                 saving || !draft.name.trim() || !draft.description.trim()
               }
-              unstyled
             >
               {saving ? '创建中…' : '创建技能'}
             </Button>
@@ -484,54 +483,70 @@ export function SkillsSection() {
         </div>
       ) : null}
 
-      <div className="skills-layout">
-        <aside className="skills-list">
+      <div className="grid min-h-[460px] flex-1 grid-cols-[260px_minmax(0,1fr)] gap-2.5 max-[900px]:grid-cols-[210px_minmax(0,1fr)]">
+        <aside className="min-h-0 min-w-0 overflow-y-auto rounded-[9px] border border-border bg-surface p-2">
           {loading ? (
-            <div className="skills-empty">正在读取技能…</div>
+            <div className="p-3.5 text-[11px] leading-[1.6] text-fg-subtle">
+              正在读取技能…
+            </div>
           ) : grouped.length === 0 ? (
-            <div className="skills-empty">还没有技能</div>
+            <div className="p-3.5 text-[11px] leading-[1.6] text-fg-subtle">
+              还没有技能
+            </div>
           ) : (
             grouped.map((group) => (
-              <div key={group.scope} className="skills-group">
-                <div className="skills-group__head">
+              <div
+                key={group.scope}
+                className="[&:not(:first-child)]:mt-3"
+              >
+                <div className="flex items-center justify-between gap-2 px-1 pb-1.5 text-[10px] font-semibold text-fg-subtle">
                   <span>
                     {SCOPE_LABEL[group.scope]} · {group.entries.length}
                   </span>
                   <Button
                     type="button"
-                    className="skills-link"
+                    variant="ghost"
+                    size="none"
+                    className="p-0 text-[10px] text-fg-subtle underline hover:text-fg"
                     onClick={() =>
                       void window.api.skills.openDirectory(group.scope)
                     }
-                    unstyled
                   >
                     打开目录
                   </Button>
                 </div>
                 {group.entries.map((entry) => {
                   const key = entryKey(entry)
+                  const active = key === selectedKey
                   return (
                     <Button
                       key={key}
                       type="button"
-                      className={`skills-item ${
-                        key === selectedKey ? 'is-active' : ''
-                      } ${entry.enabled ? '' : 'is-disabled'}`}
+                      variant="ghost"
+                      size="none"
+                      className={`flex w-full flex-col !items-start gap-[3px] rounded-[7px] border px-2 py-[7px] !text-left ${
+                        active
+                          ? 'border-border-strong bg-surface-hover'
+                          : 'border-transparent bg-transparent hover:bg-surface-hover'
+                      } ${entry.enabled ? '' : 'opacity-65'}`}
                       onClick={() => setSelectedKey(key)}
-                      unstyled
                     >
-                      <div className="skills-item__row">
-                        <span className="skills-item__name">{entry.name}</span>
+                      <div className="flex min-w-0 items-center gap-[5px]">
+                        <span className="overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[11px] text-fg">
+                          {entry.name}
+                        </span>
                         {!entry.enabled ? (
-                          <span className="skills-badge is-off">已禁用</span>
+                          <span className="shrink-0 whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-1.5 py-px text-[9px] leading-[14px] text-warning">
+                            已禁用
+                          </span>
                         ) : null}
                         {entry.shadowedBy ? (
-                          <span className="skills-badge is-shadow">
+                          <span className="shrink-0 whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--text-3)_14%,transparent)] px-1.5 py-px text-[9px] leading-[14px] text-fg-subtle">
                             被{SCOPE_LABEL[entry.shadowedBy]}覆盖
                           </span>
                         ) : null}
                       </div>
-                      <div className="skills-item__desc">
+                      <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[10px] leading-[1.4] text-fg-subtle">
                         {entry.description}
                       </div>
                     </Button>
@@ -542,34 +557,40 @@ export function SkillsSection() {
           )}
         </aside>
 
-        <section className="skills-detail">
+        <section className="flex min-h-0 min-w-0 flex-col gap-2.5 overflow-y-auto rounded-[9px] border border-border bg-surface p-3">
           {!selected ? (
-            <div className="skills-empty">
+            <div className="p-3.5 text-[11px] leading-[1.6] text-fg-subtle">
               选择一个技能查看详情，或新建技能。
             </div>
           ) : (
             <>
-              <header className="skills-detail__head">
-                <div>
-                  <div className="skills-detail__title">{selected.name}</div>
-                  <div className="skills-detail__meta">
-                    <span className="skills-badge">
+              <header className="flex items-start justify-between gap-3 border-b border-border pb-2.5">
+                <div className="min-w-0">
+                  <div className="overflow-hidden text-ellipsis whitespace-nowrap font-mono text-sm font-semibold">
+                    {selected.name}
+                  </div>
+                  <div className="mt-[5px] flex flex-wrap gap-1">
+                    <span className="shrink-0 whitespace-nowrap rounded-full bg-surface-hover px-1.5 py-px text-[9px] leading-[14px] text-fg-muted">
                       {SCOPE_LABEL[selected.scope]}
                     </span>
                     {selected.editable ? null : (
-                      <span className="skills-badge is-off">只读</span>
+                      <span className="shrink-0 whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--warning)_15%,transparent)] px-1.5 py-px text-[9px] leading-[14px] text-warning">
+                        只读
+                      </span>
                     )}
                     {selected.shadowedBy ? (
-                      <span className="skills-badge is-shadow">
+                      <span className="shrink-0 whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--text-3)_14%,transparent)] px-1.5 py-px text-[9px] leading-[14px] text-fg-subtle">
                         被{SCOPE_LABEL[selected.shadowedBy]}同名技能覆盖
                       </span>
                     ) : null}
                     {selected.version ? (
-                      <span className="skills-badge">v{selected.version}</span>
+                      <span className="shrink-0 whitespace-nowrap rounded-full bg-surface-hover px-1.5 py-px text-[9px] leading-[14px] text-fg-muted">
+                        v{selected.version}
+                      </span>
                     ) : null}
                   </div>
                 </div>
-                <div className="skills-detail__actions">
+                <div className="flex shrink-0 gap-1.5">
                   {selected.scope !== 'project' &&
                   !skills.some(
                     (entry) =>
@@ -577,10 +598,11 @@ export function SkillsSection() {
                   ) ? (
                     <Button
                       type="button"
-                      className="btn-secondary btn-small"
+                      variant="secondary"
+                      size="xs"
+                      className="inline-flex items-center gap-1"
                       onClick={() => void cloneTo('project')}
                       disabled={!projectPath || cloning}
-                      unstyled
                     >
                       <Icon name="copy" size={13} />
                       创建项目覆盖
@@ -593,10 +615,11 @@ export function SkillsSection() {
                   ) ? (
                     <Button
                       type="button"
-                      className="btn-secondary btn-small"
+                      variant="secondary"
+                      size="xs"
+                      className="inline-flex items-center gap-1"
                       onClick={() => void cloneTo('global')}
                       disabled={cloning}
-                      unstyled
                     >
                       <Icon name="copy" size={13} />
                       创建全局覆盖
@@ -604,14 +627,15 @@ export function SkillsSection() {
                   ) : null}
                   <Button
                     type="button"
-                    className="btn-secondary btn-small"
+                    variant="secondary"
+                    size="xs"
+                    className="inline-flex items-center gap-1"
                     onClick={() =>
                       void window.api.skills.openDirectory(
                         selected.scope,
                         selected.name
                       )
                     }
-                    unstyled
                   >
                     <Icon name="folder" size={13} />
                     打开目录
@@ -619,12 +643,15 @@ export function SkillsSection() {
                   {selected.editable ? (
                     <Button
                       type="button"
-                      className={`btn-secondary btn-small ${
-                        confirmRemove ? 'is-danger' : ''
+                      variant="secondary"
+                      size="xs"
+                      className={`inline-flex items-center gap-1 ${
+                        confirmRemove
+                          ? 'border-[color-mix(in_srgb,var(--danger)_50%,var(--border))] text-danger'
+                          : ''
                       }`}
                       onClick={() => void remove()}
                       disabled={saving}
-                      unstyled
                     >
                       <Icon name="trash" size={13} />
                       {confirmRemove ? '确认删除' : '删除'}
@@ -633,110 +660,111 @@ export function SkillsSection() {
                 </div>
               </header>
 
-              <div className="skills-toggles">
-                <label className="skills-switch">
+              <div className="flex flex-wrap gap-4 rounded-[7px] border border-border bg-surface-raised px-2.5 py-2">
+                <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-fg-muted">
                   <Input
                     type="checkbox"
+                    className="!h-auto !w-auto !rounded-none !border-0 !bg-transparent !p-0 accent-[var(--accent)]"
                     checked={selected.enabled}
                     onChange={(event) =>
                       void toggle(selected, {
                         enabled: event.target.checked
                       })
                     }
-                    unstyled
                   />
                   <span>启用</span>
                 </label>
-                <label className="skills-switch">
+                <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-fg-muted">
                   <Input
                     type="checkbox"
+                    className="!h-auto !w-auto !rounded-none !border-0 !bg-transparent !p-0 accent-[var(--accent)]"
                     checked={Boolean(selected.disableModelInvocation)}
                     onChange={(event) =>
                       void toggle(selected, {
                         disableModelInvocation: event.target.checked
                       })
                     }
-                    unstyled
                   />
                   <span>禁止模型自动调用</span>
                 </label>
               </div>
 
-              <div className="skills-editor">
-                <label className="field">
+              <div className="flex flex-col gap-2">
+                <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
                   <span>描述</span>
                   <Input
-                    className="skills-input"
+                    className="!h-auto w-full !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] text-fg focus:border-border-strong"
                     value={description}
                     disabled={!selected.editable}
                     maxLength={500}
                     onChange={(event) => setDescription(event.target.value)}
-                    unstyled
                   />
                 </label>
-                <label className="field">
+                <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
                   <span>版本</span>
                   <Input
-                    className="skills-input"
+                    className="!h-auto w-full !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] text-fg focus:border-border-strong"
                     value={version}
                     disabled={!selected.editable}
                     onChange={(event) => setVersion(event.target.value)}
-                    unstyled
                   />
                 </label>
-                <label className="field">
+                <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
                   <span>SKILL.md 正文</span>
                   <Textarea
-                    className="skills-textarea"
+                    className="min-h-[120px] w-full resize-y !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] font-mono leading-[1.55] text-fg focus:border-border-strong"
                     value={body}
                     disabled={!selected.editable}
                     rows={14}
                     onChange={(event) => setBody(event.target.value)}
-                    unstyled
                   />
                 </label>
                 {selected.editable ? (
-                  <div className="skills-editor__actions">
+                  <div className="flex justify-end">
                     <Button
                       type="button"
-                      className="btn-primary btn-small"
+                      variant="primary"
+                      size="xs"
                       onClick={() => void save()}
                       disabled={saving}
-                      unstyled
                     >
                       {saving ? '保存中…' : '保存技能'}
                     </Button>
                   </div>
                 ) : (
-                  <div className="skills-readonly">
+                  <div className="rounded-[7px] border border-dashed border-border px-2.5 py-2 text-[11px] leading-[1.6] text-fg-subtle">
                     内置技能只读。需要修改时，请在全局或项目中创建同名技能覆盖它。
                   </div>
                 )}
               </div>
 
-              <div className="skills-files">
-                <div className="skills-files__head">
+              <div className="flex flex-col gap-1.5 border-t border-border pt-2.5">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-fg-muted">
                   <span>文件</span>
-                  <div className="skills-files__actions">
-                    <small>{files.length} 个</small>
+                  <div className="flex items-center gap-2">
+                    <small className="font-normal text-fg-subtle">
+                      {files.length} 个
+                    </small>
                     {selected.editable ? (
                       <>
                         <Button
                           type="button"
-                          className="skills-link"
+                          variant="ghost"
+                          size="none"
+                          className="inline-flex items-center gap-1 p-0 text-[10px] text-fg-subtle underline hover:text-fg disabled:cursor-default disabled:opacity-45"
                           onClick={() => void upload('references')}
                           disabled={uploading}
-                          unstyled
                         >
                           <Icon name="plus" size={11} />
                           references
                         </Button>
                         <Button
                           type="button"
-                          className="skills-link"
+                          variant="ghost"
+                          size="none"
+                          className="inline-flex items-center gap-1 p-0 text-[10px] text-fg-subtle underline hover:text-fg disabled:cursor-default disabled:opacity-45"
                           onClick={() => void upload('assets')}
                           disabled={uploading}
-                          unstyled
                         >
                           <Icon name="plus" size={11} />
                           assets
@@ -745,45 +773,60 @@ export function SkillsSection() {
                     ) : null}
                   </div>
                 </div>
-                <div className="skills-files__list">
-                  {files.map((file) => (
-                    <div
-                      key={file.path}
-                      className={`skills-file ${
-                        preview?.path === file.path ? 'is-active' : ''
-                      }`}
-                    >
-                      <Button
-                        type="button"
-                        className="skills-file__main"
-                        onClick={() => void openFile(file)}
-                        unstyled
+                <div className="flex flex-col gap-0.5">
+                  {files.map((file) => {
+                    const active = preview?.path === file.path
+                    return (
+                      <div
+                        key={file.path}
+                        className={`group flex w-full items-center gap-0.5 rounded-md border pr-1 text-[10px] ${
+                          active
+                            ? 'border-border-strong bg-surface-hover text-fg'
+                            : 'border-transparent text-fg-muted'
+                        }`}
                       >
-                        <Icon name={fileIcon(file.path)} size={13} />
-                        <span>{file.path}</span>
-                        <small>{formatSize(file.size)}</small>
-                      </Button>
-                      {selected.editable && file.path !== 'SKILL.md' ? (
                         <Button
                           type="button"
-                          className="skills-file__delete"
-                          title="删除文件"
-                          onClick={() => removeFile(file)}
-                          unstyled
+                          variant="ghost"
+                          size="none"
+                          className="flex min-w-0 flex-1 items-center gap-1.5 !justify-start bg-transparent py-[5px] pl-[7px] pr-1 !text-left font-[inherit] text-[10px]"
+                          onClick={() => void openFile(file)}
                         >
-                          <Icon name="trash" size={12} />
+                          <Icon name={fileIcon(file.path)} size={13} />
+                          <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-mono">
+                            {file.path}
+                          </span>
+                          <small className="text-fg-subtle">
+                            {formatSize(file.size)}
+                          </small>
                         </Button>
-                      ) : null}
-                    </div>
-                  ))}
+                        {selected.editable && file.path !== 'SKILL.md' ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="none"
+                            className={`!h-[22px] !w-[22px] shrink-0 rounded-[5px] p-0 text-fg-subtle hover:bg-surface-raised hover:text-danger ${
+                              active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                            }`}
+                            title="删除文件"
+                            onClick={() => removeFile(file)}
+                          >
+                            <Icon name="trash" size={12} />
+                          </Button>
+                        ) : null}
+                      </div>
+                    )
+                  })}
                 </div>
                 {preview ? (
-                  <div className="skills-preview">
-                    <div className="skills-preview__head">
+                  <div className="overflow-hidden rounded-[7px] border border-border bg-surface-raised">
+                    <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-[5px] font-mono text-[10px] text-fg-subtle">
                       <span>{preview.path}</span>
                       <Button
                         type="button"
-                        className="skills-link"
+                        variant="ghost"
+                        size="none"
+                        className="p-0 text-[10px] text-fg-subtle underline hover:text-fg"
                         onClick={() =>
                           void window.api.skills.openFile(
                             selected.scope,
@@ -791,17 +834,18 @@ export function SkillsSection() {
                             preview.path
                           )
                         }
-                        unstyled
                       >
                         用系统打开
                       </Button>
                     </div>
                     {preview.binary ? (
-                      <div className="skills-empty">
+                      <div className="p-3.5 text-[11px] leading-[1.6] text-fg-subtle">
                         二进制文件，请用系统打开。
                       </div>
                     ) : (
-                      <pre>{preview.content}</pre>
+                      <pre className="m-0 max-h-[240px] overflow-auto whitespace-pre-wrap break-words px-2.5 py-2 font-mono text-[10px] leading-[1.55] text-fg-muted">
+                        {preview.content}
+                      </pre>
                     )}
                   </div>
                 ) : null}

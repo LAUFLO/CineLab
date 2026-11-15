@@ -171,41 +171,49 @@ export function ComponentsSection() {
   }
 
   return (
-    <div className="settings-section">
-      <div className="settings-group-title">组件</div>
-      <p className="settings-hint">
+    <div className="flex flex-col">
+      <div className="mb-3 text-[13px] font-semibold text-fg">组件</div>
+      <p className="mb-3 mt-2 text-xs leading-[1.7] text-fg-subtle">
         组件按需下载，不使用对应功能时不会占用磁盘。后续其他本地能力也会以组件形式接入。
       </p>
 
       {items.map((item) => {
         const meta = COMPONENT_META[item.kind]
         return (
-          <div key={item.kind} className="component-card">
-            <div className="component-card__info">
-              <div className="component-card__name">{meta.name}</div>
-              <p className="component-card__desc">{meta.description}</p>
-              <div className="component-card__meta">{stateLabel(item)}</div>
+          <div
+            key={item.kind}
+            className="mt-2.5 flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3.5"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="text-[13px] font-semibold text-fg">
+                {meta.name}
+              </div>
+              <p className="mb-0 mt-1.5 text-xs leading-[1.5] text-fg-subtle">
+                {meta.description}
+              </p>
+              <div className="mt-1 text-xs text-fg-subtle">
+                {stateLabel(item)}
+              </div>
               {item.state === 'downloading' ? (
-                <div className="component-card__bar">
+                <div className="mt-2 h-1 overflow-hidden rounded-full bg-border">
                   <div
-                    className="component-card__bar-fill"
+                    className="h-full bg-pick-bar transition-[width] duration-200"
                     style={{ width: `${item.percent ?? 0}%` }}
                   />
                 </div>
               ) : null}
               {item.error ? (
-                <div className="component-card__error">{item.error}</div>
+                <div className="mt-1.5 text-xs text-danger">{item.error}</div>
               ) : null}
             </div>
 
-            <div className="component-card__actions">
+            <div className="flex gap-2">
               {item.state === 'not-installed' || item.state === 'error' ? (
                 <Button
                   type="button"
-                  className="btn-primary"
+                  variant="primary"
                   disabled={pending === item.kind}
                   onClick={() => void install(item.kind)}
-                  unstyled
                 >
                   {item.state === 'error' ? '重试' : '下载'}
                 </Button>
@@ -214,10 +222,9 @@ export function ComponentsSection() {
               {item.state === 'paused' ? (
                 <Button
                   type="button"
-                  className="btn-primary"
+                  variant="primary"
                   disabled={pending === item.kind}
                   onClick={() => void install(item.kind)}
-                  unstyled
                 >
                   继续
                 </Button>
@@ -226,9 +233,8 @@ export function ComponentsSection() {
               {item.state === 'downloading' ? (
                 <Button
                   type="button"
-                  className="btn-secondary"
+                  variant="secondary"
                   onClick={() => void pause(item.kind)}
-                  unstyled
                 >
                   暂停
                 </Button>
@@ -237,9 +243,8 @@ export function ComponentsSection() {
               {item.state === 'installed' ? (
                 <Button
                   type="button"
-                  className="btn-secondary"
+                  variant="secondary"
                   onClick={() => uninstall(item)}
-                  unstyled
                 >
                   卸载
                 </Button>

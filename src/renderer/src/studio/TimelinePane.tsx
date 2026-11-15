@@ -75,8 +75,12 @@ function clipClass(
     clipTone(clip),
     selected ? 'z-[2] shadow-[0_0_0_1px_var(--border-selected)]' : '',
     dragging ? 'pointer-events-none opacity-55' : '',
-    issue?.missing ? 'is-missing' : '',
-    issue?.updateAvailable ? 'has-update' : ''
+    issue?.missing
+      ? 'opacity-55 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:border after:border-dashed after:border-border-strong after:content-[""]'
+      : '',
+    issue?.updateAvailable
+      ? 'outline-1 -outline-offset-1 outline-border-strong'
+      : ''
   )
 }
 
@@ -94,6 +98,12 @@ function clipTone(clip: TimelineClip): string {
 
 const CLIP_LABEL =
   'relative z-[1] truncate text-[10px] [text-shadow:0_1px_4px_var(--overlay)]'
+
+const CLIP_BADGE =
+  'pointer-events-none absolute right-1.5 top-1 max-w-[calc(100%-12px)] truncate rounded-[4px] border border-border-strong bg-surface px-[5px] text-[10px] leading-4 text-fg'
+
+const CLIP_META =
+  'pointer-events-none absolute bottom-1 rounded-[4px] border border-border bg-surface px-1 text-[10px] leading-[15px] text-fg'
 
 const PANEL_ROOT =
   'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[10px] border border-border bg-surface [grid-area:timeline]'
@@ -1137,21 +1147,19 @@ export function TimelinePane() {
                               : clip.name}
                           </span>
                           {issue?.missing ? (
-                            <span className="studio-clip__issue is-missing">
+                            <span className={`${CLIP_BADGE} border-dashed`}>
                               素材缺失
                             </span>
                           ) : issue?.updateAvailable ? (
-                            <span className="studio-clip__issue is-update">
-                              有新版本
-                            </span>
+                            <span className={CLIP_BADGE}>有新版本</span>
                           ) : null}
                           {clip.speed !== 1 ? (
-                            <span className="studio-clip__speed">
+                            <span className={`${CLIP_META} left-1.5`}>
                               {clip.speed}×
                             </span>
                           ) : null}
                           {clip.transitionIn ? (
-                            <span className="studio-clip__transition">
+                            <span className={`${CLIP_META} right-1.5`}>
                               {{
                                 fade: '淡',
                                 'dip-black': '黑',

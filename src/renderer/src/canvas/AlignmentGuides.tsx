@@ -7,11 +7,15 @@ export function AlignmentGuides({ guides }: { guides: AlignmentGuide[] }) {
   if (guides.length === 0) return null
 
   return (
-    <div className="alignment-guides">
+    <div className="pointer-events-none fixed inset-0 z-[80]">
       {guides.map((guide, index) => (
         <div
           key={`${guide.orientation}-${index}`}
-          className={`alignment-guide alignment-guide--${guide.orientation}`}
+          className={`absolute border-dashed border-link opacity-[0.85] ${
+            guide.orientation === 'vertical'
+              ? 'inset-y-0 border-l'
+              : 'inset-x-0 border-t'
+          }`}
           style={
             guide.orientation === 'vertical'
               ? { left: guide.position }

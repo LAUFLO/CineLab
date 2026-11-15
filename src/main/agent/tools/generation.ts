@@ -279,8 +279,8 @@ export function validateGenerationToolArgs(
 
     if (call.args.refNodeIds !== undefined) {
       const ids = call.args.refNodeIds
-      if (!Array.isArray(ids) || ids.length > 4) {
-        throw new AgentToolError('invalid_params', 'refNodeIds 最多 4 个')
+      if (!Array.isArray(ids) || ids.length > 32) {
+        throw new AgentToolError('invalid_params', 'refNodeIds 最多 32 个')
       }
       const unique = new Set(ids)
       if (unique.size !== ids.length) {
@@ -295,8 +295,8 @@ export function validateGenerationToolArgs(
 
     if (call.args.libraryRefs !== undefined) {
       const refs = call.args.libraryRefs
-      if (!Array.isArray(refs) || refs.length > 4) {
-        throw new AgentToolError('invalid_params', 'libraryRefs 最多 4 个')
+      if (!Array.isArray(refs) || refs.length > 32) {
+        throw new AgentToolError('invalid_params', 'libraryRefs 最多 32 个')
       }
       const seen = new Set<string>()
       for (const ref of refs) {

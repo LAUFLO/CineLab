@@ -142,7 +142,7 @@ async function parseImageResponse(
 ): Promise<ImageOutput[]> {
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(`HTTP ${response.status}: ${text.slice(0, 400)}`)
+    throw new Error(`HTTP ${response.status}: ${text.slice(0, 2000)}`)
   }
 
   const json = (await response.json()) as {
@@ -366,7 +366,7 @@ export async function generateImage(
       throw new Error('参考图解析失败，无法发起图生图请求')
     }
 
-    let response = await httpFetch(`${baseUrl}/images/edits`, {
+    const response = await httpFetch(`${baseUrl}/images/edits`, {
       method: 'POST',
       headers,
       body: form,
@@ -377,32 +377,8 @@ export async function generateImage(
       const status = response.status
       const text = await response.text().catch(() => '')
       throw new Error(
-        `当前模型不支持蒙版编辑或蒙版格式不兼容（HTTP ${status}）：${text.slice(0, 200)}`
+        `当前模型不支持蒙版编辑或蒙版格式不兼容（HTTP ${status}）：${text.slice(0, 2000)}`
       )
-    }
-
-    if (!response.ok && refs.length > 1) {
-      const status = response.status
-      const text = await response.text().catch(() => '')
-      const imageFieldError =
-        (status === 400 || status === 422) && /image(\[\])?/i.test(text)
-
-      if (!imageFieldError) {
-        throw new Error(`HTTP ${status}: ${text.slice(0, 400)}`)
-      }
-
-      ctx.onProgress(15, '参考图字段不兼容，改用单图重试')
-      const fallback = buildEditForm(model, prompt, params, refs, true, mask)
-      if (!fallback) {
-        throw new Error('参考图解析失败，无法重试图生图请求')
-      }
-
-      response = await httpFetch(`${baseUrl}/images/edits`, {
-        method: 'POST',
-        headers,
-        body: fallback,
-        signal: ctx.signal
-      })
     }
 
     return parseImageResponse(response, ctx)
@@ -484,7 +460,7 @@ export async function generateSpeech(
 
   if (!response.ok) {
     const message = await response.text().catch(() => '')
-    throw new Error(`HTTP ${response.status}: ${message.slice(0, 400)}`)
+    throw new Error(`HTTP ${response.status}: ${message.slice(0, 2000)}`)
   }
 
   const mime = response.headers.get('content-type')?.split(';')[0] ?? 'audio/mpeg'
@@ -543,7 +519,7 @@ export async function chatCompletion(
 
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(`HTTP ${response.status}: ${text.slice(0, 400)}`)
+    throw new Error(`HTTP ${response.status}: ${text.slice(0, 2000)}`)
   }
 
   const json = (await response.json()) as {
@@ -609,7 +585,7 @@ export async function generateText(
 
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(`HTTP ${response.status}: ${text.slice(0, 400)}`)
+    throw new Error(`HTTP ${response.status}: ${text.slice(0, 2000)}`)
   }
 
   const json = (await response.json()) as {
@@ -727,7 +703,7 @@ export async function generateMusic(
 
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(`HTTP ${response.status}: ${text.slice(0, 400)}`)
+    throw new Error(`HTTP ${response.status}: ${text.slice(0, 2000)}`)
   }
 
   const contentType = response.headers.get('content-type') ?? ''

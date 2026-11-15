@@ -9,8 +9,7 @@ import {
 } from '../provider-schema'
 import {
   modeSupportsOperation,
-  normalizeModelModes,
-  resolveModeSlots
+  normalizeModelModes
 } from '../model-modes'
 
 function createModel(patch: Partial<ModelDef> = {}): ModelDef {
@@ -30,7 +29,6 @@ describe('normalizeModelModes', () => {
       't2i',
       {
         id: 'i2i',
-        slots: { reference: { max: 10 } },
         operations: { 'shot-retake': 'native' }
       }
     ])
@@ -39,31 +37,22 @@ describe('normalizeModelModes', () => {
       { id: 't2i' },
       {
         id: 'i2i',
-        slots: { reference: { max: 10 } },
         operations: { 'shot-retake': 'native' }
       }
     ])
   })
 
+  it('drops legacy slot overrides', () => {
+    const modes = normalizeModelModes([
+      { id: 'i2i', slots: { reference: { max: 10 } } }
+    ])
+
+    expect(modes).toEqual([{ id: 'i2i' }])
+  })
+
   it('drops unknown and duplicate modes', () => {
     const modes = normalizeModelModes(['t2i', 't2i', 'unknown', 42, null])
     expect(modes).toEqual([{ id: 't2i' }])
-  })
-})
-
-describe('resolveModeSlots', () => {
-  it('merges per-model slot limits over the default definition', () => {
-    const slots = resolveModeSlots({
-      id: 'reference',
-      slots: {
-        'reference-image': { max: 30 },
-        'reference-video': { max: 10 }
-      }
-    })
-
-    expect(slots.find((slot) => slot.id === 'reference-image')?.max).toBe(30)
-    expect(slots.find((slot) => slot.id === 'reference-video')?.max).toBe(10)
-    expect(slots.find((slot) => slot.id === 'reference-audio')?.max).toBe(1)
   })
 })
 

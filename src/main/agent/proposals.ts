@@ -21,7 +21,7 @@ import { resolveProvider } from '../settings/store'
 
 const PROPOSAL_ID_PATTERN = /^[a-zA-Z0-9_-]{8,80}$/
 const MAX_PROMPT_LENGTH = 8000
-const MAX_REFS = 4
+const MAX_REFS = 32
 
 type ProposalChangeListener = (proposal: AgentProposal) => void
 

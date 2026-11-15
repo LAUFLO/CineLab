@@ -18,7 +18,6 @@ import {
   MODEL_MODE_DEFINITIONS,
   MODEL_MODE_LABEL,
   getModelModeDefinition,
-  resolveModeSlots,
   type ModelModeConfig,
   type ModelModeId
 } from '@shared/model-modes'
@@ -258,8 +257,15 @@ export function ModelConfigDialog({
   const modeSectionVisible =
     model.capability.startsWith('image') ||
     model.capability.startsWith('video')
+  const modeOutput = model.capability.startsWith('video')
+    ? 'video'
+    : model.capability.startsWith('image')
+      ? 'image'
+      : null
   const availableModes = MODEL_MODE_DEFINITIONS.filter(
-    (definition) => !modes.some((mode) => mode.id === definition.id)
+    (definition) =>
+      definition.output === modeOutput &&
+      !modes.some((mode) => mode.id === definition.id)
   )
   const operationAdapterReady = modes.some(
     (mode) => mode.id === 'video-edit' || mode.id === 'video-extend'
@@ -437,36 +443,6 @@ export function ModelConfigDialog({
       modes: next
     })
     setInputs(withVideoInput(nextInputs, operations))
-  }
-
-  const updateModeSlot = (
-    modeId: ModelModeId,
-    slotId: string,
-    max: number
-  ): void => {
-    const nextMax = Number.isFinite(max) ? Math.max(0, Math.floor(max)) : 0
-    setModes((current) =>
-      current.map((mode) =>
-        mode.id === modeId
-          ? {
-              ...mode,
-              slots: {
-                ...(mode.slots ?? {}),
-                [slotId]: {
-                  ...(mode.slots?.[slotId] ?? {}),
-                  max: nextMax
-                }
-              }
-            }
-          : mode
-      )
-    )
-  }
-
-  const resetModeSlots = (): void => {
-    setModes((current) =>
-      current.map((mode) => ({ ...mode, slots: undefined }))
-    )
   }
 
   const updateRow = (index: number, patch: Partial<ParamRow>): void => {
@@ -824,7 +800,7 @@ export function ModelConfigDialog({
             <div className="model-modes">
               {modes.map((mode) => {
                 const definition = getModelModeDefinition(mode.id)
-                const slots = resolveModeSlots(mode)
+                const slots = definition?.slots ?? []
                 return (
                   <Button
                     type="button"
@@ -847,11 +823,7 @@ export function ModelConfigDialog({
                       {slots.map((slot) => (
                         <span className="model-mode__slot" key={slot.id}>
                           {slot.label}
-                          {slot.max > 1
-                            ? ` 0–${slot.max}`
-                            : slot.required
-                              ? ' 1'
-                              : ' 可选'}
+                          {slot.required ? ' 必填' : ' 可选'}
                         </span>
                       ))}
                     </span>
@@ -879,48 +851,6 @@ export function ModelConfigDialog({
                 </Button>
               ))}
             </div>
-          ) : null}
-          {modes.length > 0 ? (
-            <details className="model-mode-limits">
-              <summary>调整槽位上限</summary>
-              <div className="model-mode-limits__list">
-                {modes.flatMap((mode) =>
-                  resolveModeSlots(mode).map((slot) => (
-                    <label
-                      className="model-mode-limit"
-                      key={`${mode.id}-${slot.id}`}
-                    >
-                      <span>
-                        {MODEL_MODE_LABEL[mode.id]} · {slot.label}
-                      </span>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={99}
-                        value={slot.max}
-                        onChange={(event) =>
-                          updateModeSlot(
-                            mode.id,
-                            slot.id,
-                            Number(event.target.value)
-                          )
-                        }
-                        unstyled
-                      />
-                      <span>张</span>
-                    </label>
-                  ))
-                )}
-              </div>
-              <Button
-                type="button"
-                className="btn-secondary btn-small"
-                onClick={resetModeSlots}
-                unstyled
-              >
-                恢复默认上限
-              </Button>
-            </details>
           ) : null}
         </div>
       ) : null}

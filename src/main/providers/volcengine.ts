@@ -151,7 +151,7 @@ export async function generateVideoArk(
 
     if (!response.ok) {
       const text = await response.text().catch(() => '')
-      throw new Error(`查询任务失败 HTTP ${response.status}: ${text.slice(0, 200)}`)
+      throw new Error(`查询任务失败 HTTP ${response.status}: ${text.slice(0, 1000)}`)
     }
 
     const task = (await response.json()) as TaskResponse

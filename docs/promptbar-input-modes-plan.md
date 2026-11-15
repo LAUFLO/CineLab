@@ -1,7 +1,7 @@
 # PromptBar 输入模式与槽位方案
 
 日期：2026-11-15
-状态：P0 / P1 已实施，P2 部分实施
+状态：P0 / P1 已实施，P2 部分实施；2026-11-15 移除本地槽位数量上限
 关联：[models.md](models.md)、[model-config-v2-plan.md](model-config-v2-plan.md)、[ui-spec.md](ui-spec.md)
 
 ## 1. 背景
@@ -125,16 +125,18 @@
 - 已连线素材自动填入第一个空槽。
 - 槽位数量超过 4 个时横向滚动。
 
-### 5.3 超限规则
+### 5.3 超出模式建议时
 
 | 当前模式 | 新增素材 | 行为 |
 |---|---|---|
 | 首尾帧 | 第 3 张图 | 自动切换「参考生视频」，3 张都作为参考图；Toast「首尾帧最多 2 张，已切换为参考图」+ 撤销 |
 | 首帧 | 第 2 张图 | 模型支持首尾帧 → 自动切换首尾帧；否则切换参考图 |
-| 参考生视频 | 超过槽位上限 | 不加入，提示「当前模型最多 N 张参考图」 |
+| 参考生视频 | 超过建议参考图数量 | 全部照常发送，由供应商 API 校验；错误显示在节点 |
 | 视频编辑 | 第 2 个源视频 | 不加入，提示「源视频只能 1 个」 |
-| 图片图生图 | 超过参考图上限 | 不加入，提示上限 |
+| 图片图生图 | 超过建议参考图数量 | 全部照常发送，由供应商 API 校验；错误显示在节点 |
 | 图层拆分 | 第 2 张源图 | 不加入，提示「图层拆分只支持 1 张源图」 |
+
+源视频和图层拆分是执行器结构限制，仍在本地提示；参考图、参考视频的数量由 API 校验，不在本地建模。
 
 自动切换必须满足两个条件：
 
@@ -246,9 +248,9 @@ export interface CineNodeData {
 | `src/renderer/src/canvas/PromptBar.tsx` | 模式选择器、槽位面板、超限切换、手动改角色 |
 | `src/renderer/src/canvas/promptbar-model.tsx` | `PickedRef` 增加槽位信息 |
 | `src/renderer/src/canvas/promptbar/ModelMenu.tsx` | 按当前模式置灰模型 |
-| `src/renderer/src/canvas/nodes/ModelConfigDialog.tsx` | 槽位上限已支持，补充角色名称映射 |
+| `src/renderer/src/canvas/nodes/ModelConfigDialog.tsx` | 模式勾选；不再提供槽位上限编辑 |
 | `src/renderer/src/stores/canvas` | 保存 `inputMode` / `inputSlots` |
-| `src/main/engine/start-generation.ts` | 按 role 校验槽位数量；超限时报错 |
+| `src/main/engine/start-generation.ts` | 按 role 传递素材；安全上限 32 张，数量由 API 校验 |
 
 ## 9. 实施顺序
 
@@ -354,3 +356,10 @@ export interface CineNodeData {
 - 槽位数量等于素材数量，不再显示空槽位。
 - 切换节点后顺序保持；新素材追加到末尾。
 - 主题默认从 `dark` 改为 `system`，只影响首次安装；已保存设置的用户保持原选择。
+
+### 12.8 移除槽位数量上限（2026-11-15）
+
+- 删除 `ModelModeConfig.slots`、`resolveModeSlots` 和设置页「调整槽位上限」面板。
+- Prompt Bar 槽位条按实际素材数量显示，不再按本地上限截断。
+- 主进程移除 4 张硬截断，改为 32 张内存安全上限；Agnes 适配器移除 5 张截断。
+- OpenAI 兼容图生图移除「多图失败自动单图重试」，接口错误直接显示在节点。

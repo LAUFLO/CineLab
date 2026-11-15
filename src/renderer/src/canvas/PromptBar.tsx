@@ -24,7 +24,6 @@ import { applyParamConstraints } from '@shared/param-constraints'
 import {
   MODEL_MODE_LABEL,
   getModelModeDefinition,
-  resolveModeSlots,
   type ModelModeId
 } from '@shared/model-modes'
 import type { ReferenceInput, ReferenceRole } from '@shared/generation'
@@ -1065,7 +1064,7 @@ export function PromptBar() {
     if (!slotMode) return empty
     const definition = getModelModeDefinition(slotMode)
     if (!definition) return empty
-    const slots = resolveModeSlots({ id: slotMode })
+    const slots = definition.slots
     const images = mergedRefs.filter(
       (ref) => ref.kind === 'image' && ref.role !== 'mask'
     )
@@ -1114,11 +1113,10 @@ export function PromptBar() {
       if (slot.role === 'reference') {
         const refs = images.filter((ref) => ref.role === 'reference')
         if (refs.length === 0) return []
-        const count = Math.min(refs.length, slot.max)
-        return Array.from({ length: count }, (_, index) => ({
+        return refs.map((ref, index) => ({
           id: `${slot.id}-${index}`,
-          label: slot.max > 1 ? String(index + 1) : slot.label,
-          ref: refs[index] ?? null,
+          label: refs.length > 1 ? String(index + 1) : slot.label,
+          ref,
           role: 'reference' as ReferenceRole
         }))
       }
@@ -1133,7 +1131,7 @@ export function PromptBar() {
       ]
     })
 
-    // 槽位之外的素材也留在槽位条里，避免「连了图但看不见」
+    // 固定槽位之外的素材也留在槽位条里，避免「连了图但看不见」
     const keyOf = (ref: PickedRef): string =>
       `${ref.scope ?? 'project'}:${ref.path}`
     const used = new Set<string>()
@@ -1146,7 +1144,7 @@ export function PromptBar() {
       used.add(keyOf(ref))
       list.push({
         id: `extra-${keyOf(ref)}`,
-        label: ref.kind === 'video' ? '未使用视频' : '未使用',
+        label: ref.kind === 'video' ? '未分配视频' : '未分配',
         ref,
         role: ref.role
       })

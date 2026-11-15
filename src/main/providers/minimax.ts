@@ -82,7 +82,7 @@ function contentFromRefs(prompt: string, refs: ImageRef[]): unknown[] {
   if (last) {
     content.push({ type: 'image_url', image_url: { url: last.dataUrl } })
   }
-  for (const ref of references.slice(0, 5)) {
+  for (const ref of references) {
     content.push({ type: 'image_url', image_url: { url: ref.dataUrl } })
   }
 
@@ -138,7 +138,7 @@ async function generateH3(
 
     if (!response.ok) {
       const text = await response.text().catch(() => '')
-      throw new Error(`查询任务失败 HTTP ${response.status}: ${text.slice(0, 200)}`)
+      throw new Error(`查询任务失败 HTTP ${response.status}: ${text.slice(0, 1000)}`)
     }
 
     const task = (await response.json()) as MiniMaxTask
@@ -221,7 +221,7 @@ async function generateLegacy(
 
     if (!response.ok) {
       const text = await response.text().catch(() => '')
-      throw new Error(`查询任务失败 HTTP ${response.status}: ${text.slice(0, 200)}`)
+      throw new Error(`查询任务失败 HTTP ${response.status}: ${text.slice(0, 1000)}`)
     }
 
     const task = (await response.json()) as MiniMaxTask
@@ -251,7 +251,7 @@ async function generateLegacy(
 
   if (!fileResponse.ok) {
     const text = await fileResponse.text().catch(() => '')
-    throw new Error(`获取文件失败 HTTP ${fileResponse.status}: ${text.slice(0, 200)}`)
+    throw new Error(`获取文件失败 HTTP ${fileResponse.status}: ${text.slice(0, 1000)}`)
   }
 
   const file = (await fileResponse.json()) as MiniMaxTask

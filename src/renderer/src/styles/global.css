@@ -9702,46 +9702,6 @@ body.is-node-menu-open .react-flow {
   border-color: var(--link);
 }
 
-.model-mode-limits {
-  margin-top: 10px;
-  font-size: 11px;
-  color: var(--text-3);
-}
-
-.model-mode-limits summary {
-  cursor: pointer;
-}
-
-.model-mode-limits__list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 8px 0;
-}
-
-.model-mode-limit {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.model-mode-limit > span:first-child {
-  flex: 1;
-  color: var(--text-2);
-}
-
-.model-mode-limit input {
-  width: 56px;
-  height: 26px;
-  padding: 0 6px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface-hover);
-  color: var(--text-1);
-  font-size: 11px;
-  text-align: center;
-}
-
 .model-mode__head {
   display: flex;
   align-items: center;

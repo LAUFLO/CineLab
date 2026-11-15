@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type {
@@ -26,9 +26,13 @@ import {
 import { applyRuntimePreferences } from '../settings/apply'
 import type { OperationBindings } from '@shared/operation-schema'
 import {
+  applyPendingModels,
+  discardPendingModels,
   ensureModelsFile,
+  loadPendingModels,
   modelsConfigStatus
 } from '../settings/models-config'
+import { readModelSkill } from '../settings/model-skill'
 
 export function registerSettingsIpc(): void {
   ipcMain.handle('settings:list-providers', () => listProviders())
@@ -45,6 +49,9 @@ export function registerSettingsIpc(): void {
     fetchModels(input)
   )
   ipcMain.handle('settings:models-config', () => modelsConfigStatus())
+  ipcMain.handle('settings:pending-models', () => loadPendingModels())
+  ipcMain.handle('settings:apply-pending-models', () => applyPendingModels())
+  ipcMain.handle('settings:discard-pending-models', () => discardPendingModels())
   ipcMain.handle('settings:operation-bindings', () => getOperationBindings())
   ipcMain.handle(
     'settings:save-operation-bindings',
@@ -54,6 +61,26 @@ export function registerSettingsIpc(): void {
     const file = await ensureModelsFile()
     await shell.openPath(file)
     return file
+  })
+  ipcMain.handle('settings:copy-text', (_event, text: string) => {
+    clipboard.writeText(String(text ?? ''))
+  })
+  ipcMain.handle('settings:download-model-skill', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const options = {
+      title: '保存模型配置 Skill',
+      defaultPath: join(app.getPath('documents'), 'cinelab-model-config.md'),
+      filters: [{ name: 'Markdown', extensions: ['md'] }]
+    }
+    const result = win
+      ? await dialog.showSaveDialog(win, options)
+      : await dialog.showSaveDialog(options)
+
+    if (result.canceled || !result.filePath) return { canceled: true }
+
+    const content = await readModelSkill()
+    await fs.writeFile(result.filePath, content, 'utf8')
+    return { path: result.filePath }
   })
   ipcMain.handle('settings:get-preferences', () => getPreferences())
   ipcMain.handle(

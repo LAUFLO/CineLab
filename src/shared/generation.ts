@@ -2,7 +2,14 @@ import type { AssetScope } from './asset-schema'
 
 export type OutputKind = 'image' | 'video' | 'audio' | 'text'
 
-export type ReferenceRole = 'firstFrame' | 'lastFrame' | 'reference'
+export type ReferenceRole =
+  | 'firstFrame'
+  | 'lastFrame'
+  | 'reference'
+  | 'mask'
+  | 'subject'
+  | 'style'
+  | 'source'
 
 export interface VideoRange {
   start: number
@@ -26,6 +33,48 @@ export interface ReferenceInput {
   scope?: AssetScope
 }
 
+/** Seedream 图层拆分返回的边界框，[left, top, right, bottom] */
+export type LayerBounds = [number, number, number, number]
+
+export interface LayerBox {
+  absolute?: LayerBounds
+  normalized?: LayerBounds
+}
+
+export interface AssetLayer {
+  /** 底图固定为 0，图层从 1 开始递增 */
+  zIndex: number
+  name?: string
+  description?: string
+  boundingBox?: LayerBox
+}
+
+export interface TextRecognitionStyle {
+  similarFontFamily?: string
+  foregroundColor?: string
+  bold?: boolean
+  italic?: boolean
+  underline?: boolean
+  strikethrough?: boolean
+  shadow?: boolean
+  translucent?: boolean
+}
+
+export interface TextRecognitionRun {
+  text: string
+  style?: TextRecognitionStyle
+}
+
+export interface TextRecognitionLine {
+  boundingBox?: LayerBox
+  runs: TextRecognitionRun[]
+}
+
+export interface TextRecognition {
+  text: string
+  lines?: TextRecognitionLine[]
+}
+
 export interface GeneratedAsset {
   id: string
   path: string
@@ -40,6 +89,10 @@ export interface GeneratedAsset {
   text?: string
   /** 生成来源操作，例如 panorama */
   op?: string
+  /** 图层拆分结果中的图层信息 */
+  layer?: AssetLayer
+  /** 规整文字图层的富文本 OCR 结果 */
+  textRecognition?: TextRecognition
 }
 
 export interface GenerateRequest {

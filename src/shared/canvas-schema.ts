@@ -1,4 +1,5 @@
 import type { AssetScope } from './asset-schema'
+import type { AssetLayer, TextRecognition } from './generation'
 import type { VideoOperationId } from './operation-schema'
 
 export type NodeKind = 'text' | 'image' | 'video' | 'audio' | 'study'
@@ -29,6 +30,8 @@ export interface OutputRef {
   hasAudio?: boolean
   op?: string
   parentOutputId?: string
+  layer?: AssetLayer
+  textRecognition?: TextRecognition
 }
 
 export interface CineNodeData extends Record<string, unknown> {
@@ -43,6 +46,8 @@ export interface CineNodeData extends Record<string, unknown> {
   error?: string
   /** Prompt Bar 中最近一次输入的提示词，按节点保留 */
   prompt?: string
+  /** Prompt Bar 槽位顺序，key 为 `scope:path` */
+  refOrder?: string[]
   /** 拉片节点：关联的 study.json */
   studyId?: string
   /** 拉片节点：来源视频节点 */

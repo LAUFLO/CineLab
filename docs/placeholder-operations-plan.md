@@ -94,7 +94,7 @@ interface NodeOperation {
 | 视频输入 | `GenerateRequest.video`，HTTP 模板支持 `{{video.dataUrl}}` / `{{video.base64}}` / `{{video.mime}}` |
 | 视频操作参数 | `{{video.start}}` / `{{video.end}}` / `{{video.duration}}` / `{{video.direction}}` / `{{video.operation}}` |
 | multipart | `submit.contentType: 'multipart'` 时自动把 data URL 转成文件字段 |
-| 模型能力 | 模型卡片「模型能力」勾选支持的操作；操作时自动列出，未声明/非 http-template 置灰 |
+| 模型能力 | 模型卡片「模型配置」勾选支持的操作；操作时自动列出，未声明/非 http-template 置灰 |
 
 约束：
 
@@ -152,7 +152,7 @@ interface NodeOperation {
 
 批次 3：
 
-- 设置 → 模型服务 → 模型能力可勾选三个视频操作；操作时未声明的模型置灰，不再需要单独绑定页。
+- 设置 → 模型服务 → 模型配置可勾选三个视频操作；操作时未声明的模型置灰，不再需要单独绑定页。
 - 绑定的 HTTP 模板能收到 `video.dataUrl`，任务轮询完成后视频写入节点新版本。
 - multipart 模式能生成文件字段。
 - `pnpm typecheck` / `pnpm test` / `pnpm build` 通过。

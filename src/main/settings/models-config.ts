@@ -7,12 +7,20 @@ import {
   inferModelInputs,
   inferModelOperations,
   type Capability,
+  type ConfigSource,
   type MediaInput,
   type ModelDef,
+  type ModelFeature,
   type ParamDef,
   type ProviderConfig,
   type ProviderType
 } from '@shared/provider-schema'
+import {
+  isModelModeId,
+  normalizeModelModes,
+  type ModelModeConfig,
+  type ModelModeId
+} from '@shared/model-modes'
 import {
   VIDEO_OPERATIONS,
   type VideoOperationId
@@ -24,6 +32,12 @@ import type {
   ModelsFileProvider
 } from '@shared/models-file'
 import type { HttpTemplate } from '@shared/http-template'
+import {
+  applyProtocolTemplate,
+  findProtocolTemplate,
+  matchModelRule,
+  mergeModeConfigs
+} from '@shared/protocol-templates'
 
 const CAPABILITIES: Capability[] = [
   'image.t2i',
@@ -129,6 +143,136 @@ function validateOperations(
   return result
 }
 
+const MODEL_FEATURES: ModelFeature[] = [
+  'sequential',
+  'layer',
+  'ocr',
+  'rgba',
+  'audio',
+  'last-frame',
+  'multi-shot',
+  'mask'
+]
+
+function validateModes(
+  value: unknown,
+  path: string,
+  errors: string[]
+): Array<ModelModeId | ModelModeConfig> | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) {
+    errors.push(`${path}.modes 必须是数组`)
+    return undefined
+  }
+
+  const normalized = normalizeModelModes(value)
+  if (normalized.length !== value.length) {
+    errors.push(`${path}.modes 包含未知模式或重复项`)
+  }
+  return normalized.length > 0 ? normalized : undefined
+}
+
+function validateFeatures(
+  value: unknown,
+  path: string,
+  errors: string[]
+): ModelFeature[] | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) {
+    errors.push(`${path}.features 必须是数组`)
+    return undefined
+  }
+
+  const result: ModelFeature[] = []
+  for (const item of value) {
+    if (
+      typeof item !== 'string' ||
+      !MODEL_FEATURES.includes(item as ModelFeature)
+    ) {
+      errors.push(`${path}.features 包含未知特性：${String(item)}`)
+      continue
+    }
+    if (!result.includes(item as ModelFeature)) {
+      result.push(item as ModelFeature)
+    }
+  }
+  return result.length > 0 ? result : undefined
+}
+
+function validateSource(
+  value: unknown,
+  path: string,
+  errors: string[]
+): ConfigSource | undefined {
+  if (value === undefined) return undefined
+  if (!isRecord(value)) {
+    errors.push(`${path}.source 必须是对象`)
+    return undefined
+  }
+
+  const kind = readString(value.kind)
+  if (
+    !kind ||
+    !['preset', 'template', 'manual', 'agent'].includes(kind)
+  ) {
+    errors.push(`${path}.source.kind 必须是 preset / template / manual / agent`)
+    return undefined
+  }
+
+  const confidence = readString(value.confidence)
+  if (confidence && !['high', 'medium', 'low'].includes(confidence)) {
+    errors.push(`${path}.source.confidence 必须是 high / medium / low`)
+  }
+
+  return {
+    kind: kind as ConfigSource['kind'],
+    ...(readString(value.url) ? { url: readString(value.url) } : {}),
+    ...(readString(value.retrievedAt)
+      ? { retrievedAt: readString(value.retrievedAt) }
+      : {}),
+    ...(confidence && ['high', 'medium', 'low'].includes(confidence)
+      ? { confidence: confidence as ConfigSource['confidence'] }
+      : {}),
+    ...(readString(value.notes) ? { notes: readString(value.notes) } : {})
+  }
+}
+
+function validateExtraBody(
+  value: unknown,
+  path: string,
+  errors: string[]
+): Record<string, unknown> | undefined {
+  if (value === undefined) return undefined
+  if (!isRecord(value)) {
+    errors.push(`${path}.extraBody 必须是对象`)
+    return undefined
+  }
+  return value
+}
+
+function validateOmitBody(
+  value: unknown,
+  path: string,
+  errors: string[]
+): string[] | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) {
+    errors.push(`${path}.omitBody 必须是字符串数组`)
+    return undefined
+  }
+
+  const result: string[] = []
+  for (const item of value) {
+    const key = readString(item)
+    if (!key) {
+      errors.push(`${path}.omitBody 只能包含非空字符串`)
+      continue
+    }
+    if (!result.includes(key)) result.push(key)
+  }
+  return result
+}
+
 function validateParams(
   params: unknown,
   path: string,
@@ -172,6 +316,30 @@ function validateParams(
     if (item.min !== undefined) param.min = Number(item.min)
     if (item.max !== undefined) param.max = Number(item.max)
     if (item.allowCustom === true) param.allowCustom = true
+    if (readString(item.description)) {
+      param.description = readString(item.description)
+    }
+    if (Array.isArray(item.appliesTo)) {
+      const appliesTo = item.appliesTo.filter(isModelModeId)
+      if (appliesTo.length !== item.appliesTo.length) {
+        errors.push(`${itemPath}.appliesTo 包含未知模式`)
+      }
+      if (appliesTo.length > 0) param.appliesTo = appliesTo
+    }
+    if (isRecord(item.when)) {
+      param.when = item.when as ParamDef['when']
+    }
+    if (Array.isArray(item.force) || isRecord(item.force)) {
+      param.force = item.force as unknown as ParamDef['force']
+    }
+    if (Array.isArray(item.forbid)) {
+      param.forbid = item.forbid
+        .map((key) => readString(key))
+        .filter((key): key is string => Boolean(key))
+    }
+    if (Array.isArray(item.deny) || isRecord(item.deny)) {
+      param.deny = item.deny as unknown as ParamDef['deny']
+    }
 
     if (type === 'select') {
       if (!Array.isArray(item.options) || item.options.length === 0) {
@@ -273,6 +441,11 @@ function validateModel(
   const params = validateParams(item.params, path, errors)
   const inputs = validateInputs(item.inputs, path, errors)
   const operations = validateOperations(item.operations, path, errors)
+  const modes = validateModes(item.modes, path, errors)
+  const features = validateFeatures(item.features, path, errors)
+  const source = validateSource(item.source, path, errors)
+  const extraBody = validateExtraBody(item.extraBody, path, errors)
+  const omitBody = validateOmitBody(item.omitBody, path, errors)
 
   return {
     id,
@@ -286,9 +459,16 @@ function validateModel(
       : {}),
     ...(inputs ? { inputs } : {}),
     ...(operations ? { operations } : {}),
+    ...(modes ? { modes } : {}),
+    ...(features ? { features } : {}),
+    ...(readString(item.family) ? { family: readString(item.family) } : {}),
+    ...(readString(item.protocol) ? { protocol: readString(item.protocol) } : {}),
+    ...(source ? { source } : {}),
     ...(adapter ? { adapter } : {}),
     ...(providerType ? { providerType } : {}),
     ...(isRecord(template) ? { template: template as unknown as HttpTemplate } : {}),
+    ...(extraBody ? { extraBody } : {}),
+    ...(omitBody ? { omitBody } : {}),
     ...(params ? { params } : {})
   }
 }
@@ -400,6 +580,7 @@ export function parseModelsFile(input: unknown, file: string): ParsedModels {
     if (models.length === 0) return
 
     const apiKeyEnv = readString(item.apiKeyEnv)
+    const protocol = readString(item.protocol)
     const apiKey = readString(item.apiKey)
     if (apiKey) {
       warnings.push(
@@ -412,6 +593,7 @@ export function parseModelsFile(input: unknown, file: string): ParsedModels {
       name,
       ...(type ? { type } : {}),
       ...(adapter ? { adapter } : {}),
+      ...(protocol ? { protocol } : {}),
       baseUrl,
       ...(headers && Object.keys(headers).length > 0 ? { headers } : {}),
       ...(apiKeyEnv ? { apiKeyEnv } : {}),
@@ -425,6 +607,96 @@ export function parseModelsFile(input: unknown, file: string): ParsedModels {
 /** 唯一的模型配置文件：用户数据目录下的 models.json */
 export function modelsFilePath(): string {
   return join(app.getPath('userData'), 'models.json')
+}
+
+export function pendingModelsFilePath(): string {
+  return join(app.getPath('userData'), 'models.pending.json')
+}
+
+export interface PendingModelsConfig {
+  file: string
+  exists: boolean
+  providers: ModelsFileProvider[]
+  errors: string[]
+  warnings: string[]
+}
+
+export async function loadPendingModels(): Promise<PendingModelsConfig> {
+  const file = pendingModelsFilePath()
+
+  let raw: string
+  try {
+    raw = await fs.readFile(file, 'utf8')
+  } catch {
+    return { file, exists: false, providers: [], errors: [], warnings: [] }
+  }
+
+  let json: unknown
+  try {
+    json = JSON.parse(raw) as ModelsFile
+  } catch (error) {
+    return {
+      file,
+      exists: true,
+      providers: [],
+      errors: [`${file}: JSON 解析失败：${String(error)}`],
+      warnings: []
+    }
+  }
+
+  const parsed = parseModelsFile(json, file)
+  return {
+    file,
+    exists: true,
+    providers: parsed.providers,
+    errors: parsed.errors,
+    warnings: parsed.warnings
+  }
+}
+
+/** 备份现有 models.json，然后把 pending 文件应用为正式配置 */
+export async function applyPendingModels(): Promise<{
+  applied: boolean
+  message?: string
+  providers?: number
+}> {
+  const pending = pendingModelsFilePath()
+  const target = modelsFilePath()
+
+  let raw: string
+  try {
+    raw = await fs.readFile(pending, 'utf8')
+  } catch {
+    return { applied: false, message: '没有找到待应用的配置' }
+  }
+
+  let json: unknown
+  try {
+    json = JSON.parse(raw)
+  } catch (error) {
+    return { applied: false, message: `JSON 解析失败：${String(error)}` }
+  }
+
+  const parsed = parseModelsFile(json, pending)
+  if (parsed.errors.length > 0) {
+    return { applied: false, message: parsed.errors[0] }
+  }
+
+  try {
+    await fs.access(target)
+    await fs.copyFile(target, `${target}.bak`)
+  } catch {
+    // 没有旧文件时不备份
+  }
+
+  await fs.mkdir(dirname(target), { recursive: true })
+  await fs.writeFile(target, raw, 'utf8')
+  await fs.unlink(pending).catch(() => undefined)
+  return { applied: true, providers: parsed.providers.length }
+}
+
+export async function discardPendingModels(): Promise<void> {
+  await fs.unlink(pendingModelsFilePath()).catch(() => undefined)
 }
 
 export interface LoadedModelsConfig {
@@ -527,6 +799,23 @@ function inferAdapter(remoteModel: string): string {
   return 'openai-compat'
 }
 
+/**
+ * 参数合并：预设当底稿，用户同 key 覆盖，预设新增的 key 自动补上。
+ * 用户完全删除某个预设参数时，升级后会被重新加回来（见 docs/model-config-merge-plan.md）。
+ */
+function mergeParams(
+  base: ParamDef[] | undefined,
+  override: ParamDef[] | undefined
+): ParamDef[] {
+  if (!base || base.length === 0) return override ?? []
+  if (!override || override.length === 0) return base
+
+  const merged = new Map<string, ParamDef>()
+  for (const param of base) merged.set(param.key, param)
+  for (const param of override) merged.set(param.key, param)
+  return [...merged.values()]
+}
+
 export function resolveModels(provider: ModelsFileProvider): ModelDef[] {
   return provider.models.map((item) => {
     const preset = item.preset
@@ -535,34 +824,79 @@ export function resolveModels(provider: ModelsFileProvider): ModelDef[] {
 
     const remoteModel = item.remoteModel ?? preset?.remoteModel ?? item.id
     const capability = item.capability ?? preset?.capability ?? 'image.t2i'
+    const protocol = item.protocol ?? provider.protocol ?? preset?.protocol
+    const protocolTemplate = findProtocolTemplate(protocol)
+    const protocolRule = matchModelRule(remoteModel)
+    const protocolDefaults = protocolTemplate
+      ? applyProtocolTemplate(protocolTemplate, protocolRule)
+      : undefined
     const adapter =
       item.adapter ??
       provider.adapter ??
       preset?.adapter ??
+      protocolTemplate?.adapter ??
       inferAdapter(remoteModel)
-    const template = item.template ?? preset?.template
-    const inputs =
-      item.inputs ??
-      preset?.inputs ??
-      inferModelInputs({ capability, remoteModel, adapter, template })
-    const operations =
-      item.operations ??
-      preset?.operations ??
-      inferModelOperations({ capability, remoteModel, adapter, template })
+    const template =
+      item.template ?? preset?.template ?? protocolDefaults?.template
+    const overrideModes = item.modes ?? preset?.modes
+    const modes =
+      overrideModes && protocolDefaults?.modes
+        ? mergeModeConfigs(
+            protocolDefaults.modes,
+            normalizeModelModes(overrideModes)
+          )
+        : (overrideModes ?? protocolDefaults?.modes)
+    const features =
+      item.features ?? preset?.features ?? protocolDefaults?.features
+    const family = item.family ?? preset?.family
+    const source = item.source ?? preset?.source
+    const inputs = modes
+      ? inferModelInputs({ capability, remoteModel, adapter, template, modes })
+      : (item.inputs ??
+        preset?.inputs ??
+        inferModelInputs({ capability, remoteModel, adapter, template }))
+    const operations = modes
+      ? inferModelOperations({
+          capability,
+          remoteModel,
+          adapter,
+          template,
+          modes
+        })
+      : (item.operations ??
+        preset?.operations ??
+        inferModelOperations({ capability, remoteModel, adapter, template }))
+    const mergedParams = mergeParams(preset?.params, item.params)
+    const params =
+      mergedParams.length > 0
+        ? mergedParams
+        : (protocolDefaults?.params ?? [])
+    const extraBody =
+      item.extraBody ?? preset?.extraBody ?? protocolDefaults?.extraBody
+    const omitBody =
+      item.omitBody ?? preset?.omitBody ?? protocolDefaults?.omitBody
 
     return {
       id: item.id,
+      ...(item.preset ? { preset: item.preset } : {}),
       name: item.name ?? preset?.name ?? item.id,
       capability,
       remoteModel,
       inputs,
       operations,
-      params: item.params ?? preset?.params ?? [],
+      ...(modes ? { modes } : {}),
+      ...(features ? { features } : {}),
+      ...(family ? { family } : {}),
+      ...(protocol ? { protocol } : {}),
+      ...(source ? { source } : {}),
+      params,
       adapter,
       ...(item.providerType ?? preset?.providerType
         ? { providerType: item.providerType ?? preset?.providerType }
         : {}),
-      ...(template ? { template } : {})
+      ...(template ? { template } : {}),
+      ...(extraBody ? { extraBody } : {}),
+      ...(omitBody ? { omitBody } : {})
     }
   })
 }

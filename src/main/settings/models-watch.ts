@@ -1,28 +1,37 @@
 import { BrowserWindow } from 'electron'
 import { watch, type FSWatcher } from 'node:fs'
 import { basename, dirname } from 'node:path'
-import { modelsFilePath } from './models-config'
+import { modelsFilePath, pendingModelsFilePath } from './models-config'
 
 let watcher: FSWatcher | null = null
 let timer: NodeJS.Timeout | null = null
+let pendingEvent = false
 
-/** 监听 models.json 变化，防抖后通知所有窗口刷新 */
+/** 监听 models.json / models.pending.json 变化，防抖后通知所有窗口刷新 */
 export function startModelsWatcher(): void {
   if (watcher) return
 
   const file = modelsFilePath()
+  const pending = pendingModelsFilePath()
   const dir = dirname(file)
   const name = basename(file)
+  const pendingName = basename(pending)
 
   try {
     watcher = watch(dir, (_event, filename) => {
-      if (filename && String(filename) !== name) return
+      const changed = filename ? String(filename) : ''
+      if (changed && changed !== name && changed !== pendingName) return
+      if (changed === pendingName) pendingEvent = true
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
         timer = null
+        const isPending = pendingEvent
+        pendingEvent = false
         for (const win of BrowserWindow.getAllWindows()) {
           if (!win.isDestroyed()) {
-            win.webContents.send('settings:models-changed')
+            win.webContents.send(
+              isPending ? 'settings:models-pending' : 'settings:models-changed'
+            )
           }
         }
       }, 250)

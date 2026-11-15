@@ -44,14 +44,17 @@
 operations?: VideoOperationId[] // shot-retake / element-replace / extend
 ```
 
-`models.json` 同步支持。设置页模型卡片增加「支持的操作」，和「输入能力」并列。
+`models.json` 同步支持。设置页模型卡片统一在「模型配置」里设置输入能力和视频操作，不再有独立的「输入能力」对话框。
 
 操作可用条件：
 
 1. `capability === 'video.t2v'`
 2. `adapter === 'http-template'`
 3. `template` 存在
-4. `operations` 包含当前操作
+4. `inputs` 包含 `video`
+5. `operations` 包含当前操作
+
+勾选任一视频操作会自动勾选「视频」输入；取消视频输入时会清空视频操作并提示。未显式配置 `operations` 时按模板变量推断：包含 `video.start` / `video.end` 推断片段重拍，包含 `refs.images` 或 `refs.image` 时额外推断元素替换，包含 `video.duration` / `video.direction` 推断智能续写。
 
 不满足的模型保留在选择列表中并置灰，显示具体原因。
 

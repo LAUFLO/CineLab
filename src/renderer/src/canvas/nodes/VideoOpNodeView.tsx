@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import type { OutputRef } from '@shared/canvas-schema'
-import { modelSupportsOperation, type ModelDef } from '@shared/provider-schema'
+import {
+  modelInputs,
+  modelModeIds,
+  modelSupportsOperation,
+  type ModelDef
+} from '@shared/provider-schema'
 import {
   VIDEO_OPERATIONS,
   type VideoOperationId
@@ -191,8 +196,14 @@ export function VideoOpNodeView({
   )
 
   const availability = (model: ModelDef): string | null => {
-    if (model.adapter !== 'http-template') return '不是专用接口'
-    if (!model.template) return '缺少 http-template'
+    const modeId =
+      data.operation === 'extend' ? 'video-extend' : 'video-edit'
+    if (!modelModeIds(model).includes(modeId)) {
+      return data.operation === 'extend'
+        ? '未声明视频延长模式'
+        : '未声明视频编辑模式'
+    }
+    if (!modelInputs(model).includes('video')) return '未开启视频输入'
     if (!modelSupportsOperation(model, data.operation)) {
       return `未声明支持${operationDef(data.operation)?.label ?? data.operation}`
     }

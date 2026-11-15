@@ -31,14 +31,15 @@ CineLab 现有视频适配器（`volcengine-video`、`kling-video`、`minimax-vi
 
 新增 `src/main/providers/sora.ts`，实现 `generateVideoSora`：
 
-1. `POST {baseUrl}/videos`，body 为 `{ model, prompt, seconds? }`
-2. 从响应取 `id`（兼容 `task_id`）
-3. 每 3 秒 `GET {baseUrl}/videos/{id}`，最多 200 次（约 10 分钟）
-4. `status === "completed"` 后 `GET {baseUrl}/videos/{id}/content` 下载视频
-5. 失败状态 `failed` / `cancelled` 抛出上游错误信息
-6. 连续 5 次查询失败才放弃
+1. `POST {baseUrl}/videos`，无参考图时 body 为 JSON `{ model, prompt, seconds?, ...extraBody }`
+2. 有参考图时优先 multipart：`input_reference` 作为文件字段；返回 400/415 且错误涉及参考图或 content-type 时自动回退为 JSON data URL
+3. 从响应取 `id`（兼容 `task_id`）
+4. 每 3 秒 `GET {baseUrl}/videos/{id}`，最多 200 次（约 10 分钟）
+5. `status === "completed"` 后 `GET {baseUrl}/videos/{id}/content` 下载视频
+6. 失败状态 `failed` / `cancelled` 抛出上游错误信息
+7. 连续 5 次查询失败才放弃
 
-第一版只支持文生视频，模型 `inputs` 写 `["text"]`，不接收参考图。
+`duration` 映射为 `seconds`。`resolution`、`ratio`、`generate_audio` 等扩展字段通过 `extraBody` 配置，不硬编码在 adapter 里。参考图模型把 `inputs` 写为 `["text", "image"]`。
 
 ## 改动清单
 

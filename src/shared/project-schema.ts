@@ -8,6 +8,51 @@ export const nodeKindSchema = z.enum([
   'study'
 ])
 
+const layerBoundsSchema = z.tuple([
+  z.number(),
+  z.number(),
+  z.number(),
+  z.number()
+])
+
+const layerBoxSchema = z.object({
+  absolute: layerBoundsSchema.optional(),
+  normalized: layerBoundsSchema.optional()
+})
+
+const assetLayerSchema = z.object({
+  zIndex: z.number(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  boundingBox: layerBoxSchema.optional()
+})
+
+const textRecognitionStyleSchema = z.object({
+  similarFontFamily: z.string().optional(),
+  foregroundColor: z.string().optional(),
+  bold: z.boolean().optional(),
+  italic: z.boolean().optional(),
+  underline: z.boolean().optional(),
+  strikethrough: z.boolean().optional(),
+  shadow: z.boolean().optional(),
+  translucent: z.boolean().optional()
+})
+
+const textRecognitionLineSchema = z.object({
+  boundingBox: layerBoxSchema.optional(),
+  runs: z.array(
+    z.object({
+      text: z.string(),
+      style: textRecognitionStyleSchema.optional()
+    })
+  )
+})
+
+const textRecognitionSchema = z.object({
+  text: z.string(),
+  lines: z.array(textRecognitionLineSchema).optional()
+})
+
 export const outputRefSchema = z.object({
   id: z.string(),
   path: z.string().max(500),
@@ -21,7 +66,9 @@ export const outputRefSchema = z.object({
   fps: z.number().optional(),
   hasAudio: z.boolean().optional(),
   op: z.string().optional(),
-  parentOutputId: z.string().optional()
+  parentOutputId: z.string().optional(),
+  layer: assetLayerSchema.optional(),
+  textRecognition: textRecognitionSchema.optional()
 })
 export const nodeStatusSchema = z.enum(['idle', 'queued', 'running', 'done', 'error'])
 export const groupColorSchema = z.enum([
@@ -48,6 +95,7 @@ export const cineNodeSchema = z.object({
     status: nodeStatusSchema,
     text: z.string().max(20000).optional(),
     prompt: z.string().max(20000).optional(),
+    refOrder: z.array(z.string().max(600)).max(8).optional(),
     studyId: z.string().max(120).optional(),
     sourceNodeId: z.string().max(120).optional(),
     sourcePath: z.string().max(500).optional(),

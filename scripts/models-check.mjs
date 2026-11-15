@@ -17,6 +17,29 @@ const CAPABILITIES = [
   'audio.music'
 ]
 const PROVIDER_TYPES = ['openai-compat', 'kling']
+const MODEL_MODES = [
+  't2i',
+  'i2i',
+  't2v',
+  'first-frame',
+  'first-last',
+  'reference',
+  'video-edit',
+  'video-extend',
+  'layer'
+]
+const MODEL_FEATURES = [
+  'sequential',
+  'layer',
+  'ocr',
+  'rgba',
+  'audio',
+  'last-frame',
+  'multi-shot',
+  'mask'
+]
+const SOURCE_KINDS = ['preset', 'template', 'manual', 'agent']
+const CONFIDENCE_LEVELS = ['high', 'medium', 'low']
 const ADAPTERS = [
   'openai-compat',
   'agnes-video',
@@ -117,6 +140,82 @@ function checkModel(model, path) {
       model.params.forEach((param, index) =>
         checkParam(param, `${path}.params[${index}]`)
       )
+    }
+  }
+
+  if (model.extraBody !== undefined && !isRecord(model.extraBody)) {
+    errors.push(`${path}.extraBody 必须是对象`)
+  }
+
+  if (model.omitBody !== undefined) {
+    if (!Array.isArray(model.omitBody)) {
+      errors.push(`${path}.omitBody 必须是字符串数组`)
+    } else if (
+      model.omitBody.some(
+        (key) => typeof key !== 'string' || key.trim().length === 0
+      )
+    ) {
+      errors.push(`${path}.omitBody 只能包含非空字符串`)
+    }
+  }
+
+  if (model.modes !== undefined) {
+    if (!Array.isArray(model.modes)) {
+      errors.push(`${path}.modes 必须是数组`)
+    } else {
+      model.modes.forEach((mode, index) => {
+        const id =
+          typeof mode === 'string'
+            ? mode
+            : isRecord(mode)
+              ? readString(mode.id)
+              : undefined
+        if (!id || !MODEL_MODES.includes(id)) {
+          errors.push(
+            `${path}.modes[${index}] 不支持：${String(id ?? mode)}，可用值 ${MODEL_MODES.join(' / ')}`
+          )
+        }
+      })
+    }
+  }
+
+  if (model.features !== undefined) {
+    if (!Array.isArray(model.features)) {
+      errors.push(`${path}.features 必须是数组`)
+    } else if (
+      model.features.some(
+        (feature) =>
+          typeof feature !== 'string' || !MODEL_FEATURES.includes(feature)
+      )
+    ) {
+      errors.push(
+        `${path}.features 包含未知特性，可用值 ${MODEL_FEATURES.join(' / ')}`
+      )
+    }
+  }
+
+  if (model.family !== undefined && !readString(model.family)) {
+    errors.push(`${path}.family 必须是非空字符串`)
+  }
+
+  if (model.protocol !== undefined && !readString(model.protocol)) {
+    errors.push(`${path}.protocol 必须是非空字符串`)
+  }
+
+  if (model.source !== undefined) {
+    if (!isRecord(model.source)) {
+      errors.push(`${path}.source 必须是对象`)
+    } else {
+      const kind = readString(model.source.kind)
+      if (!kind || !SOURCE_KINDS.includes(kind)) {
+        errors.push(`${path}.source.kind 必须是 ${SOURCE_KINDS.join(' / ')}`)
+      }
+      const confidence = readString(model.source.confidence)
+      if (confidence && !CONFIDENCE_LEVELS.includes(confidence)) {
+        errors.push(
+          `${path}.source.confidence 必须是 ${CONFIDENCE_LEVELS.join(' / ')}`
+        )
+      }
     }
   }
 }

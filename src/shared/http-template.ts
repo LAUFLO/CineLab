@@ -36,6 +36,8 @@ export interface HttpTemplate {
   submit: HttpTemplateSubmit
   poll: HttpTemplatePoll
   mode?: HttpTemplateMode
+  /** 同步接口：提交响应直接包含结果，不走轮询 */
+  sync?: boolean
   /** 接口返回完整视频（full）还是新增片段（segment），默认 full */
   videoResult?: 'full' | 'segment'
 }

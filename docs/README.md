@@ -44,6 +44,7 @@
 | [runtime-components-plan.md](runtime-components-plan.md) | 本地 runtime 组件下载与发布 |
 | [video-operations-plan.md](video-operations-plan.md) | 视频专用操作 |
 | [model-params-plan.md](model-params-plan.md) | 模型参数编辑 |
+| [model-config-merge-plan.md](model-config-merge-plan.md) | 模型配置合并与配置驱动接入 |
 | [model-onboarding-plan.md](model-onboarding-plan.md) | 模型配置引导 |
 | [models-config-unify-plan.md](models-config-unify-plan.md) | 模型配置统一 |
 | [sora-video-plan.md](sora-video-plan.md) | Sora 风格视频适配器与 BeefTV Seedance 接入 |
@@ -64,6 +65,8 @@
 | 文档 | 内容 |
 |---|---|
 | [roadmap-plan.md](roadmap-plan.md) | 当前剩余 backlog 和优先级 |
+| [model-config-v2-plan.md](model-config-v2-plan.md) | 模型配置 v2：9 个模式、协议模板、指纹规则、配置 Skill（待评审） |
+| [promptbar-input-modes-plan.md](promptbar-input-modes-plan.md) | PromptBar 输入模式与槽位：首尾帧、参考图、超限自动切换（待评审） |
 | [engineering-quality-plan.md](engineering-quality-plan.md) | 工程质量、仓库隐私、文档治理与 Tailwind 决策（讨论稿） |
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 |
 | [placeholder-operations-plan.md](placeholder-operations-plan.md) | 占位操作补齐 |

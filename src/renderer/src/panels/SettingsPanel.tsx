@@ -3,16 +3,25 @@ import {
   CAPABILITY_LABEL,
   MEDIA_INPUT_LABEL,
   modelInputs,
+  modelModeIds,
   modelOperations,
   type ModelDef,
+  type ModelFeature,
   type ProviderConfig,
   type ProviderInput
 } from '@shared/provider-schema'
-import type { ModelsConfigStatus } from '@shared/models-file'
+import { MODEL_MODE_LABEL } from '@shared/model-modes'
+import { findProtocolTemplate } from '@shared/protocol-templates'
+import type {
+  ModelsConfigStatus,
+  ModelsFileProvider
+} from '@shared/models-file'
 import { VIDEO_OPERATIONS } from '@shared/operation-schema'
 import {
+  HOT_PROVIDER_IDS,
   PROVIDER_PRESETS,
-  providerPresetModels
+  recommendedModelsForPreset,
+  type ProviderPreset
 } from '@shared/provider-presets'
 import type { UpdateStatus } from '@shared/update'
 import { BrandIcon, BrandWordmark } from '../components/Brand'
@@ -25,12 +34,9 @@ import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
 import { GeneralSettingsSection } from './GeneralSettingsSection'
 import { SkillsSection } from './SkillsSection'
-import { ModelParamsDialog } from '../canvas/nodes/ModelParamsDialog'
-import {
-  ModelInputsDialog,
-  type ModelCapabilityValue
-} from '../canvas/nodes/ModelInputsDialog'
-import { Button, Input, Select } from '../components/ui'
+import { ModelConfigDialog } from '../canvas/nodes/ModelConfigDialog'
+import type { ModelConfigValue } from '../canvas/nodes/ModelConfigDialog'
+import { Button, Dialog, Input, Select } from '../components/ui'
 
 type SectionId =
   | 'general'
@@ -48,6 +54,17 @@ interface SectionDef {
   icon: IconName
 }
 
+const FEATURE_LABEL: Record<ModelFeature, string> = {
+  sequential: '组图',
+  layer: '图层',
+  ocr: 'OCR',
+  rgba: '透明',
+  audio: '音频',
+  'last-frame': '尾帧',
+  'multi-shot': '多镜头',
+  mask: '蒙版'
+}
+
 const SECTIONS: SectionDef[] = [
   { id: 'general', label: '通用', icon: 'settings' },
   { id: 'models', label: '模型服务', icon: 'robot' },
@@ -59,14 +76,14 @@ const SECTIONS: SectionDef[] = [
   { id: 'about', label: '关于', icon: 'logo' }
 ]
 
-function emptyDraft(preset?: (typeof PROVIDER_PRESETS)[number]): ProviderInput {
+function emptyDraft(preset?: ProviderPreset): ProviderInput {
   return {
     name: preset?.name ?? '',
     type: preset?.type ?? 'openai-compat',
     baseUrl: preset?.baseUrl ?? 'https://api.openai.com/v1',
     headers: {},
     apiKey: '',
-    models: preset ? providerPresetModels(preset) : []
+    models: []
   }
 }
 
@@ -110,6 +127,14 @@ function remoteModelId(remoteModel: string): string {
   return `remote_${slug || 'model'}`
 }
 
+interface PendingModelsState {
+  file: string
+  exists: boolean
+  providers: ModelsFileProvider[]
+  errors: string[]
+  warnings: string[]
+}
+
 function ModelsSection() {
   const providers = useSettingsStore((state) => state.providers)
   const load = useSettingsStore((state) => state.load)
@@ -131,8 +156,11 @@ function ModelsSection() {
   const [headerRows, setHeaderRows] = useState<
     Array<{ key: string; value: string }>
   >([])
-  const [paramModel, setParamModel] = useState<ModelDef | null>(null)
-  const [inputsModel, setInputsModel] = useState<ModelDef | null>(null)
+  const [configModel, setConfigModel] = useState<ModelDef | null>(null)
+  const [skillDialogOpen, setSkillDialogOpen] = useState(false)
+  const [skillPath, setSkillPath] = useState('')
+  const [pending, setPending] = useState<PendingModelsState | null>(null)
+  const [pendingOpen, setPendingOpen] = useState(false)
 
   useEffect(() => {
     void load()
@@ -147,6 +175,13 @@ function ModelsSection() {
   }, [load])
 
   useEffect(() => {
+    void window.api.settings.pendingModels().then(setPending)
+    return window.api.settings.onModelsPending(() => {
+      void window.api.settings.pendingModels().then(setPending)
+    })
+  }, [])
+
+  useEffect(() => {
     setRemoteModels([])
   }, [draft?.id])
 
@@ -159,6 +194,8 @@ function ModelsSection() {
 
   const openDraft = (next: ProviderInput | null): void => {
     setDraft(next)
+    setRemoteModels([])
+    setManualModel('')
     setHeaderRows(
       next
         ? Object.entries(next.headers ?? {}).map(([key, value]) => ({
@@ -365,6 +402,68 @@ function ModelsSection() {
     }
   }
 
+  const handleDownloadSkill = async (): Promise<void> => {
+    try {
+      const result = await window.api.settings.downloadModelSkill()
+      if (result.canceled || !result.path) return
+      setSkillPath(result.path)
+      setSkillDialogOpen(true)
+    } catch (error) {
+      setMessage({ ok: false, text: String(error) })
+    }
+  }
+
+  const skillPrompt = skillPath
+    ? `读取这份 SKILL.md：${skillPath}\n按里面的规则帮我在 CineLab 中配置模型。官方文档：<粘贴链接>\n配置写完后告诉我改了哪些模型、来源和需要确认的项。`
+    : ''
+
+  const copySkillPrompt = async (): Promise<void> => {
+    try {
+      await window.api.settings.copyText(skillPrompt)
+      showToast('提示词已复制')
+    } catch (error) {
+      setMessage({ ok: false, text: String(error) })
+    }
+  }
+
+  const handleApplyPending = async (): Promise<void> => {
+    try {
+      const result = await window.api.settings.applyPendingModels()
+      if (!result.applied) {
+        setMessage({ ok: false, text: result.message ?? '应用失败' })
+        return
+      }
+      setPendingOpen(false)
+      setPending(await window.api.settings.pendingModels())
+      await load()
+      setConfig(await window.api.settings.modelsConfig())
+      showToast('模型配置已应用')
+    } catch (error) {
+      setMessage({ ok: false, text: String(error) })
+    }
+  }
+
+  const handleDiscardPending = async (): Promise<void> => {
+    try {
+      await window.api.settings.discardPendingModels()
+      setPendingOpen(false)
+      setPending(await window.api.settings.pendingModels())
+    } catch (error) {
+      setMessage({ ok: false, text: String(error) })
+    }
+  }
+
+  const activePreset = draft
+    ? PROVIDER_PRESETS.find(
+        (preset) =>
+          preset.baseUrl.replace(/\/+$/, '') ===
+          draft.baseUrl.trim().replace(/\/+$/, '')
+      )
+    : undefined
+  const recommendedModels = activePreset
+    ? recommendedModelsForPreset(activePreset.id)
+    : []
+
   if (draft) {
     return (
       <div className="settings-section">
@@ -376,6 +475,14 @@ function ModelsSection() {
         >
           ← 返回列表
         </Button>
+
+        <div className="provider-form__steps">
+          <span className="is-on">1 连接</span>
+          <span className={draft.models.length > 0 ? 'is-on' : ''}>
+            2 选模型
+          </span>
+          <span>3 保存</span>
+        </div>
 
         <label className="field">
           <span>名称</span>
@@ -424,6 +531,11 @@ function ModelsSection() {
             }
             unstyled
           />
+          {activePreset?.keyHelpUrl ? (
+            <div className="field__hint">
+              Key 获取地址：{activePreset.keyHelpUrl}
+            </div>
+          ) : null}
         </label>
 
         {draft.type === 'kling' ? (
@@ -512,11 +624,15 @@ function ModelsSection() {
                 <div>
                   <div className="model-item__name">{model.name}</div>
                   <div className="model-item__meta">
-                    {CAPABILITY_LABEL[model.capability]} · 输入{' '}
+                    {modelModeIds(model)
+                      .slice(0, 3)
+                      .map((id) => MODEL_MODE_LABEL[id])
+                      .join(' · ') || CAPABILITY_LABEL[model.capability]}{' '}
+                    · 输入{' '}
                     {modelInputs(model)
                       .map((input) => MEDIA_INPUT_LABEL[input])
                       .join('/')}{' '}
-                    · {model.remoteModel}
+                    · 接口 ID：{model.remoteModel}
                     {modelOperations(model).length > 0
                       ? ` · 操作 ${modelOperations(model)
                           .map(
@@ -533,22 +649,32 @@ function ModelsSection() {
                           .join(' · ')}${model.params.length > 3 ? ' 等' : ''}`
                       : ''}
                   </div>
+                  <div className="model-item__badges">
+                    {model.features?.map((feature) => (
+                      <span className="model-badge" key={feature}>
+                        {FEATURE_LABEL[feature]}
+                      </span>
+                    ))}
+                    {findProtocolTemplate(model.protocol)?.status ? (
+                      <span
+                        className={`model-badge is-${findProtocolTemplate(model.protocol)?.status}`}
+                      >
+                        {findProtocolTemplate(model.protocol)?.status === 'draft'
+                          ? '未验证'
+                          : findProtocolTemplate(model.protocol)?.status ===
+                              'requires-adapter'
+                            ? '需适配'
+                            : '可用'}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="model-item__actions">
                   <Button
                     type="button"
                     className="icon-btn"
-                    title="输入能力"
-                    onClick={() => setInputsModel(model)}
-                    unstyled
-                  >
-                    <Icon name="layers" size={13} />
-                  </Button>
-                  <Button
-                    type="button"
-                    className="icon-btn"
-                    title="配置参数"
-                    onClick={() => setParamModel(model)}
+                    title="模型配置"
+                    onClick={() => setConfigModel(model)}
                     unstyled
                   >
                     <Icon name="settings" size={13} />
@@ -566,7 +692,32 @@ function ModelsSection() {
               </div>
             ))}
             {draft.models.length === 0 ? (
-              <div className="model-list__empty">还没有添加模型</div>
+              <div className="model-list__empty">
+                还没有添加模型。填好 Key 后点「获取模型列表」，或点击下方推荐。
+              </div>
+            ) : null}
+            {recommendedModels.length > 0 ? (
+              <div className="model-recommendations">
+                <span className="model-recommendations__label">推荐</span>
+                {recommendedModels.map((model) => {
+                  const added = draft.models.some(
+                    (item) => item.id === model.id
+                  )
+                  return (
+                    <Button
+                      key={model.id}
+                      type="button"
+                      className={`remote-model-chip${added ? ' is-added' : ''}`}
+                      disabled={added}
+                      title={added ? '已添加' : `添加 ${model.name}`}
+                      onClick={() => addModel(model)}
+                      unstyled
+                    >
+                      {model.name}
+                    </Button>
+                  )
+                })}
+              </div>
             ) : null}
           </div>
 
@@ -644,47 +795,22 @@ function ModelsSection() {
           </Button>
         </div>
 
-        <ModelParamsDialog
-          model={paramModel}
-          onCancel={() => setParamModel(null)}
-          onSave={(params) => {
-            if (!paramModel) return
+        <ModelConfigDialog
+          model={configModel}
+          onCancel={() => setConfigModel(null)}
+          onSave={(value: ModelConfigValue) => {
+            if (!configModel) return
             setDraft((current) =>
               current
                 ? {
                     ...current,
                     models: current.models.map((item) =>
-                      item.id === paramModel.id ? { ...item, params } : item
+                      item.id === configModel.id ? { ...item, ...value } : item
                     )
                   }
                 : current
             )
-            setParamModel(null)
-          }}
-        />
-
-        <ModelInputsDialog
-          model={inputsModel}
-          onCancel={() => setInputsModel(null)}
-          onSave={(value: ModelCapabilityValue) => {
-            if (!inputsModel) return
-            setDraft((current) =>
-              current
-                ? {
-                    ...current,
-                    models: current.models.map((item) =>
-                      item.id === inputsModel.id
-                        ? {
-                            ...item,
-                            inputs: value.inputs,
-                            operations: value.operations
-                          }
-                        : item
-                    )
-                  }
-                : current
-            )
-            setInputsModel(null)
+            setConfigModel(null)
           }}
         />
       </div>
@@ -698,35 +824,83 @@ function ModelsSection() {
           <div className="models-config__head">
             <div>
               <div className="models-config__title">模型供应商配置</div>
-              <div
-                className="models-config__path"
-                title={config.activeFile ?? ''}
-              >
-                {config.activeFile ?? '未找到配置文件'}
+              <div className="models-config__meta">
+                {config.providerCount} 个供应商 · {config.modelCount} 个模型
               </div>
             </div>
             <div className="models-config__actions">
               <Button
                 type="button"
                 className="btn-secondary btn-sm"
-                onClick={() => void handleReload()}
+                onClick={() => void handleDownloadSkill()}
                 unstyled
               >
-                重新加载
+                下载配置 Skill
               </Button>
-              <Button
-                type="button"
-                className="btn-secondary btn-sm"
-                onClick={() => void handleOpenModelsFile()}
-                unstyled
-              >
-                打开文件
-              </Button>
+              <details className="models-config__advanced">
+                <summary>高级</summary>
+                <div className="models-config__advanced-body">
+                  <div
+                    className="models-config__path"
+                    title={config.activeFile ?? ''}
+                  >
+                    {config.activeFile ?? '未找到配置文件'}
+                  </div>
+                  <div className="models-config__advanced-actions">
+                    <Button
+                      type="button"
+                      className="btn-secondary btn-sm"
+                      onClick={() => void handleReload()}
+                      unstyled
+                    >
+                      重新加载
+                    </Button>
+                    <Button
+                      type="button"
+                      className="btn-secondary btn-sm"
+                      onClick={() => void handleOpenModelsFile()}
+                      unstyled
+                    >
+                      打开文件
+                    </Button>
+                  </div>
+                </div>
+              </details>
             </div>
           </div>
-          <div className="models-config__meta">
-            {config.providerCount} 个供应商 · {config.modelCount} 个模型
-          </div>
+          {pending?.exists ? (
+            <div className="models-pending">
+              <div>
+                <div className="models-pending__title">发现新的模型配置</div>
+                <div className="models-pending__meta">
+                  {pending.providers.length} 个供应商 ·{' '}
+                  {pending.providers.reduce(
+                    (sum, provider) => sum + provider.models.length,
+                    0
+                  )}{' '}
+                  个模型
+                </div>
+              </div>
+              <div className="models-pending__actions">
+                <Button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={() => setPendingOpen(true)}
+                  unstyled
+                >
+                  预览并应用
+                </Button>
+                <Button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={() => void handleDiscardPending()}
+                  unstyled
+                >
+                  忽略
+                </Button>
+              </div>
+            </div>
+          ) : null}
           {config.warnings.length > 0 ? (
             <div className="models-config__warnings">
               {config.warnings.map((warning, index) => (
@@ -781,33 +955,58 @@ function ModelsSection() {
 
         {providers.length === 0 ? (
           <div className="provider-list__empty">
-            还没有配置模型供应商。
-            <br />
-            可以从下方快速预设开始，或手动添加。
+            <div>第一次配置模型？按三步来：</div>
+            <ol className="provider-onboarding">
+              <li>选一个热门供应商</li>
+              <li>填 API Key（预设会显示获取地址）</li>
+              <li>点「获取模型列表」，勾选要用的模型</li>
+            </ol>
           </div>
         ) : null}
 
         <div className="provider-presets">
-          <div className="provider-presets__label">快速预设</div>
-          <div className="provider-presets__grid">
-            {PROVIDER_PRESETS.map((preset) => (
+          <div className="provider-presets__label">热门供应商</div>
+          <div className="provider-presets__chips">
+            {PROVIDER_PRESETS.filter((preset) =>
+              HOT_PROVIDER_IDS.has(preset.id)
+            ).map((preset) => (
               <Button
                 key={preset.id}
                 type="button"
-                className="provider-preset"
+                className="provider-chip"
+                title={preset.description}
                 onClick={() => {
                   setMessage(null)
                   openDraft(emptyDraft(preset))
                 }}
                 unstyled
               >
-                <span className="provider-preset__name">{preset.name}</span>
-                <span className="provider-preset__desc">
-                  {preset.description}
-                </span>
+                {preset.name}
               </Button>
             ))}
           </div>
+          <details className="provider-presets__more">
+            <summary>更多供应商</summary>
+            <div className="provider-presets__chips">
+              {PROVIDER_PRESETS.filter(
+                (preset) => !HOT_PROVIDER_IDS.has(preset.id)
+              ).map((preset) => (
+                <Button
+                  key={preset.id}
+                  type="button"
+                  className="provider-chip"
+                  title={preset.description}
+                  onClick={() => {
+                    setMessage(null)
+                    openDraft(emptyDraft(preset))
+                  }}
+                  unstyled
+                >
+                  {preset.name}
+                </Button>
+              ))}
+            </div>
+          </details>
         </div>
 
         <Button
@@ -822,6 +1021,91 @@ function ModelsSection() {
           + 添加供应商
         </Button>
       </div>
+
+      <Dialog
+        open={pendingOpen}
+        onClose={() => setPendingOpen(false)}
+        title="预览新的模型配置"
+        size="lg"
+      >
+        <div className="models-pending-dialog">
+          {pending?.errors.length ? (
+            <div className="models-config__errors">
+              {pending.errors.map((error, index) => (
+                <div key={index}>{error}</div>
+              ))}
+            </div>
+          ) : null}
+          {pending?.providers.map((provider) => (
+            <div className="models-pending-provider" key={provider.id}>
+              <div className="models-pending-provider__name">
+                {provider.name}
+              </div>
+              <div className="models-pending-provider__meta">
+                {provider.baseUrl}
+              </div>
+              <div className="models-pending-provider__models">
+                {provider.models.map((model) => (
+                  <span className="models-pending-model" key={model.id}>
+                    {model.name ?? model.id}
+                    {model.modes?.length
+                      ? ` · ${model.modes.length} 个模式`
+                      : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="models-pending-dialog__actions">
+            <Button
+              type="button"
+              className="btn-secondary"
+              onClick={() => void handleDiscardPending()}
+              unstyled
+            >
+              忽略
+            </Button>
+            <Button
+              type="button"
+              className="btn-primary"
+              onClick={() => void handleApplyPending()}
+              disabled={Boolean(pending?.errors.length)}
+              unstyled
+            >
+              应用配置
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={skillDialogOpen}
+        onClose={() => setSkillDialogOpen(false)}
+        title="配置 Skill 已下载"
+        size="md"
+        panelClassName="model-skill-dialog"
+      >
+        <div className="model-skill-dialog__path">{skillPath}</div>
+        <ol className="model-skill-dialog__steps">
+          <li>
+            把文件交给任意 AI Agent（OpenCode / Claude Code / Cursor /
+            ChatGPT）。
+          </li>
+          <li>附上下面的提示词，让 Agent 读文档并生成配置。</li>
+          <li>回到 CineLab，模型配置会自动重新加载。</li>
+        </ol>
+        <pre className="model-skill-dialog__prompt">{skillPrompt}</pre>
+        <div className="model-skill-dialog__actions">
+          <Button
+            type="button"
+            className="btn-secondary"
+            onClick={() => void copySkillPrompt()}
+            unstyled
+          >
+            复制提示词
+          </Button>
+        </div>
+      </Dialog>
     </div>
   )
 }
@@ -892,7 +1176,7 @@ function AppearanceSection() {
     const saved = localStorage.getItem('cinelab.theme.v1')
     return saved === 'light' || saved === 'dark' || saved === 'system'
       ? saved
-      : 'dark'
+      : 'system'
   })
 
   const apply = (next: 'light' | 'dark' | 'system'): void => {

@@ -1,7 +1,9 @@
 import { httpFetch } from './http'
 import type { ModelDef } from '@shared/provider-schema'
+import type { VideoOperationOptions } from '@shared/generation'
 import { mergeHeaders } from './headers'
 import { sleep } from './retry'
+import { applyModelRequestBody } from './model-body'
 import type { AdapterContext, ImageOutput, ProviderRuntime } from './openai-compat'
 
 interface TaskResponse {
@@ -16,10 +18,34 @@ export interface ImageRef {
   role: string
 }
 
+export interface ArkVideoInput {
+  dataUrl: string
+  mime: string
+  absolutePath?: string
+}
+
 function roleName(role: string): string {
   if (role === 'firstFrame') return 'first_frame'
   if (role === 'lastFrame') return 'last_frame'
-  return 'reference'
+  return 'reference_image'
+}
+
+function operationHint(
+  videoOptions: VideoOperationOptions | undefined
+): string {
+  if (!videoOptions) return ''
+
+  if (videoOptions.operation === 'extend') {
+    return videoOptions.direction === 'backward'
+      ? '向前延长这段视频。'
+      : '向后延长这段视频。'
+  }
+
+  if (videoOptions.range) {
+    return `只修改第 ${videoOptions.range.start.toFixed(1)} 到 ${videoOptions.range.end.toFixed(1)} 秒，其余画面保持不变。`
+  }
+
+  return ''
 }
 
 function normalizeBaseUrl(baseUrl: string): string {
@@ -32,7 +58,9 @@ export async function generateVideoArk(
   prompt: string,
   params: Record<string, unknown>,
   refs: ImageRef[],
-  ctx: AdapterContext
+  ctx: AdapterContext,
+  video?: ArkVideoInput,
+  videoOptions?: VideoOperationOptions
 ): Promise<ImageOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
   const headers = mergeHeaders(
@@ -43,7 +71,9 @@ export async function generateVideoArk(
     provider.headers
   )
 
-  const content: unknown[] = [{ type: 'text', text: prompt }]
+  const hint = operationHint(videoOptions)
+  const finalPrompt = hint ? `${prompt}\n\n${hint}` : prompt
+  const content: unknown[] = [{ type: 'text', text: finalPrompt }]
 
   for (const ref of refs) {
     content.push({
@@ -53,18 +83,38 @@ export async function generateVideoArk(
     })
   }
 
+  if (video) {
+    content.push({
+      type: 'video_url',
+      video_url: { url: video.dataUrl },
+      role: 'reference_video'
+    })
+  }
+
+  const isEdit =
+    videoOptions?.operation === 'shot-retake' ||
+    videoOptions?.operation === 'element-replace'
+  const isExtend = videoOptions?.operation === 'extend'
+  const isOmni = isEdit || isExtend
+
   const body: Record<string, unknown> = {
     model: model.remoteModel,
     content,
     resolution: params.resolution ?? '720p',
-    ratio: params.ratio ?? '16:9',
-    duration: Number(params.duration ?? 5),
+    ratio: isOmni ? 'adaptive' : (params.ratio ?? '16:9'),
+    duration: isOmni ? -1 : Number(params.duration ?? 5),
     watermark: Boolean(params.watermark ?? false)
+  }
+
+  if (isOmni && /2-5/i.test(model.remoteModel)) {
+    body.omni_reference_task_type = isExtend ? 'extend' : 'edit'
   }
 
   if (params.generate_audio !== undefined) {
     body.generate_audio = Boolean(params.generate_audio)
   }
+
+  applyModelRequestBody(body, model, { prompt: finalPrompt, params, refs })
 
   ctx.onProgress(5, '提交任务')
 

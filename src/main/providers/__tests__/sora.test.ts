@@ -92,6 +92,56 @@ describe('generateVideoSora', () => {
     expect([...output[0].data]).toEqual([1, 2, 3])
   })
 
+  it('falls back to JSON data URL when multipart reference is rejected', async () => {
+    mocks.httpFetch
+      .mockResolvedValueOnce(
+        new Response('input_reference is not supported by this gateway', {
+          status: 400,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: 'task_ref', status: 'queued' }))
+      .mockResolvedValueOnce(
+        jsonResponse({ id: 'task_ref', status: 'completed' })
+      )
+      .mockResolvedValueOnce(
+        new Response(new Uint8Array([4, 5]), {
+          status: 200,
+          headers: { 'content-type': 'video/mp4' }
+        })
+      )
+
+    const refs = [
+      { dataUrl: 'data:image/png;base64,AAAA', role: 'reference' }
+    ]
+
+    await generateVideoSora(
+      { ...model, inputs: ['text', 'image'] },
+      provider,
+      'a cat walking',
+      { duration: 5 },
+      refs,
+      context
+    )
+
+    const [firstUrl, firstInit] = mocks.httpFetch.mock.calls[0]
+    expect(firstUrl).toBe('http://127.0.0.1:8787/v1/videos')
+    expect(firstInit.body).toBeInstanceOf(FormData)
+    expect(
+      Object.keys(firstInit.headers).some(
+        (key) => key.toLowerCase() === 'content-type'
+      )
+    ).toBe(false)
+
+    const [, secondInit] = mocks.httpFetch.mock.calls[1]
+    expect(JSON.parse(secondInit.body)).toEqual({
+      model: 'seedance-2.0-mini',
+      prompt: 'a cat walking',
+      seconds: '5',
+      input_reference: 'data:image/png;base64,AAAA'
+    })
+  })
+
   it('throws the upstream message when the task fails', async () => {
     mocks.httpFetch
       .mockResolvedValueOnce(jsonResponse({ id: 'task_1' }))

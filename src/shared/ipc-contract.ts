@@ -41,7 +41,7 @@ import type {
   TemplateInput,
   ThumbCacheInfo
 } from './library-schema'
-import type { ModelsConfigStatus } from './models-file'
+import type { ModelsConfigStatus, ModelsFileProvider } from './models-file'
 import type {
   AgentChatRequest,
   AgentConfirmInput,
@@ -144,7 +144,23 @@ export interface SettingsApi {
   testConnection(input: ConnectionTestInput): Promise<ConnectionTestResult>
   fetchModels(input: ConnectionTestInput): Promise<FetchModelsResult>
   modelsConfig(): Promise<ModelsConfigStatus>
+  pendingModels(): Promise<{
+    file: string
+    exists: boolean
+    providers: ModelsFileProvider[]
+    errors: string[]
+    warnings: string[]
+  }>
+  applyPendingModels(): Promise<{
+    applied: boolean
+    message?: string
+    providers?: number
+  }>
+  discardPendingModels(): Promise<void>
+  onModelsPending(callback: () => void): () => void
   openModelsFile(): Promise<string>
+  downloadModelSkill(): Promise<{ path?: string; canceled?: boolean }>
+  copyText(text: string): Promise<void>
   getOperationBindings(): Promise<OperationBindings>
   saveOperationBindings(bindings: OperationBindings): Promise<void>
   getPreferences(): Promise<Preferences>

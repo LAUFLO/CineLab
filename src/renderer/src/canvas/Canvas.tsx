@@ -569,7 +569,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
         nodesDraggable={!handMode}
         snapToGrid={snapToGrid}
         snapGrid={[16, 16] as [number, number]}
-        connectionMode={ConnectionMode.Loose}
+        connectionMode={ConnectionMode.Strict}
         connectionRadius={60}
         selectionOnDrag={!handMode}
         onSelectionStart={() => setBoxSelecting(true)}

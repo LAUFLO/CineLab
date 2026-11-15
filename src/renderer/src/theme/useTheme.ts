@@ -14,7 +14,9 @@ function resolve(mode: ThemeMode): Resolved {
 export function useTheme() {
   const [mode, setModeState] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem('cinelab.theme.v1')
-    return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'dark'
+    return saved === 'light' || saved === 'dark' || saved === 'system'
+      ? saved
+      : 'system'
   })
 
   const apply = useCallback((next: ThemeMode) => {

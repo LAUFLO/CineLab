@@ -5,6 +5,12 @@ import { useCanvasStore, type StageNode } from '../../stores/canvas'
 import { useStageStore } from '../../stage/stageStore'
 import { Input, Button } from '../../components/ui'
 
+const CARD_CLASS =
+  'cnode__card relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-card border p-4 text-center shadow-node transition-colors duration-[120ms]'
+
+const TITLE_CLASS =
+  'flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-[.is-selected]:text-fg'
+
 export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
   const patchStageNode = useCanvasStore((state) => state.patchStageNode)
   const openStage = useStageStore((state) => state.openStage)
@@ -18,9 +24,13 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
   }
 
   return (
-    <div className={`cnode stage-node ${selected ? 'is-selected' : ''}`}>
+    <div
+      className={`cnode group stage-node relative flex h-full w-full flex-col ${
+        selected ? 'is-selected' : ''
+      }`}
+    >
       <div
-        className="cnode__title"
+        className={TITLE_CLASS}
         onDoubleClick={(event) => {
           event.stopPropagation()
           setTitleDraft(data.title)
@@ -30,7 +40,7 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
         <Icon name="frame" size={12} />
         {editingTitle ? (
           <Input
-            className="cnode__title-input nodrag nopan"
+            className="nodrag nopan !h-5 !w-[140px] !rounded-[5px] !border-border-strong !bg-surface-hover !px-1.5 !text-xs"
             value={titleDraft}
             autoFocus
             onChange={(event) => setTitleDraft(event.target.value)}
@@ -40,42 +50,48 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
               if (event.key === 'Escape') setEditingTitle(false)
             }}
             onClick={(event) => event.stopPropagation()}
-            unstyled
           />
         ) : (
           <span>{data.title}</span>
         )}
-        <span className="stage-node__badge">场景</span>
+        <span className="ml-auto rounded-pill bg-surface-hover px-[7px] py-px text-[10px] leading-4 whitespace-nowrap text-fg-muted">
+          场景
+        </span>
       </div>
 
       <div
-        className="cnode__card stage-node__card"
+        className={`${CARD_CLASS} ${
+          selected
+            ? 'border-border-selected'
+            : 'border-border group-hover:border-border-strong'
+        }`}
         onDoubleClick={(event) => {
           event.stopPropagation()
           void openStage(id)
         }}
       >
-        <div className="stage-node__preview">
+        <div className="flex flex-col items-center gap-1 text-[11px] text-fg-subtle">
           <Icon name="grid" size={32} />
           <span>3D 片场</span>
         </div>
 
-        <div className="stage-node__stats">
+        <div className="flex items-center gap-1.5 text-xs text-fg-muted">
           <span>{data.objectCount ?? 0} 对象</span>
-          <span className="stage-node__dot">·</span>
+          <span className="text-fg-subtle">·</span>
           <span>{data.cameraCount ?? 0} 机位</span>
-          <span className="stage-node__dot">·</span>
+          <span className="text-fg-subtle">·</span>
           <span>{data.shotCount ?? 0} 镜头</span>
         </div>
 
         <Button
           type="button"
-          className="stage-node__open nodrag nopan"
+          variant="ghost"
+          size="none"
+          className="nodrag nopan !h-[30px] gap-[5px] self-center !rounded-[7px] !border !border-border !bg-surface !px-3 !text-xs !font-normal !text-fg hover:!bg-surface-hover hover:!text-fg"
           onClick={(event) => {
             event.stopPropagation()
             void openStage(id)
           }}
-          unstyled
         >
           <Icon name="frame" size={13} />
           打开导演台

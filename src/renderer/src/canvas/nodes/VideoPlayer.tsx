@@ -24,6 +24,11 @@ export interface VideoPlayerHandle {
   pause: () => void
 }
 
+const BTN_CLASS =
+  '!h-[26px] !w-[26px] shrink-0 !rounded-pill !bg-[color-mix(in_srgb,var(--media-control-bg)_62%,transparent)] !text-media-text opacity-[0.94] shadow-[0_1px_4px_rgba(0,0,0,0.32)] backdrop-blur-[6px] hover:!bg-[color-mix(in_srgb,var(--media-control-bg)_92%,transparent)] hover:!text-media-text hover:opacity-100 @max-[360px]:!h-[22px] @max-[360px]:!w-[22px]'
+
+const TIME_SHADOW = '[text-shadow:0_1px_3px_rgba(0,0,0,0.55)]'
+
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   function VideoPlayer(
     { src, path, fps, onTimeChange, onDurationChange },
@@ -179,7 +184,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     return (
       <div
         ref={containerRef}
-        className={`video-node${playing ? ' is-playing' : ''}`}
+        className={`video-node relative h-full w-full min-h-0 min-w-0 overflow-hidden bg-media-bg @container [&:fullscreen]:h-screen [&:fullscreen]:w-screen`}
       >
         <video
           ref={videoRef}
@@ -187,25 +192,27 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           preload="metadata"
           playsInline
           muted={muted}
+          className="block h-full w-full object-contain"
           onClick={toggle}
         />
 
         {!playing && src ? (
           <Button
             type="button"
-            className="video-node__center nodrag nopan"
+            variant="ghost"
+            size="none"
+            className="nodrag nopan !absolute top-1/2 left-1/2 !h-[46px] !w-[46px] -translate-x-1/2 -translate-y-1/2 !rounded-pill !border !border-[var(--media-control-border)] !bg-[var(--media-control-bg)] !text-media-text shadow-float backdrop-blur-[10px] hover:!bg-[color-mix(in_srgb,var(--media-control-bg)_75%,var(--media-text))] hover:!text-media-text"
             onClick={toggle}
             title="播放"
-            unstyled
           >
             <Icon name="play" size={18} />
           </Button>
         ) : null}
 
-        <div className="video-node__footer nodrag nopan">
+        <div className="nodrag nopan absolute inset-x-2 bottom-2 flex flex-col gap-1.5">
           <Input
             type="range"
-            className="video-node__progress"
+            className="[&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-media-text !h-[3px] w-full cursor-pointer appearance-none !rounded-pill !border-0 !bg-transparent !bg-[linear-gradient(to_right,var(--media-text)_var(--video-progress),color-mix(in_srgb,var(--media-text)_24%,transparent)_var(--video-progress))] !p-0"
             min={0}
             max={duration || 0}
             step={0.01}
@@ -213,62 +220,70 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             style={progressStyle}
             onChange={(event) => seek(Number(event.target.value))}
             aria-label="播放进度"
-            unstyled
           />
 
-          <div className="video-node__controls">
+          <div className="flex min-h-7 items-center gap-[5px] text-media-text @max-[360px]:gap-[3px]">
             <Button
               type="button"
-              className="video-node__btn"
+              variant="ghost"
+              size="none"
+              className={BTN_CLASS}
               onClick={toggle}
               title={playing ? '暂停' : '播放'}
-              unstyled
             >
               <Icon name={playing ? 'pause' : 'play'} size={14} />
             </Button>
             <Button
               type="button"
-              className="video-node__btn"
+              variant="ghost"
+              size="none"
+              className={BTN_CLASS}
               onClick={() => stepFrame(-1)}
               title="上一帧"
-              unstyled
             >
               <Icon name="step-back" size={14} />
             </Button>
             <Button
               type="button"
-              className="video-node__btn"
+              variant="ghost"
+              size="none"
+              className={BTN_CLASS}
               onClick={() => stepFrame(1)}
               title="下一帧"
-              unstyled
             >
               <Icon name="step-forward" size={14} />
             </Button>
 
-            <span className="video-node__time">
+            <span
+              className={`ml-1 text-[11px] whitespace-nowrap tabular-nums opacity-[0.94] ${TIME_SHADOW} @max-[360px]:ml-0.5 @max-[360px]:text-[10px] @max-[250px]:hidden`}
+            >
               {timeLabel(currentTime, false)} / {timeLabel(duration, false)}
             </span>
-            <span className="video-node__frame">
+            <span
+              className={`text-[10px] whitespace-nowrap opacity-70 ${TIME_SHADOW} @max-[360px]:hidden`}
+            >
               F {Math.round(currentTime * frameRate)}
             </span>
 
-            <span className="video-node__spacer" />
+            <span className="flex-1" />
 
             <Button
               type="button"
-              className="video-node__btn"
+              variant="ghost"
+              size="none"
+              className={BTN_CLASS}
               onClick={toggleMute}
               title={muted ? '取消静音' : '静音'}
-              unstyled
             >
               <Icon name={muted ? 'volume-mute' : 'volume'} size={15} />
             </Button>
             <Button
               type="button"
-              className="video-node__btn"
+              variant="ghost"
+              size="none"
+              className={BTN_CLASS}
               onClick={toggleFullscreen}
               title={fullscreen ? '退出全屏' : '全屏'}
-              unstyled
             >
               <Icon name="fullscreen" size={14} />
             </Button>

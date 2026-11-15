@@ -49,6 +49,34 @@ const STATUS_LABEL: Record<string, string> = {
   error: '失败'
 }
 
+const BADGE_TONE: Record<string, string> = {
+  done: 'bg-[color-mix(in_srgb,var(--link)_14%,transparent)] text-link',
+  error: 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] text-danger'
+}
+const FIELD_CLASS =
+  'grid grid-cols-[52px_1fr_64px] items-center gap-2 text-[11.5px] text-fg-subtle'
+
+const RANGE_CLASS = 'w-full accent-link !h-6 !border-0 !bg-transparent !px-0'
+
+const NUMBER_CLASS =
+  'w-full !h-[26px] !rounded-[6px] !bg-surface-hover !px-1.5 !text-[11px]'
+
+const TAB_BASE = '!h-6 !rounded-[6px] !px-2 !text-[11px] !font-normal'
+
+const tabClass = (active: boolean): string =>
+  `${TAB_BASE} ${
+    active
+      ? '!bg-[color-mix(in_srgb,var(--link)_14%,transparent)] !text-fg'
+      : '!bg-surface-hover !text-fg-subtle'
+  }`
+
+const modelClass = (active: boolean, disabled: boolean): string =>
+  `flex !h-8 w-full !justify-between !rounded-[7px] !px-2 !text-[11.5px] !font-normal ${
+    active
+      ? '!border !border-link !bg-surface-hover !text-fg'
+      : '!bg-surface-hover !text-fg-muted'
+  }${disabled ? ' cursor-not-allowed opacity-55' : ''}`
+
 function operationDef(operation: VideoOperationId) {
   return VIDEO_OPERATIONS.find((item) => item.id === operation)
 }
@@ -395,17 +423,31 @@ export function VideoOpNodeView({
   }
 
   return (
-    <div className={`cnode video-op-node ${selected ? 'is-selected' : ''}`}>
-      <div className="cnode__title">
+    <div
+      className={`cnode group video-op-node relative flex h-full w-full flex-col ${
+        selected ? 'is-selected' : ''
+      }`}
+    >
+      <div className="flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-[.is-selected]:text-fg">
         <Icon name={OPERATION_ICON[data.operation]} size={12} />
         <span>{data.title}</span>
-        <span className={`video-op-node__badge is-${resultStatus}`}>
+        <span
+          className={`ml-auto rounded-[4px] bg-surface-hover px-1.5 py-px text-[10px] ${
+            BADGE_TONE[resultStatus] ?? 'text-fg-subtle'
+          }`}
+        >
           {STATUS_LABEL[resultStatus] ?? resultStatus}
         </span>
       </div>
 
-      <div className="cnode__card video-op-node__card">
-        <div className="video-op-node__summary">
+      <div
+        className={`cnode__card relative flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-card border bg-surface-raised p-2.5 shadow-node transition-colors duration-[120ms] ${
+          selected
+            ? 'border-border-selected'
+            : 'border-border group-hover:border-border-strong'
+        }`}
+      >
+        <div className="flex flex-col gap-0.5 text-[11px] text-fg-subtle">
           <span>{source?.data.title ?? '源视频'}</span>
           <span>
             {needsRange
@@ -417,17 +459,18 @@ export function VideoOpNodeView({
 
         <Button
           type="button"
-          className="video-op-node__toggle nodrag nopan"
+          variant="ghost"
+          size="none"
+          className="nodrag nopan !h-[26px] self-start !rounded-[6px] !bg-surface-hover !px-2.5 !text-[11px] !font-normal !text-fg-muted hover:!bg-surface-hover hover:!text-fg-muted"
           onClick={() => patchVideoOpNode(id, { expanded: !data.expanded })}
-          unstyled
         >
           {data.expanded ? '收起参数' : '设置参数'}
         </Button>
 
         {data.expanded ? (
-          <div className="video-op-node__form nodrag nopan">
+          <div className="nodrag nopan flex flex-col gap-3 border-t border-border pt-1">
             {sourceOutput ? (
-              <div className="video-op-node__preview">
+              <div className="relative aspect-video w-full overflow-hidden rounded-[8px] bg-media-bg">
                 <VideoPlayer
                   src={assetUrl(sourceOutput.path, sourceOutput.scope)}
                   path={sourceOutput.path}
@@ -439,30 +482,39 @@ export function VideoOpNodeView({
                 />
               </div>
             ) : (
-              <div className="video-op-node__warn">源节点没有视频输出</div>
+              <div className="rounded-[8px] border border-dashed border-danger p-2.5 text-center text-[11px] text-danger">
+                源节点没有视频输出
+              </div>
             )}
 
             {needsRange ? (
-              <div className="video-op-node__section">
-                <div className="video-op-node__section-head">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2 text-[11.5px] text-fg-muted">
                   <span>重拍区间</span>
                   <span>
                     {startValue.toFixed(1)}s – {endValue.toFixed(1)}s
                   </span>
                 </div>
 
-                <div className="video-edit-thumbs">
+                <div className="flex h-14 overflow-hidden rounded-[8px] bg-surface-hover">
                   {thumbs.map((item) => (
-                    <img key={item.at} src={item.url} alt="" />
+                    <img
+                      key={item.at}
+                      src={item.url}
+                      alt=""
+                      className="h-full min-w-0 flex-1 object-cover"
+                    />
                   ))}
                   {thumbs.length === 0 ? (
-                    <div className="video-edit-thumbs__empty">加载缩略帧…</div>
+                    <div className="flex w-full items-center justify-center text-[11px] text-fg-subtle">
+                      加载缩略帧…
+                    </div>
                   ) : null}
                 </div>
 
-                <div className="video-edit-range">
+                <div className="relative h-1 rounded-[2px] bg-surface-hover">
                   <div
-                    className="video-edit-range__fill"
+                    className="absolute top-0 bottom-0 rounded-[2px] bg-link"
                     style={{
                       left: `${(startValue / max) * 100}%`,
                       right: `${100 - (endValue / max) * 100}%`
@@ -470,7 +522,7 @@ export function VideoOpNodeView({
                   />
                 </div>
 
-                <label className="video-edit-panel__field">
+                <label className={FIELD_CLASS}>
                   <span>开始</span>
                   <Input
                     type="range"
@@ -478,12 +530,12 @@ export function VideoOpNodeView({
                     max={max}
                     step={0.1}
                     value={startValue}
+                    className={RANGE_CLASS}
                     onChange={(event) =>
                       setStart(
                         Math.min(Number(event.target.value), endValue - 0.1)
                       )
                     }
-                    unstyled
                   />
                   <Input
                     type="number"
@@ -491,6 +543,7 @@ export function VideoOpNodeView({
                     max={max}
                     step={0.1}
                     value={startValue.toFixed(1)}
+                    className={NUMBER_CLASS}
                     onChange={(event) =>
                       setStart(
                         Math.min(
@@ -499,11 +552,10 @@ export function VideoOpNodeView({
                         )
                       )
                     }
-                    unstyled
                   />
                 </label>
 
-                <label className="video-edit-panel__field">
+                <label className={FIELD_CLASS}>
                   <span>结束</span>
                   <Input
                     type="range"
@@ -511,12 +563,12 @@ export function VideoOpNodeView({
                     max={max}
                     step={0.1}
                     value={endValue}
+                    className={RANGE_CLASS}
                     onChange={(event) =>
                       setEnd(
                         Math.max(Number(event.target.value), startValue + 0.1)
                       )
                     }
-                    unstyled
                   />
                   <Input
                     type="number"
@@ -524,6 +576,7 @@ export function VideoOpNodeView({
                     max={max}
                     step={0.1}
                     value={endValue.toFixed(1)}
+                    className={NUMBER_CLASS}
                     onChange={(event) =>
                       setEnd(
                         Math.min(
@@ -535,37 +588,38 @@ export function VideoOpNodeView({
                         )
                       )
                     }
-                    unstyled
                   />
                 </label>
               </div>
             ) : null}
 
             {data.operation === 'extend' ? (
-              <div className="video-op-node__section">
-                <div className="video-op-node__section-head">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2 text-[11.5px] text-fg-muted">
                   <span>续写方向</span>
-                  <div className="video-edit-panel__direction">
+                  <div className="flex gap-1">
                     <Button
                       type="button"
-                      className={direction === 'forward' ? 'is-active' : ''}
+                      variant="ghost"
+                      size="none"
+                      className={tabClass(direction === 'forward')}
                       onClick={() => setDirection('forward')}
-                      unstyled
                     >
                       向后
                     </Button>
                     <Button
                       type="button"
-                      className={direction === 'backward' ? 'is-active' : ''}
+                      variant="ghost"
+                      size="none"
+                      className={tabClass(direction === 'backward')}
                       onClick={() => setDirection('backward')}
-                      unstyled
                     >
                       向前
                     </Button>
                   </div>
                 </div>
 
-                <label className="video-edit-panel__field">
+                <label className={FIELD_CLASS}>
                   <span>新增时长</span>
                   <Input
                     type="range"
@@ -573,10 +627,10 @@ export function VideoOpNodeView({
                     max={10}
                     step={1}
                     value={extendDuration}
+                    className={RANGE_CLASS}
                     onChange={(event) =>
                       setExtendDuration(Number(event.target.value))
                     }
-                    unstyled
                   />
                   <Input
                     type="number"
@@ -584,112 +638,124 @@ export function VideoOpNodeView({
                     max={10}
                     step={1}
                     value={extendDuration}
+                    className={NUMBER_CLASS}
                     onChange={(event) =>
                       setExtendDuration(
                         Math.min(10, Math.max(1, Number(event.target.value)))
                       )
                     }
-                    unstyled
                   />
                 </label>
               </div>
             ) : null}
 
             {needsReference ? (
-              <div className="video-op-node__section">
-                <div className="video-op-node__section-head">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2 text-[11.5px] text-fg-muted">
                   <span>替换素材</span>
                   <Button
                     type="button"
-                    className="video-edit-panel__link"
+                    variant="ghost"
+                    size="none"
+                    className="!text-[11px] !font-normal !text-link hover:!bg-transparent hover:!text-link"
                     onClick={() => setPickerOpen((value) => !value)}
-                    unstyled
                   >
                     {reference ? '更换' : '选择图片'}
                   </Button>
                 </div>
 
                 {reference ? (
-                  <div className="video-edit-ref">
+                  <div className="flex items-center gap-2 rounded-[8px] bg-surface-hover p-1.5">
                     <img
                       src={assetUrl(reference.thumb, reference.scope)}
                       alt=""
+                      className="h-11 w-11 rounded-[6px] object-cover"
                     />
-                    <span>{reference.name}</span>
+                    <span className="min-w-0 flex-1 truncate text-[11.5px] text-fg-muted">
+                      {reference.name}
+                    </span>
                     <Button
                       type="button"
-                      className="icon-btn"
+                      variant="ghost"
+                      size="none"
+                      className="!h-7 !w-7 shrink-0 !rounded-[8px] !text-fg-muted hover:!bg-surface-hover hover:!text-fg"
                       title="移除"
                       onClick={() => setReference(null)}
-                      unstyled
                     >
                       <Icon name="close" size={11} />
                     </Button>
                   </div>
                 ) : (
-                  <div className="video-edit-ref__empty">
+                  <div className="rounded-[8px] border border-dashed border-border p-2.5 text-center text-[11px] text-fg-subtle">
                     还没有选择替换目标
                   </div>
                 )}
 
                 {pickerOpen ? (
-                  <div className="video-edit-picker">
-                    <div className="video-edit-picker__head">
-                      <div className="video-edit-picker__tabs">
+                  <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface-raised p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex gap-1">
                         <Button
                           type="button"
-                          className={pickerTab === 'canvas' ? 'is-active' : ''}
+                          variant="ghost"
+                          size="none"
+                          className={tabClass(pickerTab === 'canvas')}
                           onClick={() => setPickerTab('canvas')}
-                          unstyled
                         >
                           画布
                         </Button>
                         <Button
                           type="button"
-                          className={pickerTab === 'library' ? 'is-active' : ''}
+                          variant="ghost"
+                          size="none"
+                          className={tabClass(pickerTab === 'library')}
                           onClick={() => setPickerTab('library')}
-                          unstyled
                         >
                           资产库
                         </Button>
                       </div>
                       <Button
                         type="button"
-                        className="btn-secondary btn-small"
+                        variant="secondary"
+                        size="xs"
                         disabled={uploading}
                         onClick={() => void handleUpload()}
-                        unstyled
                       >
                         {uploading ? '上传中…' : '上传'}
                       </Button>
                     </div>
 
-                    <div className="video-edit-picker__grid">
+                    <div className="grid max-h-[140px] grid-cols-5 gap-1 overflow-y-auto">
                       {pickerOptions.slice(0, 30).map((item) => (
                         <Button
                           key={`${item.scope ?? 'project'}:${item.path}`}
                           type="button"
-                          className={`video-edit-picker__item${
+                          variant="ghost"
+                          size="none"
+                          className={`aspect-square overflow-hidden !rounded-[6px] !border !p-0 ${
                             reference?.path === item.path &&
                             (reference?.scope ?? 'project') ===
                               (item.scope ?? 'project')
-                              ? ' is-active'
-                              : ''
+                              ? '!border-link'
+                              : '!border-transparent'
                           }`}
                           title={item.name}
                           onClick={() => {
                             setReference(item)
                             setPickerOpen(false)
                           }}
-                          unstyled
                         >
-                          <img src={assetUrl(item.thumb, item.scope)} alt="" />
+                          <img
+                            src={assetUrl(item.thumb, item.scope)}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
                         </Button>
                       ))}
                     </div>
 
                     {pickerOptions.length === 0 ? (
-                      <div className="video-edit-picker__empty">
+                      <div className="p-3 text-center text-[11px] text-fg-subtle">
                         {pickerTab === 'canvas'
                           ? '画布上没有图片'
                           : '资产库没有图片'}
@@ -700,26 +766,27 @@ export function VideoOpNodeView({
               </div>
             ) : null}
 
-            <div className="video-op-node__section">
-              <div className="video-op-node__section-head">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2 text-[11.5px] text-fg-muted">
                 <span>模型</span>
                 {activeMissing ? (
-                  <span className="video-edit-panel__warn">
-                    {activeMissing}
-                  </span>
+                  <span className="text-[10px] text-danger">{activeMissing}</span>
                 ) : null}
               </div>
 
-              <div className="video-edit-models">
+              <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
                 {videoModels.map((item) => {
                   const reason = availability(item.model)
                   return (
                     <Button
                       key={item.key}
                       type="button"
-                      className={`video-edit-model${
-                        item.key === modelKey ? ' is-active' : ''
-                      }${reason ? ' is-disabled' : ''}`}
+                      variant="ghost"
+                      size="none"
+                      className={modelClass(
+                        item.key === modelKey,
+                        Boolean(reason)
+                      )}
                       title={reason ?? undefined}
                       onClick={() => {
                         if (reason) {
@@ -728,24 +795,23 @@ export function VideoOpNodeView({
                         }
                         setModelKey(item.key)
                       }}
-                      unstyled
                     >
                       <span>{item.model.name}</span>
-                      <span className="video-edit-model__meta">
+                      <span className="text-[10px] text-fg-subtle">
                         {reason ? reason : item.providerName}
                       </span>
                     </Button>
                   )
                 })}
                 {videoModels.length === 0 ? (
-                  <div className="video-edit-models__empty">
+                  <div className="p-2.5 text-center text-[11px] text-fg-subtle">
                     还没有视频模型，请先在设置中添加
                   </div>
                 ) : null}
               </div>
             </div>
 
-            <label className="video-edit-panel__field video-edit-panel__field--stack">
+            <label className={`${FIELD_CLASS} !grid-cols-1`}>
               <span>描述</span>
               <Textarea
                 rows={4}
@@ -757,17 +823,18 @@ export function VideoOpNodeView({
                       ? '描述延长部分发生的动作'
                       : '描述这一段应该怎么重拍'
                 }
+                className="!rounded-[8px] !bg-surface-hover !p-2 !text-xs !min-h-0"
                 onChange={(event) => setPrompt(event.target.value)}
-                unstyled
               />
             </label>
 
             <Button
               type="button"
-              className="btn-primary video-op-node__generate nodrag nopan"
+              variant="primary"
+              size="none"
+              className="nodrag nopan !h-[34px] w-full !rounded-[8px] !text-[13px]"
               disabled={Boolean(activeMissing) || !prompt.trim()}
               onClick={handleGenerate}
-              unstyled
             >
               开始生成
             </Button>

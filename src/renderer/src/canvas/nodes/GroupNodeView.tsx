@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
 import { Icon } from '../../components/Icon'
 import { useCanvasStore, type GroupNode } from '../../stores/canvas'
@@ -59,12 +59,25 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
 
   return (
     <div
-      className={`group-node group-node--${data.color} ${
-        data.mode === 'storyboard' ? 'group-node--storyboard' : ''
-      } ${selected ? 'is-selected' : ''}`}
+      className={`group-node relative h-full w-full rounded-[14px] transition-[border-color,box-shadow] duration-[120ms] ${
+        data.mode === 'storyboard'
+          ? 'border-[1.5px] border-dashed'
+          : 'border border-solid'
+      } ${
+        selected
+          ? 'border-[var(--group-color)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--group-color)_45%,transparent)]'
+          : 'border-[color-mix(in_srgb,var(--group-color)_60%,transparent)]'
+      } bg-[color-mix(in_srgb,var(--group-color)_6%,transparent)] ${
+        selected ? 'is-selected' : ''
+      }`}
+      style={
+        {
+          '--group-color': `var(--group-${data.color}, var(--group-blue))`
+        } as CSSProperties
+      }
     >
       <div
-        className="group-node__header"
+        className="flex h-9 cursor-grab items-center gap-2 px-3"
         onDoubleClick={(event) => {
           event.stopPropagation()
           setDraft(data.title)
@@ -74,7 +87,7 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
         {editing ? (
           <Input
             ref={inputRef}
-            className="group-node__input nodrag"
+            className="nodrag !h-6 min-w-0 flex-1 !rounded-[6px] !border-[var(--group-color)] !bg-surface !px-1.5 !text-[13px]"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onPointerDown={(event) => event.stopPropagation()}
@@ -83,12 +96,15 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
               if (event.key === 'Escape') cancel()
             }}
             onBlur={commit}
-            unstyled
           />
         ) : (
-          <span className="group-node__title">{data.title}</span>
+          <span className="truncate text-[13px] font-medium text-fg">
+            {data.title}
+          </span>
         )}
-        <span className="group-node__count">{childCount} 个节点</span>
+        <span className="ml-auto text-[11px] whitespace-nowrap text-fg-subtle">
+          {childCount} 个节点
+        </span>
       </div>
 
       <Handle

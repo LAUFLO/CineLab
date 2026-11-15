@@ -10,6 +10,8 @@ import { requestDeleteSelection } from './delete-actions'
 import { createStudioFromNodes } from '../studio/nodes'
 import { Button } from '../components/ui'
 
+const BTN_CLASS = 'h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal'
+
 export function MultiSelectBar() {
   const nodes = useCanvasStore((state) => state.nodes)
   const groupSelection = useCanvasStore((state) => state.groupSelection)
@@ -206,44 +208,47 @@ export function MultiSelectBar() {
 
   return (
     <div
-      className="multi-bar nodrag nopan"
+      className="fixed z-[90] flex h-[42px] -translate-x-1/2 items-center gap-0.5 whitespace-nowrap rounded-xl border border-border bg-surface px-1.5 shadow-float animate-[menu-in_120ms_ease-out] nodrag nopan"
       style={{ left: position.left, top: position.top }}
       onPointerDown={(event) => event.stopPropagation()}
     >
       {canGroup ? (
         canStoryboard ? (
-          <div className="multi-bar__menu-wrap" ref={groupMenuRef}>
+          <div className="relative" ref={groupMenuRef}>
             <Button
               type="button"
-              className={`multi-bar__btn ${groupMenuOpen ? 'is-open' : ''}`}
+              variant="ghost"
+              size="none"
+              className={BTN_CLASS}
               onClick={() => setGroupMenuOpen((open) => !open)}
-              unstyled
             >
               <Icon name="layers" size={14} />
               <span>打组</span>
               <Icon name="chevron-down" size={12} />
             </Button>
             {groupMenuOpen ? (
-              <div className="multi-bar__pop">
+              <div className="absolute left-0 top-[46px] z-[95] min-w-[148px] rounded-[10px] border border-border bg-surface p-1.5 shadow-menu">
                 <Button
                   type="button"
-                  className="multi-bar__pop-item"
+                  variant="ghost"
+                  size="none"
+                  className="!flex h-8 w-full !justify-start !rounded-md px-2.5 text-[13px] !font-normal"
                   onClick={() => {
                     group()
                     setGroupMenuOpen(false)
                   }}
-                  unstyled
                 >
                   打组
                 </Button>
                 <Button
                   type="button"
-                  className="multi-bar__pop-item"
+                  variant="ghost"
+                  size="none"
+                  className="!flex h-8 w-full !justify-start !rounded-md px-2.5 text-[13px] !font-normal"
                   onClick={() => {
                     storyboard()
                     setGroupMenuOpen(false)
                   }}
-                  unstyled
                 >
                   合并分镜组
                 </Button>
@@ -253,9 +258,10 @@ export function MultiSelectBar() {
         ) : (
           <Button
             type="button"
-            className="multi-bar__btn"
+            variant="ghost"
+            size="none"
+            className={BTN_CLASS}
             onClick={group}
-            unstyled
           >
             <Icon name="layers" size={14} />
             <span>打组</span>
@@ -266,23 +272,27 @@ export function MultiSelectBar() {
       {canMerge ? (
         <Button
           type="button"
-          className="multi-bar__btn"
+          variant="ghost"
+          size="none"
+          className={BTN_CLASS}
           onClick={merge}
-          unstyled
         >
           <Icon name="layers" size={14} />
           <span>合并分组</span>
         </Button>
       ) : null}
 
-      {canGroup || canMerge ? <div className="multi-bar__divider" /> : null}
+      {canGroup || canMerge ? (
+        <div className="mx-1 h-[18px] w-px bg-divider" />
+      ) : null}
 
       {canStudio ? (
         <Button
           type="button"
-          className="multi-bar__btn"
+          variant="ghost"
+          size="none"
+          className={BTN_CLASS}
           onClick={makeStudio}
-          unstyled
         >
           <Icon name="film" size={14} />
           <span>剪辑室</span>
@@ -291,9 +301,10 @@ export function MultiSelectBar() {
 
       <Button
         type="button"
-        className="multi-bar__btn"
+        variant="ghost"
+        size="none"
+        className={BTN_CLASS}
         onClick={() => void saveToLibrary()}
-        unstyled
       >
         <Icon name="folder" size={14} />
         <span>保存到资产</span>
@@ -301,9 +312,10 @@ export function MultiSelectBar() {
 
       <Button
         type="button"
-        className="multi-bar__btn"
+        variant="ghost"
+        size="none"
+        className={BTN_CLASS}
         onClick={duplicate}
-        unstyled
       >
         <Icon name="plus" size={14} />
         <span>创建副本</span>
@@ -311,21 +323,23 @@ export function MultiSelectBar() {
 
       <Button
         type="button"
-        className="multi-bar__btn"
+        variant="ghost"
+        size="none"
+        className={BTN_CLASS}
         onClick={() => void exportAssets()}
-        unstyled
       >
         <Icon name="download" size={14} />
         <span>导出选中</span>
       </Button>
 
-      <div className="multi-bar__divider" />
+      <div className="mx-1 h-[18px] w-px bg-divider" />
 
       <Button
         type="button"
-        className="multi-bar__btn"
+        variant="ghost"
+        size="none"
+        className={BTN_CLASS}
         onClick={remove}
-        unstyled
       >
         <Icon name="close" size={14} />
         <span>删除</span>

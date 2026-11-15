@@ -155,18 +155,24 @@ export function AddNodeMenu() {
   return (
     <>
       {wire ? (
-        <svg className="add-menu__wire" aria-hidden="true">
-          <path d={wire} />
+        <svg
+          className="pointer-events-none fixed inset-0 z-[99] h-full w-full"
+          aria-hidden="true"
+        >
+          <path
+            d={wire}
+            className="fill-none stroke-[color-mix(in_srgb,var(--link)_55%,transparent)] [stroke-dasharray:5_4] [stroke-width:1.5]"
+          />
         </svg>
       ) : null}
 
       <div
         ref={ref}
-        className="add-menu"
+        className="add-menu fixed z-[100] max-h-[calc(100vh-120px)] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 shadow-menu [animation:menu-in_120ms_ease-out]"
         style={style}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <div className="add-menu__title">
+        <div className="px-2 pt-1.5 pb-1 text-[11px] text-fg-subtle">
           {menu.source
             ? sourceIsGroup
               ? `引用组内 ${sourceChildren} 个节点`
@@ -174,45 +180,51 @@ export function AddNodeMenu() {
             : '添加节点'}
         </div>
 
-        <div className="add-menu__search">
+        <div className="mb-1 flex h-7 items-center gap-1.5 rounded-md bg-surface-hover px-2 text-fg-subtle">
           <Icon name="search" size={13} />
           <Input
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="搜索节点…"
-            unstyled
+            className="!h-auto !min-w-0 !flex-1 !rounded-none !border-0 !bg-transparent !p-0 !text-xs !text-fg focus:!border-transparent"
           />
         </div>
 
-        <div className="add-menu__list">
+        <div>
           {kinds.map((kind) => (
             <Button
               key={kind}
               type="button"
-              className="add-menu__item"
+              variant="ghost"
+              size="none"
+              className="!flex h-8 w-full items-center gap-2 !justify-start !rounded-md px-2 text-[13px] !font-normal !text-fg-muted hover:!text-fg disabled:!opacity-40"
               onClick={() => pick(kind)}
-              unstyled
             >
               <Icon name={ICONS[kind]} size={16} />
               <span>{NODE_META[kind].label}</span>
             </Button>
           ))}
           {kinds.length === 0 && !stageMatches && (
-            <div className="add-menu__empty">没有匹配的节点</div>
+            <div className="px-2 py-2.5 text-center text-xs text-fg-subtle">
+              没有匹配的节点
+            </div>
           )}
         </div>
 
         {!menu.source && stageMatches ? (
           <>
-            <div className="add-menu__divider" />
-            <div className="add-menu__title">场景</div>
+            <div className="mx-1.5 my-1 h-px bg-divider" />
+            <div className="px-2 pt-1.5 pb-1 text-[11px] text-fg-subtle">
+              场景
+            </div>
             <Button
               type="button"
-              className="add-menu__item"
+              variant="ghost"
+              size="none"
+              className="!flex h-8 w-full items-center gap-2 !justify-start !rounded-md px-2 text-[13px] !font-normal !text-fg-muted hover:!text-fg disabled:!opacity-40"
               onClick={() => void addStage()}
               disabled={creatingStage}
-              unstyled
             >
               <Icon name="frame" size={16} />
               <span>{creatingStage ? '创建中…' : '导演台'}</span>
@@ -222,41 +234,46 @@ export function AddNodeMenu() {
 
         {!menu.source && query.trim() === '' ? (
           <>
-            <div className="add-menu__divider" />
-            <div className="add-menu__title">添加资源</div>
+            <div className="mx-1.5 my-1 h-px bg-divider" />
+            <div className="px-2 pt-1.5 pb-1 text-[11px] text-fg-subtle">
+              添加资源
+            </div>
             <Button
               type="button"
-              className="add-menu__item"
+              variant="ghost"
+              size="none"
+              className="!flex h-8 w-full items-center gap-2 !justify-start !rounded-md px-2 text-[13px] !font-normal !text-fg-muted hover:!text-fg disabled:!opacity-40"
               onClick={() => {
                 closeMenu()
                 const studioId = createStudioAt(menu.flow)
                 useStudioStore.getState().openStudio(studioId)
               }}
-              unstyled
             >
               <Icon name="film" size={16} />
               <span>剪辑室</span>
             </Button>
             <Button
               type="button"
-              className="add-menu__item"
+              variant="ghost"
+              size="none"
+              className="!flex h-8 w-full items-center gap-2 !justify-start !rounded-md px-2 text-[13px] !font-normal !text-fg-muted hover:!text-fg disabled:!opacity-40"
               onClick={() => {
                 closeMenu()
                 void uploadMaterialsAt(menu.flow)
               }}
-              unstyled
             >
               <Icon name="folder-plus" size={16} />
               <span>上传素材</span>
             </Button>
             <Button
               type="button"
-              className="add-menu__item"
+              variant="ghost"
+              size="none"
+              className="!flex h-8 w-full items-center gap-2 !justify-start !rounded-md px-2 text-[13px] !font-normal !text-fg-muted hover:!text-fg disabled:!opacity-40"
               onClick={() => {
                 closeMenu()
                 useUIStore.getState().openHistory()
               }}
-              unstyled
             >
               <Icon name="history" size={16} />
               <span>从生成历史选择</span>
@@ -266,8 +283,14 @@ export function AddNodeMenu() {
 
         {menu.source ? (
           <>
-            <div className="add-menu__divider" />
-            <Button type="button" className="add-menu__item" disabled unstyled>
+            <div className="mx-1.5 my-1 h-px bg-divider" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="none"
+              className="!flex h-8 w-full items-center gap-2 !justify-start !rounded-md px-2 text-[13px] !font-normal !text-fg-muted hover:!text-fg disabled:!opacity-40"
+              disabled
+            >
               <Icon name="cursor" size={16} />
               <span>参考节点</span>
             </Button>

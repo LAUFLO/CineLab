@@ -138,57 +138,75 @@ export function ProjectCard({
   }
 
   return (
-    <div className="project-center__card">
+    <div className="group relative rounded-xl border border-border bg-surface-raised p-3 text-left hover:border-border-strong hover:bg-surface-hover">
       <Button
         type="button"
-        className="project-center__cover"
+        variant="ghost"
+        size="none"
+        className="mb-2.5 flex aspect-square w-full items-center justify-center rounded-lg border-0 bg-surface-hover p-0 text-fg-subtle"
         onClick={() => onOpen(project.path)}
         title={`打开 ${project.name}`}
-        unstyled
       >
-        {cover ? <img src={cover} alt="" /> : <Icon name="folder" size={22} />}
+        {cover ? (
+          <img src={cover} alt="" className="h-full w-full rounded-[inherit] object-cover" />
+        ) : (
+          <Icon name="folder" size={22} />
+        )}
       </Button>
 
       <Button
         type="button"
-        className="project-center__card-info"
+        variant="ghost"
+        size="none"
+        className="flex w-full flex-col !items-start border-0 bg-transparent p-0 !text-left"
         onClick={() => onOpen(project.path)}
-        unstyled
       >
-        <span className="project-center__card-name">{project.name}</span>
-        <span className="project-center__card-path" title={project.path}>
+        <span className="block w-full text-[13px] text-fg">{project.name}</span>
+        <span
+          className="mt-[3px] block w-full min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[10px] text-fg-subtle"
+          title={project.path}
+        >
           {project.path}
         </span>
-        <span className="project-center__card-time">
+        <span className="mt-1 block text-[10px] text-fg-subtle">
           {new Date(project.lastOpenedAt).toLocaleString('zh-CN')}
         </span>
       </Button>
 
-      <div className="project-card__menu-wrap" ref={menuRef}>
+      <div className="absolute right-2.5 top-2.5 z-[5]" ref={menuRef}>
         <Button
           type="button"
-          className="project-card__edit"
+          variant="ghost"
+          size="none"
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-surface p-0 text-fg-muted opacity-0 transition-opacity duration-150 hover:bg-surface-hover hover:text-fg focus-visible:opacity-100 group-hover:opacity-100"
           title="更换封面"
           onClick={() => setMenuOpen((open) => !open)}
           disabled={busy}
-          unstyled
         >
           <Icon name="image" size={14} />
         </Button>
 
         {menuOpen ? (
-          <div className="project-card__menu">
-            <Button type="button" onClick={() => void setLocal()} unstyled>
+          <div className="absolute right-0 top-8 flex min-w-[132px] flex-col rounded-lg border border-border bg-surface-raised p-1 shadow-menu">
+            <Button
+              type="button"
+              variant="ghost"
+              size="none"
+              className="h-[30px] rounded-md px-2.5 !justify-start text-xs text-fg hover:bg-surface-hover"
+              onClick={() => void setLocal()}
+            >
               从本地选择
             </Button>
             {canPickCanvas ? (
               <Button
                 type="button"
+                variant="ghost"
+                size="none"
+                className="h-[30px] rounded-md px-2.5 !justify-start text-xs text-fg hover:bg-surface-hover"
                 onClick={() => {
                   setMenuOpen(false)
                   setPickerOpen(true)
                 }}
-                unstyled
               >
                 从画布选择
               </Button>
@@ -196,9 +214,10 @@ export function ProjectCard({
             {cover ? (
               <Button
                 type="button"
-                className="is-danger"
+                variant="ghost"
+                size="none"
+                className="h-[30px] rounded-md px-2.5 !justify-start text-xs text-danger hover:bg-surface-hover"
                 onClick={() => void removeCover()}
-                unstyled
               >
                 移除封面
               </Button>
@@ -209,43 +228,51 @@ export function ProjectCard({
 
       {pickerOpen ? (
         <div
-          className="cover-picker-overlay"
+          className="fixed inset-0 z-[320] flex items-center justify-center bg-black/40 p-8"
           onPointerDown={() => setPickerOpen(false)}
         >
           <div
-            className="cover-picker"
+            className="flex max-h-[min(560px,80vh)] w-[min(760px,100%)] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-float"
             onPointerDown={(event) => event.stopPropagation()}
           >
-            <header className="cover-picker__head">
+            <header className="flex h-12 shrink-0 items-center justify-between border-b border-divider px-4 text-[14px] text-fg">
               <span>选择画布图片</span>
               <Button
                 type="button"
-                className="icon-btn"
+                variant="ghost"
+                size="sm"
                 onClick={() => setPickerOpen(false)}
-                unstyled
+                aria-label="关闭"
               >
                 <Icon name="close" size={14} />
               </Button>
             </header>
 
-            <div className="cover-picker__body">
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
               {canvasImages.length > 0 ? (
-                <div className="cover-picker__grid">
+                <div className="grid grid-cols-4 gap-3">
                   {canvasImages.map((image) => (
                     <Button
                       key={image.id}
                       type="button"
-                      className="cover-picker__item"
+                      variant="ghost"
+                      size="none"
+                      className="rounded-[10px] border border-border bg-surface-raised p-2 !text-left hover:border-border-strong hover:bg-surface-hover"
                       onClick={() => void setAsset(image.path)}
-                      unstyled
                     >
-                      <img src={assetUrl(image.path)} alt="" />
-                      <span>{image.title}</span>
+                      <img
+                        src={assetUrl(image.path)}
+                        alt=""
+                        className="mb-1.5 aspect-square w-full rounded-md object-cover"
+                      />
+                      <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-xs text-fg-muted">
+                        {image.title}
+                      </span>
                     </Button>
                   ))}
                 </div>
               ) : (
-                <div className="cover-picker__empty">
+                <div className="px-4 py-12 text-center text-[13px] text-fg-subtle">
                   当前画布没有可用的图片素材
                 </div>
               )}

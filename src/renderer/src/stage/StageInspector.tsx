@@ -20,6 +20,15 @@ const TYPE_LABEL: Record<StageObject['type'], string> = {
 
 const ASPECTS: StageAspect[] = ['16:9', '9:16', '1:1']
 
+const FIELD_CLASS = '!h-[26px] !rounded-[5px] !px-1.5 !text-[10px] font-mono'
+const FIELD_LABEL_CLASS =
+  'flex items-baseline justify-between text-[11px] text-fg-subtle'
+const FIELD_GROUP_CLASS = 'mt-2 flex flex-col gap-1'
+const DANGER_BUTTON_CLASS =
+  'mt-2.5 h-7 !rounded-[7px] border border-[color-mix(in_srgb,var(--danger)_40%,var(--border))] bg-transparent text-[11px] !font-normal !text-danger hover:bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
+const ACTION_BUTTON_CLASS =
+  'mt-2.5 h-7 !rounded-[7px] bg-surface text-[11px] !font-normal !text-fg hover:bg-surface-hover hover:!text-fg'
+
 function format(value: number, scale = 1): string {
   const result = value * scale
   return Number.isInteger(result) ? String(result) : result.toFixed(2)
@@ -27,9 +36,11 @@ function format(value: number, scale = 1): string {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="stage-inspector__row">
-      <span>{label}</span>
-      <strong>{value}</strong>
+    <div className="flex items-baseline justify-between gap-2.5 py-[3px]">
+      <span className="shrink-0 text-[11px] text-fg-subtle">{label}</span>
+      <strong className="overflow-hidden text-right font-mono text-[10px] font-medium text-ellipsis whitespace-nowrap text-fg">
+        {value}
+      </strong>
     </div>
   )
 }
@@ -69,15 +80,18 @@ function Vec3Field({
   }
 
   return (
-    <div className="stage-field">
-      <span className="stage-field__label">
+    <div className={FIELD_GROUP_CLASS}>
+      <span className={FIELD_LABEL_CLASS}>
         {label}
-        {suffix ? <small>{suffix}</small> : null}
+        {suffix ? (
+          <small className="text-[9px] text-fg-subtle">{suffix}</small>
+        ) : null}
       </span>
-      <div className="stage-field__vec">
+      <div className="grid grid-cols-3 gap-1">
         {draft.map((item, index) => (
           <Input
             key={index}
+            className={FIELD_CLASS}
             value={item}
             inputMode="decimal"
             onChange={(event) => {
@@ -89,7 +103,6 @@ function Vec3Field({
             onKeyDown={(event) => {
               if (event.key === 'Enter') event.currentTarget.blur()
             }}
-            unstyled
           />
         ))}
       </div>
@@ -126,15 +139,15 @@ function NumberField({
   }
 
   return (
-    <label className="stage-field">
-      <span className="stage-field__label">
+    <label className={FIELD_GROUP_CLASS}>
+      <span className={FIELD_LABEL_CLASS}>
         {label}
-        <small>
+        <small className="text-[9px] text-fg-subtle">
           {min}-{max}
         </small>
       </span>
       <Input
-        className="stage-field__single"
+        className={FIELD_CLASS}
         value={draft}
         inputMode="decimal"
         onChange={(event) => setDraft(event.target.value)}
@@ -142,7 +155,6 @@ function NumberField({
         onKeyDown={(event) => {
           if (event.key === 'Enter') event.currentTarget.blur()
         }}
-        unstyled
       />
     </label>
   )
@@ -164,10 +176,10 @@ function TextField({
   }, [value])
 
   return (
-    <label className="stage-field">
-      <span className="stage-field__label">{label}</span>
+    <label className={FIELD_GROUP_CLASS}>
+      <span className={FIELD_LABEL_CLASS}>{label}</span>
       <Input
-        className="stage-field__single"
+        className={FIELD_CLASS}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={(event) => {
@@ -178,7 +190,6 @@ function TextField({
         onKeyDown={(event) => {
           if (event.key === 'Enter') event.currentTarget.blur()
         }}
-        unstyled
       />
     </label>
   )
@@ -191,10 +202,12 @@ function ObjectInspector({ object }: { object: StageObject }) {
   )
 
   return (
-    <section className="stage-inspector">
-      <header className="stage-inspector__head">
-        <span>对象</span>
-        <strong>{object.name}</strong>
+    <section className="flex flex-col gap-1">
+      <header className="mb-1 flex flex-col gap-0.5 border-b border-border pb-2">
+        <span className="text-[10px] text-fg-subtle">对象</span>
+        <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
+          {object.name}
+        </strong>
       </header>
       <Row label="类型" value={TYPE_LABEL[object.type]} />
 
@@ -226,15 +239,14 @@ function ObjectInspector({ object }: { object: StageObject }) {
         onCommit={(scale) => updateObject(object.id, { transform: { scale } })}
       />
 
-      <label className="stage-field">
-        <span className="stage-field__label">姿势</span>
+      <label className={FIELD_GROUP_CLASS}>
+        <span className={FIELD_LABEL_CLASS}>姿势</span>
         <NativeSelect
-          className="stage-field__single"
+          className={FIELD_CLASS}
           value={object.pose ?? 'stand'}
           onChange={(event) =>
             updateObject(object.id, { pose: event.target.value })
           }
-          unstyled
         >
           {STAGE_POSE_PRESETS.map((pose) => (
             <option key={pose} value={pose}>
@@ -244,36 +256,38 @@ function ObjectInspector({ object }: { object: StageObject }) {
         </NativeSelect>
       </label>
 
-      <label className="stage-field">
-        <span className="stage-field__label">颜色</span>
+      <label className={FIELD_GROUP_CLASS}>
+        <span className={FIELD_LABEL_CLASS}>颜色</span>
         <Input
-          className="stage-field__color"
+          className="!h-7 !rounded-[5px] !p-0.5 cursor-pointer"
           type="color"
           value={object.color ?? '#9ca3af'}
           onChange={(event) =>
             updateObject(object.id, { color: event.target.value })
           }
-          unstyled
         />
       </label>
 
-      <label className="stage-field stage-field--check">
-        <span className="stage-field__label">可见</span>
+      <label
+        className={`${FIELD_GROUP_CLASS} !flex-row items-center justify-between`}
+      >
+        <span className={FIELD_LABEL_CLASS}>可见</span>
         <Input
+          className="!h-[13px] !w-[13px] !rounded-none !border-0 !bg-transparent !p-0 accent-pick-bar"
           type="checkbox"
           checked={object.visible !== false}
           onChange={(event) =>
             updateObject(object.id, { visible: event.target.checked })
           }
-          unstyled
         />
       </label>
 
       <Button
         type="button"
-        className="stage-inspector__danger"
+        variant="ghost"
+        size="none"
+        className={DANGER_BUTTON_CLASS}
         onClick={() => removeSelectedObject()}
-        unstyled
       >
         删除对象
       </Button>
@@ -289,10 +303,12 @@ function CameraInspector({ camera }: { camera: StageCamera }) {
   const selectCamera = useStageStore((state) => state.selectCamera)
 
   return (
-    <section className="stage-inspector">
-      <header className="stage-inspector__head">
-        <span>机位</span>
-        <strong>{camera.name}</strong>
+    <section className="flex flex-col gap-1">
+      <header className="mb-1 flex flex-col gap-0.5 border-b border-border pb-2">
+        <span className="text-[10px] text-fg-subtle">机位</span>
+        <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
+          {camera.name}
+        </strong>
       </header>
 
       <TextField
@@ -318,17 +334,16 @@ function CameraInspector({ camera }: { camera: StageCamera }) {
         onCommit={(fov) => updateCamera(camera.id, { fov })}
       />
 
-      <label className="stage-field">
-        <span className="stage-field__label">画幅</span>
+      <label className={FIELD_GROUP_CLASS}>
+        <span className={FIELD_LABEL_CLASS}>画幅</span>
         <NativeSelect
-          className="stage-field__single"
+          className={FIELD_CLASS}
           value={camera.aspect ?? '16:9'}
           onChange={(event) =>
             updateCamera(camera.id, {
               aspect: event.target.value as StageAspect
             })
           }
-          unstyled
         >
           {ASPECTS.map((aspect) => (
             <option key={aspect} value={aspect}>
@@ -340,17 +355,19 @@ function CameraInspector({ camera }: { camera: StageCamera }) {
 
       <Button
         type="button"
-        className="stage-inspector__action"
+        variant="secondary"
+        size="none"
+        className={ACTION_BUTTON_CLASS}
         onClick={() => selectCamera(camera.id)}
-        unstyled
       >
         切换到此机位
       </Button>
       <Button
         type="button"
-        className="stage-inspector__danger"
+        variant="ghost"
+        size="none"
+        className={DANGER_BUTTON_CLASS}
         onClick={() => removeSelectedCamera()}
-        unstyled
       >
         删除机位
       </Button>
@@ -372,16 +389,18 @@ export function StageInspector() {
   if (camera) return <CameraInspector camera={camera} />
 
   return (
-    <section className="stage-inspector">
-      <header className="stage-inspector__head">
-        <span>场景</span>
-        <strong>{doc.name}</strong>
+    <section className="flex flex-col gap-1">
+      <header className="mb-1 flex flex-col gap-0.5 border-b border-border pb-2">
+        <span className="text-[10px] text-fg-subtle">场景</span>
+        <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
+          {doc.name}
+        </strong>
       </header>
       <Row label="对象" value={`${doc.objects.length}`} />
       <Row label="机位" value={`${doc.cameras.length}`} />
       <Row label="镜头" value={`${doc.shots.length}`} />
       <Row label="背景" value={doc.background.kind} />
-      <p className="stage-inspector__hint">
+      <p className="mt-2.5 text-[10px] leading-relaxed text-fg-subtle">
         选中对象或机位后可编辑属性；也可以在视口里拖拽变换。
       </p>
     </section>

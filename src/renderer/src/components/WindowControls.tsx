@@ -15,52 +15,57 @@ export function WindowControls({ theme, onToggleTheme }: WindowControlsProps) {
     document.documentElement.dataset.platform === 'darwin'
 
   return (
-    <div className="window-controls">
+    <div className="window-controls fixed right-3 top-1.5 z-[300] flex items-center gap-1 [-webkit-app-region:no-drag]">
       <Button
         type="button"
-        className="icon-btn"
+        variant="ghost"
+        size="none"
+        className="h-7 w-7 rounded-lg !text-fg"
         title="切换主题"
         onClick={onToggleTheme}
-        unstyled
       >
         <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
       </Button>
       <Button
         type="button"
-        className="icon-btn"
+        variant="ghost"
+        size="none"
+        className="h-7 w-7 rounded-lg !text-fg"
         title="设置"
         onClick={() => openSettings()}
-        unstyled
       >
         <Icon name="settings" />
       </Button>
       {!isMac && (
         <>
-          <span className="window-controls__divider" />
+          <span className="mx-1.5 h-4 w-px bg-divider" />
           <Button
             type="button"
-            className="icon-btn icon-btn--window"
+            variant="ghost"
+            size="none"
+            className="h-7 w-8 !rounded-md !text-fg"
             title="最小化"
             onClick={() => window.api.app.minimize()}
-            unstyled
           >
             <Icon name="minimize" size={14} />
           </Button>
           <Button
             type="button"
-            className="icon-btn icon-btn--window"
+            variant="ghost"
+            size="none"
+            className="h-7 w-8 !rounded-md !text-fg"
             title="最大化"
             onClick={() => window.api.app.maximize()}
-            unstyled
           >
             <Icon name="maximize" size={12} />
           </Button>
           <Button
             type="button"
-            className="icon-btn icon-btn--window icon-btn--close"
+            variant="ghost"
+            size="none"
+            className="h-7 w-8 !rounded-md !text-fg"
             title="关闭"
             onClick={() => window.api.app.close()}
-            unstyled
           >
             <Icon name="close" size={14} />
           </Button>

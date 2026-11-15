@@ -49,92 +49,99 @@ export function BottomBar() {
   }
 
   return (
-    <div className="bottombar">
+    <div className="bottombar absolute bottom-4 left-1/2 z-20 flex h-10 -translate-x-1/2 items-center gap-0.5 rounded-xl border border-border bg-surface p-1 shadow-float">
       <Button
         type="button"
-        className="icon-btn bottombar__add"
+        variant="ghost"
+        size="none"
+        className="h-7 w-7 rounded-lg !bg-pick-bar !text-fg-inverse hover:!bg-[color-mix(in_srgb,var(--pick-bar)_86%,var(--text-1))] hover:!text-fg-inverse"
         title="添加节点或资源"
         onClick={add}
-        unstyled
       >
         <Icon name="plus" />
       </Button>
 
-      <div className="bottombar__divider" />
+      <div className="mx-1 h-4 w-px bg-divider" />
 
-      <div className="bottombar__tool" ref={toolWrapRef}>
+      <div className="relative flex" ref={toolWrapRef}>
         <Button
           type="button"
-          className={`icon-btn ${toolMenuOpen ? 'is-open' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`h-7 w-7 rounded-lg ${toolMenuOpen ? '!bg-surface-hover !text-fg' : ''}`}
           title={`当前工具：${tool === 'select' ? '选择' : '抓手'}`}
           onClick={() => setToolMenuOpen((open) => !open)}
-          unstyled
         >
           <Icon name={tool === 'select' ? 'cursor' : 'move'} />
         </Button>
 
         {toolMenuOpen ? (
-          <div className="bottombar__tool-menu">
+          <div className="absolute bottom-[38px] left-1/2 z-30 -ml-[74px] w-[148px] rounded-[10px] border border-border bg-surface p-1.5 shadow-menu animate-[menu-in_120ms_ease-out]">
             <Button
               type="button"
-              className={`bottombar__tool-item ${
-                tool === 'select' ? 'is-active' : ''
+              variant="ghost"
+              size="none"
+              className={`!flex h-8 w-full items-center gap-2 !rounded-[7px] px-2 text-[13px] !font-normal hover:bg-surface-hover hover:text-fg ${
+                tool === 'select' ? '!bg-surface-hover !text-fg' : ''
               }`}
               onClick={() => {
                 setTool('select')
                 setToolMenuOpen(false)
               }}
-              unstyled
             >
               <Icon name="cursor" size={14} />
               <span>选择</span>
-              <kbd>V</kbd>
+              <kbd className="ml-auto font-[inherit] text-[11px] text-fg-subtle">V</kbd>
             </Button>
             <Button
               type="button"
-              className={`bottombar__tool-item ${
-                tool === 'hand' ? 'is-active' : ''
+              variant="ghost"
+              size="none"
+              className={`!flex h-8 w-full items-center gap-2 !rounded-[7px] px-2 text-[13px] !font-normal hover:bg-surface-hover hover:text-fg ${
+                tool === 'hand' ? '!bg-surface-hover !text-fg' : ''
               }`}
               onClick={() => {
                 setTool('hand')
                 setToolMenuOpen(false)
               }}
-              unstyled
             >
               <Icon name="move" size={14} />
               <span>抓手</span>
-              <kbd>H</kbd>
+              <kbd className="ml-auto font-[inherit] text-[11px] text-fg-subtle">H</kbd>
             </Button>
           </div>
         ) : null}
       </div>
 
-      <div className="bottombar__divider" />
+      <div className="mx-1 h-4 w-px bg-divider" />
 
       <Button
         type="button"
-        className="icon-btn"
+        variant="ghost"
+        size="none"
+        className="h-7 w-7 rounded-lg"
         title="生成历史"
         onClick={openHistory}
-        unstyled
       >
         <Icon name="history" />
       </Button>
       <Button
         type="button"
-        className="icon-btn"
+        variant="ghost"
+        size="none"
+        className="h-7 w-7 rounded-lg"
         title="快捷键"
         onClick={openShortcuts}
-        unstyled
       >
         <Icon name="keyboard" />
       </Button>
       <Button
         type="button"
-        className="icon-btn"
+        variant="ghost"
+        size="none"
+        className="h-7 w-7 rounded-lg"
         title="教程（即将支持）"
         onClick={() => showToast('教程将在后续版本提供')}
-        unstyled
       >
         <Icon name="help" />
       </Button>

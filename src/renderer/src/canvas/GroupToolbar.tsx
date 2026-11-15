@@ -1,11 +1,28 @@
 import { useLayoutEffect, useState } from 'react'
-import { GROUP_COLORS, GROUP_LABELS } from '@shared/canvas-schema'
+import {
+  GROUP_COLORS,
+  GROUP_LABELS,
+  type GroupColor
+} from '@shared/canvas-schema'
 import { Icon } from '../components/Icon'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 import { Button } from '../components/ui'
 
 type MenuKind = 'arrange' | 'color'
+
+const GROUP_BG: Record<GroupColor, string> = {
+  blue: 'bg-group-blue',
+  cyan: 'bg-group-cyan',
+  teal: 'bg-group-teal',
+  green: 'bg-group-green',
+  lime: 'bg-group-lime',
+  amber: 'bg-group-amber',
+  orange: 'bg-group-orange',
+  rose: 'bg-group-rose',
+  violet: 'bg-group-violet',
+  slate: 'bg-group-slate'
+}
 
 export function GroupToolbar() {
   const nodes = useCanvasStore((state) => state.nodes)
@@ -77,32 +94,36 @@ export function GroupToolbar() {
 
   return (
     <div
-      className="group-toolbar nodrag nopan"
+      className="nodrag nopan fixed z-[92] flex h-[42px] items-center gap-0.5 rounded-[12px] border border-border bg-surface px-1.5 whitespace-nowrap shadow-float [animation:menu-in_120ms_ease-out] [translate:-50%_0]"
       style={{ left: position.left, top: position.top }}
       onPointerDown={(event) => event.stopPropagation()}
     >
       <Button
         type="button"
-        className="group-toolbar__btn"
+        variant="ghost"
+        size="none"
+        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
         onClick={() => startGroupRename(group.id)}
-        unstyled
       >
         <Icon name="text" size={14} />
         <span>重命名</span>
       </Button>
 
-      <div className="group-toolbar__menu-wrap">
+      <div className="relative">
         <Button
           type="button"
-          className={`group-toolbar__btn ${menu === 'arrange' ? 'is-open' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal ${
+            menu === 'arrange' ? 'bg-surface-hover !text-fg' : ''
+          }`}
           onClick={() => setMenu(menu === 'arrange' ? null : 'arrange')}
-          unstyled
         >
           <Icon name="grid" size={14} />
           <span>排列</span>
         </Button>
         {menu === 'arrange' ? (
-          <div className="group-toolbar__pop">
+          <div className="absolute top-[38px] left-1/2 z-[93] min-w-[108px] -translate-x-1/2 rounded-[10px] border border-border bg-surface p-1.5 shadow-menu">
             {(
               [
                 ['row', '横排'],
@@ -113,12 +134,13 @@ export function GroupToolbar() {
               <Button
                 key={mode}
                 type="button"
-                className="group-toolbar__pop-item"
+                variant="ghost"
+                size="none"
+                className="!flex h-8 w-full items-center !justify-start !rounded-md px-2.5 text-[13px] !font-normal"
                 onClick={() => {
                   arrangeGroup(group.id, mode)
                   setMenu(null)
                 }}
-                unstyled
               >
                 {label}
               </Button>
@@ -127,46 +149,53 @@ export function GroupToolbar() {
         ) : null}
       </div>
 
-      <div className="group-toolbar__menu-wrap">
+      <div className="relative">
         <Button
           type="button"
-          className={`group-toolbar__btn ${menu === 'color' ? 'is-open' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal ${
+            menu === 'color' ? 'bg-surface-hover !text-fg' : ''
+          }`}
           onClick={() => setMenu(menu === 'color' ? null : 'color')}
-          unstyled
         >
           <span
-            className={`group-toolbar__dot group-color-${group.data.color}`}
+            className={`h-2.5 w-2.5 rounded-pill ${GROUP_BG[group.data.color]}`}
           />
           <span>颜色</span>
         </Button>
         {menu === 'color' ? (
-          <div className="group-toolbar__pop group-color-grid">
+          <div className="absolute top-[38px] left-1/2 z-[93] grid min-w-0 -translate-x-1/2 grid-cols-[repeat(5,22px)] gap-1.5 rounded-[10px] border border-border bg-surface p-2 shadow-menu">
             {GROUP_COLORS.map((color) => (
               <Button
                 key={color}
                 type="button"
+                variant="ghost"
+                size="none"
                 title={GROUP_LABELS[color]}
-                className={`group-color-swatch group-color-${color} ${
-                  group.data.color === color ? 'is-active' : ''
-                }`}
+                className={`h-[22px] w-[22px] !rounded-md border p-0 hover:!bg-transparent ${
+                  group.data.color === color
+                    ? '!border-fg shadow-[0_0_0_1px_var(--text-1)]'
+                    : 'border-transparent hover:!border-border-strong'
+                } ${GROUP_BG[color]}`}
                 onClick={() => {
                   setGroupColor(group.id, color)
                   setMenu(null)
                 }}
-                unstyled
               />
             ))}
           </div>
         ) : null}
       </div>
 
-      <div className="group-toolbar__divider" />
+      <div className="mx-1 h-[18px] w-px bg-divider" />
 
       <Button
         type="button"
-        className="group-toolbar__btn"
+        variant="ghost"
+        size="none"
+        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
         onClick={() => ungroup(group.id)}
-        unstyled
       >
         <Icon name="minimize" size={14} />
         <span>解组</span>
@@ -174,9 +203,10 @@ export function GroupToolbar() {
 
       <Button
         type="button"
-        className="group-toolbar__btn group-toolbar__btn--danger"
+        variant="ghost"
+        size="none"
+        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal hover:!bg-danger hover:!text-fg-inverse"
         onClick={remove}
-        unstyled
       >
         <Icon name="close" size={14} />
         <span>删除</span>

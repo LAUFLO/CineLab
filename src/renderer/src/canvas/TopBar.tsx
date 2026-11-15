@@ -159,28 +159,32 @@ export function TopBar() {
 
   return (
     <>
-      <header className="topbar">
-        <div className="topbar__group" ref={menuRef}>
-          <div className="topbar__workspace">
+      <header className="topbar pointer-events-none absolute inset-x-0 top-0 z-20 flex h-14 items-start justify-between px-3 [-webkit-app-region:drag]">
+        <div
+          className="pointer-events-auto ml-1 flex items-center gap-1 pt-4 [-webkit-app-region:no-drag] [[data-platform='darwin']_&]:pl-[68px]"
+          ref={menuRef}
+        >
+          <div className="relative flex h-10 items-center rounded-[14px] border border-border bg-surface px-1.5">
             <Button
               type="button"
-              className="topbar__brand"
+              variant="ghost"
+              size="none"
+              className="h-[30px] gap-1.5 rounded-lg px-2 text-[13px] !font-normal !text-fg"
               onClick={() => {
                 setProjectMenuOpen((open) => !open)
                 setCanvasMenuOpen(false)
                 setProjectsOpen(false)
               }}
-              unstyled
             >
               <BrandWordmark height={16} />
               <Icon name="chevron-down" size={12} />
             </Button>
 
-            <span className="topbar__divider" />
+            <span className="mx-2 h-[18px] w-px bg-divider" />
 
             {editingProject ? (
               <Input
-                className="topbar__name-input"
+                className="!h-[30px] !w-[140px] !rounded-md !border-border-strong !bg-surface-hover !px-2 !text-[13px] !text-fg"
                 value={projectDraft}
                 autoFocus
                 onChange={(event) => setProjectDraft(event.target.value)}
@@ -189,11 +193,10 @@ export function TopBar() {
                   if (event.key === 'Enter') void submitProjectName()
                   if (event.key === 'Escape') setEditingProject(false)
                 }}
-                unstyled
               />
             ) : (
               <span
-                className="topbar__project-name"
+                className="max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap text-[13px] text-fg"
                 title="双击重命名"
                 onDoubleClick={() => {
                   setProjectDraft(name)
@@ -204,50 +207,54 @@ export function TopBar() {
               </span>
             )}
 
-            <span className="topbar__divider" />
+            <span className="mx-2 h-[18px] w-px bg-divider" />
 
             {projectMenuOpen ? (
-              <div className="project-menu">
+              <div className="absolute left-0 top-[44px] z-[60] w-[280px] rounded-[14px] border border-border bg-surface p-1.5 shadow-menu">
                 <Button
                   type="button"
-                  className="add-menu__item"
+                  variant="ghost"
+                  size="none"
+                  className="!flex h-[42px] w-full !justify-start rounded-lg px-3 text-[15px] !font-normal"
                   onClick={() => void openProjects()}
-                  unstyled
                 >
                   <Icon name="folder" size={16} />
                   <span>全部项目</span>
                 </Button>
                 <Button
                   type="button"
-                  className="add-menu__item"
+                  variant="ghost"
+                  size="none"
+                  className="!flex h-[42px] w-full !justify-start rounded-lg px-3 text-[15px] !font-normal"
                   onClick={() => {
                     closeAll()
                     void startNew()
                   }}
-                  unstyled
                 >
                   <Icon name="plus" size={16} />
                   <span>创建新项目</span>
                 </Button>
-                <div className="add-menu__divider" />
+                <div className="mx-1.5 my-1 h-px bg-divider" />
                 <Button
                   type="button"
-                  className="add-menu__item"
+                  variant="ghost"
+                  size="none"
+                  className="!flex h-[42px] w-full !justify-start rounded-lg px-3 text-[15px] !font-normal"
                   onClick={() => {
                     setProjectDraft(name)
                     setEditingProject(true)
                     setProjectMenuOpen(false)
                   }}
-                  unstyled
                 >
                   <Icon name="text" size={16} />
                   <span>重命名项目</span>
                 </Button>
                 <Button
                   type="button"
-                  className="add-menu__item"
+                  variant="ghost"
+                  size="none"
+                  className="!flex h-[42px] w-full !justify-start rounded-lg px-3 text-[15px] !font-normal"
                   onClick={() => void handleDeleteProject()}
-                  unstyled
                 >
                   <Icon name="close" size={16} />
                   <span>删除项目</span>
@@ -255,28 +262,29 @@ export function TopBar() {
               </div>
             ) : null}
 
-            <div className="topbar__canvas">
+            <div className="relative">
               <Button
                 type="button"
-                className="topbar__canvas-trigger"
+                variant="ghost"
+                size="none"
+                className="h-[30px] gap-1 rounded-lg px-2 text-[13px] !font-normal"
                 onClick={() => {
                   setCanvasMenuOpen((open) => !open)
                   setProjectMenuOpen(false)
                   setProjectsOpen(false)
                 }}
-                unstyled
               >
                 {canvasName}
                 <Icon name="chevron-down" size={12} />
               </Button>
 
               {canvasMenuOpen ? (
-                <div className="project-menu canvas-menu">
+                <div className="absolute left-0 top-10 z-[60] w-60 rounded-[14px] border border-border bg-surface p-1.5 shadow-menu">
                   {canvases.map((canvas) => (
-                    <div key={canvas.id} className="canvas-menu__row">
+                    <div key={canvas.id} className="flex items-center gap-0.5">
                       {editingCanvasId === canvas.id ? (
                         <Input
-                          className="topbar__name-input"
+                          className="!h-[30px] !w-auto min-w-0 flex-1 !rounded-md !border-border-strong !bg-surface-hover !px-2 !text-[13px] !text-fg"
                           value={canvasDraft}
                           autoFocus
                           onChange={(event) =>
@@ -288,19 +296,19 @@ export function TopBar() {
                               void submitCanvasName(canvas.id)
                             if (event.key === 'Escape') setEditingCanvasId(null)
                           }}
-                          unstyled
                         />
                       ) : (
                         <Button
                           type="button"
-                          className={`add-menu__item canvas-menu__item ${
-                            canvas.id === canvasId ? 'is-active' : ''
+                          variant="ghost"
+                          size="none"
+                          className={`h-8 min-w-0 flex-1 !justify-start !rounded-md px-2 text-[13px] !font-normal ${
+                            canvas.id === canvasId ? 'bg-surface-hover !text-fg' : ''
                           }`}
                           onClick={() => {
                             closeAll()
                             void switchCanvas(canvas.id)
                           }}
-                          unstyled
                         >
                           <Icon name="grid" size={15} />
                           <span>{canvas.name}</span>
@@ -308,38 +316,41 @@ export function TopBar() {
                       )}
                       <Button
                         type="button"
-                        className="icon-btn"
+                        variant="ghost"
+                        size="none"
+                        className="h-7 w-7 shrink-0 rounded-lg p-0"
                         title="重命名画布"
                         onClick={() => {
                           setEditingCanvasId(canvas.id)
                           setCanvasDraft(canvas.name)
                         }}
-                        unstyled
                       >
                         <Icon name="text" size={12} />
                       </Button>
                       <Button
                         type="button"
-                        className="icon-btn"
+                        variant="ghost"
+                        size="none"
+                        className="h-7 w-7 shrink-0 rounded-lg p-0"
                         title="删除画布"
                         disabled={canvases.length <= 1}
                         onClick={() => void deleteCanvas(canvas.id)}
-                        unstyled
                       >
                         <Icon name="close" size={12} />
                       </Button>
                     </div>
                   ))}
 
-                  <div className="add-menu__divider" />
+                  <div className="mx-1.5 my-1 h-px bg-divider" />
                   <Button
                     type="button"
-                    className="add-menu__item"
+                    variant="ghost"
+                    size="none"
+                    className="!flex h-[42px] w-full !justify-start rounded-lg px-3 text-[15px] !font-normal"
                     onClick={() => {
                       closeAll()
                       void createCanvas()
                     }}
-                    unstyled
                   >
                     <Icon name="plus" size={16} />
                     <span>新建画布</span>
@@ -350,50 +361,55 @@ export function TopBar() {
           </div>
         </div>
 
-        <div className="topbar__group">
-          <span className="topbar__save">{saveLabel}</span>
+        <div className="pointer-events-auto flex items-center gap-1 pr-48 pt-1.5 [-webkit-app-region:no-drag] [[data-platform='darwin']_&]:pr-3">
+          <span className="whitespace-nowrap px-1 text-[11px] text-fg-subtle">{saveLabel}</span>
           {updateStatus?.state === 'available' ||
           updateStatus?.state === 'downloaded' ? (
             <Button
               type="button"
-              className="icon-btn topbar__update"
+              variant="ghost"
+              size="none"
+              className="relative h-7 w-7 rounded-lg p-0"
               title={
                 updateStatus.state === 'downloaded'
                   ? '新版本已下载，点击打开更新'
                   : `发现新版本 ${updateStatus.latestVersion ?? ''}`
               }
               onClick={() => openSettings('about')}
-              unstyled
             >
               <Icon name="download" />
-              <span className="topbar__update-dot" />
+              <span className="absolute right-[5px] top-[5px] h-1.5 w-1.5 rounded-full bg-pick-bar" />
             </Button>
           ) : null}
-          <div className="export-wrap" ref={exportRef}>
+          <div className="relative" ref={exportRef}>
             <Button
-              className="icon-btn"
+              type="button"
+              variant="ghost"
+              size="none"
+              className="h-7 w-7 rounded-lg p-0"
               title="导出"
               onClick={() => setExportMenuOpen((open) => !open)}
-              unstyled
             >
               <Icon name="download" />
             </Button>
             {exportMenuOpen ? (
-              <div className="export-menu">
+              <div className="export-menu absolute right-0 top-[34px] z-[90] w-[216px] rounded-[14px] border border-border bg-surface p-1.5 shadow-menu">
                 <Button
                   type="button"
-                  className="add-menu__item"
+                  variant="ghost"
+                  size="none"
+                  className="!flex h-[38px] w-full !justify-start rounded-lg px-2.5 text-[13px] !font-normal"
                   onClick={() => void exportProject()}
-                  unstyled
                 >
                   <Icon name="folder" size={16} />
                   <span>导出项目（.zip）</span>
                 </Button>
                 <Button
                   type="button"
-                  className="add-menu__item"
+                  variant="ghost"
+                  size="none"
+                  className="!flex h-[38px] w-full !justify-start rounded-lg px-2.5 text-[13px] !font-normal"
                   onClick={() => void exportCanvas()}
-                  unstyled
                 >
                   <Icon name="image" size={16} />
                   <span>导出当前画布 PNG</span>
@@ -406,28 +422,29 @@ export function TopBar() {
 
       {projectsOpen ? (
         <div
-          className="projects-overlay"
+          className="fixed inset-0 z-[160] flex items-center justify-center bg-black/40 p-8 [-webkit-app-region:no-drag]"
           onPointerDown={() => setProjectsOpen(false)}
         >
           <div
-            className="projects-dialog"
+            className="flex h-[min(800px,100%)] w-[min(1600px,100%)] flex-col overflow-hidden rounded-[18px] border border-border bg-surface shadow-float"
             onPointerDown={(event) => event.stopPropagation()}
           >
-            <header className="projects-dialog__head">
+            <header className="flex h-14 shrink-0 items-center justify-between border-b border-divider px-5 text-[15px] text-fg">
               <span>全部项目</span>
               <Button
                 type="button"
-                className="icon-btn"
+                variant="ghost"
+                size="none"
+                className="h-7 w-7 rounded-lg p-0"
                 onClick={() => setProjectsOpen(false)}
-                unstyled
               >
                 <Icon name="close" size={14} />
               </Button>
             </header>
 
-            <div className="projects-dialog__body">
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
               {recent.length > 0 ? (
-                <div className="projects-dialog__grid">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-2.5 [&>div]:rounded-[10px] [&>div]:p-2.5">
                   {recent.map((item) => (
                     <ProjectCard
                       key={item.path}
@@ -442,30 +459,32 @@ export function TopBar() {
                   ))}
                 </div>
               ) : (
-                <div className="projects-dialog__empty">还没有项目</div>
+                <div className="px-2 py-12 text-center text-[13px] text-fg-subtle">还没有项目</div>
               )}
             </div>
 
-            <footer className="projects-dialog__footer">
+            <footer className="flex shrink-0 justify-end gap-2 border-t border-divider px-5 py-3.5">
               <Button
                 type="button"
-                className="btn-secondary"
+                variant="secondary"
+                size="none"
+                className="h-[34px] rounded-lg px-4 text-[13px] !font-normal"
                 onClick={() => {
                   setProjectsOpen(false)
                   void startNew()
                 }}
-                unstyled
               >
                 新建项目
               </Button>
               <Button
                 type="button"
-                className="btn-secondary"
+                variant="secondary"
+                size="none"
+                className="h-[34px] rounded-lg px-4 text-[13px] !font-normal"
                 onClick={() => {
                   setProjectsOpen(false)
                   void openExisting()
                 }}
-                unstyled
               >
                 打开已有项目
               </Button>
@@ -475,7 +494,7 @@ export function TopBar() {
       ) : null}
 
       {exportNotice ? (
-        <Toast unstyled className="export-toast">
+        <Toast className="!bottom-[72px] !z-[320] max-w-[560px] !rounded-lg border-border !bg-surface !px-3.5 !py-2 !text-xs text-fg">
           {exportNotice}
         </Toast>
       ) : null}

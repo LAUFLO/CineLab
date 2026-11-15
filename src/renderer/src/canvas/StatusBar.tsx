@@ -18,12 +18,13 @@ export function StatusBar() {
   const requestArrange = useUIStore((state) => state.requestArrange)
 
   return (
-    <div className="statusbar">
+    <div className="statusbar absolute bottom-4 left-4 z-20 flex h-10 items-center gap-0.5 rounded-xl border border-border bg-surface px-1.5 py-1 text-xs text-fg-muted shadow-float">
       <Button
         type="button"
-        className="statusbar__item"
+        variant="ghost"
+        size="none"
+        className="h-[30px] gap-1.5 rounded-lg px-2 !font-normal"
         onClick={() => openLibrary('角色')}
-        unstyled
       >
         <Icon name="folder" size={15} />
         资产管理
@@ -31,55 +32,68 @@ export function StatusBar() {
 
       <Button
         type="button"
-        className="statusbar__icon"
+        variant="ghost"
+        size="none"
+        className="h-[30px] w-[30px] rounded-lg"
         title="整理画布 Alt+Shift+F"
         onClick={requestArrange}
-        unstyled
       >
         <Icon name="grid" size={15} />
       </Button>
 
       <Button
         type="button"
-        className="statusbar__icon"
+        variant="ghost"
+        size="none"
+        className="h-[30px] w-[30px] rounded-lg"
         title="适应视图"
         onClick={requestFitView}
-        unstyled
       >
         <Icon name="target" size={15} />
       </Button>
 
       <Button
         type="button"
-        className={`statusbar__icon ${edgesVisible ? '' : 'is-active'}`}
+        variant="ghost"
+        size="none"
+        className={`h-[30px] w-[30px] rounded-lg ${
+          edgesVisible ? '' : '!bg-surface-hover !text-fg'
+        }`}
         title={edgesVisible ? '隐藏节点连线' : '显示节点连线'}
         onClick={toggleEdges}
-        unstyled
       >
         <Icon name="link" size={15} />
       </Button>
 
       <Button
         type="button"
-        className={`statusbar__icon ${snapToGrid ? 'is-active' : ''}`}
+        variant="ghost"
+        size="none"
+        className={`h-[30px] w-[30px] rounded-lg ${
+          snapToGrid ? '!bg-surface-hover !text-fg' : ''
+        }`}
         title="网格吸附"
         onClick={toggleSnap}
-        unstyled
       >
         <Icon name="magnet" size={15} />
       </Button>
 
       <Button
         type="button"
-        className={`statusbar__icon ${minimapVisible ? 'is-active' : ''}`}
+        variant="ghost"
+        size="none"
+        className={`h-[30px] w-[30px] rounded-lg ${
+          minimapVisible ? '!bg-surface-hover !text-fg' : ''
+        }`}
         title="小地图"
         onClick={toggleMinimap}
-        unstyled
       >
         <Icon name="minimap" size={15} />
       </Button>
 
-      <span className="statusbar__zoom">{Math.round(zoom * 100)}%</span>
+      <span className="whitespace-nowrap px-1.5 text-fg-muted tabular-nums">
+        {Math.round(zoom * 100)}%
+      </span>
     </div>
   )
 }

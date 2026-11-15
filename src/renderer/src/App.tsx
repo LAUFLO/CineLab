@@ -218,9 +218,10 @@ export default function App() {
         <div className="boot-screen__error">{error}</div>
         <Button
           type="button"
-          className="empty-action"
+          variant="secondary"
+          size="none"
+          className="h-11 gap-2 !rounded-[10px] bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
           onClick={() => void bootstrap()}
-          unstyled
         >
           重试
         </Button>
@@ -228,7 +229,7 @@ export default function App() {
     )
   } else {
     content = (
-      <div className="app-shell">
+      <div className="relative h-full w-full bg-canvas">
         <Canvas key={canvasId ?? 'canvas'} theme={resolved} />
         <TopBar />
         <BottomBar />
@@ -248,7 +249,9 @@ export default function App() {
   return (
     <>
       {content}
-      {phase === 'ready' ? null : <div className="window-drag-strip" />}
+      {phase === 'ready' ? null : (
+        <div className="fixed inset-x-0 top-0 z-[15] h-10 [-webkit-app-region:drag]" />
+      )}
       <SettingsPanel />
       {studioOpen ? (
         <Suspense fallback={null}>

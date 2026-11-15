@@ -98,32 +98,39 @@ export function NodeContextMenu() {
   return (
     <div
       ref={ref}
-      className="ctx-menu ctx-menu--node"
+      className="fixed z-[120] max-h-[520px] overflow-y-auto rounded-[12px] border border-border bg-surface p-1.5 shadow-menu [animation:menu-in_120ms_ease-out]"
       style={{ left, top, width: MENU_WIDTH, maxHeight: MENU_MAX_HEIGHT }}
       onPointerDown={(event) => event.stopPropagation()}
       onContextMenu={(event) => event.preventDefault()}
     >
       {sections.map((section, index) => (
         <div key={`${section.title ?? 'section'}-${index}`}>
-          {index > 0 ? <div className="ctx-menu__divider" /> : null}
+          {index > 0 ? <div className="mx-2 my-[5px] h-px bg-divider" /> : null}
           {section.title ? (
-            <div className="ctx-menu__section">{section.title}</div>
+            <div className="px-2.5 pt-1.5 pb-[3px] text-[10.5px] text-fg-subtle">
+              {section.title}
+            </div>
           ) : null}
           {section.actions.map((action) => (
             <Button
               key={action.label}
               type="button"
-              className={`ctx-menu__item${action.danger ? ' is-danger' : ''}`}
+              variant="ghost"
+              size="none"
+              className={`!flex h-8 w-full items-center !justify-between gap-3 rounded-lg px-3 text-[12.5px] !font-normal disabled:!text-fg-subtle disabled:!opacity-100 ${
+                action.danger
+                  ? '!text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
+                  : '!text-fg'
+              }`}
               disabled={action.disabled}
               onClick={() => {
                 close()
                 action.run()
               }}
-              unstyled
             >
               <span>{action.label}</span>
               {action.hint ? (
-                <span className="ctx-menu__shortcut">{action.hint}</span>
+                <span className="text-xs text-fg-subtle">{action.hint}</span>
               ) : null}
             </Button>
           ))}

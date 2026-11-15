@@ -58,6 +58,12 @@ interface NodeToolbarProps {
 
 const SECTION_ORDER: OperationSection[] = ['generate', 'edit', 'video']
 const MAX_PRIMARY = 6
+const TOOLBAR_BTN =
+  '!h-7 gap-[3px] !rounded-[7px] !px-[5px] !text-xs !font-normal'
+const TOOLBAR_MENU_ITEM =
+  '!min-h-8 !rounded-md !px-2 !py-0 !text-xs !text-fg-muted hover:!text-fg'
+const TOOLBAR_MENU_ITEM_DISABLED =
+  '!text-fg-subtle hover:!bg-transparent hover:!text-fg-subtle cursor-not-allowed'
 
 function defaultParams(model: ModelDef): Record<string, unknown> {
   const values: Record<string, unknown> = {}
@@ -714,8 +720,12 @@ export function NodeToolbar({
   return (
     <>
       <div
-        className={`cnode__toolbar nodrag nopan ${
-          align === 'left' ? 'is-left' : align === 'right' ? 'is-right' : ''
+        className={`nodrag nopan absolute bottom-[calc(100%+var(--node-toolbar-offset,10px))] z-10 flex h-9 items-center gap-px rounded-[10px] border border-border bg-surface px-[5px] text-fg whitespace-nowrap shadow-float ${
+          align === 'left'
+            ? 'left-0'
+            : align === 'right'
+              ? 'right-0 left-auto'
+              : 'left-1/2 [translate:-50%_0] [transform:scale(var(--canvas-zoom-inverse,1))] [transform-origin:bottom_center]'
         }`}
       >
         {primaryOps.map((op) => {
@@ -723,12 +733,21 @@ export function NodeToolbar({
           const hasMenu = Boolean(op.menu)
 
           return (
-            <div className="cnode__toolbar-item" key={`${nodeId}-${op.id}`}>
+            <div
+              className="cnode__toolbar-item relative flex"
+              key={`${nodeId}-${op.id}`}
+            >
               <Button
                 type="button"
-                className={`cnode__toolbar-btn ${
-                  openId === op.id ? 'is-active' : ''
-                } ${reason ? 'is-disabled' : ''}`}
+                variant="ghost"
+                size="none"
+                className={`${TOOLBAR_BTN} ${
+                  openId === op.id ? 'bg-surface-hover !text-fg' : ''
+                } ${
+                  reason
+                    ? '!text-fg-subtle cursor-not-allowed hover:!bg-transparent hover:!text-fg-subtle'
+                    : ''
+                }`}
                 title={reason ?? op.label}
                 aria-disabled={Boolean(reason)}
                 onClick={(event) => {
@@ -736,7 +755,6 @@ export function NodeToolbar({
                   if (hasMenu) togglePrimaryMenu(op)
                   else activate(op)
                 }}
-                unstyled
               >
                 <Icon name={op.icon} size={14} />
                 <span>{op.label}</span>
@@ -744,15 +762,15 @@ export function NodeToolbar({
               </Button>
 
               {openId === op.id && op.menu ? (
-                <div className="cnode__toolbar-menu">
+                <div className="absolute top-[calc(100%+8px)] bottom-auto left-0 z-[80] max-h-[min(360px,55vh)] min-w-[196px] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 whitespace-normal shadow-menu">
                   {op.menu.map((item) => (
                     <MenuItem
                       key={item.id}
-                      className="cnode__toolbar-menu__item"
+                      className={TOOLBAR_MENU_ITEM}
                       onSelect={() => activate(op, item)}
                       trailing={
                         item.hint ? (
-                          <span className="cnode__toolbar-menu__hint">
+                          <span className="block max-w-[118px] truncate text-[11px]">
                             {item.hint}
                           </span>
                         ) : undefined
@@ -768,16 +786,19 @@ export function NodeToolbar({
         })}
 
         {moreOps.length > 0 ? (
-          <div className="cnode__toolbar-item">
+          <div className="cnode__toolbar-item relative flex">
             <Button
               type="button"
-              className={`cnode__toolbar-btn ${openId === 'more' ? 'is-active' : ''}`}
+              variant="ghost"
+              size="none"
+              className={`${TOOLBAR_BTN} ${
+                openId === 'more' ? 'bg-surface-hover !text-fg' : ''
+              }`}
               onClick={(event) => {
                 event.stopPropagation()
                 setMoreSub(null)
                 setOpenId((currentId) => (currentId === 'more' ? null : 'more'))
               }}
-              unstyled
             >
               <Icon name="more" size={14} />
               <span>更多</span>
@@ -785,13 +806,10 @@ export function NodeToolbar({
             </Button>
 
             {openId === 'more' ? (
-              <div className="cnode__toolbar-menu is-right is-more">
+              <div className="absolute top-[calc(100%+8px)] bottom-auto right-0 left-auto z-[80] max-h-[min(360px,55vh)] min-w-[232px] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 whitespace-normal shadow-menu">
                 {moreGroups.map((group) => (
-                  <div
-                    className="cnode__toolbar-menu__section"
-                    key={group.section}
-                  >
-                    <div className="cnode__toolbar-menu__section-title">
+                  <div key={group.section}>
+                    <div className="px-2 pt-1.5 pb-1 text-[11px] text-fg-subtle">
                       {OPERATION_SECTIONS[group.section]}
                     </div>
 
@@ -804,8 +822,8 @@ export function NodeToolbar({
                           <MenuItem
                             icon={<Icon name={op.icon} size={14} />}
                             title={reason ?? op.label}
-                            className={`cnode__toolbar-menu__item ${
-                              reason ? 'is-disabled' : ''
+                            className={`${TOOLBAR_MENU_ITEM} ${
+                              reason ? TOOLBAR_MENU_ITEM_DISABLED : ''
                             }`}
                             onSelect={(event) => {
                               if (reason) {
@@ -835,7 +853,7 @@ export function NodeToolbar({
                             trailing={
                               <>
                                 {op.hint ? (
-                                  <span className="cnode__toolbar-menu__hint">
+                                  <span className="block max-w-[118px] truncate text-[11px]">
                                     {op.hint}
                                   </span>
                                 ) : null}
@@ -853,9 +871,9 @@ export function NodeToolbar({
                   </div>
                 ))}
 
-                <div className="cnode__toolbar-menu__footer">
+                <div className="mt-1 border-t border-divider pt-1">
                   <MenuItem
-                    className="cnode__toolbar-menu__item"
+                    className={TOOLBAR_MENU_ITEM}
                     icon={<Icon name="settings" size={14} />}
                     trailing={<Icon name="chevron-right" size={11} />}
                     onSelect={() => {
@@ -872,93 +890,105 @@ export function NodeToolbar({
         ) : null}
 
         {primaryOps.length > 0 || moreOps.length > 0 ? (
-          <span className="cnode__toolbar-divider" />
+          <span className="mx-1 h-5 w-px bg-divider" />
         ) : null}
 
         {onEdit ? (
           <>
             <Button
-              className="cnode__toolbar-btn"
+              type="button"
+              variant="ghost"
+              size="none"
+              className={TOOLBAR_BTN}
               title="编辑文本（支持 Markdown）"
               onClick={(event) => {
                 event.stopPropagation()
                 onEdit()
               }}
-              unstyled
             >
               <Icon name="edit" size={14} />
               <span>编辑</span>
             </Button>
-            <span className="cnode__toolbar-divider" />
+            <span className="mx-1 h-5 w-px bg-divider" />
           </>
         ) : null}
 
         {kind === 'audio' ? (
           <>
             <Button
-              className="cnode__toolbar-btn"
+              type="button"
+              variant="ghost"
+              size="none"
+              className={TOOLBAR_BTN}
               title="截取音频片段"
               onClick={(event) => {
                 event.stopPropagation()
                 onAudioTrim?.()
               }}
-              unstyled
             >
               <Icon name="scissors" size={14} />
               <span>截取</span>
             </Button>
             <Button
-              className="cnode__toolbar-btn"
+              type="button"
+              variant="ghost"
+              size="none"
+              className={TOOLBAR_BTN}
               title="调整播放速度"
               onClick={(event) => {
                 event.stopPropagation()
                 onAudioSpeed?.()
               }}
-              unstyled
             >
               <Icon name="audio" size={14} />
               <span>变速</span>
             </Button>
-            <span className="cnode__toolbar-divider" />
+            <span className="mx-1 h-5 w-px bg-divider" />
           </>
         ) : null}
 
         <Button
-          className="cnode__toolbar-btn"
+          type="button"
+          variant="ghost"
+          size="none"
+          className={TOOLBAR_BTN}
           title="用当前节点创建剪辑室"
           onClick={(event) => {
             event.stopPropagation()
             openStudioFromNode()
           }}
-          unstyled
         >
           <Icon name="film" size={14} />
           <span>剪辑室</span>
         </Button>
 
         <Button
-          className="cnode__toolbar-btn"
+          type="button"
+          variant="ghost"
+          size="none"
+          className={TOOLBAR_BTN}
           title="下载素材"
           aria-label="下载素材"
           onClick={(event) => {
             event.stopPropagation()
             onDownload()
           }}
-          unstyled
         >
           <Icon name="download" size={14} />
         </Button>
 
         {kind !== 'audio' ? (
           <Button
-            className="cnode__toolbar-btn"
+            type="button"
+            variant="ghost"
+            size="none"
+            className={TOOLBAR_BTN}
             title={kind === 'text' ? '放大编辑' : '查看大图'}
             aria-label={kind === 'text' ? '放大编辑' : '查看大图'}
             onClick={(event) => {
               event.stopPropagation()
               onExpand()
             }}
-            unstyled
           >
             <Icon name="expand" size={14} />
           </Button>
@@ -966,14 +996,16 @@ export function NodeToolbar({
 
         {libraryAction ? (
           <Button
-            className="cnode__toolbar-btn"
+            type="button"
+            variant="ghost"
+            size="none"
+            className={TOOLBAR_BTN}
             title={libraryAction.title ?? libraryAction.label}
             aria-label={libraryAction.label}
             onClick={(event) => {
               event.stopPropagation()
               libraryAction.onClick()
             }}
-            unstyled
           >
             <Icon name="folder" size={14} />
           </Button>
@@ -983,7 +1015,7 @@ export function NodeToolbar({
       {moreSub && openId === 'more'
         ? createPortal(
             <div
-              className="cnode__toolbar-submenu"
+              className="cnode__toolbar-submenu fixed z-[320] max-h-[60vh] min-w-[176px] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 whitespace-normal shadow-menu"
               style={{ top: moreSub.top, left: moreSub.left }}
               onMouseEnter={cancelSubClose}
               onMouseLeave={scheduleSubClose}
@@ -993,14 +1025,14 @@ export function NodeToolbar({
                 ?.menu?.map((item) => (
                   <MenuItem
                     key={item.id}
-                    className="cnode__toolbar-menu__item"
+                    className={TOOLBAR_MENU_ITEM}
                     onSelect={() => {
                       const op = ops.find((entry) => entry.id === moreSub.opId)
                       if (op) activate(op, item)
                     }}
                     trailing={
                       item.hint ? (
-                        <span className="cnode__toolbar-menu__hint">
+                        <span className="block max-w-[118px] truncate text-[11px]">
                           {item.hint}
                         </span>
                       ) : undefined

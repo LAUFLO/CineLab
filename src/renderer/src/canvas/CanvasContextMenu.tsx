@@ -63,95 +63,107 @@ export function CanvasContextMenu() {
   return (
     <div
       ref={ref}
-      className="ctx-menu"
+      className="fixed z-[120] rounded-[12px] border border-border bg-surface p-1.5 shadow-menu [animation:menu-in_120ms_ease-out]"
       style={{ left, top, width: MENU_WIDTH }}
       onPointerDown={(event) => event.stopPropagation()}
       onContextMenu={(event) => event.preventDefault()}
     >
       <Button
         type="button"
-        className="ctx-menu__item"
+        variant="ghost"
+        size="none"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           void uploadMaterialsAt(menu.flow)
         }}
-        unstyled
       >
         <span>上传</span>
       </Button>
 
-      <Button type="button" className="ctx-menu__item" disabled unstyled>
+      <Button
+        type="button"
+        variant="ghost"
+        size="none"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        disabled
+      >
         <span>保存到我的资产</span>
       </Button>
 
       <Button
         type="button"
-        className="ctx-menu__item"
+        variant="ghost"
+        size="none"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           openMenu({ screen: menu.screen, flow: menu.flow })
         }}
-        unstyled
       >
         <span>添加节点</span>
       </Button>
 
       <Button
         type="button"
-        className="ctx-menu__item"
+        variant="ghost"
+        size="none"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           const studioId = createStudioAt(menu.flow)
           openStudio(studioId)
         }}
-        unstyled
       >
         <span>剪辑室</span>
       </Button>
 
-      <div className="ctx-menu__divider" />
+      <div className="mx-2 my-[5px] h-px bg-divider" />
 
       <Button
         type="button"
-        className="ctx-menu__item"
+        variant="ghost"
+        size="none"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         disabled={!canUndo}
         onClick={() => {
           undo()
           close()
         }}
-        unstyled
       >
         <span>撤销</span>
-        <span className="ctx-menu__shortcut">Ctrl+Z</span>
+        <span className="text-xs text-fg-subtle">Ctrl+Z</span>
       </Button>
 
       <Button
         type="button"
-        className="ctx-menu__item"
+        variant="ghost"
+        size="none"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         disabled={!canRedo}
         onClick={() => {
           redo()
           close()
         }}
-        unstyled
       >
         <span>重做</span>
-        <span className="ctx-menu__shortcut">Shift+Ctrl+Z</span>
+        <span className="text-xs text-fg-subtle">Shift+Ctrl+Z</span>
       </Button>
 
-      <div className="ctx-menu__divider" />
+      <div className="mx-2 my-[5px] h-px bg-divider" />
 
       <Button
         type="button"
-        className="ctx-menu__item"
+        variant="ghost"
+        size="none"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           void pasteAt(menu.flow)
         }}
-        unstyled
       >
         <span>粘贴</span>
-        <span className="ctx-menu__shortcut">Ctrl+V</span>
+        <span className="text-xs text-fg-subtle">Ctrl+V</span>
       </Button>
     </div>
   )

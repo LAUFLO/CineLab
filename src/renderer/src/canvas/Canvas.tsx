@@ -62,44 +62,48 @@ const edgeTypes = { flow: FlowEdge }
 
 function EmptyState({ onCreate }: { onCreate: (kind: NodeKind) => void }) {
   return (
-    <div className="empty-state">
-      <div className="empty-state__hint">
+    <div className="pointer-events-none absolute left-1/2 top-1/2 z-[5] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-5">
+      <div className="flex items-center gap-2 text-[13px] text-fg-muted">
         <Icon name="cursor" size={14} />
         双击画布 自由生成节点
       </div>
-      <div className="empty-state__actions">
+      <div className="pointer-events-auto flex gap-2.5">
         <Button
           type="button"
-          className="empty-action"
+          variant="secondary"
+          size="none"
+          className="h-11 gap-2 !rounded-[10px] bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
           onClick={() => onCreate('image')}
-          unstyled
         >
           <Icon name="image" size={18} />
           图片生成
         </Button>
         <Button
           type="button"
-          className="empty-action"
+          variant="secondary"
+          size="none"
+          className="h-11 gap-2 !rounded-[10px] bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
           onClick={() => onCreate('video')}
-          unstyled
         >
           <Icon name="video" size={18} />
           视频生成
         </Button>
         <Button
           type="button"
-          className="empty-action"
+          variant="secondary"
+          size="none"
+          className="h-11 gap-2 !rounded-[10px] bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
           onClick={() => onCreate('audio')}
-          unstyled
         >
           <Icon name="audio" size={18} />
           音频生成
         </Button>
         <Button
           type="button"
-          className="empty-action"
+          variant="secondary"
+          size="none"
+          className="h-11 gap-2 !rounded-[10px] bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
           onClick={() => onCreate('text')}
-          unstyled
         >
           <Icon name="text" size={18} />
           剧本生成
@@ -634,7 +638,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
 
 export function Canvas({ theme }: { theme: Theme }) {
   return (
-    <div className="canvas-root">
+    <div className="absolute inset-0 bg-canvas">
       <ReactFlowProvider>
         <CanvasInner theme={theme} />
       </ReactFlowProvider>

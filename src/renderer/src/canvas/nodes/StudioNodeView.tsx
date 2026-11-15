@@ -29,6 +29,21 @@ const FILM_STATUS_LABEL: Record<string, string> = {
   missing: '成片缺失'
 }
 
+const FILM_STATUS_TONE: Record<string, string> = {
+  pending: 'text-fg-muted',
+  ready: 'text-fg',
+  rendering: 'text-fg',
+  stale: 'border border-border-strong text-fg-muted',
+  empty: 'text-fg-subtle',
+  missing: 'text-fg-subtle'
+}
+
+const CARD_CLASS =
+  'cnode__card relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms]'
+
+const BTN_CLASS =
+  '!h-7 gap-[5px] !rounded-[7px] !border !border-border !bg-surface !px-2.5 !text-[11.5px] !font-normal !text-fg whitespace-nowrap hover:!bg-surface-hover hover:!text-fg'
+
 export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(data.title)
@@ -235,9 +250,13 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
 
   return (
     <>
-      <div className={`cnode studio-node ${selected ? 'is-selected' : ''}`}>
+      <div
+        className={`cnode group studio-node relative flex h-full w-full flex-col ${
+          selected ? 'is-selected' : ''
+        }`}
+      >
         <div
-          className="cnode__title"
+          className="flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-[.is-selected]:text-fg"
           onDoubleClick={(event) => {
             event.stopPropagation()
             setTitleDraft(data.title)
@@ -247,7 +266,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
           <Icon name="film" size={12} />
           {editingTitle ? (
             <Input
-              className="cnode__title-input nodrag nopan"
+              className="nodrag nopan !h-5 !w-[140px] !rounded-[5px] !border-border-strong !bg-surface-hover !px-1.5 !text-xs"
               value={titleDraft}
               autoFocus
               onChange={(event) => setTitleDraft(event.target.value)}
@@ -257,27 +276,34 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                 if (event.key === 'Escape') setEditingTitle(false)
               }}
               onClick={(event) => event.stopPropagation()}
-              unstyled
             />
           ) : (
             <span>{data.title}</span>
           )}
-          <span className={`studio-node__badge is-${filmStatus}`}>
+          <span
+            className={`ml-auto rounded-pill bg-surface-hover px-[7px] py-px text-[10px] leading-4 whitespace-nowrap ${
+              FILM_STATUS_TONE[filmStatus] ?? 'text-fg-muted'
+            }`}
+          >
             {FILM_STATUS_LABEL[filmStatus] ?? filmStatus}
           </span>
         </div>
 
         <div
-          className="cnode__card studio-node__card"
+          className={`${CARD_CLASS} ${
+            selected
+              ? 'border-border-selected'
+              : 'border-border group-hover:border-border-strong'
+          }`}
           onDoubleClick={() => open()}
         >
-          <div className="studio-node__preview">
+          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-media-bg">
             {assetSrc ? (
               <>
                 <video
                   key={current?.id}
                   src={assetSrc}
-                  className="studio-node__media"
+                  className="h-full w-full object-contain"
                   muted
                   playsInline
                   preload="auto"
@@ -288,13 +314,14 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                 />
                 <Button
                   type="button"
-                  className="studio-node__play nodrag nopan"
+                  variant="ghost"
+                  size="none"
+                  className="nodrag nopan absolute top-1/2 left-1/2 !h-11 !w-11 -translate-x-1/2 -translate-y-1/2 !rounded-full !border !border-white/35 !bg-black/45 !text-[15px] !text-white hover:!bg-black/[0.65] hover:!text-white"
                   title="播放成片"
                   onClick={(event) => {
                     event.stopPropagation()
                     setPreviewOpen(true)
                   }}
-                  unstyled
                 >
                   ▶
                 </Button>
@@ -302,13 +329,14 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
             ) : (
               <Button
                 type="button"
-                className="studio-node__empty nodrag nopan"
+                variant="ghost"
+                size="none"
+                className="nodrag nopan flex !h-full w-full !flex-col !items-center !justify-center gap-1.5 !rounded-none !text-xs !font-normal !text-fg-subtle hover:!bg-transparent hover:!text-fg-muted"
                 onClick={open}
-                unstyled
               >
                 <Icon name="film" size={34} />
                 <span>{clipCount > 0 ? '成片待生成' : '还没有素材'}</span>
-                <span className="studio-node__empty-hint">
+                <span className="text-[10.5px] text-fg-subtle opacity-80">
                   {clipCount > 0
                     ? '点下方「生成成片」'
                     : '双击进入剪辑室添加素材'}
@@ -317,7 +345,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
             )}
 
             {busy ? (
-              <div className="studio-node__progress">
+              <div className="absolute bottom-2.5 left-2.5 rounded-[6px] bg-black/[0.62] px-2 py-[3px] text-[11px] text-white">
                 {filmStatus === 'rendering'
                   ? `渲染中 ${progress}%`
                   : `生成中 ${progress}%`}
@@ -325,51 +353,53 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
             ) : null}
           </div>
 
-          <div className="studio-node__summary">
-            <span className="studio-node__stats">
+          <div className="flex h-7 shrink-0 items-center justify-between gap-2 border-t border-divider px-3 text-[11px] text-fg-subtle">
+            <span className="flex min-w-0 items-center gap-1.5 overflow-hidden truncate whitespace-nowrap">
               {clipCount > 0
                 ? `${clipCount} 个片段`
                 : current
                   ? '成片'
                   : '暂无片段'}
-              <span className="studio-node__dot">·</span>
+              <span className="text-fg-subtle opacity-70">·</span>
               {formatTimecode(durationMs)}
               {current ? (
                 <>
-                  <span className="studio-node__dot">·</span>
+                  <span className="text-fg-subtle opacity-70">·</span>
                   {current.width ?? '—'}×{current.height ?? '—'}
                 </>
               ) : null}
             </span>
 
             {outputs.length > 1 ? (
-              <span className="studio-node__versions nodrag nopan">
+              <span className="nodrag nopan inline-flex shrink-0 items-center gap-0.5">
                 <Button
                   type="button"
-                  className="cnode__version-btn"
+                  variant="ghost"
+                  size="none"
+                  className="!h-[18px] !w-[18px] !rounded-pill !text-[11px] !text-inherit enabled:hover:!bg-white/16 disabled:!cursor-default disabled:!opacity-35"
                   title="更早的版本"
                   disabled={currentIndex >= outputs.length - 1}
                   onClick={(event) => {
                     event.stopPropagation()
                     shiftVersion(1)
                   }}
-                  unstyled
                 >
                   ‹
                 </Button>
-                <span className="cnode__version-label">
+                <span className="px-0.5 tabular-nums">
                   {outputs.length - currentIndex}/{outputs.length}
                 </span>
                 <Button
                   type="button"
-                  className="cnode__version-btn"
+                  variant="ghost"
+                  size="none"
+                  className="!h-[18px] !w-[18px] !rounded-pill !text-[11px] !text-inherit enabled:hover:!bg-white/16 disabled:!cursor-default disabled:!opacity-35"
                   title="更新的版本"
                   disabled={currentIndex <= 0}
                   onClick={(event) => {
                     event.stopPropagation()
                     shiftVersion(-1)
                   }}
-                  unstyled
                 >
                   ›
                 </Button>
@@ -377,28 +407,30 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
             ) : null}
           </div>
 
-          <div className="studio-node__actions nodrag nopan">
+          <div className="nodrag nopan flex items-center gap-1.5 px-2.5 pb-2.5">
             <Button
               type="button"
-              className="studio-node__btn"
+              variant="ghost"
+              size="none"
+              className={BTN_CLASS}
               title="进入剪辑室"
               onClick={open}
-              unstyled
             >
               <Icon name="film" size={12} />
               剪辑室
             </Button>
             <Button
               type="button"
-              className="studio-node__btn"
+              variant="ghost"
+              size="none"
+              className={BTN_CLASS}
               title="导出字幕轨为 VTT"
               onClick={(event) => void exportSubtitles(event)}
-              unstyled
             >
               VTT
             </Button>
             <Select
-              className="studio-node__codec nodrag nopan"
+              className="nodrag nopan !h-7 !w-auto !min-w-0 !flex-none !rounded-[7px] !bg-surface !px-2 !text-[11.5px]"
               title="导出编码"
               value={codec}
               disabled={busy}
@@ -411,10 +443,11 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
             />
             <Button
               type="button"
-              className="studio-node__btn is-primary"
+              variant="primary"
+              size="none"
+              className="ml-auto !h-7 !rounded-[7px] !border-0 !px-2.5 !text-[11.5px] !font-semibold disabled:!cursor-not-allowed disabled:!opacity-40"
               onClick={(event) => void exportFilm(event)}
               disabled={filmStatus === 'empty' || filmStatus === 'missing'}
-              unstyled
             >
               {busy ? '取消' : current ? '重新生成' : '生成成片'}
             </Button>
@@ -443,11 +476,11 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
       {previewOpen && current
         ? createPortal(
             <div
-              className="image-preview"
+              className="fixed inset-0 z-[250] flex items-center justify-center bg-black/[0.72] p-12"
               onPointerDown={() => setPreviewOpen(false)}
             >
               <div
-                className="image-preview__player"
+                className="aspect-video max-h-[calc(100vh-96px)] w-[min(1280px,calc(100vw-96px))] overflow-hidden rounded-[10px] bg-media-bg shadow-float"
                 onPointerDown={(event) => event.stopPropagation()}
               >
                 <VideoPlayer

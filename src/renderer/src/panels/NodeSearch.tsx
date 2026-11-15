@@ -64,16 +64,19 @@ export function NodeSearch() {
   }
 
   return (
-    <div className="search-overlay" onPointerDown={close}>
+    <div
+      className="fixed inset-0 z-[240] flex justify-center bg-black/35 pt-[12vh] [-webkit-app-region:no-drag]"
+      onPointerDown={close}
+    >
       <div
-        className="search-dialog"
+        className="flex max-h-[420px] w-[560px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-[14px] border border-border bg-surface shadow-menu"
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <div className="search-input-wrap">
+        <div className="flex h-12 items-center gap-2 border-b border-divider px-3.5 text-fg-subtle">
           <Icon name="search" size={15} />
           <Input
             autoFocus
-            className="search-input"
+            className="!h-9 min-w-0 flex-1 !rounded-none !border-0 !bg-transparent !px-0 !text-[14px] !text-fg"
             value={query}
             placeholder="搜索节点标题、类型或提示词"
             onChange={(event) => {
@@ -100,27 +103,35 @@ export function NodeSearch() {
                 pick(active)
               }
             }}
-            unstyled
           />
-          <kbd className="search-kbd">Esc</kbd>
+          <kbd className="min-w-[28px] whitespace-nowrap rounded-md border border-border bg-surface-hover px-[7px] py-0.5 text-center font-[inherit] text-[11px] text-fg-muted">
+            Esc
+          </kbd>
         </div>
 
-        <div className="search-results">
+        <div className="overflow-y-auto p-1.5">
           {results.length === 0 ? (
-            <div className="search-empty">没有匹配的节点</div>
+            <div className="px-3 py-8 text-center text-[13px] text-fg-subtle">
+              没有匹配的节点
+            </div>
           ) : (
             results.map((node, index) => (
               <Button
                 key={node.id}
                 type="button"
-                className={`search-item ${index === active ? 'is-active' : ''}`}
+                variant="ghost"
+                size="none"
+                className={`!flex h-9 w-full items-center gap-2.5 !justify-start rounded-lg px-2.5 text-left text-[13px] !font-normal ${
+                  index === active ? '!bg-surface-hover !text-fg' : ''
+                }`}
                 onPointerEnter={() => setActive(index)}
                 onClick={() => pick(index)}
-                unstyled
               >
                 <Icon name={ICONS[node.data.kind]} size={14} />
-                <span className="search-item__title">{node.data.title}</span>
-                <span className="search-item__kind">
+                <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                  {node.data.title}
+                </span>
+                <span className="text-[11px] text-fg-subtle">
                   {NODE_META[node.data.kind].label}
                 </span>
               </Button>

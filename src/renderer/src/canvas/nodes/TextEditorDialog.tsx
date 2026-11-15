@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../../components/Icon'
-import { renderMarkdown } from './text-markdown'
+import { renderMarkdown, MARKDOWN_CLASS } from './text-markdown'
 import { Button, Dialog, Textarea } from '../../components/ui'
 
 interface TextEditorDialogProps {
@@ -149,7 +149,7 @@ export function TextEditorDialog({
         ) : (
           <div className="text-editor__preview">
             <div
-              className="cnode__text cnode__text--markdown"
+              className={`${MARKDOWN_CLASS} !static !inset-auto !overflow-visible !p-0`}
               dangerouslySetInnerHTML={{ __html: preview }}
             />
           </div>

@@ -54,20 +54,51 @@ const DEFAULT_TEXT: TextStyle = {
   align: 'center'
 }
 
+const FIELD = 'flex items-center gap-2'
+const FIELD_LABEL = 'w-16 shrink-0 text-[11px] text-fg-subtle'
+const FIELD_INPUT =
+  '!h-7 min-w-0 flex-1 !rounded-[6px] !bg-surface-raised !px-2 !py-0 !text-xs'
+const FIELD_SELECT =
+  '!h-[30px] !w-auto min-w-0 !rounded-[7px] !bg-surface-raised !px-1.5 !py-0 !text-xs'
+const FIELD_ROW = 'flex items-center gap-3.5 pb-2 pt-1'
+const FIELD_HINT = '-mt-0.5 mb-2 block text-[10px] text-fg-subtle'
+const CHECK_ROW = 'inline-flex items-center gap-[5px] text-xs text-fg-muted'
+const CHECKBOX =
+  '!h-[13px] !w-[13px] !rounded-none !border-0 !bg-transparent !p-0 accent-pick-bar'
+const INSPECTOR_BTN =
+  'h-7 justify-start gap-1 !rounded-[7px] !font-normal whitespace-nowrap bg-surface-raised px-2 text-xs'
+const TAB_BTN =
+  '!justify-center !rounded-none !border-x-0 !border-t-0 !border-b-2 px-2.5 text-xs !font-normal hover:!bg-transparent'
+const TAB_IDLE = '!border-b-transparent !text-fg-subtle'
+const TAB_ACTIVE = '!border-b-pick-bar !font-semibold !text-fg'
+const KEYFRAME_INPUT =
+  '!h-6 !w-[52px] shrink-0 !rounded-[5px] !bg-surface-raised !px-1 !py-0 !text-[11px]'
+const KEYFRAME_SELECT =
+  '!h-6 !w-auto !max-w-[72px] !rounded-[5px] !bg-surface-raised !px-[3px] !py-0 !text-[11px]'
+const KEYFRAME_PROP_SELECT =
+  '!h-7 !w-auto !rounded-[6px] !bg-surface-raised !px-1.5 !py-0 !text-xs'
+const RATIO_BTN =
+  'h-[26px] min-w-0 !rounded-[6px] bg-surface-raised px-1 text-[10.5px] !font-normal whitespace-nowrap'
+const RATIO_BTN_ACTIVE = '!border-border-selected !bg-surface-hover !text-fg'
+const PANE =
+  'min-h-0 min-w-0 overflow-x-hidden overflow-y-auto rounded-[10px] border border-border bg-surface [grid-area:right]'
+
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <label className="studio-field">
-      <span>{label}</span>
-      <Input readOnly value={value} unstyled />
+    <label className={FIELD}>
+      <span className={FIELD_LABEL}>{label}</span>
+      <Input readOnly value={value} className={FIELD_INPUT} />
     </label>
   )
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <details className="studio-inspector__section" open>
-      <summary>{title}</summary>
-      <div className="studio-inspector__body">{children}</div>
+    <details className="border-b border-divider" open>
+      <summary className="flex h-[34px] cursor-pointer list-none items-center px-3 text-xs text-fg-muted [&::-webkit-details-marker]:hidden after:ml-auto after:text-[10px] after:text-fg-subtle after:content-['▾']">
+        {title}
+      </summary>
+      <div className="flex flex-col gap-1.5 px-3 pb-2.5">{children}</div>
     </details>
   )
 }
@@ -111,9 +142,10 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
 
   return (
     <Section title="字幕">
-      <label className="studio-field">
-        <span>预设</span>
+      <label className={FIELD}>
+        <span className={FIELD_LABEL}>预设</span>
         <NativeSelect
+          className={FIELD_SELECT}
           value=""
           onChange={(event) => {
             const preset = SUBTITLE_PRESETS.find(
@@ -121,7 +153,6 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
             )
             if (preset) commit(preset.style)
           }}
-          unstyled
         >
           <option value="">选择样式</option>
           {SUBTITLE_PRESETS.map((preset) => (
@@ -131,10 +162,10 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
           ))}
         </NativeSelect>
       </label>
-      <label className="studio-field">
-        <span>内容</span>
+      <label className={FIELD}>
+        <span className={FIELD_LABEL}>内容</span>
         <Textarea
-          className="studio-textarea"
+          className="!min-h-[76px] resize-y !rounded-[7px] !bg-surface-raised !px-2 !py-1.5 !text-xs leading-normal"
           rows={4}
           value={content}
           onChange={(event) => setContent(event.target.value)}
@@ -145,23 +176,24 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
               commit({ content })
             }
           }}
-          unstyled
         />
       </label>
-      <small className="studio-field-hint">失焦或 Ctrl+Enter 保存</small>
+      <small className={FIELD_HINT}>失焦或 Ctrl+Enter 保存</small>
 
-      <label className="studio-field">
-        <span>字体</span>
+      <label className={FIELD}>
+        <span className={FIELD_LABEL}>字体</span>
         <Input
+          className={FIELD_INPUT}
           value={fontFamily}
           onChange={(event) => setFontFamily(event.target.value)}
           onBlur={() => commit({ fontFamily })}
         />
       </label>
 
-      <label className="studio-field">
-        <span>字号</span>
+      <label className={FIELD}>
+        <span className={FIELD_LABEL}>字号</span>
         <Input
+          className={FIELD_INPUT}
           type="number"
           min={8}
           max={400}
@@ -172,25 +204,25 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
         />
       </label>
 
-      <label className="studio-field">
-        <span>颜色</span>
+      <label className={FIELD}>
+        <span className={FIELD_LABEL}>颜色</span>
         <Input
+          className={FIELD_INPUT}
           type="color"
           value={color}
           onChange={(event) => setColor(event.target.value)}
           onBlur={() => commit({ color })}
-          unstyled
         />
       </label>
 
-      <label className="studio-field">
-        <span>对齐</span>
+      <label className={FIELD}>
+        <span className={FIELD_LABEL}>对齐</span>
         <NativeSelect
+          className={FIELD_SELECT}
           value={text.align}
           onChange={(event) =>
             commit({ align: event.target.value as TextStyle['align'] })
           }
-          unstyled
         >
           <option value="left">左</option>
           <option value="center">中</option>
@@ -198,27 +230,28 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
         </NativeSelect>
       </label>
 
-      <div className="studio-field-row">
-        <label className="studio-check">
+      <div className={FIELD_ROW}>
+        <label className={CHECK_ROW}>
           <Input
+            className={CHECKBOX}
             type="checkbox"
             checked={text.bold}
             onChange={(event) => commit({ bold: event.target.checked })}
-            unstyled
           />
           粗体
         </label>
-        <label className="studio-check">
+        <label className={CHECK_ROW}>
           <Input
+            className={CHECKBOX}
             type="checkbox"
             checked={text.italic}
             onChange={(event) => commit({ italic: event.target.checked })}
-            unstyled
           />
           斜体
         </label>
-        <label className="studio-check">
+        <label className={CHECK_ROW}>
           <Input
+            className={CHECKBOX}
             type="checkbox"
             checked={Boolean(text.shadow)}
             onChange={(event) =>
@@ -233,15 +266,15 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
                   : undefined
               })
             }
-            unstyled
           />
           阴影
         </label>
       </div>
 
-      <label className="studio-field">
-        <span>描边</span>
+      <label className={FIELD}>
+        <span className={FIELD_LABEL}>描边</span>
         <Input
+          className={FIELD_INPUT}
           type="number"
           min={0}
           max={20}
@@ -325,35 +358,38 @@ function AnalysisSection({ clip }: { clip: TimelineClip }) {
 
   return (
     <Section title="AI 分析">
-      <div className="studio-field-row">
+      <div className={FIELD_ROW}>
         {canShots ? (
           <Button
-            className="studio-ghost-btn"
+            variant="secondary"
+            size="none"
+            className={INSPECTOR_BTN}
             disabled={running !== null}
             onClick={() => void run('shots')}
-            unstyled
           >
             {running === 'shots' ? '检测中…' : '镜头'}
           </Button>
         ) : null}
         <Button
-          className="studio-ghost-btn"
+          variant="secondary"
+          size="none"
+          className={INSPECTOR_BTN}
           disabled={running !== null}
           onClick={() => void run('silences')}
-          unstyled
         >
           {running === 'silences' ? '检测中…' : '静音'}
         </Button>
         <Button
-          className="studio-ghost-btn"
+          variant="secondary"
+          size="none"
+          className={INSPECTOR_BTN}
           disabled={running !== null}
           onClick={() => void run('beats')}
-          unstyled
         >
           {running === 'beats' ? '检测中…' : '节拍'}
         </Button>
       </div>
-      <small className="studio-field-hint">
+      <small className={FIELD_HINT}>
         检测结果写入时间线标尺，可点击标记跳转
       </small>
     </Section>
@@ -420,13 +456,13 @@ function KeyframeSection({
 
   return (
     <Section title="关键帧">
-      <div className="studio-field-row">
+      <div className={FIELD_ROW}>
         <NativeSelect
+          className={KEYFRAME_PROP_SELECT}
           value={property}
           onChange={(event) =>
             selectProperty(event.target.value as ClipKey['property'])
           }
-          unstyled
         >
           <option value="position">位置</option>
           <option value="scale">缩放</option>
@@ -437,50 +473,50 @@ function KeyframeSection({
         {property === 'position' ? (
           <>
             <Input
-              className="studio-keyframe-input"
+              className={KEYFRAME_INPUT}
               type="number"
               step={0.01}
               value={x}
               onChange={(event) => setX(Number(event.target.value) || 0)}
-              unstyled
             />
             <Input
-              className="studio-keyframe-input"
+              className={KEYFRAME_INPUT}
               type="number"
               step={0.01}
               value={y}
               onChange={(event) => setY(Number(event.target.value) || 0)}
-              unstyled
             />
           </>
         ) : (
           <Input
-            className="studio-keyframe-input"
+            className={KEYFRAME_INPUT}
             type="number"
             step={property === 'rotation' ? 1 : 0.01}
             value={value}
             onChange={(event) => setValue(Number(event.target.value) || 0)}
-            unstyled
           />
         )}
-        <Button className="studio-ghost-btn" onClick={addKey} unstyled>
+        <Button
+          variant="secondary"
+          size="none"
+          className={INSPECTOR_BTN}
+          onClick={addKey}
+        >
           添加
         </Button>
       </div>
 
       {clip.keys.length === 0 ? (
-        <small className="studio-field-hint">
-          把播放头移到片段内，再添加关键帧
-        </small>
+        <small className={FIELD_HINT}>把播放头移到片段内，再添加关键帧</small>
       ) : (
-        <div className="studio-keyframes">
+        <div className="flex flex-col gap-1">
           {clip.keys.map((key, index) => (
             <div
-              className="studio-keyframe-group"
+              className="flex flex-col gap-0.5"
               key={`${key.property}-${index}`}
             >
-              <div className="studio-keyframe">
-                <span className="studio-keyframe__prop">
+              <div className="flex items-center gap-1 text-[11px] text-fg-muted">
+                <span className="w-10 shrink-0">
                   {
                     {
                       position: '位置',
@@ -492,7 +528,7 @@ function KeyframeSection({
                   }
                 </span>
                 <Input
-                  className="studio-keyframe-input"
+                  className={KEYFRAME_INPUT}
                   type="number"
                   min={0}
                   max={100}
@@ -507,12 +543,11 @@ function KeyframeSection({
                       )
                     })
                   }
-                  unstyled
                 />
                 {typeof key.value === 'object' ? (
                   <>
                     <Input
-                      className="studio-keyframe-input"
+                      className={KEYFRAME_INPUT}
                       type="number"
                       step={0.01}
                       value={key.value.x}
@@ -524,10 +559,9 @@ function KeyframeSection({
                           }
                         })
                       }
-                      unstyled
                     />
                     <Input
-                      className="studio-keyframe-input"
+                      className={KEYFRAME_INPUT}
                       type="number"
                       step={0.01}
                       value={key.value.y}
@@ -539,12 +573,11 @@ function KeyframeSection({
                           }
                         })
                       }
-                      unstyled
                     />
                   </>
                 ) : (
                   <Input
-                    className="studio-keyframe-input"
+                    className={KEYFRAME_INPUT}
                     type="number"
                     step={0.01}
                     value={key.value}
@@ -553,10 +586,10 @@ function KeyframeSection({
                         value: Number(event.target.value) || 0
                       })
                     }
-                    unstyled
                   />
                 )}
                 <NativeSelect
+                  className={KEYFRAME_SELECT}
                   value={key.ease}
                   onChange={(event) =>
                     patchKey(index, {
@@ -567,7 +600,6 @@ function KeyframeSection({
                           : undefined
                     })
                   }
-                  unstyled
                 >
                   <option value="linear">线性</option>
                   <option value="ease-in">缓入</option>
@@ -577,13 +609,11 @@ function KeyframeSection({
                 </NativeSelect>
                 <IconButton
                   label="删除关键帧"
-                  className="studio-icon-btn"
                   onClick={() =>
                     updateKeys(
                       clip.keys.filter((_, itemIndex) => itemIndex !== index)
                     )
                   }
-                  unstyled
                 >
                   ×
                 </IconButton>
@@ -861,33 +891,36 @@ export function InspectorPane() {
   }
 
   if (!doc) {
-    return <aside className="studio-inspector" />
+    return <aside className={PANE} />
   }
 
   return (
-    <aside className="studio-inspector">
-      <div className="studio-inspector__tabs">
+    <aside className={PANE}>
+      <div className="sticky top-0 z-[2] flex h-[38px] items-stretch gap-0.5 border-b border-divider bg-surface px-2">
         <Button
           type="button"
-          className={`studio-inspector__tab ${pane === 'props' ? 'is-active' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`${TAB_BTN} ${pane === 'props' ? TAB_ACTIVE : TAB_IDLE}`}
           onClick={() => setPane('props')}
-          unstyled
         >
           属性
         </Button>
         <Button
           type="button"
-          className={`studio-inspector__tab ${pane === 'visual' ? 'is-active' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`${TAB_BTN} ${pane === 'visual' ? TAB_ACTIVE : TAB_IDLE}`}
           onClick={() => setPane('visual')}
-          unstyled
         >
           画面
         </Button>
         <Button
           type="button"
-          className={`studio-inspector__tab ${pane === 'audio' ? 'is-active' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`${TAB_BTN} ${pane === 'audio' ? TAB_ACTIVE : TAB_IDLE}`}
           onClick={() => setPane('audio')}
-          unstyled
         >
           音频
         </Button>
@@ -901,8 +934,8 @@ export function InspectorPane() {
               <Field label="起点" value={formatTimecode(clip.startMs)} />
               <Field label="时长" value={formatTimecode(clip.durationMs)} />
               {clip.kind !== 'text' ? (
-                <label className="studio-field">
-                  <span>速度</span>
+                <label className={FIELD}>
+                  <span className={FIELD_LABEL}>速度</span>
                   <Select
                     value={String(clip.speed)}
                     options={[0.25, 0.5, 1, 1.5, 2, 4].map((speed) => ({
@@ -920,9 +953,10 @@ export function InspectorPane() {
 
           {pane === 'visual' ? (
             <Section title="画面">
-              <label className="studio-field">
-                <span>缩放</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>缩放</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="number"
                   min={0.01}
                   max={20}
@@ -933,12 +967,12 @@ export function InspectorPane() {
                       scale: Math.max(0.01, Number(event.target.value) || 1)
                     })
                   }
-                  unstyled
                 />
               </label>
-              <label className="studio-field">
-                <span>X 偏移</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>X 偏移</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="number"
                   min={-10}
                   max={10}
@@ -949,12 +983,12 @@ export function InspectorPane() {
                       offsetX: Number(event.target.value) || 0
                     })
                   }
-                  unstyled
                 />
               </label>
-              <label className="studio-field">
-                <span>Y 偏移</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>Y 偏移</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="number"
                   min={-10}
                   max={10}
@@ -965,12 +999,12 @@ export function InspectorPane() {
                       offsetY: Number(event.target.value) || 0
                     })
                   }
-                  unstyled
                 />
               </label>
-              <label className="studio-field">
-                <span>旋转</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>旋转</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="number"
                   min={-360}
                   max={360}
@@ -981,12 +1015,12 @@ export function InspectorPane() {
                       rotation: Number(event.target.value) || 0
                     })
                   }
-                  unstyled
                 />
               </label>
-              <label className="studio-field">
-                <span>不透明度</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>不透明度</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="number"
                   min={0}
                   max={100}
@@ -1004,7 +1038,6 @@ export function InspectorPane() {
                       }
                     })
                   }
-                  unstyled
                 />
               </label>
               <Field
@@ -1013,7 +1046,9 @@ export function InspectorPane() {
               />
               {clip.kind === 'video' || clip.kind === 'image' ? (
                 <Button
-                  className="studio-ghost-btn"
+                  variant="secondary"
+                  size="none"
+                  className={INSPECTOR_BTN}
                   title="缩放为 35% 并移到右下角；放到 V2 轨叠加在 V1 上"
                   onClick={() =>
                     changeTransform({
@@ -1023,7 +1058,6 @@ export function InspectorPane() {
                       rotation: 0
                     })
                   }
-                  unstyled
                 >
                   画中画预设
                 </Button>
@@ -1034,8 +1068,8 @@ export function InspectorPane() {
           {pane === 'visual' &&
           (clip.kind === 'video' || clip.kind === 'image') ? (
             <Section title="滤镜">
-              <label className="studio-field">
-                <span>预设</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>预设</span>
                 <Select
                   value=""
                   options={[
@@ -1058,9 +1092,10 @@ export function InspectorPane() {
                   }}
                 />
               </label>
-              <label className="studio-field">
-                <span>亮度</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>亮度</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="range"
                   min={0.5}
                   max={1.5}
@@ -1069,12 +1104,12 @@ export function InspectorPane() {
                   onChange={(event) =>
                     changeFilter({ brightness: Number(event.target.value) })
                   }
-                  unstyled
                 />
               </label>
-              <label className="studio-field">
-                <span>对比度</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>对比度</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="range"
                   min={0.5}
                   max={1.8}
@@ -1083,12 +1118,12 @@ export function InspectorPane() {
                   onChange={(event) =>
                     changeFilter({ contrast: Number(event.target.value) })
                   }
-                  unstyled
                 />
               </label>
-              <label className="studio-field">
-                <span>饱和度</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>饱和度</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="range"
                   min={0}
                   max={2}
@@ -1097,12 +1132,12 @@ export function InspectorPane() {
                   onChange={(event) =>
                     changeFilter({ saturation: Number(event.target.value) })
                   }
-                  unstyled
                 />
               </label>
-              <label className="studio-field">
-                <span>模糊</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>模糊</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="range"
                   min={0}
                   max={12}
@@ -1111,12 +1146,12 @@ export function InspectorPane() {
                   onChange={(event) =>
                     changeFilter({ blur: Number(event.target.value) })
                   }
-                  unstyled
                 />
               </label>
-              <label className="studio-field">
-                <span>暗角</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>暗角</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="range"
                   min={0}
                   max={1}
@@ -1125,28 +1160,27 @@ export function InspectorPane() {
                   onChange={(event) =>
                     changeFilter({ vignette: Number(event.target.value) })
                   }
-                  unstyled
                 />
               </label>
-              <label className="studio-check">
+              <label className={CHECK_ROW}>
                 <Input
+                  className={CHECKBOX}
                   type="checkbox"
                   checked={(clip.filter?.grayscale ?? 0) > 0}
                   onChange={(event) =>
                     changeFilter({ grayscale: event.target.checked ? 1 : 0 })
                   }
-                  unstyled
                 />
                 黑白
               </label>
-              <label className="studio-check">
+              <label className={CHECK_ROW}>
                 <Input
+                  className={CHECKBOX}
                   type="checkbox"
                   checked={(clip.filter?.sepia ?? 0) > 0}
                   onChange={(event) =>
                     changeFilter({ sepia: event.target.checked ? 0.55 : 0 })
                   }
-                  unstyled
                 />
                 复古
               </label>
@@ -1156,8 +1190,8 @@ export function InspectorPane() {
           {pane === 'visual' &&
           (clip.kind === 'video' || clip.kind === 'image') ? (
             <Section title="转场">
-              <label className="studio-field">
-                <span>类型</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>类型</span>
                 <Select
                   value={clip.transitionIn?.type ?? 'none'}
                   options={[
@@ -1180,9 +1214,10 @@ export function InspectorPane() {
                   }
                 />
               </label>
-              <label className="studio-field">
-                <span>时长</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>时长</span>
                 <Input
+                  className={FIELD_INPUT}
                   type="number"
                   min={200}
                   max={3000}
@@ -1195,7 +1230,6 @@ export function InspectorPane() {
                       Number(event.target.value) || 500
                     )
                   }
-                  unstyled
                 />
               </label>
             </Section>
@@ -1207,8 +1241,9 @@ export function InspectorPane() {
               <Field label="淡入" value={`${clip.fadeInMs} ms`} />
               <Field label="淡出" value={`${clip.fadeOutMs} ms`} />
               {clip.kind !== 'text' ? (
-                <label className="studio-check">
+                <label className={CHECK_ROW}>
                   <Input
+                    className={CHECKBOX}
                     type="checkbox"
                     checked={clip.preservePitch}
                     onChange={(event) =>
@@ -1218,48 +1253,47 @@ export function InspectorPane() {
                         patch: { preservePitch: event.target.checked }
                       })
                     }
-                    unstyled
                   />
                   变速时保持音高
                 </label>
               ) : null}
               {clip.kind !== 'text' ? (
                 <>
-                  <label className="studio-check">
+                  <label className={CHECK_ROW}>
                     <Input
+                      className={CHECKBOX}
                       type="checkbox"
                       checked={clip.audioFx?.denoise ?? false}
                       onChange={(event) =>
                         updateAudioFx({ denoise: event.target.checked })
                       }
-                      unstyled
                     />
                     降噪
                   </label>
-                  <label className="studio-check">
+                  <label className={CHECK_ROW}>
                     <Input
+                      className={CHECKBOX}
                       type="checkbox"
                       checked={clip.audioFx?.enhanceVoice ?? false}
                       onChange={(event) =>
                         updateAudioFx({ enhanceVoice: event.target.checked })
                       }
-                      unstyled
                     />
                     增强人声
                   </label>
-                  <label className="studio-check">
+                  <label className={CHECK_ROW}>
                     <Input
+                      className={CHECKBOX}
                       type="checkbox"
                       checked={clip.audioFx?.loudness ?? false}
                       onChange={(event) =>
                         updateAudioFx({ loudness: event.target.checked })
                       }
-                      unstyled
                     />
                     响度均衡
                   </label>
-                  <label className="studio-field">
-                    <span>变声</span>
+                  <label className={FIELD}>
+                    <span className={FIELD_LABEL}>变声</span>
                     <Select
                       value={clip.audioFx?.voiceEffect ?? 'none'}
                       options={[
@@ -1275,16 +1309,15 @@ export function InspectorPane() {
                       }
                     />
                   </label>
-                  <small className="studio-field-hint">
-                    音频清理在导出时生效
-                  </small>
+                  <small className={FIELD_HINT}>音频清理在导出时生效</small>
                 </>
               ) : null}
               {clip.kind === 'video' && clip.media ? (
                 <Button
-                  className="studio-ghost-btn"
+                  variant="secondary"
+                  size="none"
+                  className={INSPECTOR_BTN}
                   onClick={() => void detachAudio()}
-                  unstyled
                 >
                   分离音频
                 </Button>
@@ -1301,40 +1334,44 @@ export function InspectorPane() {
           clip.media ? (
             <Section title="自动粗剪">
               <Button
-                className="studio-ghost-btn"
+                variant="secondary"
+                size="none"
+                className={INSPECTOR_BTN}
                 disabled={runningAction !== null}
                 onClick={() => void runRemoveSilence()}
-                unstyled
               >
                 {runningAction === 'silence' ? '检测中…' : '删除静音'}
               </Button>
               {clip.kind === 'video' ? (
                 <Button
-                  className="studio-ghost-btn"
+                  variant="secondary"
+                  size="none"
+                  className={INSPECTOR_BTN}
                   disabled={runningAction !== null}
                   onClick={() => void runSplitByShots()}
-                  unstyled
                 >
                   {runningAction === 'shots' ? '检测中…' : '按镜头切分'}
                 </Button>
               ) : null}
               <Button
-                className="studio-ghost-btn"
+                variant="secondary"
+                size="none"
+                className={INSPECTOR_BTN}
                 disabled={runningAction !== null}
                 onClick={() => void runBeatAction('markers')}
-                unstyled
               >
                 {runningAction === 'beats' ? '检测中…' : '节拍标记'}
               </Button>
               <Button
-                className="studio-ghost-btn"
+                variant="secondary"
+                size="none"
+                className={INSPECTOR_BTN}
                 disabled={runningAction !== null}
                 onClick={() => void runBeatAction('split')}
-                unstyled
               >
                 {runningAction === 'beat-split' ? '检测中…' : '节拍切分'}
               </Button>
-              <small className="studio-field-hint">
+              <small className={FIELD_HINT}>
                 静音两端保留 120ms，过短区间跳过；所有操作可 Ctrl+Z 恢复
               </small>
             </Section>
@@ -1359,9 +1396,9 @@ export function InspectorPane() {
       ) : (
         <Section title="时间线">
           <Field label="名称" value={doc.name} />
-          <div className="studio-field">
-            <span>画幅</span>
-            <div className="studio-ratio-row">
+          <div className={FIELD}>
+            <span className={FIELD_LABEL}>画幅</span>
+            <div className="grid flex-1 grid-cols-3 gap-1">
               {[
                 { label: '9:16', width: 1080, height: 1920 },
                 { label: '16:9', width: 1920, height: 1080 },
@@ -1373,10 +1410,12 @@ export function InspectorPane() {
                 <Button
                   key={item.label}
                   type="button"
-                  className={`studio-ratio-btn${
+                  variant="secondary"
+                  size="none"
+                  className={`${RATIO_BTN} ${
                     doc.video.width === item.width &&
                     doc.video.height === item.height
-                      ? ' is-active'
+                      ? RATIO_BTN_ACTIVE
                       : ''
                   }`}
                   onClick={() =>
@@ -1389,7 +1428,6 @@ export function InspectorPane() {
                       }
                     })
                   }
-                  unstyled
                 >
                   {item.label}
                 </Button>
@@ -1405,16 +1443,19 @@ export function InspectorPane() {
           <Field label="轨道" value={`${doc.tracks.length} 条`} />
           <Field label="标记" value={`${doc.markers.length} 个`} />
           <Button
-            className="studio-ghost-btn"
+            variant="secondary"
+            size="none"
+            className={INSPECTOR_BTN}
             disabled={runningAction !== null}
             onClick={() => void runRemoveSilence()}
-            unstyled
           >
             {runningAction === 'silence' ? '检测中…' : '整条时间线删静音'}
           </Button>
           {doc.markers.length > 0 ? (
             <Button
-              className="studio-ghost-btn"
+              variant="secondary"
+              size="none"
+              className={INSPECTOR_BTN}
               onClick={() =>
                 dispatch({
                   op: 'batch',
@@ -1425,7 +1466,6 @@ export function InspectorPane() {
                   }))
                 })
               }
-              unstyled
             >
               清除全部标记
             </Button>

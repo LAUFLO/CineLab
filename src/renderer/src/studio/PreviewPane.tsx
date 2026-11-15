@@ -36,7 +36,7 @@ export function PreviewPane() {
           type="button"
           variant="ghost"
           size="none"
-          className="studio-icon-btn !font-normal"
+          className="h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal"
           onClick={() => {
             pause()
             setPlayhead(0)
@@ -49,7 +49,7 @@ export function PreviewPane() {
           type="button"
           variant="ghost"
           size="none"
-          className="studio-icon-btn !font-normal"
+          className="h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal"
           onClick={toggle}
           title={playing ? '暂停' : '播放'}
         >

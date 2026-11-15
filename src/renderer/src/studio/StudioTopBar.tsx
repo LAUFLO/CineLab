@@ -30,7 +30,7 @@ export function StudioTopBar() {
       <div className="flex min-w-0 items-center gap-1.5">
         <IconButton
           label="返回画布"
-          className="studio-icon-btn !w-auto"
+          className="!w-auto !rounded-[7px] !px-2"
           onClick={close}
         >
           <Icon name="chevron-left" size={14} />
@@ -80,14 +80,14 @@ export function StudioTopBar() {
       <div className="flex min-w-0 items-center gap-1.5">
         <IconButton
           label="切换素材池"
-          className="studio-icon-btn !w-auto !text-fg"
+          className="!w-auto !rounded-[7px] !px-2 !text-fg"
           onClick={toggleLeft}
         >
           <Icon name="library" size={14} />
         </IconButton>
         <IconButton
           label="切换检查器"
-          className="studio-icon-btn !w-auto !text-fg"
+          className="!w-auto !rounded-[7px] !px-2 !text-fg"
           onClick={toggleRight}
         >
           <Icon name="layers" size={14} />
@@ -97,7 +97,7 @@ export function StudioTopBar() {
         </span>
         <IconButton
           label="关闭"
-          className="studio-icon-btn !w-auto !text-fg"
+          className="!w-auto !rounded-[7px] !px-2 !text-fg"
           onClick={close}
         >
           <Icon name="close" size={14} />

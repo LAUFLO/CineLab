@@ -3470,7 +3470,7 @@ body.is-exporting .react-flow__minimap {
 .promptbar {
   position: absolute;
   z-index: 50;
-  height: 132px;
+  height: 196px;
   display: flex;
   flex-direction: column;
   padding: 4px 10px 8px;
@@ -3767,27 +3767,39 @@ body.is-picking .react-flow__node:hover .cnode__card {
 .promptbar__slots {
   display: flex;
   gap: 8px;
-  padding: 6px 10px 2px;
+  padding: 8px 10px 0;
   overflow-x: auto;
 }
 
 .promptbar__slot {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  position: relative;
+  width: 56px;
+  height: 56px;
   flex-shrink: 0;
 }
 
 .promptbar__slot-label {
+  position: absolute;
+  z-index: 1;
+  top: 3px;
+  left: 3px;
+  max-width: calc(100% - 6px);
+  padding: 0 4px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--text-1);
   font-size: 10px;
-  color: var(--text-3);
+  line-height: 15px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 .promptbar__slot-thumb,
 .promptbar__slot-empty {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: 8px;
   border: 1px solid var(--border);
   overflow: hidden;
@@ -3811,6 +3823,8 @@ body.is-picking .react-flow__node:hover .cnode__card {
 
 .promptbar__slot-mask {
   position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .promptbar__slot-thumb--mask {
@@ -3866,7 +3880,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
   inset: 0;
   width: 100%;
   height: 100%;
-  padding: 6px 4px;
+  padding: 8px 6px;
   border: none;
   outline: none;
   background: transparent;

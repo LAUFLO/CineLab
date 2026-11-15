@@ -4,7 +4,7 @@ import type { ModelDef, ParamDef } from '@shared/provider-schema'
 import type { ReferenceInput } from '@shared/generation'
 
 export const WIDTH = 760
-export const HEIGHT = 132
+export const HEIGHT = 196
 
 export const PLACEHOLDER: Record<NodeKind, string> = {
   text: '写下你想讲的故事、场景或角色设定。例如：一个来自未来的机器人，在城市屋顶看星星。',

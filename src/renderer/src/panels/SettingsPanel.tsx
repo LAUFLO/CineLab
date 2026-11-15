@@ -36,7 +36,7 @@ import { GeneralSettingsSection } from './GeneralSettingsSection'
 import { SkillsSection } from './SkillsSection'
 import { ModelConfigDialog } from '../canvas/nodes/ModelConfigDialog'
 import type { ModelConfigValue } from '../canvas/nodes/ModelConfigDialog'
-import { Button, Dialog, Input, Select } from '../components/ui'
+import { Button, Dialog, IconButton, Input, Select } from '../components/ui'
 
 type SectionId =
   | 'general'
@@ -466,36 +466,37 @@ function ModelsSection() {
 
   if (draft) {
     return (
-      <div className="settings-section">
+      <div className="flex flex-col">
         <Button
           type="button"
-          className="provider-form__back"
+          variant="ghost"
+          size="none"
+          className="sticky top-0 z-[8] -ml-2.5 mb-3.5 self-start rounded-lg bg-surface px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg"
           onClick={() => setDraft(null)}
-          unstyled
         >
           ← 返回列表
         </Button>
 
-        <div className="provider-form__steps">
-          <span className="is-on">1 连接</span>
-          <span className={draft.models.length > 0 ? 'is-on' : ''}>
+        <div className="-mt-1 mb-3 flex gap-3 text-[11px] text-fg-subtle">
+          <span className="text-link">1 连接</span>
+          <span className={draft.models.length > 0 ? 'text-link' : ''}>
             2 选模型
           </span>
           <span>3 保存</span>
         </div>
 
-        <label className="field">
-          <span>名称</span>
+        <label className="mb-3.5 flex flex-col gap-1.5">
+          <span className="text-xs text-fg-muted">名称</span>
           <Input
             value={draft.name}
             onChange={(event) => updateField('name', event.target.value)}
             placeholder="例如：我的中转站"
-            unstyled
+            className="!h-[34px] !rounded-lg border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
         </label>
 
-        <label className="field">
-          <span>类型</span>
+        <label className="mb-3.5 flex flex-col gap-1.5">
+          <span className="text-xs text-fg-muted">类型</span>
           <Select
             value={draft.type ?? 'openai-compat'}
             options={[
@@ -507,18 +508,18 @@ function ModelsSection() {
           />
         </label>
 
-        <label className="field">
-          <span>Base URL</span>
+        <label className="mb-3.5 flex flex-col gap-1.5">
+          <span className="text-xs text-fg-muted">Base URL</span>
           <Input
             value={draft.baseUrl}
             onChange={(event) => updateField('baseUrl', event.target.value)}
             placeholder="https://api.example.com/v1"
-            unstyled
+            className="!h-[34px] !rounded-lg border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
         </label>
 
-        <label className="field">
-          <span>
+        <label className="mb-3.5 flex flex-col gap-1.5">
+          <span className="text-xs text-fg-muted">
             {draft.type === 'kling' ? 'Access Key / API Key' : 'API Key'}
             {draft.id ? '（留空则不修改）' : ''}
           </span>
@@ -529,18 +530,18 @@ function ModelsSection() {
             placeholder={
               draft.type === 'kling' ? 'Access Key 或 API Key' : 'sk-...'
             }
-            unstyled
+            className="!h-[34px] !rounded-lg border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
           {activePreset?.keyHelpUrl ? (
-            <div className="field__hint">
+            <div className="text-[11px] leading-[1.6] text-fg-subtle">
               Key 获取地址：{activePreset.keyHelpUrl}
             </div>
           ) : null}
         </label>
 
         {draft.type === 'kling' ? (
-          <label className="field">
-            <span>
+          <label className="mb-3.5 flex flex-col gap-1.5">
+            <span className="text-xs text-fg-muted">
               Secret Key（填了则生成 JWT，留空使用 API Key）
               {draft.id ? '（留空则不修改）' : ''}
             </span>
@@ -549,38 +550,38 @@ function ModelsSection() {
               value={draft.secretKey ?? ''}
               onChange={(event) => updateField('secretKey', event.target.value)}
               placeholder="可灵 Secret Key"
-              unstyled
+              className="!h-[34px] !rounded-lg border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
             />
           </label>
         ) : null}
 
-        <div className="field">
-          <div className="field__head">
-            <span>自定义请求头</span>
+        <div className="mb-3.5 flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-fg-muted">自定义请求头</span>
             <Button
               type="button"
-              className="btn-secondary btn-small"
+              variant="secondary"
+              size="xs"
               onClick={addHeaderRow}
-              unstyled
             >
               + 添加
             </Button>
           </div>
           {headerRows.length === 0 ? (
-            <div className="field__hint">
+            <div className="text-[11px] leading-[1.6] text-fg-subtle">
               可选。部分服务需要固定请求头；值支持 {'${ENV_NAME}'} 环境变量。
             </div>
           ) : (
-            <div className="header-list">
+            <div className="flex flex-col gap-1.5">
               {headerRows.map((row, index) => (
-                <div className="header-row" key={index}>
+                <div className="flex items-center gap-1.5" key={index}>
                   <Input
                     value={row.key}
                     placeholder="Header 名称"
                     onChange={(event) =>
                       updateHeaderRow(index, { key: event.target.value })
                     }
-                    unstyled
+                    className="!h-8 min-w-0 flex-1 !rounded-[7px] border-border-strong bg-surface-hover !px-2 !text-xs focus:border-border-selected"
                   />
                   <Input
                     value={row.value}
@@ -588,42 +589,43 @@ function ModelsSection() {
                     onChange={(event) =>
                       updateHeaderRow(index, { value: event.target.value })
                     }
-                    unstyled
+                    className="!h-8 min-w-0 flex-1 !rounded-[7px] border-border-strong bg-surface-hover !px-2 !text-xs focus:border-border-selected"
                   />
-                  <Button
-                    type="button"
-                    className="icon-btn"
-                    title="删除请求头"
+                  <IconButton
+                    label="删除请求头"
+                    size="sm"
                     onClick={() => removeHeaderRow(index)}
-                    unstyled
                   >
                     <Icon name="close" size={12} />
-                  </Button>
+                  </IconButton>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="field">
-          <div className="field__head">
-            <span>模型</span>
+        <div className="mb-3.5 flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-fg-muted">模型</span>
             <Button
               type="button"
-              className="btn-secondary btn-small"
+              variant="secondary"
+              size="xs"
               onClick={() => void handleFetchModels()}
               disabled={fetching || busy}
-              unstyled
             >
               {fetching ? '获取中…' : '获取模型列表'}
             </Button>
           </div>
-          <div className="model-list">
+          <div className="flex flex-col gap-1.5">
             {draft.models.map((model) => (
-              <div key={model.id} className="model-item">
+              <div
+                key={model.id}
+                className="flex items-center justify-between gap-2 rounded-lg border border-border px-2.5 py-2"
+              >
                 <div>
-                  <div className="model-item__name">{model.name}</div>
-                  <div className="model-item__meta">
+                  <div className="text-[13px] text-fg">{model.name}</div>
+                  <div className="mt-0.5 text-[11px] text-fg-subtle">
                     {modelModeIds(model)
                       .slice(0, 3)
                       .map((id) => MODEL_MODE_LABEL[id])
@@ -649,15 +651,26 @@ function ModelsSection() {
                           .join(' · ')}${model.params.length > 3 ? ' 等' : ''}`
                       : ''}
                   </div>
-                  <div className="model-item__badges">
+                  <div className="mt-[5px] flex flex-wrap gap-1">
                     {model.features?.map((feature) => (
-                      <span className="model-badge" key={feature}>
+                      <span
+                        className="rounded-full bg-surface px-1.5 py-px text-[10px] leading-4 text-fg-subtle"
+                        key={feature}
+                      >
                         {FEATURE_LABEL[feature]}
                       </span>
                     ))}
                     {findProtocolTemplate(model.protocol)?.status ? (
                       <span
-                        className={`model-badge is-${findProtocolTemplate(model.protocol)?.status}`}
+                        className={`rounded-full px-1.5 py-px text-[10px] leading-4 ${
+                          findProtocolTemplate(model.protocol)?.status ===
+                          'requires-adapter'
+                            ? 'border border-[color-mix(in_srgb,var(--danger)_40%,var(--border))] text-danger'
+                            : findProtocolTemplate(model.protocol)?.status ===
+                                'draft'
+                              ? 'border border-border text-fg-muted'
+                              : 'bg-surface text-fg-subtle'
+                        }`}
                       >
                         {findProtocolTemplate(model.protocol)?.status === 'draft'
                           ? '未验证'
@@ -669,36 +682,32 @@ function ModelsSection() {
                     ) : null}
                   </div>
                 </div>
-                <div className="model-item__actions">
-                  <Button
-                    type="button"
-                    className="icon-btn"
-                    title="模型配置"
+                <div className="flex items-center gap-0.5">
+                  <IconButton
+                    label="模型配置"
+                    size="sm"
                     onClick={() => setConfigModel(model)}
-                    unstyled
                   >
                     <Icon name="settings" size={13} />
-                  </Button>
-                  <Button
-                    type="button"
-                    className="icon-btn"
-                    title="删除模型"
+                  </IconButton>
+                  <IconButton
+                    label="删除模型"
+                    size="sm"
                     onClick={() => removeModel(model.id)}
-                    unstyled
                   >
                     <Icon name="close" size={12} />
-                  </Button>
+                  </IconButton>
                 </div>
               </div>
             ))}
             {draft.models.length === 0 ? (
-              <div className="model-list__empty">
+              <div className="p-2 text-xs text-fg-subtle">
                 还没有添加模型。填好 Key 后点「获取模型列表」，或点击下方推荐。
               </div>
             ) : null}
             {recommendedModels.length > 0 ? (
-              <div className="model-recommendations">
-                <span className="model-recommendations__label">推荐</span>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] text-fg-subtle">推荐</span>
                 {recommendedModels.map((model) => {
                   const added = draft.models.some(
                     (item) => item.id === model.id
@@ -707,11 +716,16 @@ function ModelsSection() {
                     <Button
                       key={model.id}
                       type="button"
-                      className={`remote-model-chip${added ? ' is-added' : ''}`}
+                      variant="ghost"
+                      size="none"
+                      className={`h-[26px] rounded-full border border-border px-2.5 text-xs ${
+                        added
+                          ? 'cursor-default text-fg-muted opacity-45'
+                          : 'text-fg-muted hover:border-border-strong hover:text-fg'
+                      }`}
                       disabled={added}
                       title={added ? '已添加' : `添加 ${model.name}`}
                       onClick={() => addModel(model)}
-                      unstyled
                     >
                       {model.name}
                     </Button>
@@ -721,7 +735,7 @@ function ModelsSection() {
             ) : null}
           </div>
 
-          <div className="manual-model">
+          <div className="flex gap-2">
             <Input
               value={manualModel}
               placeholder="没有想要的模型？手动输入模型 ID"
@@ -732,20 +746,21 @@ function ModelsSection() {
                   addManualModel()
                 }
               }}
-              unstyled
+              className="!h-[34px] min-w-0 flex-1 !rounded-lg border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
             />
             <Button
               type="button"
-              className="btn-secondary btn-small"
+              variant="secondary"
+              size="xs"
+              className="!h-[34px] !px-4"
               onClick={addManualModel}
-              unstyled
             >
               添加
             </Button>
           </div>
 
           {remoteModels.length > 0 ? (
-            <div className="remote-models">
+            <div className="mt-0.5 flex max-h-[150px] flex-wrap gap-1.5 overflow-y-auto">
               {remoteModels.map((remote) => {
                 const added = draft.models.some(
                   (model) => model.remoteModel === remote
@@ -754,11 +769,16 @@ function ModelsSection() {
                   <Button
                     key={remote}
                     type="button"
-                    className={`remote-model-chip ${added ? 'is-added' : ''}`}
+                    variant="ghost"
+                    size="none"
+                    className={`h-[26px] rounded-full border border-border px-2.5 text-xs ${
+                      added
+                        ? 'cursor-default text-fg-muted opacity-45'
+                        : 'text-fg-muted hover:border-border-strong hover:text-fg'
+                    }`}
                     disabled={added}
                     title={added ? '已添加' : `添加 ${remote}`}
                     onClick={() => addRemoteModel(remote)}
-                    unstyled
                   >
                     {remote}
                   </Button>
@@ -769,27 +789,31 @@ function ModelsSection() {
         </div>
 
         {message ? (
-          <div className={`form-message ${message.ok ? 'is-ok' : 'is-error'}`}>
+          <div
+            className={`mb-3 break-all rounded-md px-2.5 py-2 text-xs leading-[1.6] ${
+              message.ok
+                ? 'bg-[rgba(34,197,94,0.08)] text-success'
+                : 'bg-[rgba(239,68,68,0.08)] text-danger'
+            }`}
+          >
             {message.text}
           </div>
         ) : null}
 
-        <div className="provider-form__actions">
+        <div className="mt-2 flex justify-end gap-2">
           <Button
             type="button"
-            className="btn-secondary"
+            variant="secondary"
             onClick={() => void handleTest()}
             disabled={busy}
-            unstyled
           >
             测试连接
           </Button>
           <Button
             type="button"
-            className="btn-primary"
+            variant="primary"
             onClick={() => void handleSave()}
             disabled={busy}
-            unstyled
           >
             保存
           </Button>
@@ -818,48 +842,52 @@ function ModelsSection() {
   }
 
   return (
-    <div className="settings-section">
+    <div className="flex flex-col">
       {config ? (
-        <div className="models-config">
-          <div className="models-config__head">
+        <div className="mb-3 rounded-[10px] border border-border bg-surface-raised p-3">
+          <div className="flex items-start justify-between gap-2.5">
             <div>
-              <div className="models-config__title">模型供应商配置</div>
-              <div className="models-config__meta">
+              <div className="mb-[3px] text-[13px] text-fg">
+                模型供应商配置
+              </div>
+              <div className="mt-[3px] text-[11px] text-fg-subtle">
                 {config.providerCount} 个供应商 · {config.modelCount} 个模型
               </div>
             </div>
-            <div className="models-config__actions">
+            <div className="flex shrink-0 gap-1.5">
               <Button
                 type="button"
-                className="btn-secondary btn-sm"
+                variant="secondary"
+                size="sm"
                 onClick={() => void handleDownloadSkill()}
-                unstyled
               >
                 下载配置 Skill
               </Button>
-              <details className="models-config__advanced">
-                <summary>高级</summary>
-                <div className="models-config__advanced-body">
+              <details className="relative">
+                <summary className="inline-flex h-7 cursor-pointer list-none items-center rounded-lg border border-border px-2.5 text-xs text-fg-muted [&::-webkit-details-marker]:hidden">
+                  高级
+                </summary>
+                <div className="absolute right-0 top-[calc(100%+6px)] z-20 w-80 rounded-[10px] border border-border bg-surface p-2.5 shadow-menu">
                   <div
-                    className="models-config__path"
+                    className="break-all text-[11px] leading-[1.5] text-fg-subtle"
                     title={config.activeFile ?? ''}
                   >
                     {config.activeFile ?? '未找到配置文件'}
                   </div>
-                  <div className="models-config__advanced-actions">
+                  <div className="mt-2 flex gap-1.5">
                     <Button
                       type="button"
-                      className="btn-secondary btn-sm"
+                      variant="secondary"
+                      size="sm"
                       onClick={() => void handleReload()}
-                      unstyled
                     >
                       重新加载
                     </Button>
                     <Button
                       type="button"
-                      className="btn-secondary btn-sm"
+                      variant="secondary"
+                      size="sm"
                       onClick={() => void handleOpenModelsFile()}
-                      unstyled
                     >
                       打开文件
                     </Button>
@@ -869,10 +897,10 @@ function ModelsSection() {
             </div>
           </div>
           {pending?.exists ? (
-            <div className="models-pending">
+            <div className="mt-2.5 flex items-center justify-between gap-2.5 rounded-[10px] border border-[color-mix(in_srgb,var(--link)_35%,var(--border))] bg-[color-mix(in_srgb,var(--link)_8%,transparent)] px-3 py-2.5">
               <div>
-                <div className="models-pending__title">发现新的模型配置</div>
-                <div className="models-pending__meta">
+                <div className="text-xs text-fg">发现新的模型配置</div>
+                <div className="mt-0.5 text-[11px] text-fg-subtle">
                   {pending.providers.length} 个供应商 ·{' '}
                   {pending.providers.reduce(
                     (sum, provider) => sum + provider.models.length,
@@ -881,20 +909,20 @@ function ModelsSection() {
                   个模型
                 </div>
               </div>
-              <div className="models-pending__actions">
+              <div className="flex shrink-0 gap-1.5">
                 <Button
                   type="button"
-                  className="btn-secondary btn-sm"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setPendingOpen(true)}
-                  unstyled
                 >
                   预览并应用
                 </Button>
                 <Button
                   type="button"
-                  className="btn-secondary btn-sm"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => void handleDiscardPending()}
-                  unstyled
                 >
                   忽略
                 </Button>
@@ -902,14 +930,14 @@ function ModelsSection() {
             </div>
           ) : null}
           {config.warnings.length > 0 ? (
-            <div className="models-config__warnings">
+            <div className="mt-2 break-all rounded-lg border border-border bg-surface px-2.5 py-2 text-[11px] leading-[1.6] text-fg-muted">
               {config.warnings.map((warning, index) => (
                 <div key={index}>{warning}</div>
               ))}
             </div>
           ) : null}
           {config.errors.length > 0 ? (
-            <div className="models-config__errors">
+            <div className="mt-2 break-all rounded-lg bg-[rgba(239,68,68,0.08)] px-2.5 py-2 text-[11px] leading-[1.6] text-danger">
               {config.errors.map((error, index) => (
                 <div key={index}>{error}</div>
               ))}
@@ -918,45 +946,48 @@ function ModelsSection() {
         </div>
       ) : null}
 
-      <div className="provider-list">
+      <div>
         {providers.map((provider) => (
-          <div key={provider.id} className="provider-card">
-            <div className="provider-card__main">
-              <div className="provider-card__name">{provider.name}</div>
-              <div className="provider-card__meta">{provider.baseUrl}</div>
-              <div className="provider-card__meta">
+          <div
+            key={provider.id}
+            className="mb-2.5 flex items-start justify-between gap-2 rounded-[10px] border border-border bg-surface-raised p-3"
+          >
+            <div>
+              <div className="mb-1 text-[13px] text-fg">{provider.name}</div>
+              <div className="break-all text-[11px] leading-[1.6] text-fg-subtle">
+                {provider.baseUrl}
+              </div>
+              <div className="break-all text-[11px] leading-[1.6] text-fg-subtle">
                 {provider.models.length} 个模型 ·{' '}
                 {provider.hasKey ? 'Key 已保存' : '未设置 Key'}
                 {provider.hasSecret ? ' · Secret 已保存' : ''}
                 {provider.type === 'kling' ? ' · 可灵' : ''}
               </div>
             </div>
-            <div className="provider-card__actions">
-              <Button
-                type="button"
-                className="icon-btn"
+            <div className="flex shrink-0 gap-0.5">
+              <IconButton
+                label="编辑供应商"
+                size="sm"
                 onClick={() => openDraft(toDraft(provider))}
-                unstyled
               >
                 <Icon name="settings" size={14} />
-              </Button>
-              <Button
-                type="button"
-                className="icon-btn"
+              </IconButton>
+              <IconButton
+                label="删除供应商"
+                size="sm"
                 onClick={() => handleDelete(provider.id)}
                 disabled={busy}
-                unstyled
               >
                 <Icon name="close" size={14} />
-              </Button>
+              </IconButton>
             </div>
           </div>
         ))}
 
         {providers.length === 0 ? (
-          <div className="provider-list__empty">
+          <div className="px-2 py-6 text-center text-xs leading-[1.8] text-fg-subtle">
             <div>第一次配置模型？按三步来：</div>
-            <ol className="provider-onboarding">
+            <ol className="mt-2 list-decimal pl-[18px] text-left text-[11px] leading-[1.8] text-fg-subtle">
               <li>选一个热门供应商</li>
               <li>填 API Key（预设会显示获取地址）</li>
               <li>点「获取模型列表」，勾选要用的模型</li>
@@ -964,43 +995,45 @@ function ModelsSection() {
           </div>
         ) : null}
 
-        <div className="provider-presets">
-          <div className="provider-presets__label">热门供应商</div>
-          <div className="provider-presets__chips">
+        <div className="mt-[18px] flex flex-col gap-2">
+          <div className="text-[11px] text-fg-subtle">热门供应商</div>
+          <div className="flex flex-wrap gap-1.5">
             {PROVIDER_PRESETS.filter((preset) =>
               HOT_PROVIDER_IDS.has(preset.id)
             ).map((preset) => (
               <Button
                 key={preset.id}
                 type="button"
-                className="provider-chip"
+                variant="ghost"
+                size="none"
+                className="h-7 rounded-full border border-border bg-surface-hover px-2.5 text-xs text-fg-muted hover:border-link hover:text-fg"
                 title={preset.description}
                 onClick={() => {
                   setMessage(null)
                   openDraft(emptyDraft(preset))
                 }}
-                unstyled
               >
                 {preset.name}
               </Button>
             ))}
           </div>
-          <details className="provider-presets__more">
-            <summary>更多供应商</summary>
-            <div className="provider-presets__chips">
+          <details className="mt-0.5 text-[11px] text-fg-subtle">
+            <summary className="cursor-pointer">更多供应商</summary>
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {PROVIDER_PRESETS.filter(
                 (preset) => !HOT_PROVIDER_IDS.has(preset.id)
               ).map((preset) => (
                 <Button
                   key={preset.id}
                   type="button"
-                  className="provider-chip"
+                  variant="ghost"
+                  size="none"
+                  className="h-7 rounded-full border border-border bg-surface-hover px-2.5 text-xs text-fg-muted hover:border-link hover:text-fg"
                   title={preset.description}
                   onClick={() => {
                     setMessage(null)
                     openDraft(emptyDraft(preset))
                   }}
-                  unstyled
                 >
                   {preset.name}
                 </Button>
@@ -1011,12 +1044,12 @@ function ModelsSection() {
 
         <Button
           type="button"
-          className="btn-primary btn-block"
+          variant="primary"
+          className="mt-2 w-full"
           onClick={() => {
             setMessage(null)
             openDraft(emptyDraft())
           }}
-          unstyled
         >
           + 添加供应商
         </Button>
@@ -1028,25 +1061,29 @@ function ModelsSection() {
         title="预览新的模型配置"
         size="lg"
       >
-        <div className="models-pending-dialog">
+        <div className="flex flex-col gap-2.5">
           {pending?.errors.length ? (
-            <div className="models-config__errors">
+            <div className="break-all rounded-lg bg-[rgba(239,68,68,0.08)] px-2.5 py-2 text-[11px] leading-[1.6] text-danger">
               {pending.errors.map((error, index) => (
                 <div key={index}>{error}</div>
               ))}
             </div>
           ) : null}
           {pending?.providers.map((provider) => (
-            <div className="models-pending-provider" key={provider.id}>
-              <div className="models-pending-provider__name">
-                {provider.name}
-              </div>
-              <div className="models-pending-provider__meta">
+            <div
+              className="rounded-[10px] border border-border bg-surface-hover p-2.5"
+              key={provider.id}
+            >
+              <div className="text-[13px] text-fg">{provider.name}</div>
+              <div className="mt-0.5 text-[11px] text-fg-subtle">
                 {provider.baseUrl}
               </div>
-              <div className="models-pending-provider__models">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {provider.models.map((model) => (
-                  <span className="models-pending-model" key={model.id}>
+                  <span
+                    className="rounded-full bg-surface px-2 py-0.5 text-[11px] text-fg-muted"
+                    key={model.id}
+                  >
                     {model.name ?? model.id}
                     {model.modes?.length
                       ? ` · ${model.modes.length} 个模式`
@@ -1056,21 +1093,19 @@ function ModelsSection() {
               </div>
             </div>
           ))}
-          <div className="models-pending-dialog__actions">
+          <div className="mt-1 flex justify-end gap-2">
             <Button
               type="button"
-              className="btn-secondary"
+              variant="secondary"
               onClick={() => void handleDiscardPending()}
-              unstyled
             >
               忽略
             </Button>
             <Button
               type="button"
-              className="btn-primary"
+              variant="primary"
               onClick={() => void handleApplyPending()}
               disabled={Boolean(pending?.errors.length)}
-              unstyled
             >
               应用配置
             </Button>
@@ -1085,8 +1120,10 @@ function ModelsSection() {
         size="md"
         panelClassName="model-skill-dialog"
       >
-        <div className="model-skill-dialog__path">{skillPath}</div>
-        <ol className="model-skill-dialog__steps">
+        <div className="break-all rounded-lg bg-surface-hover px-2.5 py-2 text-[11px] text-fg-muted">
+          {skillPath}
+        </div>
+        <ol className="my-3 list-decimal pl-[18px] text-xs leading-[1.9] text-fg-muted">
           <li>
             把文件交给任意 AI Agent（OpenCode / Claude Code / Cursor /
             ChatGPT）。
@@ -1094,13 +1131,14 @@ function ModelsSection() {
           <li>附上下面的提示词，让 Agent 读文档并生成配置。</li>
           <li>回到 CineLab，模型配置会自动重新加载。</li>
         </ol>
-        <pre className="model-skill-dialog__prompt">{skillPrompt}</pre>
-        <div className="model-skill-dialog__actions">
+        <pre className="m-0 max-h-[180px] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-hover px-3 py-2.5 font-[inherit] text-[11px] leading-[1.7] text-fg-muted">
+          {skillPrompt}
+        </pre>
+        <div className="mt-3 flex justify-end">
           <Button
             type="button"
-            className="btn-secondary"
+            variant="secondary"
             onClick={() => void copySkillPrompt()}
-            unstyled
           >
             复制提示词
           </Button>
@@ -1123,47 +1161,46 @@ function LibrarySection() {
   }, [refresh])
 
   return (
-    <div className="settings-section">
-      <div className="settings-group-title">全局资产库</div>
-      <p className="settings-hint">
+    <div className="flex flex-col">
+      <div className="mb-3 text-[13px] font-semibold text-fg">全局资产库</div>
+      <p className="mt-2 text-xs leading-[1.7] text-fg-subtle">
         所有项目共用这个文件夹。删除项目不会删除资产库，图片、视频和提示词模板都可以跨项目使用。
         建议选择空目录，应用会自动创建「角色 / 场景 / 道具 / 风格 / 音频 /
         提示词」。
       </p>
 
-      <div className="library-root-card">
-        <code>{root || '加载中…'}</code>
+      <div className="mt-3.5 overflow-hidden rounded-lg border border-border bg-surface-raised px-3 py-2.5">
+        <code className="block overflow-hidden text-ellipsis whitespace-nowrap text-[11.5px] text-fg-muted">
+          {root || '加载中…'}
+        </code>
       </div>
 
-      <div className="settings-actions">
+      <div className="mt-3 flex flex-wrap gap-2">
         <Button
           type="button"
-          className="btn-secondary"
+          variant="secondary"
           onClick={() => void chooseRoot()}
-          unstyled
         >
           选择文件夹
         </Button>
         <Button
           type="button"
-          className="btn-secondary"
+          variant="secondary"
           onClick={() => void revealRoot()}
-          unstyled
         >
           打开目录
         </Button>
         <Button
           type="button"
-          className="btn-secondary"
+          variant="secondary"
           onClick={() => void resetRoot()}
           disabled={isDefault}
-          unstyled
         >
           恢复默认
         </Button>
       </div>
 
-      <p className="settings-hint">
+      <p className="mt-2 text-xs leading-[1.7] text-fg-subtle">
         默认路径是「文档 / CineLab
         Assets」。可以直接在资源管理器里整理文件夹和文件，应用以磁盘内容为准。
       </p>
@@ -1195,9 +1232,9 @@ function AppearanceSection() {
   }
 
   return (
-    <div className="settings-section">
-      <div className="settings-group-title">主题</div>
-      <div className="theme-options">
+    <div className="flex flex-col">
+      <div className="mb-3 text-[13px] font-semibold text-fg">主题</div>
+      <div className="flex flex-col gap-2">
         {[
           { id: 'dark', label: '深色', hint: '默认主题' },
           { id: 'light', label: '浅色', hint: '明亮环境使用' },
@@ -1206,12 +1243,15 @@ function AppearanceSection() {
           <Button
             key={option.id}
             type="button"
-            className={`theme-option ${mode === option.id ? 'is-active' : ''}`}
+            variant="ghost"
+            size="none"
+            className={`flex-col !items-start gap-[3px] rounded-[10px] border bg-surface-raised px-3.5 py-3 !text-left hover:border-border-strong ${
+              mode === option.id ? 'border-border-selected' : 'border-border'
+            }`}
             onClick={() => apply(option.id as 'light' | 'dark' | 'system')}
-            unstyled
           >
-            <span className="theme-option__label">{option.label}</span>
-            <span className="theme-option__hint">{option.hint}</span>
+            <span className="text-[13px] text-fg">{option.label}</span>
+            <span className="text-[11px] text-fg-subtle">{option.hint}</span>
           </Button>
         ))}
       </div>
@@ -1227,9 +1267,9 @@ function PlaceholderSection({
   description: string
 }) {
   return (
-    <div className="settings-section">
-      <div className="settings-group-title">{title}</div>
-      <p className="settings-placeholder">{description}</p>
+    <div className="flex flex-col">
+      <div className="mb-3 text-[13px] font-semibold text-fg">{title}</div>
+      <p className="mb-4 mt-0 text-xs leading-[1.8] text-fg-subtle">{description}</p>
     </div>
   )
 }
@@ -1271,59 +1311,59 @@ function AboutSection() {
   const canCheck = status?.canCheck ?? false
 
   return (
-    <div className="settings-section">
-      <BrandWordmark height={20} className="settings-about__wordmark" />
-      <p className="settings-placeholder">
+    <div className="flex flex-col">
+      <BrandWordmark height={20} className="mb-3.5" />
+      <p className="mb-4 mt-0 text-xs leading-[1.8] text-fg-subtle">
         本地 AI 创作无限画布。模型完全自定义，数据存在你自己的硬盘上。
       </p>
-      <div className="about-row">
-        <span>版本</span>
-        <code>{version}</code>
+      <div className="flex h-[34px] items-center gap-3 text-xs text-fg-muted">
+        <span className="w-14 text-fg-subtle">版本</span>
+        <code className="font-[inherit] text-fg">{version}</code>
       </div>
-      <div className="about-row">
-        <span>仓库</span>
-        <code>github.com/LAUFLO/CineLab</code>
+      <div className="flex h-[34px] items-center gap-3 text-xs text-fg-muted">
+        <span className="w-14 text-fg-subtle">仓库</span>
+        <code className="font-[inherit] text-fg">github.com/LAUFLO/CineLab</code>
       </div>
-      <div className="about-row">
-        <span>协议</span>
-        <code>MIT</code>
+      <div className="flex h-[34px] items-center gap-3 text-xs text-fg-muted">
+        <span className="w-14 text-fg-subtle">协议</span>
+        <code className="font-[inherit] text-fg">MIT</code>
       </div>
-      <div className="about-row">
-        <span>日志</span>
+      <div className="flex h-[34px] items-center gap-3 text-xs text-fg-muted">
+        <span className="w-14 text-fg-subtle">日志</span>
         <Button
           type="button"
-          className="btn-secondary btn-sm"
+          variant="secondary"
+          size="sm"
           onClick={() => void window.api.app.openLogs()}
-          unstyled
         >
           打开日志目录
         </Button>
       </div>
 
-      <div className="update-card">
-        <div className="update-card__head">
-          <span className="update-card__title">软件更新</span>
+      <div className="mt-[18px] rounded-[10px] border border-border bg-surface-raised p-3.5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[13px] text-fg">软件更新</span>
           <Button
             type="button"
-            className="btn-secondary btn-sm"
+            variant="secondary"
+            size="sm"
             disabled={!canCheck || busy}
             onClick={() => void check()}
-            unstyled
           >
             {status?.state === 'checking' ? '检查中…' : '检查更新'}
           </Button>
         </div>
         <div
-          className={`update-card__status ${
-            status?.state === 'error' ? 'is-error' : ''
+          className={`mt-2 text-xs leading-relaxed ${
+            status?.state === 'error' ? 'text-danger' : 'text-fg-muted'
           }`}
         >
           {updateLabel(status)}
         </div>
         {status?.state === 'downloading' ? (
-          <div className="update-card__bar">
+          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-hover">
             <div
-              className="update-card__bar-fill"
+              className="h-full bg-pick-bar transition-[width] duration-[160ms]"
               style={{ width: `${status.percent ?? 0}%` }}
             />
           </div>
@@ -1331,9 +1371,10 @@ function AboutSection() {
         {status?.state === 'available' ? (
           <Button
             type="button"
-            className="btn-primary btn-sm update-card__action"
+            variant="primary"
+            size="sm"
+            className="mt-2.5"
             onClick={() => void download()}
-            unstyled
           >
             下载更新
           </Button>
@@ -1341,15 +1382,18 @@ function AboutSection() {
         {status?.state === 'downloaded' ? (
           <Button
             type="button"
-            className="btn-primary btn-sm update-card__action"
+            variant="primary"
+            size="sm"
+            className="mt-2.5"
             onClick={() => void install()}
-            unstyled
           >
             重启并安装
           </Button>
         ) : null}
         {status?.releaseNotes ? (
-          <div className="update-card__notes">{status.releaseNotes}</div>
+          <div className="mt-2.5 max-h-[120px] overflow-y-auto whitespace-pre-wrap text-[11px] leading-relaxed text-fg-subtle">
+            {status.releaseNotes}
+          </div>
         ) : null}
       </div>
     </div>
@@ -1380,35 +1424,35 @@ export function SettingsPanel() {
   if (!open) return null
 
   return (
-    <div className="settings-overlay" onPointerDown={close}>
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 backdrop-blur-[2px] [-webkit-app-region:no-drag]"
+      onPointerDown={close}
+    >
       <div
-        className="settings-dialog"
+        className="flex h-[660px] max-h-[calc(100vh-80px)] w-[920px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface shadow-menu [-webkit-app-region:no-drag]"
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <header className="settings-dialog__head">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-divider pl-5 pr-4 text-[15px] font-semibold">
           <span>设置</span>
-          <Button
-            type="button"
-            className="icon-btn settings-dialog__close"
-            onClick={close}
-            title="关闭"
-            unstyled
-          >
+          <IconButton label="关闭" size="sm" onClick={close}>
             <Icon name="close" size={14} />
-          </Button>
+          </IconButton>
         </header>
 
-        <div className="settings-dialog__body">
-          <nav className="settings-nav">
+        <div className="flex min-h-0 flex-1">
+          <nav className="flex w-[200px] shrink-0 flex-col gap-0.5 border-r border-divider bg-[color-mix(in_srgb,var(--surface-raised)_60%,transparent)] px-2 py-3">
             {SECTIONS.map((section) => (
               <Button
                 key={section.id}
                 type="button"
-                className={`settings-nav__item ${
-                  active === section.id ? 'is-active' : ''
+                variant="ghost"
+                size="none"
+                className={`h-9 !justify-start gap-[9px] rounded-lg px-2.5 text-[13px] !font-normal ${
+                  active === section.id
+                    ? 'bg-surface-raised text-fg shadow-[inset_0_0_0_1px_var(--border)]'
+                    : ''
                 }`}
                 onClick={() => setActive(section.id)}
-                unstyled
               >
                 {section.id === 'about' ? (
                   <BrandIcon size={15} />
@@ -1420,7 +1464,7 @@ export function SettingsPanel() {
             ))}
           </nav>
 
-          <div className="settings-content">
+          <div className="min-w-0 flex-1 overflow-y-auto px-6 py-5">
             {active === 'general' ? <GeneralSettingsSection /> : null}
             {active === 'models' ? <ModelsSection /> : null}
             {active === 'skills' ? <SkillsSection /> : null}

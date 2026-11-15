@@ -61,7 +61,9 @@ export function SettingRow({
           </div>
         ) : null}
       </div>
-      <div className="settings-row__control">{children}</div>
+      <div className="shrink-0 flex items-center gap-2 [&_button[aria-haspopup=listbox]]:h-[30px] [&_button[aria-haspopup=listbox]]:w-[210px] [&_button[aria-haspopup=listbox]]:text-xs">
+        {children}
+      </div>
     </div>
   )
 }

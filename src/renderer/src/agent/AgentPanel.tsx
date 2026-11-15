@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type {
-  AgentModelInfo,
-  AgentReference
-} from '@shared/agent'
+import type { AgentModelInfo, AgentReference } from '@shared/agent'
 import type { SkillAdminEntry } from '@shared/skills'
 import { Icon } from '../components/Icon'
 import {
@@ -22,7 +19,6 @@ import {
   type AgentMessage
 } from './agentStore'
 import agentIcon from '../assets/agent-icon.svg'
-import '../styles/agent.css'
 import { Button, Input, Textarea } from '../components/ui'
 
 import { ContextRing } from './panel/ContextRing'
@@ -423,40 +419,49 @@ export function AgentPanel() {
   const panel = createPortal(
     <>
       {visible ? (
-        <section className="agent-panel" aria-label="CineBot" ref={panelRef}>
-          <header className="agent-panel__head">
+        <section
+          className="agent-panel fixed bottom-4 right-3 top-12 z-[95] flex w-[420px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[18px] border border-border-strong bg-surface-raised text-[13px] text-fg shadow-float max-[560px]:inset-x-2 max-[560px]:bottom-4 max-[560px]:top-[44px] max-[560px]:w-auto"
+          aria-label="CineBot"
+          ref={panelRef}
+        >
+          <header className="flex shrink-0 items-center justify-between gap-2.5 border-b border-border px-3 py-2.5">
             <Button
               type="button"
-              className="agent-session-trigger"
+              className="min-w-0 max-w-[280px] justify-start gap-[5px] px-2 py-1 text-[13px] !font-semibold !text-fg"
               onClick={() => setSessionMenuOpen((open) => !open)}
               title="CineBot 历史对话"
-              unstyled
+              variant="ghost"
+              size="none"
             >
-              <span className="agent-session-brand">CineBot</span>
-              <span className="agent-session-divider">·</span>
-              <span className="agent-session-title">
+              <span className="shrink-0 font-bold text-fg">CineBot</span>
+              <span className="shrink-0 text-fg-subtle">·</span>
+              <span className="truncate font-medium text-fg-muted">
                 {sessionTitle || '新对话'}
               </span>
               <Icon name="chevron-down" size={12} />
             </Button>
-            <div className="agent-panel__head-actions">
-              {running ? <span className="agent-running-dot" /> : null}
+            <div className="flex shrink-0 items-center gap-[3px]">
+              {running ? (
+                <span className="mr-[3px] size-[7px] rounded-full bg-success animate-pulse" />
+              ) : null}
               <Button
                 type="button"
-                className="agent-icon-button"
+                className="size-[30px] p-0"
                 title="新对话"
                 onClick={() => void newSession()}
                 disabled={running}
-                unstyled
+                variant="ghost"
+                size="none"
               >
                 <Icon name="plus" size={15} />
               </Button>
               <Button
                 type="button"
-                className="agent-icon-button"
+                className="size-[30px] p-0"
                 title="收起 CineBot"
                 onClick={close}
-                unstyled
+                variant="ghost"
+                size="none"
               >
                 <Icon name="chevron-down" size={15} />
               </Button>
@@ -464,65 +469,78 @@ export function AgentPanel() {
           </header>
 
           {sessionMenuOpen ? (
-            <div className="agent-popover agent-session-menu">
-              <div className="agent-popover__title">历史对话</div>
-              <div className="agent-popover__search">
+            <div className="absolute inset-x-2.5 top-[52px] z-20 flex max-h-[420px] flex-col gap-2 overflow-hidden rounded-[12px] border border-border-strong bg-surface-raised p-2.5 shadow-menu">
+              <div className="text-xs font-semibold text-fg">历史对话</div>
+              <div className="flex shrink-0 items-center gap-1.5 rounded-[8px] border border-border bg-surface px-2 py-1.5 text-fg-subtle">
                 <Icon name="search" size={13} />
                 <Input
                   autoFocus
                   value={sessionSearch}
                   onChange={(event) => setSessionSearch(event.target.value)}
                   placeholder="搜索历史对话"
-                  unstyled
+                  className="!h-auto min-w-0 flex-1 !rounded-none !border-0 !bg-transparent !p-0 !text-xs !text-fg placeholder:!text-fg-subtle"
                 />
               </div>
               <Button
                 type="button"
-                className="agent-session-new"
+                className="shrink-0 justify-start gap-1.5 rounded-[8px] border border-border bg-surface px-2 py-[7px] text-left text-xs !font-normal !text-fg disabled:!opacity-100"
                 onClick={() => {
                   setSessionMenuOpen(false)
                   void newSession()
                 }}
                 disabled={running}
-                unstyled
+                variant="ghost"
+                size="none"
               >
                 <Icon name="plus" size={13} />
                 新对话
               </Button>
-              <div className="agent-session-list">
+              <div className="flex min-h-0 flex-col gap-0.5 overflow-y-auto">
                 {filteredSessions.length === 0 ? (
-                  <div className="agent-session-empty">没有匹配的对话</div>
+                  <div className="px-1.5 py-2.5 text-[11px] text-fg-subtle">
+                    没有匹配的对话
+                  </div>
                 ) : (
                   filteredSessions.map((session) => (
                     <div
                       key={session.sessionId}
-                      className={`agent-session-item ${
-                        session.sessionId === sessionId ? 'is-active' : ''
+                      className={`group flex items-center gap-0.5 rounded-[7px] border pr-1 text-xs ${
+                        session.sessionId === sessionId
+                          ? 'border-border-strong bg-surface-hover text-fg'
+                          : 'border-transparent text-fg-muted hover:bg-surface-hover'
                       }`}
                     >
                       <Button
                         type="button"
-                        className="agent-session-item__main"
+                        className="min-w-0 flex-1 !justify-between gap-2 !rounded-none px-1 py-[7px] pl-2 text-left text-xs !font-normal !text-inherit hover:!text-inherit disabled:!opacity-100"
                         onClick={() => {
                           setSessionMenuOpen(false)
                           void selectSession(session.sessionId)
                         }}
                         disabled={running}
-                        unstyled
+                        variant="ghost"
+                        size="none"
                       >
-                        <span>{session.title}</span>
-                        <small>{relativeTime(session.updatedAt)}</small>
+                        <span className="truncate">{session.title}</span>
+                        <small className="shrink-0 text-[10px] text-fg-subtle">
+                          {relativeTime(session.updatedAt)}
+                        </small>
                       </Button>
                       <Button
                         type="button"
-                        className="agent-session-item__delete"
+                        className={`size-[22px] shrink-0 !rounded-[5px] !p-0 !text-fg-subtle hover:!bg-surface-raised hover:!text-danger disabled:!opacity-30 ${
+                          session.sessionId === sessionId
+                            ? 'opacity-100'
+                            : 'opacity-0 group-hover:opacity-100'
+                        }`}
                         title="删除对话"
                         disabled={running}
                         onClick={(event) => {
                           event.stopPropagation()
                           confirmDeleteSession(session)
                         }}
-                        unstyled
+                        variant="ghost"
+                        size="none"
                       >
                         <Icon name="trash" size={12} />
                       </Button>
@@ -533,24 +551,34 @@ export function AgentPanel() {
             </div>
           ) : null}
 
-          <div className="agent-panel__messages" ref={listRef}>
+          <div
+            className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3.5"
+            ref={listRef}
+          >
             {messages.length === 0 ? (
-              <div className="agent-empty">
-                <img className="agent-empty__icon" src={agentIcon} alt="" />
-                <div className="agent-empty__title">我是 CineBot</div>
-                <div className="agent-empty__desc">
+              <div className="my-auto flex flex-col items-start gap-2.5 px-2 py-6">
+                <img
+                  className="size-14 rounded-full shadow-float"
+                  src={agentIcon}
+                  alt=""
+                />
+                <div className="mt-1 text-lg font-semibold text-fg">
+                  我是 CineBot
+                </div>
+                <div className="max-w-[330px] text-xs leading-[1.7] text-fg-subtle">
                   {clipMode
                     ? '我可以读取时间线、移动片段、自动字幕、删静音、设置转场或导出成片。'
                     : '我可以整理画布、引用画布或资产库素材、登记生成提案，也可以读取你的技能。先点下方「上传」添加本地素材。'}
                 </div>
                 <Button
                   type="button"
-                  className="agent-suggestion"
+                  className="max-w-full !justify-start !rounded-[9px] bg-surface px-2.5 py-2 text-left text-xs !font-normal"
                   onClick={() => {
                     setDraft(suggestion)
                     textareaRef.current?.focus()
                   }}
-                  unstyled
+                  variant="secondary"
+                  size="none"
                 >
                   {suggestion}
                 </Button>
@@ -567,32 +595,34 @@ export function AgentPanel() {
           </div>
 
           {pendingConfirm ? (
-            <section className="agent-confirm">
-              <header className="agent-confirm__head">
+            <section className="mx-3 mb-2 shrink-0 rounded-[10px] border border-[color-mix(in_srgb,var(--warning)_55%,var(--border-strong))] bg-surface p-2.5 text-[11px]">
+              <header className="flex items-center justify-between gap-2 text-xs font-semibold text-warning">
                 <span>需要确认</span>
-                <span className="agent-confirm__tool">
+                <span className="text-[10px] font-normal text-fg-subtle">
                   {toolLabel(pendingConfirm.call.name)}
                 </span>
               </header>
-              <div className="agent-confirm__reason">
+              <div className="mt-1.5 leading-[1.5] text-fg">
                 {pendingConfirm.reason}
               </div>
-              <div className="agent-confirm__actions">
+              <div className="mt-2 flex justify-end gap-2">
                 <Button
                   type="button"
-                  className="agent-confirm__approve"
+                  className="!rounded-[6px] px-2.5 py-1 text-[11px] !font-normal"
                   disabled={confirming}
                   onClick={() => void confirmTool(true)}
-                  unstyled
+                  variant="primary"
+                  size="none"
                 >
                   {confirming ? '处理中…' : '允许一次'}
                 </Button>
                 <Button
                   type="button"
-                  className="agent-confirm__reject"
+                  className="!rounded-[6px] px-2.5 py-1 text-[11px] !font-normal"
                   disabled={confirming}
                   onClick={() => void confirmTool(false)}
-                  unstyled
+                  variant="secondary"
+                  size="none"
                 >
                   取消
                 </Button>
@@ -610,33 +640,47 @@ export function AgentPanel() {
           ) : null}
 
           {error ? (
-            <div className="agent-error" role="status">
+            <div
+              className="mx-3 mb-2 flex shrink-0 items-center justify-between gap-2 rounded-[8px] border border-[color-mix(in_srgb,var(--danger)_30%,var(--border))] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] px-2.5 py-[7px] text-[11px] text-danger"
+              role="status"
+            >
               <span>{error}</span>
-              <Button type="button" onClick={clearError} unstyled>
+              <Button
+                type="button"
+                className="shrink-0 !rounded-[5px] px-1.5 py-0.5 text-[10px] !font-normal !text-inherit hover:!text-inherit"
+                onClick={clearError}
+                variant="secondary"
+                size="none"
+              >
                 知道了
               </Button>
             </div>
           ) : null}
 
           {changedCount > 0 ? (
-            <div className="agent-change">
+            <div className="mx-3 mb-2 flex shrink-0 items-center justify-between gap-2 rounded-[8px] border border-border px-2.5 py-[7px] text-[11px] text-fg-muted">
               <span>本轮修改了 {changedCount} 处</span>
               <Button
                 type="button"
+                className="!rounded-[5px] px-2 py-[3px] text-[11px] !font-normal !text-fg"
                 onClick={undoLastTurn}
                 disabled={running}
-                unstyled
+                variant="secondary"
+                size="none"
               >
                 撤销这一轮
               </Button>
             </div>
           ) : null}
 
-          <div className="agent-composer">
+          <div className="relative mx-2.5 mb-2.5 mt-2 shrink-0 rounded-[14px] border border-border-strong bg-surface p-2">
             {attachments.length > 0 || references.length > 0 ? (
-              <div className="agent-attachments">
+              <div className="flex flex-wrap gap-1 px-0.5 pb-1.5 pt-0.5">
                 {attachments.map((item) => (
-                  <span className="agent-attachment" key={item.nodeId}>
+                  <span
+                    className="inline-flex max-w-[180px] items-center gap-1 rounded-[6px] border border-border bg-surface-raised py-[3px] pl-1.5 pr-[5px] text-[10px] text-fg-muted"
+                    key={item.nodeId}
+                  >
                     <Icon
                       name={
                         item.kind === 'video'
@@ -647,13 +691,15 @@ export function AgentPanel() {
                       }
                       size={11}
                     />
-                    <span className="agent-attachment__name">{item.name}</span>
+                    <span className="truncate">{item.name}</span>
                     <Button
                       type="button"
+                      className="size-4 !rounded-[4px] !p-0 !text-fg-subtle disabled:!opacity-40"
                       title="移除附件"
                       disabled={running}
                       onClick={() => removeAttachment(item.nodeId)}
-                      unstyled
+                      variant="ghost"
+                      size="none"
                     >
                       <Icon name="close" size={10} />
                     </Button>
@@ -661,7 +707,7 @@ export function AgentPanel() {
                 ))}
                 {references.map((item) => (
                   <span
-                    className="agent-attachment agent-attachment--reference"
+                    className="inline-flex max-w-[180px] items-center gap-1 rounded-[6px] border border-[color-mix(in_srgb,var(--accent)_45%,var(--border))] bg-surface-raised py-[3px] pl-1.5 pr-[5px] text-[10px] text-fg"
                     key={`${item.scope}:${item.path}`}
                   >
                     <Icon
@@ -674,13 +720,15 @@ export function AgentPanel() {
                       }
                       size={11}
                     />
-                    <span className="agent-attachment__name">@{item.name}</span>
+                    <span className="truncate">@{item.name}</span>
                     <Button
                       type="button"
+                      className="size-4 !rounded-[4px] !p-0 !text-fg-subtle disabled:!opacity-40"
                       title="移除引用"
                       disabled={running}
                       onClick={() => removeReference(item)}
-                      unstyled
+                      variant="ghost"
+                      size="none"
                     >
                       <Icon name="close" size={10} />
                     </Button>
@@ -689,22 +737,27 @@ export function AgentPanel() {
               </div>
             ) : null}
             {mentionOpen ? (
-              <div className="agent-mention-popover">
-                <div className="agent-popover__title">引用素材</div>
-                <div className="agent-mention-list">
+              <div className="absolute inset-x-2 bottom-[calc(100%+8px)] z-[26] flex max-h-[300px] flex-col gap-2 rounded-[12px] border border-border-strong bg-surface-raised p-2.5 shadow-menu">
+                <div className="text-xs font-semibold text-fg">引用素材</div>
+                <div className="flex min-h-0 flex-col gap-0.5 overflow-y-auto">
                   {filteredMentionItems.length === 0 ? (
-                    <div className="agent-modal__empty">没有匹配的素材</div>
+                    <div className="px-2 py-3.5 text-[11px] leading-[1.6] text-fg-subtle">
+                      没有匹配的素材
+                    </div>
                   ) : (
                     filteredMentionItems.map((item, index) => (
                       <Button
                         key={item.key}
                         type="button"
-                        className={`agent-mention-item ${
-                          index === mentionIndex ? 'is-active' : ''
+                        className={`!justify-start gap-2 !rounded-[6px] px-2 py-[7px] text-left text-xs !font-normal ${
+                          index === mentionIndex
+                            ? '!bg-surface-hover !text-fg'
+                            : ''
                         }`}
                         onMouseEnter={() => setMentionIndex(index)}
                         onClick={() => insertReference(item)}
-                        unstyled
+                        variant="ghost"
+                        size="none"
                       >
                         <Icon
                           name={
@@ -716,8 +769,10 @@ export function AgentPanel() {
                           }
                           size={13}
                         />
-                        <span>{item.name}</span>
-                        <small>{item.nodeId ? '画布' : '资产库'}</small>
+                        <span className="flex-1 truncate">{item.name}</span>
+                        <small className="shrink-0 text-[10px] text-fg-subtle">
+                          {item.nodeId ? '画布' : '资产库'}
+                        </small>
                       </Button>
                     ))
                   )}
@@ -726,6 +781,7 @@ export function AgentPanel() {
             ) : null}
             <Textarea
               ref={textareaRef}
+              className="!min-h-[42px] !max-h-[140px] !resize-none !rounded-none !border-0 !bg-transparent !px-1 !py-[3px] !text-[13px] !leading-[1.55] placeholder:!text-fg-subtle disabled:cursor-not-allowed disabled:!text-fg-subtle disabled:!opacity-100"
               value={draft}
               onChange={(event) => {
                 const value = event.target.value
@@ -779,93 +835,108 @@ export function AgentPanel() {
                 if (skillPickerOpen) setSkillPickerOpen(false)
                 if (permissionMenuOpen) setPermissionMenuOpen(false)
               }}
-              unstyled
             />
-            <div className="agent-composer__bar">
-              <div className="agent-composer__chips">
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap gap-1">
                 <Button
                   type="button"
-                  className="agent-chip"
+                  className="max-w-[150px] truncate !justify-start gap-1 !rounded-[7px] px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
                   onClick={() => void attachLocalAssets()}
                   disabled={running}
                   title="上传本地素材到画布"
-                  unstyled
+                  variant="ghost"
+                  size="none"
                 >
                   <Icon name="paperclip" size={12} />
                   上传
                 </Button>
                 <Button
                   type="button"
-                  className="agent-chip"
+                  className="max-w-[150px] truncate !justify-start gap-1 !rounded-[7px] px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
                   onClick={() => {
                     setModelTab('text')
                     setModelPickerOpen(true)
                   }}
                   title="选择模型"
-                  unstyled
+                  variant="ghost"
+                  size="none"
                 >
                   <Icon name="robot" size={12} />
                   {modelNameOf(modelInfo)}
                 </Button>
-                <span className="agent-chip-anchor">
+                <span className="relative inline-flex">
                   <Button
                     type="button"
-                    className="agent-chip"
+                    className="max-w-[150px] truncate !justify-start gap-1 !rounded-[7px] px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
                     onClick={() => setPermissionMenuOpen((open) => !open)}
                     title="权限范围"
-                    unstyled
+                    variant="ghost"
+                    size="none"
                   >
                     <Icon name="target" size={12} />
                     {permissionMode === 'read-only' ? '只读' : '当前空间'}
                   </Button>
                   {permissionMenuOpen ? (
-                    <div className="agent-permission-menu">
+                    <div className="absolute bottom-[calc(100%+8px)] left-1/2 z-[25] flex w-[250px] -translate-x-1/2 flex-col rounded-[10px] border border-border-strong bg-surface-raised p-1 shadow-menu">
                       <Button
                         type="button"
-                        className={
-                          permissionMode === 'read-only' ? 'is-active' : ''
-                        }
+                        className={`!h-auto flex-col !items-stretch !justify-start gap-0.5 !rounded-[7px] px-2 py-[7px] text-left text-xs !font-normal ${
+                          permissionMode === 'read-only'
+                            ? '!bg-surface-hover !text-fg'
+                            : ''
+                        }`}
                         onClick={() => {
                           setPermissionMode('read-only')
                           setPermissionMenuOpen(false)
                         }}
-                        unstyled
+                        variant="ghost"
+                        size="none"
                       >
-                        <span>只读</span>
-                        <small>只读取，不修改画布或时间线</small>
+                        <span className="text-xs">只读</span>
+                        <small className="text-[10px] leading-[1.4] text-fg-subtle">
+                          只读取，不修改画布或时间线
+                        </small>
                       </Button>
                       <Button
                         type="button"
-                        className={
-                          permissionMode === 'current' ? 'is-active' : ''
-                        }
+                        className={`!h-auto flex-col !items-stretch !justify-start gap-0.5 !rounded-[7px] px-2 py-[7px] text-left text-xs !font-normal ${
+                          permissionMode === 'current'
+                            ? '!bg-surface-hover !text-fg'
+                            : ''
+                        }`}
                         onClick={() => {
                           setPermissionMode('current')
                           setPermissionMenuOpen(false)
                         }}
-                        unstyled
+                        variant="ghost"
+                        size="none"
                       >
-                        <span>当前空间</span>
-                        <small>允许修改当前画布或时间线</small>
+                        <span className="text-xs">当前空间</span>
+                        <small className="text-[10px] leading-[1.4] text-fg-subtle">
+                          允许修改当前画布或时间线
+                        </small>
                       </Button>
                     </div>
                   ) : null}
                 </span>
-                <span className="agent-chip-anchor agent-chip-anchor--skill">
+                <span className="relative inline-flex">
                   <Button
                     type="button"
-                    className="agent-chip"
+                    className="max-w-[150px] truncate !justify-start gap-1 !rounded-[7px] px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
                     onClick={openSkillPicker}
                     title="选择技能"
-                    unstyled
+                    variant="ghost"
+                    size="none"
                   >
                     <Icon name="sparkles" size={12} />
                     技能
                   </Button>
                   {skillPickerOpen ? (
-                    <div className="agent-skill-popover">
-                      <div className="agent-popover__title">选择技能</div>
-                      <div className="agent-popover__search">
+                    <div className="absolute bottom-[calc(100%+8px)] left-1/2 z-[25] flex max-h-[360px] w-[300px] -translate-x-1/2 flex-col gap-2 rounded-[12px] border border-border-strong bg-surface-raised p-2.5 shadow-menu">
+                      <div className="text-xs font-semibold text-fg">
+                        选择技能
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1.5 rounded-[8px] border border-border bg-surface px-2 py-1.5 text-fg-subtle">
                         <Icon name="search" size={13} />
                         <Input
                           autoFocus
@@ -904,29 +975,36 @@ export function AgentPanel() {
                             }
                           }}
                           placeholder="搜索技能"
-                          unstyled
+                          className="!h-auto min-w-0 flex-1 !rounded-none !border-0 !bg-transparent !p-0 !text-xs !text-fg placeholder:!text-fg-subtle"
                         />
                       </div>
-                      <div className="agent-skill-list">
+                      <div className="flex min-h-0 flex-col gap-0.5 overflow-y-auto">
                         {filteredSkills.length === 0 ? (
-                          <div className="agent-modal__empty">没有可用技能</div>
+                          <div className="px-2 py-3.5 text-[11px] leading-[1.6] text-fg-subtle">
+                            没有可用技能
+                          </div>
                         ) : (
                           filteredSkills.map((skill, index) => (
                             <Button
                               key={`${skill.scope}:${skill.name}`}
                               type="button"
-                              className={`agent-skill-item ${
-                                index === skillIndex ? 'is-active' : ''
+                              className={`!h-auto !justify-between gap-2.5 !rounded-[8px] border !border-transparent px-[9px] py-2 text-left !font-normal ${
+                                index === skillIndex ? '!bg-surface-hover' : ''
                               }`}
                               onMouseEnter={() => setSkillIndex(index)}
                               onClick={() => insertSkill(skill)}
-                              unstyled
+                              variant="ghost"
+                              size="none"
                             >
-                              <div>
-                                <span>{skill.name}</span>
-                                <small>{skill.description}</small>
+                              <div className="flex min-w-0 flex-col gap-0.5">
+                                <span className="text-xs text-fg">
+                                  {skill.name}
+                                </span>
+                                <small className="truncate text-[10px] leading-[1.4] text-fg-subtle">
+                                  {skill.description}
+                                </small>
                               </div>
-                              <span className="agent-skill-scope">
+                              <span className="shrink-0 text-[9px] text-fg-subtle">
                                 {skill.scope}
                               </span>
                             </Button>
@@ -935,12 +1013,13 @@ export function AgentPanel() {
                       </div>
                       <Button
                         type="button"
-                        className="agent-skill-manage"
+                        className="!justify-center gap-[5px] !rounded-[7px] border border-border !bg-surface px-2 py-1.5 text-[11px] !font-normal !text-fg-muted hover:!border-border-strong hover:!bg-surface hover:!text-fg"
                         onClick={() => {
                           setSkillPickerOpen(false)
                           openSettings('skills')
                         }}
-                        unstyled
+                        variant="ghost"
+                        size="none"
                       >
                         <Icon name="settings" size={12} />
                         管理技能
@@ -959,21 +1038,23 @@ export function AgentPanel() {
               {running ? (
                 <Button
                   type="button"
-                  className="agent-send agent-send--stop"
+                  className="size-[30px] shrink-0 !rounded-[10px] !border !border-border-strong !bg-surface-hover p-0 !text-fg disabled:!opacity-[0.35]"
                   onClick={() => void cancel()}
                   title="停止"
-                  unstyled
+                  variant="primary"
+                  size="none"
                 >
                   <Icon name="stop" size={14} />
                 </Button>
               ) : (
                 <Button
                   type="button"
-                  className="agent-send agent-send--round"
+                  className="size-[30px] shrink-0 !rounded-full p-0 disabled:!opacity-[0.35]"
                   onClick={submit}
                   disabled={!draft.trim()}
                   title="发送"
-                  unstyled
+                  variant="primary"
+                  size="none"
                 >
                   <Icon name="arrow-up" size={14} />
                 </Button>
@@ -983,68 +1064,84 @@ export function AgentPanel() {
 
           {modelPickerOpen ? (
             <div
-              className="agent-modal-backdrop"
+              className="absolute inset-0 z-30 flex items-start justify-center bg-[color-mix(in_srgb,var(--canvas-bg)_62%,transparent)] px-3 pb-3 pt-[54px] backdrop-blur-[2px]"
               onPointerDown={() => setModelPickerOpen(false)}
             >
               <div
-                className="agent-modal"
+                className="flex max-h-full w-full flex-col overflow-hidden rounded-[14px] border border-border-strong bg-surface-raised shadow-menu"
                 onPointerDown={(event) => event.stopPropagation()}
               >
-                <header className="agent-modal__head">
+                <header className="flex items-start justify-between gap-2.5 border-b border-border p-3">
                   <div>
-                    <div className="agent-modal__title">选择模型</div>
-                    <div className="agent-modal__desc">
+                    <div className="text-sm font-semibold">选择模型</div>
+                    <div className="mt-[3px] text-[10px] text-fg-subtle">
                       文本模型用于对话，图片 / 视频 / 音频模型用于 CineBot 生成
                     </div>
                   </div>
                   <Button
                     type="button"
-                    className="agent-icon-button"
+                    className="size-[30px] p-0"
                     onClick={() => setModelPickerOpen(false)}
-                    unstyled
+                    variant="ghost"
+                    size="none"
                   >
                     <Icon name="close" size={14} />
                   </Button>
                 </header>
-                <div className="agent-model-tabs" role="tablist">
+                <div
+                  className="flex shrink-0 gap-1 border-b border-border px-2 pt-2"
+                  role="tablist"
+                >
                   {modelGroups.map((group) => (
                     <Button
                       key={group.key}
                       type="button"
                       role="tab"
                       aria-selected={modelTab === group.key}
-                      className={`agent-model-tab ${
-                        modelTab === group.key ? 'is-active' : ''
+                      className={`h-[30px] flex-1 !justify-center gap-[5px] !rounded-b-none !rounded-t-[7px] text-xs !font-normal ${
+                        modelTab === group.key
+                          ? '!bg-surface-hover !font-semibold !text-fg'
+                          : '!text-fg-subtle'
                       }`}
                       onClick={() => setModelTab(group.key)}
-                      unstyled
+                      variant="ghost"
+                      size="none"
                     >
                       {group.tabLabel}
                       {group.selected ? (
-                        <span className="agent-model-tab__dot" />
+                        <span className="size-[5px] rounded-full bg-success" />
                       ) : null}
                     </Button>
                   ))}
                 </div>
-                <div className="agent-modal__list">
-                  <section className="agent-model-group">
-                    <header className="agent-model-group__head">
-                      <span>{activeModelGroup.label}</span>
-                      <small>{activeModelGroup.desc}</small>
+                <div className="flex min-h-0 flex-col gap-[3px] overflow-y-auto p-2">
+                  <section className="mb-1 flex flex-col gap-0.5 border-b border-border pb-2 last:mb-0 last:border-b-0">
+                    <header className="flex flex-col gap-0.5 px-2 pb-1 pt-1.5">
+                      <span className="text-xs font-semibold text-fg">
+                        {activeModelGroup.label}
+                      </span>
+                      <small className="text-[10px] leading-[1.4] text-fg-subtle">
+                        {activeModelGroup.desc}
+                      </small>
                     </header>
                     <Button
                       type="button"
-                      className={`agent-model-item ${
-                        !activeModelGroup.selected ? 'is-active' : ''
+                      className={`!h-auto !justify-between gap-2.5 !rounded-[8px] border !border-transparent px-[9px] py-2 text-left !font-normal ${
+                        !activeModelGroup.selected
+                          ? '!border-border-strong !bg-surface-hover'
+                          : ''
                       }`}
                       onClick={() => {
                         void activeModelGroup.setModel(null)
                       }}
-                      unstyled
+                      variant="ghost"
+                      size="none"
                     >
-                      <div>
-                        <span>自动选择</span>
-                        <small>使用该能力下第一个可用模型</small>
+                      <div className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-xs text-fg">自动选择</span>
+                        <small className="truncate text-[10px] leading-[1.4] text-fg-subtle">
+                          使用该能力下第一个可用模型
+                        </small>
                       </div>
                       {!activeModelGroup.selected ? (
                         <Icon name="target" size={14} />
@@ -1056,17 +1153,22 @@ export function AgentPanel() {
                         <Button
                           key={`${activeModelGroup.key}:${key}`}
                           type="button"
-                          className={`agent-model-item ${
-                            activeModelGroup.selected === key ? 'is-active' : ''
+                          className={`!h-auto !justify-between gap-2.5 !rounded-[8px] border !border-transparent px-[9px] py-2 text-left !font-normal ${
+                            activeModelGroup.selected === key
+                              ? '!border-border-strong !bg-surface-hover'
+                              : ''
                           }`}
                           onClick={() => {
                             void activeModelGroup.setModel(key)
                           }}
-                          unstyled
+                          variant="ghost"
+                          size="none"
                         >
-                          <div>
-                            <span>{model.name}</span>
-                            <small>
+                          <div className="flex min-w-0 flex-col gap-0.5">
+                            <span className="text-xs text-fg">
+                              {model.name}
+                            </span>
+                            <small className="truncate text-[10px] leading-[1.4] text-fg-subtle">
                               {model.providerName ?? model.providerId}
                             </small>
                           </div>
@@ -1077,7 +1179,7 @@ export function AgentPanel() {
                       )
                     })}
                     {activeModelGroup.models.length === 0 ? (
-                      <div className="agent-modal__empty">
+                      <div className="px-2 py-3.5 text-[11px] leading-[1.6] text-fg-subtle">
                         没有配置可用的{activeModelGroup.label}模型
                       </div>
                     ) : null}
@@ -1090,13 +1192,18 @@ export function AgentPanel() {
       ) : (
         <Button
           type="button"
-          className="agent-fab"
+          className="fixed bottom-[26px] right-[26px] z-[95] size-11 !rounded-full !border-0 !bg-transparent p-0 shadow-float hover:-translate-y-px hover:!bg-transparent hover:shadow-menu"
           onClick={toggle}
           aria-label="打开 CineBot"
           title="CineBot（Ctrl+Shift+A）"
-          unstyled
+          variant="secondary"
+          size="none"
         >
-          <img className="agent-fab__icon" src={agentIcon} alt="" />
+          <img
+            className="block size-full rounded-full"
+            src={agentIcon}
+            alt=""
+          />
         </Button>
       )}
     </>,
@@ -1105,4 +1212,3 @@ export function AgentPanel() {
 
   return panel
 }
-

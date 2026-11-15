@@ -214,12 +214,17 @@ export function AudioPlayer({
   const hasSelection = selecting && selectionEnd - selectionStart > 0.001
 
   return (
-    <div className={`audio-node${busy ? ' is-busy' : ''}`}>
-      <audio ref={audioRef} src={src ?? undefined} preload="metadata" />
+    <div className="audio-node relative flex h-full w-full min-h-0 flex-col">
+      <audio
+        ref={audioRef}
+        src={src ?? undefined}
+        preload="metadata"
+        className="hidden"
+      />
 
       <div
-        className={`audio-node__wave-wrap nodrag nopan${
-          selecting ? ' is-selecting' : ''
+        className={`nodrag nopan relative min-h-0 flex-1 touch-none overflow-hidden bg-[color-mix(in_srgb,var(--surface-hover)_88%,transparent)] ${
+          selecting ? 'cursor-crosshair' : 'cursor-pointer'
         }`}
         onClick={seek}
         onPointerDown={startSelect}
@@ -229,7 +234,9 @@ export function AudioPlayer({
         role="presentation"
       >
         <svg
-          className="audio-node__wave"
+          className={`pointer-events-none absolute inset-3 fill-fg-subtle ${
+            busy ? 'opacity-0' : 'opacity-90'
+          }`}
           viewBox={`0 0 ${WAVE_BARS} 100`}
           preserveAspectRatio="none"
           aria-hidden="true"
@@ -252,18 +259,18 @@ export function AudioPlayer({
         {hasSelection ? (
           <>
             <div
-              className="audio-node__selection"
+              className="pointer-events-none absolute top-1.5 bottom-1.5 rounded-[6px] bg-[color-mix(in_srgb,var(--text-1)_12%,transparent)]"
               style={{
                 left: `${selectionStart * 100}%`,
                 width: `${(selectionEnd - selectionStart) * 100}%`
               }}
             />
             <div
-              className="audio-node__selection-edge"
+              className="pointer-events-none absolute top-1.5 bottom-1.5 -ml-px w-0.5 rounded-pill bg-[color-mix(in_srgb,var(--text-1)_75%,transparent)]"
               style={{ left: `${selectionStart * 100}%` }}
             />
             <div
-              className="audio-node__selection-edge"
+              className="pointer-events-none absolute top-1.5 bottom-1.5 -ml-px w-0.5 rounded-pill bg-[color-mix(in_srgb,var(--text-1)_75%,transparent)]"
               style={{ left: `${selectionEnd * 100}%` }}
             />
           </>
@@ -271,24 +278,25 @@ export function AudioPlayer({
 
         {!busy && duration > 0 ? (
           <div
-            className="audio-node__playhead"
+            className="pointer-events-none absolute top-2.5 bottom-2.5 -ml-px w-0.5 rounded-pill bg-danger shadow-[0_0_0_1px_color-mix(in_srgb,var(--danger)_18%,transparent)]"
             style={{ left: `${progress * 100}%` }}
           />
         ) : null}
       </div>
 
       {busy ? (
-        <div className="audio-node__busy">
-          <div className="audio-node__pill">
+        <div className="pointer-events-none absolute inset-x-2.5 top-1.5 bottom-[42px] flex items-center justify-center">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-[10px] border border-border-strong bg-surface-raised px-3.5 py-2 text-xs text-fg">
             <span>生成中…</span>
             <Button
               type="button"
-              className="audio-node__cancel nodrag nopan"
+              variant="ghost"
+              size="none"
+              className="nodrag nopan rounded-[6px] px-0 text-xs !font-normal text-fg-muted hover:!bg-transparent hover:text-fg"
               onClick={(event) => {
                 event.stopPropagation()
                 onCancel?.()
               }}
-              unstyled
             >
               取消
             </Button>
@@ -296,15 +304,18 @@ export function AudioPlayer({
         </div>
       ) : null}
 
-      <div className="audio-node__controls">
-        <span className="audio-node__time">{timeLabel(currentTime)}</span>
+      <div className="flex h-[34px] shrink-0 items-center justify-between border-t border-divider px-3">
+        <span className="min-w-[42px] text-[11px] tabular-nums text-fg-muted">
+          {timeLabel(currentTime)}
+        </span>
         <Button
           type="button"
-          className="audio-node__play nodrag nopan"
+          variant="ghost"
+          size="none"
+          className="nodrag nopan !h-7 !w-7 !rounded-pill !text-fg hover:!bg-surface-hover disabled:!opacity-45"
           onClick={toggle}
           disabled={busy || !src}
           title={playing ? '暂停' : '播放'}
-          unstyled
         >
           {playing ? (
             <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
@@ -320,7 +331,7 @@ export function AudioPlayer({
             </svg>
           )}
         </Button>
-        <span className="audio-node__time">
+        <span className="min-w-[42px] text-right text-[11px] tabular-nums text-fg-muted">
           {timeLabel(Math.round(duration || 0))}
         </span>
       </div>

@@ -113,7 +113,7 @@ export function AudioActionBar({
 
   return createPortal(
     <div
-      className="audio-bar nodrag nopan"
+      className="nodrag nopan fixed z-[60] flex min-w-[430px] -translate-x-1/2 items-center gap-2.5 rounded-[12px] border border-border-strong bg-[color-mix(in_srgb,var(--surface-raised)_94%,transparent)] px-2.5 py-2 text-xs text-fg shadow-float"
       style={{
         left: anchor.left + anchor.width / 2,
         top
@@ -123,22 +123,23 @@ export function AudioActionBar({
     >
       <Button
         type="button"
-        className="audio-bar__close"
+        variant="ghost"
+        size="none"
+        className="h-6 w-6 shrink-0 !rounded-[6px] p-0 text-fg-subtle hover:text-fg"
         title="关闭"
         onClick={onClose}
-        unstyled
       >
         <Icon name="close" size={14} />
       </Button>
 
-      <span className="audio-bar__label">
+      <span className="shrink-0 text-fg">
         {mode === 'trim' ? '截取' : '变速'}
       </span>
 
       {mode === 'trim' ? (
-        <div className="audio-bar__range">
+        <div className="ml-auto flex items-center gap-1.5">
           <Input
-            className="audio-bar__time-input"
+            className="!h-7 !w-[66px] !rounded-[7px] !px-1.5 text-center !text-xs tabular-nums focus:!border-border-selected"
             value={startText}
             spellCheck={false}
             onFocus={(event) => event.currentTarget.select()}
@@ -151,11 +152,10 @@ export function AudioActionBar({
               }
               if (event.key === 'Escape') onClose()
             }}
-            unstyled
           />
-          <span className="audio-bar__dash">–</span>
+          <span className="text-fg-subtle">–</span>
           <Input
-            className="audio-bar__time-input"
+            className="!h-7 !w-[66px] !rounded-[7px] !px-1.5 text-center !text-xs tabular-nums focus:!border-border-selected"
             value={endText}
             spellCheck={false}
             onFocus={(event) => event.currentTarget.select()}
@@ -168,25 +168,27 @@ export function AudioActionBar({
               }
               if (event.key === 'Escape') onClose()
             }}
-            unstyled
           />
         </div>
       ) : (
-        <div className="audio-bar__speed">
-          <span className="audio-bar__limit">0.1x</span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[10.5px] whitespace-nowrap text-fg-subtle">
+            0.1x
+          </span>
           <Input
-            className="audio-bar__slider"
+            className="!h-auto !w-[150px] !rounded-none !border-0 !bg-transparent !p-0 accent-fg cursor-pointer"
             type="range"
             min={0.1}
             max={4}
             step={0.05}
             value={rate}
             onChange={(event) => onRateChange(Number(event.target.value))}
-            unstyled
           />
-          <span className="audio-bar__limit">4.0x</span>
+          <span className="text-[10.5px] whitespace-nowrap text-fg-subtle">
+            4.0x
+          </span>
           <Input
-            className="audio-bar__rate-input"
+            className="!h-7 !w-14 !rounded-[7px] !px-1 text-center !text-xs tabular-nums focus:!border-border-selected"
             type="number"
             min={0.1}
             max={4}
@@ -201,18 +203,18 @@ export function AudioActionBar({
               }
               if (event.key === 'Escape') onClose()
             }}
-            unstyled
           />
-          <span className="audio-bar__unit">x</span>
+          <span className="-ml-1 text-[11px] text-fg-subtle">x</span>
         </div>
       )}
 
       <Button
         type="button"
-        className="audio-bar__go"
+        variant="primary"
+        size="none"
+        className="h-[30px] shrink-0 rounded-[8px] border border-transparent !bg-pick-bar px-3.5 text-xs font-semibold"
         disabled={busy}
         onClick={onSubmit}
-        unstyled
       >
         {busy ? '生成中…' : '生成'}
       </Button>

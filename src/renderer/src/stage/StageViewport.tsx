@@ -569,5 +569,5 @@ export function StageViewport() {
     syncShotCamera()
   }, [viewMode, selectedCameraId, doc])
 
-  return <div ref={hostRef} className="stage-viewport" />
+  return <div ref={hostRef} className="absolute inset-0" />
 }

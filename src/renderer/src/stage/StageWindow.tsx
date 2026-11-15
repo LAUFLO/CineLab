@@ -26,6 +26,24 @@ const TRANSFORM_OPTIONS = [
   { mode: 'scale' as const, label: '缩放' }
 ]
 
+const ICON_BUTTON_CLASS =
+  'size-7 shrink-0 border border-transparent p-0 !rounded-[7px] text-fg-muted hover:border-border hover:bg-surface-hover hover:text-fg'
+
+const TEXT_BUTTON_CLASS =
+  'h-7 gap-[5px] !rounded-[7px] bg-surface px-2.5 text-[11px] !font-normal !text-fg hover:!border-border hover:bg-surface-hover hover:!text-fg'
+
+const MINI_BUTTON_CLASS =
+  'size-[18px] shrink-0 border border-border p-0 !rounded-[5px] text-[13px] leading-none !font-normal text-fg-muted hover:bg-surface-hover hover:text-fg'
+
+const LIST_ITEM_CLASS =
+  'flex w-full min-w-0 !justify-start items-center gap-[7px] border border-transparent px-[7px] py-1.5 !rounded-[7px] text-left text-[11px] !font-normal text-fg-muted hover:bg-surface-hover data-[active]:border-border-strong data-[active]:bg-surface-hover data-[active]:text-fg'
+
+const VIEW_SWITCH_CLASS =
+  '!rounded-none border-0 bg-transparent px-2.5 py-1 text-[11px] !font-normal text-fg-subtle hover:bg-surface-hover hover:text-fg data-[active]:bg-surface-hover data-[active]:text-fg disabled:cursor-default disabled:!opacity-40'
+
+const TRANSFORM_TOOL_CLASS =
+  '!rounded-none border-0 bg-transparent px-2.5 py-[5px] text-[11px] !font-normal text-fg-subtle hover:bg-surface-hover hover:text-fg data-[active]:bg-surface-hover data-[active]:text-fg'
+
 export function StageWindow() {
   const open = useStageStore((state) => state.open)
   const nodeId = useStageStore((state) => state.nodeId)
@@ -252,65 +270,79 @@ export function StageWindow() {
 
   return createPortal(
     <div
-      className="stage-overlay"
+      className="fixed inset-0 z-[90] flex bg-black/55 px-4 pt-12 pb-4 backdrop-blur-[4px] [-webkit-app-region:no-drag] max-[720px]:px-2 max-[720px]:pt-11 max-[720px]:pb-2"
       role="dialog"
       aria-label="导演台"
       data-scope="stage"
     >
-      <div className="stage-window">
-        <header className="stage-topbar">
-          <div className="stage-topbar__left">
+      <div className="stage-window grid min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden rounded-panel border border-border bg-canvas p-1.5 text-fg shadow-menu [grid-template-areas:'top_top_top'_'left_viewport_right'_'timeline_timeline_timeline'] [grid-template-columns:240px_minmax(0,1fr)_280px] [grid-template-rows:48px_minmax(0,1fr)_168px] max-[900px]:[grid-template-columns:190px_minmax(0,1fr)_220px] max-[900px]:[grid-template-rows:48px_minmax(0,1fr)_150px] max-[720px]:[grid-template-areas:'top'_'viewport'_'timeline'] max-[720px]:[grid-template-columns:minmax(0,1fr)] max-[720px]:[grid-template-rows:48px_minmax(0,1fr)_150px]">
+        <header className="flex min-w-0 items-center justify-between gap-3 rounded-[10px] border border-border bg-surface px-2.5 [grid-area:top]">
+          <div className="flex min-w-0 items-center gap-2">
             <Button
               type="button"
-              className="stage-icon-button"
+              variant="ghost"
+              size="none"
+              className={ICON_BUTTON_CLASS}
               onClick={closeStage}
               title="返回画布"
-              unstyled
             >
               <Icon name="chevron-left" size={16} />
             </Button>
-            <div className="stage-topbar__title">
-              <span>{doc?.name ?? '导演台'}</span>
-              <small>{saveLabel}</small>
+            <div className="flex min-w-0 flex-col">
+              <span className="overflow-hidden text-ellipsis text-[13px] font-semibold whitespace-nowrap">
+                {doc?.name ?? '导演台'}
+              </span>
+              <small className="text-[10px] text-fg-subtle">{saveLabel}</small>
             </div>
           </div>
 
-          <div className="stage-topbar__center">
-            <div className="stage-view-switch" role="group" aria-label="视角">
+          <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+            <div
+              className="flex overflow-hidden rounded-[7px] border border-border"
+              role="group"
+              aria-label="视角"
+            >
               <Button
                 type="button"
-                className={viewMode === 'director' ? 'is-active' : ''}
+                variant="ghost"
+                size="none"
+                className={VIEW_SWITCH_CLASS}
+                data-active={viewMode === 'director' ? '' : undefined}
                 onClick={() => setViewMode('director')}
-                unstyled
               >
                 导演视角
               </Button>
               <Button
                 type="button"
-                className={viewMode === 'camera' ? 'is-active' : ''}
+                variant="ghost"
+                size="none"
+                className={VIEW_SWITCH_CLASS}
+                data-active={viewMode === 'camera' ? '' : undefined}
                 onClick={() => setViewMode('camera')}
                 disabled={!doc || doc.cameras.length === 0}
-                unstyled
               >
                 机位视角
               </Button>
             </div>
             {activeCamera ? (
-              <span className="stage-topbar__camera">
+              <span className="overflow-hidden text-ellipsis text-[11px] text-fg-subtle whitespace-nowrap">
                 {activeCamera.name} · {activeCamera.fov}°
               </span>
             ) : (
-              <span className="stage-topbar__camera">暂无当前机位</span>
+              <span className="overflow-hidden text-ellipsis text-[11px] text-fg-subtle whitespace-nowrap">
+                暂无当前机位
+              </span>
             )}
           </div>
 
-          <div className="stage-topbar__right">
+          <div className="flex min-w-0 items-center gap-2">
             <Button
               type="button"
-              className="stage-text-button"
+              variant="secondary"
+              size="none"
+              className={TEXT_BUTTON_CLASS}
               onClick={() => void handleExportPreview()}
               disabled={!doc || !selectedShotId || exporting}
-              unstyled
             >
               <Icon name="video" size={14} />
               {exporting
@@ -319,156 +351,188 @@ export function StageWindow() {
             </Button>
             <Button
               type="button"
-              className="stage-text-button"
+              variant="secondary"
+              size="none"
+              className={TEXT_BUTTON_CLASS}
               onClick={() => void handleCapture()}
               disabled={!doc || capturing}
-              unstyled
             >
               <Icon name="image" size={14} />
               {capturing ? '截图中…' : '截图到画布'}
             </Button>
             <Button
               type="button"
-              className="stage-icon-button"
+              variant="ghost"
+              size="none"
+              className={ICON_BUTTON_CLASS}
               onClick={closeStage}
               title="关闭导演台"
-              unstyled
             >
               <Icon name="close" size={16} />
             </Button>
           </div>
         </header>
 
-        <aside className="stage-sidebar">
-          <div className="stage-sidebar__section">
-            <div className="stage-sidebar__title">
+        <aside className="flex min-h-0 flex-col gap-1.5 overflow-x-hidden overflow-y-auto rounded-[10px] border border-border bg-surface p-2 [grid-area:left] max-[720px]:hidden">
+          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+            <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>对象</span>
-              <div className="stage-sidebar__title-actions">
-                <small>{doc?.objects.length ?? 0}</small>
+              <div className="flex items-center gap-1.5">
+                <small className="font-normal text-fg-subtle">
+                  {doc?.objects.length ?? 0}
+                </small>
                 <Button
                   type="button"
-                  className="stage-mini-button"
+                  variant="ghost"
+                  size="none"
+                  className={MINI_BUTTON_CLASS}
                   title="添加对象"
                   onClick={() => setAddObjectOpen((open) => !open)}
-                  unstyled
                 >
                   +
                 </Button>
               </div>
             </div>
             {addObjectOpen ? (
-              <div className="stage-add-menu">
+              <div className="mb-1.5 grid grid-cols-2 gap-1 rounded-[7px] border border-border bg-surface-hover p-1">
                 {OBJECT_OPTIONS.map((option) => (
                   <Button
                     key={option.type}
                     type="button"
+                    variant="ghost"
+                    size="none"
+                    className="border border-border bg-surface px-1.5 py-[5px] !rounded-[5px] text-[11px] !font-normal text-fg-muted hover:bg-surface-hover hover:text-fg"
                     onClick={() => {
                       addObject(option.type)
                       setAddObjectOpen(false)
                     }}
-                    unstyled
                   >
                     {option.label}
                   </Button>
                 ))}
               </div>
             ) : null}
-            <div className="stage-sidebar__list">
+            <div className="flex flex-col gap-[3px]">
               {doc?.objects.length ? (
                 doc.objects.map((object) => (
                   <Button
                     key={object.id}
                     type="button"
-                    className={`stage-list-item ${
-                      object.id === selectedObjectId ? 'is-selected' : ''
-                    }`}
+                    variant="ghost"
+                    size="none"
+                    className={LIST_ITEM_CLASS}
+                    data-active={
+                      object.id === selectedObjectId ? '' : undefined
+                    }
                     onClick={() => selectObject(object.id)}
-                    unstyled
                   >
                     <Icon name="grid" size={13} />
-                    <span>{object.name}</span>
-                    <small>{object.type}</small>
+                    <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                      {object.name}
+                    </span>
+                    <small className="text-[10px] text-fg-subtle">
+                      {object.type}
+                    </small>
                   </Button>
                 ))
               ) : (
-                <div className="stage-sidebar__empty">还没有对象</div>
+                <div className="px-1.5 py-2 text-[11px] text-fg-subtle">
+                  还没有对象
+                </div>
               )}
             </div>
           </div>
 
-          <div className="stage-sidebar__section">
-            <div className="stage-sidebar__title">
+          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+            <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>机位</span>
-              <div className="stage-sidebar__title-actions">
-                <small>{doc?.cameras.length ?? 0}</small>
+              <div className="flex items-center gap-1.5">
+                <small className="font-normal text-fg-subtle">
+                  {doc?.cameras.length ?? 0}
+                </small>
                 <Button
                   type="button"
-                  className="stage-mini-button"
+                  variant="ghost"
+                  size="none"
+                  className={MINI_BUTTON_CLASS}
                   title="添加机位"
                   onClick={() => addCamera()}
-                  unstyled
                 >
                   +
                 </Button>
               </div>
             </div>
-            <div className="stage-sidebar__list">
+            <div className="flex flex-col gap-[3px]">
               {doc?.cameras.length ? (
                 doc.cameras.map((camera) => (
                   <Button
                     key={camera.id}
                     type="button"
-                    className={`stage-list-item ${
-                      camera.id === activeCameraId ? 'is-selected' : ''
-                    }`}
+                    variant="ghost"
+                    size="none"
+                    className={LIST_ITEM_CLASS}
+                    data-active={camera.id === activeCameraId ? '' : undefined}
                     onClick={() => selectCamera(camera.id)}
-                    unstyled
                   >
                     <Icon name="frame" size={13} />
-                    <span>{camera.name}</span>
-                    <small>{camera.fov}°</small>
+                    <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                      {camera.name}
+                    </span>
+                    <small className="text-[10px] text-fg-subtle">
+                      {camera.fov}°
+                    </small>
                   </Button>
                 ))
               ) : (
-                <div className="stage-sidebar__empty">还没有机位</div>
+                <div className="px-1.5 py-2 text-[11px] text-fg-subtle">
+                  还没有机位
+                </div>
               )}
             </div>
           </div>
 
-          <div className="stage-sidebar__section">
-            <div className="stage-sidebar__title">
+          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+            <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>镜头</span>
-              <small>{doc?.shots.length ?? 0}</small>
+              <small className="font-normal text-fg-subtle">
+                {doc?.shots.length ?? 0}
+              </small>
             </div>
-            <div className="stage-sidebar__list">
+            <div className="flex flex-col gap-[3px]">
               {doc?.shots.length ? (
                 doc.shots.map((shot) => (
                   <Button
                     key={shot.id}
                     type="button"
-                    className={`stage-list-item ${
-                      shot.id === selectedShotId ? 'is-selected' : ''
-                    }`}
+                    variant="ghost"
+                    size="none"
+                    className={LIST_ITEM_CLASS}
+                    data-active={shot.id === selectedShotId ? '' : undefined}
                     onClick={() => selectShot(shot.id)}
-                    unstyled
                   >
                     <Icon name="video" size={13} />
-                    <span>{shot.name ?? shot.id}</span>
-                    <small>{Math.round(shot.durationMs / 1000)}s</small>
+                    <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                      {shot.name ?? shot.id}
+                    </span>
+                    <small className="text-[10px] text-fg-subtle">
+                      {Math.round(shot.durationMs / 1000)}s
+                    </small>
                   </Button>
                 ))
               ) : (
-                <div className="stage-sidebar__empty">还没有镜头</div>
+                <div className="px-1.5 py-2 text-[11px] text-fg-subtle">
+                  还没有镜头
+                </div>
               )}
             </div>
           </div>
         </aside>
 
-        <main className="stage-viewport-wrap">
+        <main className="relative min-h-0 min-w-0 overflow-hidden rounded-[10px] border border-border bg-media-bg [grid-area:viewport]">
           <StageViewport />
           {viewMode === 'director' && selectedObjectId ? (
             <div
-              className="stage-transform-tools"
+              className="absolute top-2.5 left-1/2 flex -translate-x-1/2 overflow-hidden rounded-[7px] border border-border bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] shadow-float"
               role="group"
               aria-label="变换工具"
             >
@@ -476,9 +540,11 @@ export function StageWindow() {
                 <Button
                   key={option.mode}
                   type="button"
-                  className={transformMode === option.mode ? 'is-active' : ''}
+                  variant="ghost"
+                  size="none"
+                  className={TRANSFORM_TOOL_CLASS}
+                  data-active={transformMode === option.mode ? '' : undefined}
                   onClick={() => setTransformMode(option.mode)}
-                  unstyled
                 >
                   {option.label}
                 </Button>
@@ -486,28 +552,39 @@ export function StageWindow() {
             </div>
           ) : null}
           {loading ? (
-            <div className="stage-viewport__status">正在加载场景…</div>
+            <div className="pointer-events-none absolute top-1/2 left-1/2 max-w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3.5 py-2.5 text-center text-xs leading-relaxed text-fg-muted">
+              正在加载场景…
+            </div>
           ) : null}
           {!loading && doc && doc.objects.length === 0 ? (
-            <div className="stage-viewport__empty">
+            <div className="pointer-events-none absolute bottom-4 left-1/2 max-w-[320px] -translate-x-1/2 rounded-lg border border-border bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3.5 py-2.5 text-center text-xs leading-relaxed text-fg-muted">
               场景还是空的；对象编辑与 Agent 搭景将在下一阶段接入。
             </div>
           ) : null}
-          <div className="stage-viewport__hint">
+          <div className="pointer-events-none absolute right-2.5 bottom-2 rounded-[5px] bg-black/35 px-1.5 py-0.5 text-[10px] text-fg-subtle">
             拖拽旋转 · 滚轮缩放 · 点击对象或机位
           </div>
         </main>
 
-        <aside className="stage-inspector-wrap">
+        <aside className="flex min-h-0 flex-col gap-1.5 overflow-x-hidden overflow-y-auto rounded-[10px] border border-border bg-surface p-2.5 [grid-area:right] max-[720px]:hidden">
           <StageInspector />
         </aside>
 
         <StageTimeline />
 
         {error ? (
-          <div className="stage-error" role="status">
+          <div
+            className="absolute right-5 bottom-5 left-5 flex items-center justify-between gap-2 rounded-lg border border-border bg-[color-mix(in_srgb,var(--danger)_14%,var(--surface))] px-3 py-2 text-[11px] text-danger shadow-float"
+            role="status"
+          >
             <span>{error}</span>
-            <Button type="button" onClick={clearError} unstyled>
+            <Button
+              type="button"
+              variant="ghost"
+              size="none"
+              className="shrink-0 border border-border bg-transparent px-2 py-[2px] !rounded-[5px] text-[10px] !font-normal !text-danger hover:!bg-transparent hover:!text-danger"
+              onClick={clearError}
+            >
               知道了
             </Button>
           </div>

@@ -9,7 +9,12 @@ import {
   segmentMetaLine,
   studyClock
 } from './study-sheet'
-import { Button } from '../../components/ui'
+import { Button, IconButton } from '../../components/ui'
+
+const TH_CLASS =
+  'sticky top-0 z-[1] whitespace-nowrap border-b border-border bg-surface p-2 text-left font-medium text-fg-subtle'
+const TD_CLASS = 'border-b border-divider p-2 align-top leading-[1.55]'
+const TEXT_CLASS = `max-w-[340px] min-w-[180px] ${TD_CLASS}`
 
 export function FilmStudySheet() {
   const nodeId = useFilmStudyStore((state) => state.sheetNodeId)
@@ -31,73 +36,91 @@ export function FilmStudySheet() {
   }
 
   const body = loading ? (
-    <div className="film-study-sheet__empty">正在读取分镜表…</div>
+    <div className="p-10 text-center text-xs text-fg-subtle">
+      正在读取分镜表…
+    </div>
   ) : !study ? (
-    <div className="film-study-sheet__empty">没有可用的拉片结果</div>
+    <div className="p-10 text-center text-xs text-fg-subtle">
+      没有可用的拉片结果
+    </div>
   ) : (
     <>
       {!study.autoAnalyzedAt ? (
-        <div className="film-study-sheet__warn">
+        <div className="mb-2.5 rounded-lg border border-[color-mix(in_srgb,var(--warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] px-2.5 py-2 text-[11px] leading-[1.55] text-warning">
           当前只有基础分镜，景别 / 运镜 / 提示词尚未生成。可在拉片节点选择 AI
           描述后重新拉片。
         </div>
       ) : null}
 
-      <div className="film-study-sheet__table-wrap">
-        <table className="film-study-sheet__table">
+      <div className="min-w-[1080px]">
+        <table className="w-full border-collapse text-[11.5px]">
           <thead>
             <tr>
-              <th>镜号</th>
-              <th>时间</th>
-              <th>景别</th>
-              <th>机位</th>
-              <th>运镜</th>
-              <th>光线</th>
-              <th>画面</th>
-              <th>提示词</th>
-              <th>人声 / 音乐</th>
-              <th />
+              <th className={TH_CLASS}>镜号</th>
+              <th className={TH_CLASS}>时间</th>
+              <th className={TH_CLASS}>景别</th>
+              <th className={TH_CLASS}>机位</th>
+              <th className={TH_CLASS}>运镜</th>
+              <th className={TH_CLASS}>光线</th>
+              <th className={TH_CLASS}>画面</th>
+              <th className={TH_CLASS}>提示词</th>
+              <th className={TH_CLASS}>人声 / 音乐</th>
+              <th className={TH_CLASS} />
             </tr>
           </thead>
-          <tbody>
+          <tbody className="text-fg-muted">
             {study.segments.map((segment, index) => (
-              <tr key={segment.id}>
-                <td className="film-study-sheet__index">
+              <tr key={segment.id} className="hover:[&>td]:bg-surface-hover">
+                <td
+                  className={`${TD_CLASS} whitespace-nowrap tabular-nums text-fg`}
+                >
                   {String(index + 1).padStart(2, '0')}
                 </td>
-                <td className="film-study-sheet__time">
+                <td
+                  className={`${TD_CLASS} whitespace-nowrap tabular-nums text-fg-subtle`}
+                >
                   {studyClock(segment.startTime)}
                   <br />
-                  <span>{segmentDuration(segment).toFixed(1)}s</span>
+                  <span className="text-fg-subtle opacity-[0.72]">
+                    {segmentDuration(segment).toFixed(1)}s
+                  </span>
                 </td>
-                <td>{segment.shotSize ?? '—'}</td>
-                <td>{segment.cameraAngle ?? '—'}</td>
-                <td>{segment.cameraMove ?? '—'}</td>
-                <td>{segment.lighting ?? '—'}</td>
-                <td className="film-study-sheet__text">
-                  <strong>{segment.title}</strong>
+                <td className={TD_CLASS}>{segment.shotSize ?? '—'}</td>
+                <td className={TD_CLASS}>{segment.cameraAngle ?? '—'}</td>
+                <td className={TD_CLASS}>{segment.cameraMove ?? '—'}</td>
+                <td className={TD_CLASS}>{segment.lighting ?? '—'}</td>
+                <td className={TEXT_CLASS}>
+                  <strong className="mb-[3px] block font-medium text-fg">
+                    {segment.title}
+                  </strong>
                   {segment.visualDescription ? (
-                    <p>{segment.visualDescription}</p>
+                    <p className="mt-0 mb-[3px] text-fg-muted">
+                      {segment.visualDescription}
+                    </p>
                   ) : null}
                 </td>
-                <td className="film-study-sheet__text">
-                  {segment.imagePrompt ?? '—'}
-                </td>
-                <td className="film-study-sheet__text">
-                  {segment.voiceOver ? <p>人声：{segment.voiceOver}</p> : null}
-                  {segment.musicCue ? <p>音乐：{segment.musicCue}</p> : null}
+                <td className={TEXT_CLASS}>{segment.imagePrompt ?? '—'}</td>
+                <td className={TEXT_CLASS}>
+                  {segment.voiceOver ? (
+                    <p className="mt-0 mb-[3px] text-fg-muted">
+                      人声：{segment.voiceOver}
+                    </p>
+                  ) : null}
+                  {segment.musicCue ? (
+                    <p className="mt-0 mb-[3px] text-fg-muted">
+                      音乐：{segment.musicCue}
+                    </p>
+                  ) : null}
                   {!segment.voiceOver && !segment.musicCue ? '—' : null}
                 </td>
-                <td>
-                  <Button
-                    type="button"
-                    className="icon-btn"
-                    title="复制这一镜的提示词"
+                <td className={TD_CLASS}>
+                  <IconButton
+                    label="复制这一镜的提示词"
+                    size="sm"
                     onClick={() => void copy(segmentCopyText(segment, index))}
-                    unstyled
                   >
                     <Icon name="copy" size={12} />
-                  </Button>
+                  </IconButton>
                 </td>
               </tr>
             ))}
@@ -108,20 +131,23 @@ export function FilmStudySheet() {
   )
 
   return createPortal(
-    <div className="film-study-sheet" onPointerDown={close}>
+    <div
+      className="fixed inset-0 z-[950] flex items-center justify-center bg-[color-mix(in_srgb,var(--canvas-bg)_72%,transparent)] px-6 pt-12 pb-6"
+      onPointerDown={close}
+    >
       <div
-        className="film-study-sheet__panel"
+        className="flex h-[min(900px,calc(100vh_-_72px))] w-[min(1440px,calc(100vw_-_48px))] flex-col overflow-hidden rounded-[14px] border border-border bg-surface shadow-float"
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <header className="film-study-sheet__head">
-          <div className="film-study-sheet__title">
+        <header className="flex h-[52px] shrink-0 items-center gap-4 border-b border-divider pr-3.5 pl-[18px]">
+          <div className="flex min-w-0 items-center gap-[7px] text-[13px] text-fg">
             <Icon name="film" size={15} />
             <span>分镜表</span>
-            <span className="film-study-sheet__source">
+            <span className="max-w-[320px] truncate text-xs text-fg-subtle">
               {study?.sourceName ?? ''}
             </span>
           </div>
-          <div className="film-study-sheet__meta">
+          <div className="ml-auto flex items-center gap-2.5 whitespace-nowrap text-[11px] text-fg-subtle">
             {study ? (
               <>
                 <span>{study.segments.length} 个分镜</span>
@@ -131,18 +157,19 @@ export function FilmStudySheet() {
             ) : null}
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               disabled={!study}
               onClick={() =>
                 void copy(study ? buildStudyTableMarkdown(study) : '')
               }
-              unstyled
             >
               复制整表
             </Button>
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               disabled={!study}
               onClick={() =>
                 study
@@ -158,35 +185,30 @@ export function FilmStudySheet() {
                       )
                   : undefined
               }
-              unstyled
             >
               导出 Markdown
             </Button>
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               onClick={() => {
                 const target = nodeId
                 close()
                 void openRoom(target)
               }}
-              unstyled
             >
               高级编辑
             </Button>
-            <Button
-              type="button"
-              className="icon-btn"
-              title="关闭"
-              onClick={close}
-              unstyled
-            >
+            <IconButton label="关闭" size="sm" onClick={close}>
               <Icon name="close" size={14} />
-            </Button>
+            </IconButton>
           </div>
         </header>
 
-        <div className="film-study-sheet__body">{body}</div>
+        <div className="min-h-0 flex-1 overflow-auto px-4 pt-3 pb-4">
+          {body}
+        </div>
       </div>
     </div>,
     document.body

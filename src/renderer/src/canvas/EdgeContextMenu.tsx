@@ -5,6 +5,9 @@ import { Button } from '../components/ui'
 
 const MENU_WIDTH = 168
 
+const ITEM_CLASS =
+  '!flex h-8 w-full items-center !justify-between gap-3 rounded-lg px-3 text-[12.5px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
+
 export function EdgeContextMenu() {
   const menu = useUIStore((state) => state.edgeContextMenu)
   const close = useUIStore((state) => state.closeEdgeContextMenu)
@@ -46,22 +49,23 @@ export function EdgeContextMenu() {
   return (
     <div
       ref={ref}
-      className="ctx-menu ctx-menu--node"
+      className="fixed z-[120] max-h-[520px] overflow-y-auto rounded-[12px] border border-border bg-surface p-1.5 shadow-menu [animation:menu-in_120ms_ease-out]"
       style={{ left, top, width: MENU_WIDTH }}
       onPointerDown={(event) => event.stopPropagation()}
       onContextMenu={(event) => event.preventDefault()}
     >
       <Button
         type="button"
-        className="ctx-menu__item is-danger"
+        variant="ghost"
+        size="none"
+        className={ITEM_CLASS}
         onClick={() => {
           removeEdges([menu.edgeId])
           close()
         }}
-        unstyled
       >
         <span>删除连线</span>
-        <span className="ctx-menu__shortcut">Delete</span>
+        <span className="text-xs text-fg-subtle">Delete</span>
       </Button>
     </div>
   )

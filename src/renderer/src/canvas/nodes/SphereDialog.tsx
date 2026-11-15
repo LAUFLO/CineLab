@@ -3,7 +3,13 @@ import type { ModelDef } from '@shared/provider-schema'
 import { modelInputs } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
 import { useSettingsStore } from '../../stores/settings'
-import { Button, Dialog, Input, Select } from '../../components/ui'
+import {
+  Button,
+  Dialog,
+  IconButton,
+  Input,
+  Select
+} from '../../components/ui'
 
 interface SphereDialogProps {
   open: boolean
@@ -154,34 +160,33 @@ export function SphereDialog({
       onClose={busy ? () => {} : onClose}
       bare
       ariaLabel={mode === 'light' ? '自定义光位' : '自定义机位'}
-      overlayClassName="operation-dialog-overlay"
-      panelClassName="operation-dialog is-wide"
+      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-black/55 px-6 py-12"
+      panelClassName="w-[520px] rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
     >
-      <div className="operation-dialog__header">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="operation-dialog__title">
+          <div className="text-[15px] font-semibold">
             {mode === 'light' ? '自定义光位' : '自定义机位'}
           </div>
-          <div className="operation-dialog__subtitle">
+          <div className="mt-1 text-xs text-fg-subtle">
             拖动球面上的圆点调整方向
           </div>
         </div>
-        <Button
-          type="button"
-          className="operation-dialog__close"
-          title="关闭"
+        <IconButton
+          label="关闭"
+          size="sm"
+          className="disabled:!opacity-100"
           disabled={busy}
           onClick={onClose}
-          unstyled
         >
           <Icon name="close" size={14} />
-        </Button>
+        </IconButton>
       </div>
 
-      <div className="sphere-editor">
+      <div className="mt-2.5 flex flex-col items-center gap-2">
         <svg
           viewBox="0 0 240 240"
-          className="sphere-editor__stage"
+          className="h-[240px] w-[240px] cursor-grab touch-none active:cursor-grabbing"
           onPointerDown={(event) => {
             event.currentTarget.setPointerCapture(event.pointerId)
             setDragging(true)
@@ -255,14 +260,14 @@ export function SphereDialog({
           />
         </svg>
 
-        <div className="sphere-editor__readout">
+        <div className="text-xs text-fg-muted">
           水平 {Math.round(azimuth)}° · 俯仰 {Math.round(elevation)}°
         </div>
       </div>
 
       {mode === 'light' ? (
-        <div className="sphere-editor__controls">
-          <label className="sphere-editor__range">
+        <div className="mt-3 flex flex-col gap-2.5">
+          <label className="flex flex-col gap-1.5 text-xs text-fg-muted">
             <span>亮度 {brightness}%</span>
             <Input
               type="range"
@@ -270,10 +275,10 @@ export function SphereDialog({
               max="100"
               value={brightness}
               onChange={(event) => setBrightness(Number(event.target.value))}
-              unstyled
+              className="w-full accent-pick-bar !h-6 !border-0 !bg-transparent !px-0"
             />
           </label>
-          <div className="sphere-editor__chips">
+          <div className="flex flex-wrap gap-1.5">
             {(
               [
                 ['warm', '暖色'],
@@ -284,11 +289,11 @@ export function SphereDialog({
               <Button
                 key={value}
                 type="button"
-                className={`sphere-editor__chip ${
-                  temperature === value ? 'is-active' : ''
-                }`}
+                variant="secondary"
+                size="none"
+                className="h-7 !rounded-[7px] bg-surface-hover px-3 text-xs data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
+                data-active={temperature === value ? '' : undefined}
                 onClick={() => setTemperature(value)}
-                unstyled
               >
                 {label}
               </Button>
@@ -296,8 +301,8 @@ export function SphereDialog({
           </div>
         </div>
       ) : (
-        <div className="sphere-editor__controls">
-          <div className="sphere-editor__chips">
+        <div className="mt-3 flex flex-col gap-2.5">
+          <div className="flex flex-wrap gap-1.5">
             {(
               [
                 ['close', '特写'],
@@ -308,11 +313,11 @@ export function SphereDialog({
               <Button
                 key={value}
                 type="button"
-                className={`sphere-editor__chip ${
-                  shotSize === value ? 'is-active' : ''
-                }`}
+                variant="secondary"
+                size="none"
+                className="h-7 !rounded-[7px] bg-surface-hover px-3 text-xs data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
+                data-active={shotSize === value ? '' : undefined}
                 onClick={() => setShotSize(value)}
-                unstyled
               >
                 {label}
               </Button>
@@ -322,22 +327,22 @@ export function SphereDialog({
       )}
 
       {models.length === 0 ? (
-        <div className="operation-dialog__empty">
+        <div className="mt-4 flex flex-col gap-2 rounded-[9px] border border-border bg-surface-hover p-[14px] text-xs text-fg-muted">
           <p>还没有可用的图片模型。</p>
           <Button
             type="button"
-            className="btn-primary"
+            variant="primary"
+            className="mt-1 self-start"
             onClick={() => {
               onClose()
               openSettings()
             }}
-            unstyled
           >
             打开设置
           </Button>
         </div>
       ) : (
-        <label className="operation-dialog__field">
+        <label className="flex flex-col gap-1.5 text-xs text-fg-muted">
           <span>使用模型</span>
           <Select
             value={modelKey}
@@ -356,27 +361,27 @@ export function SphereDialog({
         </label>
       )}
 
-      <div className="sphere-editor__prompt">{prompt}</div>
+      <div className="mt-3 max-h-[88px] overflow-y-auto rounded-[8px] border border-border bg-surface-hover p-2.5 text-[11px] leading-[1.6] text-fg-subtle">
+        {prompt}
+      </div>
 
-      <div className="operation-dialog__footer">
+      <div className="mt-4 flex justify-end gap-2 border-t border-divider pt-3.5">
         <Button
           type="button"
-          className="btn-secondary"
+          variant="secondary"
           disabled={busy}
           onClick={onClose}
-          unstyled
         >
           取消
         </Button>
         <Button
           type="button"
-          className="btn-primary"
+          variant="primary"
           disabled={!active || !activeSupportsImage || busy}
           onClick={() => {
             if (!active || !activeSupportsImage) return
             onConfirm(prompt, modelKey, active.model)
           }}
-          unstyled
         >
           {busy ? '提交中…' : '开始生成'}
         </Button>

@@ -237,11 +237,7 @@ export default function App() {
         <LibraryPanel />
         <ToolbarSettings />
         <ConfirmDialog />
-        {error ? (
-          <ToastView unstyled className="toast">
-            {error}
-          </ToastView>
-        ) : null}
+        {error ? <ToastView tone="error">{error}</ToastView> : null}
       </div>
     )
   }

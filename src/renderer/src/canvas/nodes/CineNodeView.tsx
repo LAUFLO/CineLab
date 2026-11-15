@@ -653,9 +653,8 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         onClose={() => setOcrOpen(false)}
         title="文字识别结果"
         size="md"
-        panelClassName="ocr-dialog"
       >
-        <div className="ocr-dialog__body">
+        <div className="max-h-[50vh] overflow-y-auto text-[13px] leading-[1.8] break-words whitespace-pre-wrap text-fg">
           {current?.textRecognition?.text ?? ''}
         </div>
       </Dialog>

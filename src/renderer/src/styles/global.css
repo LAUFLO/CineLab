@@ -3770,6 +3770,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
   gap: 8px;
   padding: 8px 10px 0;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .promptbar__slot {
@@ -3799,6 +3800,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 
 .promptbar__slot-thumb,
 .promptbar__slot-empty {
+  display: block;
   width: 40px;
   height: 40px;
   border-radius: 6px;
@@ -3809,6 +3811,7 @@ body.is-picking .react-flow__node:hover .cnode__card {
 
 .promptbar__slot-thumb img,
 .promptbar__slot-thumb video {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;

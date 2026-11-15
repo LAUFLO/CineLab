@@ -95,6 +95,7 @@ export const cineNodeSchema = z.object({
     status: nodeStatusSchema,
     text: z.string().max(20000).optional(),
     prompt: z.string().max(20000).optional(),
+    refOrder: z.array(z.string().max(600)).max(8).optional(),
     studyId: z.string().max(120).optional(),
     sourceNodeId: z.string().max(120).optional(),
     sourcePath: z.string().max(500).optional(),

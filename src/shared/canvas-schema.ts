@@ -46,6 +46,8 @@ export interface CineNodeData extends Record<string, unknown> {
   error?: string
   /** Prompt Bar 中最近一次输入的提示词，按节点保留 */
   prompt?: string
+  /** Prompt Bar 槽位顺序，key 为 `scope:path` */
+  refOrder?: string[]
   /** 拉片节点：关联的 study.json */
   studyId?: string
   /** 拉片节点：来源视频节点 */

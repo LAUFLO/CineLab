@@ -125,6 +125,7 @@ export function PromptBar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [paramValues, setParamValues] = useState<Record<string, unknown>>({})
   const [inputMode, setInputMode] = useState<ModelModeId | null>(null)
+  const [draggedSlot, setDraggedSlot] = useState<string | null>(null)
   const [maskDraft, setMaskDraft] = useState<{
     dataUrl: string
     sourceKey: string
@@ -855,9 +856,28 @@ export function PromptBar() {
     inputMode ??
     (active ? inferActiveMode(active.model, inferModeContext) : undefined)
 
+  const orderedRefs = (() => {
+    const order = node?.data.refOrder ?? []
+    if (order.length === 0) return rawRefs
+
+    const keyOf = (ref: PickedRef): string =>
+      `${ref.scope ?? 'project'}:${ref.path}`
+    const remaining = new Map(rawRefs.map((ref) => [keyOf(ref), ref]))
+    const result: PickedRef[] = []
+
+    for (const key of order) {
+      const ref = remaining.get(key)
+      if (!ref) continue
+      result.push(ref)
+      remaining.delete(key)
+    }
+    for (const ref of remaining.values()) result.push(ref)
+    return result
+  })()
+
   const mergedRefs: PickedRef[] = (() => {
     let imageIndex = 0
-    return rawRefs.map((ref): PickedRef => {
+    return orderedRefs.map((ref): PickedRef => {
       if (ref.kind === 'video') {
         return { ...ref, role: 'reference' as ReferenceRole }
       }
@@ -879,6 +899,22 @@ export function PromptBar() {
       return { ...ref, role: 'reference' as ReferenceRole }
     })
   })()
+  const swapRefs = (fromKey: string, toKey: string): void => {
+    if (!node || fromKey === toKey) return
+
+    const keyOf = (ref: PickedRef): string =>
+      `${ref.scope ?? 'project'}:${ref.path}`
+    const current = orderedRefs.map(keyOf)
+    const fromIndex = current.indexOf(fromKey)
+    const toIndex = current.indexOf(toKey)
+    if (fromIndex < 0 || toIndex < 0) return
+
+    const next = [...current]
+    next[fromIndex] = toKey
+    next[toIndex] = fromKey
+    useCanvasStore.getState().patchNodeData(node.id, { refOrder: next })
+  }
+
   const textContexts = (() => {
     const result: TextContext[] = []
     const seen = new Set<string>()
@@ -1077,7 +1113,8 @@ export function PromptBar() {
       }
       if (slot.role === 'reference') {
         const refs = images.filter((ref) => ref.role === 'reference')
-        const count = Math.max(1, Math.min(refs.length, slot.max))
+        if (refs.length === 0) return []
+        const count = Math.min(refs.length, slot.max)
         return Array.from({ length: count }, (_, index) => ({
           id: `${slot.id}-${index}`,
           label: slot.max > 1 ? String(index + 1) : slot.label,
@@ -1508,7 +1545,23 @@ export function PromptBar() {
                   <Button
                     type="button"
                     className="promptbar__slot-thumb"
-                    title="双击在画布上定位"
+                    title="拖动交换位置，双击在画布上定位"
+                    draggable
+                    onDragStart={() => {
+                      if (!slot.ref) return
+                      setDraggedSlot(
+                        `${slot.ref.scope ?? 'project'}:${slot.ref.path}`
+                      )
+                    }}
+                    onDragEnd={() => setDraggedSlot(null)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault()
+                      if (!slot.ref) return
+                      const toKey = `${slot.ref.scope ?? 'project'}:${slot.ref.path}`
+                      if (draggedSlot) swapRefs(draggedSlot, toKey)
+                      setDraggedSlot(null)
+                    }}
                     onPointerEnter={(event) => {
                       if (!slot.ref) return
                       const rect = event.currentTarget.getBoundingClientRect()

@@ -1176,7 +1176,7 @@ function AppearanceSection() {
     const saved = localStorage.getItem('cinelab.theme.v1')
     return saved === 'light' || saved === 'dark' || saved === 'system'
       ? saved
-      : 'dark'
+      : 'system'
   })
 
   const apply = (next: 'light' | 'dark' | 'system'): void => {

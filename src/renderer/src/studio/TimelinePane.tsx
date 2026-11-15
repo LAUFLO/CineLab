@@ -18,7 +18,7 @@ import {
 import type { TimelineCommand } from '@shared/timeline-commands'
 import { snapTargets, snapValue } from '@shared/timeline-snap'
 import { Icon } from '../components/Icon'
-import { IconButton, Button } from '../components/ui'
+import { IconButton, Button, cn } from '../components/ui'
 import { useTimelineStore } from '../stores/timeline'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
@@ -29,6 +29,12 @@ const KIND_LETTER: Record<TimelineTrack['kind'], string> = {
   video: 'V',
   audio: 'A',
   subtitle: 'S'
+}
+
+const KIND_TONE: Record<TimelineTrack['kind'], string> = {
+  video: 'text-group-cyan',
+  audio: 'text-group-lime',
+  subtitle: 'text-group-amber'
 }
 
 type DragMode = 'move' | 'trim-start' | 'trim-end'
@@ -60,15 +66,37 @@ function trackHeight(track: TimelineTrack): number {
 function clipClass(
   clip: TimelineClip,
   selected: boolean,
-  issue?: { missing?: boolean; updateAvailable?: boolean }
+  issue?: { missing?: boolean; updateAvailable?: boolean },
+  dragging?: boolean
 ): string {
-  const kind = clip.kind === 'text' ? 'subtitle' : clip.kind
-  return `studio-clip studio-clip--${kind} ${selected ? 'is-selected' : ''} ${
-    issue?.missing ? 'is-missing' : ''
-  } ${issue?.updateAvailable ? 'has-update' : ''} ${
-    clip.transitionIn ? 'has-transition' : ''
-  } ${clip.speed !== 1 ? 'has-speed' : ''}`
+  return cn(
+    'studio-clip absolute top-0.5 bottom-0.5 flex cursor-pointer touch-none select-none items-center overflow-hidden rounded-[4px] border px-1.5',
+    selected ? 'border-border-selected' : 'border-border',
+    clipTone(clip),
+    selected ? 'z-[2] shadow-[0_0_0_1px_var(--border-selected)]' : '',
+    dragging ? 'pointer-events-none opacity-55' : '',
+    issue?.missing ? 'is-missing' : '',
+    issue?.updateAvailable ? 'has-update' : ''
+  )
 }
+
+/** 音频片段用斜纹底纹，颜色取 group-lime token */
+const CLIP_AUDIO_TONE =
+  'bg-[repeating-linear-gradient(90deg,color-mix(in_srgb,var(--group-lime)_12%,transparent)_0_2px,color-mix(in_srgb,var(--group-lime)_3%,transparent)_2px_4px)]'
+
+/** 片段底色按素材类型取 token；图片沿用基础底色 */
+function clipTone(clip: TimelineClip): string {
+  if (clip.kind === 'text') return 'bg-group-amber/14'
+  if (clip.kind === 'video') return 'bg-group-cyan/10'
+  if (clip.kind === 'audio') return CLIP_AUDIO_TONE
+  return 'bg-surface-raised'
+}
+
+const CLIP_LABEL =
+  'relative z-[1] truncate text-[10px] [text-shadow:0_1px_4px_var(--overlay)]'
+
+const PANEL_ROOT =
+  'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[10px] border border-border bg-surface [grid-area:timeline]'
 
 function subtitleText(content: string) {
   return {
@@ -766,7 +794,7 @@ export function TimelinePane() {
   }, [dispatch, showToast])
 
   if (!doc) {
-    return <section className="studio-timeline" />
+    return <section className={PANEL_ROOT} />
   }
 
   const isSelected = (id: string): boolean => selectedIds.includes(id)
@@ -776,48 +804,58 @@ export function TimelinePane() {
       : null
 
   return (
-    <section className="studio-timeline">
-      <div className="studio-timeline__toolbar">
+    <section className={PANEL_ROOT}>
+      <div className="flex h-10 shrink-0 items-center gap-0.5 border-b border-divider px-2">
         <Button
           type="button"
-          className={`studio-tool-btn ${tool === 'select' ? 'is-active' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap ${
+            tool === 'select' ? '!bg-surface-hover !text-fg' : ''
+          }`}
           onClick={() => setTool('select')}
           title="选择 (V)"
-          unstyled
         >
           <Icon name="cursor" size={13} />
           选择
         </Button>
         <Button
           type="button"
-          className={`studio-tool-btn ${tool === 'cut' ? 'is-active' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap ${
+            tool === 'cut' ? '!bg-surface-hover !text-fg' : ''
+          }`}
           onClick={() => setTool('cut')}
           title="切割 (C)"
-          unstyled
         >
           <Icon name="scissors" size={13} />
           切割
         </Button>
         <Button
           type="button"
-          className="studio-tool-btn"
+          variant="ghost"
+          size="none"
+          className="h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap"
           onClick={addSubtitle}
           title="在播放头添加字幕"
-          unstyled
         >
           <Icon name="text" size={13} />
           字幕
         </Button>
         <Button
           type="button"
-          className={`studio-tool-btn ${transcribing ? 'is-active' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap ${
+            transcribing ? '!bg-surface-hover !text-fg' : ''
+          }`}
           onClick={() => void runAutoSubtitles()}
           title={
             transcribing
               ? '点击取消转写'
               : '选中片段时转写该片段；未选中时转写整条时间线'
           }
-          unstyled
         >
           <Icon name="sparkles" size={13} />
           {transcribing
@@ -828,108 +866,122 @@ export function TimelinePane() {
         </Button>
         <Button
           type="button"
-          className="studio-tool-btn"
+          variant="ghost"
+          size="none"
+          className="h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap"
           onClick={() => void importSubtitles()}
           title="导入 SRT / VTT 字幕文件"
-          unstyled
         >
           <Icon name="download" size={13} />
           导入字幕
         </Button>
-        <span className="studio-toolbar-divider" />
+        <span className="mx-1 h-4 w-px bg-divider" />
         <IconButton
           label="撤销 (Ctrl+Z)"
-          className="studio-icon-btn"
           onClick={undo}
           disabled={history.past.length === 0}
-          unstyled
         >
           ↶
         </IconButton>
         <IconButton
           label="重做 (Ctrl+Shift+Z)"
-          className="studio-icon-btn"
           onClick={redo}
           disabled={history.future.length === 0}
-          unstyled
         >
           ↷
         </IconButton>
-        <span className="studio-toolbar-divider" />
+        <span className="mx-1 h-4 w-px bg-divider" />
         <Button
           type="button"
-          className={`studio-tool-btn ${snap ? 'is-active' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap ${
+            snap ? '!bg-surface-hover !text-fg' : ''
+          }`}
           onClick={toggleSnap}
-          unstyled
         >
           <Icon name="target" size={13} />
           吸附
         </Button>
         <Button
           type="button"
-          className={`studio-tool-btn ${magnet ? 'is-active' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap ${
+            magnet ? '!bg-surface-hover !text-fg' : ''
+          }`}
           onClick={toggleMagnet}
-          unstyled
         >
           <Icon name="magnet" size={13} />
           磁性
         </Button>
-        <span className="studio-toolbar-spacer" />
+        <span className="flex-1" />
         <IconButton
           label="缩小"
-          className="studio-icon-btn"
           onClick={() => zoomAt(zoom / 1.6, width / 2)}
           disabled={zoom <= 0.5}
-          unstyled
         >
           −
         </IconButton>
-        <span className="studio-zoom">{Math.round(zoom * 100)}%</span>
+        <span className="min-w-9 text-center text-[11px] text-fg-subtle">
+          {Math.round(zoom * 100)}%
+        </span>
         <IconButton
           label="放大"
-          className="studio-icon-btn"
           onClick={() => zoomAt(zoom * 1.6, width / 2)}
           disabled={zoom >= 4}
-          unstyled
         >
           ＋
         </IconButton>
       </div>
 
-      <div className="studio-timeline__body">
-        <div className="studio-track-heads" ref={headsRef}>
-          <div className="studio-ruler-corner" />
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <div
+          className="w-[140px] shrink-0 overflow-hidden border-r border-divider"
+          ref={headsRef}
+        >
+          <div className="h-7 border-b border-divider bg-surface" />
           {doc.tracks.map((track) => (
             <div
               key={track.id}
-              className={`studio-track-head ${track.id === mainId ? 'is-main' : ''}`}
+              className={`flex items-center justify-between gap-1 border-b border-divider bg-surface px-2 ${
+                track.id === mainId
+                  ? 'shadow-[inset_2px_0_0_var(--pick-bar)]'
+                  : ''
+              }`}
               style={{ height: trackHeight(track) }}
             >
-              <div className="studio-track-head__main">
+              <div className="flex min-w-0 items-center gap-1.5">
                 <span
-                  className={`studio-track-kind studio-track-kind--${track.kind}`}
+                  className={`inline-flex h-4 w-4 items-center justify-center rounded-[4px] bg-surface-hover text-[9px] font-bold ${KIND_TONE[track.kind]}`}
                 >
                   {KIND_LETTER[track.kind]}
                 </span>
-                <span className="studio-track-head__name">{track.name}</span>
+                <span className="truncate text-[11px] text-fg-muted">
+                  {track.name}
+                </span>
                 {track.id === mainId ? (
-                  <span className="studio-track-head__badge">主轨</span>
+                  <span className="whitespace-nowrap rounded-[3px] bg-surface-hover px-1 py-px text-[9px] text-fg-subtle">
+                    主轨
+                  </span>
                 ) : null}
               </div>
-              <div className="studio-track-head__tools">
+              <div className="flex shrink-0 gap-0.5">
                 <Button
                   type="button"
-                  className="studio-track-tool"
+                  variant="ghost"
+                  size="none"
+                  className="h-[18px] w-[18px] !rounded-[4px] text-[9px] !font-normal !text-fg-subtle hover:!text-fg"
                   title="可见"
-                  unstyled
                 >
                   ◉
                 </Button>
                 <Button
                   type="button"
-                  className="studio-track-tool"
+                  variant="ghost"
+                  size="none"
+                  className="h-[18px] w-[18px] !rounded-[4px] text-[9px] !font-normal !text-fg-subtle hover:!text-fg"
                   title="锁定"
-                  unstyled
                 >
                   ▣
                 </Button>
@@ -939,7 +991,7 @@ export function TimelinePane() {
         </div>
 
         <div
-          className="studio-tracks-scroll"
+          className="min-w-0 flex-1 overflow-auto"
           ref={scrollRef}
           onWheel={onWheel}
           onScroll={() => {
@@ -949,14 +1001,17 @@ export function TimelinePane() {
           }}
         >
           <div
-            className="studio-tracks-content"
+            className="relative min-h-full"
             style={{ width: Math.max(width, totalMs * pxPerMs) }}
           >
-            <div className="studio-ruler" onPointerDown={seekRuler}>
+            <div
+              className="relative h-7 cursor-ew-resize border-b border-divider"
+              onPointerDown={seekRuler}
+            >
               {ticks.map((tick) => (
                 <span
                   key={tick.ms}
-                  className="studio-ruler__tick"
+                  className="pointer-events-none absolute top-0 flex h-full items-center whitespace-nowrap border-l border-divider pl-1 text-[10px] text-fg-subtle [transform:translateX(-0.5px)]"
                   style={{ left: tick.ms * pxPerMs }}
                 >
                   {tick.label}
@@ -966,8 +1021,12 @@ export function TimelinePane() {
                 <Button
                   key={marker.id}
                   type="button"
-                  className={`studio-ruler__marker ${
-                    marker.durationMs ? 'is-range' : ''
+                  variant="ghost"
+                  size="none"
+                  className={`absolute bottom-0 z-[3] h-3 max-w-24 gap-0.5 overflow-hidden whitespace-nowrap text-left text-[9px] leading-none !font-normal [transform:translateX(-3px)] hover:!bg-transparent ${
+                    marker.durationMs
+                      ? '!justify-start !rounded-[2px] px-0.5 !text-fg'
+                      : '!justify-start !rounded-none'
                   }`}
                   style={{
                     left: marker.atMs * pxPerMs,
@@ -985,26 +1044,19 @@ export function TimelinePane() {
                     event.stopPropagation()
                     setPlayhead(marker.atMs)
                   }}
-                  unstyled
                 >
                   <span
-                    className="studio-ruler__marker-dot"
+                    className="h-1.5 w-1.5 shrink-0 rounded-[1px] bg-pick-bar [transform:rotate(45deg)]"
                     style={
                       marker.color ? { background: marker.color } : undefined
                     }
                   />
-                  <span className="studio-ruler__marker-label">
-                    {marker.label}
-                  </span>
+                  <span className="truncate">{marker.label}</span>
                 </Button>
               ))}
             </div>
 
-            <div
-              className="studio-lanes"
-              ref={lanesRef}
-              onPointerDown={seekLanes}
-            >
+            <div className="relative" ref={lanesRef} onPointerDown={seekLanes}>
               {doc.tracks.map((track) => {
                 const ghost =
                   dragClip &&
@@ -1016,7 +1068,7 @@ export function TimelinePane() {
                 return (
                   <div
                     key={track.id}
-                    className="studio-lane"
+                    className="relative border-b border-divider"
                     style={{ height: trackHeight(track) }}
                     onDragOver={(event) => {
                       event.preventDefault()
@@ -1073,7 +1125,13 @@ export function TimelinePane() {
                             handleClipPointerDown(event, clip)
                           }
                         >
-                          <span className="studio-clip__label">
+                          <span
+                            className={`${CLIP_LABEL} ${
+                              isSelected(clip.id)
+                                ? 'text-fg'
+                                : 'text-fg-muted'
+                            }`}
+                          >
                             {clip.kind === 'text'
                               ? clip.text?.content || clip.name
                               : clip.name}
@@ -1110,13 +1168,21 @@ export function TimelinePane() {
                             widthPx={Math.max(2, durationMs * pxPerMs)}
                           />
                           <div
-                            className="studio-clip__handle studio-clip__handle--left"
+                            className={`absolute inset-y-0 left-0 z-[3] w-1.5 cursor-ew-resize ${
+                              isSelected(clip.id)
+                                ? 'bg-border-selected opacity-30'
+                                : ''
+                            }`}
                             onPointerDown={(event) =>
                               beginDrag(event, clip, 'trim-start')
                             }
                           />
                           <div
-                            className="studio-clip__handle studio-clip__handle--right"
+                            className={`absolute inset-y-0 right-0 z-[3] w-1.5 cursor-ew-resize ${
+                              isSelected(clip.id)
+                                ? 'bg-border-selected opacity-30'
+                                : ''
+                            }`}
                             onPointerDown={(event) =>
                               beginDrag(event, clip, 'trim-end')
                             }
@@ -1126,13 +1192,15 @@ export function TimelinePane() {
                     })}
                     {ghost && preview ? (
                       <div
-                        className={`${clipClass(ghost, false)} is-dragging`}
+                        className={clipClass(ghost, false, undefined, true)}
                         style={{
                           left: preview.startMs * pxPerMs,
                           width: Math.max(2, preview.durationMs * pxPerMs)
                         }}
                       >
-                        <span className="studio-clip__label">{ghost.name}</span>
+                        <span className={`${CLIP_LABEL} text-fg-muted`}>
+                          {ghost.name}
+                        </span>
                       </div>
                     ) : null}
                   </div>
@@ -1141,7 +1209,7 @@ export function TimelinePane() {
             </div>
 
             <div
-              className="studio-playhead studio-playhead--lanes"
+              className="pointer-events-none absolute top-0 bottom-0 z-[3] w-px bg-pick-bar before:absolute before:-left-1 before:top-0 before:h-2 before:w-[9px] before:bg-pick-bar before:content-[''] before:[clip-path:polygon(0_0,100%_0,50%_100%)]"
               style={{ left: playheadMs * pxPerMs }}
             />
           </div>

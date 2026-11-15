@@ -86,7 +86,7 @@ export function ClipMedia({ clip, widthPx }: { clip: TimelineClip; widthPx: numb
   if (frames.length > 0) {
     return (
       <div
-        className="studio-clip__frames is-repeat"
+        className="pointer-events-none absolute inset-0 overflow-hidden bg-repeat-x [background-size:auto_100%]"
         style={{ backgroundImage: `url(${frames[0]})` }}
       />
     )
@@ -99,7 +99,7 @@ export function ClipMedia({ clip, widthPx }: { clip: TimelineClip; widthPx: numb
     const offsetPx = -((offsetMs / clipMs) * widthPx)
     return (
       <div
-        className="studio-clip__wave"
+        className="pointer-events-none absolute inset-0 overflow-hidden bg-repeat-x opacity-80"
         style={{
           backgroundImage: `url(${wave.src})`,
           backgroundSize: `${Math.max((totalMs / clipMs) * 100, 2)}% 100%`,

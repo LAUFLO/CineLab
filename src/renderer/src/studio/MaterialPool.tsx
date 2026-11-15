@@ -227,7 +227,7 @@ export function MaterialPool() {
             type="button"
             variant="ghost"
             size="none"
-            className="studio-ghost-btn"
+            className="h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal"
             disabled={uploading || !studioNodeId}
             onClick={() => void upload()}
           >
@@ -330,7 +330,7 @@ export function MaterialPool() {
           type="button"
           variant="ghost"
           size="none"
-          className="studio-ghost-btn w-full !border-border"
+          className="h-7 w-full gap-1 !rounded-[7px] border border-border px-2 text-xs !font-normal"
           disabled={uploading || !studioNodeId}
           onClick={() => void upload()}
         >

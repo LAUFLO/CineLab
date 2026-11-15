@@ -10,7 +10,14 @@ import { useSettingsStore } from '../../stores/settings'
 import { useUIStore } from '../../stores/ui'
 import { VideoPlayer, type VideoPlayerHandle } from './VideoPlayer'
 import { EmotionPanel, StructurePanel } from './FilmStudyInsights'
-import { Button, Textarea, Input, Select } from '../../components/ui'
+import {
+  Button,
+  Textarea,
+  Input,
+  Select,
+  IconButton,
+  cn
+} from '../../components/ui'
 
 const ITEM_WIDTH = 104
 const ITEM_GAP = 6
@@ -39,6 +46,24 @@ function studyTime(seconds: number): string {
   const rest = Math.max(0, seconds - minutes * 60)
   return `${String(minutes).padStart(2, '0')}:${rest.toFixed(1).padStart(4, '0')}`
 }
+
+const SIDE_TITLE_CLASS = 'mb-1.5 text-[11px] text-fg-subtle'
+const EMPTY_CLASS = 'py-2 text-[11px] text-fg-subtle'
+
+const EDITOR_INPUT_CLASS =
+  '!h-auto !min-h-[30px] !rounded-[6px] !border-border-strong !px-2 !py-1.5 !text-xs !leading-[1.5] focus:!border-border-selected'
+const EDITOR_TEXTAREA_CLASS =
+  '!min-h-12 !rounded-[6px] !border-border-strong !px-2 !py-1.5 !text-xs !leading-[1.5] focus:!border-border-selected'
+
+const SUBTITLE_ROW_CLASS =
+  '!flex w-full !items-start !justify-start gap-1.5 !rounded-[5px] px-[5px] py-1 text-left !font-normal text-fg-muted'
+
+const SEGMENT_MAIN_CLASS =
+  '!flex min-w-0 flex-1 !items-center !justify-start gap-[7px] px-[5px] py-1 text-left !font-normal text-fg-muted hover:!bg-transparent hover:!text-fg-muted'
+
+const FRAME_BASE_CLASS =
+  '!absolute top-3 !flex h-[112px] w-[104px] flex-col !items-stretch !justify-start gap-1 !rounded-lg border border-border bg-surface p-[5px] text-left !font-normal !text-fg-subtle hover:!border-border-strong hover:!bg-surface hover:!text-fg-subtle'
+const FRAME_ACTIVE_CLASS = '!border-border-selected !text-fg hover:!text-fg'
 
 export function FilmStudyRoom() {
   const study = useFilmStudyStore((state) => state.study)
@@ -434,75 +459,74 @@ export function FilmStudyRoom() {
   }))
 
   return (
-    <div className="film-study-room" onPointerDown={closeRoom}>
+    <div
+      className="fixed inset-0 z-[900] flex items-center justify-center bg-[color-mix(in_srgb,var(--canvas-bg)_72%,transparent)] p-6"
+      onPointerDown={closeRoom}
+    >
       <div
-        className="film-study-room__panel"
+        className="flex h-[min(820px,calc(100vh_-_48px))] w-[min(1280px,calc(100vw_-_48px))] flex-col overflow-hidden rounded-panel border border-border bg-surface shadow-float"
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <header className="film-study-room__head">
-          <div className="film-study-room__title">
+        <header className="flex h-[52px] shrink-0 items-center gap-4 border-b border-divider pr-3.5 pl-[18px]">
+          <div className="flex min-w-0 items-center gap-[7px] text-[13px] text-fg">
             <Icon name="film" size={15} />
             <span>拉片室</span>
-            <span className="film-study-room__source">{study.sourceName}</span>
+            <span className="max-w-[320px] truncate text-xs text-fg-subtle">
+              {study.sourceName}
+            </span>
           </div>
-          <div className="film-study-room__head-meta">
+          <div className="ml-auto flex items-center gap-3 whitespace-nowrap text-[11px] text-fg-subtle">
             <span>{study.frames.length} 帧</span>
             <span>{study.segments.length} 段</span>
             <span>{study.frameInterval}s / 帧</span>
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               onClick={() => void exportMarkdown()}
-              unstyled
             >
               导出 Markdown
             </Button>
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               onClick={() => void exportBundle()}
-              unstyled
             >
               导出拉片包
             </Button>
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               onClick={() => void exportAnalysisPackage()}
-              unstyled
             >
               导出 AI 包
             </Button>
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               onClick={importAnalysis}
-              unstyled
             >
               导入 AI 结果
             </Button>
             <Button
               type="button"
-              className="btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               onClick={() => setAnalysisOpen(true)}
-              unstyled
             >
               直连分析
             </Button>
           </div>
-          <Button
-            type="button"
-            className="icon-btn"
-            title="关闭拉片室"
-            onClick={closeRoom}
-            unstyled
-          >
+          <IconButton label="关闭拉片室" size="sm" onClick={closeRoom}>
             <Icon name="close" size={14} />
-          </Button>
+          </IconButton>
         </header>
 
-        <div className="film-study-room__body">
-          <div className="film-study-room__player">
+        <div className="flex min-h-0 flex-1">
+          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-media-bg p-4 [&_.video-node]:h-full [&_.video-node]:w-[min(100%,760px)] [&_.video-node]:overflow-hidden [&_.video-node]:rounded-lg">
             <VideoPlayer
               ref={playerRef}
               src={sourceUrl}
@@ -512,8 +536,8 @@ export function FilmStudyRoom() {
             />
           </div>
 
-          <aside className="film-study-room__side">
-            <div className="film-study-tabs">
+          <aside className="w-[284px] shrink-0 overflow-y-auto border-l border-divider p-[18px]">
+            <div className="mb-3.5 flex gap-0.5 rounded-lg bg-surface-hover p-0.5">
               {(
                 [
                   ['notes', '笔记'],
@@ -524,9 +548,15 @@ export function FilmStudyRoom() {
                 <Button
                   key={id}
                   type="button"
-                  className={`film-study-tab${tab === id ? ' is-active' : ''}`}
+                  variant="ghost"
+                  size="none"
+                  className={cn(
+                    'h-[26px] flex-1 !rounded-[6px] text-[11px] !font-normal',
+                    tab === id
+                      ? 'bg-surface !text-fg hover:!bg-surface'
+                      : '!text-fg-subtle hover:!text-fg-muted'
+                  )}
                   onClick={() => setTab(id)}
-                  unstyled
                 >
                   {label}
                 </Button>
@@ -535,176 +565,196 @@ export function FilmStudyRoom() {
 
             {tab === 'notes' ? (
               <>
-                <div className="film-study-room__side-title">当前帧</div>
-                <div className="film-study-room__time">
+                <div className={SIDE_TITLE_CLASS}>当前帧</div>
+                <div className="mb-5 text-[26px] text-fg tabular-nums">
                   {selected ? studyTime(selected.time) : '00:00.0'}
                 </div>
-                <div className="film-study-room__kv">
+                <div className="flex justify-between gap-3 border-b border-divider py-[7px] text-xs text-fg-muted">
                   <span>帧序号</span>
-                  <strong>
+                  <strong className="font-medium text-fg">
                     {selected?.index ?? 0} / {frames.length}
                   </strong>
                 </div>
-                <div className="film-study-room__kv">
+                <div className="flex justify-between gap-3 border-b border-divider py-[7px] text-xs text-fg-muted">
                   <span>抽帧间隔</span>
-                  <strong>{study.frameInterval}s</strong>
+                  <strong className="font-medium text-fg">
+                    {study.frameInterval}s
+                  </strong>
                 </div>
-                <div className="film-study-room__kv">
+                <div className="flex justify-between gap-3 border-b border-divider py-[7px] text-xs text-fg-muted">
                   <span>片长</span>
-                  <strong>{studyTime(study.duration)}</strong>
+                  <strong className="font-medium text-fg">
+                    {studyTime(study.duration)}
+                  </strong>
                 </div>
 
                 <Textarea
-                  className="film-study-note"
+                  className="mt-3 !min-h-[76px] !rounded-lg !border-border-strong !px-[9px] !py-2 !text-xs !leading-[1.55] focus:!border-border-selected"
                   value={selected?.note ?? ''}
                   placeholder="记录这一帧的画面、表演、构图或声音…"
                   onChange={(event) => updateFrameNote(event.target.value)}
-                  unstyled
                 />
 
-                <div className="film-study-subtitles">
-                  <div className="film-study-subtitles__head">
+                <div className="mt-3.5 rounded-lg border border-border bg-surface-raised px-[9px] py-2">
+                  <div className="flex items-center justify-between gap-2 text-[11px] text-fg-muted">
                     <span>字幕 {study.subtitles?.length ?? 0} 条</span>
-                    <div>
+                    <div className="flex gap-1">
                       <Button
                         type="button"
-                        className="btn-secondary btn-sm"
+                        variant="secondary"
+                        size="sm"
                         onClick={() => void extractSubtitles()}
-                        unstyled
                       >
                         提取
                       </Button>
                       <Button
                         type="button"
-                        className="btn-secondary btn-sm"
+                        variant="secondary"
+                        size="sm"
                         onClick={() => void importSubtitles()}
-                        unstyled
                       >
                         导入 SRT
                       </Button>
                     </div>
                   </div>
                   {study.subtitles?.length ? (
-                    <details className="film-study-subtitles__details">
-                      <summary>查看字幕</summary>
-                      <div className="film-study-subtitles__list">
+                    <details className="mt-1.5">
+                      <summary className="cursor-pointer text-[10.5px] text-fg-subtle select-none">
+                        查看字幕
+                      </summary>
+                      <div className="mt-[5px] flex max-h-[180px] flex-col gap-0.5 overflow-y-auto">
                         {(study.subtitles ?? []).map((subtitle, index) => (
                           <Button
                             key={`${subtitle.startTime}-${index}`}
                             type="button"
-                            className="film-study-subtitle-row"
+                            variant="ghost"
+                            size="none"
+                            className={SUBTITLE_ROW_CLASS}
                             onClick={() => seekToTime(subtitle.startTime)}
-                            unstyled
                           >
-                            <span>{studyTime(subtitle.startTime)}</span>
-                            <strong>{subtitle.text}</strong>
+                            <span className="shrink-0 pt-px text-[9.5px] text-fg-subtle tabular-nums">
+                              {studyTime(subtitle.startTime)}
+                            </span>
+                            <strong className="min-w-0 text-[10.5px] leading-[1.45] font-normal">
+                              {subtitle.text}
+                            </strong>
                           </Button>
                         ))}
                       </div>
                     </details>
                   ) : (
-                    <div className="film-study-subtitles__empty">
+                    <div className="mt-1.5 text-[10.5px] text-fg-subtle">
                       暂无字幕，可提取内嵌字幕或导入 SRT
                     </div>
                   )}
                 </div>
 
-                <div className="film-study-room__side-title">段落搭建</div>
-                <div className="film-study-range">
+                <div className={SIDE_TITLE_CLASS}>段落搭建</div>
+                <div className="mb-2 flex items-center gap-1.5 text-[10px] text-fg-subtle">
                   <Button
                     type="button"
-                    className="btn-secondary btn-sm"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => {
                       setInIndex(selectedIndex)
                       if (outIndex < selectedIndex) setOutIndex(selectedIndex)
                     }}
-                    unstyled
                   >
                     设为入点
                   </Button>
-                  <span>{studyTime(frames[inIndex]?.time ?? 0)}</span>
+                  <span className="min-w-10 tabular-nums">
+                    {studyTime(frames[inIndex]?.time ?? 0)}
+                  </span>
                   <Button
                     type="button"
-                    className="btn-secondary btn-sm"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => {
                       setOutIndex(selectedIndex)
                       if (inIndex > selectedIndex) setInIndex(selectedIndex)
                     }}
-                    unstyled
                   >
                     设为出点
                   </Button>
-                  <span>{studyTime(frames[outIndex]?.time ?? 0)}</span>
+                  <span className="min-w-10 tabular-nums">
+                    {studyTime(frames[outIndex]?.time ?? 0)}
+                  </span>
                 </div>
                 <Button
                   type="button"
-                  className="btn-primary btn-sm film-study-create"
+                  variant="primary"
+                  size="sm"
+                  className="w-full"
                   onClick={createSegment}
-                  unstyled
                 >
                   用当前入点/出点新建段落
                 </Button>
 
-                <div className="film-study-room__side-title">段落列表</div>
-                <div className="film-study-segments">
+                <div className={SIDE_TITLE_CLASS}>段落列表</div>
+                <div className="flex flex-col gap-1">
                   {study.segments.length === 0 ? (
-                    <div className="film-study-empty">还没有段落</div>
+                    <div className={EMPTY_CLASS}>还没有段落</div>
                   ) : (
                     [...study.segments]
                       .sort((a, b) => a.startTime - b.startTime)
                       .map((segment) => (
                         <div
                           key={segment.id}
-                          className={`film-study-segment${
-                            segment.id === selectedSegmentId ? ' is-active' : ''
-                          }`}
+                          className={cn(
+                            'flex items-center gap-0.5 rounded-[7px] border border-transparent p-[3px]',
+                            segment.id === selectedSegmentId &&
+                              'border-border-strong bg-surface-raised'
+                          )}
                         >
                           <Button
                             type="button"
-                            className="film-study-segment__main"
+                            variant="ghost"
+                            size="none"
+                            className={SEGMENT_MAIN_CLASS}
                             onClick={() => selectSegment(segment)}
-                            unstyled
                           >
-                            <span>{studyTime(segment.startTime)}</span>
-                            <strong>{segment.title}</strong>
+                            <span className="shrink-0 text-[10px] text-fg-subtle tabular-nums">
+                              {studyTime(segment.startTime)}
+                            </span>
+                            <strong className="truncate text-xs font-medium">
+                              {segment.title}
+                            </strong>
                           </Button>
-                          <Button
-                            type="button"
-                            className="film-study-segment__action"
-                            title="播放本段"
+                          <IconButton
+                            label="播放本段"
+                            size="xs"
+                            className="!h-[22px] !w-[22px] !rounded-[5px] !text-fg-subtle"
                             onClick={() => playSegment(segment)}
-                            unstyled
                           >
                             <Icon name="play" size={12} />
-                          </Button>
-                          <Button
-                            type="button"
-                            className="film-study-segment__action"
-                            title="删除段落"
+                          </IconButton>
+                          <IconButton
+                            label="删除段落"
+                            size="xs"
+                            className="!h-[22px] !w-[22px] !rounded-[5px] !text-fg-subtle"
                             onClick={() => deleteSegment(segment)}
-                            unstyled
                           >
                             <Icon name="trash" size={12} />
-                          </Button>
+                          </IconButton>
                         </div>
                       ))
                   )}
                 </div>
 
                 {selectedSegment ? (
-                  <div className="film-study-editor">
-                    <div className="film-study-room__side-title">段落详情</div>
-                    <label>
+                  <div className="mt-4 flex flex-col gap-2 border-t border-divider pt-3">
+                    <div className={SIDE_TITLE_CLASS}>段落详情</div>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>标题</span>
                       <Input
+                        className={EDITOR_INPUT_CLASS}
                         value={selectedSegment.title}
                         onChange={(event) =>
                           updateSegment({ title: event.target.value })
                         }
-                        unstyled
                       />
                     </label>
-                    <label>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>类型</span>
                       <Select
                         value={selectedSegment.type}
@@ -712,20 +762,21 @@ export function FilmStudyRoom() {
                         onChange={(type) => updateSegment({ type })}
                       />
                     </label>
-                    <label>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>剧情线（id 或名称）</span>
                       <Input
+                        className={EDITOR_INPUT_CLASS}
                         value={selectedSegment.primaryLine ?? ''}
                         placeholder="例如 main / 主线"
                         onChange={(event) =>
                           updateSegment({ primaryLine: event.target.value })
                         }
-                        unstyled
                       />
                     </label>
-                    <label>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>共用剧情线（逗号分隔）</span>
                       <Input
+                        className={EDITOR_INPUT_CLASS}
                         value={(selectedSegment.sharedLines ?? []).join(', ')}
                         placeholder="例如 romance, information"
                         onChange={(event) =>
@@ -736,98 +787,97 @@ export function FilmStudyRoom() {
                               .filter(Boolean)
                           })
                         }
-                        unstyled
                       />
                     </label>
-                    <label>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>结构角色</span>
                       <Input
+                        className={EDITOR_INPUT_CLASS}
                         value={selectedSegment.structureRole ?? ''}
                         placeholder="例如 铺垫 / 冲突 / 高潮"
                         onChange={(event) =>
                           updateSegment({ structureRole: event.target.value })
                         }
-                        unstyled
                       />
                     </label>
-                    <label>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>段落功能</span>
                       <Textarea
+                        className={EDITOR_TEXTAREA_CLASS}
                         value={selectedSegment.segmentFunction ?? ''}
                         onChange={(event) =>
                           updateSegment({
                             segmentFunction: event.target.value
                           })
                         }
-                        unstyled
                       />
                     </label>
-                    <label>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>关键节拍</span>
                       <Textarea
+                        className={EDITOR_TEXTAREA_CLASS}
                         value={selectedSegment.keyBeats ?? ''}
                         onChange={(event) =>
                           updateSegment({ keyBeats: event.target.value })
                         }
-                        unstyled
                       />
                     </label>
-                    <label>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>创作意图</span>
                       <Textarea
+                        className={EDITOR_TEXTAREA_CLASS}
                         value={selectedSegment.creativeIntent ?? ''}
                         onChange={(event) =>
                           updateSegment({ creativeIntent: event.target.value })
                         }
-                        unstyled
                       />
                     </label>
-                    <label>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>视听手法</span>
                       <Textarea
+                        className={EDITOR_TEXTAREA_CLASS}
                         value={selectedSegment.techniques ?? ''}
                         onChange={(event) =>
                           updateSegment({ techniques: event.target.value })
                         }
-                        unstyled
                       />
                     </label>
-                    <label>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>观众体验</span>
                       <Textarea
+                        className={EDITOR_TEXTAREA_CLASS}
                         value={selectedSegment.audienceExperience ?? ''}
                         onChange={(event) =>
                           updateSegment({
                             audienceExperience: event.target.value
                           })
                         }
-                        unstyled
                       />
                     </label>
-                    <label>
+                    <label className="flex flex-col gap-1 text-[10px] text-fg-subtle">
                       <span>备注</span>
                       <Textarea
+                        className={EDITOR_TEXTAREA_CLASS}
                         value={selectedSegment.notes ?? ''}
                         onChange={(event) =>
                           updateSegment({ notes: event.target.value })
                         }
-                        unstyled
                       />
                     </label>
-                    <div className="film-study-editor__actions">
+                    <div className="mt-1 flex flex-wrap gap-1.5">
                       <Button
                         type="button"
-                        className="btn-primary btn-sm"
+                        variant="primary"
+                        size="sm"
                         onClick={playSegment.bind(null, selectedSegment)}
-                        unstyled
                       >
                         播放本段
                       </Button>
                       <Button
                         type="button"
-                        className="btn-secondary btn-sm"
+                        variant="secondary"
+                        size="sm"
                         onClick={addSegmentToCanvas}
-                        unstyled
                       >
                         段落摘要放入画布
                       </Button>
@@ -837,18 +887,20 @@ export function FilmStudyRoom() {
 
                 <Button
                   type="button"
-                  className="btn-secondary btn-sm film-study-add-frame"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-4 w-full"
                   onClick={() => void addFrameToCanvas()}
-                  unstyled
                 >
                   当前帧放入画布
                 </Button>
                 <Button
                   type="button"
-                  className="btn-secondary btn-sm film-study-add-frame"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-1.5 w-full"
                   disabled={contactBusy}
                   onClick={() => void addContactSheetToCanvas()}
-                  unstyled
                 >
                   {contactBusy ? '正在生成拼图…' : '拉片拼图放入画布'}
                 </Button>
@@ -871,33 +923,35 @@ export function FilmStudyRoom() {
 
         <div
           ref={scrollRef}
-          className="film-study-timeline"
+          className="h-[142px] shrink-0 overflow-x-auto overflow-y-hidden border-t border-divider bg-surface-raised"
           onScroll={(event) => setScrollLeft(event.currentTarget.scrollLeft)}
         >
-          <div
-            className="film-study-timeline__spacer"
-            style={{ width: totalWidth }}
-          >
+          <div className="relative h-full" style={{ width: totalWidth }}>
             {frames.slice(startIndex, endIndex).map((frame, offset) => {
               const index = startIndex + offset
               return (
                 <Button
                   key={frame.index}
                   type="button"
-                  className={`film-study-frame${
-                    index === selectedIndex ? ' is-active' : ''
-                  }`}
+                  variant="ghost"
+                  size="none"
+                  className={cn(
+                    FRAME_BASE_CLASS,
+                    index === selectedIndex && FRAME_ACTIVE_CLASS
+                  )}
                   style={{ left: PADDING + index * STEP }}
                   onClick={() => seekFrame(index)}
                   title={`${studyTime(frame.time)} · 第 ${frame.index} 帧`}
-                  unstyled
                 >
                   <img
                     src={assetUrl(frame.file, 'project')}
                     alt=""
                     loading="lazy"
+                    className="min-h-0 w-full flex-1 rounded-[4px] bg-media-bg object-cover"
                   />
-                  <span>{studyTime(frame.time)}</span>
+                  <span className="shrink-0 pl-0.5 text-[10px] tabular-nums">
+                    {studyTime(frame.time)}
+                  </span>
                 </Button>
               )
             })}
@@ -907,17 +961,17 @@ export function FilmStudyRoom() {
 
       {analysisOpen ? (
         <div
-          className="film-study-analysis"
+          className="absolute inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--canvas-bg)_60%,transparent)]"
           onPointerDown={(event) => event.stopPropagation()}
         >
-          <div className="film-study-analysis__panel">
-            <div className="film-study-analysis__title">直连多模态分析</div>
-            <div className="film-study-analysis__hint">
+          <div className="flex w-[400px] max-w-[calc(100vw_-_48px)] flex-col gap-3 rounded-card border border-border bg-surface-raised p-[18px] shadow-float">
+            <div className="text-sm text-fg">直连多模态分析</div>
+            <div className="text-[11px] leading-[1.65] text-fg-subtle">
               选择支持图片输入的文本模型。会抽取最多 12 张代表帧发送，
               结果将替换当前段落。
             </div>
             {textModels.length === 0 ? (
-              <div className="film-study-analysis__empty">
+              <div className="rounded-[7px] bg-surface p-2.5 text-[11px] text-fg-subtle">
                 还没有 text.chat 模型，请先在设置中配置。
               </div>
             ) : (
@@ -927,24 +981,24 @@ export function FilmStudyRoom() {
                 onChange={setAnalysisModel}
               />
             )}
-            <div className="film-study-analysis__actions">
+            <div className="mt-0.5 flex justify-end gap-2">
               <Button
                 type="button"
-                className="btn-secondary btn-sm"
+                variant="secondary"
+                size="sm"
                 disabled={analysisBusy}
                 onClick={() => setAnalysisOpen(false)}
-                unstyled
               >
                 取消
               </Button>
               <Button
                 type="button"
-                className="btn-primary btn-sm"
+                variant="primary"
+                size="sm"
                 disabled={
                   analysisBusy || textModels.length === 0 || !analysisModel
                 }
                 onClick={() => void runDirectAnalysis()}
-                unstyled
               >
                 {analysisBusy ? '分析中…' : '开始分析'}
               </Button>

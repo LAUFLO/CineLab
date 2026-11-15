@@ -180,35 +180,39 @@ export function StoryboardToolbar() {
 
   return (
     <div
-      className="group-toolbar storyboard-toolbar nodrag nopan"
+      className="nodrag nopan fixed z-[92] flex h-[42px] items-center gap-0.5 rounded-[12px] border border-border bg-surface px-1.5 whitespace-nowrap shadow-float [animation:menu-in_120ms_ease-out] [translate:-50%_0]"
       style={{ left: position.left, top: position.top }}
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <div className="group-toolbar__menu-wrap">
+      <div className="relative">
         <Button
           type="button"
-          className={`group-toolbar__btn ${menu === 'ratio' ? 'is-open' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal ${
+            menu === 'ratio' ? 'bg-surface-hover !text-fg' : ''
+          }`}
           onClick={() => setMenu(menu === 'ratio' ? null : 'ratio')}
-          unstyled
         >
           <Icon name="frame" size={14} />
           <span>{GROUP_RATIO_LABEL[ratio]}</span>
           <Icon name="chevron-down" size={12} />
         </Button>
         {menu === 'ratio' ? (
-          <div className="group-toolbar__pop">
+          <div className="absolute top-[38px] left-1/2 z-[93] min-w-[108px] -translate-x-1/2 rounded-[10px] border border-border bg-surface p-1.5 shadow-menu">
             {GROUP_RATIOS.map((value) => (
               <Button
                 key={value}
                 type="button"
-                className={`group-toolbar__pop-item ${
-                  ratio === value ? 'is-active' : ''
+                variant="ghost"
+                size="none"
+                className={`!flex h-8 w-full items-center !justify-start !rounded-md px-2.5 text-[13px] !font-normal ${
+                  ratio === value ? 'bg-surface-hover !text-fg' : ''
                 }`}
                 onClick={() => {
                   setStoryboardRatio(group.id, value as GroupRatio)
                   setMenu(null)
                 }}
-                unstyled
               >
                 {GROUP_RATIO_LABEL[value]}
               </Button>
@@ -217,12 +221,15 @@ export function StoryboardToolbar() {
         ) : null}
       </div>
 
-      <div className="group-toolbar__menu-wrap">
+      <div className="relative">
         <Button
           type="button"
-          className={`group-toolbar__btn ${menu === 'grid' ? 'is-open' : ''}`}
+          variant="ghost"
+          size="none"
+          className={`h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal ${
+            menu === 'grid' ? 'bg-surface-hover !text-fg' : ''
+          }`}
           onClick={() => setMenu(menu === 'grid' ? null : 'grid')}
-          unstyled
         >
           <Icon name="grid" size={14} />
           <span>
@@ -231,19 +238,22 @@ export function StoryboardToolbar() {
           <Icon name="chevron-down" size={12} />
         </Button>
         {menu === 'grid' ? (
-          <div className="group-toolbar__pop">
+          <div className="absolute top-[38px] left-1/2 z-[93] min-w-[108px] -translate-x-1/2 rounded-[10px] border border-border bg-surface p-1.5 shadow-menu">
             {GRID_OPTIONS.map(([nextCols, nextRows]) => (
               <Button
                 key={`${nextCols}x${nextRows}`}
                 type="button"
-                className={`group-toolbar__pop-item ${
-                  cols === nextCols && rows === nextRows ? 'is-active' : ''
+                variant="ghost"
+                size="none"
+                className={`!flex h-8 w-full items-center !justify-start !rounded-md px-2.5 text-[13px] !font-normal ${
+                  cols === nextCols && rows === nextRows
+                    ? 'bg-surface-hover !text-fg'
+                    : ''
                 }`}
                 onClick={() => {
                   setStoryboardGrid(group.id, nextCols, nextRows)
                   setMenu(null)
                 }}
-                unstyled
               >
                 {nextCols}×{nextRows}
               </Button>
@@ -254,11 +264,12 @@ export function StoryboardToolbar() {
 
       <Button
         type="button"
-        className="group-toolbar__btn"
+        variant="ghost"
+        size="none"
+        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
         title="按分镜比例与当前宫格（含间距）拼接，默认 2K 分辨率"
         disabled={stitching}
         onClick={() => void stitch()}
-        unstyled
       >
         <Icon name="layers" size={14} />
         <span>{stitching ? '拼接中…' : '拼接(2K)'}</span>
@@ -266,10 +277,11 @@ export function StoryboardToolbar() {
 
       <Button
         type="button"
-        className="group-toolbar__btn"
+        variant="ghost"
+        size="none"
+        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
         title="把分镜组内素材送入剪辑室"
         onClick={makeStudio}
-        unstyled
       >
         <Icon name="film" size={14} />
         <span>剪辑室</span>
@@ -277,12 +289,13 @@ export function StoryboardToolbar() {
 
       <Button
         type="button"
-        className={`group-toolbar__btn ${
-          group.data.showIndex === false ? '' : 'is-open'
+        variant="ghost"
+        size="none"
+        className={`h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal ${
+          group.data.showIndex === false ? '' : 'bg-surface-hover !text-fg'
         }`}
         title="显示或隐藏序号"
         onClick={() => toggleStoryboardIndex(group.id)}
-        unstyled
       >
         <Icon name="text" size={14} />
         <span>序号</span>
@@ -290,21 +303,23 @@ export function StoryboardToolbar() {
 
       <Button
         type="button"
-        className="group-toolbar__btn"
+        variant="ghost"
+        size="none"
+        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
         onClick={clearChildren}
-        unstyled
       >
         <Icon name="trash" size={14} />
         <span>清空</span>
       </Button>
 
-      <div className="group-toolbar__divider" />
+      <div className="mx-1 h-[18px] w-px bg-divider" />
 
       <Button
         type="button"
-        className="group-toolbar__btn"
+        variant="ghost"
+        size="none"
+        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
         onClick={() => setGroupMode(group.id, 'normal')}
-        unstyled
       >
         <Icon name="grid" size={14} />
         <span>转普通组</span>
@@ -312,9 +327,10 @@ export function StoryboardToolbar() {
 
       <Button
         type="button"
-        className="group-toolbar__btn group-toolbar__btn--danger"
+        variant="ghost"
+        size="none"
+        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal hover:!bg-danger hover:!text-fg-inverse"
         onClick={() => ungroup(group.id)}
-        unstyled
       >
         <Icon name="minimize" size={14} />
         <span>解组</span>

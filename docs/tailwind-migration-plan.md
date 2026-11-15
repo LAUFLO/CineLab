@@ -166,7 +166,7 @@
 | 子批 | 范围 | 状态 |
 |---|---|---|
 | 1a | 设置外壳、通用、外观、关于、资产库、模型服务、技能、组件 | done |
-| 1b | `ModelConfigDialog`（模型配置弹窗） | todo |
+| 1b | `ModelConfigDialog`（模型配置弹窗） | done |
 
 1a 已完成的动作：
 
@@ -180,7 +180,19 @@
 8. 删除 `global.css` 中 921 行设置/模型/组件相关规则，删除 `skills.css` 492 行。
 9. `Button` 新增 `size="none"`，用于布局完全自定义的导航项与行内按钮。
 
-1b 未完成的原因：`ModelConfigDialog` 是跨设置页与画布节点的共享弹窗，涉及 592 行参数面板样式与 92 个类，单独作为子批次处理，避免与设置外壳的视觉回归混在一起。
+1b 已完成：
+
+1. `ModelConfigDialog` 全部自定义类改为 utility，20 处 `unstyled` 退出。
+2. 删除 `global.css` 中「模型配置」「能力模式」「模型输入能力」三段共 734 行。
+3. 面板样式核对 `.operation-dialog`：`p-[18px]`、`rounded-[14px]`、`bg-surface`、`border-border`、`shadow-menu`，与迁移前一致。
+4. 补回被 1a 误删的 `.settings-overlay` 与 `.settings-dialog__close`（HistoryPanel / ProjectCenter / ShortcutPanel 仍在引用）。
+5. 遮罩统一为 `bg-black/45` + `backdrop-blur-[2px]` + `z-[90]`，与设置页一致。
+
+已知偏差（1b 有意调整）：
+
+- 请求扩展表与删除字段原先使用未样式化的原生输入框，现改为 `Input` / `Textarea` primitive，属于补齐样式。
+- 等宽字体由手写字体栈改为 `font-mono`。
+- Chip 过渡色从 border/background 扩展到 `transition-colors`。
 
 ## 6. 每批验收门槛
 
@@ -215,7 +227,7 @@
 | 批 | 状态 | CSS 实际下降 | 备注 |
 |---|---|---|---|
 | 基线 | done | — | 10 张截图，1440×900 / DPR 1 / 明暗双主题 |
-| 1 设置/模型配置 | partial | -1,453 行 | 1a done：`global.css` -961、`skills.css` -492；1b `ModelConfigDialog` 待续 |
+| 1 设置/模型配置 | done | -2,187 行 | `global.css` -1,695、`skills.css` -492；设置目录与 ModelConfigDialog `unstyled` 均为 0 |
 | 2 资产库/项目中心 | todo | — | — |
 | 3 剪辑室 | todo | — | — |
 | 4 Prompt Bar | todo | — | — |

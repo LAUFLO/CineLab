@@ -28,7 +28,14 @@ import {
 import { paramTemplatesFor, type ParamTemplate } from '@shared/param-presets'
 import type { HttpTemplate } from '@shared/http-template'
 import { Icon } from '../../components/Icon'
-import { Button, Dialog, Input, Select, Textarea } from '../../components/ui'
+import {
+  Button,
+  Dialog,
+  Input,
+  Select,
+  Textarea,
+  cn
+} from '../../components/ui'
 
 export interface ModelConfigValue {
   params: ParamDef[]
@@ -766,13 +773,13 @@ export function ModelConfigDialog({
       onClose={onCancel}
       bare
       ariaLabel="模型配置"
-      overlayClassName="settings-overlay"
-      panelClassName="operation-dialog model-config-dialog"
+      overlayClassName="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 backdrop-blur-[2px] [-webkit-app-region:no-drag]"
+      panelClassName="flex max-h-[82vh] w-[720px] max-w-[calc(100vw_-_48px)] flex-col gap-3 overflow-y-auto rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu [&>*]:flex-none"
     >
-      <header className="operation-dialog__header">
+      <header className="flex items-start justify-between gap-3">
         <div>
-          <div className="operation-dialog__title">模型配置</div>
-          <div className="operation-dialog__subtitle">
+          <div className="text-[15px] font-semibold">模型配置</div>
+          <div className="mt-1 text-xs text-fg-subtle">
             {model.name} ·{' '}
             {modelModeIds(model)
               .map((id) => MODEL_MODE_LABEL[id])
@@ -781,47 +788,52 @@ export function ModelConfigDialog({
         </div>
         <Button
           type="button"
-          className="operation-dialog__close"
+          variant="ghost"
+          size="none"
+          className="h-7 w-7 !rounded-[7px]"
           title="关闭"
           onClick={onCancel}
-          unstyled
         >
           <Icon name="close" size={14} />
         </Button>
       </header>
 
       {modeSectionVisible ? (
-        <div className="model-config__section">
-          <div className="model-config__section-title">能力模式</div>
-          <div className="model-params__intro">
+        <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface p-3">
+          <div className="text-[13px] font-medium text-fg">能力模式</div>
+          <div className="text-xs leading-[1.7] text-fg-subtle">
             这些是这个模型支持的生成方式。点击已启用的卡片可以取消。
           </div>
           {modes.length > 0 ? (
-            <div className="model-modes">
+            <div className="grid grid-cols-2 gap-2">
               {modes.map((mode) => {
                 const definition = getModelModeDefinition(mode.id)
                 const slots = definition?.slots ?? []
                 return (
                   <Button
                     type="button"
-                    className="model-mode is-on"
+                    variant="ghost"
+                    size="none"
+                    className="!block w-full rounded-lg border border-link bg-[color-mix(in_srgb,var(--link)_10%,transparent)] px-2.5 py-2 text-left hover:!bg-[color-mix(in_srgb,var(--link)_10%,transparent)]"
                     key={mode.id}
                     title="点击取消这个模式"
                     onClick={() => toggleMode(mode.id)}
-                    unstyled
                   >
-                    <span className="model-mode__head">
-                      <span className="model-mode__name">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-fg">
                         {MODEL_MODE_LABEL[mode.id]}
                       </span>
-                      <span className="model-mode__output">
+                      <span className="text-[10px] text-fg-subtle">
                         {definition?.output === 'video' ? '视频' : '图片'} ·
                         点击取消
                       </span>
                     </span>
-                    <span className="model-mode__slots">
+                    <span className="mt-1.5 flex flex-wrap gap-1">
                       {slots.map((slot) => (
-                        <span className="model-mode__slot" key={slot.id}>
+                        <span
+                          className="rounded-full bg-surface px-1.5 py-px text-[10px] leading-4 text-fg-muted"
+                          key={slot.id}
+                        >
                           {slot.label}
                           {slot.required ? ' 必填' : ' 可选'}
                         </span>
@@ -832,20 +844,21 @@ export function ModelConfigDialog({
               })}
             </div>
           ) : (
-            <div className="model-config__hint is-warning">
+            <div className="text-[11px] leading-[1.7] text-warning">
               还没有启用任何模式。至少启用一个，否则这个模型不会出现在生成入口。
             </div>
           )}
           {availableModes.length > 0 ? (
-            <div className="model-modes__available">
-              <span className="model-modes__available-label">添加模式</span>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] text-fg-subtle">添加模式</span>
               {availableModes.map((definition) => (
                 <Button
                   type="button"
-                  className="model-mode__add"
+                  variant="ghost"
+                  size="none"
+                  className="h-6 rounded-full border border-dashed border-border px-2 text-[11px] text-fg-muted hover:border-link hover:!bg-transparent hover:text-fg"
                   key={definition.id}
                   onClick={() => toggleMode(definition.id)}
-                  unstyled
                 >
                   + {MODEL_MODE_LABEL[definition.id]}
                 </Button>
@@ -855,14 +868,14 @@ export function ModelConfigDialog({
         </div>
       ) : null}
 
-      <div className="model-params__intro">
+      <div className="text-xs leading-[1.7] text-fg-subtle">
         勾选这个模型实际能接收的素材。Prompt Bar
         会根据当前节点已引用的图片或视频，自动置灰不支持的模型。
       </div>
 
-      <div className="model-config__section">
-        <div className="model-config__section-title">输入能力</div>
-        <div className="model-inputs__grid">
+      <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface p-3">
+        <div className="text-[13px] font-medium text-fg">输入能力</div>
+        <div className="grid grid-cols-2 gap-2">
           {MEDIA_INPUTS.map((input) => {
             const checked = inputs.includes(input)
             const locked = input === 'text'
@@ -873,9 +886,14 @@ export function ModelConfigDialog({
               <Button
                 key={input}
                 type="button"
-                className={`model-inputs__item${checked ? ' is-on' : ''}${
-                  locked ? ' is-locked' : ''
-                }`}
+                variant="ghost"
+                size="none"
+                className={cn(
+                  '!h-11 w-full !justify-start gap-2 rounded-lg border border-border bg-surface-hover px-3 !text-[13px] !font-normal text-fg-muted hover:!bg-surface-hover disabled:!pointer-events-auto disabled:!opacity-100',
+                  checked &&
+                    'border-link !bg-[color-mix(in_srgb,var(--link)_10%,transparent)] !text-fg hover:!bg-[color-mix(in_srgb,var(--link)_10%,transparent)]',
+                  locked && 'cursor-default'
+                )}
                 onClick={() => toggleInput(input)}
                 disabled={locked}
                 title={
@@ -883,19 +901,23 @@ export function ModelConfigDialog({
                     ? '取消视频输入会同时关闭视频操作'
                     : undefined
                 }
-                unstyled
               >
-                <span className="model-inputs__check">
+                <span
+                  className={cn(
+                    'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border text-[11px] text-fg-inverse',
+                    checked ? 'border-link bg-link' : 'border-border'
+                  )}
+                >
                   {checked ? '✓' : ''}
                 </span>
-                <span className="model-inputs__name">
+                <span className="flex-1">
                   {MEDIA_INPUT_LABEL[input]}
                 </span>
                 {locked ? (
-                  <span className="model-inputs__lock">必选</span>
+                  <span className="text-[10px] text-fg-subtle">必选</span>
                 ) : null}
                 {requiredByOperation ? (
-                  <span className="model-inputs__lock">操作需要</span>
+                  <span className="text-[10px] text-fg-subtle">操作需要</span>
                 ) : null}
               </Button>
             )
@@ -904,77 +926,88 @@ export function ModelConfigDialog({
       </div>
 
       {isVideo ? (
-        <div className="model-config__section">
-          <div className="model-config__section-title">视频操作</div>
-          <div className="model-config__hint">
+        <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface p-3">
+          <div className="text-[13px] font-medium text-fg">视频操作</div>
+          <div className="text-[11px] leading-[1.7] text-fg-subtle">
             只有使用自定义协议的视频接口需要勾选。勾选后该模型会出现在片段重拍、元素替换、智能续写的模型列表里。
           </div>
           {!operationAdapterReady ? (
-            <div className="model-config__hint is-warning">
+            <div className="text-[11px] leading-[1.7] text-warning">
               当前模型没有声明视频编辑或延长模式，勾选后操作节点仍会置灰。
             </div>
           ) : null}
-          <div className="model-inputs__grid">
+          <div className="grid grid-cols-2 gap-2">
             {VIDEO_OPERATIONS.map((operation) => {
               const checked = operations.includes(operation.id)
               return (
                 <Button
                   key={operation.id}
                   type="button"
-                  className={`model-inputs__item${checked ? ' is-on' : ''}`}
+                  variant="ghost"
+                  size="none"
+                  className={cn(
+                    '!h-11 w-full !justify-start gap-2 rounded-lg border border-border bg-surface-hover px-3 !text-[13px] !font-normal text-fg-muted hover:!bg-surface-hover disabled:!pointer-events-auto disabled:!opacity-100',
+                    checked &&
+                      'border-link !bg-[color-mix(in_srgb,var(--link)_10%,transparent)] !text-fg hover:!bg-[color-mix(in_srgb,var(--link)_10%,transparent)]'
+                  )}
                   onClick={() => toggleOperation(operation.id)}
                   disabled={!operationAdapterReady && !checked}
                   title={operation.description}
-                  unstyled
                 >
-                  <span className="model-inputs__check">
+                  <span
+                    className={cn(
+                      'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border text-[11px] text-fg-inverse',
+                      checked ? 'border-link bg-link' : 'border-border'
+                    )}
+                  >
                     {checked ? '✓' : ''}
                   </span>
-                  <span className="model-inputs__name">
-                    {operation.label}
-                  </span>
+                  <span className="flex-1">{operation.label}</span>
                 </Button>
               )
             })}
           </div>
           {operationNotice ? (
-            <div className="model-config__hint">{operationNotice}</div>
+            <div className="text-[11px] leading-[1.7] text-fg-subtle">
+              {operationNotice}
+            </div>
           ) : null}
         </div>
       ) : null}
 
-      <div className="model-config__section-title">生成参数</div>
-      <div className="model-params__intro">
+      <div className="text-[13px] font-medium text-fg">生成参数</div>
+      <div className="text-xs leading-[1.7] text-fg-subtle">
         这些参数会显示在 Prompt Bar
         的「生成设置」里。第一次配置可以直接添加常用参数，不需要了解接口字段名。
       </div>
 
       {templates.length > 0 ? (
         <>
-          <div className="model-params__templates-head">
+          <div className="flex items-center justify-between gap-3">
             <Button
               type="button"
-              className="model-params__templates-toggle"
+              variant="ghost"
+              size="none"
+              className="!justify-start gap-1.5 p-0 !text-fg-subtle hover:!bg-transparent"
               onClick={() => setTemplatesOpen((value) => !value)}
-              unstyled
             >
               <Icon
                 name={templatesOpen ? 'chevron-down' : 'chevron-right'}
                 size={12}
               />
-              <span className="model-params__templates-title">常用参数</span>
-              <span className="model-params__templates-count">
+              <span className="text-[13px] font-medium text-fg">常用参数</span>
+              <span className="rounded-full bg-surface-hover px-1.5 text-[10px] leading-4 text-fg-subtle">
                 {addedCount}/{templates.length}
               </span>
             </Button>
-            <div className="model-params__templates-actions">
-              <span className="model-params__templates-desc">点击标签添加</span>
+            <div className="flex items-center gap-2.5">
+              <span className="text-[11px] text-fg-subtle">点击标签添加</span>
               <Button
                 type="button"
-                className="btn-secondary btn-small"
+                variant="secondary"
+                size="xs"
                 disabled={addedCount === templates.length}
                 onClick={addAllTemplates}
-                unstyled
               >
                 全部添加
               </Button>
@@ -982,26 +1015,32 @@ export function ModelConfigDialog({
           </div>
 
           {templatesOpen ? (
-            <div className="model-params__template-chips">
+            <div className="flex flex-wrap gap-1.5">
               {templates.map((template) => {
                 const added = existingKeys.has(template.def.key)
                 return (
                   <Button
                     key={template.id}
                     type="button"
-                    className={`model-params__chip${added ? ' is-added' : ''}`}
+                    variant="secondary"
+                    size="none"
+                    className={cn(
+                      '!h-7 !justify-start gap-1.5 rounded-lg border-border bg-surface-hover px-2.5 !text-[11.5px] !font-normal !text-fg duration-[120ms]',
+                      added
+                        ? 'cursor-default opacity-45 disabled:!opacity-45'
+                        : 'hover:!border-border-selected hover:bg-surface-raised'
+                    )}
                     disabled={added}
                     title={`${template.description}\n${optionSummary(
                       template.def
                     )}`}
                     onClick={() => addTemplate(template)}
-                    unstyled
                   >
                     <span>{template.def.label}</span>
-                    <span className="model-params__chip-meta">
+                    <span className="text-[10px] text-fg-subtle">
                       {chipSummary(template.def)}
                     </span>
-                    <span className="model-params__chip-action">
+                    <span className="text-[11px] text-fg-subtle">
                       {added ? '✓' : '+'}
                     </span>
                   </Button>
@@ -1012,9 +1051,9 @@ export function ModelConfigDialog({
         </>
       ) : null}
 
-      <div className="model-params__list">
+      <div className="flex min-h-0 flex-none flex-col gap-2.5 overflow-visible pr-1">
         {rows.length === 0 ? (
-          <div className="model-params__empty">
+          <div className="p-6 text-center text-xs leading-[1.8] text-fg-subtle">
             <div>还没有参数</div>
             <div>从上方常用参数添加，或点底部「自定义参数」</div>
           </div>
@@ -1023,52 +1062,56 @@ export function ModelConfigDialog({
             const expanded = openRow === index
             return (
               <div
-                className={`model-param${expanded ? ' is-open' : ''}`}
+                className={cn(
+                  'flex flex-col gap-2 rounded-[10px] border border-border p-[11px]',
+                  expanded ? 'bg-surface' : 'bg-surface-hover'
+                )}
                 key={`${row.key}-${index}`}
               >
-                <div className="model-param__summary-row">
+                <div className="flex items-center gap-1.5">
                   <Button
                     type="button"
-                    className="model-param__summary"
+                    variant="ghost"
+                    size="none"
+                    className="min-w-0 flex-1 !justify-start gap-2 p-0 text-left !text-fg hover:!bg-transparent [&>svg]:shrink-0 [&>svg]:text-fg-subtle"
                     onClick={() => setOpenRow(expanded ? null : index)}
-                    unstyled
                   >
                     <Icon
                       name={expanded ? 'chevron-down' : 'chevron-right'}
                       size={12}
                     />
-                    <span className="model-param__name">
+                    <span className="max-w-[170px] truncate text-xs text-fg">
                       {row.label || '未命名参数'}
                     </span>
-                    <span className="model-param__type">
+                    <span className="shrink-0 rounded-full bg-surface-hover px-1.5 py-px text-[10px] leading-4 text-fg-subtle">
                       {TYPE_LABEL[row.type]}
                     </span>
-                    <span className="model-param__value">
+                    <span className="ml-auto min-w-0 truncate text-[11px] text-fg-subtle">
                       {optionSummary(row)}
                     </span>
                   </Button>
                   <Button
                     type="button"
-                    className="icon-btn"
+                    variant="ghost"
+                    size="none"
+                    className="h-7 w-7"
                     title="删除参数"
                     onClick={() => removeRow(index)}
-                    unstyled
                   >
                     <Icon name="close" size={12} />
                   </Button>
                 </div>
 
                 {expanded ? (
-                  <div className="model-param__body">
-                    <div className="model-param__head">
+                  <div className="flex flex-col gap-2 border-t border-divider pt-2">
+                    <div className="flex items-center gap-2">
                       <Input
-                        className="model-param__label"
+                        className="!h-8 min-w-0 flex-1 !rounded-[7px] border-border-strong bg-surface !px-[9px] !text-[13px] font-medium focus:!border-border-selected"
                         value={row.label}
                         placeholder="参数显示名，例如「画面比例」"
                         onChange={(event) =>
                           updateRow(index, { label: event.target.value })
                         }
-                        unstyled
                       />
                       <Select
                         value={row.type}
@@ -1083,50 +1126,53 @@ export function ModelConfigDialog({
                         }
                       />
                     </div>
-                    <div className="model-param__type-hint">
+                    <div className="text-[11px] text-fg-subtle">
                       {TYPE_HINT[row.type]}
                     </div>
 
-                    <div className="model-param__grid is-single">
-                      <label>
+                    <div className="grid grid-cols-1 gap-2">
+                      <label className="flex flex-col gap-1 text-[10.5px] text-fg-subtle">
                         <span>分组</span>
                         <Input
+                          className="!h-[30px] !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
                           value={row.group ?? ''}
                           placeholder="例如：比例 / 画质 / 数量"
                           onChange={(event) =>
                             updateRow(index, { group: event.target.value })
                           }
-                          unstyled
                         />
                       </label>
                     </div>
 
-                    <details className="model-param__advanced">
-                      <summary>高级：接口字段名（通常不需要改）</summary>
-                      <label>
+                    <details className="mt-0.5 text-[10.5px] text-fg-subtle">
+                      <summary className="cursor-pointer select-none hover:text-fg-muted">
+                        高级：接口字段名（通常不需要改）
+                      </summary>
+                      <label className="mt-1.5 flex flex-col gap-1">
                         <span>接口字段名</span>
                         <Input
+                          className="!h-[30px] !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
                           value={row.key}
                           placeholder="例如：ratio"
                           onChange={(event) =>
                             updateRow(index, { key: event.target.value })
                           }
-                          unstyled
                         />
                       </label>
                     </details>
 
                     {row.key === 'duration' && row.type === 'select' ? (
-                      <div className="model-param__duration-hint">
+                      <div className="flex items-center justify-between gap-2.5 rounded-[7px] border border-dashed border-border bg-surface px-[9px] py-2 text-[10.5px] leading-[1.55] text-fg-subtle">
                         <span>
                           如果模型支持 4–12
                           秒这类连续秒数，可以改为滑条；只支持固定档位的模型请保留下拉。
                         </span>
                         <Button
                           type="button"
-                          className="model-param__convert"
+                          variant="secondary"
+                          size="none"
+                          className="!h-[26px] flex-none !rounded-[6px] bg-surface-hover px-[9px] !text-[10.5px] text-fg-muted hover:!border-border-selected hover:text-fg"
                           onClick={() => convertDurationToRange(index)}
-                          unstyled
                         >
                           改为时长滑条
                         </Button>
@@ -1134,14 +1180,15 @@ export function ModelConfigDialog({
                     ) : null}
 
                     {row.type === 'select' ? (
-                      <div className="model-param__options">
-                        <div className="model-param__options-head">
+                      <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-2">
+                        <div className="flex items-center justify-between gap-2 text-[10.5px] text-fg-subtle">
                           <span>可选项</span>
                           <Button
                             type="button"
-                            className="model-param__add-option"
+                            variant="secondary"
+                            size="none"
+                            className="!h-6 !rounded-[6px] bg-surface-hover px-2 !text-[10.5px] text-fg-muted hover:!border-border-selected hover:text-fg"
                             onClick={() => addOption(index)}
-                            unstyled
                           >
                             + 添加选项
                           </Button>
@@ -1149,10 +1196,11 @@ export function ModelConfigDialog({
 
                         {(row.options ?? []).map((option, optionIndex) => (
                           <div
-                            className="model-param__option"
+                            className="grid grid-cols-[1fr_1fr_24px] items-center gap-1.5"
                             key={`${index}-${optionIndex}`}
                           >
                             <Input
+                              className="!h-7 !rounded-[6px] border-border-strong bg-surface-hover !px-2 !text-[11px] focus:!border-border-selected"
                               value={option.label}
                               placeholder="显示名，例如 16:9"
                               onChange={(event) =>
@@ -1160,9 +1208,9 @@ export function ModelConfigDialog({
                                   label: event.target.value
                                 })
                               }
-                              unstyled
                             />
                             <Input
+                              className="!h-7 !rounded-[6px] border-border-strong bg-surface-hover !px-2 !text-[11px] focus:!border-border-selected"
                               value={option.value}
                               placeholder="接口值，例如 16:9"
                               onChange={(event) =>
@@ -1170,22 +1218,22 @@ export function ModelConfigDialog({
                                   value: event.target.value
                                 })
                               }
-                              unstyled
                             />
                             <Button
                               type="button"
-                              className="icon-btn"
+                              variant="ghost"
+                              size="none"
+                              className="h-7 w-7 disabled:!opacity-100"
                               title="删除选项"
                               disabled={(row.options?.length ?? 0) <= 1}
                               onClick={() => removeOption(index, optionIndex)}
-                              unstyled
                             >
                               <Icon name="close" size={11} />
                             </Button>
                           </div>
                         ))}
 
-                        <div className="model-param__default">
+                        <div className="flex items-center gap-2 text-[11px] text-fg-subtle">
                           <span>默认选项</span>
                           <Select
                             value={String(row.defaultValue ?? '')}
@@ -1199,16 +1247,16 @@ export function ModelConfigDialog({
                           />
                         </div>
 
-                        <label className="model-param__check">
+                        <label className="flex cursor-pointer items-center gap-[7px] text-[10.5px] text-fg-subtle">
                           <Input
                             type="checkbox"
+                            className="!h-auto !w-auto !rounded-none !border-0 !bg-transparent !p-0 accent-fg"
                             checked={row.allowCustom === true}
                             onChange={(event) =>
                               updateRow(index, {
                                 allowCustom: event.target.checked
                               })
                             }
-                            unstyled
                           />
                           <span>允许在生成设置中自定义值</span>
                         </label>
@@ -1216,11 +1264,12 @@ export function ModelConfigDialog({
                     ) : null}
 
                     {row.type === 'number' ? (
-                      <div className="model-param__grid is-three">
-                        <label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <label className="flex flex-col gap-1 text-[10.5px] text-fg-subtle">
                           <span>默认值</span>
                           <Input
                             type="number"
+                            className="!h-[30px] !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
                             value={String(row.defaultValue ?? '')}
                             placeholder="默认值"
                             onChange={(event) =>
@@ -1228,13 +1277,13 @@ export function ModelConfigDialog({
                                 defaultValue: event.target.value
                               })
                             }
-                            unstyled
                           />
                         </label>
-                        <label>
+                        <label className="flex flex-col gap-1 text-[10.5px] text-fg-subtle">
                           <span>最小值</span>
                           <Input
                             type="number"
+                            className="!h-[30px] !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
                             value={row.min ?? ''}
                             placeholder="最小值"
                             onChange={(event) =>
@@ -1245,13 +1294,13 @@ export function ModelConfigDialog({
                                     : Number(event.target.value)
                               })
                             }
-                            unstyled
                           />
                         </label>
-                        <label>
+                        <label className="flex flex-col gap-1 text-[10.5px] text-fg-subtle">
                           <span>最大值</span>
                           <Input
                             type="number"
+                            className="!h-[30px] !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
                             value={row.max ?? ''}
                             placeholder="最大值"
                             onChange={(event) =>
@@ -1262,16 +1311,16 @@ export function ModelConfigDialog({
                                     : Number(event.target.value)
                               })
                             }
-                            unstyled
                           />
                         </label>
                       </div>
                     ) : null}
 
                     {row.type === 'text' ? (
-                      <div className="model-param__default">
+                      <div className="flex items-center gap-2 text-[11px] text-fg-subtle">
                         <span>默认值</span>
                         <Input
+                          className="!h-[30px] flex-1 !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs"
                           value={String(row.defaultValue ?? '')}
                           placeholder="默认文本"
                           onChange={(event) =>
@@ -1279,13 +1328,12 @@ export function ModelConfigDialog({
                               defaultValue: event.target.value
                             })
                           }
-                          unstyled
                         />
                       </div>
                     ) : null}
 
                     {row.type === 'boolean' ? (
-                      <div className="model-param__default">
+                      <div className="flex items-center gap-2 text-[11px] text-fg-subtle">
                         <span>默认值</span>
                         <Select
                           value={row.defaultValue === true ? 'true' : 'false'}
@@ -1309,20 +1357,21 @@ export function ModelConfigDialog({
         )}
       </div>
 
-      <div className="model-config__section">
+      <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface p-3">
         <Button
           type="button"
-          className="model-params__templates-toggle"
+          variant="ghost"
+          size="none"
+          className="!justify-start gap-1.5 p-0 !text-fg-subtle hover:!bg-transparent"
           onClick={() => setAdvancedOpen((current) => !current)}
-          unstyled
         >
           <Icon
             name={advancedOpen ? 'chevron-down' : 'chevron-right'}
             size={12}
           />
-          <span className="model-config__section-title">高级</span>
+          <span className="text-[13px] font-medium text-fg">高级</span>
         </Button>
-        <div className="model-config__hint">
+        <div className="text-[11px] leading-[1.7] text-fg-subtle">
           开发者选项，普通模型保持默认即可。只有自定义接口或中转站需要改：
           请求扩展把参数映射成接口字段，删除字段从默认请求体移除字段，
           自定义协议用于提交任务并轮询结果。
@@ -1330,27 +1379,35 @@ export function ModelConfigDialog({
 
         {advancedOpen ? (
           <>
-            <div className="model-config__advanced-field">
-              <div className="model-config__advanced-head">
+            <div className="flex flex-col gap-1.5 text-[11px] text-fg-subtle">
+              <div className="flex items-center justify-between gap-2">
                 <span>请求扩展 — 追加到请求体的字段</span>
-                <div className="model-config__advanced-tabs">
+                <div className="inline-flex gap-0.5 rounded-[7px] bg-surface-hover p-0.5">
                   <Button
                     type="button"
-                    className={`model-config__tab${
-                      extraBodyMode === 'rows' ? ' is-active' : ''
-                    }`}
+                    variant="ghost"
+                    size="none"
+                    className={cn(
+                      '!h-[22px] !rounded-[5px] px-2 !text-[11px]',
+                      extraBodyMode === 'rows'
+                        ? 'bg-surface !text-fg hover:!bg-surface'
+                        : '!text-fg-subtle hover:!bg-transparent'
+                    )}
                     onClick={() => switchExtraBodyMode('rows')}
-                    unstyled
                   >
                     键值对
                   </Button>
                   <Button
                     type="button"
-                    className={`model-config__tab${
-                      extraBodyMode === 'json' ? ' is-active' : ''
-                    }`}
+                    variant="ghost"
+                    size="none"
+                    className={cn(
+                      '!h-[22px] !rounded-[5px] px-2 !text-[11px]',
+                      extraBodyMode === 'json'
+                        ? 'bg-surface !text-fg hover:!bg-surface'
+                        : '!text-fg-subtle hover:!bg-transparent'
+                    )}
                     onClick={() => switchExtraBodyMode('json')}
-                    unstyled
                   >
                     JSON
                   </Button>
@@ -1358,15 +1415,18 @@ export function ModelConfigDialog({
               </div>
 
               {extraBodyMode === 'rows' ? (
-                <div className="extra-body-table">
-                  <div className="extra-body-table__head">
+                <div className="flex flex-col gap-1.5">
+                  <div className="grid grid-cols-[minmax(100px,1fr)_minmax(140px,1.4fr)_72px_28px] items-center gap-1.5 text-[10px] text-fg-subtle">
                     <span>字段名</span>
                     <span>值</span>
                     <span>类型</span>
                     <span />
                   </div>
                   {extraBodyRows.map((row, index) => (
-                    <div className="extra-body-table__row" key={index}>
+                    <div
+                      className="grid grid-cols-[minmax(100px,1fr)_minmax(140px,1.4fr)_72px_28px] items-center gap-1.5"
+                      key={index}
+                    >
                       <Input
                         value={row.key}
                         placeholder="例如 camera_fixed"
@@ -1375,7 +1435,6 @@ export function ModelConfigDialog({
                             key: event.target.value
                           })
                         }
-                        unstyled
                       />
                       {row.type === 'boolean' ? (
                         <Select
@@ -1390,7 +1449,7 @@ export function ModelConfigDialog({
                         />
                       ) : row.type === 'json' ? (
                         <Textarea
-                          className="model-config__json is-compact"
+                          className="!h-[34px] !min-h-[34px] !rounded-lg border-border bg-surface-hover !px-2 !py-1.5 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
                           value={row.value}
                           spellCheck={false}
                           onChange={(event) =>
@@ -1398,7 +1457,6 @@ export function ModelConfigDialog({
                               value: event.target.value
                             })
                           }
-                          unstyled
                         />
                       ) : (
                         <Input
@@ -1409,7 +1467,6 @@ export function ModelConfigDialog({
                               value: event.target.value
                             })
                           }
-                          unstyled
                         />
                       )}
                       <Select
@@ -1427,10 +1484,11 @@ export function ModelConfigDialog({
                       />
                       <Button
                         type="button"
-                        className="icon-btn"
+                        variant="ghost"
+                        size="none"
+                        className="h-7 w-7"
                         title="删除字段"
                         onClick={() => removeExtraBodyRow(index)}
-                        unstyled
                       >
                         <Icon name="close" size={12} />
                       </Button>
@@ -1438,16 +1496,16 @@ export function ModelConfigDialog({
                   ))}
                   <Button
                     type="button"
-                    className="btn-secondary btn-small"
+                    variant="secondary"
+                    size="xs"
                     onClick={addExtraBodyRow}
-                    unstyled
                   >
                     + 添加字段
                   </Button>
                 </div>
               ) : (
                 <Textarea
-                  className="model-config__json"
+                  className="!min-h-[84px] !rounded-lg border-border bg-surface-hover !px-2.5 !py-2 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
                   value={extraBodyText}
                   spellCheck={false}
                   placeholder={
@@ -1457,30 +1515,33 @@ export function ModelConfigDialog({
                     setError(null)
                     setExtraBodyText(event.target.value)
                   }}
-                  unstyled
                 />
               )}
             </div>
 
-            <div className="model-config__advanced-field">
+            <div className="flex flex-col gap-1.5 text-[11px] text-fg-subtle">
               <span>删除字段 — 从默认请求体移除的字段</span>
-              <div className="omit-tags">
+              <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-surface-hover px-2 py-1.5">
                 {omitBodyTags.map((tag) => (
-                  <span className="omit-tag" key={tag}>
+                  <span
+                    className="inline-flex h-[22px] items-center gap-1 rounded-full bg-surface px-1.5 text-[11px] text-fg"
+                    key={tag}
+                  >
                     {tag}
                     <Button
                       type="button"
-                      className="omit-tag__remove"
+                      variant="ghost"
+                      size="none"
+                      className="h-3.5 w-3.5 rounded-full !text-fg-subtle hover:!bg-transparent hover:!text-danger"
                       title={`移除 ${tag}`}
                       onClick={() => removeOmitTag(tag)}
-                      unstyled
                     >
                       <Icon name="close" size={10} />
                     </Button>
                   </span>
                 ))}
                 <Input
-                  className="omit-tags__input"
+                  className="!h-6 min-w-[140px] flex-1 !border-0 bg-transparent !px-0 !text-[11px] focus:!border-0"
                   value={omitBodyInput}
                   placeholder="输入字段名后回车，例如 n"
                   onChange={(event) => setOmitBodyInput(event.target.value)}
@@ -1490,33 +1551,31 @@ export function ModelConfigDialog({
                       addOmitTag()
                     }
                   }}
-                  unstyled
                 />
               </div>
             </div>
 
             {model.adapter === 'http-template' ? (
-              <div className="model-config__advanced-field">
-                <div className="model-config__advanced-head">
+              <div className="flex flex-col gap-1.5 text-[11px] text-fg-subtle">
+                <div className="flex items-center justify-between gap-2">
                   <span>自定义协议 — 提交任务并轮询结果</span>
                   <Button
                     type="button"
-                    className="btn-secondary btn-small"
+                    variant="secondary"
+                    size="xs"
                     onClick={formatTemplate}
-                    unstyled
                   >
                     格式化
                   </Button>
                 </div>
                 <Textarea
-                  className="model-config__json is-tall"
+                  className="!min-h-[180px] !rounded-lg border-border bg-surface-hover !px-2.5 !py-2 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
                   value={templateText}
                   spellCheck={false}
                   onChange={(event) => {
                     setError(null)
                     setTemplateText(event.target.value)
                   }}
-                  unstyled
                 />
               </div>
             ) : null}
@@ -1524,37 +1583,26 @@ export function ModelConfigDialog({
         ) : null}
       </div>
 
-      {error ? <div className="form-message is-error">{error}</div> : null}
+      {error ? (
+        <div className="mb-3 break-all rounded-[6px] bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] px-2.5 py-2 text-xs leading-[1.6] text-danger">
+          {error}
+        </div>
+      ) : null}
 
-      <footer className="model-params__footer">
-        <Button
-          type="button"
-          className="btn-secondary"
-          onClick={addCustom}
-          unstyled
-        >
+      <footer className="flex items-center gap-2">
+        <Button type="button" variant="secondary" onClick={addCustom}>
           + 自定义参数
         </Button>
         {preset ? (
-          <Button
-            type="button"
-            className="btn-secondary"
-            onClick={restorePreset}
-            unstyled
-          >
+          <Button type="button" variant="secondary" onClick={restorePreset}>
             恢复预设默认值
           </Button>
         ) : null}
-        <div className="model-params__spacer" />
-        <Button
-          type="button"
-          className="btn-secondary"
-          onClick={onCancel}
-          unstyled
-        >
+        <div className="flex-1" />
+        <Button type="button" variant="secondary" onClick={onCancel}>
           取消
         </Button>
-        <Button type="button" className="btn-primary" onClick={submit} unstyled>
+        <Button type="button" variant="primary" onClick={submit}>
           保存配置
         </Button>
       </footer>

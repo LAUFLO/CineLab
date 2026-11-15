@@ -224,6 +224,9 @@ export function PromptBar() {
     setMentionIndex(0)
     setMaskDraft(null)
     setMaskEditor(null)
+    setRefPreview(null)
+    setSlotMenu(null)
+    setDraggedSlot(null)
 
     return () => {
       if (!currentId) return
@@ -1928,7 +1931,12 @@ export function PromptBar() {
         ) : null}
       </div>
 
-      {refPreview
+      {refPreview &&
+      mergedRefs.some(
+        (ref) =>
+          ref.path === refPreview.path &&
+          (ref.scope ?? 'project') === (refPreview.scope ?? 'project')
+      )
         ? createPortal(
             <div
               className="ref-preview"

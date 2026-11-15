@@ -34,26 +34,26 @@ export function TemplateDialog({
       onClose={onCancel}
       bare
       ariaLabel={initial ? '编辑提示词模板' : '新建提示词模板'}
-      overlayClassName="library-modal"
-      panelClassName="library-modal__panel library-modal__panel--wide"
+      overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-black/50"
+      panelClassName="w-[560px] rounded-[12px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-menu"
     >
-      <div className="library-modal__title">
+      <div className="mb-[14px] text-sm text-fg">
         {initial ? '编辑提示词模板' : '新建提示词模板'}
       </div>
 
-      <label className="field">
-        <span>名称</span>
+      <label className="mb-[14px] flex flex-col gap-1.5">
+        <span className="text-xs text-fg-muted">名称</span>
         <Input
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="例如：雪夜电影感"
           autoFocus
-          unstyled
+          className="!h-[34px] !rounded-[8px] !bg-surface-hover !px-2.5 !text-[13px]"
         />
       </label>
 
-      <label className="field">
-        <span>适用节点</span>
+      <label className="mb-[14px] flex flex-col gap-1.5">
+        <span className="text-xs text-fg-muted">适用节点</span>
         <Select
           value={kind}
           options={NODE_KINDS.map((item) => ({
@@ -64,19 +64,18 @@ export function TemplateDialog({
         />
       </label>
 
-      <label className="field">
-        <span>提示词</span>
+      <label className="mb-[14px] flex flex-col gap-1.5">
+        <span className="text-xs text-fg-muted">提示词</span>
         <Textarea
-          className="library-textarea"
+          className="!min-h-[76px] resize-y !rounded-[8px] !bg-surface-hover !px-2.5 !py-2 !text-[13px]"
           rows={6}
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           placeholder="模板会直接填入 prompt bar"
-          unstyled
         />
       </label>
 
-      <div className="library-modal__actions">
+      <div className="mt-4 flex justify-end gap-2">
         <Button variant="secondary" onClick={onCancel}>
           取消
         </Button>

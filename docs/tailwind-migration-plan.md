@@ -194,6 +194,36 @@
 - 等宽字体由手写字体栈改为 `font-mono`。
 - Chip 过渡色从 border/background 扩展到 `transition-colors`。
 
+### 5.2 第 2 批执行要点
+
+第 2 批拆成两个子批次：
+
+| 子批 | 范围 | 状态 |
+|---|---|---|
+| 2a | 项目中心、项目卡片、模板选择器、封面对话框、确认弹窗 | done |
+| 2b | 资产库窗口、文件夹树、资产网格、提示词模板、资产库弹窗 | done |
+
+2a 已完成的动作：
+
+1. `ProjectCenter` 外壳、按钮、空状态、模板选择器改为 utility，入场动画保留 `@keyframes welcome-in` 并用 `animate-[welcome-in_220ms_ease-out]` 引用。
+2. `ProjectCard` 卡片、封面、菜单、封面对话框改为 utility，编辑按钮用 `group-hover` 控制显隐。
+3. `ConfirmDialog` 的 overlay/panel 改为 utility，遮罩 `bg-black/35`、面板 420px。
+4. 删除 `global.css` 中项目中心、全部项目之外的卡片、确认弹窗、封面选择器共 561 行。
+
+2a 踩到的两个坑：
+
+- `Button` 默认 `inline-flex items-center`，`block` 无法可靠覆盖；卡片信息区必须用 `flex flex-col`，且文本省略需要 `min-w-0`，否则 flex item 的 `min-width: auto` 会撑开。
+- `ConfirmDialog` 只在 `phase === 'ready'` 时渲染，项目中心无法触发确认弹窗，截图必须在画布页面采集。
+
+2b 已完成的动作：
+
+1. `LibraryWindow` 外壳、搜索、面包屑、侧栏、页脚、移动/合成/标签弹窗改 utility。
+2. `AssetGrid`、`FolderTree`、`NameDialog`、`TemplateDialog`、`TemplateGrid` 全部 utility 化。
+3. 删除 `global.css` 中资产库三段共 1,087 行，另删除已无引用的 `.field` 族 41 行。
+4. e2e 的 `.library-window` 选择器改为 `data-testid="library-window"`。
+
+2b 保留的共享类：`icon-btn`、`btn-*`、`form-message`、`settings-overlay`。资产库窗口像素差异 0.82%，树缩进、行高与迁移前一致。
+
 ## 6. 每批验收门槛
 
 全部满足才允许合并：
@@ -228,7 +258,7 @@
 |---|---|---|---|
 | 基线 | done | — | 10 张截图，1440×900 / DPR 1 / 明暗双主题 |
 | 1 设置/模型配置 | done | -2,187 行 | `global.css` -1,695、`skills.css` -492；设置目录与 ModelConfigDialog `unstyled` 均为 0 |
-| 2 资产库/项目中心 | todo | — | — |
+| 2 资产库/项目中心 | done | -1,583 行 | 2a 项目中心/卡片/确认弹窗，2b 资产库窗口/文件夹树/资产网格/模板/弹窗 |
 | 3 剪辑室 | todo | — | — |
 | 4 Prompt Bar | todo | — | — |
 | 5 画布节点 | todo | — | — |

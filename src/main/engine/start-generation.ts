@@ -165,12 +165,24 @@ export async function startGeneration(
         !supportedInputs.includes('image')
       ) {
         throw new Error(
-          '该模型不支持图片输入，请在设置 → 模型 → 输入能力中勾选「图片」'
+          '该模型不支持图片输入，请在设置 → 模型 → 模型配置中勾选「图片」'
         )
       }
       if (video && !supportedInputs.includes('video')) {
         throw new Error('该模型不支持参考视频，请选择支持视频输入的模型')
       }
+      const hasSubject =
+        request.refs?.some((ref) => ref.role === 'subject') ?? false
+      const hasStyle =
+        request.refs?.some((ref) => ref.role === 'style') ?? false
+      const effectivePrompt = [
+        request.prompt,
+        hasSubject ? '保持参考图中的主体一致。' : '',
+        hasStyle ? '参考参考图的风格、色调和材质。' : ''
+      ]
+        .filter(Boolean)
+        .join('\n')
+
       const runtime = {
         baseUrl: provider.baseUrl,
         apiKey: provider.apiKey,
@@ -181,16 +193,16 @@ export async function startGeneration(
 
       const generate = (): Promise<ProviderOutput[]> => {
         if (isVideo) {
-          if (video && adapter !== 'http-template') {
+          if (video && adapter !== 'http-template' && adapter !== 'volcengine-video') {
             throw new Error(
-              '当前视频模型不支持视频输入，请在设置 → 操作模型中绑定 http-template 专用接口'
+              '当前视频模型不支持视频输入，请选择支持视频编辑的模型'
             )
           }
           if (adapter === 'agnes-video') {
             return generateVideoAgnes(
               model,
               runtime,
-              request.prompt,
+              effectivePrompt,
               request.params,
               refs,
               context
@@ -200,7 +212,7 @@ export async function startGeneration(
             return generateVideoSora(
               model,
               runtime,
-              request.prompt,
+              effectivePrompt,
               request.params,
               refs,
               context
@@ -210,19 +222,20 @@ export async function startGeneration(
             return generateVideoHttpTemplate(
               model,
               runtime,
-              request.prompt,
+              effectivePrompt,
               request.params,
               refs,
               video,
               request.videoOptions,
-              context
+              context,
+              request.mask
             )
           }
           if (adapter === 'minimax-video' || adapter === 'minimax-legacy') {
             return generateVideoMinimax(
               model,
               runtime,
-              request.prompt,
+              effectivePrompt,
               request.params,
               refs,
               context,
@@ -233,7 +246,7 @@ export async function startGeneration(
             return generateVideoKling(
               model,
               runtime,
-              request.prompt,
+              effectivePrompt,
               request.params,
               refs,
               context
@@ -242,10 +255,12 @@ export async function startGeneration(
           return generateVideoArk(
             model,
             runtime,
-            request.prompt,
+            effectivePrompt,
             request.params,
             refs,
-            context
+            context,
+            video,
+            request.videoOptions
           )
         }
 
@@ -254,14 +269,14 @@ export async function startGeneration(
             ? generateMusic(
                 model,
                 runtime,
-                request.prompt,
+                effectivePrompt,
                 request.params,
                 context
               )
             : generateSpeech(
                 model,
                 runtime,
-                request.prompt,
+                effectivePrompt,
                 request.params,
                 context
               )
@@ -271,17 +286,31 @@ export async function startGeneration(
           return generateText(
             model,
             runtime,
-            request.prompt,
+            effectivePrompt,
             request.params,
             refs,
             context
           )
         }
 
+        if (adapter === 'http-template') {
+          return generateVideoHttpTemplate(
+            model,
+            runtime,
+            effectivePrompt,
+            request.params,
+            refs,
+            undefined,
+            undefined,
+            context,
+            request.mask
+          )
+        }
+
         return generateImage(
           model,
           runtime,
-          request.prompt,
+          effectivePrompt,
           request.params,
           refs,
           context,
@@ -330,7 +359,9 @@ export async function startGeneration(
           model: model.name,
           text: output.text,
           width: videoSize?.[0],
-          height: videoSize?.[1]
+          height: videoSize?.[1],
+          layer: output.layer,
+          textRecognition: output.textRecognition
         })
         assets.push(request.op ? { ...asset, op: request.op } : asset)
       }

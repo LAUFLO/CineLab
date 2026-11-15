@@ -20,6 +20,7 @@ import { useGenerationHistoryStore } from '../../stores/generation-history'
 import { useUIStore } from '../../stores/ui'
 import { useLibraryStore } from '../../stores/library'
 import { useStudioStore } from '../../stores/studio'
+import { useSettingsStore } from '../../stores/settings'
 import { TextEditorDialog } from './TextEditorDialog'
 import { renderMarkdown } from './text-markdown'
 import { createStudioFromNode } from '../../studio/nodes'
@@ -30,7 +31,7 @@ import { NodeToolbar } from './NodeToolbar'
 import { PanoramaViewer } from './PanoramaViewer'
 import { VideoPlayer } from './VideoPlayer'
 import { StudyNodeCard } from './StudyNodeCard'
-import { Button, Input } from '../../components/ui'
+import { Button, Dialog, Input } from '../../components/ui'
 
 const NODE_ICON: Record<NodeKind, IconName> = {
   text: 'text',
@@ -86,6 +87,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const [titleDraft, setTitleDraft] = useState(data.title)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [panoramaOpen, setPanoramaOpen] = useState(false)
+  const [ocrOpen, setOcrOpen] = useState(false)
   const textEditorOpen = useUIStore((state) => state.textEditorNodeId === id)
   const closeTextEditor = useUIStore((state) => state.closeTextEditor)
   const [previewRatio, setPreviewRatio] = useState<number | null>(null)
@@ -461,6 +463,30 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                   />
                 ) : null}
 
+                {current?.layer ? (
+                  <span className="cnode__layer-tag nodrag nopan">
+                    {current.layer.zIndex === 0
+                      ? '底图'
+                      : current.layer.name?.trim() ||
+                        `图层 ${current.layer.zIndex}`}
+                  </span>
+                ) : null}
+
+                {current?.textRecognition?.text ? (
+                  <Button
+                    type="button"
+                    className="cnode__ocr nodrag nopan"
+                    title="查看文字识别结果"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setOcrOpen(true)
+                    }}
+                    unstyled
+                  >
+                    OCR
+                  </Button>
+                ) : null}
+
                 {isBusy && data.kind !== 'audio' ? (
                   <div className="cnode__generating">
                     <div className="cnode__generating-pill">
@@ -485,6 +511,17 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                     <span className="cnode__error-text">
                       {data.error ?? '生成失败'}
                     </span>
+                    <Button
+                      type="button"
+                      className="cnode__retry nodrag nopan"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        useSettingsStore.getState().openPanel('models')
+                      }}
+                      unstyled
+                    >
+                      检查模型配置
+                    </Button>
                     <Button
                       type="button"
                       className="cnode__retry nodrag nopan"
@@ -580,6 +617,17 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         onClose={closeTextEditor}
         onSave={saveText}
       />
+      <Dialog
+        open={ocrOpen}
+        onClose={() => setOcrOpen(false)}
+        title="文字识别结果"
+        size="md"
+        panelClassName="ocr-dialog"
+      >
+        <div className="ocr-dialog__body">
+          {current?.textRecognition?.text ?? ''}
+        </div>
+      </Dialog>
       {previewOpen &&
       current &&
       (current.kind === 'image' || current.kind === 'video')

@@ -1,7 +1,16 @@
 import { httpFetch } from './http'
 import type { ModelDef } from '@shared/provider-schema'
+import type {
+  AssetLayer,
+  LayerBounds,
+  LayerBox,
+  TextRecognition,
+  TextRecognitionLine,
+  TextRecognitionStyle
+} from '@shared/generation'
 import { mergeHeaders } from './headers'
 import { sleep } from './retry'
+import { applyModelRequestBody, applyModelRequestForm } from './model-body'
 
 export interface ProviderRuntime {
   baseUrl: string
@@ -19,6 +28,10 @@ export interface ProviderOutput {
   data: Buffer
   mime: string
   text?: string
+  /** 图层拆分结果中的图层信息 */
+  layer?: AssetLayer
+  /** 规整文字图层的富文本 OCR 结果 */
+  textRecognition?: TextRecognition
 }
 
 export type ImageOutput = ProviderOutput
@@ -55,6 +68,74 @@ function parseDataUrl(
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function toBounds(value: unknown): LayerBounds | undefined {
+  if (!Array.isArray(value) || value.length !== 4) return undefined
+  const numbers = value.map((item) => Number(item))
+  if (numbers.some((item) => !Number.isFinite(item))) return undefined
+  return [numbers[0], numbers[1], numbers[2], numbers[3]]
+}
+
+function toLayerBox(value: unknown): LayerBox | undefined {
+  if (!isRecord(value)) return undefined
+  const absolute = toBounds(value.absolute)
+  const normalized = toBounds(value.normalized)
+  if (!absolute && !normalized) return undefined
+  return {
+    ...(absolute ? { absolute } : {}),
+    ...(normalized ? { normalized } : {})
+  }
+}
+
+function toTextStyle(value: unknown): TextRecognitionStyle | undefined {
+  if (!isRecord(value)) return undefined
+  const style: TextRecognitionStyle = {}
+  if (typeof value.similar_font_family === 'string') {
+    style.similarFontFamily = value.similar_font_family
+  }
+  if (typeof value.foreground_color === 'string') {
+    style.foregroundColor = value.foreground_color
+  }
+  for (const key of [
+    'bold',
+    'italic',
+    'underline',
+    'strikethrough',
+    'shadow',
+    'translucent'
+  ] as const) {
+    if (typeof value[key] === 'boolean') style[key] = value[key] as boolean
+  }
+  return Object.keys(style).length > 0 ? style : undefined
+}
+
+function toTextRecognition(value: unknown): TextRecognition | undefined {
+  if (!isRecord(value) || typeof value.text !== 'string') return undefined
+
+  const lines: TextRecognitionLine[] = []
+  if (Array.isArray(value.lines)) {
+    for (const line of value.lines) {
+      if (!isRecord(line) || !Array.isArray(line.runs)) continue
+      const runs = line.runs.flatMap((run) => {
+        if (!isRecord(run) || typeof run.text !== 'string') return []
+        const style = toTextStyle(run.style)
+        return [{ text: run.text, ...(style ? { style } : {}) }]
+      })
+      if (runs.length === 0) continue
+      const boundingBox = toLayerBox(line.bounding_box)
+      lines.push({ ...(boundingBox ? { boundingBox } : {}), runs })
+    }
+  }
+
+  return {
+    text: value.text,
+    ...(lines.length > 0 ? { lines } : {})
+  }
+}
+
 async function parseImageResponse(
   response: Response,
   ctx: AdapterContext
@@ -65,7 +146,16 @@ async function parseImageResponse(
   }
 
   const json = (await response.json()) as {
-    data?: Array<{ b64_json?: string; url?: string }>
+    data?: Array<{
+      b64_json?: string
+      url?: string
+      output_format?: string
+      z_index?: number
+      name?: string
+      description?: string
+      bounding_box?: unknown
+      text_recognition?: unknown
+    }>
   }
 
   const items = json.data ?? []
@@ -79,15 +169,38 @@ async function parseImageResponse(
   for (let index = 0; index < items.length; index += 1) {
     const item = items[index]
 
+    const boundingBox = toLayerBox(item.bounding_box)
+    const layer: AssetLayer | undefined =
+      typeof item.z_index === 'number'
+        ? {
+            zIndex: item.z_index,
+            ...(item.name ? { name: item.name } : {}),
+            ...(item.description ? { description: item.description } : {}),
+            ...(boundingBox ? { boundingBox } : {})
+          }
+        : undefined
+    const textRecognition = toTextRecognition(item.text_recognition)
+
     if (item.b64_json) {
-      outputs.push({ data: Buffer.from(item.b64_json, 'base64'), mime: 'image/png' })
+      const format = item.output_format
+      outputs.push({
+        data: Buffer.from(item.b64_json, 'base64'),
+        mime: format === 'jpeg' || format === 'jpg' ? 'image/jpeg' : 'image/png',
+        ...(layer ? { layer } : {}),
+        ...(textRecognition ? { textRecognition } : {})
+      })
     } else if (item.url) {
       const download = await httpFetch(item.url, { signal: ctx.signal })
       if (!download.ok) {
         throw new Error(`下载图片失败：HTTP ${download.status}`)
       }
       const mime = download.headers.get('content-type')?.split(';')[0] ?? 'image/png'
-      outputs.push({ data: Buffer.from(await download.arrayBuffer()), mime })
+      outputs.push({
+        data: Buffer.from(await download.arrayBuffer()),
+        mime,
+        ...(layer ? { layer } : {}),
+        ...(textRecognition ? { textRecognition } : {})
+      })
     }
 
     ctx.onProgress(60 + Math.round(((index + 1) / items.length) * 25), '下载结果')
@@ -139,6 +252,16 @@ function buildEditForm(
     form.append('mask', parsed.blob, 'mask.png')
   }
 
+  applyModelRequestForm(form, model, { prompt, params, refs })
+
+  if (form.get('layer_decomposition') !== 'true') {
+    form.delete('layer_decomposition_options')
+  }
+
+  if (form.get('background') === 'transparent' && form.get('output_format') !== 'png') {
+    form.set('output_format', 'png')
+  }
+
   return form
 }
 
@@ -175,8 +298,49 @@ export async function generateImage(
           : {})
       }
     }
+    applyModelRequestBody(body, model, { prompt, params, refs })
 
     ctx.onProgress(5, refs.length > 0 ? '提交图生图请求' : '提交请求')
+
+    const response = await httpFetch(`${baseUrl}/images/generations`, {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body),
+      signal: ctx.signal
+    })
+
+    return parseImageResponse(response, ctx)
+  }
+
+  // Seedream 图层拆分：官方接口走 /images/generations + image，不使用 edits 表单
+  const layerMode =
+    params.layer_decomposition === true || params.layer_decomposition === 'true'
+
+  if (layerMode) {
+    if (refs.length === 0) {
+      throw new Error('图层拆分需要一张参考图')
+    }
+    if (refs.length > 1) {
+      throw new Error('图层拆分只支持一张参考图')
+    }
+    if (mask) {
+      throw new Error('图层拆分不支持蒙版')
+    }
+
+    const body: Record<string, unknown> = {
+      model: model.remoteModel,
+      prompt,
+      image: refs[0].dataUrl
+    }
+    if (params.size) body.size = params.size
+    applyModelRequestBody(body, model, { prompt, params, refs })
+    // 官方要求图层拆分场景不能传 background
+    delete body.background
+
+    ctx.onProgress(5, '提交图层拆分请求')
 
     const response = await httpFetch(`${baseUrl}/images/generations`, {
       method: 'POST',
@@ -256,6 +420,22 @@ export async function generateImage(
     body.output_watermark = { enabled: Boolean(params.watermark) }
   }
 
+  applyModelRequestBody(body, model, {
+    prompt,
+    params,
+    refs,
+    ...(mask ? { mask } : {})
+  })
+
+  if (body.layer_decomposition !== true) {
+    delete body.layer_decomposition_options
+  }
+
+  // 透明背景必须输出 PNG，避免用户只改背景导致接口报错
+  if (body.background === 'transparent' && body.output_format !== 'png') {
+    body.output_format = 'png'
+  }
+
   ctx.onProgress(5, '提交请求')
 
   const response = await httpFetch(`${baseUrl}/images/generations`, {
@@ -285,6 +465,7 @@ export async function generateSpeech(
     speed: Number(params.speed ?? 1),
     response_format: params.format ?? 'mp3'
   }
+  applyModelRequestBody(body, model, { prompt: input, params })
 
   ctx.onProgress(10, '合成语音')
 
@@ -339,6 +520,8 @@ export async function chatCompletion(
   if (params.max_tokens !== undefined) {
     body.max_tokens = Number(params.max_tokens)
   }
+
+  applyModelRequestBody(body, model, { params })
 
   ctx.onProgress(10, '生成文本')
 
@@ -406,6 +589,8 @@ export async function generateText(
   if (params.max_tokens !== undefined) {
     body.max_tokens = Number(params.max_tokens)
   }
+
+  applyModelRequestBody(body, model, { prompt, params, refs })
 
   ctx.onProgress(10, '生成文本')
 
@@ -529,6 +714,7 @@ export async function generateMusic(
       params.instrumental === true || params.instrumental === 'true',
     prompt
   }
+  applyModelRequestBody(body, model, { prompt, params })
 
   ctx.onProgress(5, '提交音乐任务')
 

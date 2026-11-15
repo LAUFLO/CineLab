@@ -1,5 +1,17 @@
 import type { HttpTemplate } from './http-template'
 import type { VideoOperationId } from './operation-schema'
+import type {
+  ModelModeConfig,
+  ModelModeId,
+  OperationSupport
+} from './model-modes'
+import {
+  highestOperationSupport,
+  modeMediaKinds,
+  modeOperationIds,
+  modeSupportsOperation,
+  normalizeModelModes
+} from './model-modes'
 
 export type Capability =
   | 'image.t2i'
@@ -28,6 +40,21 @@ export interface ParamOption {
   label: string
 }
 
+export interface ParamCondition {
+  mode?: ModelModeId
+  params?: Record<string, unknown>
+}
+
+export interface ParamForce {
+  when: ParamCondition
+  value: unknown
+}
+
+export interface ParamDeny {
+  when: ParamCondition
+  values: unknown[]
+}
+
 export interface ParamDef {
   key: string
   label: string
@@ -40,6 +67,36 @@ export interface ParamDef {
   max?: number
   /** 允许在 Prompt Bar 中不选预设、直接输入自定义值 */
   allowCustom?: boolean
+  /** 给用户看的一句说明 */
+  description?: string
+  /** v2：只在这些模式出现 */
+  appliesTo?: ModelModeId[]
+  /** v2：满足条件才显示 */
+  when?: ParamCondition
+  /** v2：满足条件时锁定值，可以写多条 */
+  force?: ParamForce | ParamForce[]
+  /** v2：这些字段存在时不发送当前字段 */
+  forbid?: string[]
+  /** v2：满足条件时禁用这些值，可以写多条 */
+  deny?: ParamDeny | ParamDeny[]
+}
+
+export type ModelFeature =
+  | 'sequential'
+  | 'layer'
+  | 'ocr'
+  | 'rgba'
+  | 'audio'
+  | 'last-frame'
+  | 'multi-shot'
+  | 'mask'
+
+export interface ConfigSource {
+  kind: 'preset' | 'template' | 'manual' | 'agent'
+  url?: string
+  retrievedAt?: string
+  confidence?: 'high' | 'medium' | 'low'
+  notes?: string
 }
 
 export interface ModelDef {
@@ -52,12 +109,31 @@ export interface ModelDef {
   inputs?: MediaInput[]
   /** 该模型支持的视频专用操作；缺省按 http-template 模板推断 */
   operations?: VideoOperationId[]
+  /** v2 能力模式；缺省从 capability / inputs / operations 推断 */
+  modes?: Array<ModelModeId | ModelModeConfig>
+  /** 输出特性，例如组图、图层、OCR、原生音频 */
+  features?: ModelFeature[]
+  /** 同系列变体分组，仅用于 UI，不参与能力判断 */
+  family?: string
+  /** 协议模板 ID，仅用于展示和默认值 */
+  protocol?: string
+  /** 能力信息来源，Agent 生成时写入 */
+  source?: ConfigSource
   /** 该模型只出现在指定类型的供应商下；缺省为 openai-compat */
   providerType?: ProviderType
   /** 生成执行器，缺省按 remoteModel 推断 */
   adapter?: string
   /** http-template 执行器的请求/轮询模板 */
   template?: HttpTemplate
+  /** 引用自哪个内置预设，用于恢复预设默认值 */
+  preset?: string
+  /**
+   * 追加到适配器默认请求体的字段，支持 {{params.*}} / {{refs.*}} /
+   * {{prompt}} / {{model}} 变量。适配器先构造默认 body，再合并这里的内容。
+   */
+  extraBody?: Record<string, unknown>
+  /** 从默认请求体中删除的顶层字段，例如 Seedream 不支持 n */
+  omitBody?: string[]
 }
 
 export interface ModelInferenceInput {
@@ -67,6 +143,7 @@ export interface ModelInferenceInput {
   template?: HttpTemplate
   inputs?: MediaInput[]
   operations?: VideoOperationId[]
+  modes?: Array<ModelModeId | ModelModeConfig>
 }
 
 function templateHasMode(
@@ -86,6 +163,15 @@ function templateHasMode(
  * 这里的默认值只用于旧配置和预设；用户可以在设置中覆盖。
  */
 export function inferModelInputs(model: ModelInferenceInput): MediaInput[] {
+  const explicitModes = normalizeModelModes(model.modes)
+  if (explicitModes.length > 0) {
+    const kinds = new Set<MediaInput>()
+    for (const mode of explicitModes) {
+      for (const kind of modeMediaKinds(mode)) kinds.add(kind as MediaInput)
+    }
+    return [...kinds]
+  }
+
   const remote = model.remoteModel ?? ''
 
   if (model.capability === 'image.i2i') return ['text', 'image']
@@ -122,11 +208,200 @@ export function inferModelInputs(model: ModelInferenceInput): MediaInput[] {
   return ['text']
 }
 
-/** 已配置值优先，缺省时按能力推断 */
+/**
+ * 推断旧配置的模式。
+ *
+ * 旧字段只有媒体类型，无法精确区分首帧、参考、编辑。这里只推断
+ * 「最小可用模式」：宁可少列，也不要错误地声称支持某个模式。
+ */
+export function inferModelModes(model: ModelInferenceInput): ModelModeConfig[] {
+  const explicit = normalizeModelModes(model.modes)
+  if (explicit.length > 0) return explicit
+
+  const inputs = model.inputs ?? inferModelInputs(model)
+  const operations = model.operations ?? inferModelOperations(model)
+  const modes: ModelModeConfig[] = []
+
+  if (model.capability === 'image.i2i') {
+    return [{ id: 'i2i' }]
+  }
+
+  if (model.capability === 'image.t2i') {
+    modes.push({ id: 't2i' })
+    if (inputs.includes('image')) modes.push({ id: 'i2i' })
+    return modes
+  }
+
+  if (model.capability === 'video.t2v') {
+    if (inputs.includes('text')) modes.push({ id: 't2v' })
+    if (inputs.includes('image')) modes.push({ id: 'first-frame' })
+    if (operations.includes('extend')) modes.push({ id: 'video-extend' })
+    if (
+      operations.includes('shot-retake') ||
+      operations.includes('element-replace')
+    ) {
+      modes.push({ id: 'video-edit' })
+    }
+    if (inputs.includes('video') && operations.length === 0) {
+      modes.push({ id: 'reference' })
+    }
+    return modes
+  }
+
+  return modes
+}
+
+export function modelModeConfigs(model: ModelDef): ModelModeConfig[] {
+  return inferModelModes(model)
+}
+
+export function modelModeIds(model: ModelDef): ModelModeId[] {
+  return modelModeConfigs(model).map((mode) => mode.id)
+}
+
+export function modelSupportsMode(
+  model: ModelDef,
+  mode: ModelModeId
+): boolean {
+  return modelModeIds(model).includes(mode)
+}
+
+/** 从模式推导媒体类型；只在没有显式 inputs 时使用 */
+export function modelModeMediaKinds(model: ModelDef): MediaInput[] {
+  const kinds = new Set<MediaInput>()
+  for (const mode of modelModeConfigs(model)) {
+    for (const kind of modeMediaKinds(mode)) kinds.add(kind as MediaInput)
+  }
+  return [...kinds]
+}
+
+/** 汇总每个操作在模型所有模式里的最高支持级别 */
+export function modelOperationSupport(
+  model: ModelDef
+): Record<VideoOperationId, OperationSupport> {
+  const result: Record<VideoOperationId, OperationSupport> = {
+    'shot-retake': 'none',
+    'element-replace': 'none',
+    extend: 'none'
+  }
+
+  for (const mode of modelModeConfigs(model)) {
+    for (const operation of modeOperationIds(mode)) {
+      result[operation] = highestOperationSupport([
+        result[operation],
+        modeSupportsOperation(mode, operation)
+      ])
+    }
+  }
+
+  return result
+}
+
+export interface ModeContext {
+  kind: 'image' | 'video' | null
+  imageCount: number
+  videoCount: number
+  hasFirstFrame: boolean
+  hasLastFrame: boolean
+}
+
+/**
+ * 判断模型是否支持当前节点的输入组合。
+ *
+ * 只做保守判断：只要模型支持任意一种能接住当前素材的模式，就放行。
+ * 这样可以避免误伤「一张图既可能是首帧，也可能是参考图」的情况。
+ */
+export function modelModeCompatibility(
+  model: ModelDef,
+  context: ModeContext
+): { ok: boolean; reason?: string } {
+  if (!context.kind) return { ok: true }
+
+  const modes = modelModeIds(model)
+
+  if (context.kind === 'image') {
+    if (context.imageCount === 0) {
+      return modes.includes('t2i')
+        ? { ok: true }
+        : { ok: false, reason: '该模型不支持纯文生图' }
+    }
+    return modes.includes('i2i') || modes.includes('layer')
+      ? { ok: true }
+      : { ok: false, reason: '该模型不支持图片输入' }
+  }
+
+  if (context.videoCount > 0) {
+    return ['video-edit', 'video-extend', 'reference'].some((mode) =>
+      modes.includes(mode as ModelModeId)
+    )
+      ? { ok: true }
+      : { ok: false, reason: '该模型不支持视频输入' }
+  }
+
+  if (context.imageCount >= 2 && context.hasFirstFrame && context.hasLastFrame) {
+    return modes.includes('first-last') || modes.includes('reference')
+      ? { ok: true }
+      : { ok: false, reason: '该模型不支持首尾帧' }
+  }
+
+  if (context.imageCount > 0) {
+    return ['first-frame', 'first-last', 'reference'].some((mode) =>
+      modes.includes(mode as ModelModeId)
+    )
+      ? { ok: true }
+      : { ok: false, reason: '该模型不支持图片输入' }
+  }
+
+  return modes.includes('t2v') || modes.includes('reference')
+    ? { ok: true }
+    : { ok: false, reason: '该模型不支持文生视频' }
+}
+
+/** 根据当前素材推断一个「最可能正在使用」的模式，用于参数约束 */
+export function inferActiveMode(
+  model: ModelDef,
+  context: ModeContext
+): ModelModeId | undefined {
+  if (!context.kind) return undefined
+
+  const modes = modelModeIds(model)
+
+  if (context.kind === 'image') {
+    if (context.imageCount === 0) {
+      return modes.includes('t2i') ? 't2i' : undefined
+    }
+    if (modes.includes('i2i')) return 'i2i'
+    return modes.includes('layer') ? 'layer' : undefined
+  }
+
+  if (context.videoCount > 0) {
+    if (modes.includes('video-edit')) return 'video-edit'
+    if (modes.includes('video-extend')) return 'video-extend'
+    return modes.includes('reference') ? 'reference' : undefined
+  }
+
+  if (
+    context.imageCount >= 2 &&
+    context.hasFirstFrame &&
+    context.hasLastFrame &&
+    modes.includes('first-last')
+  ) {
+    return 'first-last'
+  }
+
+  if (context.imageCount > 0) {
+    if (modes.includes('first-frame')) return 'first-frame'
+    return modes.includes('reference') ? 'reference' : undefined
+  }
+
+  return modes.includes('t2v') ? 't2v' : undefined
+}
+
+/** v2 模式优先；否则已配置 inputs；最后按能力推断 */
 export function modelInputs(model: ModelDef): MediaInput[] {
-  return model.inputs && model.inputs.length > 0
-    ? model.inputs
-    : inferModelInputs(model)
+  if (model.modes && model.modes.length > 0) return modelModeMediaKinds(model)
+  if (model.inputs && model.inputs.length > 0) return model.inputs
+  return inferModelInputs(model)
 }
 
 /** 返回模型缺少的必需输入 */
@@ -150,6 +425,22 @@ function templateContains(
 export function inferModelOperations(
   model: ModelInferenceInput
 ): VideoOperationId[] {
+  const explicitModes = normalizeModelModes(model.modes)
+  if (explicitModes.length > 0) {
+    const result: VideoOperationId[] = []
+    for (const mode of explicitModes) {
+      for (const operation of modeOperationIds(mode)) {
+        if (
+          modeSupportsOperation(mode, operation) !== 'none' &&
+          !result.includes(operation)
+        ) {
+          result.push(operation)
+        }
+      }
+    }
+    return result
+  }
+
   if (model.operations !== undefined) return model.operations
   if (model.capability !== 'video.t2v') return []
   if (model.adapter !== 'http-template' || !model.template) return []
@@ -162,12 +453,29 @@ export function inferModelOperations(
     templateContains(model.template, 'video.duration') ||
     templateContains(model.template, 'video.direction')
 
-  if (hasRange) result.push('shot-retake', 'element-replace')
+  if (hasRange) result.push('shot-retake')
+  if (
+    hasRange &&
+    (templateContains(model.template, 'refs.images') ||
+      templateContains(model.template, 'refs.image'))
+  ) {
+    result.push('element-replace')
+  }
   if (hasExtend) result.push('extend')
   return result
 }
 
 export function modelOperations(model: ModelDef): VideoOperationId[] {
+  if (model.modes && model.modes.length > 0) {
+    return (
+      Object.entries(modelOperationSupport(model)) as Array<
+        [VideoOperationId, OperationSupport]
+      >
+    )
+      .filter(([, support]) => support !== 'none')
+      .map(([operation]) => operation)
+  }
+
   return model.operations !== undefined
     ? model.operations
     : inferModelOperations(model)
@@ -234,7 +542,7 @@ export const CAPABILITY_LABEL: Record<Capability, string> = {
   'audio.music': '音乐生成'
 }
 
-export const MODEL_PRESETS: ModelDef[] = [
+const RAW_MODEL_PRESETS: ModelDef[] = [
   {
     id: 'gpt-image-1',
     name: 'GPT Image 2.5',
@@ -354,34 +662,140 @@ export const MODEL_PRESETS: ModelDef[] = [
     capability: 'image.t2i',
     remoteModel: 'doubao-seedream-5-0-260128',
     inputs: ['text', 'image'],
+    // 5.0 pro / flash 不支持组图，不能发送 n
+    omitBody: ['n'],
+    extraBody: {
+      background: '{{params.background}}',
+      output_format: '{{params.output_format}}',
+      watermark: '{{params.watermark}}',
+      layer_decomposition: '{{params.layer_decomposition}}'
+    },
     params: [
       {
         key: 'size',
         label: '尺寸',
         type: 'select',
         options: [
-          { value: '1024x1024', label: '1024×1024' },
-          { value: '1536x1024', label: '1536×1024' },
-          { value: '1024x1536', label: '1024×1536' },
-          { value: '2048x2048', label: '2048×2048' },
-          { value: '2048x1152', label: '2048×1152' },
-          { value: '1152x2048', label: '1152×2048' }
+          { value: '1K', label: '1K' },
+          { value: '1.5K', label: '1.5K' },
+          { value: '2K', label: '2K' }
         ],
-        defaultValue: '1024x1024'
+        defaultValue: '2K'
       },
       {
-        key: 'n',
-        label: '数量',
-        type: 'number',
-        defaultValue: 1,
-        min: 1,
-        max: 4
+        key: 'background',
+        label: '背景',
+        type: 'select',
+        options: [
+          { value: 'opaque', label: '不透明' },
+          { value: 'transparent', label: '透明' }
+        ],
+        defaultValue: 'opaque'
+      },
+      {
+        key: 'output_format',
+        label: '输出格式',
+        type: 'select',
+        options: [
+          { value: 'jpeg', label: 'JPEG' },
+          { value: 'png', label: 'PNG' }
+        ],
+        defaultValue: 'jpeg'
       },
       {
         key: 'watermark',
         label: '水印',
         type: 'boolean',
         defaultValue: false
+      },
+      {
+        key: 'layer_decomposition',
+        label: '图层拆分',
+        type: 'boolean',
+        group: '图层',
+        defaultValue: false
+      }
+    ]
+  },
+  {
+    id: 'doubao-seedream-5-5',
+    name: 'Seedream 5.5',
+    capability: 'image.t2i',
+    remoteModel: 'doubao-seedream-5-5-261028',
+    inputs: ['text', 'image'],
+    // 5.5 不支持组图；图层拆分另行处理
+    omitBody: ['n'],
+    extraBody: {
+      background: '{{params.background}}',
+      output_format: '{{params.output_format}}',
+      watermark: '{{params.watermark}}',
+      layer_decomposition: '{{params.layer_decomposition}}',
+      layer_decomposition_options: {
+        max_images: '{{params.layer_max_images}}',
+        text_recognition: '{{params.text_recognition}}'
+      }
+    },
+    params: [
+      {
+        key: 'size',
+        label: '尺寸',
+        type: 'select',
+        options: [
+          { value: '1K', label: '1K' },
+          { value: '1.5K', label: '1.5K' },
+          { value: '2K', label: '2K' }
+        ],
+        defaultValue: '2K'
+      },
+      {
+        key: 'background',
+        label: '背景',
+        type: 'select',
+        options: [
+          { value: 'auto', label: '自动' },
+          { value: 'opaque', label: '不透明' },
+          { value: 'transparent', label: '透明' }
+        ],
+        defaultValue: 'auto'
+      },
+      {
+        key: 'output_format',
+        label: '输出格式',
+        type: 'select',
+        options: [
+          { value: 'png', label: 'PNG' },
+          { value: 'jpeg', label: 'JPEG' }
+        ],
+        defaultValue: 'png'
+      },
+      {
+        key: 'watermark',
+        label: '水印',
+        type: 'boolean',
+        defaultValue: false
+      },
+      {
+        key: 'layer_decomposition',
+        label: '图层拆分',
+        type: 'boolean',
+        group: '图层',
+        defaultValue: false
+      },
+      {
+        key: 'layer_max_images',
+        label: '最多图层数',
+        type: 'number',
+        group: '图层',
+        defaultValue: 30,
+        min: 2,
+        max: 100
+      },
+      {
+        key: 'text_recognition',
+        label: '识别文字',
+        type: 'boolean',
+        group: '图层',
+        defaultValue: true
       }
     ]
   },
@@ -791,3 +1205,97 @@ export const MODEL_PRESETS: ModelDef[] = [
     ]
   }
 ]
+
+/**
+ * 预设的 v2 能力元数据。只写差异，避免在每个预设对象里重复。
+ * 未列出的预设继续按 capability / inputs 推断。
+ */
+const PRESET_MODE_OVERRIDES: Record<
+  string,
+  Partial<Pick<ModelDef, 'modes' | 'features' | 'family' | 'protocol'>>
+> = {
+  'gpt-image-1': {
+    modes: ['t2i', 'i2i'],
+    features: ['mask'],
+    family: 'gpt-image',
+    protocol: 'openai-image'
+  },
+  'dall-e-3': {
+    modes: ['t2i'],
+    family: 'dall-e',
+    protocol: 'openai-image'
+  },
+  'doubao-seedance': {
+    modes: [
+      't2v',
+      'first-frame',
+      'first-last',
+      'reference',
+      'video-edit',
+      'video-extend'
+    ],
+    features: ['audio', 'last-frame'],
+    family: 'seedance',
+    protocol: 'ark-video'
+  },
+  'doubao-seedream-5': {
+    modes: ['t2i', 'i2i', 'layer'],
+    features: ['layer', 'rgba'],
+    family: 'seedream',
+    protocol: 'ark-image'
+  },
+  'doubao-seedream-5-5': {
+    modes: ['t2i', 'i2i', 'layer'],
+    features: ['layer', 'ocr', 'rgba'],
+    family: 'seedream',
+    protocol: 'ark-image'
+  },
+  'vidu-q2': {
+    modes: ['t2v', 'first-frame', 'first-last', 'reference'],
+    family: 'vidu',
+    protocol: 'vidu-video'
+  },
+  'minimax-h3': {
+    modes: ['t2v', 'first-frame', 'first-last', 'reference'],
+    features: ['audio'],
+    family: 'minimax-h3',
+    protocol: 'minimax-video'
+  },
+  'minimax-hailuo-23': {
+    modes: ['t2v', 'first-frame', 'first-last'],
+    family: 'hailuo',
+    protocol: 'minimax-video'
+  },
+  'kling-v2-5-turbo': {
+    modes: ['t2v', 'first-frame', 'first-last', 'reference'],
+    family: 'kling',
+    protocol: 'kling-video'
+  },
+  'kling-v1-6': {
+    modes: ['t2v', 'first-frame', 'first-last'],
+    family: 'kling',
+    protocol: 'kling-video'
+  },
+  'agnes-image-2.5-flash': {
+    modes: ['t2i', 'i2i'],
+    family: 'agnes-image',
+    protocol: 'openai-image'
+  },
+  'agnes-video-2.5-flash': {
+    modes: ['t2v', 'first-frame', 'reference'],
+    features: ['audio'],
+    family: 'agnes-video',
+    protocol: 'agnes-video'
+  },
+  'agnes-video-2.5': {
+    modes: ['t2v', 'first-frame', 'reference'],
+    features: ['audio'],
+    family: 'agnes-video',
+    protocol: 'agnes-video'
+  }
+}
+
+export const MODEL_PRESETS: ModelDef[] = RAW_MODEL_PRESETS.map((model) => ({
+  ...model,
+  ...(PRESET_MODE_OVERRIDES[model.id] ?? {})
+}))

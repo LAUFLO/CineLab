@@ -1,4 +1,5 @@
 import type { AssetScope } from './asset-schema'
+import type { AssetLayer, TextRecognition } from './generation'
 import type { VideoOperationId } from './operation-schema'
 
 export type NodeKind = 'text' | 'image' | 'video' | 'audio' | 'study'
@@ -29,6 +30,8 @@ export interface OutputRef {
   hasAudio?: boolean
   op?: string
   parentOutputId?: string
+  layer?: AssetLayer
+  textRecognition?: TextRecognition
 }
 
 export interface CineNodeData extends Record<string, unknown> {

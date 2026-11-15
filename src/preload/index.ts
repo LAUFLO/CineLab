@@ -105,6 +105,10 @@ const api: CineApi = {
       ipcRenderer.invoke('settings:fetch-models', input),
     modelsConfig: () => ipcRenderer.invoke('settings:models-config'),
     openModelsFile: () => ipcRenderer.invoke('settings:open-models-file'),
+    downloadModelSkill: () =>
+      ipcRenderer.invoke('settings:download-model-skill'),
+    copyText: (text: string) =>
+      ipcRenderer.invoke('settings:copy-text', text),
     getOperationBindings: () =>
       ipcRenderer.invoke('settings:operation-bindings'),
     saveOperationBindings: (bindings: OperationBindings) =>
@@ -117,6 +121,16 @@ const api: CineApi = {
     importPreferences: () => ipcRenderer.invoke('settings:import-preferences'),
     chooseProjectDir: () => ipcRenderer.invoke('settings:choose-project-dir'),
     openDataDir: () => ipcRenderer.invoke('settings:open-data-dir'),
+    pendingModels: () => ipcRenderer.invoke('settings:pending-models'),
+    applyPendingModels: () =>
+      ipcRenderer.invoke('settings:apply-pending-models'),
+    discardPendingModels: () =>
+      ipcRenderer.invoke('settings:discard-pending-models'),
+    onModelsPending: (callback: () => void) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('settings:models-pending', listener)
+      return () => ipcRenderer.removeListener('settings:models-pending', listener)
+    },
     onModelsChanged: (callback: () => void) => {
       const listener = (): void => callback()
       ipcRenderer.on('settings:models-changed', listener)

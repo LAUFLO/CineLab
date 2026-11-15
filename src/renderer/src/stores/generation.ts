@@ -82,10 +82,15 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             model: asset.model,
             width: asset.width,
             height: asset.height,
-            op: asset.op
+            op: asset.op,
+            ...(asset.layer ? { layer: asset.layer } : {}),
+            ...(asset.textRecognition
+              ? { textRecognition: asset.textRecognition }
+              : {})
           }))
 
-          const outputs = [...incoming, ...(node?.data.outputs ?? [])].slice(0, 20)
+          // 图层拆分最多返回 1 张底图 + 99 个图层，不能按普通版本数量截断
+          const outputs = [...incoming, ...(node?.data.outputs ?? [])].slice(0, 100)
 
           const text = event.assets.find(
             (asset) => asset.kind === 'text' && asset.text

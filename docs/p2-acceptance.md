@@ -26,8 +26,7 @@
   - 字幕框选 `SubtitleDialog`
   - 遮罩编辑 `MaskEditorDialog`
   - 深度捕捉 `DepthCaptureDialog`
-  - 模型参数 `ModelParamsDialog`
-  - 模型能力 `ModelInputsDialog`
+  - 模型配置 `ModelConfigDialog`（输入能力、视频操作、生成参数、高级）
   - AI 操作 `AiOperationDialog`
   - 光位/机位 `SphereDialog`
   - 文本编辑 `TextEditorDialog`

@@ -11,18 +11,29 @@ import { useReactFlow, useViewport } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import {
   MEDIA_INPUT_LABEL,
+  inferActiveMode,
   missingInputsFor,
+  modelModeIds,
   type Capability,
   type MediaInput,
+  type ModeContext,
   type ModelDef,
   type ParamDef
 } from '@shared/provider-schema'
+import { applyParamConstraints } from '@shared/param-constraints'
+import {
+  MODEL_MODE_LABEL,
+  getModelModeDefinition,
+  resolveModeSlots,
+  type ModelModeId
+} from '@shared/model-modes'
 import type { ReferenceInput, ReferenceRole } from '@shared/generation'
 import { Icon } from '../components/Icon'
 import {
   IconButton,
   Input,
   MenuItem,
+  Select,
   Switch,
   Button,
   Textarea
@@ -45,6 +56,7 @@ import { MentionMenu } from './promptbar/MentionMenu'
 import { ModelMenu } from './promptbar/ModelMenu'
 import { ParamPanel } from './promptbar/ParamPanel'
 import { UploadMenu } from './promptbar/UploadMenu'
+import { MaskEditorDialog } from './nodes/MaskEditorDialog'
 
 import {
   WIDTH,
@@ -67,6 +79,14 @@ import {
   escapeRegExp,
   renderMentionText
 } from './promptbar-model'
+
+interface ModeSlotView {
+  id: string
+  label: string
+  ref: PickedRef | null
+  role: ReferenceRole
+  mask?: string | null
+}
 
 export function PromptBar() {
   const nodes = useCanvasStore((state) => state.nodes)
@@ -104,6 +124,30 @@ export function PromptBar() {
   const [modelKey, setModelKey] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [paramValues, setParamValues] = useState<Record<string, unknown>>({})
+  const [inputMode, setInputMode] = useState<ModelModeId | 'auto'>('auto')
+  const [modeUndo, setModeUndo] = useState<ModelModeId | null>(null)
+  const [roleOverrides, setRoleOverrides] = useState<
+    Record<string, ReferenceRole>
+  >({})
+  const [slotMenu, setSlotMenu] = useState<{
+    key: string
+    x: number
+    y: number
+  } | null>(null)
+  const [draggedSlot, setDraggedSlot] = useState<{
+    key: string
+    role: ReferenceRole
+  } | null>(null)
+  const [maskDraft, setMaskDraft] = useState<{
+    dataUrl: string
+    sourceKey: string
+  } | null>(null)
+  const [maskEditor, setMaskEditor] = useState<{
+    src: string
+    width: number
+    height: number
+    sourceKey: string
+  } | null>(null)
   const [customParamKeys, setCustomParamKeys] = useState<Set<string>>(new Set())
   const [promptText, setPromptText] = useState('')
   const [paramMenuKey, setParamMenuKey] = useState<string | null>(null)
@@ -178,6 +222,8 @@ export function PromptBar() {
     setMentionQuery('')
     setMentionStart(null)
     setMentionIndex(0)
+    setMaskDraft(null)
+    setMaskEditor(null)
 
     return () => {
       if (!currentId) return
@@ -410,9 +456,49 @@ export function PromptBar() {
     models.find((item) => item.key === preferredModels[capabilityGroup]) ??
     models[0] ??
     null
-  const values = active
-    ? { ...defaultParams(active.model), ...paramValues }
-    : {}
+  const quickModeContext: ModeContext = (() => {
+    const incoming = node
+      ? edges.filter((edge) => edge.target === node.id)
+      : []
+    let imageCount = 0
+    let videoCount = 0
+
+    for (const edge of incoming) {
+      const source = nodes.find((item) => item.id === edge.source)
+      if (!source) continue
+      const entries = isGroupNode(source)
+        ? nodes.filter((item) => item.parentId === source.id)
+        : [source]
+      for (const entry of entries) {
+        if (isGroupNode(entry)) continue
+        const output = selectedNodeOutput(entry)
+        if (!output) continue
+        if (output.kind === 'video') videoCount += 1
+        if (output.kind === 'image') imageCount += 1
+      }
+    }
+
+    return {
+      kind: kind === 'image' || kind === 'video' ? kind : null,
+      imageCount,
+      videoCount,
+      hasFirstFrame: imageCount >= 1,
+      hasLastFrame: imageCount >= 2
+    }
+  })()
+
+  const activeMode =
+    active && node
+      ? inferActiveMode(active.model, quickModeContext)
+      : undefined
+  const constrained = active
+    ? applyParamConstraints(active.model.params, {
+        mode: activeMode,
+        values: { ...defaultParams(active.model), ...paramValues }
+      })
+    : { params: [] as ParamDef[], values: {} as Record<string, unknown> }
+  const values = constrained.values
+  const visibleParams = constrained.params
 
   useEffect(() => {
     setCustomParamKeys(new Set())
@@ -461,17 +547,17 @@ export function PromptBar() {
   const paramGroups = useMemo(() => {
     if (!active) return []
     const groups = new Map<string, ParamDef[]>()
-    for (const param of active.model.params) {
+    for (const param of visibleParams) {
       const name = param.group?.trim() || '其它'
       const list = groups.get(name) ?? []
       list.push(param)
       groups.set(name, list)
     }
     return [...groups.entries()].map(([name, params]) => ({ name, params }))
-  }, [active])
+  }, [active, visibleParams])
 
   const paramSummary = active
-    ? active.model.params
+    ? visibleParams
         .map((param) => paramLabel(param, values[param.key]))
         .filter((label) => label.length > 0)
         .slice(0, 4)
@@ -505,6 +591,34 @@ export function PromptBar() {
 
     return { left, top }
   }, [node, nodes, flowToScreenPosition, viewport.x, viewport.y, viewport.zoom])
+
+  const incomingImageCount = (() => {
+    if (!node) return 0
+    let count = 0
+    for (const edge of edges) {
+      if (edge.target !== node.id) continue
+      const source = nodes.find((item) => item.id === edge.source)
+      if (!source) continue
+      const entries = isGroupNode(source)
+        ? nodes.filter((item) => item.parentId === source.id)
+        : [source]
+      for (const entry of entries) {
+        if (isGroupNode(entry)) continue
+        const output = selectedNodeOutput(entry)
+        if (output?.kind === 'image') count += 1
+      }
+    }
+    return count
+  })()
+
+  useEffect(() => {
+    if (kind !== 'video' || inputMode !== 'first-last') return
+    if (incomingImageCount <= 2) return
+
+    setInputMode('reference')
+    setModeUndo('first-last')
+    showToast('首尾帧最多 2 张，已切换为参考图')
+  }, [kind, inputMode, incomingImageCount, showToast])
 
   if (!node || !layout) return null
 
@@ -707,6 +821,22 @@ export function PromptBar() {
     return result
   })()
 
+  const modeImageRole = (index: number): ReferenceRole => {
+    if (kind !== 'video') return 'reference'
+    if (inputMode === 'first-frame') {
+      return index === 0 ? 'firstFrame' : 'reference'
+    }
+    if (inputMode === 'first-last') {
+      return index === 0
+        ? 'firstFrame'
+        : index === 1
+          ? 'lastFrame'
+          : 'reference'
+    }
+    if (inputMode === 'reference') return 'reference'
+    return index === 0 ? 'firstFrame' : index === 1 ? 'lastFrame' : 'reference'
+  }
+
   const mergedRefs = (() => {
     const seen = new Set<string>()
     const result: PickedRef[] = []
@@ -727,6 +857,19 @@ export function PromptBar() {
 
       seen.add(key)
       result.push(ref)
+    }
+
+    let imageIndex = 0
+    for (const ref of result) {
+      if (ref.kind !== 'image') continue
+      ref.role = modeImageRole(imageIndex)
+      imageIndex += 1
+    }
+
+    for (const ref of result) {
+      const override =
+        roleOverrides[`${ref.scope ?? 'project'}:${ref.path}`]
+      if (override) ref.role = override
     }
 
     return result
@@ -782,6 +925,163 @@ export function PromptBar() {
   const activeMissing = active
     ? missingInputsFor(active.model, requiredInputs)
     : []
+
+  const availableModes = (() => {
+    if (!active) return [] as Array<ModelModeId | 'auto'>
+    const supported = modelModeIds(active.model)
+    const candidates: Array<ModelModeId | 'auto'> =
+      kind === 'image'
+        ? ['auto', 't2i', 'i2i', 'layer']
+        : kind === 'video'
+          ? ['auto', 't2v', 'first-frame', 'first-last', 'reference']
+          : []
+    return candidates.filter(
+      (id) => id === 'auto' || supported.includes(id as ModelModeId)
+    )
+  })()
+
+  const modeContext: ModeContext = {
+    kind: kind === 'image' || kind === 'video' ? kind : null,
+    imageCount: mergedRefs.filter((ref) => ref.kind === 'image').length,
+    videoCount: mergedRefs.filter((ref) => ref.kind === 'video').length,
+    hasFirstFrame: mergedRefs.some(
+      (ref) => ref.kind === 'image' && ref.role === 'firstFrame'
+    ),
+    hasLastFrame: mergedRefs.some(
+      (ref) => ref.kind === 'image' && ref.role === 'lastFrame'
+    )
+  }
+
+  const maskSource =
+    mergedRefs.find(
+      (ref) => ref.kind === 'image' && ref.role === 'reference'
+    ) ?? null
+  const maskSourceKey = maskSource
+    ? `${maskSource.scope ?? 'project'}:${maskSource.path}`
+    : null
+  const activeMask =
+    maskDraft && maskDraft.sourceKey === maskSourceKey
+      ? maskDraft.dataUrl
+      : null
+
+  const openMaskEditor = (ref: PickedRef): void => {
+    const src = assetUrl(ref.path, ref.scope)
+    const sourceKey = `${ref.scope ?? 'project'}:${ref.path}`
+    const image = new Image()
+    image.onload = () => {
+      setMaskEditor({
+        src,
+        width: image.naturalWidth || 1024,
+        height: image.naturalHeight || 1024,
+        sourceKey
+      })
+    }
+    image.onerror = () => {
+      showToast('读取参考图失败，无法打开蒙版编辑器', 'error')
+    }
+    image.src = src
+  }
+
+  const slotMode =
+    inputMode === 'auto'
+      ? active
+        ? inferActiveMode(active.model, modeContext)
+        : undefined
+      : inputMode
+
+  const modeSlots: ModeSlotView[] = (() => {
+    const empty: ModeSlotView[] = []
+    if (!slotMode) return empty
+    const definition = getModelModeDefinition(slotMode)
+    if (!definition) return empty
+    const slots = resolveModeSlots({ id: slotMode })
+    const images = mergedRefs.filter(
+      (ref) => ref.kind === 'image' && ref.role !== 'mask'
+    )
+    const videos = mergedRefs.filter((ref) => ref.kind === 'video')
+    let imageIndex = 0
+
+    const roleOf = (role: (typeof slots)[number]['role']): ReferenceRole => {
+      if (
+        role === 'firstFrame' ||
+        role === 'lastFrame' ||
+        role === 'reference' ||
+        role === 'mask' ||
+        role === 'subject' ||
+        role === 'source'
+      ) {
+        return role
+      }
+      return 'reference'
+    }
+
+    return slots.flatMap<ModeSlotView>((slot) => {
+      if (slot.media === 'text') return []
+      if (slot.media === 'video') {
+        return [
+          {
+            id: slot.id,
+            label: slot.label,
+            ref: videos[0] ?? null,
+            role: 'reference' as ReferenceRole
+          }
+        ]
+      }
+      if (slot.role === 'mask') {
+        return [
+          {
+            id: slot.id,
+            label: slot.label,
+            ref: null,
+            role: 'mask' as ReferenceRole,
+            mask: activeMask
+          }
+        ]
+      }
+      if (slot.role === 'reference') {
+        const refs = images.filter((ref) => ref.role === 'reference')
+        const count = Math.max(1, Math.min(refs.length, slot.max))
+        return Array.from({ length: count }, (_, index) => ({
+          id: `${slot.id}-${index}`,
+          label: slot.max > 1 ? `${slot.label} ${index + 1}` : slot.label,
+          ref: refs[index] ?? null,
+          role: 'reference' as ReferenceRole
+        }))
+      }
+      const ref = images[imageIndex++] ?? null
+      return [
+        {
+          id: slot.id,
+          label: slot.label,
+          ref,
+          role: roleOf(slot.role)
+        }
+      ]
+    })
+  })()
+
+  const handleSlotDrop = (target: (typeof modeSlots)[number]): void => {
+    if (!draggedSlot) return
+    if (target.role === 'mask') {
+      setDraggedSlot(null)
+      return
+    }
+    const targetKey = target.ref
+      ? `${target.ref.scope ?? 'project'}:${target.ref.path}`
+      : null
+
+    setRoleOverrides((current) => {
+      const next = { ...current }
+      if (targetKey && targetKey !== draggedSlot.key) {
+        next[draggedSlot.key] = target.role
+        next[targetKey] = draggedSlot.role
+      } else {
+        next[draggedSlot.key] = target.role
+      }
+      return next
+    })
+    setDraggedSlot(null)
+  }
 
   const inputLabel = (inputs: MediaInput[]): string =>
     inputs.map((input) => MEDIA_INPUT_LABEL[input]).join('、')
@@ -1029,7 +1329,7 @@ export function PromptBar() {
         (/^agnes-video/i.test(active.model.remoteModel) ? 'agnes-video' : '')
       if (adapter !== 'http-template') {
         showToast(
-          '当前模型不支持参考视频，请先在设置 → 操作模型绑定 http-template 专用接口',
+          '当前模型不支持参考视频，请先在设置 → 模型配置中启用这个模型的自定义协议',
           'error'
         )
         return
@@ -1037,7 +1337,7 @@ export function PromptBar() {
     }
 
     const imageRefs: ReferenceInput[] = mergedRefs
-      .filter((ref) => ref.kind === 'image')
+      .filter((ref) => ref.kind === 'image' && ref.role !== 'mask')
       .map((ref) => ({
         path: ref.path,
         role: ref.role,
@@ -1050,6 +1350,7 @@ export function PromptBar() {
       prompt: buildPromptWithContext(promptText.trim(), textContexts),
       params: { ...values, watermark },
       ...(imageRefs.length > 0 ? { refs: imageRefs } : {}),
+      ...(activeMask ? { mask: activeMask } : {}),
       ...(videoRef
         ? {
             video: {
@@ -1129,6 +1430,34 @@ export function PromptBar() {
             <Icon name="frame" size={13} />
             画布参考
           </Button>
+          {availableModes.length > 1 ? (
+            <div className="promptbar__mode">
+              <Select
+                value={inputMode}
+                options={availableModes.map((id) => ({
+                  value: id,
+                  label: id === 'auto' ? '自动' : MODEL_MODE_LABEL[id]
+                }))}
+                onChange={(value) => {
+                  setInputMode(value as ModelModeId | 'auto')
+                  setModeUndo(null)
+                }}
+              />
+            </div>
+          ) : null}
+          {modeUndo ? (
+            <Button
+              type="button"
+              className="promptbar__mode-undo"
+              onClick={() => {
+                setInputMode(modeUndo)
+                setModeUndo(null)
+              }}
+              unstyled
+            >
+              撤销切换
+            </Button>
+          ) : null}
           <div className="promptbar__spacer" />
           {mergedRefs.length > 0 ? (
             <div className="promptbar__picked">
@@ -1207,6 +1536,158 @@ export function PromptBar() {
             <Icon name="expand" size={13} />
           </IconButton>
         </div>
+
+        {modeSlots.length > 0 ? (
+          <div className="promptbar__slots">
+            {modeSlots.map((slot) => (
+              <div className="promptbar__slot" key={slot.id}>
+                <span className="promptbar__slot-label">{slot.label}</span>
+                {slot.role === 'mask' ? (
+                  <div className="promptbar__slot-mask">
+                    {slot.mask ? (
+                      <>
+                        <Button
+                          type="button"
+                          className="promptbar__slot-thumb promptbar__slot-thumb--mask"
+                          title="点击重新涂抹"
+                          onClick={() => {
+                            if (maskSource) openMaskEditor(maskSource)
+                          }}
+                          unstyled
+                        >
+                          <img src={slot.mask} alt="" />
+                        </Button>
+                        <Button
+                          type="button"
+                          className="promptbar__slot-clear"
+                          title="清除蒙版"
+                          onClick={() => setMaskDraft(null)}
+                          unstyled
+                        >
+                          ×
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        type="button"
+                        className="promptbar__slot-empty promptbar__slot-empty--action"
+                        title={
+                          maskSource ? '涂抹要编辑的区域' : '先添加一张参考图'
+                        }
+                        disabled={!maskSource}
+                        onClick={() => {
+                          if (maskSource) openMaskEditor(maskSource)
+                        }}
+                        unstyled
+                      >
+                        {maskSource ? '涂抹' : '缺参考图'}
+                      </Button>
+                    )}
+                  </div>
+                ) : slot.ref ? (
+                  <Button
+                    type="button"
+                    className="promptbar__slot-thumb"
+                    title="点击设置角色，拖拽可交换"
+                    draggable
+                    onDragStart={() => {
+                      if (!slot.ref) return
+                      setDraggedSlot({
+                        key: `${slot.ref.scope ?? 'project'}:${slot.ref.path}`,
+                        role: slot.role
+                      })
+                    }}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault()
+                      handleSlotDrop(slot)
+                    }}
+                    onClick={(event) => {
+                      const rect = event.currentTarget.getBoundingClientRect()
+                      setSlotMenu({
+                        key: `${slot.ref?.scope ?? 'project'}:${slot.ref?.path ?? ''}`,
+                        x: rect.left,
+                        y: rect.bottom + 4
+                      })
+                    }}
+                    unstyled
+                  >
+                    {slot.ref.kind === 'video' ? (
+                      <video
+                        src={`${assetUrl(slot.ref.path, slot.ref.scope)}#t=0.1`}
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      <img
+                        src={assetUrl(slot.ref.path, slot.ref.scope)}
+                        alt=""
+                      />
+                    )}
+                  </Button>
+                ) : (
+                  <div
+                    className="promptbar__slot-empty"
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault()
+                      handleSlotDrop(slot)
+                    }}
+                  >
+                    空
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {slotMenu ? (
+          <div
+            className="promptbar__slot-menu"
+            style={{ left: slotMenu.x, top: slotMenu.y }}
+          >
+            {(
+              [
+                ['firstFrame', '设为首帧'],
+                ['lastFrame', '设为尾帧'],
+                ['reference', '设为参考图']
+              ] as Array<[ReferenceRole, string]>
+            ).map(([role, label]) => (
+              <Button
+                key={role}
+                type="button"
+                className="promptbar__slot-menu-item"
+                onClick={() => {
+                  setRoleOverrides((current) => ({
+                    ...current,
+                    [slotMenu.key]: role
+                  }))
+                  setSlotMenu(null)
+                }}
+                unstyled
+              >
+                {label}
+              </Button>
+            ))}
+            <Button
+              type="button"
+              className="promptbar__slot-menu-item"
+              onClick={() => {
+                setRoleOverrides((current) => {
+                  const next = { ...current }
+                  delete next[slotMenu.key]
+                  return next
+                })
+                setSlotMenu(null)
+              }}
+              unstyled
+            >
+              恢复自动
+            </Button>
+          </div>
+        ) : null}
 
         <div className="promptbar__input-wrap">
           <div className="promptbar__mirror" ref={mirrorRef} aria-hidden>
@@ -1323,10 +1804,11 @@ export function PromptBar() {
                 models={models}
                 activeKey={active?.key}
                 requiredInputs={requiredInputs}
-                onSelect={(item, missing, unavailable) => {
+                modeContext={modeContext}
+                onSelect={(item, missing, unavailable, reason) => {
                   if (unavailable) {
                     showToast(
-                      `「${item.model.name}」不支持${inputLabel(missing)}输入`,
+                      reason ?? `「${item.model.name}」不支持当前输入`,
                       'error'
                     )
                     return
@@ -1467,6 +1949,21 @@ export function PromptBar() {
             document.body
           )
         : null}
+
+      <MaskEditorDialog
+        open={Boolean(maskEditor)}
+        title="蒙版编辑"
+        subtitle="涂抹要修改的区域，透明区域会交给模型编辑"
+        src={maskEditor?.src ?? ''}
+        imageWidth={maskEditor?.width ?? 1024}
+        imageHeight={maskEditor?.height ?? 1024}
+        onClose={() => setMaskEditor(null)}
+        onConfirm={(mask) => {
+          if (!maskEditor) return
+          setMaskDraft({ dataUrl: mask, sourceKey: maskEditor.sourceKey })
+          setMaskEditor(null)
+        }}
+      />
     </>
   )
 }

@@ -3,7 +3,12 @@ import { probeMedia } from '../media/ffmpeg'
 import { createHash, randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
-import type { GeneratedAsset, OutputKind } from '@shared/generation'
+import type {
+  AssetLayer,
+  GeneratedAsset,
+  OutputKind,
+  TextRecognition
+} from '@shared/generation'
 
 const EXT_BY_MIME: Record<string, string> = {
   'image/png': 'png',
@@ -42,6 +47,8 @@ export interface IngestInput {
   text?: string
   width?: number
   height?: number
+  layer?: AssetLayer
+  textRecognition?: TextRecognition
 }
 
 export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
@@ -109,7 +116,11 @@ export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
     height,
     duration,
     fps,
-    hasAudio
+    hasAudio,
+    ...(input.layer ? { layer: input.layer } : {}),
+    ...(input.textRecognition
+      ? { textRecognition: input.textRecognition }
+      : {})
   }
 }
 

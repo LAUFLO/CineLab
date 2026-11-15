@@ -9,6 +9,7 @@ import type {
 } from './openai-compat'
 import { sleep } from './retry'
 import { mergeHeaders } from './headers'
+import { replaceTemplateVariables } from '@shared/template-vars'
 
 interface ImageRef {
   dataUrl: string
@@ -30,6 +31,8 @@ interface TemplateContext {
   mode: HttpTemplateMode
   baseUrl: string
   taskId?: string
+  /** PNG data URL，透明区域表示需要编辑 */
+  mask?: string
 }
 
 function normalizeBaseUrl(baseUrl: string): string {
@@ -63,9 +66,32 @@ function refValue(key: string, refs: ImageRef[]): unknown {
       .filter((ref) => ref.role === 'firstFrame' || ref.role === 'lastFrame')
       .map((ref) => ref.dataUrl)
   }
+  if (key === 'refs.subject') {
+    return refs.find((ref) => ref.role === 'subject')?.dataUrl
+  }
+  if (key === 'refs.subjects') {
+    return refs
+      .filter((ref) => ref.role === 'subject')
+      .map((ref) => ref.dataUrl)
+  }
+  if (key === 'refs.style') {
+    return refs.find((ref) => ref.role === 'style')?.dataUrl
+  }
+  if (key === 'refs.styles') {
+    return refs.filter((ref) => ref.role === 'style').map((ref) => ref.dataUrl)
+  }
   if (key === 'refs.images') {
-    const references = refs.filter((ref) => ref.role === 'reference')
-    return (references.length > 0 ? references : refs).map((ref) => ref.dataUrl)
+    const references = refs.filter(
+      (ref) =>
+        ref.role === 'reference' ||
+        ref.role === 'subject' ||
+        ref.role === 'style' ||
+        ref.role === 'source'
+    )
+    return (references.length > 0
+      ? references
+      : refs.filter((ref) => ref.role !== 'mask')
+    ).map((ref) => ref.dataUrl)
   }
   return undefined
 }
@@ -86,6 +112,7 @@ function tokenValue(token: string, context: TemplateContext): unknown {
   if (token === 'video.duration') return context.videoOptions?.duration
   if (token === 'video.direction') return context.videoOptions?.direction
   if (token === 'video.operation') return context.videoOptions?.operation
+  if (token === 'refs.mask') return context.mask
   if (token.startsWith('params.')) {
     return context.params[token.slice('params.'.length)]
   }
@@ -96,30 +123,7 @@ function tokenValue(token: string, context: TemplateContext): unknown {
 }
 
 function replaceValue(value: unknown, context: TemplateContext): unknown {
-  if (typeof value === 'string') {
-    const exact = /^\{\{\s*([\w.]+)\s*\}\}$/.exec(value)
-    if (exact) return tokenValue(exact[1], context)
-
-    return value.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_match, token: string) => {
-      const next = tokenValue(token, context)
-      return next === undefined || next === null ? '' : String(next)
-    })
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((item) => replaceValue(item, context))
-  }
-
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([key, item]) => [
-        key,
-        replaceValue(item, context)
-      ])
-    )
-  }
-
-  return value
+  return replaceTemplateVariables(value, (token) => tokenValue(token, context))
 }
 
 function omitEmpty(value: unknown): unknown {
@@ -282,7 +286,8 @@ export async function generateVideoHttpTemplate(
   refs: ImageRef[],
   video: VideoRef | undefined,
   videoOptions: VideoOperationOptions | undefined,
-  ctx: AdapterContext
+  ctx: AdapterContext,
+  mask?: string
 ): Promise<ProviderOutput[]> {
   const template = model.template
   if (!template) throw new Error('该模型没有配置 http-template')
@@ -296,6 +301,7 @@ export async function generateVideoHttpTemplate(
     refs,
     ...(video ? { video } : {}),
     ...(videoOptions ? { videoOptions } : {}),
+    ...(mask ? { mask } : {}),
     mode,
     baseUrl
   }
@@ -366,6 +372,18 @@ export async function generateVideoHttpTemplate(
   }
 
   const submitted = (await submit.json()) as unknown
+
+  if (template.sync) {
+    const result = getPath(submitted, template.poll.resultPath)
+    if (result === undefined) {
+      throw new Error('接口没有返回结果地址')
+    }
+    if (template.poll.download === false && typeof result === 'string') {
+      return [{ data: Buffer.alloc(0), mime: 'video/mp4', text: result }]
+    }
+    return downloadOutput(result, ctx)
+  }
+
   const taskId = getPath(submitted, template.poll.taskIdPath)
   if (typeof taskId !== 'string' && typeof taskId !== 'number') {
     throw new Error('接口没有返回任务 ID')

@@ -37,13 +37,13 @@ export function NameDialog({
       onClose={onCancel}
       bare
       ariaLabel={title}
-      overlayClassName="library-modal"
-      panelClassName="library-modal__panel"
+      overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-black/50"
+      panelClassName="w-[420px] rounded-[12px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-menu"
     >
-      <div className="library-modal__title">{title}</div>
+      <div className="mb-[14px] text-sm text-fg">{title}</div>
 
-      <label className="field">
-        <span>{label}</span>
+      <label className="mb-[14px] flex flex-col gap-1.5">
+        <span className="text-xs text-fg-muted">{label}</span>
         <Input
           ref={inputRef}
           value={value}
@@ -52,11 +52,11 @@ export function NameDialog({
           onKeyDown={(event) => {
             if (event.key === 'Enter') submit()
           }}
-          unstyled
+          className="!h-[34px] !rounded-[8px] !bg-surface-hover !px-2.5 !text-[13px]"
         />
       </label>
 
-      <div className="library-modal__actions">
+      <div className="mt-4 flex justify-end gap-2">
         <Button variant="secondary" onClick={onCancel}>
           取消
         </Button>

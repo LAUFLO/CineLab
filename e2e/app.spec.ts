@@ -77,9 +77,12 @@ test.describe.serial('CineLab desktop', () => {
 
   test('opens the asset library', async () => {
     await page.getByRole('button', { name: '资产管理' }).click()
-    await expect(page.locator('.library-window')).toBeVisible()
-    await page.locator('.library-window [aria-label="关闭"]').click()
-    await expect(page.locator('.library-window')).toHaveCount(0)
+    await expect(page.getByTestId('library-window')).toBeVisible()
+    await page
+      .getByTestId('library-window')
+      .locator('[aria-label="关闭"]')
+      .click()
+    await expect(page.getByTestId('library-window')).toHaveCount(0)
   })
 
   test('opens CineBot', async () => {

@@ -45,44 +45,51 @@ function TreeRow({
   const fixed = isDefaultFolder(node)
 
   return (
-    <div className="library-tree__node">
+    <div>
       <div
-        className={`library-tree__row ${current === node.path ? 'is-active' : ''}`}
+        className={`group flex h-[30px] items-center gap-0.5 rounded-[7px] pr-1.5 text-fg-muted hover:bg-surface-hover hover:text-fg ${
+          current === node.path ? 'bg-surface-hover text-fg' : ''
+        }`}
         style={{ paddingLeft: `${8 + depth * 14}px` }}
       >
         <Button
           type="button"
-          className="library-tree__toggle"
+          variant="ghost"
+          size="none"
+          className="h-full w-5 shrink-0 cursor-pointer !p-0 text-fg-subtle hover:!bg-transparent hover:!text-fg-subtle"
           onClick={() => toggle(node.path)}
           aria-label={open ? '折叠' : '展开'}
-          unstyled
         >
           {hasChildren ? (
             <Icon name={open ? 'chevron-down' : 'chevron-right'} size={11} />
           ) : (
-            <span className="library-tree__dot" />
+            <span className="h-[3px] w-[3px] rounded-full bg-fg-subtle opacity-50" />
           )}
         </Button>
 
         <Button
           type="button"
-          className="library-tree__label"
+          variant="ghost"
+          size="none"
+          className="h-full min-w-0 flex-1 cursor-pointer !justify-start gap-[7px] !p-0 text-[12.5px] !text-inherit hover:!bg-transparent hover:!text-inherit"
           onClick={() => onSelect(node.path)}
           onDoubleClick={() => toggle(node.path)}
-          unstyled
         >
           <Icon name="folder" size={14} />
-          <span className="library-tree__name">{node.name}</span>
+          <span className="min-w-0 flex-1 truncate">{node.name}</span>
           {node.assetCount > 0 ? (
-            <span className="library-tree__count">{node.assetCount}</span>
+            <span className="h-4 min-w-[18px] shrink-0 rounded-[8px] border border-border bg-surface px-[5px] text-center text-[10px] leading-[14px] text-fg-subtle">
+              {node.assetCount}
+            </span>
           ) : null}
         </Button>
 
         {readOnly ? null : (
-          <div className="library-tree__actions">
+          <div className="flex gap-px opacity-0 transition-opacity duration-[120ms] group-hover:opacity-100">
             <IconButton
               label="新建子文件夹"
               size="xs"
+              className="!h-[21px] !w-[21px] !rounded-[5px] cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-fg"
               onClick={() => onCreate(node.path)}
             >
               <Icon name="folder-plus" size={13} />
@@ -92,6 +99,7 @@ function TreeRow({
                 <IconButton
                   label="重命名"
                   size="xs"
+                  className="!h-[21px] !w-[21px] !rounded-[5px] cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-fg"
                   onClick={() => onRename(node)}
                 >
                   <Icon name="edit" size={13} />
@@ -99,7 +107,7 @@ function TreeRow({
                 <IconButton
                   label="删除空文件夹"
                   size="xs"
-                  className="text-danger hover:text-danger"
+                  className="!h-[21px] !w-[21px] !rounded-[5px] cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-danger"
                   onClick={() => onDelete(node)}
                 >
                   <Icon name="trash" size={13} />
@@ -159,25 +167,31 @@ export function FolderTree(props: FolderTreeProps) {
   }
 
   return (
-    <div className="library-tree">
-      <div className={`library-tree__row ${current === '' ? 'is-active' : ''}`}>
-        <span className="library-tree__toggle">
-          <span className="library-tree__dot" />
+    <div className="min-h-0 flex-1 overflow-y-auto px-1.5 py-2">
+      <div
+        className={`group flex h-[30px] items-center gap-0.5 rounded-[7px] pr-1.5 text-fg-muted hover:bg-surface-hover hover:text-fg ${
+          current === '' ? 'bg-surface-hover text-fg' : ''
+        }`}
+      >
+        <span className="flex h-full w-5 shrink-0 items-center justify-center">
+          <span className="h-[3px] w-[3px] rounded-full bg-fg-subtle opacity-50" />
         </span>
         <Button
           type="button"
-          className="library-tree__label"
+          variant="ghost"
+          size="none"
+          className="h-full min-w-0 flex-1 cursor-pointer !justify-start gap-[7px] !p-0 text-[12.5px] !text-inherit hover:!bg-transparent hover:!text-inherit"
           onClick={() => onSelect('')}
-          unstyled
         >
           <Icon name="grid" size={13} />
-          <span className="library-tree__name">全部素材</span>
+          <span className="min-w-0 flex-1 truncate">全部素材</span>
         </Button>
         {props.readOnly ? null : (
-          <div className="library-tree__actions">
+          <div className="flex gap-px opacity-0 transition-opacity duration-[120ms] group-hover:opacity-100">
             <IconButton
               label="新建文件夹"
               size="xs"
+              className="!h-[21px] !w-[21px] !rounded-[5px] cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-fg"
               onClick={() => onCreate('')}
             >
               <Icon name="folder-plus" size={13} />
@@ -186,7 +200,7 @@ export function FolderTree(props: FolderTreeProps) {
         )}
       </div>
 
-      <div className="library-tree__children">
+      <div>
         {tree.map((node) => (
           <TreeRow
             key={node.path}

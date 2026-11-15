@@ -387,17 +387,21 @@ export function LibraryWindow() {
   const isTemplateFolder = folder === PROMPT_FOLDER
 
   return createPortal(
-    <div className="library-layer" onPointerDown={close}>
+    <div
+      className="fixed inset-0 z-[250] flex items-center justify-center bg-black/42"
+      onPointerDown={close}
+    >
       <div
-        className="library-window"
+        data-testid="library-window"
+        className="flex h-[min(720px,calc(100vh-80px))] w-[min(1120px,calc(100vw-64px))] flex-col overflow-hidden rounded-[14px] border border-border bg-surface shadow-menu"
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <header className="library-window__head">
-          <div className="library-window__title">
+        <header className="flex h-[52px] shrink-0 items-center justify-between gap-4 border-b border-divider pl-[18px] pr-3">
+          <div className="flex min-w-0 items-center gap-2 text-sm text-fg">
             <Icon name="library" size={16} />
             <span>{mode === 'pick' ? '选择要加入的文件夹' : '资产库'}</span>
             {mode === 'pick' && pendingAdds.length > 0 ? (
-              <span className="library-window__subject">
+              <span className="max-w-[320px] truncate text-xs text-fg-muted">
                 ·{' '}
                 {pendingAdds.length === 1
                   ? pendingAdds[0].name
@@ -406,14 +410,14 @@ export function LibraryWindow() {
             ) : null}
           </div>
 
-          <div className="library-window__head-actions">
-            <div className="library-search">
+          <div className="flex items-center gap-1.5">
+            <div className="flex h-7 items-center gap-1.5 rounded-[8px] border border-border bg-surface-raised px-[9px] text-fg-subtle focus-within:border-border-strong">
               <Icon name="search" size={13} />
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="搜索当前文件夹"
-                unstyled
+                className="!h-auto !w-[180px] !rounded-none !border-0 !bg-transparent !p-0 !text-xs focus:!border-0"
               />
             </div>
             {mode === 'browse' && !isTemplateFolder ? (
@@ -441,8 +445,8 @@ export function LibraryWindow() {
           </div>
         </header>
 
-        <div className="library-window__body">
-          <aside className="library-window__side">
+        <div className="flex min-h-0 flex-1">
+          <aside className="flex w-[248px] shrink-0 flex-col border-r border-divider bg-surface-raised">
             <FolderTree
               tree={tree}
               current={folder}
@@ -453,29 +457,36 @@ export function LibraryWindow() {
               }
               onDelete={handleDeleteFolder}
             />
-            <div className="library-window__root" title={root}>
+            <div
+              className="shrink-0 truncate border-t border-divider px-3 py-[9px] text-[10.5px] text-fg-subtle"
+              title={root}
+            >
               {root}
             </div>
           </aside>
 
-          <main className="library-window__main">
-            <div className="library-breadcrumb">
+          <main className="min-w-0 flex-1 overflow-y-auto px-[18px] pb-5 pt-[14px]">
+            <div className="mb-[14px] flex items-center gap-0.5 text-xs text-fg-subtle">
               <Button
                 type="button"
+                variant="ghost"
+                size="none"
+                className="cursor-pointer rounded-[4px] px-1 py-0.5 text-xs text-fg-muted"
                 onClick={() => handleSelectFolder('')}
-                unstyled
               >
                 全部
               </Button>
               {segments.map((segment, index) => {
                 const path = segments.slice(0, index + 1).join('/')
                 return (
-                  <span key={path}>
+                  <span key={path} className="flex items-center gap-0.5">
                     <Icon name="chevron-right" size={10} />
                     <Button
                       type="button"
+                      variant="ghost"
+                      size="none"
+                      className="cursor-pointer rounded-[4px] px-1 py-0.5 text-xs text-fg-muted"
                       onClick={() => handleSelectFolder(path)}
-                      unstyled
                     >
                       {segment}
                     </Button>
@@ -485,9 +496,15 @@ export function LibraryWindow() {
             </div>
 
             {error ? (
-              <div className="form-message is-error">{error}</div>
+              <div className="mb-3 break-all rounded-md bg-danger/8 px-2.5 py-2 text-xs leading-[1.6] text-danger">
+                {error}
+              </div>
             ) : null}
-            {loading ? <div className="library-loading">加载中…</div> : null}
+            {loading ? (
+              <div className="py-10 text-center text-xs text-fg-subtle">
+                加载中…
+              </div>
+            ) : null}
 
             {!loading && isTemplateFolder ? (
               <TemplateGrid
@@ -526,13 +543,14 @@ export function LibraryWindow() {
           </main>
         </div>
 
-        <footer className="library-window__foot">
-          <div className="library-window__foot-left">
+        <footer className="flex h-14 shrink-0 items-center justify-between gap-3 border-t border-divider px-[18px]">
+          <div className="flex min-w-0 items-center gap-2">
             {selectionMode ? (
               <>
                 <Button
                   variant="secondary"
                   size="xs"
+                  className="shrink-0 whitespace-nowrap"
                   onClick={() =>
                     setSelectedPaths(new Set(assets.map((asset) => asset.path)))
                   }
@@ -542,42 +560,49 @@ export function LibraryWindow() {
                 <Button
                   variant="secondary"
                   size="xs"
+                  className="shrink-0 whitespace-nowrap"
                   onClick={() => setSelectedPaths(new Set())}
                 >
                   清空
                 </Button>
-                <span className="library-window__count">
+                <span className="ml-1 min-w-0 truncate text-[11px] text-fg-subtle">
                   已选 {selectedAssets.length} 个
                 </span>
               </>
             ) : (
               <>
                 {mode === 'browse' ? (
-                  <Button variant="secondary" onClick={handleImport}>
+                  <Button
+                    variant="secondary"
+                    className="shrink-0 whitespace-nowrap"
+                    onClick={handleImport}
+                  >
                     <Icon name="plus" size={13} />
                     上传
                   </Button>
                 ) : null}
                 <Button
                   variant="secondary"
+                  className="shrink-0 whitespace-nowrap"
                   onClick={() => handleCreateFolder(folder)}
                 >
                   <Icon name="folder-plus" size={13} />
                   新建文件夹
                 </Button>
-                <span className="library-window__count">
+                <span className="ml-1 min-w-0 truncate text-[11px] text-fg-subtle">
                   {assets.length} 个素材 · {templates.length} 个模板
                 </span>
               </>
             )}
           </div>
 
-          <div className="library-window__foot-right">
+          <div className="flex min-w-0 items-center gap-2">
             {selectionMode ? (
               <>
                 <Button
                   variant="secondary"
                   size="xs"
+                  className="shrink-0 whitespace-nowrap"
                   disabled={selectedAssets.length === 0}
                   onClick={() => {
                     setMoveTargets(selectedAssets)
@@ -589,22 +614,25 @@ export function LibraryWindow() {
                 <Button
                   variant="secondary"
                   size="xs"
+                  className="shrink-0 whitespace-nowrap"
                   disabled={!canConcat}
                   onClick={() => setConcatOpen(true)}
                 >
                   合成视频
                 </Button>
                 <Button
-                  className="btn-secondary btn-small is-danger"
+                  variant="secondary"
+                  size="xs"
+                  className="shrink-0 whitespace-nowrap !px-3.5 !text-danger hover:!text-danger"
                   disabled={selectedAssets.length === 0}
                   onClick={handleBatchDelete}
-                  unstyled
                 >
                   删除
                 </Button>
                 <Button
                   variant="primary"
                   size="xs"
+                  className="shrink-0 whitespace-nowrap"
                   onClick={() => {
                     setSelectionMode(false)
                     setSelectedPaths(new Set())
@@ -615,11 +643,16 @@ export function LibraryWindow() {
               </>
             ) : mode === 'pick' ? (
               <>
-                <Button variant="secondary" onClick={close}>
+                <Button
+                  variant="secondary"
+                  className="shrink-0 whitespace-nowrap"
+                  onClick={close}
+                >
                   取消
                 </Button>
                 <Button
                   variant="primary"
+                  className="shrink-0 whitespace-nowrap"
                   onClick={handleConfirmAdd}
                   disabled={!folder || pendingAdds.length === 0}
                 >
@@ -627,7 +660,11 @@ export function LibraryWindow() {
                 </Button>
               </>
             ) : (
-              <Button variant="secondary" onClick={close}>
+              <Button
+                variant="secondary"
+                className="shrink-0 whitespace-nowrap"
+                onClick={close}
+              >
                 关闭
               </Button>
             )}
@@ -641,15 +678,15 @@ export function LibraryWindow() {
           onClose={() => setMoveTargets([])}
           bare
           ariaLabel="移动素材"
-          overlayClassName="library-modal"
-          panelClassName="library-modal__panel"
+          overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-black/50"
+          panelClassName="w-[420px] rounded-[12px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-menu"
         >
-          <div className="library-modal__title">
+          <div className="mb-[14px] text-sm text-fg">
             {moveTargets.length === 1
               ? `移动「${moveTargets[0].name}」到`
               : `移动 ${moveTargets.length} 个素材到`}
           </div>
-          <div className="library-move-tree">
+          <div className="mt-3 max-h-[340px] overflow-y-auto rounded-[8px] border border-border bg-surface-raised p-1.5">
             <FolderTree
               tree={tree}
               current={moveFolder}
@@ -660,7 +697,7 @@ export function LibraryWindow() {
               readOnly
             />
           </div>
-          <div className="library-modal__actions">
+          <div className="mt-4 flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setMoveTargets([])}>
               取消
             </Button>
@@ -681,21 +718,26 @@ export function LibraryWindow() {
           onClose={() => setConcatOpen(false)}
           bare
           ariaLabel="合成视频"
-          overlayClassName="library-modal"
-          panelClassName="library-modal__panel library-modal__panel--wide"
+          overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-black/50"
+          panelClassName="w-[560px] rounded-[12px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-menu"
         >
-          <div className="library-modal__title">合成视频</div>
-          <div className="concat-form">
-            <div className="concat-form__row">
+          <div className="mb-[14px] text-sm text-fg">合成视频</div>
+          <div className="mb-5 mt-4 flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-4 text-xs text-fg-muted">
               <span>分辨率</span>
-              <div className="concat-form__options">
+              <div className="flex gap-2">
                 {(['720p', '1080p'] as const).map((value) => (
                   <Button
                     key={value}
                     type="button"
-                    className={concatResolution === value ? 'is-active' : ''}
+                    variant="secondary"
+                    size="none"
+                    className={`h-[34px] min-w-20 rounded-[8px] bg-surface-hover px-[14px] text-xs ${
+                      concatResolution === value
+                        ? '!border-border-selected !bg-surface-raised !text-fg'
+                        : ''
+                    }`}
                     onClick={() => setConcatResolution(value)}
-                    unstyled
                   >
                     {value === '720p' ? '720P' : '1080P'}
                   </Button>
@@ -703,9 +745,9 @@ export function LibraryWindow() {
               </div>
             </div>
 
-            <div className="concat-form__row">
+            <div className="flex items-center justify-between gap-4 text-xs text-fg-muted">
               <span>画质</span>
-              <div className="concat-form__options">
+              <div className="flex gap-2">
                 {(
                   [
                     ['standard', '标准'],
@@ -715,9 +757,14 @@ export function LibraryWindow() {
                   <Button
                     key={value}
                     type="button"
-                    className={concatQuality === value ? 'is-active' : ''}
+                    variant="secondary"
+                    size="none"
+                    className={`h-[34px] min-w-20 rounded-[8px] bg-surface-hover px-[14px] text-xs ${
+                      concatQuality === value
+                        ? '!border-border-selected !bg-surface-raised !text-fg'
+                        : ''
+                    }`}
                     onClick={() => setConcatQuality(value)}
-                    unstyled
                   >
                     {label}
                   </Button>
@@ -725,21 +772,26 @@ export function LibraryWindow() {
               </div>
             </div>
 
-            <div className="concat-form__row">
+            <div className="flex items-center justify-between gap-4 text-xs text-fg-muted">
               <span>字幕</span>
-              <div className="concat-form__file">
+              <div className="flex min-w-0 items-center gap-2">
                 <Button
                   type="button"
+                  variant="secondary"
+                  size="none"
+                  className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
                   onClick={() =>
                     void window.api.export
                       .pickFile('subtitle')
                       .then((path) => path && setConcatSubtitle(path))
                   }
-                  unstyled
                 >
                   {concatSubtitle ? '更换 SRT' : '选择 SRT'}
                 </Button>
-                <span title={concatSubtitle ?? ''}>
+                <span
+                  className="max-w-[220px] truncate text-[11px] text-fg-subtle"
+                  title={concatSubtitle ?? ''}
+                >
                   {concatSubtitle
                     ? concatSubtitle.split(/[\\/]/).pop()
                     : '无（可选）'}
@@ -747,8 +799,10 @@ export function LibraryWindow() {
                 {concatSubtitle ? (
                   <Button
                     type="button"
+                    variant="secondary"
+                    size="none"
+                    className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
                     onClick={() => setConcatSubtitle(null)}
-                    unstyled
                   >
                     清除
                   </Button>
@@ -756,28 +810,35 @@ export function LibraryWindow() {
               </div>
             </div>
 
-            <div className="concat-form__row">
+            <div className="flex items-center justify-between gap-4 text-xs text-fg-muted">
               <span>背景音乐</span>
-              <div className="concat-form__file">
+              <div className="flex min-w-0 items-center gap-2">
                 <Button
                   type="button"
+                  variant="secondary"
+                  size="none"
+                  className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
                   onClick={() =>
                     void window.api.export
                       .pickFile('audio')
                       .then((path) => path && setConcatBgm(path))
                   }
-                  unstyled
                 >
                   {concatBgm ? '更换音频' : '选择音频'}
                 </Button>
-                <span title={concatBgm ?? ''}>
+                <span
+                  className="max-w-[220px] truncate text-[11px] text-fg-subtle"
+                  title={concatBgm ?? ''}
+                >
                   {concatBgm ? concatBgm.split(/[\\/]/).pop() : '无（可选）'}
                 </span>
                 {concatBgm ? (
                   <Button
                     type="button"
+                    variant="secondary"
+                    size="none"
+                    className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
                     onClick={() => setConcatBgm(null)}
-                    unstyled
                   >
                     清除
                   </Button>
@@ -785,21 +846,26 @@ export function LibraryWindow() {
               </div>
             </div>
 
-            <div className="concat-form__row">
+            <div className="flex items-center justify-between gap-4 text-xs text-fg-muted">
               <span>旁白</span>
-              <div className="concat-form__file">
+              <div className="flex min-w-0 items-center gap-2">
                 <Button
                   type="button"
+                  variant="secondary"
+                  size="none"
+                  className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
                   onClick={() =>
                     void window.api.export
                       .pickFile('audio')
                       .then((path) => path && setConcatNarration(path))
                   }
-                  unstyled
                 >
                   {concatNarration ? '更换音频' : '选择音频'}
                 </Button>
-                <span title={concatNarration ?? ''}>
+                <span
+                  className="max-w-[220px] truncate text-[11px] text-fg-subtle"
+                  title={concatNarration ?? ''}
+                >
                   {concatNarration
                     ? concatNarration.split(/[\\/]/).pop()
                     : '无（可选）'}
@@ -807,8 +873,10 @@ export function LibraryWindow() {
                 {concatNarration ? (
                   <Button
                     type="button"
+                    variant="secondary"
+                    size="none"
+                    className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
                     onClick={() => setConcatNarration(null)}
-                    unstyled
                   >
                     清除
                   </Button>
@@ -816,10 +884,10 @@ export function LibraryWindow() {
               </div>
             </div>
 
-            <div className="concat-form__row">
+            <div className="flex items-center justify-between gap-4 text-xs text-fg-muted">
               <span>音量</span>
-              <div className="concat-form__volumes">
-                <label>
+              <div className="flex min-w-[260px] flex-col gap-1.5">
+                <label className="grid grid-cols-[36px_1fr_40px] items-center gap-2 text-[11px] text-fg-subtle">
                   原声
                   <Input
                     type="range"
@@ -829,11 +897,13 @@ export function LibraryWindow() {
                     onChange={(event) =>
                       setConcatOriginalVolume(Number(event.target.value))
                     }
-                    unstyled
+                    className="!h-auto !rounded-none !border-0 !bg-transparent !p-0"
                   />
-                  <em>{concatOriginalVolume}%</em>
+                  <em className="text-right not-italic">
+                    {concatOriginalVolume}%
+                  </em>
                 </label>
-                <label>
+                <label className="grid grid-cols-[36px_1fr_40px] items-center gap-2 text-[11px] text-fg-subtle">
                   BGM
                   <Input
                     type="range"
@@ -843,11 +913,11 @@ export function LibraryWindow() {
                     onChange={(event) =>
                       setConcatBgmVolume(Number(event.target.value))
                     }
-                    unstyled
+                    className="!h-auto !rounded-none !border-0 !bg-transparent !p-0"
                   />
-                  <em>{concatBgmVolume}%</em>
+                  <em className="text-right not-italic">{concatBgmVolume}%</em>
                 </label>
-                <label>
+                <label className="grid grid-cols-[36px_1fr_40px] items-center gap-2 text-[11px] text-fg-subtle">
                   旁白
                   <Input
                     type="range"
@@ -857,14 +927,16 @@ export function LibraryWindow() {
                     onChange={(event) =>
                       setConcatNarrationVolume(Number(event.target.value))
                     }
-                    unstyled
+                    className="!h-auto !rounded-none !border-0 !bg-transparent !p-0"
                   />
-                  <em>{concatNarrationVolume}%</em>
+                  <em className="text-right not-italic">
+                    {concatNarrationVolume}%
+                  </em>
                 </label>
               </div>
             </div>
 
-            <div className="concat-form__hint">
+            <div className="text-[11px] leading-[1.6] text-fg-subtle">
               按资产列表顺序拼接 {selectedVideos.length} 段视频，统一为 H.264 /
               AAC，输出 MP4
               {concatBgm ? '；背景音乐循环' : ''}
@@ -872,7 +944,7 @@ export function LibraryWindow() {
               {concatSubtitle ? '；字幕烧录进画面' : ''}。
             </div>
           </div>
-          <div className="library-modal__actions">
+          <div className="mt-4 flex justify-end gap-2">
             <Button
               variant="secondary"
               disabled={concatBusy}
@@ -897,12 +969,14 @@ export function LibraryWindow() {
           onClose={() => setTagTarget(null)}
           bare
           ariaLabel={`标签「${tagTarget.name}」`}
-          overlayClassName="library-modal"
-          panelClassName="library-modal__panel"
+          overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-black/50"
+          panelClassName="w-[420px] rounded-[12px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-menu"
         >
-          <div className="library-modal__title">标签「{tagTarget.name}」</div>
+          <div className="mb-[14px] text-sm text-fg">
+            标签「{tagTarget.name}」
+          </div>
           <Input
-            className="tag-input"
+            className="!mt-[14px] !h-[38px] !rounded-[8px] !border-border-strong !bg-surface-hover !px-2.5 !text-[13px] focus:!border-border-selected"
             value={tagDraft}
             placeholder="多个标签用逗号分隔，例如：人物, 夜景"
             autoFocus
@@ -910,13 +984,12 @@ export function LibraryWindow() {
             onKeyDown={(event) => {
               if (event.key === 'Enter') void handleSaveTags()
             }}
-            unstyled
           />
 
-          <div className="tag-hint">
+          <div className="mt-2 text-[11px] leading-[1.6] text-fg-subtle">
             标签保存在资产库根目录的 .tags.json，不修改原文件。
           </div>
-          <div className="library-modal__actions">
+          <div className="mt-4 flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setTagTarget(null)}>
               取消
             </Button>

@@ -74,7 +74,7 @@ export async function generateVideoAgnes(
     if (firstFrame) body.first_frame = firstFrame.dataUrl
     if (lastFrame) body.last_frame = lastFrame.dataUrl
   } else if (mode === 'reference') {
-    body.images = references.slice(0, 5).map((ref) => ref.dataUrl)
+    body.images = references.map((ref) => ref.dataUrl)
   }
 
   ctx.onProgress(5, '提交视频任务')

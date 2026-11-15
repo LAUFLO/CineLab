@@ -11,7 +11,7 @@ describe('protocol templates', () => {
     expect(findProtocolTemplate('missing')).toBeUndefined()
   })
 
-  it('applies Seedance 2.5 reference limits', () => {
+  it('applies Seedance 2.5 duration limits', () => {
     const template = findProtocolTemplate('ark-video')
     const rule = matchModelRule('doubao-seedance-2-5-260628')
     expect(template).toBeDefined()
@@ -20,8 +20,7 @@ describe('protocol templates', () => {
     const result = applyProtocolTemplate(template!, rule)
     const reference = result.modes.find((mode) => mode.id === 'reference')
 
-    expect(reference?.slots?.['reference-image']?.max).toBe(30)
-    expect(reference?.slots?.['reference-video']?.max).toBe(10)
+    expect(reference).toBeDefined()
     expect(result.params.find((param) => param.key === 'duration')?.max).toBe(
       30
     )
@@ -39,16 +38,14 @@ describe('protocol templates', () => {
     ).toBe(100)
   })
 
-  it('applies MiniMax H3 reference limits', () => {
+  it('applies MiniMax H3 modes', () => {
     const template = findProtocolTemplate('minimax-video')
     const rule = matchModelRule('MiniMax-H3')
 
     const result = applyProtocolTemplate(template!, rule)
     const reference = result.modes.find((mode) => mode.id === 'reference')
 
-    expect(reference?.slots?.['reference-image']?.max).toBe(9)
-    expect(reference?.slots?.['reference-video']?.max).toBe(3)
-    expect(reference?.slots?.['reference-audio']?.max).toBe(3)
+    expect(reference).toBeDefined()
   })
 
   it('ignores a rule that belongs to another template', () => {

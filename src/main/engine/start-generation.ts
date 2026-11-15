@@ -28,6 +28,8 @@ import { generateVideoSora } from '../providers/sora'
 import { generateVideoArk } from '../providers/volcengine'
 import { resolveProvider } from '../settings/store'
 
+const MAX_REFERENCE_IMAGES = 32
+
 const REF_MIME: Record<string, string> = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -64,7 +66,8 @@ async function loadRefs(
       : null
   const loaded: Array<{ dataUrl: string; role: string }> = []
 
-  for (const ref of refs.slice(0, 4)) {
+  // 安全上限，防止 base64 参考图撑爆主进程内存；具体数量由供应商 API 校验
+  for (const ref of refs.slice(0, MAX_REFERENCE_IMAGES)) {
     const root = ref.scope === 'global' && libraryBase ? libraryBase : projectBase
     const absolute = resolve(root, ref.path)
 

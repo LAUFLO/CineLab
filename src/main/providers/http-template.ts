@@ -426,7 +426,7 @@ export async function generateVideoHttpTemplate(
 
       if (!response.ok) {
         const text = await response.text().catch(() => '')
-        throw new Error(`查询任务失败 HTTP ${response.status}: ${text.slice(0, 200)}`)
+        throw new Error(`查询任务失败 HTTP ${response.status}: ${text.slice(0, 1000)}`)
       }
 
       polled = await response.json()

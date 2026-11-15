@@ -34,8 +34,6 @@ export interface InputSlot {
   media: MediaKind
   role: SlotRole
   label: string
-  min: number
-  max: number
   required: boolean
   /** 同组槽位互斥，例如首帧模式与参考模式 */
   exclusiveGroup?: string
@@ -45,12 +43,12 @@ export type OperationSupport = 'native' | 'prompted' | 'none'
 
 /**
  * 模型对某个模式的配置。字符串简写（`"t2i"`）会在归一化时转成
- * `{ id: 't2i' }`，需要覆盖槽位上限时再写对象形式。
+ * `{ id: 't2i' }`，需要覆盖操作支持级别时再写对象形式。
+ *
+ * 素材数量不做本地建模：能收几张由供应商 API 决定，超量直接展示接口错误。
  */
 export interface ModelModeConfig {
   id: ModelModeId
-  /** 覆盖默认槽位上限，key 是槽位 id */
-  slots?: Record<string, Partial<Pick<InputSlot, 'min' | 'max' | 'required'>>>
   /** 覆盖操作支持级别；缺省按模式定义 */
   operations?: Partial<Record<VideoOperationId, OperationSupport>>
 }
@@ -70,14 +68,12 @@ function slot(
   media: MediaKind,
   role: SlotRole,
   label: string,
-  min: number,
-  max: number,
-  required: boolean
+  required = false
 ): InputSlot {
-  return { id, media, role, label, min, max, required }
+  return { id, media, role, label, required }
 }
 
-const PROMPT = slot('prompt', 'text', 'prompt', '提示词', 1, 1, true)
+const PROMPT = slot('prompt', 'text', 'prompt', '提示词', true)
 
 export const MODEL_MODE_DEFINITIONS: ModelModeDefinition[] = [
   {
@@ -94,8 +90,8 @@ export const MODEL_MODE_DEFINITIONS: ModelModeDefinition[] = [
     output: 'image',
     slots: [
       PROMPT,
-      slot('reference', 'image', 'reference', '参考图', 1, 1, true),
-      slot('mask', 'image', 'mask', '蒙版', 0, 1, false)
+      slot('reference', 'image', 'reference', '参考图', true),
+      slot('mask', 'image', 'mask', '蒙版')
     ]
   },
   {
@@ -112,7 +108,7 @@ export const MODEL_MODE_DEFINITIONS: ModelModeDefinition[] = [
     output: 'video',
     slots: [
       PROMPT,
-      slot('firstFrame', 'image', 'firstFrame', '首帧', 1, 1, true)
+      slot('firstFrame', 'image', 'firstFrame', '首帧', true)
     ]
   },
   {
@@ -122,8 +118,8 @@ export const MODEL_MODE_DEFINITIONS: ModelModeDefinition[] = [
     output: 'video',
     slots: [
       PROMPT,
-      slot('firstFrame', 'image', 'firstFrame', '首帧', 1, 1, true),
-      slot('lastFrame', 'image', 'lastFrame', '尾帧', 1, 1, true)
+      slot('firstFrame', 'image', 'firstFrame', '首帧', true),
+      slot('lastFrame', 'image', 'lastFrame', '尾帧', true)
     ]
   },
   {
@@ -133,9 +129,9 @@ export const MODEL_MODE_DEFINITIONS: ModelModeDefinition[] = [
     output: 'video',
     slots: [
       PROMPT,
-      slot('reference-image', 'image', 'reference', '参考图', 0, 4, false),
-      slot('reference-video', 'video', 'reference', '参考视频', 0, 1, false),
-      slot('reference-audio', 'audio', 'reference', '参考音频', 0, 1, false)
+      slot('reference-image', 'image', 'reference', '参考图'),
+      slot('reference-video', 'video', 'reference', '参考视频'),
+      slot('reference-audio', 'audio', 'reference', '参考音频')
     ]
   },
   {
@@ -145,8 +141,8 @@ export const MODEL_MODE_DEFINITIONS: ModelModeDefinition[] = [
     output: 'video',
     slots: [
       PROMPT,
-      slot('source', 'video', 'source', '源视频', 1, 1, true),
-      slot('reference-image', 'image', 'reference', '替换素材', 0, 1, false)
+      slot('source', 'video', 'source', '源视频', true),
+      slot('reference-image', 'image', 'reference', '替换素材')
     ],
     operations: ['shot-retake', 'element-replace']
   },
@@ -155,7 +151,7 @@ export const MODEL_MODE_DEFINITIONS: ModelModeDefinition[] = [
     label: '视频延长',
     description: '以源视频为基础，向前或向后延长一段。',
     output: 'video',
-    slots: [PROMPT, slot('source', 'video', 'source', '源视频', 1, 1, true)],
+    slots: [PROMPT, slot('source', 'video', 'source', '源视频', true)],
     operations: ['extend']
   },
   {
@@ -163,7 +159,7 @@ export const MODEL_MODE_DEFINITIONS: ModelModeDefinition[] = [
     label: '图层拆分',
     description: '把单张图片拆成一张底图和多个独立图层。',
     output: 'image',
-    slots: [slot('source', 'image', 'source', '源图', 1, 1, true)]
+    slots: [slot('source', 'image', 'source', '源图', true)]
   }
 ]
 
@@ -204,13 +200,6 @@ export function normalizeModeConfig(value: unknown): ModelModeConfig | null {
 
   const mode: ModelModeConfig = { id: record.id }
   if (
-    typeof record.slots === 'object' &&
-    record.slots !== null &&
-    !Array.isArray(record.slots)
-  ) {
-    mode.slots = record.slots as ModelModeConfig['slots']
-  }
-  if (
     typeof record.operations === 'object' &&
     record.operations !== null &&
     !Array.isArray(record.operations)
@@ -236,20 +225,11 @@ export function normalizeModelModes(value: unknown): ModelModeConfig[] {
   return result
 }
 
-/** 把模型对槽位的覆盖合并到模式默认定义上 */
-export function resolveModeSlots(mode: ModelModeConfig): InputSlot[] {
-  const definition = getModelModeDefinition(mode.id)
-  if (!definition) return []
-
-  return definition.slots.map((defaultSlot) => {
-    const override = mode.slots?.[defaultSlot.id]
-    return override ? { ...defaultSlot, ...override } : { ...defaultSlot }
-  })
-}
-
 export function modeMediaKinds(mode: ModelModeConfig): MediaKind[] {
   const kinds = new Set<MediaKind>()
-  for (const item of resolveModeSlots(mode)) kinds.add(item.media)
+  for (const item of getModelModeDefinition(mode.id)?.slots ?? []) {
+    kinds.add(item.media)
+  }
   return [...kinds]
 }
 

@@ -140,7 +140,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
     adapter: 'openai-compat',
     modes: [
       { id: 't2i' },
-      { id: 'i2i', slots: { reference: { max: 10, required: true } } },
+      { id: 'i2i' },
       { id: 'layer' }
     ],
     features: ['layer', 'ocr', 'rgba'],
@@ -235,14 +235,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
       { id: 't2v' },
       { id: 'first-frame' },
       { id: 'first-last' },
-      {
-        id: 'reference',
-        slots: {
-          'reference-image': { max: 30 },
-          'reference-video': { max: 10 },
-          'reference-audio': { max: 10 }
-        }
-      },
+      { id: 'reference' },
       { id: 'video-edit' },
       { id: 'video-extend' }
     ],
@@ -335,10 +328,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
       { id: 't2v' },
       { id: 'first-frame' },
       { id: 'first-last' },
-      {
-        id: 'reference',
-        slots: { 'reference-image': { max: 15 } }
-      },
+      { id: 'reference' },
       { id: 'video-edit' },
       { id: 'video-extend' }
     ],
@@ -376,14 +366,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
       { id: 't2v' },
       { id: 'first-frame' },
       { id: 'first-last' },
-      {
-        id: 'reference',
-        slots: {
-          'reference-image': { max: 9 },
-          'reference-video': { max: 3 },
-          'reference-audio': { max: 3 }
-        }
-      }
+      { id: 'reference' }
     ],
     features: ['audio'],
     params: [
@@ -427,13 +410,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
       { id: 't2v' },
       { id: 'first-frame' },
       { id: 'first-last' },
-      {
-        id: 'reference',
-        slots: {
-          'reference-image': { max: 15 },
-          'reference-audio': { max: 3 }
-        }
-      }
+      { id: 'reference' }
     ],
     params: [
       VIDEO_DURATION(4, 16, 5),
@@ -461,13 +438,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
       { id: 't2v' },
       { id: 'first-frame' },
       { id: 'first-last' },
-      {
-        id: 'reference',
-        slots: {
-          'reference-image': { max: 4 },
-          'reference-audio': { max: 1 }
-        }
-      }
+      { id: 'reference' }
     ],
     features: ['audio'],
     params: [
@@ -483,10 +454,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
       { id: 't2v' },
       { id: 'first-frame' },
       { id: 'first-last' },
-      {
-        id: 'reference',
-        slots: { 'reference-image': { max: 3 } }
-      }
+      { id: 'reference' }
     ],
     features: ['audio'],
     params: [
@@ -517,10 +485,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
     status: 'requires-adapter',
     modes: [
       { id: 't2i' },
-      {
-        id: 'i2i',
-        slots: { reference: { max: 14, required: true } }
-      }
+      { id: 'i2i' }
     ],
     params: [
       {
@@ -563,13 +528,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
       { id: 't2v' },
       { id: 'first-frame' },
       { id: 'first-last' },
-      {
-        id: 'reference',
-        slots: {
-          'reference-image': { max: 10 },
-          'reference-video': { max: 5 }
-        }
-      },
+      { id: 'reference' },
       { id: 'video-extend' }
     ],
     features: ['audio'],
@@ -632,10 +591,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
     status: 'requires-adapter',
     modes: [
       { id: 't2i' },
-      {
-        id: 'i2i',
-        slots: { reference: { max: 9, required: true } }
-      }
+      { id: 'i2i' }
     ],
     features: ['sequential'],
     params: [
@@ -775,10 +731,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
     status: 'draft',
     modes: [
       { id: 't2i' },
-      {
-        id: 'i2i',
-        slots: { reference: { max: 4, required: true } }
-      }
+      { id: 'i2i' }
     ],
     params: [
       {
@@ -857,10 +810,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
     status: 'draft',
     modes: [
       { id: 't2i' },
-      {
-        id: 'i2i',
-        slots: { reference: { max: 4, required: true } }
-      }
+      { id: 'i2i' }
     ],
     params: [
       {
@@ -1191,16 +1141,7 @@ export const MODEL_RULES: ModelRule[] = [
     match: /^doubao-seedance-2-5/i,
     template: 'ark-video',
     overrides: {
-      modes: [
-        {
-          id: 'reference',
-          slots: {
-            'reference-image': { max: 30 },
-            'reference-video': { max: 10 },
-            'reference-audio': { max: 10 }
-          }
-        }
-      ],
+      modes: [{ id: 'reference' }],
       params: {
         duration: { min: 4, max: 30, defaultValue: 5 }
       }
@@ -1210,16 +1151,7 @@ export const MODEL_RULES: ModelRule[] = [
     match: /^doubao-seedance-2-0/i,
     template: 'ark-video',
     overrides: {
-      modes: [
-        {
-          id: 'reference',
-          slots: {
-            'reference-image': { max: 9 },
-            'reference-video': { max: 3 },
-            'reference-audio': { max: 3 }
-          }
-        }
-      ],
+      modes: [{ id: 'reference' }],
       params: {
         duration: { min: 4, max: 15, defaultValue: 5 }
       }
@@ -1230,12 +1162,7 @@ export const MODEL_RULES: ModelRule[] = [
     template: 'ark-image',
     overrides: {
       features: ['layer', 'ocr', 'rgba'],
-      modes: [
-        {
-          id: 'layer',
-          slots: { source: { max: 1 } }
-        }
-      ],
+      modes: [{ id: 'layer' }],
       params: {
         layer_max_images: { max: 100, defaultValue: 30 },
         text_recognition: { defaultValue: true }
@@ -1375,9 +1302,6 @@ export function mergeModeConfigs(
     merged.set(mode.id, {
       ...existing,
       ...mode,
-      ...(existing?.slots || mode.slots
-        ? { slots: { ...(existing?.slots ?? {}), ...(mode.slots ?? {}) } }
-        : {}),
       ...(existing?.operations || mode.operations
         ? {
             operations: {

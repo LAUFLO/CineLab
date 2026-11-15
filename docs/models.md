@@ -84,13 +84,13 @@
 
 ### 能力模式
 
-`modes` 是 v2 的能力声明，取代 `inputs` + `operations` 作为主要判断依据。每一项可以是字符串，也可以是带槽位覆盖的对象：
+`modes` 是 v2 的能力声明，取代 `inputs` + `operations` 作为主要判断依据。每一项可以写成字符串，需要覆盖操作支持级别时再写成对象：
 
 ```json
 {
   "modes": [
     "t2i",
-    { "id": "reference", "slots": { "reference-image": { "max": 10 } } }
+    { "id": "video-edit", "operations": { "element-replace": "prompted" } }
   ]
 }
 ```
@@ -109,8 +109,9 @@
 
 - 旧配置不写 `modes` 时，从 `capability` + `inputs` + `operations` 推断。
 - 组图、蒙版、多镜头是 `features`，不是模式。
-- 设置页「模型配置」可以勾选/取消模式，并调整槽位上限。
+- 设置页「模型配置」可以勾选/取消模式。
 - Prompt Bar 会按当前节点已连的素材判断模型是否兼容。
+- 素材数量不在本地建模：能收几张由供应商 API 决定。超量时照常发送，接口错误直接显示在节点上，用户删减素材后重新生成即可。
 
 ### 协议模板与指纹规则
 

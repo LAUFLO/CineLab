@@ -460,6 +460,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
     modes: [
       { id: 't2v' },
       { id: 'first-frame' },
+      { id: 'first-last' },
       {
         id: 'reference',
         slots: {

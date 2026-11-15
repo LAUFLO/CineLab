@@ -227,6 +227,9 @@ export function PromptBar() {
     setRefPreview(null)
     setSlotMenu(null)
     setDraggedSlot(null)
+    setInputMode('auto')
+    setRoleOverrides({})
+    setModeUndo(null)
 
     return () => {
       if (!currentId) return
@@ -695,14 +698,6 @@ export function PromptBar() {
     }
   }
 
-  const handleRefClick = (ref: PickedRef): void => {
-    if (refClickTimer.current) return
-    refClickTimer.current = window.setTimeout(() => {
-      refClickTimer.current = null
-      removeRef(ref)
-    }, 220)
-  }
-
   const handleRefDoubleClick = (ref: PickedRef): void => {
     if (refClickTimer.current) {
       clearTimeout(refClickTimer.current)
@@ -824,6 +819,10 @@ export function PromptBar() {
     return result
   })()
 
+  const supportsFirstLast = active
+    ? modelModeIds(active.model).includes('first-last')
+    : false
+
   const modeImageRole = (index: number): ReferenceRole => {
     if (kind !== 'video') return 'reference'
     if (inputMode === 'first-frame') {
@@ -837,7 +836,10 @@ export function PromptBar() {
           : 'reference'
     }
     if (inputMode === 'reference') return 'reference'
-    return index === 0 ? 'firstFrame' : index === 1 ? 'lastFrame' : 'reference'
+    // 自动：首张作首帧；第二张只在模型支持首尾帧时作尾帧，否则降为参考图
+    if (index === 0) return 'firstFrame'
+    if (index === 1) return supportsFirstLast ? 'lastFrame' : 'reference'
+    return 'reference'
   }
 
   const mergedRefs = (() => {
@@ -1018,7 +1020,7 @@ export function PromptBar() {
       return 'reference'
     }
 
-    return slots.flatMap<ModeSlotView>((slot) => {
+    const list = slots.flatMap<ModeSlotView>((slot) => {
       if (slot.media === 'text') return []
       if (slot.media === 'video') {
         return [
@@ -1061,6 +1063,27 @@ export function PromptBar() {
         }
       ]
     })
+
+    // 槽位之外的素材也留在槽位条里，避免「连了图但看不见」
+    const keyOf = (ref: PickedRef): string =>
+      `${ref.scope ?? 'project'}:${ref.path}`
+    const used = new Set<string>()
+    for (const slot of list) {
+      if (slot.ref) used.add(keyOf(slot.ref))
+    }
+    for (const ref of mergedRefs) {
+      if (ref.role === 'mask') continue
+      if (used.has(keyOf(ref))) continue
+      used.add(keyOf(ref))
+      list.push({
+        id: `extra-${keyOf(ref)}`,
+        label: ref.kind === 'video' ? '未使用视频' : '未使用',
+        ref,
+        role: ref.role
+      })
+    }
+
+    return list
   })()
 
   const handleSlotDrop = (target: (typeof modeSlots)[number]): void => {
@@ -1434,57 +1457,6 @@ export function PromptBar() {
             画布参考
           </Button>
           <div className="promptbar__spacer" />
-          {mergedRefs.length > 0 ? (
-            <div className="promptbar__picked">
-              {mergedRefs.map((ref) => {
-                const auto = autoRefs.some(
-                  (item) =>
-                    item.path === ref.path &&
-                    (item.scope ?? 'project') === (ref.scope ?? 'project')
-                )
-
-                return (
-                  <Button
-                    key={`${ref.scope ?? 'project'}:${ref.path}`}
-                    type="button"
-                    className={`promptbar__picked-item${
-                      auto ? ' is-auto' : ''
-                    }`}
-                    onPointerEnter={(event) => {
-                      const rect = event.currentTarget.getBoundingClientRect()
-                      setRefPreview({
-                        path: ref.path,
-                        kind: ref.kind,
-                        scope: ref.scope,
-                        x: rect.left + rect.width / 2,
-                        y: rect.top - 8
-                      })
-                    }}
-                    onPointerLeave={() => setRefPreview(null)}
-                    onClick={() => handleRefClick(ref)}
-                    onDoubleClick={(event) => {
-                      event.preventDefault()
-                      event.stopPropagation()
-                      handleRefDoubleClick(ref)
-                    }}
-                    unstyled
-                  >
-                    {ref.kind === 'video' ? (
-                      <video
-                        src={`${assetUrl(ref.path, ref.scope)}#t=0.1`}
-                        muted
-                        playsInline
-                        preload="metadata"
-                      />
-                    ) : (
-                      <img src={assetUrl(ref.path, ref.scope)} alt="" />
-                    )}
-                    <Icon name="close" size={10} />
-                  </Button>
-                )
-              })}
-            </div>
-          ) : null}
           {autoRefs.length > 0 ? (
             <span
               className="promptbar__autolink"
@@ -1492,14 +1464,6 @@ export function PromptBar() {
             >
               <Icon name="sparkles" size={10} />
               AutoLink {autoRefs.length}
-            </span>
-          ) : null}
-          {mergedRefs.length > 0 ? (
-            <span
-              className="promptbar__refs"
-              title="来自画布参考、上游连线与智能引用"
-            >
-              素材 {mergedRefs.length}
             </span>
           ) : null}
           <IconButton
@@ -1576,6 +1540,24 @@ export function PromptBar() {
                     onDrop={(event) => {
                       event.preventDefault()
                       handleSlotDrop(slot)
+                    }}
+                    onPointerEnter={(event) => {
+                      if (!slot.ref) return
+                      const rect = event.currentTarget.getBoundingClientRect()
+                      setRefPreview({
+                        path: slot.ref.path,
+                        kind: slot.ref.kind,
+                        scope: slot.ref.scope,
+                        x: rect.left + rect.width / 2,
+                        y: rect.top - 8
+                      })
+                    }}
+                    onPointerLeave={() => setRefPreview(null)}
+                    onDoubleClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      setSlotMenu(null)
+                      if (slot.ref) handleRefDoubleClick(slot.ref)
                     }}
                     onClick={(event) => {
                       const rect = event.currentTarget.getBoundingClientRect()
@@ -1660,6 +1642,21 @@ export function PromptBar() {
               unstyled
             >
               恢复自动
+            </Button>
+            <Button
+              type="button"
+              className="promptbar__slot-menu-item"
+              onClick={() => {
+                const ref = mergedRefs.find(
+                  (item) =>
+                    `${item.scope ?? 'project'}:${item.path}` === slotMenu.key
+                )
+                if (ref) removeRef(ref)
+                setSlotMenu(null)
+              }}
+              unstyled
+            >
+              移除
             </Button>
           </div>
         ) : null}

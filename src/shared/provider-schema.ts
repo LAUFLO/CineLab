@@ -1282,13 +1282,13 @@ const PRESET_MODE_OVERRIDES: Record<
     protocol: 'openai-image'
   },
   'agnes-video-2.5-flash': {
-    modes: ['t2v', 'first-frame', 'reference'],
+    modes: ['t2v', 'first-frame', 'first-last', 'reference'],
     features: ['audio'],
     family: 'agnes-video',
     protocol: 'agnes-video'
   },
   'agnes-video-2.5': {
-    modes: ['t2v', 'first-frame', 'reference'],
+    modes: ['t2v', 'first-frame', 'first-last', 'reference'],
     features: ['audio'],
     family: 'agnes-video',
     protocol: 'agnes-video'

@@ -136,3 +136,10 @@ jobs:
           foreach ($asset in $assets) {
             gh release upload $tag $asset.FullName --clobber
           }
+
+      - name: Notify Feishu
+        if: success()
+        continue-on-error: true
+        env:
+          CINELAB_FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        run: node scripts/notify-feishu.mjs

@@ -66,4 +66,12 @@ Completed plans should be marked `状态：历史` instead of being rewritten as
 
 ## Release
 
-Releases are built from `v*` tags by the `Release Windows` workflow. The tag must match `package.json` version. The current Windows build is unsigned; do not represent it as code-signed.
+Releases are built from `v*` tags by the `Release` workflow. The tag must match `package.json` version. The current Windows build is unsigned; do not represent it as code-signed.
+
+发布后必须通知飞书群：
+
+- 自动：`Release` workflow 的 `publish` job 末尾执行 `scripts/notify-feishu.mjs`，读取仓库 Secret `FEISHU_WEBHOOK`。通知失败不会阻塞发布（`continue-on-error`）。
+- 手动补发：`CINELAB_FEISHU_WEBHOOK=<webhook> pnpm notify:release`。
+- 预演：`pnpm notify:release --dry-run` 只打印卡片 JSON，不发送。
+
+Webhook 不写入仓库、文档、日志或提交信息。卡片模板见 `scripts/notify-feishu.mjs`（版本、下载产物、CHANGELOG 摘要、Release 按钮）。

@@ -146,7 +146,7 @@ export function ProjectCenter() {
 
       {templateOpen ? (
         <div
-          className="settings-overlay"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px] [-webkit-app-region:no-drag]"
           onPointerDown={() => setTemplateOpen(false)}
         >
           <div

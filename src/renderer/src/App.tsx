@@ -203,19 +203,19 @@ export default function App() {
 
   if (phase === 'loading') {
     content = (
-      <div className="boot-screen">
-        <BrandWordmark height={22} className="boot-screen__logo" />
-        <div className="boot-screen__hint">正在打开项目…</div>
+      <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-canvas">
+        <BrandWordmark height={22} className="text-[20px] font-bold tracking-[0.02em]" />
+        <div className="text-[13px] text-fg-muted">正在打开项目…</div>
       </div>
     )
   } else if (phase === 'welcome') {
     content = <ProjectCenter />
   } else if (phase === 'error') {
     content = (
-      <div className="boot-screen">
-        <BrandWordmark height={22} className="boot-screen__logo" />
-        <div className="boot-screen__hint">项目打开失败</div>
-        <div className="boot-screen__error">{error}</div>
+      <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-canvas">
+        <BrandWordmark height={22} className="text-[20px] font-bold tracking-[0.02em]" />
+        <div className="text-[13px] text-fg-muted">项目打开失败</div>
+        <div className="max-w-[520px] break-all text-center text-xs text-danger">{error}</div>
         <Button
           type="button"
           variant="secondary"

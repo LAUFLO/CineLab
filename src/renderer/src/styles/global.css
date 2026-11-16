@@ -165,8 +165,8 @@ body.is-exporting .react-flow__minimap {
 
 /* 左右 + 按钮：锚点在节点边线，视觉圆在节点外侧。
    保留原因：需要压过 React Flow 的 .react-flow__handle 基础样式并绘制 ::before 圆点，
-   且 AddNodeMenu 与 scripts/cdp-*.mjs 用 .cnode__handle--left/--right 定位，故不走 utility。 */
-.react-flow__handle.cnode__handle {
+   且 AddNodeMenu 与 scripts/cdp-*.mjs 用 [data-handle="left|right"] 定位，故不走 utility。 */
+.react-flow__handle[data-handle] {
   width: 20px;
   height: 20px;
   border: none;
@@ -182,7 +182,7 @@ body.is-exporting .react-flow__minimap {
   z-index: 5;
 }
 
-.react-flow__handle.cnode__handle::before {
+.react-flow__handle[data-handle]::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -194,29 +194,29 @@ body.is-exporting .react-flow__minimap {
   transform: translateY(-50%);
 }
 
-.cnode:hover .react-flow__handle.cnode__handle,
-.cnode.is-selected .react-flow__handle.cnode__handle,
-.group-node:hover .react-flow__handle.cnode__handle,
-.group-node.is-selected .react-flow__handle.cnode__handle {
+[data-cnode]:hover .react-flow__handle[data-handle],
+[data-cnode][data-selected] .react-flow__handle[data-handle],
+[data-node-kind='group']:hover .react-flow__handle[data-handle],
+[data-node-kind='group'][data-selected] .react-flow__handle[data-handle] {
   opacity: 1;
 }
 
-.react-flow__handle.cnode__handle:hover {
+.react-flow__handle[data-handle]:hover {
   color: var(--text-1);
 }
 
-.react-flow__handle.cnode__handle:hover::before {
+.react-flow__handle[data-handle]:hover::before {
   border-color: var(--border-strong);
 }
 
-.react-flow__handle.cnode__handle--left {
+.react-flow__handle[data-handle='left'] {
   left: 0;
   top: 50%;
   transform: none;
   margin-top: -10px;
 }
 
-.react-flow__handle.cnode__handle--right {
+.react-flow__handle[data-handle='right'] {
   left: auto;
   right: 0;
   top: 50%;
@@ -224,22 +224,22 @@ body.is-exporting .react-flow__minimap {
   margin-top: -10px;
 }
 
-.react-flow__handle.cnode__handle--left::before {
+.react-flow__handle[data-handle='left']::before {
   left: -26px;
 }
 
-.react-flow__handle.cnode__handle--right::before {
+.react-flow__handle[data-handle='right']::before {
   right: -26px;
 }
 
-.react-flow__handle.cnode__handle--left .cnode__handle-icon {
+.react-flow__handle[data-handle='left'] > svg {
   position: absolute;
   left: -22px;
   top: 50%;
   transform: translateY(-50%);
 }
 
-.react-flow__handle.cnode__handle--right .cnode__handle-icon {
+.react-flow__handle[data-handle='right'] > svg {
   position: absolute;
   right: -22px;
   top: 50%;
@@ -263,7 +263,7 @@ body.is-picking .react-flow__node {
   cursor: crosshair;
 }
 
-body.is-picking .react-flow__node:hover .cnode__card {
+body.is-picking .react-flow__node:hover [data-node-card] {
   outline: 2px solid var(--pick-bar);
   outline-offset: 2px;
 }
@@ -326,9 +326,8 @@ body.is-node-menu-open .react-flow {
   display: block;
 }
 
-.cnode .react-flow__handle.cnode__handle.studio-node__handle--derived,
-.cnode .react-flow__handle.cnode__handle.stage-node__handle--derived,
-.cnode .react-flow__handle.cnode__handle.film-node__handle--passive {
+[data-cnode] .react-flow__handle[data-handle][data-derived],
+[data-cnode] .react-flow__handle[data-handle][data-passive] {
   opacity: 0;
   pointer-events: none;
 }

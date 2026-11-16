@@ -45,11 +45,11 @@ async function evaluate(expression) {
 
 const handles = JSON.parse(
   await evaluate(`JSON.stringify({
-    rights: [...document.querySelectorAll('.cnode__handle--right')].map((el) => {
+    rights: [...document.querySelectorAll('.react-flow__handle[data-handle="right"]')].map((el) => {
       const r = el.getBoundingClientRect()
       return { x: r.x + r.width / 2, y: r.y + r.height / 2 }
     }),
-    lefts: [...document.querySelectorAll('.cnode__handle--left')].map((el) => {
+    lefts: [...document.querySelectorAll('.react-flow__handle[data-handle="left"]')].map((el) => {
       const r = el.getBoundingClientRect()
       return { x: r.x + r.width / 2, y: r.y + r.height / 2 }
     })

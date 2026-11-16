@@ -25,8 +25,7 @@ const bullets = sectionFor(version)
   .split('\n')
   .map((line) => line.trim())
   .filter((line) => line.startsWith('- '))
-  .slice(0, 8)
-  .map((line) => line)
+  .slice(0, 12)
 
 const releaseUrl = `https://github.com/LAUFLO/CineLab/releases/tag/v${version}`
 const exe = `CineLab-${version}-x64.exe`
@@ -34,19 +33,13 @@ const dmg = `CineLab-${version}-arm64.dmg`
 
 const elements = [
   {
-    tag: 'div',
-    text: {
-      tag: 'lark_md',
-      content: `**版本**：v${version}\n**Tag**：[v${version}](${releaseUrl})`
-    }
+    tag: 'markdown',
+    content: `**版本**：v${version}\n**Tag**：[v${version}](${releaseUrl})`
   },
   { tag: 'hr' },
   {
-    tag: 'div',
-    text: {
-      tag: 'lark_md',
-      content: `**下载**\n- Windows x64：\`${exe}\`\n- macOS arm64：\`${dmg}\``
-    }
+    tag: 'markdown',
+    content: `**下载**\n- Windows x64：\`${exe}\`\n- macOS arm64：\`${dmg}\``
   }
 ]
 
@@ -54,11 +47,13 @@ if (bullets.length > 0) {
   elements.push(
     { tag: 'hr' },
     {
-      tag: 'div',
-      text: {
-        tag: 'lark_md',
-        content: `**本次变更**\n${bullets.join('\n')}`
-      }
+      tag: 'collapsible_panel',
+      expanded: false,
+      header: {
+        title: { tag: 'markdown', content: `**展开全部变更（${bullets.length} 项）**` },
+        vertical_align: 'center'
+      },
+      elements: [{ tag: 'markdown', content: bullets.join('\n') }]
     }
   )
 }
@@ -66,37 +61,28 @@ if (bullets.length > 0) {
 elements.push(
   { tag: 'hr' },
   {
-    tag: 'note',
-    elements: [
-      {
-        tag: 'plain_text',
-        content:
-          '校验和见 SHA256SUMS.txt ｜ 安装包未签名：Windows 会提示 SmartScreen，macOS 需手动放行 Gatekeeper'
-      }
-    ]
+    tag: 'markdown',
+    content:
+      '<font color="grey">校验和见 SHA256SUMS.txt ｜ 安装包未签名：Windows 会提示 SmartScreen，macOS 需手动放行 Gatekeeper</font>'
   },
   {
-    tag: 'action',
-    actions: [
-      {
-        tag: 'button',
-        text: { tag: 'plain_text', content: '查看 Release' },
-        url: releaseUrl,
-        type: 'primary'
-      }
-    ]
+    tag: 'button',
+    text: { tag: 'plain_text', content: '查看 Release' },
+    type: 'primary',
+    behaviors: [{ type: 'open_url', default_url: releaseUrl }]
   }
 )
 
 const payload = {
   msg_type: 'interactive',
   card: {
-    config: { wide_screen_mode: true },
+    schema: '2.0',
+    config: { update_multi: true },
     header: {
       template: 'blue',
       title: { tag: 'plain_text', content: `CineLab v${version} 已发布` }
     },
-    elements
+    body: { elements }
   }
 }
 

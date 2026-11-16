@@ -288,9 +288,9 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   return (
     <>
       <div
-        className={`cnode group relative flex h-full w-full flex-col ${
-          selected ? 'is-selected' : ''
-        }`}
+        data-cnode
+        data-selected={selected || undefined}
+        className="group relative flex h-full w-full flex-col"
         onDoubleClick={(event) => {
           const target = event.target as HTMLElement
           if (target.closest('button, input, textarea, a')) return
@@ -376,7 +376,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         ) : null}
 
         <div
-          className="flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-[.is-selected]:text-fg"
+          className="flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-data-[selected]:text-fg"
           onDoubleClick={(event) => {
             event.stopPropagation()
             setTitleDraft(data.title)
@@ -415,7 +415,8 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         </div>
 
         <div
-          className={`cnode__card relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms] ${
+          data-node-card
+          className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms] ${
             selected
               ? 'border-border-selected'
               : 'border-border group-hover:border-border-strong'
@@ -625,20 +626,20 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         <Handle
           type="target"
           position={Position.Left}
-          className="cnode__handle cnode__handle--left"
+          data-handle="left"
           title="接收上游连线"
         >
-          <Icon name="plus" size={12} className="cnode__handle-icon" />
+          <Icon name="plus" size={12} />
         </Handle>
 
         <Handle
           type="source"
           position={Position.Right}
-          className="cnode__handle cnode__handle--right"
+          data-handle="right"
           title="生成下游节点"
           onClick={openFromHandle}
         >
-          <Icon name="plus" size={12} className="cnode__handle-icon" />
+          <Icon name="plus" size={12} />
         </Handle>
       </div>
       <TextEditorDialog

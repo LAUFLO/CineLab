@@ -44,7 +44,7 @@ async function evaluate(expression) {
 }
 
 const pos = await evaluate(`(() => {
-  const handle = document.querySelector('${process.argv[4] ?? '.cnode__handle--right'}')
+  const handle = document.querySelector('${process.argv[4] ?? '.react-flow__handle[data-handle="right"]'}')
   if (!handle) return null
   const rect = handle.getBoundingClientRect()
   return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }

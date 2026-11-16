@@ -69,6 +69,7 @@
 | [promptbar-input-modes-plan.md](promptbar-input-modes-plan.md) | PromptBar 输入模式与槽位：首尾帧、参考图、超限自动切换（待评审） |
 | [engineering-quality-plan.md](engineering-quality-plan.md) | 工程质量、仓库隐私、文档治理与 Tailwind 决策（讨论稿） |
 | [tailwind-migration-plan.md](tailwind-migration-plan.md) | Tailwind 全量迁移（路线 A）：9 批清单、截图基线、验收门槛 |
+| [tailwind-anchor-migration-plan.md](tailwind-anchor-migration-plan.md) | Tailwind 锚点迁移：语义类名改 `data-*`，收尾最后一公里 |
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 |
 | [placeholder-operations-plan.md](placeholder-operations-plan.md) | 占位操作补齐 |
 

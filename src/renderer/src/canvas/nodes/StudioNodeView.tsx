@@ -39,7 +39,7 @@ const FILM_STATUS_TONE: Record<string, string> = {
 }
 
 const CARD_CLASS =
-  'cnode__card relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms]'
+  'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms]'
 
 const BTN_CLASS =
   '!h-7 gap-[5px] !rounded-[7px] !border !border-border !bg-surface !px-2.5 !text-[11.5px] !font-normal !text-fg whitespace-nowrap hover:!bg-surface-hover hover:!text-fg'
@@ -251,12 +251,13 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
   return (
     <>
       <div
-        className={`cnode group studio-node relative flex h-full w-full flex-col ${
-          selected ? 'is-selected' : ''
-        }`}
+        data-cnode
+        data-node-kind="studio"
+        data-selected={selected || undefined}
+        className="group relative flex h-full w-full flex-col"
       >
         <div
-          className="flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-[.is-selected]:text-fg"
+          className="flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-data-[selected]:text-fg"
           onDoubleClick={(event) => {
             event.stopPropagation()
             setTitleDraft(data.title)
@@ -290,6 +291,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
         </div>
 
         <div
+          data-node-card
           className={`${CARD_CLASS} ${
             selected
               ? 'border-border-selected'
@@ -457,19 +459,19 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
         <Handle
           type="target"
           position={Position.Left}
-          className="cnode__handle cnode__handle--left"
+          data-handle="left"
           title="接收素材连线"
         >
-          <Icon name="plus" size={12} className="cnode__handle-icon" />
+          <Icon name="plus" size={12} />
         </Handle>
 
         <Handle
           type="source"
           position={Position.Right}
-          className="cnode__handle cnode__handle--right"
+          data-handle="right"
           title="把成片接到其他节点"
         >
-          <Icon name="plus" size={12} className="cnode__handle-icon" />
+          <Icon name="plus" size={12} />
         </Handle>
       </div>
 

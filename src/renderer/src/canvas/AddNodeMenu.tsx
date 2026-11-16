@@ -138,7 +138,7 @@ export function AddNodeMenu() {
 
     const side = menu.source.handle === 'source' ? 'right' : 'left'
     const handle = document.querySelector<HTMLElement>(
-      `.react-flow__node[data-id="${menu.source.nodeId}"] .cnode__handle--${side}`
+      `.react-flow__node[data-id="${menu.source.nodeId}"] .react-flow__handle[data-handle="${side}"]`
     )
     if (!handle) return null
 

@@ -3,10 +3,10 @@ import { Icon } from '../../components/Icon'
 import type { FilmNode } from '../../stores/canvas'
 
 const CARD_CLASS =
-  'cnode__card relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms]'
+  'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms]'
 
 const TITLE_CLASS =
-  'flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-[.is-selected]:text-fg'
+  'flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-data-[selected]:text-fg'
 
 /**
  * 旧版独立成片节点的兜底渲染。
@@ -15,9 +15,10 @@ const TITLE_CLASS =
 export function FilmNodeView({ selected }: NodeProps<FilmNode>) {
   return (
     <div
-      className={`cnode group relative flex h-full w-full flex-col ${
-        selected ? 'is-selected' : ''
-      }`}
+      data-cnode
+      data-node-kind="film"
+      data-selected={selected || undefined}
+      className="group relative flex h-full w-full flex-col"
     >
       <div className={TITLE_CLASS}>
         <Icon name="film" size={12} />
@@ -25,6 +26,7 @@ export function FilmNodeView({ selected }: NodeProps<FilmNode>) {
       </div>
 
       <div
+        data-node-card
         className={`${CARD_CLASS} ${
           selected
             ? 'border-border-selected'
@@ -41,14 +43,14 @@ export function FilmNodeView({ selected }: NodeProps<FilmNode>) {
       <Handle
         type="target"
         position={Position.Left}
-        className="cnode__handle cnode__handle--left film-node__handle--passive"
+        data-handle="left" data-passive
         isConnectable={false}
       />
 
       <Handle
         type="source"
         position={Position.Right}
-        className="cnode__handle cnode__handle--right"
+        data-handle="right"
       />
     </div>
   )

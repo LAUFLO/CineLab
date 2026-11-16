@@ -10,12 +10,11 @@
 
 | 文件 | 行数 | 内容 |
 |---|---:|---|
-| `global.css` | 334 | 基础设施 |
+| `infrastructure.css` | 347 | 基础设施 |
 | `tokens.css` | 96 | 主题变量 |
 | `tailwind.css` | 52 | `@theme` |
-| `studio.css` | 32 | 左右栏变量覆盖 |
-| `stage.css` | 15 | three.js canvas |
-| `base.css` | 14 | base layer |
+
+（`studio.css`、`stage.css`、`base.css` 已在后续收尾中删除或合并。）
 
 但 JSX 中仍有约 20 个**不承载样式**的语义类名，作为行为钩子使用。它们与 utility 混在 `className` 里，容易被误认为"还有一套旧样式体系"，也会诱导后来者在 `global.css` 里为它们补规则。
 

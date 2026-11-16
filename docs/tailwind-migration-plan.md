@@ -5,6 +5,8 @@
 适用版本：v0.2.0
 关联：[engineering-quality-plan.md](engineering-quality-plan.md)、[p2-acceptance.md](p2-acceptance.md)、[ui-spec.md](ui-spec.md)
 
+> 命名说明：`global.css` 已于 2026-11-16 更名为 `infrastructure.css`（避免被误认为“全局样式文件”）。下文历史批次记录保留旧名，当前实现以 `infrastructure.css` 为准。
+
 ## 1. 背景
 
 `engineering-quality-plan.md` 3.5 节选定「方案 B：分阶段全量迁移 Tailwind」，四阶段为：基础层 → 组件层 → 页面层 → 收尾。P2 完成了前两个阶段：

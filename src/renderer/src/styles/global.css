@@ -10,6 +10,21 @@
  * 新增组件样式请优先写 utility，不要在这里加组件类。
  */
 
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  :root[data-theme='light'] {
+    color-scheme: light;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+    color: var(--text-1);
+  }
+}
+
 * {
   box-sizing: border-box;
 }

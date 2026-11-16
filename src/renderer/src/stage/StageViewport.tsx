@@ -126,7 +126,7 @@ export function StageViewport() {
     })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
-    renderer.domElement.className = 'stage-viewport__canvas'
+    renderer.domElement.className = 'block h-full w-full'
     host.appendChild(renderer.domElement)
     rendererRef.current = renderer
 

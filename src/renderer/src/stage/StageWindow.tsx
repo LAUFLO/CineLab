@@ -9,7 +9,6 @@ import { StageTimeline } from './StageTimeline'
 import { StageViewport } from './StageViewport'
 import { useStageStore } from './stageStore'
 import { exportStagePreviewToCanvas } from './preview-runner'
-import '../styles/stage.css'
 import { Button } from '../components/ui'
 
 const OBJECT_OPTIONS: Array<{ type: StageObjectType; label: string }> = [

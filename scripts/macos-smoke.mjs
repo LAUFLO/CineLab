@@ -2,6 +2,10 @@ import { execFileSync, spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
+const expectedVersion = JSON.parse(
+  readFileSync(join(process.cwd(), 'package.json'), 'utf8')
+).version
+
 const appPath = process.argv[2]
 const installDepth = process.argv.includes('--install-depth')
 const installVision = process.argv.includes('--install-vision')
@@ -139,7 +143,9 @@ async function main() {
       return JSON.stringify({
         version: info.version,
         platform: info.platform,
-        projectCenter: Boolean(document.querySelector('.project-center')),
+        projectCenter: Boolean(
+          document.querySelector('[data-testid="project-center"]')
+        ),
         windowButtons: document.querySelectorAll(
           '.window-controls .icon-btn--window'
         ).length,
@@ -151,8 +157,10 @@ async function main() {
     await new Promise((resolve) => setTimeout(resolve, 500))
   }
   console.log('renderer:', JSON.stringify(parsed))
-  if (parsed.version !== '0.1.0') {
-    throw new Error(`unexpected version ${parsed.version}`)
+  if (parsed.version !== expectedVersion) {
+    throw new Error(
+      `unexpected version ${parsed.version}, expected ${expectedVersion}`
+    )
   }
   if (parsed.platform !== 'darwin') {
     throw new Error(`unexpected platform ${parsed.platform}`)

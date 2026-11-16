@@ -56,7 +56,10 @@ export function ProjectCenter() {
   }, [])
 
   return (
-    <div className="absolute inset-0 flex items-start justify-center overflow-y-auto bg-canvas bg-[radial-gradient(var(--border)_1px,transparent_1px)] p-8 [background-size:20px_20px]">
+    <div
+      data-testid="project-center"
+      className="absolute inset-0 flex items-start justify-center overflow-y-auto bg-canvas bg-[radial-gradient(var(--border)_1px,transparent_1px)] p-8 [background-size:20px_20px]"
+    >
       <div
         className={`my-auto rounded-[20px] border border-border bg-surface p-[44px_48px] text-center shadow-float animate-[welcome-in_220ms_ease-out] max-[720px]:p-[36px_28px] ${
           recent.length > 0 ? 'w-[min(960px,100%)]' : 'w-[min(560px,100%)]'

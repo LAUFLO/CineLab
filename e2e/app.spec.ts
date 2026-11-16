@@ -87,7 +87,7 @@ test.describe.serial('CineLab desktop', () => {
 
   test('opens CineBot', async () => {
     await page.locator('[aria-label="打开 CineBot"]').click()
-    await expect(page.locator('.agent-panel')).toBeVisible()
-    await expect(page.locator('.agent-panel textarea')).toBeVisible()
+    await expect(page.getByTestId('agent-panel')).toBeVisible()
+    await expect(page.getByTestId('agent-panel').locator('textarea')).toBeVisible()
   })
 })

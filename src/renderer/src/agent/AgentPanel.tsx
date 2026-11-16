@@ -420,7 +420,8 @@ export function AgentPanel() {
     <>
       {visible ? (
         <section
-          className="agent-panel fixed bottom-4 right-3 top-12 z-[95] flex w-[420px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[18px] border border-border-strong bg-surface-raised text-[13px] text-fg shadow-float max-[560px]:inset-x-2 max-[560px]:bottom-4 max-[560px]:top-[44px] max-[560px]:w-auto"
+          data-testid="agent-panel"
+          className="fixed bottom-4 right-3 top-12 z-[95] flex w-[420px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[18px] border border-border-strong bg-surface-raised text-[13px] text-fg shadow-float max-[560px]:inset-x-2 max-[560px]:bottom-4 max-[560px]:top-[44px] max-[560px]:w-auto"
           aria-label="CineBot"
           ref={panelRef}
         >

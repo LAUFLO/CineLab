@@ -84,14 +84,13 @@ body {
 }
 
 /* 导出画布时隐藏所有浮层 UI */
-body.is-exporting .topbar,
-body.is-exporting .bottombar,
-body.is-exporting .statusbar,
-body.is-exporting .promptbar,
-body.is-exporting .window-controls,
-body.is-exporting .library-panel,
-body.is-exporting .export-menu,
-body.is-exporting .react-flow__minimap {
+body[data-exporting] [data-slot='topbar'],
+body[data-exporting] [data-slot='bottombar'],
+body[data-exporting] [data-slot='statusbar'],
+body[data-exporting] [data-slot='promptbar'],
+body[data-exporting] [data-slot='window-controls'],
+body[data-exporting] [data-slot='export-menu'],
+body[data-exporting] .react-flow__minimap {
   display: none !important;
 }
 
@@ -159,7 +158,7 @@ body.is-exporting .react-flow__minimap {
   background: color-mix(in srgb, var(--link) 6%, transparent);
 }
 
-.react-flow.is-single-group .react-flow__nodesselection-rect::before {
+.react-flow[data-single-group] .react-flow__nodesselection-rect::before {
   display: none;
 }
 
@@ -259,11 +258,11 @@ body.is-exporting .react-flow__minimap {
   }
 }
 
-body.is-picking .react-flow__node {
+body[data-picking] .react-flow__node {
   cursor: crosshair;
 }
 
-body.is-picking .react-flow__node:hover [data-node-card] {
+body[data-picking] .react-flow__node:hover [data-node-card] {
   outline: 2px solid var(--pick-bar);
   outline-offset: 2px;
 }
@@ -290,15 +289,15 @@ body.is-picking .react-flow__node:hover [data-node-card] {
 }
 
 /* 节点工具栏菜单打开时，让节点层优先于底部提示词栏 */
-body.is-node-menu-open .react-flow {
+body[data-node-menu-open] .react-flow {
   z-index: 60 !important;
 }
 
-.react-flow.is-hand-tool .react-flow__pane {
+.react-flow[data-hand-tool] .react-flow__pane {
   cursor: grab;
 }
 
-.react-flow.is-hand-tool .react-flow__pane:active {
+.react-flow[data-hand-tool] .react-flow__pane:active {
   cursor: grabbing;
 }
 
@@ -314,15 +313,15 @@ body.is-node-menu-open .react-flow {
   width: auto;
 }
 
-.brand-wordmark img.brand-wordmark__dark {
+.brand-wordmark img[data-brand='dark'] {
   display: none;
 }
 
-[data-theme='dark'] .brand-wordmark img.brand-wordmark__light {
+[data-theme='dark'] .brand-wordmark img[data-brand='light'] {
   display: none;
 }
 
-[data-theme='dark'] .brand-wordmark img.brand-wordmark__dark {
+[data-theme='dark'] .brand-wordmark img[data-brand='dark'] {
   display: block;
 }
 

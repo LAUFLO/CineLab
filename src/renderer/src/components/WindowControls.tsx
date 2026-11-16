@@ -15,7 +15,7 @@ export function WindowControls({ theme, onToggleTheme }: WindowControlsProps) {
     document.documentElement.dataset.platform === 'darwin'
 
   return (
-    <div className="window-controls fixed right-3 top-1.5 z-[300] flex items-center gap-1 [-webkit-app-region:no-drag]">
+    <div data-slot="window-controls" className="fixed right-3 top-1.5 z-[300] flex items-center gap-1 [-webkit-app-region:no-drag]">
       <Button
         type="button"
         variant="ghost"

@@ -143,7 +143,7 @@ export function TopBar() {
 
   const exportCanvas = async (): Promise<void> => {
     setExportMenuOpen(false)
-    document.body.classList.add('is-exporting')
+    document.body.dataset.exporting = ''
     try {
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
@@ -153,13 +153,13 @@ export function TopBar() {
         '画布已导出'
       )
     } finally {
-      document.body.classList.remove('is-exporting')
+      delete document.body.dataset.exporting
     }
   }
 
   return (
     <>
-      <header className="topbar pointer-events-none absolute inset-x-0 top-0 z-20 flex h-14 items-start justify-between px-3 [-webkit-app-region:drag]">
+      <header data-slot="topbar" className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-14 items-start justify-between px-3 [-webkit-app-region:drag]">
         <div
           className="pointer-events-auto ml-1 flex items-center gap-1 pt-4 [-webkit-app-region:no-drag] [[data-platform='darwin']_&]:pl-[68px]"
           ref={menuRef}
@@ -393,7 +393,7 @@ export function TopBar() {
               <Icon name="download" />
             </Button>
             {exportMenuOpen ? (
-              <div className="export-menu absolute right-0 top-[34px] z-[90] w-[216px] rounded-[14px] border border-border bg-surface p-1.5 shadow-menu">
+              <div data-slot="export-menu" className="absolute right-0 top-[34px] z-[90] w-[216px] rounded-[14px] border border-border bg-surface p-1.5 shadow-menu">
                 <Button
                   type="button"
                   variant="ghost"

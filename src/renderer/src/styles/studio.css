@@ -7,25 +7,25 @@
  * 时间线内部的像素定位（轨道宽度、片段 left/width、播放头、刻度间距）由 inline style 计算。
  */
 
-.studio-window[data-left-open='false'] {
+[data-window='studio'][data-left-open='false'] {
   --studio-left: 0px !important;
 }
 
-.studio-window[data-right-open='false'] {
+[data-window='studio'][data-right-open='false'] {
   --studio-right: 0px !important;
 }
 
 /* 窄窗口 */
 
 @media (max-width: 1400px) {
-  .studio-window {
+  [data-window='studio'] {
     --studio-left: 300px;
     --studio-right: 260px;
   }
 }
 
 @media (max-width: 1100px) {
-  .studio-window {
+  [data-window='studio'] {
     --studio-left: 260px;
     --studio-right: 240px;
   }

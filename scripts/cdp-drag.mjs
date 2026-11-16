@@ -93,7 +93,7 @@ await send('Input.dispatchMouseEvent', {
 
 await new Promise((r) => setTimeout(r, 400))
 const state = await evaluate(
-  `JSON.stringify({ menu: document.querySelectorAll('.add-menu').length, edges: document.querySelectorAll('.react-flow__edge').length })`
+  `JSON.stringify({ menu: document.querySelectorAll('[data-add-menu]').length, edges: document.querySelectorAll('.react-flow__edge').length })`
 )
 console.log('start', JSON.stringify(pos), '->', targetX, targetY)
 console.log('state', state)

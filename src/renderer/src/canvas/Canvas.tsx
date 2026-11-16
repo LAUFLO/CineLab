@@ -552,14 +552,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
         maxZoom={4}
         defaultViewport={viewport}
         onMove={(_event, next) => setViewport(next)}
-        className={
-          [
-            handMode ? 'is-hand-tool' : '',
-            singleGroupSelected ? 'is-single-group' : ''
-          ]
-            .filter(Boolean)
-            .join(' ') || undefined
-        }
+        data-hand-tool={handMode || undefined}
+        data-single-group={singleGroupSelected || undefined}
         style={
           {
             '--canvas-zoom': viewport.zoom,

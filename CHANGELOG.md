@@ -3,6 +3,30 @@
 本项目的版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循语义化版本。
 
+## [0.2.1] - 2026-11-16
+
+### 变更
+
+- 样式体系全量迁移到 Tailwind utility：CSS 从 14,197 行降到 495 行，组件样式 0 行，构建 CSS 289.0 → 167.9 KB。
+- 行为钩子从语义类名统一为 `data-*`，`className` 只保留 utility 与 Tailwind 变体。
+- 样式入口精简为 3 个文件：`tokens.css`、`tailwind.css`、`infrastructure.css`（原 `global.css` 更名，文件头限定五类内容）。
+- 文档治理：30 份已完成方案移入 `docs/archive/`，索引重新分类；`ui-spec` 补输入槽位与模型配置 v2。
+- 修复 e2e 在 DevTools 端口 9222 被占用时启动超时，4 个用例恢复通过。
+- 依赖更新：electron 45.3.1、vite 8.3.8、`@babel/core` 8.1.2。
+
+## [0.2.0] - 2026-11-15
+
+### 新增
+
+- 模型配置 v2：能力模式、9 个生成模式、协议模板与配置 Skill。
+- PromptBar 模式驱动槽位：首尾帧、参考图、拖拽排序、超限自动切换模式。
+- 默认主题改为跟随系统。
+- README 重构，补充社区入口。
+
+### 变更
+
+- 移除本地槽位数量上限，连线改为严格模式。
+
 ## [0.1.1] - 2026-11-14
 
 ### 修复

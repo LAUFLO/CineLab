@@ -31,13 +31,13 @@ export function BrandWordmark({ height = 20, className }: BrandWordmarkProps) {
       <img
         src={wordmarkLight}
         alt="CineLab"
-        className="brand-wordmark__light"
+        data-brand="light"
         draggable={false}
       />
       <img
         src={wordmarkDark}
         alt="CineLab"
-        className="brand-wordmark__dark"
+        data-brand="dark"
         draggable={false}
       />
     </span>

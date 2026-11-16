@@ -424,11 +424,12 @@ export function VideoOpNodeView({
 
   return (
     <div
-      className={`cnode group video-op-node relative flex h-full w-full flex-col ${
-        selected ? 'is-selected' : ''
-      }`}
+      data-cnode
+      data-node-kind="video-op"
+      data-selected={selected || undefined}
+      className="group relative flex h-full w-full flex-col"
     >
-      <div className="flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-[.is-selected]:text-fg">
+      <div className="flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-data-[selected]:text-fg">
         <Icon name={OPERATION_ICON[data.operation]} size={12} />
         <span>{data.title}</span>
         <span
@@ -441,7 +442,8 @@ export function VideoOpNodeView({
       </div>
 
       <div
-        className={`cnode__card relative flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-card border bg-surface-raised p-2.5 shadow-node transition-colors duration-[120ms] ${
+        data-node-card
+        className={`relative flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-card border bg-surface-raised p-2.5 shadow-node transition-colors duration-[120ms] ${
           selected
             ? 'border-border-selected'
             : 'border-border group-hover:border-border-strong'
@@ -845,16 +847,16 @@ export function VideoOpNodeView({
       <Handle
         type="target"
         position={Position.Left}
-        className="cnode__handle cnode__handle--left"
+        data-handle="left"
         title="接收源视频"
       >
-        <Icon name="plus" size={12} className="cnode__handle-icon" />
+        <Icon name="plus" size={12} />
       </Handle>
 
       <Handle
         type="source"
         position={Position.Right}
-        className="cnode__handle cnode__handle--right"
+        data-handle="right"
         title="生成结果"
       />
     </div>

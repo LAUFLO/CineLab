@@ -138,7 +138,7 @@ export function AddNodeMenu() {
 
     const side = menu.source.handle === 'source' ? 'right' : 'left'
     const handle = document.querySelector<HTMLElement>(
-      `.react-flow__node[data-id="${menu.source.nodeId}"] .cnode__handle--${side}`
+      `.react-flow__node[data-id="${menu.source.nodeId}"] .react-flow__handle[data-handle="${side}"]`
     )
     if (!handle) return null
 
@@ -168,7 +168,8 @@ export function AddNodeMenu() {
 
       <div
         ref={ref}
-        className="add-menu fixed z-[100] max-h-[calc(100vh-120px)] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 shadow-menu [animation:menu-in_120ms_ease-out]"
+        data-add-menu
+        className="fixed z-[100] max-h-[calc(100vh-120px)] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 shadow-menu [animation:menu-in_120ms_ease-out]"
         style={style}
         onPointerDown={(event) => event.stopPropagation()}
       >

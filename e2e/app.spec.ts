@@ -15,7 +15,9 @@ test.describe.serial('CineLab desktop', () => {
       env: {
         ...(process.env as Record<string, string>),
         CINELAB_USER_DATA: userData,
-        CINELAB_DISABLE_THROTTLE: '1'
+        CINELAB_DISABLE_THROTTLE: '1',
+        // 交给 Electron 自动分配 DevTools 端口，避免与用户浏览器的 9222 冲突
+        CINELAB_DEBUG_PORT: '0'
       }
     })
     page = await app.firstWindow()
@@ -59,20 +61,20 @@ test.describe.serial('CineLab desktop', () => {
       () =>
         Boolean(
           document.querySelector('.react-flow') ??
-            document.querySelector('.project-card')
+            document.querySelector('[data-testid="project-card"]')
         ),
       undefined,
       { timeout: 20_000 }
     )
 
     if ((await page.locator('.react-flow').count()) === 0) {
-      await page.locator('.project-card', { hasText: 'E2E' }).first().click()
+      await page.locator('[data-testid="project-card"]', { hasText: 'E2E' }).first().click()
     }
     await expect(page.locator('.react-flow')).toBeVisible({ timeout: 20_000 })
 
     await page.getByRole('button', { name: '图片生成' }).click()
     await expect(page.locator('.react-flow__node')).toHaveCount(1)
-    await expect(page.locator('.promptbar')).toBeVisible()
+    await expect(page.locator('[data-slot="promptbar"]')).toBeVisible()
   })
 
   test('opens the asset library', async () => {
@@ -87,7 +89,7 @@ test.describe.serial('CineLab desktop', () => {
 
   test('opens CineBot', async () => {
     await page.locator('[aria-label="打开 CineBot"]').click()
-    await expect(page.locator('.agent-panel')).toBeVisible()
-    await expect(page.locator('.agent-panel textarea')).toBeVisible()
+    await expect(page.getByTestId('agent-panel')).toBeVisible()
+    await expect(page.getByTestId('agent-panel').locator('textarea')).toBeVisible()
   })
 })

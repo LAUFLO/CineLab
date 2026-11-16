@@ -107,8 +107,9 @@ export function AppTooltip() {
 
   return (
     <div
-      className={`app-tooltip ${
-        tip.placement === 'bottom' ? 'is-bottom' : ''
+      data-placement={tip.placement}
+      className={`fixed z-[500] max-w-[min(360px,calc(100vw-16px))] -translate-x-1/2 whitespace-nowrap rounded-lg border border-border bg-surface-raised px-2.5 py-1.5 text-xs leading-[1.4] text-fg shadow-float ${
+        tip.placement === 'bottom' ? '' : '-translate-y-full'
       }`}
       style={{ left: tip.x, top: tip.y }}
     >

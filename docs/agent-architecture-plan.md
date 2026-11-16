@@ -5,7 +5,7 @@
 适用版本：v0.1.0
 最后核对：2026-11-13
 范围：Agent 运行时、工具协议、权限、确认、回合事务、会话、上下文、技能、IPC
-关联文档：`docs/agent-capabilities.md`（当前工具清单）、`docs/agent-capability-plan.md`（分阶段记录）、`docs/agent-full-scope.md`、`docs/agent-plan.md`、`docs/director-stage-plan.md`
+关联文档：`docs/agent-capabilities.md`（当前工具清单）、`docs/archive/agent-capability-plan.md`（分阶段记录）、`docs/agent-full-scope.md`、`docs/archive/agent-plan.md`、`docs/archive/director-stage-plan.md`
 
 > 本文件前半部分保留 2026-11-08 的架构设计；实际落地以第 0 节「实施状态」和 `docs/agent-capabilities.md` 为准。
 
@@ -360,7 +360,7 @@ interface AgentScope {
 - 批量修改超过阈值。
 - 任何生成。
 
-生成走两段式（落地细节见 `docs/agent-generation-proposal-plan.md`）：
+生成走两段式（落地细节见 `docs/archive/agent-generation-proposal-plan.md`）：
 
 ```text
 generation.propose  → 只登记，返回 proposalId、目标、模型、参数、数量

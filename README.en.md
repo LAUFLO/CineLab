@@ -23,6 +23,10 @@
   <a href="https://github.com/LAUFLO/CineLab/releases/latest">Download</a>
   ·
   <a href="docs/README.md">Docs</a>
+  ·
+  <a href="https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=ee4gcf5b-e0c4-4ede-b6e8-524abb223c01">Feishu group</a>
+  ·
+  <a href="https://qun.qq.com/universal-share/share?ac=1&authKey=Q9ARD0p6c%2BkqnN5F4k%2BMysAX18yETDp%2F9OGNOL%2F%2FVL8eXMcotGtyMs26DyaLTKXH&busi_data=eyJncm91cENvZGUiOiIxMTM2NDMzODU4IiwidG9rZW4iOiJ2Q2ViQmtJSHBQSzh6UlFXVWI2QmtxMUlIZDFzaC95VlFoY05IRXc3Z00rcWFRMjhjZndFMnduTWNPVzBxc1JOIiwidWluIjoiMTE3NTA4MjQyNCJ9&data=-6tZHhq9ZGRpIjIU2f63RJcsU31U4SfF5aNtH5G0T6Cc2rjp_X9mzFu4KQuIToGQb2ODE5RhHgQRjsTnXVDycA&svctype=4&tempid=h5_group_info">QQ group: 1136433858</a>
 </p>
 
 ## What is CineLab

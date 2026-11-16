@@ -23,6 +23,10 @@
   <a href="https://github.com/LAUFLO/CineLab/releases/latest">下载</a>
   ·
   <a href="docs/README.md">文档</a>
+  ·
+  <a href="https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=ee4gcf5b-e0c4-4ede-b6e8-524abb223c01">飞书交流群</a>
+  ·
+  <a href="https://qun.qq.com/universal-share/share?ac=1&authKey=Q9ARD0p6c%2BkqnN5F4k%2BMysAX18yETDp%2F9OGNOL%2F%2FVL8eXMcotGtyMs26DyaLTKXH&busi_data=eyJncm91cENvZGUiOiIxMTM2NDMzODU4IiwidG9rZW4iOiJ2Q2ViQmtJSHBQSzh6UlFXVWI2QmtxMUlIZDFzaC95VlFoY05IRXc3Z00rcWFRMjhjZndFMnduTWNPVzBxc1JOIiwidWluIjoiMTE3NTA4MjQyNCJ9&data=-6tZHhq9ZGRpIjIU2f63RJcsU31U4SfF5aNtH5G0T6Cc2rjp_X9mzFu4KQuIToGQb2ODE5RhHgQRjsTnXVDycA&svctype=4&tempid=h5_group_info">QQ群：1136433858</a>
 </p>
 
 ## CineLab 是什么
@@ -123,7 +127,7 @@ Bug 和功能建议请提到 [GitHub Issues](https://github.com/LAUFLO/CineLab/i
 - [模型配置](docs/models.md)：`models.json` 格式与 Provider 配置
 - [界面规格](docs/ui-spec.md)：布局尺寸、节点结构、prompt bar、工具栏清单
 - [CineBot 能力清单](docs/agent-capabilities.md)：当前工具、参数校验、确认规则和回合撤销
-- [剪辑室](docs/clip-studio-plan.md) · [导演台](docs/director-stage-plan.md) · [逐帧拉片](docs/film-study-plan.md)
+- [剪辑室](docs/archive/clip-studio-plan.md) · [导演台](docs/archive/director-stage-plan.md) · [逐帧拉片](docs/archive/film-study-plan.md)
 
 ## 开发
 

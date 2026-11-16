@@ -6,10 +6,10 @@ import { useStageStore } from '../../stage/stageStore'
 import { Input, Button } from '../../components/ui'
 
 const CARD_CLASS =
-  'cnode__card relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-card border p-4 text-center shadow-node transition-colors duration-[120ms]'
+  'relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-card border p-4 text-center shadow-node transition-colors duration-[120ms]'
 
 const TITLE_CLASS =
-  'flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-[.is-selected]:text-fg'
+  'flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-data-[selected]:text-fg'
 
 export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
   const patchStageNode = useCanvasStore((state) => state.patchStageNode)
@@ -25,9 +25,10 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
 
   return (
     <div
-      className={`cnode group stage-node relative flex h-full w-full flex-col ${
-        selected ? 'is-selected' : ''
-      }`}
+      data-cnode
+      data-node-kind="stage"
+      data-selected={selected || undefined}
+      className="group relative flex h-full w-full flex-col"
     >
       <div
         className={TITLE_CLASS}
@@ -60,6 +61,7 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
       </div>
 
       <div
+        data-node-card
         className={`${CARD_CLASS} ${
           selected
             ? 'border-border-selected'
@@ -101,16 +103,16 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
       <Handle
         type="target"
         position={Position.Left}
-        className="cnode__handle cnode__handle--left"
+        data-handle="left"
         title="接收参考素材"
       >
-        <Icon name="plus" size={12} className="cnode__handle-icon" />
+        <Icon name="plus" size={12} />
       </Handle>
 
       <Handle
         type="source"
         position={Position.Right}
-        className="cnode__handle cnode__handle--right stage-node__handle--derived"
+        data-handle="right" data-derived
         isConnectable={false}
         title="截图与预演由导演台派生"
       />

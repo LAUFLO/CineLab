@@ -59,7 +59,9 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
 
   return (
     <div
-      className={`group-node relative h-full w-full rounded-[14px] transition-[border-color,box-shadow] duration-[120ms] ${
+      data-node-kind="group"
+      data-selected={selected || undefined}
+      className={`relative h-full w-full rounded-[14px] transition-[border-color,box-shadow] duration-[120ms] ${
         data.mode === 'storyboard'
           ? 'border-[1.5px] border-dashed'
           : 'border border-solid'
@@ -67,9 +69,7 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
         selected
           ? 'border-[var(--group-color)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--group-color)_45%,transparent)]'
           : 'border-[color-mix(in_srgb,var(--group-color)_60%,transparent)]'
-      } bg-[color-mix(in_srgb,var(--group-color)_6%,transparent)] ${
-        selected ? 'is-selected' : ''
-      }`}
+      } bg-[color-mix(in_srgb,var(--group-color)_6%,transparent)]`}
       style={
         {
           '--group-color': `var(--group-${data.color}, var(--group-blue))`
@@ -110,20 +110,20 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
       <Handle
         type="target"
         position={Position.Left}
-        className="cnode__handle cnode__handle--left"
+        data-handle="left"
         title="接收上游连线"
       >
-        <Icon name="plus" size={12} className="cnode__handle-icon" />
+        <Icon name="plus" size={12} />
       </Handle>
 
       <Handle
         type="source"
         position={Position.Right}
-        className="cnode__handle cnode__handle--right"
+        data-handle="right"
         title="引用组内节点生成"
         onClick={openFromHandle}
       >
-        <Icon name="plus" size={12} className="cnode__handle-icon" />
+        <Icon name="plus" size={12} />
       </Handle>
     </div>
   )

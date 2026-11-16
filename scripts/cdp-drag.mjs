@@ -44,7 +44,7 @@ async function evaluate(expression) {
 }
 
 const pos = await evaluate(`(() => {
-  const handle = document.querySelector('${process.argv[4] ?? '.cnode__handle--right'}')
+  const handle = document.querySelector('${process.argv[4] ?? '.react-flow__handle[data-handle="right"]'}')
   if (!handle) return null
   const rect = handle.getBoundingClientRect()
   return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
@@ -93,7 +93,7 @@ await send('Input.dispatchMouseEvent', {
 
 await new Promise((r) => setTimeout(r, 400))
 const state = await evaluate(
-  `JSON.stringify({ menu: document.querySelectorAll('.add-menu').length, edges: document.querySelectorAll('.react-flow__edge').length })`
+  `JSON.stringify({ menu: document.querySelectorAll('[data-add-menu]').length, edges: document.querySelectorAll('.react-flow__edge').length })`
 )
 console.log('start', JSON.stringify(pos), '->', targetX, targetY)
 console.log('state', state)

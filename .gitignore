@@ -21,3 +21,4 @@ lint.json
 test-results/
 playwright-report/
 blob-report/
+.qq-group.json

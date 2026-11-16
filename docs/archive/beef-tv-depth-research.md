@@ -1,5 +1,6 @@
 # BeefTV 深度捕捉组件调研
 
+状态：历史（2026-11-16 归档）
 日期：2026-11-07
 来源：https://github.com/glanderness/BeefTV
 

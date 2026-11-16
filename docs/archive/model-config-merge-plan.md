@@ -1,8 +1,8 @@
 # 模型配置合并与配置驱动接入方案
 
 日期：2026-11-14
-状态：已完成
-关联：[models.md](models.md)、[video-operations-plan.md](video-operations-plan.md)、[sora-video-plan.md](sora-video-plan.md)
+状态：历史（2026-11-16 归档）
+关联：[models.md](../models.md)、[video-operations-plan.md](video-operations-plan.md)、[sora-video-plan.md](sora-video-plan.md)
 
 ## 1. 目标
 

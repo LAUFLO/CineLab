@@ -1,7 +1,7 @@
 # 逐帧拉片方案
 
 日期：2026-11-08
-状态：历史（2026-11-13 归档）
+状态：历史（2026-11-16 归档）
 适用版本：`main` @ `b76a064`
 参考项目：[bkingfilm/lapian-notes](https://github.com/bkingfilm/lapian-notes)（MIT）
 

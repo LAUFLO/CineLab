@@ -17,15 +17,36 @@ const CURRENT_DOCS = [
 ]
 
 const HISTORICAL_DOCS = [
-  'docs/agent-capability-plan.md',
-  'docs/agent-generation-proposal-plan.md',
-  'docs/agent-generation-operations-plan.md',
-  'docs/agent-phase3-plan.md',
-  'docs/node-operation-bridge-plan.md',
-  'docs/agent-plan.md',
-  'docs/clip-studio-plan.md',
-  'docs/director-stage-plan.md',
-  'docs/film-study-plan.md'
+  'docs/archive/agent-capability-plan.md',
+  'docs/archive/agent-generation-proposal-plan.md',
+  'docs/archive/agent-generation-operations-plan.md',
+  'docs/archive/agent-phase3-plan.md',
+  'docs/archive/node-operation-bridge-plan.md',
+  'docs/archive/agent-plan.md',
+  'docs/archive/clip-studio-plan.md',
+  'docs/archive/director-stage-plan.md',
+  'docs/archive/film-study-plan.md',
+  'docs/archive/engineering-quality-plan.md',
+  'docs/archive/p2-acceptance.md',
+  'docs/archive/video-operations-plan.md',
+  'docs/archive/remaining-features-plan.md',
+  'docs/archive/model-params-plan.md',
+  'docs/archive/model-config-merge-plan.md',
+  'docs/archive/sora-video-plan.md',
+  'docs/archive/studio-film-merge-plan.md',
+  'docs/archive/project-cover-plan.md',
+  'docs/archive/logging-plan.md',
+  'docs/archive/library-export-enhancements-plan.md',
+  'docs/archive/project-templates-plan.md',
+  'docs/archive/prompt-mention-plan.md',
+  'docs/archive/update-plan.md',
+  'docs/archive/general-settings-plan.md',
+  'docs/archive/director-stage-viewport-plan.md',
+  'docs/archive/model-config-v2-plan.md',
+  'docs/archive/promptbar-input-modes-plan.md',
+  'docs/archive/tailwind-migration-plan.md',
+  'docs/archive/tailwind-anchor-migration-plan.md',
+  'docs/archive/beef-tv-depth-research.md'
 ]
 
 const PATH_PATTERN = /`((?:src|docs|scripts|resources|\.github)\/[^`\s]+)`/g

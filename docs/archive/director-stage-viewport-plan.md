@@ -1,7 +1,7 @@
 # 导演台 3D 视口实施文档（A 路线）
 
 日期：2026-11-09
-状态：A1 / A2 / A3 已完成（3D 视口、编辑与 Agent 工具、运镜时间轴、本地白模预演导出）
+状态：历史（2026-11-16 归档）
 关联：`docs/director-stage-plan.md`、`STAGE-COMMANDS-1`、`STAGE-NODE-STORAGE-1`
 
 ## 1. 技术路线

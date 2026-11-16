@@ -1,8 +1,8 @@
 # PromptBar 输入模式与槽位方案
 
 日期：2026-11-15
-状态：P0 / P1 已实施，P2 部分实施；2026-11-15 移除本地槽位数量上限
-关联：[models.md](models.md)、[model-config-v2-plan.md](model-config-v2-plan.md)、[ui-spec.md](ui-spec.md)
+状态：历史（2026-11-16 归档）
+关联：[models.md](../models.md)、[model-config-v2-plan.md](model-config-v2-plan.md)、[ui-spec.md](../ui-spec.md)
 
 ## 1. 背景
 

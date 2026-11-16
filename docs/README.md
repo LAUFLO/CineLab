@@ -42,6 +42,7 @@
 | [node-output-target-plan.md](node-output-target-plan.md) | 节点操作输出目标：版本回写 / 新建节点规则 | 已实现，保留参考 |
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 | Backlog |
 | [agent-full-scope.md](agent-full-scope.md) | Agent 完整范围 | 参考 |
+| [update-mirror-plan.md](update-mirror-plan.md) | 更新源失败兜底：GitHub 主源 + 镜像代理手动下载 | 已实现 |
 
 ## 3. 历史归档
 

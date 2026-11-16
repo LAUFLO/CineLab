@@ -1302,6 +1302,7 @@ function AboutSection() {
   const check = useUpdateStore((state) => state.check)
   const download = useUpdateStore((state) => state.download)
   const install = useUpdateStore((state) => state.install)
+  const openFallback = useUpdateStore((state) => state.openFallback)
 
   useEffect(() => {
     void window.api.app.getInfo().then((info) => setVersion(info.version))
@@ -1360,6 +1361,29 @@ function AboutSection() {
         >
           {updateLabel(status)}
         </div>
+        {status?.state === 'error' && status.fallback ? (
+          <div className="mt-2.5 flex flex-col items-start gap-1.5">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void openFallback()}
+            >
+              {status.fallback.kind === 'releases-page'
+                ? '打开发布页'
+                : '用浏览器下载'}
+            </Button>
+            <span className="text-[11px] leading-relaxed text-fg-subtle">
+              {status.fallback.kind === 'installer'
+                ? `${status.fallback.fileName ?? '安装包'} · ${
+                    status.fallback.source === 'github'
+                      ? 'GitHub 直连'
+                      : `经 ${status.fallback.source}`
+                  } · 下载后请核对 SHA256SUMS.txt`
+                : '在浏览器里选择对应平台的安装包'}
+            </span>
+          </div>
+        ) : null}
         {status?.state === 'downloading' ? (
           <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-hover">
             <div

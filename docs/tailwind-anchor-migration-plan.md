@@ -158,7 +158,10 @@
 | 步骤 | 状态 | 结果 |
 |---|---|---|
 | 第一步：画布节点锚点 | done | 6 个 NodeView、`global.css` 10 条选择器、2 个 CDP 脚本、`AddNodeMenu`；连接点选中态验证通过 |
-| 第二步：功能锚点与 body 状态 | todo | — |
+| 第二步：功能锚点与 body 状态 | done | `agent-panel`、`promptbar__*`、`add-menu`、`*-window`、`brand-wordmark`、导出隐藏、body 状态全部改 `data-*`；同步 e2e 与脚本 |
+| 补漏：工具提示与节点工具栏 | done | `app-tooltip` / `ref-preview` 原先类名在、样式已丢，已补 utility；`cnode__toolbar-item/submenu` 改 `data-toolbar-*` |
+
+最终状态：组件 `className` 只含 utility 与 Tailwind 变体，行为钩子全部为 `data-*`；`global.css` 332 行仅剩基础设施。
 
 ## 9. 不迁移的项（物理边界）
 

@@ -138,7 +138,10 @@ export function ProjectCard({
   }
 
   return (
-    <div className="group relative rounded-xl border border-border bg-surface-raised p-3 text-left hover:border-border-strong hover:bg-surface-hover">
+    <div
+      data-testid="project-card"
+      className="group relative rounded-xl border border-border bg-surface-raised p-3 text-left hover:border-border-strong hover:bg-surface-hover"
+    >
       <Button
         type="button"
         variant="ghost"

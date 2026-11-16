@@ -18,7 +18,7 @@ export function StatusBar() {
   const requestArrange = useUIStore((state) => state.requestArrange)
 
   return (
-    <div className="statusbar absolute bottom-4 left-4 z-20 flex h-10 items-center gap-0.5 rounded-xl border border-border bg-surface px-1.5 py-1 text-xs text-fg-muted shadow-float">
+    <div data-slot="statusbar" className="absolute bottom-4 left-4 z-20 flex h-10 items-center gap-0.5 rounded-xl border border-border bg-surface px-1.5 py-1 text-xs text-fg-muted shadow-float">
       <Button
         type="button"
         variant="ghost"

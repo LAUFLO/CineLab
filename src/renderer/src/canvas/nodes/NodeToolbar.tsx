@@ -157,8 +157,10 @@ export function NodeToolbar({
 
   useEffect(() => {
     if (!openId) return
-    document.body.classList.add('is-node-menu-open')
-    return () => document.body.classList.remove('is-node-menu-open')
+    document.body.dataset.nodeMenuOpen = ''
+    return () => {
+      delete document.body.dataset.nodeMenuOpen
+    }
   }, [openId])
 
   const cancelSubClose = (): void => {

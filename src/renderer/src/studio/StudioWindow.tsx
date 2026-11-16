@@ -258,7 +258,8 @@ export function StudioWindow() {
       data-scope="studio"
     >
       <div
-        className="studio-window grid min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden rounded-panel border border-border bg-canvas p-1.5 text-fg shadow-menu [grid-template-areas:'top_top_top'_'left_preview_right'_'timeline_timeline_timeline'] [grid-template-columns:var(--studio-left,360px)_minmax(0,1fr)_var(--studio-right,300px)]"
+        data-window="studio"
+        className="grid min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden rounded-panel border border-border bg-canvas p-1.5 text-fg shadow-menu [grid-template-areas:'top_top_top'_'left_preview_right'_'timeline_timeline_timeline'] [grid-template-columns:var(--studio-left,360px)_minmax(0,1fr)_var(--studio-right,300px)]"
         data-left-open={leftOpen}
         data-right-open={rightOpen}
         style={{

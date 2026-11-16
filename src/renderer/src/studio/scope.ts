@@ -3,5 +3,5 @@
  * 用 DOM 查询而不是 store，避免画布与全屏工作区互相依赖。
  */
 export function studioOpen(): boolean {
-  return Boolean(document.querySelector('.studio-window, .stage-window'))
+  return Boolean(document.querySelector('[data-window]'))
 }

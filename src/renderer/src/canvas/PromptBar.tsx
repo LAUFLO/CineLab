@@ -320,7 +320,7 @@ export function PromptBar() {
       const target = event.target
       if (!(target instanceof Element)) return
       if (target.closest('.mention-menu')) return
-      if (target.closest('.promptbar__input-wrap')) return
+      if (target.closest('[data-promptbar-input]')) return
       setMentionOpen(false)
     }
 
@@ -344,8 +344,8 @@ export function PromptBar() {
         setParamMenuKey(null)
       if (
         advancedOpen &&
-        !target.closest('.promptbar__advanced') &&
-        !target.closest('.promptbar__advanced-trigger')
+        !target.closest('[data-promptbar-advanced]') &&
+        !target.closest('[data-promptbar-advanced-trigger]')
       ) {
         setAdvancedOpen(false)
       }
@@ -372,7 +372,7 @@ export function PromptBar() {
   useEffect(() => {
     if (!picking || !node) return
 
-    document.body.classList.add('is-picking')
+    document.body.dataset.picking = ''
 
     const onPointerDown = (event: PointerEvent): void => {
       const target = event.target
@@ -443,7 +443,7 @@ export function PromptBar() {
     document.addEventListener('pointerdown', onPointerDown, true)
     document.addEventListener('keydown', onKeyDown)
     return () => {
-      document.body.classList.remove('is-picking')
+      delete document.body.dataset.picking
       document.removeEventListener('pointerdown', onPointerDown, true)
       document.removeEventListener('keydown', onKeyDown)
     }
@@ -1461,7 +1461,8 @@ export function PromptBar() {
       ) : null}
 
       <div
-        className={`promptbar flex flex-col rounded-[14px] border border-border bg-surface shadow-float ${
+        data-slot="promptbar"
+        className={`flex flex-col rounded-[14px] border border-border bg-surface shadow-float ${
           expanded
             ? 'fixed left-1/2 top-1/2 z-[240] h-auto min-h-[320px] max-h-[calc(100vh-120px)] w-[min(920px,calc(100vw-96px))] -translate-x-1/2 -translate-y-1/2 px-3 pb-3 pt-2'
             : 'absolute z-50 h-[196px] animate-[promptbar-in_180ms_ease-out] px-2.5 pb-2 pt-1'
@@ -1657,11 +1658,10 @@ export function PromptBar() {
           </div>
         ) : null}
 
-        {/* 保留 promptbar__input-wrap 类名：提及菜单用 closest 判定点击是否在输入区内 */}
+        {/* data-promptbar-input：提及菜单用 closest 判定点击是否在输入区内 */}
         <div
-          className={`promptbar__input-wrap relative flex-1 ${
-            expanded ? 'min-h-[200px]' : 'min-h-0'
-          }`}
+          data-promptbar-input
+          className={`relative flex-1 ${expanded ? 'min-h-[200px]' : 'min-h-0'}`}
         >
           <div className={MIRROR_CLASS} ref={mirrorRef} aria-hidden>
             {renderMentionText(promptText, mentionNames)}
@@ -1895,7 +1895,7 @@ export function PromptBar() {
         </div>
 
         {advancedOpen ? (
-          <div className="promptbar__advanced absolute right-0 top-[calc(100%+8px)] z-[70] w-[268px] rounded-[12px] border border-border bg-surface p-3 shadow-menu">
+          <div data-promptbar-advanced className="absolute right-0 top-[calc(100%+8px)] z-[70] w-[268px] rounded-[12px] border border-border bg-surface p-3 shadow-menu">
             <div className="mb-2.5 text-xs text-fg-muted">高级设置</div>
             <div className="flex items-center justify-between gap-3">
               <div>

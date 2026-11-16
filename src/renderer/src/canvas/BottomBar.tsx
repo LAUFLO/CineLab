@@ -49,7 +49,7 @@ export function BottomBar() {
   }
 
   return (
-    <div className="bottombar absolute bottom-4 left-1/2 z-20 flex h-10 -translate-x-1/2 items-center gap-0.5 rounded-xl border border-border bg-surface p-1 shadow-float">
+    <div data-slot="bottombar" className="absolute bottom-4 left-1/2 z-20 flex h-10 -translate-x-1/2 items-center gap-0.5 rounded-xl border border-border bg-surface p-1 shadow-float">
       <Button
         type="button"
         variant="ghost"

@@ -1926,7 +1926,8 @@ export function PromptBar() {
       )
         ? createPortal(
             <div
-              className="ref-preview"
+              data-ref-preview
+              className="pointer-events-none fixed z-[400] -translate-x-1/2 -translate-y-full rounded-[10px] border border-border bg-surface p-1 shadow-menu"
               style={{ left: refPreview.x, top: refPreview.y }}
             >
               {refPreview.kind === 'video' ? (

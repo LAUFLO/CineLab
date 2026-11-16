@@ -206,8 +206,8 @@ export function NodeToolbar({
     const onPointerDown = (event: PointerEvent): void => {
       const target = event.target
       if (!(target instanceof Element)) return
-      if (target.closest('.cnode__toolbar-item')) return
-      if (target.closest('.cnode__toolbar-submenu')) return
+      if (target.closest('[data-toolbar-item]')) return
+      if (target.closest('[data-toolbar-submenu]')) return
       setOpenId(null)
       setMoreSub(null)
     }
@@ -736,7 +736,8 @@ export function NodeToolbar({
 
           return (
             <div
-              className="cnode__toolbar-item relative flex"
+              data-toolbar-item
+              className="relative flex"
               key={`${nodeId}-${op.id}`}
             >
               <Button
@@ -788,7 +789,7 @@ export function NodeToolbar({
         })}
 
         {moreOps.length > 0 ? (
-          <div className="cnode__toolbar-item relative flex">
+          <div data-toolbar-item className="relative flex">
             <Button
               type="button"
               variant="ghost"
@@ -1017,7 +1018,8 @@ export function NodeToolbar({
       {moreSub && openId === 'more'
         ? createPortal(
             <div
-              className="cnode__toolbar-submenu fixed z-[320] max-h-[60vh] min-w-[176px] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 whitespace-normal shadow-menu"
+              data-toolbar-submenu
+              className="fixed z-[320] max-h-[60vh] min-w-[176px] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 whitespace-normal shadow-menu"
               style={{ top: moreSub.top, left: moreSub.left }}
               onMouseEnter={cancelSubClose}
               onMouseLeave={scheduleSubClose}

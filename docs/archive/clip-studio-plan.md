@@ -1,6 +1,6 @@
 # 剪辑室与 AI 智能剪辑方案
 
-> 状态：历史（2026-11-13 归档）
+> 状态：历史（2026-11-16 归档）
 > 日期：2026-11-07
 > 适用版本：`main` @ `b76a064`
 > 关联：`src/shared/timeline-*.ts`、`src/renderer/src/studio/`、`src/main/timeline/`、`src/main/ipc/timeline.ts`

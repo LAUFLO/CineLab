@@ -1,7 +1,7 @@
 # Tailwind 锚点迁移方案（收尾最后一公里）
 
 日期：2026-11-16
-状态：待实施
+状态：历史（2026-11-16 归档）
 关联：[tailwind-migration-plan.md](tailwind-migration-plan.md)
 
 ## 1. 背景

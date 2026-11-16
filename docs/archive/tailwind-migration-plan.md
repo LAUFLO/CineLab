@@ -1,9 +1,9 @@
 # Tailwind 全量迁移方案（路线 A）
 
 日期：2026-11-15
-状态：待实施
+状态：历史（2026-11-16 归档）
 适用版本：v0.2.0
-关联：[engineering-quality-plan.md](engineering-quality-plan.md)、[p2-acceptance.md](p2-acceptance.md)、[ui-spec.md](ui-spec.md)
+关联：[engineering-quality-plan.md](engineering-quality-plan.md)、[p2-acceptance.md](p2-acceptance.md)、[ui-spec.md](../ui-spec.md)
 
 > 命名说明：`global.css` 已于 2026-11-16 更名为 `infrastructure.css`（避免被误认为“全局样式文件”）。下文历史批次记录保留旧名，当前实现以 `infrastructure.css` 为准。
 

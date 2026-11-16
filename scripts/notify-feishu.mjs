@@ -21,41 +21,66 @@ function sectionFor(target) {
   return changelog.match(re)?.[1]?.trim() ?? ''
 }
 
-const bullets = sectionFor(version)
-  .split('\n')
-  .map((line) => line.trim())
-  .filter((line) => line.startsWith('- '))
-  .slice(0, 12)
+const section = sectionFor(version)
+const groups = []
+let current = null
+for (const line of section.split('\n')) {
+  const heading = line.match(/^###\s+(.+)/)
+  if (heading) {
+    current = { title: heading[1].trim(), items: [] }
+    groups.push(current)
+    continue
+  }
+  if (current && line.trim().startsWith('- ')) {
+    current.items.push(line.trim())
+  }
+}
 
+if (groups.length === 0) {
+  const items = section
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('- '))
+  if (items.length > 0) groups.push({ title: '变更', items })
+}
+
+const ICON = { 新增: '✨', 变更: '🔧', 修复: '🐛', '已知限制': '⚠️' }
+const PREVIEW = 5
 const releaseUrl = `https://github.com/LAUFLO/CineLab/releases/tag/v${version}`
-const exe = `CineLab-${version}-x64.exe`
-const dmg = `CineLab-${version}-arm64.dmg`
 
 const elements = [
   {
     tag: 'markdown',
-    content: `**版本**：v${version}\n**Tag**：[v${version}](${releaseUrl})`
-  },
-  { tag: 'hr' },
-  {
-    tag: 'markdown',
-    content: `**下载**\n- Windows x64：\`${exe}\`\n- macOS arm64：\`${dmg}\``
+    content: `**版本**：v${version} ｜ [Release](${releaseUrl})`
   }
 ]
 
-if (bullets.length > 0) {
+for (const group of groups) {
+  if (group.items.length === 0) continue
+  const icon = ICON[group.title] ?? '•'
+  const preview = group.items.slice(0, PREVIEW)
+  const rest = group.items.slice(PREVIEW)
+
   elements.push(
     { tag: 'hr' },
     {
+      tag: 'markdown',
+      content: `**${icon} ${group.title} · ${group.items.length} 项**`
+    },
+    { tag: 'markdown', content: preview.join('\n') }
+  )
+
+  if (rest.length > 0) {
+    elements.push({
       tag: 'collapsible_panel',
       expanded: false,
       header: {
-        title: { tag: 'markdown', content: `**展开全部变更（${bullets.length} 项）**` },
+        title: { tag: 'markdown', content: `**展开剩余 ${rest.length} 条**` },
         vertical_align: 'center'
       },
-      elements: [{ tag: 'markdown', content: bullets.join('\n') }]
-    }
-  )
+      elements: [{ tag: 'markdown', content: rest.join('\n') }]
+    })
+  }
 }
 
 elements.push(
@@ -63,13 +88,37 @@ elements.push(
   {
     tag: 'markdown',
     content:
-      '<font color="grey">校验和见 SHA256SUMS.txt ｜ 安装包未签名：Windows 会提示 SmartScreen，macOS 需手动放行 Gatekeeper</font>'
+      '<font color="grey">校验和见 SHA256SUMS.txt ｜ 未签名：Windows 提示 SmartScreen，macOS 需手动放行</font>'
   },
   {
-    tag: 'button',
-    text: { tag: 'plain_text', content: '查看 Release' },
-    type: 'primary',
-    behaviors: [{ type: 'open_url', default_url: releaseUrl }]
+    tag: 'column_set',
+    flex_mode: 'none',
+    columns: [
+      {
+        tag: 'column',
+        width: 'auto',
+        elements: [
+          {
+            tag: 'button',
+            text: { tag: 'plain_text', content: '完整更新日志' },
+            type: 'default',
+            behaviors: [{ type: 'open_url', default_url: releaseUrl }]
+          }
+        ]
+      },
+      {
+        tag: 'column',
+        width: 'auto',
+        elements: [
+          {
+            tag: 'button',
+            text: { tag: 'plain_text', content: '下载安装包' },
+            type: 'primary',
+            behaviors: [{ type: 'open_url', default_url: releaseUrl }]
+          }
+        ]
+      }
+    ]
   }
 )
 
@@ -80,7 +129,7 @@ const payload = {
     config: { update_multi: true },
     header: {
       template: 'blue',
-      title: { tag: 'plain_text', content: `CineLab v${version} 已发布` }
+      title: { tag: 'plain_text', content: `🚀 CineLab v${version}` }
     },
     body: { elements }
   }

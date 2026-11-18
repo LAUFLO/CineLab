@@ -6,6 +6,7 @@ import {
   type StageObject,
   type StageVec3
 } from '@shared/stage-schema'
+import { ShotInspector } from './ShotInspector'
 import { useStageStore } from './stageStore'
 import { Input, NativeSelect, Button } from '../components/ui'
 
@@ -379,6 +380,7 @@ export function StageInspector() {
   const doc = useStageStore((state) => state.doc)
   const selectedObjectId = useStageStore((state) => state.selectedObjectId)
   const selectedCameraId = useStageStore((state) => state.selectedCameraId)
+  const selectedShotId = useStageStore((state) => state.selectedShotId)
 
   if (!doc) return null
 
@@ -387,6 +389,8 @@ export function StageInspector() {
 
   const camera = doc.cameras.find((item) => item.id === selectedCameraId)
   if (camera) return <CameraInspector camera={camera} />
+
+  if (selectedShotId) return <ShotInspector />
 
   return (
     <section className="flex flex-col gap-1">

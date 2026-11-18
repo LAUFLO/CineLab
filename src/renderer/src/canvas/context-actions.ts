@@ -7,6 +7,7 @@ import {
 } from '@shared/canvas-schema'
 import type { LibraryAsset } from '@shared/library-schema'
 import { useCanvasStore, isGroupNode, isStudioNode } from '../stores/canvas'
+import { activeStageNodeId } from '../stage/stage-active'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
 
@@ -206,6 +207,11 @@ export async function pasteAt(position?: XYPosition): Promise<number> {
     if (asset.width && asset.height) {
       const nextHeight = Math.round((width * asset.height) / asset.width)
       store.resizeNode(id, nextHeight + TITLE_HEIGHT)
+    }
+
+    const stageNodeId = activeStageNodeId()
+    if (stageNodeId) {
+      store.onConnect({ source: id, target: stageNodeId })
     }
 
     toast('已粘贴图片')

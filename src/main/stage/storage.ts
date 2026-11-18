@@ -6,6 +6,7 @@ import {
   validateStageDoc,
   type DirectorStageDoc
 } from '@shared/stage-schema'
+import { normalizePrevisWorldRef } from '@shared/previs/world-gen'
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,80}$/
 
@@ -20,6 +21,10 @@ export function stageDirectory(projectRoot: string): string {
 
 function stageFile(projectRoot: string, stageId: string): string {
   return join(stageDirectory(projectRoot), `${assertStageId(stageId)}.json`)
+}
+
+function worldFile(projectRoot: string, stageId: string): string {
+  return join(stageDirectory(projectRoot), `${assertStageId(stageId)}.world.json`)
 }
 
 async function writeJsonAtomic(file: string, data: unknown): Promise<void> {
@@ -67,7 +72,16 @@ export async function loadStageFile(
   if (errors.length > 0) {
     throw new Error(`场景文件无效：${errors[0]}`)
   }
-  return parsed as DirectorStageDoc
+  const doc = parsed as DirectorStageDoc
+  try {
+    const worldRaw = await fs.readFile(worldFile(projectRoot, stageId), 'utf8')
+    doc.world = normalizePrevisWorldRef(JSON.parse(worldRaw) as unknown)
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      // 世界文件损坏时忽略，不阻塞场景加载。
+    }
+  }
+  return doc
 }
 
 export async function saveStageFile(
@@ -108,10 +122,16 @@ export async function saveStageFile(
   }
 
   await ensureStageDir(projectRoot)
+  const { world, ...rest } = doc
   await writeJsonAtomic(file, {
-    ...doc,
+    ...rest,
     updatedAt
   })
+  if (world) {
+    await writeJsonAtomic(worldFile(projectRoot, doc.stageId), world)
+  } else {
+    await fs.rm(worldFile(projectRoot, doc.stageId), { force: true })
+  }
 }
 
 /** 复制场景文件并生成新 ID；源文件不存在时创建空场景 */
@@ -143,4 +163,5 @@ export async function deleteStageFile(
   stageId: string
 ): Promise<void> {
   await fs.rm(stageFile(projectRoot, stageId), { force: true })
+  await fs.rm(worldFile(projectRoot, stageId), { force: true })
 }

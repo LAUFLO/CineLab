@@ -32,6 +32,7 @@
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 |
 | [doc-impact.md](doc-impact.md) | 代码路径 → 文档影响映射 |
 | [studio-node-live-preview-plan.md](studio-node-live-preview-plan.md) | 剪辑室节点实时预览，待实施 |
+| [previs-adaptation-plan.md](previs-adaptation-plan.md) | Previs 语义镜头、程序化世界与场景图白膜，M1–M5 已完成 |
 
 ## 3. 历史归档
 

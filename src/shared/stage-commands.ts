@@ -7,6 +7,7 @@ import {
   cloneStageDoc,
   type ActionTrack,
   type CameraKeyframe,
+  type StageShotIntent,
   type DirectorStageDoc,
   type PreviewOptions,
   type StageBackground,
@@ -43,6 +44,15 @@ export type StageCommand =
     }
   | { type: 'removeShot'; shotId: string }
   | { type: 'setCameraTrack'; shotId: string; track: CameraKeyframe[] }
+  | {
+      type: 'setShotIntent'
+      shotId: string
+      intent: StageShotIntent
+      track: CameraKeyframe[]
+      solvedAt: string
+    }
+  | { type: 'clearShotIntent'; shotId: string }
+  | { type: 'setWorld'; world?: import('./previs/world-gen').PrevisWorldRef }
   | { type: 'setActionTrack'; shotId: string; track: ActionTrack }
   | { type: 'setActiveCamera'; cameraId: string | null }
   | { type: 'setBackground'; background: StageBackground }
@@ -69,6 +79,7 @@ export interface StageChange {
   deletedShotIds: string[]
   activeCameraChanged: boolean
   backgroundChanged: boolean
+  worldChanged: boolean
 }
 
 export interface StageCommandResult {
@@ -95,7 +106,8 @@ export function emptyStageChange(): StageChange {
     updatedShotIds: [],
     deletedShotIds: [],
     activeCameraChanged: false,
-    backgroundChanged: false
+    backgroundChanged: false,
+    worldChanged: false
   }
 }
 
@@ -115,6 +127,7 @@ function mergeChange(target: StageChange, source: StageChange): void {
   for (const id of source.deletedShotIds) pushUnique(target.deletedShotIds, id)
   target.activeCameraChanged ||= source.activeCameraChanged
   target.backgroundChanged ||= source.backgroundChanged
+  target.worldChanged ||= source.worldChanged
 }
 
 function fail(
@@ -556,6 +569,65 @@ export function applyStageCommand(
           ? { ...shot, cameraTrack: sortByTime(command.track) }
           : shot
       )
+      change.updatedShotIds.push(target.id)
+      break
+    }
+
+    case 'setShotIntent': {
+      const target = findShot(doc, command.shotId)
+      if (!target) return fail(doc, '镜头不存在')
+      if (command.intent.keys.length === 0) {
+        return fail(doc, '语义镜头至少需要一个关键帧')
+      }
+      for (let index = 0; index < command.intent.keys.length; index += 1) {
+        const key = command.intent.keys[index]
+        if (
+          !Number.isFinite(key.timeMs) ||
+          key.timeMs < 0 ||
+          key.timeMs > target.durationMs
+        ) {
+          return fail(doc, '语义镜头关键帧时间超出镜头时长')
+        }
+        if (index > 0 && key.timeMs <= command.intent.keys[index - 1].timeMs) {
+          return fail(doc, '语义镜头关键帧时间必须递增')
+        }
+      }
+      const error = validateCameraTrack(command.track, target.durationMs)
+      if (error) return fail(doc, error)
+      next.shots = doc.shots.map((shot) =>
+        shot.id === target.id
+          ? {
+              ...shot,
+              intent: command.intent,
+              cameraTrack: sortByTime(command.track),
+              intentSolvedAt: command.solvedAt
+            }
+          : shot
+      )
+      change.updatedShotIds.push(target.id)
+      break
+    }
+
+    case 'setWorld': {
+      if (command.world) {
+        next.world = command.world
+      } else {
+        next.world = undefined
+      }
+      change.worldChanged = true
+      break
+    }
+
+    case 'clearShotIntent': {
+      const target = findShot(doc, command.shotId)
+      if (!target) return fail(doc, '镜头不存在')
+      next.shots = doc.shots.map((shot) => {
+        if (shot.id !== target.id) return shot
+        const cleared = { ...shot }
+        delete cleared.intent
+        delete cleared.intentSolvedAt
+        return cleared
+      })
       change.updatedShotIds.push(target.id)
       break
     }

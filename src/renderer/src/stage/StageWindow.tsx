@@ -3,13 +3,17 @@ import { createPortal } from 'react-dom'
 import type { StageObjectType } from '@shared/stage-schema'
 import { Icon } from '../components/Icon'
 import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
+import { selectedNodeOutput } from '../stores/canvas-model'
+import { generateStageFromScene } from './stage-from-scene'
 import { useUIStore } from '../stores/ui'
 import { StageInspector } from './StageInspector'
 import { StageTimeline } from './StageTimeline'
 import { StageViewport } from './StageViewport'
+import { normalizePrevisWorldRef } from '@shared/previs/world-gen'
+import { WorldSettingsDialog } from './WorldSettingsDialog'
 import { useStageStore } from './stageStore'
 import { exportStagePreviewToCanvas } from './preview-runner'
-import { Button } from '../components/ui'
+import { Button, Dialog } from '../components/ui'
 
 const OBJECT_OPTIONS: Array<{ type: StageObjectType; label: string }> = [
   { type: 'human', label: '人物' },
@@ -74,6 +78,9 @@ export function StageWindow() {
   const [exporting, setExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState(0)
   const [addObjectOpen, setAddObjectOpen] = useState(false)
+  const [worldSettingsOpen, setWorldSettingsOpen] = useState(false)
+  const [generatingScene, setGeneratingScene] = useState(false)
+  const [privacyOpen, setPrivacyOpen] = useState(false)
 
   useEffect(() => {
     if (!playing) return
@@ -216,6 +223,66 @@ export function StageWindow() {
     }
   }
 
+  const handleWorld = (): void => {
+    const current = useStageStore.getState().doc
+    if (!current) return
+    const seed = current.world
+      ? (current.world.seed + 1) % 1_000_000
+      : 1
+    const world = normalizePrevisWorldRef({
+      ...(current.world ?? {
+        generatorVersion: 'styled-v1',
+        style: 'modern_city',
+        layout: 'street',
+        density: 'medium',
+        timeOfDay: 'dusk',
+        weather: 'clear',
+        extentM: [160, 160]
+      }),
+      seed
+    })
+    useStageStore.getState().applyCommands([{ type: 'setWorld', world }])
+  }
+
+  const stageReferenceImage = (): ReturnType<typeof selectedNodeOutput> => {
+    if (!nodeId) return null
+    const canvas = useCanvasStore.getState()
+    const edge = canvas.edges.find((item) => item.target === nodeId)
+    if (!edge) return null
+    const source = canvas.nodes.find((item) => item.id === edge.source)
+    if (!source) return null
+    const output = selectedNodeOutput(source)
+    return output && output.kind === 'image' ? output : null
+  }
+
+  const runGenerateFromScene = async (): Promise<void> => {
+    const output = stageReferenceImage()
+    if (!output) return
+    setGeneratingScene(true)
+    try {
+      await generateStageFromScene({
+        imagePath: output.path,
+        imageScope: output.scope
+      })
+    } catch (error) {
+      useStageStore.setState({
+        error: error instanceof Error ? error.message : String(error)
+      })
+    } finally {
+      setGeneratingScene(false)
+    }
+  }
+
+  const handleGenerateFromScene = (): void => {
+    if (
+      window.localStorage.getItem('cinelab.scenePrivacyAcknowledged') !== '1'
+    ) {
+      setPrivacyOpen(true)
+      return
+    }
+    void runGenerateFromScene()
+  }
+
   const handleCapture = async (): Promise<void> => {
     if (capturing) return
     const dataUrl = capture()
@@ -277,6 +344,39 @@ export function StageWindow() {
       <div data-window="stage" className="grid min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden rounded-panel border border-border bg-canvas p-1.5 text-fg shadow-menu [grid-template-areas:'top_top_top'_'left_viewport_right'_'timeline_timeline_timeline'] [grid-template-columns:240px_minmax(0,1fr)_280px] [grid-template-rows:48px_minmax(0,1fr)_168px] max-[900px]:[grid-template-columns:190px_minmax(0,1fr)_220px] max-[900px]:[grid-template-rows:48px_minmax(0,1fr)_150px] max-[720px]:[grid-template-areas:'top'_'viewport'_'timeline'] max-[720px]:[grid-template-columns:minmax(0,1fr)] max-[720px]:[grid-template-rows:48px_minmax(0,1fr)_150px]">
         <header className="flex min-w-0 items-center justify-between gap-3 rounded-[10px] border border-border bg-surface px-2.5 [grid-area:top]">
           <div className="flex min-w-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="none"
+              className={TEXT_BUTTON_CLASS}
+              onClick={handleWorld}
+              disabled={!doc}
+              title="生成或更换程序化白膜世界"
+            >
+              {doc?.world ? '换世界' : '生成世界'}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="none"
+              className={TEXT_BUTTON_CLASS}
+              onClick={() => setWorldSettingsOpen(true)}
+              disabled={!doc}
+              title="手动调整世界参数"
+            >
+              世界设置
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="none"
+              className={TEXT_BUTTON_CLASS}
+              onClick={() => void handleGenerateFromScene()}
+              disabled={!doc || generatingScene || !stageReferenceImage()}
+              title="从上游第一张参考图生成白膜场景"
+            >
+              {generatingScene ? '生成中…' : '从参考图生成'}
+            </Button>
             <Button
               type="button"
               variant="ghost"
@@ -589,6 +689,46 @@ export function StageWindow() {
           </div>
         ) : null}
       </div>
+      <WorldSettingsDialog
+        open={worldSettingsOpen}
+        onClose={() => setWorldSettingsOpen(false)}
+      />
+      <Dialog
+        open={privacyOpen}
+        onClose={() => setPrivacyOpen(false)}
+        title="图片会发送给模型"
+        size="sm"
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPrivacyOpen(false)}
+            >
+              取消
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                window.localStorage.setItem(
+                  'cinelab.scenePrivacyAcknowledged',
+                  '1'
+                )
+                setPrivacyOpen(false)
+                void runGenerateFromScene()
+              }}
+            >
+              继续
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-xs leading-relaxed text-fg-muted">
+          「从参考图生成」会把这张图片发送给你在设置中配置的多模态文本模型，用于解析场景。
+          图片不会上传到 CineLab 服务器；解析结果只写回当前项目。
+        </p>
+      </Dialog>
     </div>,
     document.body
   )

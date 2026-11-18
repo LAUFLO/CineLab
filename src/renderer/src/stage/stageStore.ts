@@ -5,9 +5,11 @@ import type {
   StageObject,
   StageObjectType,
   StageShot,
+  StageShotIntent,
   StageTransform,
   StageVec3
 } from '@shared/stage-schema'
+import { solveStageShotIntent } from '@shared/stage-shot-intent'
 import {
   applyStageCommands,
   createStageHistory,
@@ -18,6 +20,7 @@ import {
   type StageHistoryState
 } from '@shared/stage-commands'
 import { isStageNode, useCanvasStore } from '../stores/canvas'
+import { setActiveStageNode } from './stage-active'
 
 export type StageViewMode = 'director' | 'camera'
 export type StageTransformMode = 'translate' | 'rotate' | 'scale'
@@ -69,6 +72,8 @@ interface StageState {
   addShot: () => string | null
   removeSelectedShot: () => boolean
   setShotDuration: (durationMs: number) => boolean
+  setShotIntent: (intent: StageShotIntent) => boolean
+  clearShotIntent: () => boolean
   captureKeyframe: () => boolean
   removeKeyframe: (index: number) => boolean
   seek: (timeMs: number) => void
@@ -143,6 +148,7 @@ export const useStageStore = create<StageState>((set, get) => ({
       return
     }
 
+    setActiveStageNode(nodeId)
     set({
       open: true,
       nodeId,
@@ -190,6 +196,7 @@ export const useStageStore = create<StageState>((set, get) => ({
   },
 
   closeStage: () => {
+    setActiveStageNode(null)
     const { doc, dirty, nodeId } = get()
     if (doc && dirty && nodeId) {
       void window.api.stage
@@ -371,6 +378,42 @@ export const useStageStore = create<StageState>((set, get) => ({
         selectedKeyframeIndex: null
       })
     }
+    return applied
+  },
+
+  setShotIntent: (intent) => {
+    const { doc, selectedShotId } = get()
+    if (!doc || !selectedShotId) return false
+    const shot = doc.shots.find((item) => item.id === selectedShotId)
+    if (!shot) return false
+    try {
+      const solved = solveStageShotIntent(doc, { ...shot, intent })
+      const applied = get().applyCommands([
+        {
+          type: 'setShotIntent',
+          shotId: selectedShotId,
+          intent,
+          track: solved.track,
+          solvedAt: new Date().toISOString()
+        }
+      ])
+      if (applied) set({ selectedKeyframeIndex: null })
+      return applied
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : String(error)
+      })
+      return false
+    }
+  },
+
+  clearShotIntent: () => {
+    const { selectedShotId } = get()
+    if (!selectedShotId) return false
+    const applied = get().applyCommands([
+      { type: 'clearShotIntent', shotId: selectedShotId }
+    ])
+    if (applied) set({ selectedKeyframeIndex: null })
     return applied
   },
 

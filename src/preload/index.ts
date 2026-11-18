@@ -465,6 +465,23 @@ const api: CineApi = {
       }
     }
   },
+  scene: {
+    analyze: (input: import('../shared/scene-analyze').SceneAnalyzeInput) =>
+      ipcRenderer.invoke('scene:analyze', input),
+    loadObjectPresets: () =>
+      ipcRenderer.invoke('scene:get-object-presets'),
+    saveObjectPresets: (presets: import('../shared/scene-object-presets').SceneObjectPreset[]) =>
+      ipcRenderer.invoke('scene:save-object-presets', presets),
+    importObjectPresets: () =>
+      ipcRenderer.invoke('scene:import-object-presets'),
+    exportObjectPresets: () =>
+      ipcRenderer.invoke('scene:export-object-presets'),
+    uploadImage: (input: {
+      name: string
+      mime: string
+      data: ArrayBuffer
+    }) => ipcRenderer.invoke('scene:upload-image', input)
+  },
   skills: {
     list: () => ipcRenderer.invoke('skills:list'),
     files: (scope, name) => ipcRenderer.invoke('skills:files', scope, name),

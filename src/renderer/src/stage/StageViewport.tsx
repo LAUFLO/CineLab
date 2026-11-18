@@ -8,6 +8,10 @@ import {
   createStageObject,
   disposeObject3D as disposeObject
 } from './stage-scene'
+import {
+  createStageWorldRender,
+  type StageWorldRender
+} from './stage-world-scene'
 import { useStageStore } from './stageStore'
 
 const DEFAULT_BACKGROUND = '#1a1a1a'
@@ -73,6 +77,7 @@ export function StageViewport() {
   const transformRef = useRef<TransformControls | null>(null)
   const transformHelperRef = useRef<THREE.Object3D | null>(null)
   const objectsGroupRef = useRef<THREE.Group | null>(null)
+  const worldRef = useRef<StageWorldRender | null>(null)
   const cameraGroupRef = useRef<THREE.Group | null>(null)
   const selectionRef = useRef<THREE.BoxHelper | null>(null)
   const aspectRef = useRef(FALLBACK_ASPECT)
@@ -292,6 +297,9 @@ export function StageViewport() {
       }
 
       const camera = activeCameraRef.current
+      if (camera && worldRef.current) {
+        worldRef.current.animate(performance.now() / 1000, camera.position)
+      }
       if (camera) renderer.render(scene, camera)
     })
 
@@ -345,6 +353,8 @@ export function StageViewport() {
       transform.dispose()
       scene.remove(transformHelper)
       controls.dispose()
+      worldRef.current?.dispose()
+      worldRef.current = null
       disposeObject(objectsGroup)
       disposeObject(cameraGroup)
       grid.geometry.dispose()
@@ -389,6 +399,17 @@ export function StageViewport() {
     objectsGroup.clear()
     disposeObject(cameraGroup)
     cameraGroup.clear()
+
+    if (worldRef.current) {
+      scene.remove(worldRef.current.group)
+      worldRef.current.dispose()
+      worldRef.current = null
+    }
+    if (doc.world) {
+      const world = createStageWorldRender(doc.world)
+      worldRef.current = world
+      scene.add(world.group)
+    }
 
     for (const object of doc.objects) {
       objectsGroup.add(createStageObject(object))

@@ -35,6 +35,7 @@ import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
 import { GeneralSettingsSection } from './GeneralSettingsSection'
 import { SkillsSection } from './SkillsSection'
+import { ObjectPresetsSection } from './ObjectPresetsSection'
 import { ModelConfigDialog } from '../canvas/nodes/ModelConfigDialog'
 import type { ModelConfigValue } from '../canvas/nodes/ModelConfigDialog'
 import { Button, Dialog, IconButton, Input, Select } from '../components/ui'
@@ -46,6 +47,7 @@ type SectionId =
   | 'library'
   | 'components'
   | 'appearance'
+  | 'objectPresets'
   | 'shortcuts'
   | 'about'
 
@@ -73,6 +75,7 @@ const SECTIONS: SectionDef[] = [
   { id: 'library', label: '资产库', icon: 'library' },
   { id: 'components', label: '组件', icon: 'layers' },
   { id: 'appearance', label: '外观', icon: 'sun' },
+  { id: 'objectPresets', label: '物体类别', icon: 'layers' },
   { id: 'shortcuts', label: '快捷键', icon: 'help' },
   { id: 'about', label: '关于', icon: 'logo' }
 ]
@@ -1508,6 +1511,7 @@ export function SettingsPanel() {
             {active === 'library' ? <LibrarySection /> : null}
             {active === 'components' ? <ComponentsSection /> : null}
             {active === 'appearance' ? <AppearanceSection /> : null}
+          {active === 'objectPresets' ? <ObjectPresetsSection /> : null}
             {active === 'shortcuts' ? (
               <PlaceholderSection
                 title="快捷键"

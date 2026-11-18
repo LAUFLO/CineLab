@@ -20,6 +20,7 @@ import '@xyflow/react/dist/style.css'
 import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import { Icon } from '../components/Icon'
 import { isGroupNode, useCanvasStore, type CanvasNode } from '../stores/canvas'
+import { activeStageNodeId } from '../stage/stage-active'
 import { useUIStore } from '../stores/ui'
 import { usePreferencesStore } from '../stores/preferences'
 import { studioOpen } from '../studio/scope'
@@ -325,6 +326,69 @@ function CanvasInner({ theme }: { theme: Theme }) {
     [screenToFlowPosition, openMenu]
   )
 
+  const handleDrop = useCallback(
+    async (event: React.DragEvent): Promise<void> => {
+      event.preventDefault()
+      const files = Array.from(event.dataTransfer.files).filter((file) =>
+        file.type.startsWith('image/')
+      )
+      if (files.length === 0) return
+      const flow = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY
+      })
+      const stageNodeId = activeStageNodeId()
+      for (let index = 0; index < files.length; index += 1) {
+        const file = files[index]
+        try {
+          const data = await file.arrayBuffer()
+          const asset = await window.api.scene.uploadImage({
+            name: file.name,
+            mime: file.type || 'image/png',
+            data
+          })
+          const store = useCanvasStore.getState()
+          const width = NODE_META.image.width
+          const height = NODE_META.image.height
+          const id = store.addNode('image', {
+            x: flow.x - width / 2 + index * 40,
+            y: flow.y - height / 2 + index * 40
+          })
+          store.patchNodeData(id, {
+            status: 'done',
+            outputs: [
+              {
+                id: asset.id,
+                path: asset.path,
+                kind: asset.kind,
+                createdAt: asset.createdAt,
+                model: asset.model,
+                width: asset.width,
+                height: asset.height
+              }
+            ],
+            selectedOutputId: asset.id
+          })
+          if (asset.width && asset.height) {
+            const nextHeight = Math.round(
+              (width * asset.height) / asset.width
+            )
+            store.resizeNode(id, nextHeight + TITLE_HEIGHT)
+          }
+          if (stageNodeId) {
+            store.onConnect({ source: id, target: stageNodeId })
+          }
+        } catch (error) {
+          useUIStore.getState().showToast(
+            error instanceof Error ? error.message : String(error),
+            'error'
+          )
+        }
+      }
+    },
+    [screenToFlowPosition]
+  )
+
   const handleDoubleClick = useCallback(
     (event: React.MouseEvent) => {
       const target = event.target as HTMLElement
@@ -533,6 +597,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onDrop={(event) => void handleDrop(event)}
+        onDragOver={(event) => event.preventDefault()}
         onConnectStart={handleConnectStart}
         onConnectEnd={handleConnectEnd}
         onPaneClick={closeMenu}

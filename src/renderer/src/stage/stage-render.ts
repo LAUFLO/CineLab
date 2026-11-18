@@ -2,6 +2,10 @@ import * as THREE from 'three'
 import type { DirectorStageDoc, StageShot } from '@shared/stage-schema'
 import { sampleCameraTrack } from '@shared/stage-timeline'
 import { createStageObject, disposeObject3D } from './stage-scene'
+import {
+  createStageWorldRender,
+  type StageWorldRender
+} from './stage-world-scene'
 
 interface StageRenderInput {
   doc: DirectorStageDoc
@@ -23,6 +27,7 @@ let camera: THREE.PerspectiveCamera | null = null
 let objectsGroup: THREE.Group | null = null
 let doc: DirectorStageDoc | null = null
 let shot: StageShot | null = null
+let worldRender: StageWorldRender | null = null
 
 function disposeCurrent(): void {
   if (!objectsGroup) return
@@ -87,6 +92,16 @@ function buildScene(input: StageRenderInput): void {
       ? doc.background.value
       : '#1a1a1a'
   )
+
+  if (worldRender) {
+    scene.remove(worldRender.group)
+    worldRender.dispose()
+    worldRender = null
+  }
+  if (doc.world) {
+    worldRender = createStageWorldRender(doc.world)
+    scene.add(worldRender.group)
+  }
 
   disposeCurrent()
   for (const object of doc.objects) {

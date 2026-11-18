@@ -15,9 +15,12 @@ import type {
   StageObject,
   StageObjectType,
   StageShot,
+  StageShotIntent,
   StageTransform,
   StageVec3
 } from '@shared/stage-schema'
+import type { PrevisWorldRef } from '@shared/previs/world-gen'
+import { solveStageShotIntent } from '@shared/stage-shot-intent'
 import {
   isStageNode,
   useCanvasStore
@@ -27,6 +30,7 @@ import {
   useStageStore
 } from '../stage/stageStore'
 import { exportStagePreviewToCanvas } from '../stage/preview-runner'
+import { generateStageFromScene } from '../stage/stage-from-scene'
 
 const OBJECT_LABEL: Record<StageObjectType, string> = {
   human: '人物',
@@ -510,6 +514,151 @@ export async function executeStageTool(
         keyframeCount: shot?.cameraTrack?.length ?? keyframes.length
       },
       change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_set_shot_intent') {
+    await ensureStageOpen(nodeId)
+    const shotId = String(call.args.shotId ?? '')
+    const rawIntent = call.args.intent
+    if (!rawIntent || typeof rawIntent !== 'object') {
+      return { ok: false, error: 'intent 参数无效' }
+    }
+    const intent = rawIntent as StageShotIntent
+    if (!Array.isArray(intent.keys) || intent.keys.length === 0) {
+      return { ok: false, error: 'intent.keys 不能为空' }
+    }
+    const { doc } = await readDoc(nodeId)
+    const shot = doc.shots.find((item) => item.id === shotId)
+    if (!shot) return { ok: false, error: '找不到这个镜头' }
+    let solved
+    try {
+      solved = solveStageShotIntent(doc, { ...shot, intent })
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error)
+      }
+    }
+    const updated = await applyToStage(
+      nodeId,
+      [
+        {
+          type: 'setShotIntent',
+          shotId,
+          intent,
+          track: solved.track,
+          solvedAt: new Date().toISOString()
+        }
+      ],
+      call.turnId
+    )
+    return {
+      ok: true,
+      result: {
+        shotId,
+        keyframeCount:
+          updated.shots.find((item) => item.id === shotId)?.cameraTrack
+            ?.length ?? solved.track.length,
+        notes: solved.notes
+      },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_clear_shot_intent') {
+    await ensureStageOpen(nodeId)
+    const shotId = String(call.args.shotId ?? '')
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'clearShotIntent', shotId }],
+      call.turnId
+    )
+    return {
+      ok: true,
+      result: {
+        shotId,
+        keyframeCount:
+          updated.shots.find((item) => item.id === shotId)?.cameraTrack
+            ?.length ?? 0
+      },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_set_world') {
+    await ensureStageOpen(nodeId)
+    const world = call.args.world
+    if (!world || typeof world !== 'object') {
+      return { ok: false, error: 'world 参数无效' }
+    }
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'setWorld', world: world as PrevisWorldRef }],
+      call.turnId
+    )
+    return {
+      ok: true,
+      result: { hasWorld: Boolean(updated.world) },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_randomize_world') {
+    await ensureStageOpen(nodeId)
+    const { doc } = await readDoc(nodeId)
+    if (!doc.world) {
+      return { ok: false, error: '当前没有世界' }
+    }
+    const world = {
+      ...doc.world,
+      seed: Math.floor(Math.random() * 1_000_000_000)
+    }
+    const updated = await applyToStage(
+      nodeId,
+      [{ type: 'setWorld', world }],
+      call.turnId
+    )
+    return {
+      ok: true,
+      result: { seed: world.seed, hasWorld: Boolean(updated.world) },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_from_scene_image') {
+    await ensureStageOpen(nodeId)
+    const imagePath = String(call.args.imagePath ?? '')
+    if (!imagePath.trim()) {
+      return { ok: false, error: 'imagePath 不能为空' }
+    }
+    const imageScope =
+      call.args.imageScope === 'global'
+        ? 'global'
+        : call.args.imageScope === 'project'
+          ? 'project'
+          : undefined
+    const modelKey =
+      typeof call.args.modelKey === 'string' ? call.args.modelKey : undefined
+    const seed =
+      typeof call.args.seed === 'number' ? call.args.seed : undefined
+    try {
+      const result = await generateStageFromScene({
+        imagePath,
+        imageScope,
+        modelKey,
+        seed
+      })
+      return {
+        ok: true,
+        result,
+        change: stageChange()
+      }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error)
+      }
     }
   }
 

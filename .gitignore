@@ -16,6 +16,7 @@ data/
 *.cinelab/
 models.json
 .opencode/
+docs/assets/
 coverage/
 lint.json
 test-results/

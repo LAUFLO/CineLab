@@ -14,7 +14,7 @@ import {
 import type { ReferenceInput } from '@shared/generation'
 import { Icon, type IconName } from '../../components/Icon'
 import { assetUrl } from '../../lib/asset-url'
-import { VideoPlayer } from './VideoPlayer'
+import { VideoPreview } from './VideoPreview'
 import {
   absolutePosition,
   nodeSize,
@@ -473,7 +473,7 @@ export function VideoOpNodeView({
           <div className="nodrag nopan flex flex-col gap-3 border-t border-border pt-1">
             {sourceOutput ? (
               <div className="relative aspect-video w-full overflow-hidden rounded-[8px] bg-media-bg">
-                <VideoPlayer
+                <VideoPreview
                   src={assetUrl(sourceOutput.path, sourceOutput.scope)}
                   path={sourceOutput.path}
                   onDurationChange={(value) => {

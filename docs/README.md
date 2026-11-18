@@ -31,6 +31,7 @@
 | [agent-full-scope.md](agent-full-scope.md) | Agent 完整范围总表 |
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 |
 | [doc-impact.md](doc-impact.md) | 代码路径 → 文档影响映射 |
+| [studio-node-live-preview-plan.md](studio-node-live-preview-plan.md) | 剪辑室节点实时预览，待实施 |
 
 ## 3. 历史归档
 

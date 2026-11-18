@@ -1,11 +1,16 @@
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   type MouseEvent,
   type PointerEvent
 } from 'react'
 import { Button } from '../../components/ui'
+import {
+  acquireAudioPlayback,
+  releaseAudioPlayback
+} from './playbackBudget'
 
 interface AudioPlayerProps {
   src: string | null
@@ -105,6 +110,7 @@ export function AudioPlayer({
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const dragStart = useRef<number | null>(null)
+  const playbackId = useId()
   const [peaks, setPeaks] = useState<number[]>([])
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -138,9 +144,15 @@ export function AudioPlayer({
     const onTime = (): void => setCurrentTime(audio.currentTime)
     const onMeta = (): void =>
       setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
-    const onEnded = (): void => setPlaying(false)
+    const onEnded = (): void => {
+      setPlaying(false)
+      releaseAudioPlayback(playbackId)
+    }
     const onPlay = (): void => setPlaying(true)
-    const onPause = (): void => setPlaying(false)
+    const onPause = (): void => {
+      setPlaying(false)
+      releaseAudioPlayback(playbackId)
+    }
 
     audio.addEventListener('timeupdate', onTime)
     audio.addEventListener('loadedmetadata', onMeta)
@@ -157,13 +169,29 @@ export function AudioPlayer({
       audio.removeEventListener('play', onPlay)
       audio.removeEventListener('pause', onPause)
     }
-  }, [src])
+  }, [src, playbackId])
+
+  // 卸载时停止播放并释放出声名额
+  useEffect(() => {
+    const audio = audioRef.current
+    return () => {
+      if (!audio) return
+      audio.pause()
+      audio.removeAttribute('src')
+      audio.load()
+      releaseAudioPlayback(playbackId)
+    }
+  }, [playbackId])
 
   const toggle = (): void => {
     const audio = audioRef.current
     if (!audio || busy || !src) return
-    if (audio.paused) void audio.play()
-    else audio.pause()
+    if (audio.paused) {
+      acquireAudioPlayback(playbackId, () => audio.pause())
+      void audio.play()
+    } else {
+      audio.pause()
+    }
   }
 
   const ratioAt = (

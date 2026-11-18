@@ -322,6 +322,16 @@ const api: CineApi = {
         ipcRenderer.removeListener('timeline:export-progress', listener)
       }
     },
+    onTimelineChanged: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: { timelineId: string; at: number }
+      ): void => callback(payload)
+      ipcRenderer.on('timeline:changed', listener)
+      return () => {
+        ipcRenderer.removeListener('timeline:changed', listener)
+      }
+    },
     transcribe: (input) => ipcRenderer.invoke('timeline:transcribe', input),
     cancelTranscribe: () => ipcRenderer.invoke('timeline:transcribe-cancel'),
     onTranscribeProgress: (callback) => {
@@ -384,6 +394,8 @@ const api: CineApi = {
       ipcRenderer.invoke('export:canvas-png', projectName, canvasName),
     asset: (relPath: string, fileName: string, scope?: 'project' | 'global') =>
       ipcRenderer.invoke('export:asset', relPath, fileName, scope),
+    deleteFile: (relPath: string) =>
+      ipcRenderer.invoke('export:delete-file', relPath),
     assets: (inputs: AssetRef[], fileName: string) =>
       ipcRenderer.invoke('export:assets', inputs, fileName),
     concatVideos: (

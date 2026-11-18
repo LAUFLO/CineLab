@@ -293,6 +293,8 @@ export function recommendedModelsForPreset(presetId: string): ModelDef[] {
     const model = MODEL_PRESETS.find((item) => item.id === id)
     if (!model) return []
     const clone = structuredClone(model)
+    // 预设的旧 inputs 不可靠；推荐模型的能力由协议模板和 modes 决定。
+    delete clone.inputs
     const template = findProtocolTemplate(clone.protocol)
     const modes =
       template && clone.modes

@@ -6,10 +6,10 @@ import type {
   GeneratedAsset,
   ReferenceInput
 } from '@shared/generation'
-import { modelInputs } from '@shared/provider-schema'
 import { ingestAsset } from '../assets/ingest'
 import { generationQueue, type QueueJob } from '../engine/queue'
 import { getLibraryRoot } from '../library/config'
+import { referenceInputError } from '@shared/reference-inputs'
 import { resolveMediaPath } from '../media/paths'
 import { applyVideoSegmentResult } from '../media/video-ops'
 import {
@@ -30,11 +30,20 @@ import { resolveProvider } from '../settings/store'
 
 const MAX_REFERENCE_IMAGES = 32
 
-const REF_MIME: Record<string, string> = {
+const IMAGE_MIME: Record<string, string> = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp'
+}
+
+const AUDIO_MIME: Record<string, string> = {
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.flac': 'audio/flac',
+  '.ogg': 'audio/ogg'
 }
 
 const VIDEO_MIME: Record<string, string> = {
@@ -53,10 +62,17 @@ const VIDEO_SIZE: Record<string, [number, number]> = {
   '21:9': [1680, 720]
 }
 
+interface LoadedRef {
+  dataUrl: string
+  role: string
+  media: 'image' | 'audio'
+  mime: string
+}
+
 async function loadRefs(
   projectRoot: string,
   refs: ReferenceInput[] | undefined
-): Promise<Array<{ dataUrl: string; role: string }>> {
+): Promise<LoadedRef[]> {
   if (!refs || refs.length === 0) return []
 
   const projectBase = resolve(projectRoot)
@@ -64,10 +80,16 @@ async function loadRefs(
     refs.some((ref) => ref.scope === 'global')
       ? resolve(await getLibraryRoot())
       : null
-  const loaded: Array<{ dataUrl: string; role: string }> = []
+  const loaded: LoadedRef[] = []
 
-  // 安全上限，防止 base64 参考图撑爆主进程内存；具体数量由供应商 API 校验
-  for (const ref of refs.slice(0, MAX_REFERENCE_IMAGES)) {
+  // 安全上限，防止 base64 参考素材撑爆主进程内存；数量本身由供应商 API 校验
+  if (refs.length > MAX_REFERENCE_IMAGES) {
+    throw new Error(
+      `参考素材最多 ${MAX_REFERENCE_IMAGES} 个，请减少后重试`
+    )
+  }
+
+  for (const ref of refs) {
     const root = ref.scope === 'global' && libraryBase ? libraryBase : projectBase
     const absolute = resolve(root, ref.path)
 
@@ -75,7 +97,9 @@ async function loadRefs(
       continue
     }
 
-    const mime = REF_MIME[extname(absolute).toLowerCase()]
+    const ext = extname(absolute).toLowerCase()
+    const imageMime = IMAGE_MIME[ext]
+    const mime = imageMime ?? AUDIO_MIME[ext]
     if (!mime) continue
 
     try {
@@ -83,7 +107,9 @@ async function loadRefs(
 
       loaded.push({
         dataUrl: `data:${mime};base64,${data.toString('base64')}`,
-        role: ref.role
+        role: ref.role,
+        media: imageMime ? 'image' : 'audio',
+        mime
       })
     } catch {
       // 素材缺失时跳过
@@ -158,22 +184,27 @@ export async function startGeneration(
     run: async (signal, onProgress) => {
       const refs = await loadRefs(projectRoot, request.refs)
       if (request.refs && request.refs.length > 0 && refs.length === 0) {
-        throw new Error('参考素材缺失或不在当前项目中，请重新添加素材')
+        throw new Error('参考素材缺失、格式不支持或不在当前项目中，请重新添加素材')
       }
       const video = await loadVideo(projectRoot, request.video)
 
-      const supportedInputs = modelInputs(model)
-      if (
-        (refs.length > 0 || request.mask) &&
-        !supportedInputs.includes('image')
-      ) {
-        throw new Error(
-          '该模型不支持图片输入，请在设置 → 模型 → 模型配置中勾选「图片」'
-        )
-      }
-      if (video && !supportedInputs.includes('video')) {
-        throw new Error('该模型不支持参考视频，请选择支持视频输入的模型')
-      }
+      const imageRefs = refs.filter((ref) => ref.media === 'image')
+      const audioRefs = refs.filter((ref) => ref.media === 'audio')
+      const hasKeyframe = refs.some(
+        (ref) => ref.role === 'firstFrame' || ref.role === 'lastFrame'
+      )
+
+      const refError = referenceInputError({
+        isVideo,
+        model,
+        imageCount: imageRefs.length,
+        audioCount: audioRefs.length,
+        hasSourceVideo: Boolean(video),
+        hasVideoOperation: Boolean(request.videoOptions?.operation),
+        hasMask: Boolean(request.mask),
+        hasKeyframe
+      })
+      if (refError) throw new Error(refError)
       const hasSubject =
         request.refs?.some((ref) => ref.role === 'subject') ?? false
       const hasStyle =
@@ -196,7 +227,12 @@ export async function startGeneration(
 
       const generate = (): Promise<ProviderOutput[]> => {
         if (isVideo) {
-          if (video && adapter !== 'http-template' && adapter !== 'volcengine-video') {
+          if (
+            video &&
+            adapter !== 'http-template' &&
+            adapter !== 'volcengine-video' &&
+            adapter !== 'agnes-video'
+          ) {
             throw new Error(
               '当前视频模型不支持视频输入，请选择支持视频编辑的模型'
             )
@@ -208,7 +244,8 @@ export async function startGeneration(
               effectivePrompt,
               request.params,
               refs,
-              context
+              context,
+              video
             )
           }
           if (adapter === 'sora-video') {

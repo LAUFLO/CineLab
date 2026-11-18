@@ -76,7 +76,7 @@ interface CollectedRefs {
 
 interface LibraryRefInput {
   path: string
-  kind: 'image' | 'video'
+  kind: 'image' | 'video' | 'audio'
   role?: ReferenceInput['role']
 }
 
@@ -109,6 +109,7 @@ function buildReferences(
 ): CollectedRefs {
   const { nodes } = useCanvasStore.getState()
   const images: ReferenceInput[] = []
+  const audios: ReferenceInput[] = []
   const videos: ReferenceInput[] = []
   const usedRoles = new Set<ReferenceInput['role']>()
   const seen = new Set<string>()
@@ -148,22 +149,37 @@ function buildReferences(
     videos.push({ path, role: 'reference', ...(scope ? { scope } : {}) })
   }
 
+  const pushAudio = (path: string, scope: ReferenceInput['scope']): void => {
+    if (audios.length >= 8) return
+    const key = keyOf(path, scope)
+    if (seen.has(key)) return
+    seen.add(key)
+    audios.push({
+      path,
+      role: 'reference',
+      media: 'audio',
+      ...(scope ? { scope } : {})
+    })
+  }
+
   for (const nodeId of nodeIds) {
     const node = nodes.find((item) => item.id === nodeId)
     if (!node || isGroupNode(node)) continue
     const output = selectedNodeOutput(node)
     if (!output) continue
     if (output.kind === 'video') pushVideo(output.path, output.scope)
+    else if (output.kind === 'audio') pushAudio(output.path, output.scope)
     else if (output.kind === 'image') pushImage(output.path, output.scope)
   }
 
   for (const ref of libraryRefs) {
     if (ref.kind === 'video') pushVideo(ref.path, 'global')
+    else if (ref.kind === 'audio') pushAudio(ref.path, 'global')
     else pushImage(ref.path, 'global', ref.role)
   }
 
   return {
-    refs: images,
+    refs: [...images, ...audios],
     ...(videos[0] ? { video: videos[0] } : {}),
     nodeIds: [...new Set(nodeIds)]
   }

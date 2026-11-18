@@ -259,7 +259,8 @@ describe('parseModelsFile', () => {
       models: [{ id: 'seedance', preset: 'doubao-seedance' }]
     })
 
-    expect(models[0].inputs).toEqual(['text', 'image', 'video', 'audio'])
+    // audio 是输出特性，不参与输入能力推导
+    expect(models[0].inputs).toEqual(['text', 'image', 'video'])
   })
 
   it('applies http-template defaults from the protocol template', () => {
@@ -295,6 +296,6 @@ describe('parseModelsFile', () => {
 
     expect(
       resolved.find((model) => model.id === 'doubao-seedance')?.inputs
-    ).toEqual(['text', 'image', 'video', 'audio'])
+    ).toEqual(['text', 'image', 'video'])
   })
 })

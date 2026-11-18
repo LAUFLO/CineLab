@@ -49,7 +49,7 @@ export function ratioOf(label: string): string | null {
 
 export type MentionGroupName = '已引用' | '画布' | '资产库' | '角色'
 
-export type RefKind = 'image' | 'video'
+export type RefKind = 'image' | 'video' | 'audio'
 
 export interface PickedRef extends ReferenceInput {
   kind: RefKind

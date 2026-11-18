@@ -4,7 +4,7 @@
 状态：现行
 适用版本：v0.1.0
 最后核对：2026-11-13
-关联：`docs/archive/agent-capability-plan.md`、`docs/agent-architecture-plan.md`
+关联：`docs/agent-architecture-plan.md`
 
 当前注册 61 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库和技能。
 本文件记录已开放给 CineBot 的能力、参数校验、确认规则和回合撤销方式。

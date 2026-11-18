@@ -37,6 +37,8 @@ export interface InputSlot {
   required: boolean
   /** 同组槽位互斥，例如首帧模式与参考模式 */
   exclusiveGroup?: string
+  /** 可选参考槽位：不参与模型输入能力推导，需要显式 inputs 或适配器支持 */
+  optional?: boolean
 }
 
 export type OperationSupport = 'native' | 'prompted' | 'none'
@@ -130,8 +132,14 @@ export const MODEL_MODE_DEFINITIONS: ModelModeDefinition[] = [
     slots: [
       PROMPT,
       slot('reference-image', 'image', 'reference', '参考图'),
-      slot('reference-video', 'video', 'reference', '参考视频'),
-      slot('reference-audio', 'audio', 'reference', '参考音频')
+      {
+        ...slot('reference-video', 'video', 'reference', '参考视频'),
+        optional: true
+      },
+      {
+        ...slot('reference-audio', 'audio', 'reference', '参考音频'),
+        optional: true
+      }
     ]
   },
   {
@@ -228,6 +236,7 @@ export function normalizeModelModes(value: unknown): ModelModeConfig[] {
 export function modeMediaKinds(mode: ModelModeConfig): MediaKind[] {
   const kinds = new Set<MediaKind>()
   for (const item of getModelModeDefinition(mode.id)?.slots ?? []) {
+    if (item.optional) continue
     kinds.add(item.media)
   }
   return [...kinds]

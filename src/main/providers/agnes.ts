@@ -11,6 +11,67 @@ import { sleep } from './retry'
 interface ImageRef {
   dataUrl: string
   role: string
+  /** 省略时按图片处理，兼容旧调用 */
+  media?: 'image' | 'audio'
+}
+
+interface AgnesVideoRef {
+  dataUrl: string
+  mime: string
+}
+
+export function buildAgnesBody(
+  model: ModelDef,
+  prompt: string,
+  params: Record<string, unknown>,
+  refs: ImageRef[],
+  video?: AgnesVideoRef
+): Record<string, unknown> {
+  const firstFrame = refs.find((ref) => ref.role === 'firstFrame')
+  const lastFrame = refs.find((ref) => ref.role === 'lastFrame')
+  const images = refs.filter(
+    (ref) => ref.media !== 'audio' && ref.role === 'reference'
+  )
+  const audios = refs.filter((ref) => ref.media === 'audio')
+  const mode =
+    firstFrame || lastFrame
+      ? 'keyframe'
+      : images.length > 0 || audios.length > 0 || video
+        ? 'reference'
+        : 'text'
+
+  const body: Record<string, unknown> = {
+    model: model.remoteModel,
+    prompt,
+    mode,
+    seconds: String(params.duration ?? params.seconds ?? '5'),
+    size: '720P',
+    aspect_ratio: params.ratio ?? '16:9'
+  }
+
+  if (mode === 'keyframe') {
+    if (firstFrame) body.first_frame = firstFrame.dataUrl
+    if (lastFrame) body.last_frame = lastFrame.dataUrl
+  } else if (mode === 'reference') {
+    if (images.length > 0) body.images = images.map((ref) => ref.dataUrl)
+    if (audios.length > 0) body.audios = audios.map((ref) => ref.dataUrl)
+    if (video) {
+      if (/^agnes-video-2\.5-flash/i.test(model.remoteModel)) {
+        throw new Error(
+          'Agnes Video 2.5 Flash 不支持参考视频，请切换到标准版'
+        )
+      }
+      body.videos = [
+        {
+          url: video.dataUrl,
+          start_seconds: 0,
+          require_audio: false
+        }
+      ]
+    }
+  }
+
+  return body
 }
 
 interface AgnesTask {
@@ -40,7 +101,8 @@ export async function generateVideoAgnes(
   prompt: string,
   params: Record<string, unknown>,
   refs: ImageRef[],
-  ctx: AdapterContext
+  ctx: AdapterContext,
+  video?: AgnesVideoRef
 ): Promise<ProviderOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
   const origin = new URL(baseUrl).origin
@@ -52,30 +114,7 @@ export async function generateVideoAgnes(
     provider.headers
   )
 
-  const firstFrame = refs.find((ref) => ref.role === 'firstFrame')
-  const lastFrame = refs.find((ref) => ref.role === 'lastFrame')
-  const references = refs.filter((ref) => ref.role === 'reference')
-  const mode = firstFrame || lastFrame
-    ? 'keyframe'
-    : references.length > 0
-      ? 'reference'
-      : 'text'
-
-  const body: Record<string, unknown> = {
-    model: model.remoteModel,
-    prompt,
-    mode,
-    seconds: String(params.duration ?? params.seconds ?? '5'),
-    size: '720P',
-    aspect_ratio: params.ratio ?? '16:9'
-  }
-
-  if (mode === 'keyframe') {
-    if (firstFrame) body.first_frame = firstFrame.dataUrl
-    if (lastFrame) body.last_frame = lastFrame.dataUrl
-  } else if (mode === 'reference') {
-    body.images = references.map((ref) => ref.dataUrl)
-  }
+  const body = buildAgnesBody(model, prompt, params, refs, video)
 
   ctx.onProgress(5, '提交视频任务')
 
@@ -107,7 +146,7 @@ export async function generateVideoAgnes(
   let consecutiveErrors = 0
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    await sleep(2000, ctx.signal)
+    await sleep(3000, ctx.signal)
 
     let task: AgnesTask
 

@@ -126,7 +126,7 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
               },
               kind: {
                 type: 'string',
-                enum: ['image', 'video'],
+                enum: ['image', 'video', 'audio'],
                 description: '素材类型'
               },
               role: {
@@ -322,7 +322,7 @@ export function validateGenerationToolArgs(
             'libraryRefs.path 必须是资产库相对路径'
           )
         }
-        if (!['image', 'video'].includes(String(item.kind))) {
+        if (!['image', 'video', 'audio'].includes(String(item.kind))) {
           throw new AgentToolError('invalid_params', 'libraryRefs.kind 无效')
         }
         if (

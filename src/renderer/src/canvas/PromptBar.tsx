@@ -12,14 +12,14 @@ import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
 import {
   MEDIA_INPUT_LABEL,
   inferActiveMode,
-  missingInputsFor,
-  modelModeIds,
   type Capability,
   type MediaInput,
   type ModeContext,
   type ModelDef,
   type ParamDef
 } from '@shared/provider-schema'
+import { effectiveCapabilities } from '@shared/capabilities'
+import { referenceInputErrors } from '@shared/reference-inputs'
 import { applyParamConstraints } from '@shared/param-constraints'
 import {
   MODEL_MODE_LABEL,
@@ -744,11 +744,13 @@ export function PromptBar() {
     void fitView({ nodes: [target], padding: 0.8, duration: 300, maxZoom: 1.5 })
   }
 
-  const refs = (() => {
+  const refsResult = (() => {
     const incoming = edges.filter((edge) => edge.target === node.id)
     const images: PickedRef[] = []
+    const audios: PickedRef[] = []
     const videos: PickedRef[] = []
     let imageIndex = 0
+    let droppedVideo = 0
 
     for (const edge of incoming) {
       const source = nodes.find((item) => item.id === edge.source)
@@ -772,12 +774,25 @@ export function PromptBar() {
               scope: output.scope,
               kind: 'video'
             })
+          } else if (kind === 'video') {
+            droppedVideo += 1
+          }
+          continue
+        }
+
+        if (output.kind === 'audio') {
+          if (kind === 'video') {
+            audios.push({
+              path: output.path,
+              role: 'reference',
+              scope: output.scope,
+              kind: 'audio'
+            })
           }
           continue
         }
 
         if (output.kind !== 'image') continue
-        if (imageIndex >= 3) continue
 
         const role: ReferenceRole =
           imageIndex === 0
@@ -795,8 +810,12 @@ export function PromptBar() {
       }
     }
 
-    return [...images, ...videos]
+    return {
+      list: [...images, ...audios, ...videos],
+      droppedVideo
+    }
   })()
+  const refs = refsResult.list
 
   const autoRefs = (() => {
     if (!autoLink) return []
@@ -848,30 +867,32 @@ export function PromptBar() {
     return result
   })()
 
-  const rawRefs = (() => {
+  const rawRefsResult = (() => {
     const seen = new Set<string>()
     const result: PickedRef[] = []
-    let imageCount = 0
     let videoCount = 0
+    let droppedVideo = 0
 
     for (const ref of [...pickedRefs, ...autoRefs, ...refs]) {
       const key = `${ref.scope ?? 'project'}:${ref.path}`
       if (seen.has(key)) continue
 
       if (ref.kind === 'video') {
-        if (videoCount >= 1) continue
+        if (videoCount >= 1) {
+          droppedVideo += 1
+          continue
+        }
         videoCount += 1
-      } else {
-        if (imageCount >= 4) continue
-        imageCount += 1
       }
 
       seen.add(key)
       result.push(ref)
     }
 
-    return result
+    return { list: result, droppedVideo }
   })()
+  const rawRefs = rawRefsResult.list
+  const videoOverflow = refsResult.droppedVideo + rawRefsResult.droppedVideo
 
   const rawImageCount = rawRefs.filter((ref) => ref.kind === 'image').length
   const rawVideoCount = rawRefs.filter((ref) => ref.kind === 'video').length
@@ -911,6 +932,9 @@ export function PromptBar() {
     let imageIndex = 0
     return orderedRefs.map((ref): PickedRef => {
       if (ref.kind === 'video') {
+        return { ...ref, role: 'reference' as ReferenceRole }
+      }
+      if (ref.kind === 'audio') {
         return { ...ref, role: 'reference' as ReferenceRole }
       }
 
@@ -994,15 +1018,18 @@ export function PromptBar() {
     return inputs
   })()
 
-  const activeMissing = active
-    ? missingInputsFor(active.model, requiredInputs)
-    : []
+  const capabilities = active ? effectiveCapabilities(active.model) : null
+
+  const activeMissing =
+    active && capabilities
+      ? requiredInputs.filter((input) => !capabilities.media.includes(input))
+      : []
 
   const availableModes = (() => {
-    if (!active) {
+    if (!active || !capabilities) {
       return [] as Array<{ id: ModelModeId; disabled: boolean; hint?: string }>
     }
-    const supported = modelModeIds(active.model)
+    const supported = capabilities.modes
     const candidates: ModelModeId[] =
       kind === 'image'
         ? ['t2i', 'i2i', 'layer']
@@ -1102,6 +1129,7 @@ export function PromptBar() {
       (ref) => ref.kind === 'image' && ref.role !== 'mask'
     )
     const videos = mergedRefs.filter((ref) => ref.kind === 'video')
+    const audios = mergedRefs.filter((ref) => ref.kind === 'audio')
     let imageIndex = 0
 
     const roleOf = (role: (typeof slots)[number]['role']): ReferenceRole => {
@@ -1121,7 +1149,9 @@ export function PromptBar() {
     const list = slots.flatMap<ModeSlotView>((slot) => {
       if (slot.media === 'text') return []
       if (slot.media === 'video') {
-        if (videos.length === 0) return []
+        if (videos.length === 0 || !capabilities?.media.includes('video')) {
+          return []
+        }
         return [
           {
             id: slot.id,
@@ -1131,7 +1161,17 @@ export function PromptBar() {
           }
         ]
       }
-      if (slot.media === 'audio') return []
+      if (slot.media === 'audio') {
+        if (audios.length === 0 || !capabilities?.media.includes('audio')) {
+          return []
+        }
+        return audios.map((ref, index) => ({
+          id: `${slot.id}-${index}`,
+          label: audios.length > 1 ? String(index + 1) : slot.label,
+          ref,
+          role: 'reference' as ReferenceRole
+        }))
+      }
       if (slot.role === 'mask') {
         return [
           {
@@ -1174,10 +1214,22 @@ export function PromptBar() {
     for (const ref of mergedRefs) {
       if (ref.role === 'mask') continue
       if (used.has(keyOf(ref))) continue
+      // 能力表不支持的媒体不进入槽位条，由模型芯片提示
+      if (ref.kind === 'video' && !capabilities?.media.includes('video')) {
+        continue
+      }
+      if (ref.kind === 'audio' && !capabilities?.media.includes('audio')) {
+        continue
+      }
       used.add(keyOf(ref))
       list.push({
         id: `extra-${keyOf(ref)}`,
-        label: ref.kind === 'video' ? '未分配视频' : '未分配',
+        label:
+          ref.kind === 'video'
+            ? '未分配视频'
+            : ref.kind === 'audio'
+              ? '未分配音频'
+              : '未分配',
         ref,
         role: ref.role
       })
@@ -1385,38 +1437,41 @@ export function PromptBar() {
   const handleSend = (): void => {
     if (!active || !canSend) return
 
-    if (activeMissing.length > 0) {
-      showToast(
-        `当前模型不支持${inputLabel(activeMissing)}输入，请更换模型`,
-        'error'
-      )
-      return
-    }
-
     const videoRef = mergedRefs.find((ref) => ref.kind === 'video')
     if (videoRef && kind !== 'video') {
       showToast('图片节点不能引用视频，请改用视频节点', 'error')
       return
     }
-    if (videoRef) {
-      const adapter =
-        active.model.adapter ??
-        (/^agnes-video/i.test(active.model.remoteModel) ? 'agnes-video' : '')
-      if (adapter !== 'http-template') {
-        showToast(
-          '当前模型不支持参考视频，请先在设置 → 模型配置中启用这个模型的自定义协议',
-          'error'
-        )
-        return
-      }
+
+    const refErrors = referenceInputErrors({
+      isVideo: kind === 'video',
+      mode: slotMode,
+      model: active.model,
+      capabilities: capabilities ?? undefined,
+      imageCount: mergedRefs.filter(
+        (ref) => ref.kind === 'image' && ref.role !== 'mask'
+      ).length,
+      audioCount: mergedRefs.filter((ref) => ref.kind === 'audio').length,
+      hasSourceVideo: Boolean(videoRef),
+      hasVideoOperation: false,
+      hasMask: Boolean(activeMask),
+      hasKeyframe: slotMode === 'first-frame' || slotMode === 'first-last'
+    })
+    if (refErrors.length > 0) {
+      showToast(refErrors[0], 'error')
+      return
     }
 
-    const imageRefs: ReferenceInput[] = mergedRefs
-      .filter((ref) => ref.kind === 'image' && ref.role !== 'mask')
+    const mediaRefs: ReferenceInput[] = mergedRefs
+      .filter(
+        (ref) =>
+          (ref.kind === 'image' || ref.kind === 'audio') && ref.role !== 'mask'
+      )
       .map((ref) => ({
         path: ref.path,
         role: ref.role,
-        scope: ref.scope
+        scope: ref.scope,
+        media: ref.kind
       }))
 
     void runGeneration({
@@ -1424,7 +1479,7 @@ export function PromptBar() {
       modelKey: active.key,
       prompt: buildPromptWithContext(promptText.trim(), textContexts),
       params: { ...values, watermark },
-      ...(imageRefs.length > 0 ? { refs: imageRefs } : {}),
+      ...(mediaRefs.length > 0 ? { refs: mediaRefs } : {}),
       ...(activeMask ? { mask: activeMask } : {}),
       ...(videoRef
         ? {
@@ -1538,9 +1593,18 @@ export function PromptBar() {
         </div>
 
         {modeSlots.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto overflow-y-hidden px-2.5 pt-2">
+          <div
+            data-testid="promptbar-slots"
+            className="flex gap-2 overflow-x-auto overflow-y-hidden px-2.5 pt-2"
+          >
             {modeSlots.map((slot) => (
-              <div className="relative h-10 w-10 shrink-0" key={slot.id}>
+              <div
+                className="relative h-10 w-10 shrink-0"
+                key={slot.id}
+                data-slot-kind={
+                  slot.ref?.kind ?? (slot.role === 'mask' ? 'mask' : 'empty')
+                }
+              >
                 <span className="pointer-events-none absolute left-0.5 top-0.5 z-[1] max-w-[calc(100%-4px)] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg">
                   {slot.label}
                 </span>
@@ -1642,6 +1706,13 @@ export function PromptBar() {
                         playsInline
                         preload="metadata"
                       />
+                    ) : slot.ref.kind === 'audio' ? (
+                      <span
+                        className="flex h-full w-full items-center justify-center text-fg-muted"
+                        title={slot.ref.path.split(/[\\/]/).pop()}
+                      >
+                        <Icon name="audio" size={16} />
+                      </span>
                     ) : (
                       <img
                         className={SLOT_MEDIA_CLASS}
@@ -1655,6 +1726,14 @@ export function PromptBar() {
                 )}
               </div>
             ))}
+            {videoOverflow > 0 ? (
+              <span
+                className="inline-flex h-10 shrink-0 items-center rounded-[6px] border border-dashed border-border px-2 text-[10px] text-fg-subtle"
+                title="当前数据结构只支持 1 个参考视频"
+              >
+                参考视频仅支持 1 个
+              </span>
+            ) : null}
           </div>
         ) : null}
 
@@ -1939,6 +2018,13 @@ export function PromptBar() {
                   loop
                   preload="metadata"
                 />
+              ) : refPreview.kind === 'audio' ? (
+                <div className="flex items-center gap-2 rounded-[6px] px-3 py-2 text-xs text-fg-muted">
+                  <Icon name="audio" size={16} />
+                  <span className="max-w-[180px] truncate">
+                    {refPreview.path.split(/[\\/]/).pop()}
+                  </span>
+                </div>
               ) : (
                 <img src={assetUrl(refPreview.path, refPreview.scope)} alt="" />
               )}

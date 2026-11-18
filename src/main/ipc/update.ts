@@ -4,7 +4,8 @@ import {
   downloadUpdate,
   getUpdateStatus,
   initUpdateService,
-  installUpdate
+  installUpdate,
+  openFallbackDownload
 } from '../update/service'
 
 export function registerUpdateIpc(): void {
@@ -16,4 +17,5 @@ export function registerUpdateIpc(): void {
   ipcMain.handle('update:install', () => {
     installUpdate()
   })
+  ipcMain.handle('update:open-fallback', () => openFallbackDownload())
 }

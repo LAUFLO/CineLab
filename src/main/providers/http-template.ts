@@ -14,6 +14,8 @@ import { replaceTemplateVariables } from '@shared/template-vars'
 interface ImageRef {
   dataUrl: string
   role: string
+  /** 省略时按图片处理，兼容旧调用 */
+  media?: 'image' | 'audio'
 }
 
 interface VideoRef {
@@ -63,7 +65,11 @@ function refValue(key: string, refs: ImageRef[]): unknown {
   }
   if (key === 'refs.frames') {
     return refs
-      .filter((ref) => ref.role === 'firstFrame' || ref.role === 'lastFrame')
+      .filter(
+        (ref) =>
+          ref.media !== 'audio' &&
+          (ref.role === 'firstFrame' || ref.role === 'lastFrame')
+      )
       .map((ref) => ref.dataUrl)
   }
   if (key === 'refs.subject') {
@@ -83,15 +89,26 @@ function refValue(key: string, refs: ImageRef[]): unknown {
   if (key === 'refs.images') {
     const references = refs.filter(
       (ref) =>
-        ref.role === 'reference' ||
-        ref.role === 'subject' ||
-        ref.role === 'style' ||
-        ref.role === 'source'
+        ref.media !== 'audio' &&
+        (ref.role === 'reference' ||
+          ref.role === 'subject' ||
+          ref.role === 'style' ||
+          ref.role === 'source')
     )
     return (references.length > 0
       ? references
-      : refs.filter((ref) => ref.role !== 'mask')
+      : refs.filter(
+          (ref) => ref.media !== 'audio' && ref.role !== 'mask'
+        )
     ).map((ref) => ref.dataUrl)
+  }
+  if (key === 'refs.audio') {
+    return refs.find((ref) => ref.media === 'audio')?.dataUrl
+  }
+  if (key === 'refs.audios') {
+    return refs
+      .filter((ref) => ref.media === 'audio')
+      .map((ref) => ref.dataUrl)
   }
   return undefined
 }

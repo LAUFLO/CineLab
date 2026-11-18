@@ -298,24 +298,6 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
         type: 'boolean',
         defaultValue: false,
         description: '开启后视频右下角带模型水印。'
-      },
-      {
-        key: 'return_last_frame',
-        label: '返回尾帧',
-        type: 'boolean',
-        defaultValue: false,
-        description: '把生成视频的最后一帧作为图片返回，便于接续下一段。'
-      },
-      {
-        key: 'output_format',
-        label: '输出格式',
-        type: 'select',
-        options: [
-          { value: 'mp4', label: 'MP4' },
-          { value: 'mov', label: 'MOV' }
-        ],
-        defaultValue: 'mp4',
-        description: 'MP4 兼容性最好；MOV 适合后期调色。'
       }
     ]
   },
@@ -327,10 +309,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
     modes: [
       { id: 't2v' },
       { id: 'first-frame' },
-      { id: 'first-last' },
-      { id: 'reference' },
-      { id: 'video-edit' },
-      { id: 'video-extend' }
+      { id: 'first-last' }
     ],
     features: ['audio'],
     params: [

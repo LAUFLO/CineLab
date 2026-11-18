@@ -8,6 +8,7 @@ interface UpdateStore {
   check: () => Promise<void>
   download: () => Promise<void>
   install: () => Promise<void>
+  openFallback: () => Promise<void>
 }
 
 export const useUpdateStore = create<UpdateStore>((set, get) => ({
@@ -31,5 +32,9 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
 
   install: async () => {
     await window.api.update.install()
+  },
+
+  openFallback: async () => {
+    await window.api.update.openFallback()
   }
 }))

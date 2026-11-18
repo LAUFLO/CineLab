@@ -165,7 +165,7 @@ export function referenceInputErrors(ctx: ReferenceInputContext): string[]
 - 新增 `src/main/engine/generation-error.ts`：401 / 402 / 403 / 429 分类，配额错误优先于通用鉴权错误。
 - `SettingsPanel.tsx`：模型卡片显示「N 项能力未实现」，title 列出具体缺口。
 - 新增 `src/main/settings/capability-report.ts`：启动时汇总缺口写入日志。
-- 验证：启动日志检测到 `agnes-video-2.5-flash` 的 video 缺口；设置页显示「1 项能力未实现」；截图 [p1-gap.png](../.opencode/handover/evidence/capability-consistency/p1-gap.png)。
+- 验证：启动日志检测到 `agnes-video-2.5-flash` 的 video 缺口；设置页显示「1 项能力未实现」；截图 [p1-gap.png](assets/capability-consistency/p1-gap.png)。
 
 ### P2 实现记录
 
@@ -176,7 +176,7 @@ export function referenceInputErrors(ctx: ReferenceInputContext): string[]
   - `handleSend` 改为调用 `referenceInputErrors`，不再维护一套独立的检查。
   - 能力表不支持的媒体不再进入槽位条，由模型芯片显示「不支持视频/音频」。
 - 测试迁移到 `src/shared/__tests__/reference-inputs.test.ts`，新增多错误返回和模式不支持用例。
-- UI 验证：Agnes Flash 连接参考音频和参考视频，全能参考模式只显示「参考音频」槽位，模型芯片显示「不支持视频」；截图 [p2-slots.png](../.opencode/handover/evidence/capability-consistency/p2-slots.png)。
+- UI 验证：Agnes Flash 连接参考音频和参考视频，全能参考模式只显示「参考音频」槽位，模型芯片显示「不支持视频」；截图 [p2-slots.png](assets/capability-consistency/p2-slots.png)。
 
 ### P3 实现记录
 

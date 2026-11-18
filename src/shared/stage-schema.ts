@@ -1,8 +1,12 @@
+import type { PrevisWorldRef } from './previs/world-gen'
+
 export type StageVec3 = [number, number, number]
 
 export type StageAspect = '16:9' | '9:16' | '1:1'
 
 export type StageEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut'
+
+export type CameraTrackSmoothing = 'linear' | 'hermite'
 
 export type StageObjectType =
   | 'human'
@@ -65,6 +69,40 @@ export interface ActionTrack {
   keys: ActionKeyframe[]
 }
 
+export type StageCameraRelation =
+  | 'front'
+  | 'front_side'
+  | 'side'
+  | 'back_side'
+  | 'behind'
+  | 'over_shoulder'
+  | 'hold'
+
+export type StageCameraDistance = 'close' | 'medium' | 'far'
+export type StageCameraHeight = 'floor' | 'low' | 'eye' | 'high' | 'crane'
+export type StageCameraAim = 'feet' | 'body' | 'face'
+export type StageShotFraming = 'single' | 'two_shot' | 'group'
+
+export interface StageShotIntentKey {
+  timeMs: number
+  subjectIds: string[]
+  framing: StageShotFraming
+  relation: StageCameraRelation
+  side?: 'left' | 'right'
+  towardId?: string
+  distance?: StageCameraDistance
+  height?: StageCameraHeight
+  aim?: StageCameraAim
+  angleOffsetDeg?: number
+  fovDeg?: number
+  still?: boolean
+}
+
+export interface StageShotIntent {
+  version: 1
+  keys: StageShotIntentKey[]
+}
+
 export interface StageShot {
   id: string
   name?: string
@@ -73,6 +111,12 @@ export interface StageShot {
   aspect: StageAspect
   cameraTrack?: CameraKeyframe[]
   actionTracks?: ActionTrack[]
+  /** 关键帧插值模式；缺省按 'hermite' 解释。 */
+  cameraSmoothing?: CameraTrackSmoothing
+  /** 语义镜头；存在时 cameraTrack 由求解器生成。 */
+  intent?: StageShotIntent
+  /** 求解器写入的时间戳。 */
+  intentSolvedAt?: string
 }
 
 export interface StageBackground {
@@ -89,6 +133,8 @@ export interface DirectorStageDoc {
   cameras: StageCamera[]
   shots: StageShot[]
   activeCameraId?: string
+  /** 程序化 previs 世界；缺省时行为不变。 */
+  world?: PrevisWorldRef
   updatedAt: string
 }
 

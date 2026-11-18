@@ -42,6 +42,8 @@
 | [node-output-target-plan.md](node-output-target-plan.md) | 节点操作输出目标：版本回写 / 新建节点规则 | 已实现，保留参考 |
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 | Backlog |
 | [studio-node-live-preview-plan.md](studio-node-live-preview-plan.md) | 剪辑室节点实时预览（编辑即可见，导出按需） | 方案已确认，待实施 |
+| [previs-adaptation-plan.md](previs-adaptation-plan.md) | Bloomway 借鉴：语义镜头（含双人/群体）、Previs 世界、场景图白膜 | 实施中（M1–M5 已完成） |
+| [previs-selftest.md](previs-selftest.md) | Previs 能力自测报告（M1–M5 交付与已知问题） | 现行 |
 | [agent-full-scope.md](agent-full-scope.md) | Agent 完整范围 | 参考 |
 
 ## 3. 历史归档

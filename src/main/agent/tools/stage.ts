@@ -373,6 +373,122 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
     },
     replay: 'unsafe',
     requiresConfirm: true
+  },
+  {
+    id: 'stage.setShotIntent',
+    name: 'stage_set_shot_intent',
+    description:
+      '用语义描述设置镜头：主体、单/双/群构图、机位关系、景别、高度和瞄准。优先用它，不要直接猜相机坐标。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        shotId: { type: 'string', description: '镜头 ID，来自 stage_get' },
+        intent: {
+          type: 'object',
+          description:
+            '语义镜头：{ version: 1, keys: [{ timeMs, subjectIds, framing, relation, side?, towardId?, distance?, height?, aim?, angleOffsetDeg?, fovDeg? }] }'
+        }
+      },
+      required: ['nodeId', 'shotId', 'intent'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.clearShotIntent',
+    name: 'stage_clear_shot_intent',
+    description: '把语义镜头转回手工关键帧，保留当前相机轨迹。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        shotId: { type: 'string', description: '镜头 ID' }
+      },
+      required: ['nodeId', 'shotId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.setWorld',
+    name: 'stage_set_world',
+    description:
+      '设置导演台的程序化 previs 世界（街道、城市、江户、雨夜、火星等）。world 结构见 stage_capabilities。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        world: {
+          type: 'object',
+          description:
+            'PrevisWorldRef：{ generatorVersion, style, layout, density, seed, extentM, timeOfDay?, weather?, landmarks?, water?, overrides? }'
+        }
+      },
+      required: ['nodeId', 'world'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.randomizeWorld',
+    name: 'stage_randomize_world',
+    description: '用新的随机种子重新生成当前世界。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter
+      },
+      required: ['nodeId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.fromSceneImage',
+    name: 'stage_from_scene_image',
+    description:
+      '根据上游参考图生成白膜场景：调用多模态模型解析场景图，写入世界、物体和机位。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        imagePath: { type: 'string', description: '图片相对路径' },
+        imageScope: {
+          type: 'string',
+          enum: ['project', 'global'],
+          description: '图片所在范围，缺省 project'
+        },
+        modelKey: {
+          type: 'string',
+          description: 'providerId/modelId；省略时自动选第一个文本模型'
+        },
+        seed: { type: 'number', description: '世界随机种子' }
+      },
+      required: ['nodeId', 'imagePath'],
+      additionalProperties: false
+    },
+    replay: 'safe'
   }
 ]
 
@@ -789,5 +905,131 @@ export function validateStageToolArgs(
         throw new AgentToolError('invalid_params', 'fps 只能是 24 或 30')
       }
     }
+
+    if (call.name === 'stage_set_shot_intent') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+      const intent = call.args.intent
+      if (!intent || typeof intent !== 'object' || Array.isArray(intent)) {
+        throw new AgentToolError('invalid_params', 'intent 必须是对象')
+      }
+      const keys = (intent as Record<string, unknown>).keys
+      if (!Array.isArray(keys) || keys.length === 0) {
+        throw new AgentToolError('invalid_params', 'intent.keys 不能为空')
+      }
+      const framings = ['single', 'two_shot', 'group']
+      const relations = [
+        'front',
+        'front_side',
+        'side',
+        'back_side',
+        'behind',
+        'over_shoulder',
+        'hold'
+      ]
+      keys.forEach((rawKey, index) => {
+        const key = rawKey as Record<string, unknown>
+        if (!key || typeof key !== 'object' || Array.isArray(key)) {
+          throw new AgentToolError(
+            'invalid_params',
+            `intent.keys[${index}] 必须是对象`
+          )
+        }
+        if (
+          typeof key.timeMs !== 'number' ||
+          !Number.isFinite(key.timeMs) ||
+          key.timeMs < 0
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `intent.keys[${index}].timeMs 无效`
+          )
+        }
+        if (
+          !Array.isArray(key.subjectIds) ||
+          key.subjectIds.length === 0 ||
+          key.subjectIds.some((id) => typeof id !== 'string')
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `intent.keys[${index}].subjectIds 无效`
+          )
+        }
+        if (!framings.includes(String(key.framing))) {
+          throw new AgentToolError(
+            'invalid_params',
+            `intent.keys[${index}].framing 无效`
+          )
+        }
+        if (!relations.includes(String(key.relation))) {
+          throw new AgentToolError(
+            'invalid_params',
+            `intent.keys[${index}].relation 无效`
+          )
+        }
+        if (
+          key.side !== undefined &&
+          key.side !== 'left' &&
+          key.side !== 'right'
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `intent.keys[${index}].side 无效`
+          )
+        }
+        if (
+          key.towardId !== undefined &&
+          typeof key.towardId !== 'string'
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            `intent.keys[${index}].towardId 无效`
+          )
+        }
+      })
+    }
+
+    if (call.name === 'stage_clear_shot_intent') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+    }
+
+    if (call.name === 'stage_set_world') {
+      const world = call.args.world
+      if (!world || typeof world !== 'object' || Array.isArray(world)) {
+        throw new AgentToolError('invalid_params', 'world 必须是对象')
+      }
+    }
+
+    if (call.name === 'stage_from_scene_image') {
+      if (
+        typeof call.args.imagePath !== 'string' ||
+        !call.args.imagePath.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'imagePath 必须是非空字符串')
+      }
+      if (
+        call.args.imageScope !== undefined &&
+        !['project', 'global'].includes(String(call.args.imageScope))
+      ) {
+        throw new AgentToolError('invalid_params', 'imageScope 无效')
+      }
+      if (
+        call.args.seed !== undefined &&
+        (typeof call.args.seed !== 'number' || !Number.isFinite(call.args.seed))
+      ) {
+        throw new AgentToolError('invalid_params', 'seed 必须是数字')
+      }
+    }
+
+
   }
 }

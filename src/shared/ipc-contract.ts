@@ -504,6 +504,19 @@ export interface StageApi {
   ): () => void
 }
 
+export interface SceneApi {
+  analyze(input: import('./scene-analyze').SceneAnalyzeInput): Promise<import('./scene-analyze').SceneAnalyzeResult>
+  loadObjectPresets(): Promise<import('./scene-object-presets').SceneObjectPreset[]>
+  saveObjectPresets(presets: import('./scene-object-presets').SceneObjectPreset[]): Promise<import('./scene-object-presets').SceneObjectPreset[]>
+  importObjectPresets(): Promise<import('./scene-object-presets').SceneObjectPreset[]>
+  exportObjectPresets(): Promise<boolean>
+  uploadImage(input: {
+    name: string
+    mime: string
+    data: ArrayBuffer
+  }): Promise<import('./generation').GeneratedAsset>
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -530,5 +543,6 @@ export interface CineApi {
   update: UpdateApi
   agent: AgentApi
   stage: StageApi
+  scene: SceneApi
   skills: SkillsApi
 }

@@ -100,7 +100,7 @@ describe('sampleCameraTrack', () => {
       key(1000, [1, 0, 0], [0, 0, 0], 50)
     ]
     expect(
-      sampleCameraTrack(camera, { durationMs: 1000, cameraTrack: track }, 500)
+      sampleCameraTrack(camera, { durationMs: 1000, cameraTrack: track, cameraSmoothing: 'linear' }, 500)
         .position[0]
     ).toBeCloseTo(0.125)
   })
@@ -111,5 +111,67 @@ describe('sampleCameraTrack', () => {
       sampleCameraTrack(camera, { durationMs: 1000, cameraTrack: track }, 500)
         .position[0]
     ).toBe(1)
+  })
+})
+
+
+describe('sampleCameraTrack (hermite)', () => {
+  it('defaults to hermite for old documents', () => {
+    const track = [
+      key(0, [0, 0, 0]),
+      key(1000, [1, 0, 0]),
+      key(2000, [2, 0, 0])
+    ]
+    const sample = sampleCameraTrack(
+      camera,
+      { durationMs: 2000, cameraTrack: track },
+      1000
+    )
+    expect(sample.position[0]).toBeCloseTo(1)
+  })
+
+  it('keeps a straight two-key track straight', () => {
+    const track = [key(0, [0, 0, 0]), key(2000, [2, 0, 0])]
+    const sample = sampleCameraTrack(
+      camera,
+      { durationMs: 2000, cameraTrack: track },
+      1000
+    )
+    expect(sample.position[0]).toBeCloseTo(1)
+  })
+
+  it('smooths a three-key turn without overshooting badly', () => {
+    const track = [
+      key(0, [0, 0, 0]),
+      key(1000, [1, 1, 0]),
+      key(2000, [2, 0, 0])
+    ]
+    const sample = sampleCameraTrack(
+      camera,
+      { durationMs: 2000, cameraTrack: track },
+      1000
+    )
+    expect(sample.position[0]).toBeCloseTo(1)
+    expect(sample.position[1]).toBeCloseTo(1)
+  })
+
+  it('falls back to the starting key when times repeat', () => {
+    const track = [key(0, [0, 0, 0]), key(0, [5, 5, 5])]
+    const sample = sampleCameraTrack(
+      camera,
+      { durationMs: 1000, cameraTrack: track },
+      0
+    )
+    expect(sample.position).toEqual([0, 0, 0])
+  })
+
+  it('uses smoothstep for fov', () => {
+    const track = [key(0, [0, 0, 0], [0, 0, 0], 40), key(2000, [2, 0, 0], [0, 0, 0], 60)]
+    const sample = sampleCameraTrack(
+      camera,
+      { durationMs: 2000, cameraTrack: track },
+      1000
+    )
+    expect(sample.fov).toBeCloseTo(50)
   })
 })

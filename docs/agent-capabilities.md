@@ -6,7 +6,7 @@
 最后核对：2026-11-13
 关联：`docs/archive/agent-capability-plan.md`、`docs/agent-architecture-plan.md`
 
-当前注册 56 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库和技能。
+当前注册 61 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库和技能。
 本文件记录已开放给 CineBot 的能力、参数校验、确认规则和回合撤销方式。
 所有写操作都走命令层；UI 和 Agent 共用执行器。
 
@@ -20,9 +20,9 @@
 
 `generation_catalog`、`generation_propose`、`library_search`
 
-### 导演台（15）
+### 导演台（20）
 
-`stage_get`、`stage_capabilities`、`stage_add_object`、`stage_transform_object`、`stage_add_camera`、`stage_transform_camera`、`stage_add_shot`、`stage_update_shot`、`stage_remove_shot`、`stage_set_camera_track`、`stage_set_background`、`stage_update_object`、`stage_export_preview`、`stage_set_active_camera`、`stage_remove_object`
+`stage_get`、`stage_capabilities`、`stage_add_object`、`stage_transform_object`、`stage_add_camera`、`stage_transform_camera`、`stage_add_shot`、`stage_update_shot`、`stage_remove_shot`、`stage_set_camera_track`、`stage_set_background`、`stage_update_object`、`stage_export_preview`、`stage_set_active_camera`、`stage_remove_object`、`stage_set_shot_intent`、`stage_clear_shot_intent`、`stage_set_world`、`stage_randomize_world`、`stage_from_scene_image`
 
 ### 剪辑室（17）
 
@@ -80,6 +80,11 @@
 | `stage_set_background` | `stage.setBackground` | 否 | 否 | 场景历史 |
 | `stage_update_object` | `stage.updateObject` | 否 | 否 | 场景历史 |
 | `stage_export_preview` | `stage.exportPreview` | 否 | 是 | 画布历史（导出节点） |
+| `stage_set_shot_intent` | `stage.setShotIntent` | 否 | 否 | 场景历史 |
+| `stage_clear_shot_intent` | `stage.clearShotIntent` | 否 | 否 | 场景历史 |
+| `stage_set_world` | `stage.setWorld` | 否 | 否 | 场景历史 |
+| `stage_randomize_world` | `stage.randomizeWorld` | 否 | 否 | 场景历史 |
+| `stage_from_scene_image` | `stage.fromSceneImage` | 否 | 是 | 场景历史（调用模型） |
 
 实现说明：
 
@@ -90,6 +95,9 @@
 - Agent 写场景前会自动打开导演台，确保修改可见并进入场景撤销历史。
 - 同一轮场景命令通过 `turnId` 合并为一条撤销记录；本轮撤销时 `agentStore.undoLastTurn` 会同时回退画布与场景。
 - 导出参数：`shotId` 必填；`resolution` 为 `720p / 1080p`；`fps` 为 `24 / 30`。
+- 语义镜头通过 `solveStageShotIntent` 解算成 `cameraTrack`；支持单/双/群体构图，Agent 只写关系，不猜坐标。
+- 世界通过 `StageCommand.setWorld` 写入 `doc.world`，场景历史可撤销；`stage_randomize_world` 只换 seed。
+- 场景图通过 `scene:analyze` 调用用户配置的多模态文本模型，生成 world/objects/camera；图片会发送给该模型。
 
 ## 4. 拉片
 

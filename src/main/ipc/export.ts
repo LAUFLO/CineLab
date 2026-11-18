@@ -210,6 +210,23 @@ export function registerExportIpc(): void {
   )
 
   ipcMain.handle(
+    'export:delete-file',
+    async (_event, relPath: string): Promise<void> => {
+      const root = getCurrentProjectRoot()
+      if (!root) throw new Error('没有打开的项目')
+      const rootPath = resolve(root)
+      const absolute = resolve(rootPath, relPath)
+      if (
+        !absolute.startsWith(`${rootPath}\\`) &&
+        !absolute.startsWith(`${rootPath}/`)
+      ) {
+        throw new Error('资源路径无效')
+      }
+      await rm(absolute, { force: true })
+    }
+  )
+
+  ipcMain.handle(
     'export:assets',
     async (
       event,

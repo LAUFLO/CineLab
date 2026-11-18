@@ -315,7 +315,7 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
           run: () => ctx.openStudio(node.id)
         },
         {
-          label: '下载成片',
+          label: '另存成片',
           disabled: !output,
           run: () => {
             if (!output) return

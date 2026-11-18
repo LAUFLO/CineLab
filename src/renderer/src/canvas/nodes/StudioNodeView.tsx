@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { docDurationMs, formatTimecode } from '@shared/timeline-layout'
@@ -18,6 +18,20 @@ import { useTimelineStore } from '../../stores/timeline'
 import { useUIStore } from '../../stores/ui'
 import { referencesFromDoc, upstreamSignature } from '../../studio/references'
 import { VideoPlayer } from './VideoPlayer'
+import { TimelineCanvas } from '../../studio/TimelineCanvas'
+import { useTimelineAudio } from '../../studio/useTimelineAudio'
+import {
+  acquireAudioPlayback,
+  acquireVideoPlayback,
+  pauseAllPlayback,
+  releaseAudioPlayback,
+  releaseVideoPlayback
+} from './playbackBudget'
+import {
+  getCachedTimeline,
+  invalidateTimelineCache,
+  setCachedTimeline
+} from '../../studio/docCache'
 import { Input, Button, Select } from '../../components/ui'
 
 const FILM_STATUS_LABEL: Record<string, string> = {
@@ -26,7 +40,7 @@ const FILM_STATUS_LABEL: Record<string, string> = {
   ready: '可导出',
   stale: '待更新',
   empty: '时间线为空',
-  missing: '成片缺失'
+  missing: '导出文件缺失'
 }
 
 const FILM_STATUS_TONE: Record<string, string> = {
@@ -52,6 +66,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
   const [codec, setCodec] = useState<TimelineVideoCodec>('h264')
   const [previewOpen, setPreviewOpen] = useState(false)
   const patchStudioNode = useCanvasStore((state) => state.patchStudioNode)
+  const removeEdges = useCanvasStore((state) => state.removeEdges)
   const setStudioFilmStatus = useCanvasStore(
     (state) => state.setStudioFilmStatus
   )
@@ -69,6 +84,131 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
   const busy = exporting || filmStatus === 'rendering'
   const assetSrc = current ? assetUrl(current.path, current.scope) : null
   const clipCount = data.clipCount ?? 0
+  const [previewDoc, setPreviewDoc] = useState<TimelineDoc | null>(null)
+  const [previewPlaying, setPreviewPlaying] = useState(false)
+  const [previewTimeMs, setPreviewTimeMs] = useState(0)
+  const [previewTab, setPreviewTab] = useState<'live' | 'exported'>('live')
+  const previewTimeMsRef = useRef(previewTimeMs)
+  previewTimeMsRef.current = previewTimeMs
+  const studioOpen = useStudioStore((state) => state.open)
+  const studioNodeId = useStudioStore((state) => state.nodeId)
+  const isSelfOpen = studioOpen && studioNodeId === id
+  const storeTimelineDoc = useTimelineStore((state) => state.doc)
+
+  // 实时预览：剪辑室打开时用 store doc，否则用缓存或磁盘
+  useEffect(() => {
+    if (isSelfOpen) {
+      setPreviewDoc(storeTimelineDoc)
+      if (storeTimelineDoc) {
+        setCachedTimeline(data.timelineId, storeTimelineDoc)
+      }
+      return
+    }
+
+    let alive = true
+    const cached = getCachedTimeline(data.timelineId)
+    if (cached) {
+      setPreviewDoc(cached)
+      return
+    }
+    void window.api.timeline
+      .load(data.timelineId)
+      .then((doc) => {
+        if (!alive) return
+        if (doc) setCachedTimeline(data.timelineId, doc)
+        setPreviewDoc(doc)
+      })
+      .catch(() => {
+        if (alive) setPreviewDoc(null)
+      })
+    return () => {
+      alive = false
+    }
+  }, [id, data.timelineId, isSelfOpen, storeTimelineDoc])
+
+  // 时间线保存后刷新；剪辑室打开时跳过，关闭时统一刷新（100ms debounce）
+  useEffect(() => {
+    let timer = 0
+    const unsubscribe = window.api.timeline.onTimelineChanged((payload) => {
+      if (payload.timelineId !== data.timelineId) return
+      const state = useStudioStore.getState()
+      if (state.open && state.nodeId === id) return
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        invalidateTimelineCache(payload.timelineId)
+        void window.api.timeline
+          .load(payload.timelineId)
+          .then((doc) => {
+            if (doc) setCachedTimeline(payload.timelineId, doc)
+            setPreviewDoc(doc)
+          })
+          .catch(() => undefined)
+      }, 100)
+    })
+    return () => {
+      window.clearTimeout(timer)
+      unsubscribe()
+    }
+  }, [id, data.timelineId])
+
+  // 节点内播放时钟：从第 0 帧开始，播完回到第 0 帧
+  useEffect(() => {
+    if (!previewPlaying || !previewDoc) return
+    const total = Math.max(docDurationMs(previewDoc), 1)
+    let last = performance.now()
+    let lastDraw = 0
+    let frame = 0
+    const tick = (now: number): void => {
+      const delta = now - last
+      last = now
+      if (now - lastDraw >= 66) {
+        lastDraw = now
+        setPreviewTimeMs((current) => {
+          const next = current + delta
+          if (next >= total) {
+            setPreviewPlaying(false)
+            return 0
+          }
+          return next
+        })
+      }
+      frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [previewPlaying, previewDoc])
+
+  // 节点内播放占用一个视频名额
+  useEffect(() => {
+    if (!previewPlaying) return
+    const playbackId = `studio:${id}`
+    acquireVideoPlayback(playbackId, () => setPreviewPlaying(false))
+    return () => releaseVideoPlayback(playbackId)
+  }, [previewPlaying, id])
+
+  // 打开大预览时暂停节点小窗播放
+  useEffect(() => {
+    if (previewOpen) setPreviewPlaying(false)
+  }, [previewOpen])
+
+  // 关闭大预览或切到导出版本时释放出声名额
+  useEffect(() => {
+    if (!previewOpen || previewTab !== 'live') {
+      releaseAudioPlayback('studio-preview')
+    }
+  }, [previewOpen, previewTab])
+
+  useEffect(() => {
+    if (!previewPlaying) releaseAudioPlayback('studio-preview')
+  }, [previewPlaying])
+
+  // 大预览实时预览出声
+  useTimelineAudio(
+    previewDoc,
+    previewOpen && previewTab === 'live' && previewPlaying,
+    () => previewTimeMsRef.current
+  )
+
   const durationMs =
     data.durationMs && data.durationMs > 0
       ? data.durationMs
@@ -97,6 +237,46 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
   const shiftVersion = (delta: number): void => {
     const next = outputs[currentIndex + delta]
     if (next) patchStudioNode(id, { selectedOutputId: next.id })
+  }
+
+  const deleteVersion = async (event: React.MouseEvent): Promise<void> => {
+    event.stopPropagation()
+    if (!current) return
+    if (!window.confirm('删除这个导出版本？将同时删除文件，且不可恢复。')) {
+      return
+    }
+
+    const output = current
+    const remaining = outputs.filter((item) => item.id !== output.id)
+    const nextSelected = remaining[0]
+
+    const state = useCanvasStore.getState()
+    const stillReferenced = state.nodes.some((node) => {
+      if (node.id === id) return false
+      const nodeOutputs = (node.data as { outputs?: { path: string }[] }).outputs
+      return nodeOutputs?.some((item) => item.path === output.path) ?? false
+    })
+
+    patchStudioNode(id, {
+      outputs: remaining,
+      selectedOutputId: nextSelected?.id,
+      filmStatus: remaining.length > 0 ? 'ready' : 'pending'
+    })
+
+    if (remaining.length === 0) {
+      const edges = state.edges.filter((edge) => edge.source === id)
+      if (edges.length > 0) {
+        removeEdges(edges.map((edge) => edge.id))
+      }
+    }
+
+    if (!stillReferenced) {
+      await window.api.export.deleteFile(output.path).catch(() => undefined)
+    }
+
+    showToast(
+      stillReferenced ? '已删除版本（文件仍被其他节点引用）' : '已删除版本和文件'
+    )
   }
 
   const loadStudioDoc = async (): Promise<{
@@ -149,6 +329,9 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
       await window.api.timeline.save(studio.data.timelineId, doc)
     }
 
+    pauseAllPlayback()
+    setPreviewPlaying(false)
+    showToast('导出中，画布预览已暂停')
     setExporting(true)
     setProgress(0)
     setStudioFilmStatus(id, 'rendering')
@@ -161,12 +344,12 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
       const result = await window.api.timeline.export(doc, { codec })
       if (result.canceled) {
         setStudioFilmStatus(id, current ? 'stale' : 'pending')
-        showToast('已取消生成成片')
+        showToast('已取消导出')
         return
       }
       if (!result.ok || !result.path) {
         setStudioFilmStatus(id, current ? 'stale' : 'pending')
-        showToast('生成成片失败', 'error')
+        showToast('导出失败', 'error')
         return
       }
 
@@ -217,7 +400,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
           useCanvasStore.getState().nodes
         )
       })
-      showToast(`成片已生成：${result.path}`)
+      showToast(`已导出成片：${result.path}`)
     } catch (error) {
       setStudioFilmStatus(id, current ? 'stale' : 'pending')
       showToast(error instanceof Error ? error.message : String(error), 'error')
@@ -225,6 +408,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
       unsubscribe()
       setExporting(false)
       setProgress(0)
+      showToast('导出结束，画布预览已恢复')
     }
   }
 
@@ -300,7 +484,50 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
           onDoubleClick={() => open()}
         >
           <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-media-bg">
-            {assetSrc ? (
+            {previewDoc && previewDoc.clips.length > 0 ? (
+              <>
+                <TimelineCanvas
+                  doc={previewDoc}
+                  timeMs={previewTimeMs}
+                  playing={previewPlaying}
+                  renderScale={0.35}
+                  className="block max-h-full max-w-full"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className="nodrag nopan absolute top-1/2 left-1/2 !h-11 !w-11 -translate-x-1/2 -translate-y-1/2 !rounded-full !border !border-white/35 !bg-black/45 !text-[15px] !text-white hover:!bg-black/[0.65] hover:!text-white"
+                  title={previewPlaying ? '暂停预览' : '播放预览'}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    if (previewPlaying) {
+                      setPreviewPlaying(false)
+                    } else {
+                      setPreviewTimeMs(0)
+                      setPreviewPlaying(true)
+                    }
+                  }}
+                >
+                  {previewPlaying ? '❚❚' : '▶'}
+                </Button>
+                {assetSrc ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="none"
+                    className="nodrag nopan absolute top-2 right-2 !h-7 !w-7 !rounded-full !border !border-border !bg-surface/80 !text-fg-muted hover:!bg-surface hover:!text-fg"
+                    title="查看导出版本"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setPreviewOpen(true)
+                    }}
+                  >
+                    <Icon name="film" size={13} />
+                  </Button>
+                ) : null}
+              </>
+            ) : assetSrc ? (
               <>
                 <video
                   key={current?.id}
@@ -337,10 +564,10 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                 onClick={open}
               >
                 <Icon name="film" size={34} />
-                <span>{clipCount > 0 ? '成片待生成' : '还没有素材'}</span>
+                <span>{clipCount > 0 ? '当前为实时预览' : '还没有素材'}</span>
                 <span className="text-[10.5px] text-fg-subtle opacity-80">
                   {clipCount > 0
-                    ? '点下方「生成成片」'
+                    ? '点下方「导出成片」'
                     : '双击进入剪辑室添加素材'}
                 </span>
               </Button>
@@ -360,7 +587,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
               {clipCount > 0
                 ? `${clipCount} 个片段`
                 : current
-                  ? '成片'
+                  ? '导出版本'
                   : '暂无片段'}
               <span className="text-fg-subtle opacity-70">·</span>
               {formatTimecode(durationMs)}
@@ -407,6 +634,19 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                 </Button>
               </span>
             ) : null}
+
+            {current ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="none"
+                className="!h-[18px] !w-[18px] !rounded-pill !text-[11px] !text-inherit enabled:hover:!bg-white/16"
+                title="删除这个导出版本"
+                onClick={(event) => void deleteVersion(event)}
+              >
+                <Icon name="trash" size={10} />
+              </Button>
+            ) : null}
           </div>
 
           <div className="nodrag nopan flex items-center gap-1.5 px-2.5 pb-2.5">
@@ -451,7 +691,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
               onClick={(event) => void exportFilm(event)}
               disabled={filmStatus === 'empty' || filmStatus === 'missing'}
             >
-              {busy ? '取消' : current ? '重新生成' : '生成成片'}
+              {busy ? '取消导出' : current ? '重新导出' : '导出成片'}
             </Button>
           </div>
         </div>
@@ -475,21 +715,89 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
         </Handle>
       </div>
 
-      {previewOpen && current
+      {previewOpen && (current || (previewDoc && previewDoc.clips.length > 0))
         ? createPortal(
             <div
               className="fixed inset-0 z-[250] flex items-center justify-center bg-black/[0.72] p-12"
               onPointerDown={() => setPreviewOpen(false)}
             >
               <div
-                className="aspect-video max-h-[calc(100vh-96px)] w-[min(1280px,calc(100vw-96px))] overflow-hidden rounded-[10px] bg-media-bg shadow-float"
+                className="relative flex aspect-video max-h-[calc(100vh-96px)] w-[min(1280px,calc(100vw-96px))] items-center justify-center overflow-hidden rounded-[10px] bg-media-bg shadow-float"
                 onPointerDown={(event) => event.stopPropagation()}
               >
-                <VideoPlayer
-                  src={assetUrl(current.path, current.scope)}
-                  path={current.path}
-                  fps={current.fps}
-                />
+                <div className="nodrag nopan absolute top-3 left-3 z-10 flex gap-1 rounded-pill bg-black/45 p-1 backdrop-blur">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="none"
+                    className={`!h-7 !rounded-pill !px-3 !text-[11.5px] ${
+                      previewTab === 'live' ? '!bg-white/18 !text-white' : '!text-white/70'
+                    }`}
+                    onClick={() => setPreviewTab('live')}
+                    disabled={!previewDoc || previewDoc.clips.length === 0}
+                  >
+                    实时预览
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="none"
+                    className={`!h-7 !rounded-pill !px-3 !text-[11.5px] ${
+                      previewTab === 'exported' ? '!bg-white/18 !text-white' : '!text-white/70'
+                    }`}
+                    onClick={() => setPreviewTab('exported')}
+                    disabled={!current}
+                  >
+                    导出版本
+                  </Button>
+                </div>
+
+                {previewTab === 'live' && previewDoc && previewDoc.clips.length > 0 ? (
+                  <>
+                    <TimelineCanvas
+                      doc={previewDoc}
+                      timeMs={previewTimeMs}
+                      playing={previewPlaying}
+                      renderScale={0.5}
+                      className="block max-h-full max-w-full"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="none"
+                      className="nodrag nopan absolute bottom-6 left-1/2 !h-11 !w-11 -translate-x-1/2 !rounded-full !border !border-white/35 !bg-black/45 !text-[15px] !text-white hover:!bg-black/[0.65] hover:!text-white"
+                      title={previewPlaying ? '暂停预览' : '播放预览'}
+                      onClick={() => {
+                        if (previewPlaying) {
+                          releaseAudioPlayback('studio-preview')
+                          setPreviewPlaying(false)
+                        } else {
+                          acquireAudioPlayback('studio-preview', () =>
+                            setPreviewPlaying(false)
+                          )
+                          setPreviewTimeMs(0)
+                          setPreviewPlaying(true)
+                        }
+                      }}
+                    >
+                      {previewPlaying ? '❚❚' : '▶'}
+                    </Button>
+                  </>
+                ) : previewTab === 'live' ? (
+                  <div className="flex h-full w-full items-center justify-center text-[12px] text-white/60">
+                    时间线为空
+                  </div>
+                ) : current ? (
+                  <VideoPlayer
+                    src={assetUrl(current.path, current.scope)}
+                    path={current.path}
+                    fps={current.fps}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[12px] text-white/60">
+                    还没有导出版本
+                  </div>
+                )}
               </div>
             </div>,
             document.body

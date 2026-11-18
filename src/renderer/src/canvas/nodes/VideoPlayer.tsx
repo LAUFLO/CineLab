@@ -16,6 +16,11 @@ interface VideoPlayerProps {
   fps?: number
   onTimeChange?: (time: number) => void
   onDurationChange?: (duration: number) => void
+  onPlay?: () => void
+  onPause?: () => void
+  onEnded?: () => void
+  /** 节点小窗强制静音时隐藏音量按钮 */
+  hideVolume?: boolean
 }
 
 export interface VideoPlayerHandle {
@@ -31,7 +36,17 @@ const TIME_SHADOW = '[text-shadow:0_1px_3px_rgba(0,0,0,0.55)]'
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   function VideoPlayer(
-    { src, path, fps, onTimeChange, onDurationChange },
+    {
+      src,
+      path,
+      fps,
+      onTimeChange,
+      onDurationChange,
+      onPlay,
+      onPause,
+      onEnded,
+      hideVolume
+    },
     ref
   ) {
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -92,29 +107,49 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           }
         }
       }
-      const onPlay = (): void => setPlaying(true)
-      const onPause = (): void => setPlaying(false)
-      const onEnded = (): void => setPlaying(false)
+      const handlePlay = (): void => {
+        setPlaying(true)
+        onPlay?.()
+      }
+      const handlePause = (): void => {
+        setPlaying(false)
+        onPause?.()
+      }
+      const handleEnded = (): void => {
+        setPlaying(false)
+        onEnded?.()
+      }
       const onVolume = (): void => setMuted(video.muted)
 
       video.addEventListener('timeupdate', onTime)
       video.addEventListener('loadedmetadata', onMeta)
       video.addEventListener('durationchange', onMeta)
-      video.addEventListener('play', onPlay)
-      video.addEventListener('pause', onPause)
-      video.addEventListener('ended', onEnded)
+      video.addEventListener('play', handlePlay)
+      video.addEventListener('pause', handlePause)
+      video.addEventListener('ended', handleEnded)
       video.addEventListener('volumechange', onVolume)
 
       return () => {
         video.removeEventListener('timeupdate', onTime)
         video.removeEventListener('loadedmetadata', onMeta)
         video.removeEventListener('durationchange', onMeta)
-        video.removeEventListener('play', onPlay)
-        video.removeEventListener('pause', onPause)
-        video.removeEventListener('ended', onEnded)
+        video.removeEventListener('play', handlePlay)
+        video.removeEventListener('pause', handlePause)
+        video.removeEventListener('ended', handleEnded)
         video.removeEventListener('volumechange', onVolume)
       }
-    }, [src, onTimeChange, onDurationChange])
+    }, [src, onTimeChange, onDurationChange, onPlay, onPause, onEnded])
+
+    // 卸载时释放解码器，避免画布上累积 video 元素
+    useEffect(() => {
+      const video = videoRef.current
+      return () => {
+        if (!video) return
+        video.pause()
+        video.removeAttribute('src')
+        video.load()
+      }
+    }, [])
 
     useEffect(() => {
       const onChange = (): void => {
@@ -127,7 +162,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const toggle = (): void => {
       const video = videoRef.current
       if (!video || !src) return
-      if (video.paused) void video.play()
+      if (video.paused) void video.play().catch(() => undefined)
       else video.pause()
     }
 
@@ -171,7 +206,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         onTimeChange?.(time)
       },
       play: () => {
-        void videoRef.current?.play()
+        void videoRef.current?.play().catch(() => undefined)
       },
       pause: () => videoRef.current?.pause()
     }))
@@ -267,16 +302,18 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
             <span className="flex-1" />
 
-            <Button
-              type="button"
-              variant="ghost"
-              size="none"
-              className={BTN_CLASS}
-              onClick={toggleMute}
-              title={muted ? '取消静音' : '静音'}
-            >
-              <Icon name={muted ? 'volume-mute' : 'volume'} size={15} />
-            </Button>
+            {hideVolume ? null : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="none"
+                className={BTN_CLASS}
+                onClick={toggleMute}
+                title={muted ? '取消静音' : '静音'}
+              >
+                <Icon name={muted ? 'volume-mute' : 'volume'} size={15} />
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"

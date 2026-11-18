@@ -7,6 +7,8 @@ import {
 export interface ModelBodyRef {
   dataUrl: string
   role: string
+  /** 省略时按图片处理，兼容旧调用 */
+  media?: 'image' | 'audio'
 }
 
 export interface ModelBodyContext {
@@ -26,7 +28,11 @@ function refValue(token: string, refs: ModelBodyRef[]): unknown {
   }
   if (token === 'refs.frames') {
     return refs
-      .filter((ref) => ref.role === 'firstFrame' || ref.role === 'lastFrame')
+      .filter(
+        (ref) =>
+          ref.media !== 'audio' &&
+          (ref.role === 'firstFrame' || ref.role === 'lastFrame')
+      )
       .map((ref) => ref.dataUrl)
   }
   if (token === 'refs.subject') {
@@ -49,20 +55,33 @@ function refValue(token: string, refs: ModelBodyRef[]): unknown {
     return refs.find((ref) => ref.role === 'mask')?.dataUrl
   }
   if (token === 'refs.image') {
-    return refs.find((ref) => ref.role !== 'mask')?.dataUrl
+    return refs.find(
+      (ref) => ref.media !== 'audio' && ref.role !== 'mask'
+    )?.dataUrl
   }
   if (token === 'refs.images') {
     const references = refs.filter(
       (ref) =>
-        ref.role === 'reference' ||
-        ref.role === 'subject' ||
-        ref.role === 'style' ||
-        ref.role === 'source'
+        ref.media !== 'audio' &&
+        (ref.role === 'reference' ||
+          ref.role === 'subject' ||
+          ref.role === 'style' ||
+          ref.role === 'source')
     )
     return (references.length > 0
       ? references
-      : refs.filter((ref) => ref.role !== 'mask')
+      : refs.filter(
+          (ref) => ref.media !== 'audio' && ref.role !== 'mask'
+        )
     ).map((ref) => ref.dataUrl)
+  }
+  if (token === 'refs.audio') {
+    return refs.find((ref) => ref.media === 'audio')?.dataUrl
+  }
+  if (token === 'refs.audios') {
+    return refs
+      .filter((ref) => ref.media === 'audio')
+      .map((ref) => ref.dataUrl)
   }
   return undefined
 }
@@ -79,6 +98,8 @@ function resolverFor(model: ModelDef, context: ModelBodyContext) {
       frames: refValue('refs.frames', refs),
       image: refValue('refs.image', refs),
       images: refValue('refs.images', refs),
+      audio: refValue('refs.audio', refs),
+      audios: refValue('refs.audios', refs),
       subject: refValue('refs.subject', refs),
       subjects: refValue('refs.subjects', refs),
       style: refValue('refs.style', refs),

@@ -2,6 +2,8 @@ import type { AssetScope } from './asset-schema'
 
 export type OutputKind = 'image' | 'video' | 'audio' | 'text'
 
+export type ReferenceMedia = 'image' | 'video' | 'audio'
+
 export type ReferenceRole =
   | 'firstFrame'
   | 'lastFrame'
@@ -31,6 +33,8 @@ export interface ReferenceInput {
   role: ReferenceRole
   /** 省略时按项目内相对路径解析 */
   scope?: AssetScope
+  /** 参考媒体类型；省略时主进程按扩展名推断，兼容旧数据和 Agent 请求 */
+  media?: ReferenceMedia
 }
 
 /** Seedream 图层拆分返回的边界框，[left, top, right, bottom] */

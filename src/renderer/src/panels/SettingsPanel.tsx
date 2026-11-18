@@ -11,6 +11,7 @@ import {
   type ProviderInput
 } from '@shared/provider-schema'
 import { MODEL_MODE_LABEL } from '@shared/model-modes'
+import { effectiveCapabilities } from '@shared/capabilities'
 import { findProtocolTemplate } from '@shared/protocol-templates'
 import type {
   ModelsConfigStatus,
@@ -660,6 +661,18 @@ function ModelsSection() {
                         {FEATURE_LABEL[feature]}
                       </span>
                     ))}
+                    {(() => {
+                      const gaps = effectiveCapabilities(model).gaps
+                      if (gaps.length === 0) return null
+                      return (
+                        <span
+                          className="rounded-full border border-[color-mix(in_srgb,var(--danger)_40%,var(--border))] px-1.5 py-px text-[10px] leading-4 text-danger"
+                          title={gaps.map((gap) => gap.message).join('\n')}
+                        >
+                          {gaps.length} 项能力未实现
+                        </span>
+                      )
+                    })()}
                     {findProtocolTemplate(model.protocol)?.status ? (
                       <span
                         className={`rounded-full px-1.5 py-px text-[10px] leading-4 ${

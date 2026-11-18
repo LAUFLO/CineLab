@@ -163,16 +163,22 @@ function templateHasMode(
  * 这里的默认值只用于旧配置和预设；用户可以在设置中覆盖。
  */
 export function inferModelInputs(model: ModelInferenceInput): MediaInput[] {
+  const remote = model.remoteModel ?? ''
   const explicitModes = normalizeModelModes(model.modes)
   if (explicitModes.length > 0) {
     const kinds = new Set<MediaInput>()
     for (const mode of explicitModes) {
       for (const kind of modeMediaKinds(mode)) kinds.add(kind as MediaInput)
     }
+    // 可选参考媒体不参与通用推导，已知模型需要补回
+    if (/^agnes-video-2\.5-flash/i.test(remote)) {
+      kinds.add('audio')
+    } else if (/^agnes-video-2\.5/i.test(remote)) {
+      kinds.add('audio')
+      kinds.add('video')
+    }
     return [...kinds]
   }
-
-  const remote = model.remoteModel ?? ''
 
   if (model.capability === 'image.i2i') return ['text', 'image']
   if (model.capability === 'image.t2i') {
@@ -387,9 +393,8 @@ export function inferActiveMode(
   return modes.includes('t2v') ? 't2v' : undefined
 }
 
-/** v2 模式优先；否则已配置 inputs；最后按能力推断 */
+/** 显式 inputs 优先；否则按模式、适配器和模型名推断 */
 export function modelInputs(model: ModelDef): MediaInput[] {
-  if (model.modes && model.modes.length > 0) return modelModeMediaKinds(model)
   if (model.inputs && model.inputs.length > 0) return model.inputs
   return inferModelInputs(model)
 }
@@ -401,6 +406,21 @@ export function missingInputsFor(
 ): MediaInput[] {
   const available = new Set(modelInputs(model))
   return required.filter((input) => !available.has(input))
+}
+
+/**
+ * 是否支持视频参考音频。
+ *
+ * `features` 的语义是输出特性（例如原生音频），不能拿来判断输入能力；
+ * 这里优先看显式 `inputs`，未声明时只对已知适配器兜底。
+ */
+export function supportsReferenceAudio(model: ModelDef): boolean {
+  if (model.inputs && model.inputs.length > 0) {
+    return model.inputs.includes('audio')
+  }
+  return (
+    model.adapter === 'agnes-video' || /^agnes-video/i.test(model.remoteModel)
+  )
 }
 
 function templateContains(
@@ -1257,7 +1277,7 @@ const PRESET_MODE_OVERRIDES: Record<
     protocol: 'minimax-video'
   },
   'kling-v2-5-turbo': {
-    modes: ['t2v', 'first-frame', 'first-last', 'reference'],
+    modes: ['t2v', 'first-frame', 'first-last'],
     family: 'kling',
     protocol: 'kling-video'
   },

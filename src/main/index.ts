@@ -6,6 +6,7 @@ import { installApplicationMenu } from './menu'
 import { ensureLibrary } from './library/config'
 import { cleanupThumbCache } from './library/thumbs'
 import { ensureMigrated } from './settings/store'
+import { reportCapabilityGaps } from './settings/capability-report'
 import { getPreferences } from './settings/preferences'
 import { applyRuntimePreferences } from './settings/apply'
 import { startModelsWatcher } from './settings/models-watch'
@@ -105,6 +106,8 @@ if (!hasLock) {
       console.warn('[settings] failed to migrate legacy settings', error)
       diagLog(`migrate settings failed ${String(error)}`)
     }
+
+    void reportCapabilityGaps()
 
     let startupPreferences: Awaited<ReturnType<typeof getPreferences>> | null =
       null

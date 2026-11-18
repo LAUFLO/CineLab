@@ -10,41 +10,12 @@ import { getCurrentProjectRoot } from '../project/manager'
 import { isRetryable } from '../providers/retry'
 import { log } from '../logger'
 import { updateProposalFromRun } from '../agent/proposals'
+import { formatGenerationError } from '../engine/generation-error'
 
 function broadcast(event: GenerationEvent): void {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send('generation:event', event)
   }
-}
-
-function formatGenerationError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error)
-
-  if (/HTTP 401|HTTP 403/i.test(message)) {
-    return 'API Key 无效或没有权限，请在设置中检查密钥'
-  }
-  if (/HTTP 429/i.test(message)) {
-    return '请求过于频繁（限流），请稍后重试'
-  }
-  if (/HTTP 404/i.test(message)) {
-    return '模型或接口不存在，请检查模型配置'
-  }
-  if (/HTTP 5\d\d/i.test(message)) {
-    return '模型服务暂时不可用，请稍后重试'
-  }
-  if (
-    /ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|fetch failed|socket hang up|连接超时/i.test(
-      message
-    )
-  ) {
-    return '网络连接失败，请检查网络或代理后重试'
-  }
-  if (/aborted|已取消/i.test(message)) {
-    return '任务已取消'
-  }
-
-  const detail = message.replace(/^Error:\s*/, '').trim()
-  return detail.length > 160 ? `${detail.slice(0, 160)}…` : detail
 }
 
 export function registerGenerateIpc(): void {

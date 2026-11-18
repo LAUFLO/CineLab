@@ -259,7 +259,18 @@ describe('agent tool permissions', () => {
       assertToolAllowed(
         call('generation_propose', {
           ...base,
-          libraryRefs: [{ path: '场景/街景.png', kind: 'audio' }]
+          libraryRefs: [{ path: '场景/配音.mp3', kind: 'audio' }]
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('generation_propose', {
+          ...base,
+          libraryRefs: [{ path: '场景/街景.png', kind: 'text' }]
         }),
         scope,
         'current'

@@ -13,6 +13,7 @@
     "typecheck": "node scripts/typecheck.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "audit:capabilities": "vitest run src/main/__tests__/capability-audit.test.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{ts,mjs,json}\"",

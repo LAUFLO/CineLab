@@ -33,6 +33,8 @@
 | [group-nodes.md](group-nodes.md) | 分组节点与分镜组 | 待开分支 |
 | [bottom-toolbar-plan.md](bottom-toolbar-plan.md) | 底部工具栏 | 待实施 |
 | [runtime-components-plan.md](runtime-components-plan.md) | 本地 runtime 组件下载与发布 | 实施中 |
+| [reference-audio-plan.md](reference-audio-plan.md) | 参考音频链路：Agnes `audios`、统一校验与槽位 | 已实现，保留参考 |
+| [capability-consistency-plan.md](capability-consistency-plan.md) | 能力一致性治理：适配器能力表、统一闸门与审计 | 已实现，保留参考 |
 | [placeholder-operations-plan.md](placeholder-operations-plan.md) | 占位操作补齐 | 实施中 |
 | [models-config-unify-plan.md](models-config-unify-plan.md) | 模型配置统一 | 实施中 |
 | [model-onboarding-plan.md](model-onboarding-plan.md) | 模型配置引导 | 实施中 |

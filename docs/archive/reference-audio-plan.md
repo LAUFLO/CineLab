@@ -1,8 +1,8 @@
 # 参考音频链路方案
 
 日期：2026-11-17
-状态：已实现
-关联：[models.md](models.md)、[ui-spec.md](ui-spec.md)、[architecture.md](architecture.md)
+状态：历史（2026-11-18 归档）
+关联：[models.md](../models.md)、[ui-spec.md](../ui-spec.md)、[architecture.md](../architecture.md)
 
 ## 1. 背景
 

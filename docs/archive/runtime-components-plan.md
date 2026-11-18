@@ -1,7 +1,7 @@
 # 深度 runtime 组件构建与发布方案
 
 日期：2026-11-07
-状态：实施中
+状态：历史（2026-11-18 归档）
 关联：`DEPTH-CAPTURE-1`、`RUNTIME-COMPONENTS-1`、`docs/beef-tv-depth-research.md`
 
 ## 1. 背景

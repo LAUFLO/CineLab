@@ -1,8 +1,8 @@
 # 能力一致性治理方案
 
 日期：2026-11-17
-状态：已实现
-关联：[models.md](models.md)、[architecture.md](architecture.md)、[reference-audio-plan.md](reference-audio-plan.md)
+状态：历史（2026-11-18 归档）
+关联：[models.md](../models.md)、[architecture.md](../architecture.md)、[reference-audio-plan.md](reference-audio-plan.md)
 
 ## 1. 问题定性
 

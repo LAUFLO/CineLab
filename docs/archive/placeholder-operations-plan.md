@@ -1,7 +1,7 @@
 # 工具栏占位功能补齐方案
 
 日期：2026-11-07
-状态：实施中（批次 1）
+状态：历史（2026-11-18 归档）
 关联：`docs/node-toolbar-plan.md`、`docs/runtime-components-plan.md`
 
 ## 1. 背景

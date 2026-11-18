@@ -2,7 +2,7 @@
 
 日期：2026-11-14
 状态：历史（2026-11-16 归档）
-关联：[models.md](../models.md)、[video-operations-plan.md](video-operations-plan.md)、[sora-video-plan.md](sora-video-plan.md)、[model-config-merge-plan.md](model-config-merge-plan.md)
+关联：[models.md](../models.md)、[video-operations-plan.md](video-operations-plan.md)
 
 ## 1. 背景
 

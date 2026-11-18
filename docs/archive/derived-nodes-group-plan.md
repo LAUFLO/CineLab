@@ -1,5 +1,7 @@
 # 派生节点自动成组与尺寸规范
 
+状态：历史（2026-11-18 归档）
+
 > 状态：实施中
 > 日期：2026-11-07
 > 关联：`src/renderer/src/stores/canvas.ts`、`NodeToolbar.tsx`、`PromptBar.tsx`

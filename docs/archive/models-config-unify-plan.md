@@ -1,5 +1,7 @@
 # 模型配置统一方案
 
+状态：历史（2026-11-18 归档）
+
 > 状态：已确认，实施中
 > 日期：2026-11-06
 > 关联：`docs/models.md`、`src/main/settings/`、`src/renderer/src/panels/SettingsPanel.tsx`

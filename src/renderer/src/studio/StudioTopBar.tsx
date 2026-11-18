@@ -93,7 +93,7 @@ export function StudioTopBar() {
           <Icon name="layers" size={14} />
         </IconButton>
         <span className="mx-1.5 whitespace-nowrap text-xs text-fg-muted">
-          成片在画布节点生成
+          在画布节点导出成片
         </span>
         <IconButton
           label="关闭"

@@ -30,6 +30,7 @@ import { AudioActionBar, type AudioActionMode } from './AudioActionBar'
 import { NodeToolbar } from './NodeToolbar'
 import { PanoramaViewer } from './PanoramaViewer'
 import { VideoPlayer } from './VideoPlayer'
+import { VideoPreview } from './VideoPreview'
 import { StudyNodeCard } from './StudyNodeCard'
 import { Button, Dialog, Input } from '../../components/ui'
 
@@ -453,10 +454,11 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                   />
                 ) : assetSrc &&
                   (current?.kind === 'video' || data.kind === 'video') ? (
-                  <VideoPlayer
+                  <VideoPreview
                     src={assetSrc}
                     path={current?.path}
                     fps={current?.fps}
+                    nodeWidth={nodeWidth}
                   />
                 ) : assetSrc ? (
                   <img

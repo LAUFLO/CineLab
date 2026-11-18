@@ -41,6 +41,7 @@
 | [p3-refactor-plan.md](p3-refactor-plan.md) | P3 架构拆分计划与进度 | 部分完成 |
 | [node-output-target-plan.md](node-output-target-plan.md) | 节点操作输出目标：版本回写 / 新建节点规则 | 已实现，保留参考 |
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 | Backlog |
+| [studio-node-live-preview-plan.md](studio-node-live-preview-plan.md) | 剪辑室节点实时预览（编辑即可见，导出按需） | 方案已确认，待实施 |
 | [agent-full-scope.md](agent-full-scope.md) | Agent 完整范围 | 参考 |
 
 ## 3. 历史归档

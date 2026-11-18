@@ -32,10 +32,16 @@ export function registerTimelineIpc(): void {
 
   ipcMain.handle(
     'timeline:save',
-    async (_event, timelineId: string, doc: TimelineDoc) => {
+    async (event, timelineId: string, doc: TimelineDoc) => {
       const root = getCurrentProjectRoot()
       if (!root) throw new Error('没有打开的项目')
       await saveTimelineFile(root, timelineId, doc)
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('timeline:changed', {
+          timelineId,
+          at: Date.now()
+        })
+      }
     }
   )
 

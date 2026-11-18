@@ -232,6 +232,7 @@ export interface ExportApi {
   project(projectName: string): Promise<ExportResult>
   canvasPng(projectName: string, canvasName: string): Promise<ExportResult>
   asset(relPath: string, fileName: string, scope?: AssetScope): Promise<ExportResult>
+  deleteFile(relPath: string): Promise<void>
   assets(inputs: AssetRef[], fileName: string): Promise<ExportResult>
   concatVideos(
     paths: string[],
@@ -383,6 +384,9 @@ export interface TimelineApi {
   export(doc: TimelineDoc, settings?: TimelineExportSettings): Promise<TimelineExportResult>
   cancelExport(): Promise<void>
   onExportProgress(callback: (progress: TimelineExportProgress) => void): () => void
+  onTimelineChanged(
+    callback: (payload: { timelineId: string; at: number }) => void
+  ): () => void
   transcribe(input: TimelineTranscribeRequest): Promise<TimelineTranscribeResult>
   cancelTranscribe(): Promise<void>
   onTranscribeProgress(

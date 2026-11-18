@@ -127,7 +127,7 @@ Bug 和功能建议请提到 [GitHub Issues](https://github.com/LAUFLO/CineLab/i
 - [模型配置](docs/models.md)：`models.json` 格式与 Provider 配置
 - [界面规格](docs/ui-spec.md)：布局尺寸、节点结构、prompt bar、工具栏清单
 - [CineBot 能力清单](docs/agent-capabilities.md)：当前工具、参数校验、确认规则和回合撤销
-- [剪辑室](docs/archive/clip-studio-plan.md) · [导演台](docs/archive/director-stage-plan.md) · [逐帧拉片](docs/archive/film-study-plan.md)
+- [剪辑室](docs/archive/clip-studio-plan.md) · [导演台](docs/archive/director-stage-plan.md)
 
 ## 开发
 

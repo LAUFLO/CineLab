@@ -850,22 +850,24 @@ export function resolveModels(provider: ModelsFileProvider): ModelDef[] {
       item.features ?? preset?.features ?? protocolDefaults?.features
     const family = item.family ?? preset?.family
     const source = item.source ?? preset?.source
-    const inputs = modes
-      ? inferModelInputs({ capability, remoteModel, adapter, template, modes })
-      : (item.inputs ??
-        preset?.inputs ??
-        inferModelInputs({ capability, remoteModel, adapter, template }))
-    const operations = modes
-      ? inferModelOperations({
-          capability,
-          remoteModel,
-          adapter,
-          template,
-          modes
-        })
-      : (item.operations ??
-        preset?.operations ??
-        inferModelOperations({ capability, remoteModel, adapter, template }))
+    const inputs =
+      item.inputs ??
+      (modes
+        ? inferModelInputs({ capability, remoteModel, adapter, template, modes })
+        : (preset?.inputs ??
+          inferModelInputs({ capability, remoteModel, adapter, template })))
+    const operations =
+      item.operations ??
+      (modes
+        ? inferModelOperations({
+            capability,
+            remoteModel,
+            adapter,
+            template,
+            modes
+          })
+        : (preset?.operations ??
+          inferModelOperations({ capability, remoteModel, adapter, template })))
     const mergedParams = mergeParams(preset?.params, item.params)
     const params =
       mergedParams.length > 0

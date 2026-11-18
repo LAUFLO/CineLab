@@ -47,6 +47,31 @@ describe('applyModelRequestBody', () => {
     })
   })
 
+  it('exposes audio tokens and keeps audio out of image tokens', () => {
+    const body: Record<string, unknown> = {}
+    applyModelRequestBody(
+      body,
+      {
+        ...model,
+        extraBody: {
+          audio: '{{refs.audio}}',
+          audios: '{{refs.audios}}',
+          images: '{{refs.images}}'
+        }
+      },
+      {
+        refs: [
+          { dataUrl: 'data:image/png;base64,SUI', role: 'reference', media: 'image' },
+          { dataUrl: 'data:audio/mpeg;base64,AU1', role: 'reference', media: 'audio' }
+        ]
+      }
+    )
+
+    expect(body.audio).toBe('data:audio/mpeg;base64,AU1')
+    expect(body.audios).toEqual(['data:audio/mpeg;base64,AU1'])
+    expect(body.images).toEqual(['data:image/png;base64,SUI'])
+  })
+
   it('skips undefined variables and leaves the body unchanged without config', () => {
     const body: Record<string, unknown> = { model: 'plain', n: 2 }
     applyModelRequestBody(body, { ...model, extraBody: undefined, omitBody: undefined }, {})

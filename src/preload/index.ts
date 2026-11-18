@@ -220,6 +220,7 @@ const api: CineApi = {
     check: () => ipcRenderer.invoke('update:check'),
     download: () => ipcRenderer.invoke('update:download'),
     install: () => ipcRenderer.invoke('update:install'),
+    openFallback: () => ipcRenderer.invoke('update:open-fallback'),
     onEvent: (callback: (status: UpdateStatus) => void) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

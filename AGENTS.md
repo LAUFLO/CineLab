@@ -28,31 +28,13 @@
 | 技术架构 | `docs/architecture.md` |
 | 模型配置 | `models.json`（用户数据目录） |
 | 模型配置说明 | `docs/models.md` |
-| 分组设计 | `docs/group-nodes.md` |
-| 底部工具栏计划 | `docs/bottom-toolbar-plan.md` |
-| 深度动作捕捉方案 | `docs/depth-capture-plan.md` |
 | 后续路线图 | `docs/roadmap-plan.md` |
-| 模型配置统一方案 | `docs/models-config-unify-plan.md` |
-| 自动更新方案 | `docs/update-plan.md` |
-| 派生节点自动成组 | `docs/derived-nodes-group-plan.md` |
-| BeefTV 深度组件调研 | `docs/beef-tv-depth-research.md` |
-| 深度 runtime 构建发布 | `docs/runtime-components-plan.md` |
-| 剩余本地增强方案 | `docs/remaining-features-plan.md` |
-| 剪辑室合并成片方案 | `docs/studio-film-merge-plan.md` |
-| 导演台方案 | `docs/director-stage-plan.md` |
-| 导演台 3D 视口 | `docs/director-stage-viewport-plan.md` |
+| Agent 架构参考 | `docs/agent-architecture-plan.md` |
 | Agent 完整范围 | `docs/agent-full-scope.md` |
-| Agent 架构 | `docs/agent-architecture-plan.md` |
-| Agent 生成提案 | `docs/agent-generation-proposal-plan.md` |
-| CineBot 能力扩展方案 | `docs/agent-capability-plan.md` |
 | CineBot 能力清单 | `docs/agent-capabilities.md` |
-| 节点操作桥方案 | `docs/node-operation-bridge-plan.md` |
-| 节点输出目标方案 | `docs/node-output-target-plan.md` |
-| CineBot Phase 3 方案 | `docs/agent-phase3-plan.md` |
-| CineBot Phase 4 方案 | `docs/agent-generation-operations-plan.md` |
-| 剪辑室计划 | `docs/clip-studio-plan.md` |
-| 逐帧拉片方案 | `docs/film-study-plan.md` |
-| 剪辑助手计划 | `docs/agent-plan.md` |
+| 剪辑室 backlog | `docs/clip-studio-backlog.md` |
+| 文档影响映射 | `docs/doc-impact.md` |
+| 历史归档 | `docs/archive/` |
 
 ## 开发命令
 

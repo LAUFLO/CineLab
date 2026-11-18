@@ -1,8 +1,15 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, shell } from 'electron'
 import { autoUpdater, type UpdateInfo } from 'electron-updater'
 import type { UpdateState, UpdateStatus } from '@shared/update'
 import type { UpdateChannel } from '@shared/preferences'
 import { getPreferences } from '../settings/preferences'
+import {
+  installerFallback,
+  installerFor,
+  releasesFallback,
+  resolveInstallerFallback,
+  type PendingInstaller
+} from './fallback'
 
 let status: UpdateStatus = {
   state: 'idle',
@@ -12,6 +19,8 @@ let status: UpdateStatus = {
 
 let initialized = false
 let silentCheckTimer: NodeJS.Timeout | null = null
+let pendingInstaller: PendingInstaller | null = null
+let fallbackProbe: Promise<void> | null = null
 
 function broadcast(): void {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -38,17 +47,60 @@ function releaseNotes(info: UpdateInfo): string | undefined {
   return undefined
 }
 
-function errorMessage(error: unknown): string {
+function errorMessage(error: unknown, downloading: boolean): string {
   const raw = error instanceof Error ? error.message : String(error)
-  if (/ENOTFOUND|ECONNREFUSED|ETIMEDOUT|ECONNRESET|network|404/i.test(raw)) {
-    return '无法连接更新服务器，请检查网络后重试'
+  const network = /ENOTFOUND|ECONNREFUSED|ETIMEDOUT|ECONNRESET|network|404/i.test(
+    raw
+  )
+  const detail = raw.slice(0, 200)
+
+  if (downloading) {
+    return network
+      ? '下载更新失败，网络可能无法直连 GitHub'
+      : `下载更新失败：${detail}`
   }
-  return `检查更新失败：${raw.slice(0, 200)}`
+
+  return network
+    ? '无法连接更新服务器，请检查网络后重试'
+    : `检查更新失败：${detail}`
+}
+
+function applyDownloadFallback(): void {
+  if (status.fallback || fallbackProbe) return
+
+  const installer = pendingInstaller
+  if (!installer) {
+    setStatus({ fallback: releasesFallback() })
+    return
+  }
+
+  fallbackProbe = resolveInstallerFallback(installer)
+    .then((fallback) => {
+      setStatus({ fallback })
+    })
+    .catch(() => {
+      setStatus({ fallback: installerFallback(installer) })
+    })
+    .finally(() => {
+      fallbackProbe = null
+    })
 }
 
 function handleError(error: unknown): void {
   console.error('[update]', error)
-  setStatus({ state: 'error', error: errorMessage(error) })
+  // 下载失败常同时触发 error 事件和 downloadUpdate 的 reject，
+  // 第二次进来时保留首次文案，避免把「下载失败」覆盖成「检查失败」。
+  if (status.state === 'error') return
+
+  const downloading = status.state === 'downloading'
+
+  setStatus({
+    state: 'error',
+    error: errorMessage(error, downloading),
+    ...(downloading ? {} : { fallback: releasesFallback() })
+  })
+
+  if (downloading) applyDownloadFallback()
 }
 
 export function getUpdateStatus(): UpdateStatus {
@@ -73,7 +125,7 @@ export async function checkForUpdates(): Promise<UpdateStatus> {
   }
 
   try {
-    setStatus({ state: 'checking', error: undefined })
+    setStatus({ state: 'checking', error: undefined, fallback: undefined })
     await autoUpdater.checkForUpdates()
   } catch (error) {
     handleError(error)
@@ -91,7 +143,8 @@ export async function downloadUpdate(): Promise<UpdateStatus> {
       percent: 0,
       transferred: 0,
       total: undefined,
-      error: undefined
+      error: undefined,
+      fallback: undefined
     })
     await autoUpdater.downloadUpdate()
   } catch (error) {
@@ -104,6 +157,12 @@ export async function downloadUpdate(): Promise<UpdateStatus> {
 export function installUpdate(): void {
   if (status.state !== 'downloaded') return
   autoUpdater.quitAndInstall(false, true)
+}
+
+export async function openFallbackDownload(): Promise<void> {
+  const url = status.fallback?.url
+  if (!url) return
+  await shell.openExternal(url)
 }
 
 export function initUpdateService(): void {
@@ -130,10 +189,11 @@ export function initUpdateService(): void {
   }
 
   autoUpdater.on('checking-for-update', () => {
-    setStatus({ state: 'checking', error: undefined })
+    setStatus({ state: 'checking', error: undefined, fallback: undefined })
   })
 
   autoUpdater.on('update-available', (info) => {
+    pendingInstaller = installerFor(info)
     setStatus({
       state: 'available',
       latestVersion: info.version,
@@ -142,11 +202,13 @@ export function initUpdateService(): void {
       percent: undefined,
       transferred: undefined,
       total: undefined,
-      error: undefined
+      error: undefined,
+      fallback: undefined
     })
   })
 
   autoUpdater.on('update-not-available', () => {
+    pendingInstaller = null
     setStatus({
       state: 'not-available',
       latestVersion: undefined,
@@ -155,7 +217,8 @@ export function initUpdateService(): void {
       percent: undefined,
       transferred: undefined,
       total: undefined,
-      error: undefined
+      error: undefined,
+      fallback: undefined
     })
   })
 

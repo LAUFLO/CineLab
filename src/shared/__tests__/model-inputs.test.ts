@@ -3,6 +3,7 @@ import {
   inferModelInputs,
   missingInputsFor,
   modelInputs,
+  supportsReferenceAudio,
   type ModelDef
 } from '../provider-schema'
 
@@ -105,5 +106,31 @@ describe('missingInputsFor', () => {
   it('returns an empty list when all inputs are supported', () => {
     const value = model({ inputs: ['text', 'image', 'video'] })
     expect(missingInputsFor(value, ['text', 'video'])).toEqual([])
+  })
+})
+
+describe('supportsReferenceAudio', () => {
+  it('reads explicit inputs', () => {
+    expect(
+      supportsReferenceAudio(model({ inputs: ['text', 'image', 'audio'] }))
+    ).toBe(true)
+    expect(supportsReferenceAudio(model({ inputs: ['text', 'image'] }))).toBe(
+      false
+    )
+  })
+
+  it('falls back to known agnes adapters when inputs are missing', () => {
+    expect(
+      supportsReferenceAudio(model({ remoteModel: 'agnes-video-2.5-flash' }))
+    ).toBe(true)
+    expect(supportsReferenceAudio(model({ adapter: 'agnes-video' }))).toBe(true)
+  })
+
+  it('rejects other adapters without audio input', () => {
+    expect(
+      supportsReferenceAudio(
+        model({ remoteModel: 'sora-2', adapter: 'sora-video' })
+      )
+    ).toBe(false)
   })
 })

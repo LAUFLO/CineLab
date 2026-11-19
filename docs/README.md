@@ -28,6 +28,8 @@
 | 文档 | 内容 |
 |---|---|
 | [agent-architecture-plan.md](agent-architecture-plan.md) | AgentRuntime 设计参考 |
+| [agent-runtime-v3-plan.md](agent-runtime-v3-plan.md) | CineBot 运行时 v3：pi-coding-agent 整包重构方案，已评审 |
+| [agent-runtime-v3-spike.md](agent-runtime-v3-spike.md) | M0 spike 报告：动态 import、最小闭环、包体与安装包结论 |
 | [agent-full-scope.md](agent-full-scope.md) | Agent 完整范围总表 |
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 |
 | [doc-impact.md](doc-impact.md) | 代码路径 → 文档影响映射 |

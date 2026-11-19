@@ -41,6 +41,7 @@
 | 04 | `gltf` 对象类型 | 未接 GLTFLoader，`assetPath` 未读取，wireframe 人形占位 | `src/renderer/src/stage/stage-scene.ts` |
 | 04 | 场景图 → 白膜 | VLM 解析与程序化世界已接；深度校准未接，`depth` 默认为空 | `src/main/scene/analyze.ts`、`src/shared/scene-calibrate.ts` |
 | 04 | 舞台对象资产 | 只有 human/box/sphere/plane/gltf/crowd；无家具/建筑/自然资产库 | `src/shared/scene-object-presets.ts` |
+| 06 | Agent 运行时 v3（pi） | M1–M3 已接入动态 import、v2 会话、63 工具审计、确认、撤销、自动续跑、前端新事件；M4 真实模型回归未完成 | `src/main/agent/pi/` |
 
 ## 仅文档 / 计划中
 

@@ -46,6 +46,7 @@ export function AgentPanel() {
   const compacting = useAgentStore((state) => state.compacting)
   const running = useAgentStore((state) => state.running)
   const error = useAgentStore((state) => state.error)
+  const activity = useAgentStore((state) => state.activity)
   const modelInfo = useAgentStore((state) => state.modelInfo)
   const modelKey = useAgentStore((state) => state.modelKey)
   const allModels = useAgentStore((state) => state.allModels)
@@ -647,6 +648,33 @@ export function AgentPanel() {
               >
                 撤销这一轮
               </Button>
+            </div>
+          ) : null}
+
+          {activity.compaction ||
+          activity.retry ||
+          activity.thinking.trim() ||
+          activity.steering.length > 0 ||
+          activity.followUp.length > 0 ? (
+            <div className="mx-3 mb-2 flex shrink-0 flex-col gap-1 rounded-card border border-border px-2.5 py-[7px] text-[11px] text-fg-muted">
+              {activity.compaction ? <span>正在压缩上下文…</span> : null}
+              {activity.retry ? <span>{activity.retry}</span> : null}
+              {activity.steering.length > 0 || activity.followUp.length > 0 ? (
+                <span>
+                  排队：引导 {activity.steering.length} · 后续{' '}
+                  {activity.followUp.length}
+                </span>
+              ) : null}
+              {activity.thinking.trim() ? (
+                <details className="group">
+                  <summary className="cursor-pointer select-none text-fg-subtle">
+                    思考过程
+                  </summary>
+                  <div className="mt-1 max-h-32 overflow-y-auto whitespace-pre-wrap break-words text-fg-subtle">
+                    {activity.thinking}
+                  </div>
+                </details>
+              ) : null}
             </div>
           ) : null}
 

@@ -351,7 +351,7 @@ function updateModule(module, dryRun) {
   const path = join(root, module.file)
   if (!existsSync(path)) return false
   const files = moduleFiles(module)
-  const original = readFileSync(path, 'utf8')
+  const original = readFileSync(path, 'utf8').replace(/\r\n/g, '\n')
   let text = replaceBlock(original, 'files', buildFileTable(files))
   text = replaceBlock(text, 'exports', buildExportTable(files))
   if (dryRun) {
@@ -372,7 +372,8 @@ function updateGenerated(dryRun) {
       errors.push('缺少 docs/code-map/_generated.md')
       return
     }
-    if (readFileSync(path, 'utf8') !== next) {
+    const current = readFileSync(path, 'utf8').replace(/\r\n/g, '\n')
+    if (current !== next) {
       errors.push('docs/code-map/_generated.md 不是最新，请运行 map:code')
     }
     return

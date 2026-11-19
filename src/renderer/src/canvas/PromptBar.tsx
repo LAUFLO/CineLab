@@ -235,7 +235,7 @@ export function PromptBar() {
     setMaskDraft(null)
     setMaskEditor(null)
     setRefPreview(null)
-    setInputMode(null)
+    setInputMode(node?.data.inputMode ?? null)
 
     return () => {
       if (!currentId) return
@@ -626,9 +626,15 @@ export function PromptBar() {
 
   useEffect(() => {
     if (kind !== 'video' || !inputMode) return
-    if (inputMode === 'first-frame' && incomingImageCount !== 1) {
+    const reset = (message: string): void => {
       setInputMode(null)
-      showToast(
+      if (node?.id) {
+        useCanvasStore.getState().patchNodeData(node.id, { inputMode: undefined })
+      }
+      showToast(message)
+    }
+    if (inputMode === 'first-frame' && incomingImageCount !== 1) {
+      reset(
         incomingImageCount === 0
           ? '首帧模式需要 1 张图片，已切换为文生视频'
           : '首帧模式只能 1 张图片，已切换为全能参考'
@@ -636,14 +642,20 @@ export function PromptBar() {
       return
     }
     if (inputMode === 'first-last' && incomingImageCount !== 2) {
-      setInputMode(null)
-      showToast(
+      reset(
         incomingImageCount < 2
           ? '首尾帧需要 2 张图片，已切换回默认模式'
           : '首尾帧最多 2 张，已切换为全能参考'
       )
     }
-  }, [kind, inputMode, incomingImageCount, showToast])
+  }, [kind, inputMode, incomingImageCount, showToast, node?.id])
+
+  useEffect(() => {
+    if (!inputMode || !active || !node) return
+    if (effectiveCapabilities(active.model).modes.includes(inputMode)) return
+    setInputMode(null)
+    useCanvasStore.getState().patchNodeData(node.id, { inputMode: undefined })
+  }, [active?.key, inputMode, node?.id])
 
   if (!node || !layout) return null
 
@@ -1837,7 +1849,7 @@ export function PromptBar() {
           {availableModes.length > 0 && slotMode ? (
             <div className="flex shrink-0">
               <Select
-                className="!h-[26px] !w-28 !min-w-0 !rounded-md !border-0 !px-2 !text-xs !text-fg-muted hover:!text-fg"
+                className="!h-[26px] !w-28 !min-w-0 !rounded-md !border-0 !bg-surface-hover !px-2 !text-xs !text-fg-muted hover:!text-fg"
                 value={slotMode}
                 options={availableModes.map((option) => ({
                   value: option.id,
@@ -1846,7 +1858,14 @@ export function PromptBar() {
                   hint: option.hint
                 }))}
                 menuWidth="trigger"
-                onChange={(value) => setInputMode(value)}
+                onChange={(value) => {
+                  setInputMode(value)
+                  if (node?.id) {
+                    useCanvasStore
+                      .getState()
+                      .patchNodeData(node.id, { inputMode: value })
+                  }
+                }}
               />
             </div>
           ) : null}

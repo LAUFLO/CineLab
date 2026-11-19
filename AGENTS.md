@@ -1,4 +1,4 @@
-> **新会话启动时，请首先读取 `.opencode/handover/boot-packet.md`，然后读取 `.opencode/handover/state.json` 获取完整状态与 frontier。**
+> **新会话启动时，先读 `docs/code-map/README.md` 与 `docs/code-map/08-capabilities.md`；出方案前按涉及模块读对应地图。`.opencode/handover` 只作本机补充，跨机器以 `docs/code-map/` 为准。**
 
 # CineLab
 
@@ -8,17 +8,22 @@
 
 ## 自动接续规则
 
-1. 新会话开始：先读 `.opencode/handover/boot-packet.md`，再读 `state.json`。
-2. 每完成一个 frontier 项：更新 `state.json` 中对应 todo 状态，并在 `evidence/` 留一条验证记录。
-3. 用户说「收工 / 交接 / 同步状态 / handover」：执行 handover skill，重新生成投影文件。
-4. `state.json` 是唯一真相源；`boot-packet.md` 与 `project_summary.md` 是只读投影，禁止反写。
-5. 大功能（跨模块、涉及技术选型或外部依赖）在方案讨论确定后，必须先落 `docs/<feature>-plan.md`，再进入实现；方案变更先改文档再改代码。
+1. 新会话开始：先读 `docs/code-map/README.md`，再读 `docs/code-map/08-capabilities.md`；需要细节时读对应模块地图。
+2. 方案阶段：先查 `docs/code-map/11-feature-index.md`，再按「需求 → 模块」读 1–3 个模块地图；方案必须写「现状 / 已有实现检查（复用/扩展/新建）/ 改动点 / 影响模块 / 验收」；能力判断以代码为准，`docs/*-plan.md` 只作设计意图。
+3. 每完成一个 frontier 项：更新 `state.json` 中对应 todo 状态，并在 `evidence/` 留一条验证记录；同时把功能状态回写 `docs/code-map/08-capabilities.md`。
+4. 用户说「收工 / 交接 / 同步状态 / handover」：执行 handover skill，重新生成投影文件。
+5. `state.json` 是唯一真相源；`boot-packet.md` 与 `project_summary.md` 是只读投影，禁止反写。
+6. 大功能（跨模块、涉及技术选型或外部依赖）在方案讨论确定后，必须先落 `docs/<feature>-plan.md`，再进入实现；方案变更先改文档再改代码。
+7. 跨机器上下文以 `docs/code-map/` 为准；`.opencode/handover` 只作为本机补充，不作为跨机器真相源。
+8. 功能增删改后：运行 `corepack pnpm map:code` 更新自动区，更新对应模块、`08-capabilities.md` 与 `11-feature-index.md`，再运行 `corepack pnpm check:docs`；新增文件未归属模块时 `check:code-map` 会失败。
 
 ## 状态与工件路径约定
 
 | 用途 | 路径 |
 |---|---|
 | 状态真相源 | `.opencode/handover/state.json` |
+| 代码地图 | `docs/code-map/README.md` |
+| 能力清单 | `docs/code-map/08-capabilities.md` |
 | 接续包 | `.opencode/handover/boot-packet.md` |
 | 项目概览 | `.opencode/handover/project_summary.md` |
 | 验证证据 | `.opencode/handover/evidence/` |
@@ -45,6 +50,8 @@ corepack pnpm typecheck    # 主进程 + 渲染进程类型检查
 corepack pnpm test         # Vitest 单元测试
 corepack pnpm check:encryption # 检查透明加密文件与 Git blob 是否为明文
 corepack pnpm check:docs   # 检查文档状态、链接、索引和 Agent 工具清单
+corepack pnpm map:code     # 更新代码地图自动区
+corepack pnpm check:code-map # 校验代码地图是否最新
 corepack pnpm check:ui     # 检查 UI 控件、圆角、浮层和硬编码色值
 corepack pnpm build        # 构建
 corepack pnpm dist:win     # 打包 Windows 安装包

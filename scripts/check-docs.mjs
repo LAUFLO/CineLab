@@ -39,6 +39,23 @@ const HISTORICAL_DOCS = [
   'docs/archive/runtime-components-plan.md'
 ]
 
+const CODE_MAP_DOCS = [
+  'docs/code-map/README.md',
+  'docs/code-map/00-overview.md',
+  'docs/code-map/01-canvas.md',
+  'docs/code-map/02-generation.md',
+  'docs/code-map/03-clip-studio.md',
+  'docs/code-map/04-director-stage.md',
+  'docs/code-map/05-film-study.md',
+  'docs/code-map/06-agent.md',
+  'docs/code-map/07-storage-ipc.md',
+  'docs/code-map/08-capabilities.md',
+  'docs/code-map/09-dev-workflow.md',
+  'docs/code-map/10-ui.md',
+  'docs/code-map/11-feature-index.md',
+  'docs/code-map/_generated.md'
+]
+
 const PATH_PATTERN = /`((?:src|docs|scripts|resources|\.github)\/[^`\s]+)`/g
 
 function read(path) {
@@ -206,12 +223,79 @@ function checkAgentTools() {
   }
 }
 
+function checkCodeMap() {
+  for (const file of CODE_MAP_DOCS) {
+    if (!existsSync(join(root, file))) {
+      errors.push(`缺少代码地图：${file}`)
+    }
+  }
+
+  const capabilities = 'docs/code-map/08-capabilities.md'
+  if (existsSync(join(root, capabilities))) {
+    const text = read(capabilities)
+    for (const heading of ['## 已实现', '## 部分实现', '## 仅文档']) {
+      if (!text.includes(heading)) {
+        errors.push(`${capabilities} 缺少「${heading}」分档`)
+      }
+    }
+  }
+
+  for (const file of CODE_MAP_DOCS.filter((item) => /\/0[1-7]-|\/10-/.test(item))) {
+    if (!existsSync(join(root, file))) continue
+    const text = read(file)
+    for (const key of ['files', 'exports']) {
+      if (!text.includes(`<!-- AUTO:${key}:start -->`)) {
+        errors.push(`${file} 缺少 AUTO:${key} 区`)
+      }
+    }
+  }
+
+  const generated = 'docs/code-map/_generated.md'
+  if (existsSync(join(root, generated))) {
+    const text = read(generated)
+    for (const heading of ['## 模块规模', '## IPC 接口', '## Agent 工具', '## 测试清单']) {
+      if (!text.includes(heading)) {
+        errors.push(`${generated} 缺少「${heading}」`)
+      }
+    }
+  }
+
+  const readme = 'docs/code-map/README.md'
+  if (existsSync(join(root, readme))) {
+    const text = read(readme)
+    for (const heading of ['## 30 秒速览', '## 需求 → 模块', '## 阅读顺序']) {
+      if (!text.includes(heading)) {
+        errors.push(`${readme} 缺少「${heading}」`)
+      }
+    }
+  }
+
+  const workflow = 'docs/code-map/09-dev-workflow.md'
+  if (existsSync(join(root, workflow))) {
+    const text = read(workflow)
+    if (!text.includes('## 1. 方案阶段')) {
+      errors.push(`${workflow} 缺少「## 1. 方案阶段」`)
+    }
+  }
+
+  const featureIndex = 'docs/code-map/11-feature-index.md'
+  if (existsSync(join(root, featureIndex))) {
+    const text = read(featureIndex)
+    for (const heading of ['## 使用方式', '## 画布与节点', '## 维护规则']) {
+      if (!text.includes(heading)) {
+        errors.push(`${featureIndex} 缺少「${heading}」`)
+      }
+    }
+  }
+}
+
 checkMeta()
 checkHistoricalDocs()
 checkLinks()
 checkIndex()
 checkPathRefs()
 checkAgentTools()
+checkCodeMap()
 
 if (warnings.length > 0) {
   console.warn('[check-docs] 警告：')
@@ -225,5 +309,5 @@ if (errors.length > 0) {
 }
 
 console.log(
-  `[check-docs] 通过：${CURRENT_DOCS.length} 份现行文档、${HISTORICAL_DOCS.length} 份历史文档，路径、数字、链接、索引和 Agent 工具清单一致`
+  `[check-docs] 通过：${CURRENT_DOCS.length} 份现行文档、${HISTORICAL_DOCS.length} 份历史文档、${CODE_MAP_DOCS.length} 份代码地图，路径、数字、链接、索引和 Agent 工具清单一致`
 )

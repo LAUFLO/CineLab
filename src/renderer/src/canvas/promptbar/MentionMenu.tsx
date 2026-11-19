@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { Icon } from '../../components/Icon'
-import { MenuItem, Popover } from '../../components/ui'
+import { Input, MenuItem, Popover } from '../../components/ui'
 import { assetUrl } from '../../lib/asset-url'
 import { isVideoPath, type MentionItem } from '../promptbar-model'
 
@@ -13,6 +13,9 @@ interface MentionMenuProps {
   onHover: (index: number) => void
   onSelect: (item: MentionItem) => void
   onClose: () => void
+  onQueryChange: (query: string) => void
+  onMove: (delta: number) => void
+  onCommit: () => void
   anchorRef: RefObject<HTMLElement | null>
 }
 
@@ -20,6 +23,8 @@ const MENU =
   'mention-menu !p-0 flex !max-h-[340px] flex-col !overflow-hidden animate-[menu-in_120ms_ease-out]'
 const HEAD =
   'flex h-9 shrink-0 items-center gap-[7px] border-b border-divider px-3 text-xs text-fg-subtle'
+const SEARCH =
+  '!h-7 !min-w-0 !flex-1 !rounded-md !border-0 !bg-transparent !px-0 !text-xs !text-fg placeholder:!text-fg-subtle focus:!border-0'
 const LIST = 'flex-1 overflow-y-auto p-[5px]'
 const SECTION = '[&+&]:mt-1'
 const SECTION_TITLE = 'px-2 py-[5px] text-[10.5px] text-fg-subtle'
@@ -38,6 +43,9 @@ export function MentionMenu({
   onHover,
   onSelect,
   onClose,
+  onQueryChange,
+  onMove,
+  onCommit,
   anchorRef
 }: MentionMenuProps) {
   return (
@@ -50,7 +58,30 @@ export function MentionMenu({
     >
       <div className={HEAD}>
         <Icon name="search" size={12} />
-        <span>{query || '搜索画布、资产库和角色'}</span>
+        <Input
+          className={SEARCH}
+          value={query}
+          placeholder="搜索画布、资产库和角色"
+          aria-label="搜索提及素材"
+          onChange={(event) => onQueryChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+              event.preventDefault()
+              onMove(event.key === 'ArrowDown' ? 1 : -1)
+              return
+            }
+            if (event.key === 'Enter') {
+              if (event.nativeEvent.isComposing) return
+              event.preventDefault()
+              onCommit()
+              return
+            }
+            if (event.key === 'Escape') {
+              event.preventDefault()
+              onClose()
+            }
+          }}
+        />
       </div>
 
       <div className={LIST}>

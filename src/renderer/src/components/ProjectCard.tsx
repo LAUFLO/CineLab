@@ -162,7 +162,7 @@ export function ProjectCard({
           type="button"
           variant="ghost"
           size="none"
-          className="flex h-7 w-7 items-center justify-center rounded-card border border-border bg-surface p-0 text-fg-muted opacity-0 transition-opacity duration-150 hover:bg-surface-hover hover:text-fg focus-visible:opacity-100 group-hover:opacity-100"
+          className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-surface p-0 text-fg-muted opacity-0 transition-opacity duration-150 hover:bg-surface-hover hover:text-fg focus-visible:opacity-100 group-hover:opacity-100"
           title="更换封面"
           onClick={() => setMenuOpen((open) => !open)}
           disabled={busy}

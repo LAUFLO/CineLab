@@ -1026,7 +1026,7 @@ export function ModelConfigDialog({
                     variant="secondary"
                     size="none"
                     className={cn(
-                      '!h-7 !justify-start gap-1.5 rounded-card border-border bg-surface-hover px-2.5 !text-[11.5px] !font-normal !text-fg duration-[120ms]',
+                      '!h-7 !justify-start gap-1.5 rounded-md border-border bg-surface-hover px-2.5 !text-[11.5px] !font-normal !text-fg duration-[120ms]',
                       added
                         ? 'cursor-default opacity-45 disabled:!opacity-45'
                         : 'hover:!border-border-selected hover:bg-surface-raised'
@@ -1450,7 +1450,7 @@ export function ModelConfigDialog({
                         />
                       ) : row.type === 'json' ? (
                         <Textarea
-                          className="!h-[34px] !min-h-[34px] !rounded-card border-border bg-surface-hover !px-2 !py-1.5 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
+                          className="!h-[34px] !min-h-[34px] !rounded-md border-border bg-surface-hover !px-2 !py-1.5 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
                           value={row.value}
                           spellCheck={false}
                           onChange={(event) =>

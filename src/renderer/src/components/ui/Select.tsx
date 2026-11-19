@@ -151,7 +151,7 @@ export function Select<T extends string>({
         ref={triggerRef}
         type="button"
         className={cn(
-          'inline-flex h-9 min-w-[120px] items-center justify-between gap-2 rounded-card border border-border bg-surface px-3 text-sm text-fg transition-colors',
+          'inline-flex h-9 min-w-[120px] items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-sm text-fg transition-colors',
           'hover:border-border-selected hover:bg-surface-hover focus-visible:border-border-selected focus-visible:outline-none',
           'disabled:pointer-events-none disabled:opacity-55',
           className

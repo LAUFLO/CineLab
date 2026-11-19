@@ -104,7 +104,7 @@ export function GroupToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal"
         onClick={() => startGroupRename(group.id)}
       >
         <Icon name="text" size={14} />
@@ -116,7 +116,7 @@ export function GroupToolbar() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal ${
+          className={`h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal ${
             menu === 'arrange' ? 'bg-surface-hover !text-fg' : ''
           }`}
           ref={arrangeRef}
@@ -164,7 +164,7 @@ export function GroupToolbar() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal ${
+          className={`h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal ${
             menu === 'color' ? 'bg-surface-hover !text-fg' : ''
           }`}
           ref={colorRef}
@@ -212,7 +212,7 @@ export function GroupToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal"
         onClick={() => ungroup(group.id)}
       >
         <Icon name="minimize" size={14} />
@@ -223,7 +223,7 @@ export function GroupToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal hover:!bg-danger hover:!text-fg-inverse"
+        className="h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal hover:!bg-danger hover:!text-fg-inverse"
         onClick={remove}
       >
         <Icon name="close" size={14} />

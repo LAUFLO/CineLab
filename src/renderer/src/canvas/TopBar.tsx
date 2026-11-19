@@ -142,7 +142,7 @@ export function TopBar() {
               type="button"
               variant="ghost"
               size="none"
-              className="h-[30px] gap-1.5 rounded-card px-2 text-[13px] !font-normal !text-fg"
+              className="h-[30px] gap-1.5 rounded-md px-2 text-[13px] !font-normal !text-fg"
               ref={projectTriggerRef}
               onClick={() => {
                 setProjectMenuOpen((open) => !open)
@@ -196,7 +196,7 @@ export function TopBar() {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="!flex h-[42px] w-full !justify-start rounded-card px-3 text-[15px] !font-normal"
+                  className="!flex h-[42px] w-full !justify-start rounded-md px-3 text-[15px] !font-normal"
                   onClick={() => void openProjects()}
                 >
                   <Icon name="folder" size={16} />
@@ -206,7 +206,7 @@ export function TopBar() {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="!flex h-[42px] w-full !justify-start rounded-card px-3 text-[15px] !font-normal"
+                  className="!flex h-[42px] w-full !justify-start rounded-md px-3 text-[15px] !font-normal"
                   onClick={() => {
                     closeAll()
                     void startNew()
@@ -220,7 +220,7 @@ export function TopBar() {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="!flex h-[42px] w-full !justify-start rounded-card px-3 text-[15px] !font-normal"
+                  className="!flex h-[42px] w-full !justify-start rounded-md px-3 text-[15px] !font-normal"
                   onClick={() => {
                     setProjectDraft(name)
                     setEditingProject(true)
@@ -234,7 +234,7 @@ export function TopBar() {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="!flex h-[42px] w-full !justify-start rounded-card px-3 text-[15px] !font-normal"
+                  className="!flex h-[42px] w-full !justify-start rounded-md px-3 text-[15px] !font-normal"
                   onClick={() => void handleDeleteProject()}
                 >
                   <Icon name="close" size={16} />
@@ -248,7 +248,7 @@ export function TopBar() {
                 type="button"
                 variant="ghost"
                 size="none"
-                className="h-[30px] gap-1 rounded-card px-2 text-[13px] !font-normal"
+                className="h-[30px] gap-1 rounded-md px-2 text-[13px] !font-normal"
                 ref={canvasTriggerRef}
                 onClick={() => {
                   setCanvasMenuOpen((open) => !open)
@@ -307,7 +307,7 @@ export function TopBar() {
                         type="button"
                         variant="ghost"
                         size="none"
-                        className="h-7 w-7 shrink-0 rounded-card p-0"
+                        className="h-7 w-7 shrink-0 rounded-md p-0"
                         title="重命名画布"
                         onClick={() => {
                           setEditingCanvasId(canvas.id)
@@ -320,7 +320,7 @@ export function TopBar() {
                         type="button"
                         variant="ghost"
                         size="none"
-                        className="h-7 w-7 shrink-0 rounded-card p-0"
+                        className="h-7 w-7 shrink-0 rounded-md p-0"
                         title="删除画布"
                         disabled={canvases.length <= 1}
                         onClick={() => void deleteCanvas(canvas.id)}
@@ -335,7 +335,7 @@ export function TopBar() {
                     type="button"
                     variant="ghost"
                     size="none"
-                    className="!flex h-[42px] w-full !justify-start rounded-card px-3 text-[15px] !font-normal"
+                    className="!flex h-[42px] w-full !justify-start rounded-md px-3 text-[15px] !font-normal"
                     onClick={() => {
                       closeAll()
                       void createCanvas()
@@ -358,7 +358,7 @@ export function TopBar() {
               type="button"
               variant="ghost"
               size="none"
-              className="relative h-7 w-7 rounded-card p-0"
+              className="relative h-7 w-7 rounded-md p-0"
               title={
                 updateStatus.state === 'downloaded'
                   ? '新版本已下载，点击打开更新'
@@ -375,7 +375,7 @@ export function TopBar() {
               type="button"
               variant="ghost"
               size="none"
-              className="h-7 w-7 rounded-card p-0"
+              className="h-7 w-7 rounded-md p-0"
               title="导出"
               ref={exportTriggerRef}
               onClick={() => setExportMenuOpen((open) => !open)}
@@ -395,7 +395,7 @@ export function TopBar() {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="!flex h-[38px] w-full !justify-start rounded-card px-2.5 text-[13px] !font-normal"
+                  className="!flex h-[38px] w-full !justify-start rounded-md px-2.5 text-[13px] !font-normal"
                   onClick={() => void exportProject()}
                 >
                   <Icon name="folder" size={16} />
@@ -405,7 +405,7 @@ export function TopBar() {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="!flex h-[38px] w-full !justify-start rounded-card px-2.5 text-[13px] !font-normal"
+                  className="!flex h-[38px] w-full !justify-start rounded-md px-2.5 text-[13px] !font-normal"
                   onClick={() => void exportCanvas()}
                 >
                   <Icon name="image" size={16} />
@@ -432,7 +432,7 @@ export function TopBar() {
                 type="button"
                 variant="ghost"
                 size="none"
-                className="h-7 w-7 rounded-card p-0"
+                className="h-7 w-7 rounded-md p-0"
                 onClick={() => setProjectsOpen(false)}
               >
                 <Icon name="close" size={14} />
@@ -465,7 +465,7 @@ export function TopBar() {
                 type="button"
                 variant="secondary"
                 size="none"
-                className="h-[34px] rounded-card px-4 text-[13px] !font-normal"
+                className="h-[34px] rounded-md px-4 text-[13px] !font-normal"
                 onClick={() => {
                   setProjectsOpen(false)
                   void startNew()
@@ -477,7 +477,7 @@ export function TopBar() {
                 type="button"
                 variant="secondary"
                 size="none"
-                className="h-[34px] rounded-card px-4 text-[13px] !font-normal"
+                className="h-[34px] rounded-md px-4 text-[13px] !font-normal"
                 onClick={() => {
                   setProjectsOpen(false)
                   void openExisting()

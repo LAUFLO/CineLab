@@ -484,7 +484,7 @@ function ModelsSection() {
           type="button"
           variant="ghost"
           size="none"
-          className="sticky top-0 z-[8] -ml-2.5 mb-3.5 self-start rounded-card bg-surface px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg"
+          className="sticky top-0 z-[8] -ml-2.5 mb-3.5 self-start rounded-md bg-surface px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg"
           onClick={() => setDraft(null)}
         >
           ← 返回列表
@@ -504,7 +504,7 @@ function ModelsSection() {
             value={draft.name}
             onChange={(event) => updateField('name', event.target.value)}
             placeholder="例如：我的中转站"
-            className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+            className="!h-[34px] !rounded-md border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
         </label>
 
@@ -527,7 +527,7 @@ function ModelsSection() {
             value={draft.baseUrl}
             onChange={(event) => updateField('baseUrl', event.target.value)}
             placeholder="https://api.example.com/v1"
-            className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+            className="!h-[34px] !rounded-md border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
         </label>
 
@@ -543,7 +543,7 @@ function ModelsSection() {
             placeholder={
               draft.type === 'kling' ? 'Access Key 或 API Key' : 'sk-...'
             }
-            className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+            className="!h-[34px] !rounded-md border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
           {activePreset?.keyHelpUrl ? (
             <div className="text-[11px] leading-[1.6] text-fg-subtle">
@@ -563,7 +563,7 @@ function ModelsSection() {
               value={draft.secretKey ?? ''}
               onChange={(event) => updateField('secretKey', event.target.value)}
               placeholder="可灵 Secret Key"
-              className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+              className="!h-[34px] !rounded-md border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
             />
           </label>
         ) : null}
@@ -771,7 +771,7 @@ function ModelsSection() {
                   addManualModel()
                 }
               }}
-              className="!h-[34px] min-w-0 flex-1 !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+              className="!h-[34px] min-w-0 flex-1 !rounded-md border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
             />
             <Button
               type="button"

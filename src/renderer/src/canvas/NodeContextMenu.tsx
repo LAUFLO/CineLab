@@ -78,7 +78,7 @@ export function NodeContextMenu() {
               type="button"
               variant="ghost"
               size="none"
-              className={`!flex h-8 w-full items-center !justify-between gap-3 rounded-card px-3 text-[12.5px] !font-normal disabled:!text-fg-subtle disabled:!opacity-100 ${
+              className={`!flex h-8 w-full items-center !justify-between gap-3 rounded-md px-3 text-[12.5px] !font-normal disabled:!text-fg-subtle disabled:!opacity-100 ${
                 action.danger
                   ? '!text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
                   : '!text-fg'

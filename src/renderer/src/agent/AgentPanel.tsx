@@ -11,6 +11,7 @@ import {
 import { useSettingsStore } from '../stores/settings'
 import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
+import { useStageStore } from '../stage/stageStore'
 import {
   AGENT_CONTEXT_BUDGET_TOKENS,
   agentContextStats,
@@ -84,6 +85,7 @@ export function AgentPanel() {
   const clearError = useAgentStore((state) => state.clearError)
 
   const clipMode = useStudioStore((state) => state.open)
+  const stageMode = useStageStore((state) => state.open)
   const openSettings = useSettingsStore((state) => state.openPanel)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   const showToast = useUIStore((state) => state.showToast)
@@ -136,11 +138,13 @@ export function AgentPanel() {
     void send(text)
   }
 
-  const suggestion = clipMode
-    ? '把选中片段整体前移 1 秒'
-    : attachments.length > 0 || references.length > 0
-      ? '用引用的素材生成一段视频'
-      : '帮我整理一下当前选中的节点'
+  const suggestion = stageMode
+    ? '把这个场景搭成雨夜街道，加两个人物'
+    : clipMode
+      ? '把选中片段整体前移 1 秒'
+      : attachments.length > 0 || references.length > 0
+        ? '用引用的素材生成一段视频'
+        : '帮我整理一下当前选中的节点'
   const changedCount = agentTurnChangeCount(lastTurn)
   const contextStats = useMemo(
     () => agentContextStats(messages, contextSummary),
@@ -449,7 +453,7 @@ export function AgentPanel() {
               className="!p-2.5 flex !max-h-[420px] flex-col gap-2 !overflow-hidden"
             >
               <div className="text-xs font-semibold text-fg">历史对话</div>
-              <div className="flex shrink-0 items-center gap-1.5 rounded-card border border-border bg-surface px-2 py-1.5 text-fg-subtle">
+              <div className="flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1.5 text-fg-subtle">
                 <Icon name="search" size={13} />
                 <Input
                   autoFocus
@@ -461,7 +465,7 @@ export function AgentPanel() {
               </div>
               <Button
                 type="button"
-                className="shrink-0 justify-start gap-1.5 rounded-card border border-border bg-surface px-2 py-[7px] text-left text-xs !font-normal !text-fg disabled:!opacity-100"
+                className="shrink-0 justify-start gap-1.5 rounded-md border border-border bg-surface px-2 py-[7px] text-left text-xs !font-normal !text-fg disabled:!opacity-100"
                 onClick={() => {
                   setSessionMenuOpen(false)
                   void newSession()
@@ -544,13 +548,15 @@ export function AgentPanel() {
                   我是 CineBot
                 </div>
                 <div className="max-w-[330px] text-xs leading-[1.7] text-fg-subtle">
-                  {clipMode
-                    ? '我可以读取时间线、移动片段、自动字幕、删静音、设置转场或导出成片。'
-                    : '我可以整理画布、引用画布或资产库素材、登记生成提案，也可以读取你的技能。先点下方「上传」添加本地素材。'}
+                  {stageMode
+                    ? '当前在导演台。我可以搭景、加人物和机位、设计镜头，并直接修改当前场景。'
+                    : clipMode
+                      ? '我可以读取时间线、移动片段、自动字幕、删静音、设置转场或导出成片。'
+                      : '我可以整理画布、引用画布或资产库素材、登记生成提案，也可以读取你的技能。先点下方「上传」添加本地素材。'}
                 </div>
                 <Button
                   type="button"
-                  className="max-w-full !justify-start !rounded-card bg-surface px-2.5 py-2 text-left text-xs !font-normal"
+                  className="max-w-full !justify-start !rounded-md bg-surface px-2.5 py-2 text-left text-xs !font-normal"
                   onClick={() => {
                     setDraft(suggestion)
                     textareaRef.current?.focus()
@@ -963,7 +969,7 @@ export function AgentPanel() {
                       <div className="text-xs font-semibold text-fg">
                         选择技能
                       </div>
-                      <div className="flex shrink-0 items-center gap-1.5 rounded-card border border-border bg-surface px-2 py-1.5 text-fg-subtle">
+                      <div className="flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1.5 text-fg-subtle">
                         <Icon name="search" size={13} />
                         <Input
                           autoFocus
@@ -1015,7 +1021,7 @@ export function AgentPanel() {
                             <Button
                               key={`${skill.scope}:${skill.name}`}
                               type="button"
-                              className={`!h-auto !justify-between gap-2.5 !rounded-card border !border-transparent px-[9px] py-2 text-left !font-normal ${
+                              className={`!h-auto !justify-between gap-2.5 !rounded-md border !border-transparent px-[9px] py-2 text-left !font-normal ${
                                 index === skillIndex ? '!bg-surface-hover' : ''
                               }`}
                               onMouseEnter={() => setSkillIndex(index)}
@@ -1065,7 +1071,7 @@ export function AgentPanel() {
               {running ? (
                 <Button
                   type="button"
-                  className="size-[30px] shrink-0 !rounded-card !border !border-border-strong !bg-surface-hover p-0 !text-fg disabled:!opacity-[0.35]"
+                  className="size-[30px] shrink-0 !rounded-md !border !border-border-strong !bg-surface-hover p-0 !text-fg disabled:!opacity-[0.35]"
                   onClick={() => void cancel()}
                   title="停止"
                   variant="primary"
@@ -1153,7 +1159,7 @@ export function AgentPanel() {
                     </header>
                     <Button
                       type="button"
-                      className={`!h-auto !justify-between gap-2.5 !rounded-card border !border-transparent px-[9px] py-2 text-left !font-normal ${
+                      className={`!h-auto !justify-between gap-2.5 !rounded-md border !border-transparent px-[9px] py-2 text-left !font-normal ${
                         !activeModelGroup.selected
                           ? '!border-border-strong !bg-surface-hover'
                           : ''
@@ -1180,7 +1186,7 @@ export function AgentPanel() {
                         <Button
                           key={`${activeModelGroup.key}:${key}`}
                           type="button"
-                          className={`!h-auto !justify-between gap-2.5 !rounded-card border !border-transparent px-[9px] py-2 text-left !font-normal ${
+                          className={`!h-auto !justify-between gap-2.5 !rounded-md border !border-transparent px-[9px] py-2 text-left !font-normal ${
                             activeModelGroup.selected === key
                               ? '!border-border-strong !bg-surface-hover'
                               : ''

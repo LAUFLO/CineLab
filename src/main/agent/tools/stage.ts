@@ -7,7 +7,8 @@ import { STAGE_EASINGS, STAGE_LIMITS, STAGE_OBJECT_TYPES } from '@shared/stage-s
 
 const stageNodeIdParameter = {
   type: 'string',
-  description: '导演台画布节点 ID，必须来自 canvas_get 的 selectedNodes'
+  description:
+    '导演台画布节点 ID；导演台模式下由系统提示直接给出，其他模式来自 canvas_get 的 selectedNodes'
 }
 
 const stageVec3Parameter = {

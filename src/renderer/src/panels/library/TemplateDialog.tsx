@@ -55,7 +55,7 @@ export function TemplateDialog({
           onChange={(event) => setName(event.target.value)}
           placeholder="例如：雪夜电影感"
           autoFocus
-          className="!h-[34px] !rounded-card !bg-surface-hover !px-2.5 !text-[13px]"
+          className="!h-[34px] !rounded-md !bg-surface-hover !px-2.5 !text-[13px]"
         />
       </label>
 

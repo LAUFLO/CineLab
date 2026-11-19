@@ -1366,7 +1366,10 @@ export function PromptBar() {
     const cursor = textarea?.selectionStart ?? promptText.length
     const start = mentionStart ?? cursor
     const insert = `@${item.name} `
-    const next = promptText.slice(0, start) + insert + promptText.slice(cursor)
+    // 菜单顶部搜索框可独立输入，替换范围以 @ 后的词为准，而不是当前光标
+    let end = start + 1
+    while (end < promptText.length && !/\s/.test(promptText[end])) end += 1
+    const next = promptText.slice(0, start) + insert + promptText.slice(end)
 
     updatePromptText(next)
     setMentionOpen(false)
@@ -1807,6 +1810,26 @@ export function PromptBar() {
             activeIndex={mentionIndex}
             onHover={setMentionIndex}
             onSelect={applyMention}
+            onQueryChange={(value) => {
+              setMentionQuery(value)
+              setMentionIndex(0)
+            }}
+            onMove={(delta) => {
+              if (flatMentions.length === 0) return
+              setMentionIndex(
+                (current) =>
+                  (current + delta + flatMentions.length) %
+                  flatMentions.length
+              )
+            }}
+            onCommit={() => {
+              const item =
+                flatMentions[
+                  Math.min(mentionIndex, flatMentions.length - 1)
+                ]
+              if (item) applyMention(item)
+              else setMentionOpen(false)
+            }}
           />
         </div>
 

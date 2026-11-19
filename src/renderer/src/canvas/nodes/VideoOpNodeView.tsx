@@ -680,7 +680,7 @@ export function VideoOpNodeView({
                       type="button"
                       variant="ghost"
                       size="none"
-                      className="!h-7 !w-7 shrink-0 !rounded-card !text-fg-muted hover:!bg-surface-hover hover:!text-fg"
+                      className="!h-7 !w-7 shrink-0 !rounded-md !text-fg-muted hover:!bg-surface-hover hover:!text-fg"
                       title="移除"
                       onClick={() => setReference(null)}
                     >
@@ -825,7 +825,7 @@ export function VideoOpNodeView({
                       ? '描述延长部分发生的动作'
                       : '描述这一段应该怎么重拍'
                 }
-                className="!rounded-card !bg-surface-hover !p-2 !text-xs !min-h-0"
+                className="!rounded-md !bg-surface-hover !p-2 !text-xs !min-h-0"
                 onChange={(event) => setPrompt(event.target.value)}
               />
             </label>
@@ -834,7 +834,7 @@ export function VideoOpNodeView({
               type="button"
               variant="primary"
               size="none"
-              className="nodrag nopan !h-[34px] w-full !rounded-card !text-[13px]"
+              className="nodrag nopan !h-[34px] w-full !rounded-md !text-[13px]"
               disabled={Boolean(activeMissing) || !prompt.trim()}
               onClick={handleGenerate}
             >

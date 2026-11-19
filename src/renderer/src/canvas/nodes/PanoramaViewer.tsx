@@ -171,7 +171,7 @@ export function PanoramaViewer({ open, src, onClose }: PanoramaViewerProps) {
           type="button"
           variant="ghost"
           size="none"
-          className="pointer-events-auto h-[34px] w-[34px] !rounded-card border border-white/20 !bg-black/45 !text-white hover:!bg-black/70 hover:!text-white"
+          className="pointer-events-auto h-[34px] w-[34px] !rounded-md border border-white/20 !bg-black/45 !text-white hover:!bg-black/70 hover:!text-white"
           title="退出全景"
           onClick={onClose}
         >

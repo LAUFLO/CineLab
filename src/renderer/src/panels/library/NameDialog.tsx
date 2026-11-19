@@ -52,7 +52,7 @@ export function NameDialog({
           onKeyDown={(event) => {
             if (event.key === 'Enter') submit()
           }}
-          className="!h-[34px] !rounded-card !bg-surface-hover !px-2.5 !text-[13px]"
+          className="!h-[34px] !rounded-md !bg-surface-hover !px-2.5 !text-[13px]"
         />
       </label>
 

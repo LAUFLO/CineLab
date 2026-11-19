@@ -61,6 +61,7 @@ const CLIP_SYSTEM_PROMPT = `你是 CineBot，CineLab 的剪辑助手。你只操
 const STAGE_SYSTEM_PROMPT = `${CANVAS_SYSTEM_PROMPT}
 
 导演台补充规则：
+- 当前处于导演台，只修改当前导演台场景；不要创建画布节点，也不要操作画布连线。
 - 修改场景前先用 stage_get 读取对象、机位、镜头和当前视角。
 - 先加对象和机位，再加镜头；镜头时长单位是秒。
 - 需要语义构图时用 stage_set_shot_intent，不要自己猜机位坐标。
@@ -78,6 +79,11 @@ export function systemPromptFor(profile: AgentProfileId): string {
   if (profile === 'stage') return STAGE_SYSTEM_PROMPT
   if (profile === 'film') return FILM_SYSTEM_PROMPT
   return CANVAS_SYSTEM_PROMPT
+}
+
+export function stageContext(stageNodeId?: string): string {
+  if (!stageNodeId) return ''
+  return `\n\n当前正在导演台编辑场景：导演台画布节点 nodeId=${stageNodeId}。\n- 所有 stage_* 工具的 nodeId 都使用这个值。\n- 用户要求搭景、加人物、加机位或分镜时，直接修改当前导演台场景，不要创建画布节点。`
 }
 
 export function attachmentContext(

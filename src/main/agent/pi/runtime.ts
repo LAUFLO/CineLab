@@ -26,6 +26,7 @@ import {
   attachmentContext,
   generationModelsContext,
   referenceContext,
+  stageContext,
   systemPromptFor
 } from './prompt'
 import {
@@ -91,6 +92,7 @@ function createScope(request: AgentChatRequest): AgentScope {
       : {}),
     ...(request.timelineId ? { timelineId: request.timelineId } : {}),
     ...(request.studioNodeId ? { studioNodeId: request.studioNodeId } : {}),
+    ...(request.stageNodeId ? { stageNodeId: request.stageNodeId } : {}),
     selectedClipIds: [...new Set(request.selectedClipIds ?? [])],
     playheadMs: Math.max(0, request.playheadMs ?? 0)
   }
@@ -412,6 +414,7 @@ async function runTurn(input: {
     const catalog = await skillCatalogPrompt(root)
     const systemPrompt = [
       systemPromptFor(request.profileId),
+      stageContext(request.stageNodeId),
       attachmentContext(request.attachments),
       referenceContext(request.references),
       generationModelsContext(request.generationModels),

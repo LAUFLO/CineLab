@@ -7,10 +7,13 @@ import type * as PiCodingAgent from '@earendil-works/pi-coding-agent'
 
 type DynamicImport = (specifier: string) => Promise<unknown>
 
-const dynamicImport = new Function(
-  'specifier',
-  'return import(specifier)'
-) as DynamicImport
+const dynamicImport: DynamicImport =
+  typeof process !== 'undefined' && process.env.VITEST
+    ? (specifier) => import(/* @vite-ignore */ specifier)
+    : (new Function(
+        'specifier',
+        'return import(specifier)'
+      ) as DynamicImport)
 
 let codingAgentPromise: Promise<typeof PiCodingAgent> | null = null
 let piAiPromise: Promise<typeof PiAi> | null = null

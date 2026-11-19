@@ -56,7 +56,7 @@ export function ShortcutPanel() {
       onPointerDown={close}
     >
       <div
-        className="flex max-h-[calc(100vh-96px)] w-[520px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface shadow-menu"
+        className="flex max-h-[calc(100vh-96px)] w-[520px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface-raised shadow-float"
         onPointerDown={(event) => event.stopPropagation()}
       >
         <header className="flex h-[54px] shrink-0 items-center justify-between border-b border-divider pl-5 pr-3.5 text-[15px] font-semibold">
@@ -83,7 +83,7 @@ export function ShortcutPanel() {
                   className="flex h-[30px] items-center justify-between gap-4 text-[13px] text-fg-muted"
                 >
                   <span>{label}</span>
-                  <kbd className="min-w-7 whitespace-nowrap rounded-[6px] border border-border bg-surface-hover px-[7px] py-0.5 text-center font-sans text-[11px] text-fg-muted">
+                  <kbd className="min-w-7 whitespace-nowrap rounded-md border border-border bg-surface-hover px-[7px] py-0.5 text-center font-sans text-[11px] text-fg-muted">
                     {keys}
                   </kbd>
                 </div>

@@ -11,6 +11,7 @@ import {
   samplePrevisVehicle,
   type PrevisPlan,
 } from '@shared/previs/plan-core';
+import type { StageLighting } from '@shared/stage-lighting';
 import { buildWorld3dVehicle, world3dVehicleHeadings } from './world-vehicles';
 import { previsPathLine, samplePrevisPath, samplePrevisPathSmoothHeading } from '@shared/previs/motion-spline';
 import { createWorld3dTheme, WORLD3D_THEME_LOOK } from './world-themes';
@@ -114,7 +115,10 @@ function mixHex(a: string, b: string, k: number): string {
   return `#${new THREE.Color(a).lerp(new THREE.Color(b), k).getHexString()}`;
 }
 
-function resolveWorldLook(sourceWorld: PrevisWorldRef | undefined): {
+function resolveWorldLook(
+  sourceWorld: PrevisWorldRef | undefined,
+  lighting?: StageLighting
+): {
   time: TimeOfDay;
   weather: 'rain' | 'snow' | undefined;
   look: (typeof TIME_LOOK)[TimeOfDay];
@@ -133,6 +137,18 @@ function resolveWorldLook(sourceWorld: PrevisWorldRef | undefined): {
   if (themeLook) {
     const { sky, hemiSky, hemiGround, hemi, sun, sunI, sunLift, glow } = themeLook;
     Object.assign(look, { sky, hemiSky, hemiGround, hemi, sun, sunI, sunLift, glow });
+  }
+  if (lighting) {
+    look.sky = lighting.background;
+    look.hemiSky = lighting.hemi.sky;
+    look.hemiGround = lighting.hemi.ground;
+    look.hemi = lighting.hemi.intensity;
+    look.sun = lighting.sun.color;
+    look.sunI = lighting.sun.intensity;
+    look.sunLift = Math.max(
+      0.2,
+      Math.min(1.2, lighting.sun.position[1] / 10)
+    );
   }
   return { time, weather, look, theme, themeLook };
 }
@@ -223,11 +239,17 @@ export function buildWorld3dFigure(hex: string, ghost = false): THREE.Group {
 }
 
 /** `smooth` (default on): motion between keys follows curves; off: straight lines with hard corners. */
-export function buildWorld3dContent(source: World3dSource, opts?: { smooth?: boolean }): World3dContent {
+export function buildWorld3dContent(
+  source: World3dSource,
+  opts?: { smooth?: boolean; lighting?: StageLighting }
+): World3dContent {
   const smooth = opts?.smooth !== false;
   const plan: PrevisPlan | null = 'stage' in source ? source : null;
   const sourceWorld = plan ? plan.set?.world : (source as { world: PrevisWorldRef }).world;
-  const { time, weather, look, theme, themeLook } = resolveWorldLook(sourceWorld);
+  const { time, weather, look, theme, themeLook } = resolveWorldLook(
+    sourceWorld,
+    opts?.lighting
+  );
   const neon = sourceWorld?.neon === true;
   /** Grade of a sloped street (uphill toward the east); rolling hills add a gentle wave along the street. */
   const slope = typeof sourceWorld?.slope === 'number' ? sourceWorld.slope : 0;
@@ -1438,7 +1460,7 @@ export function buildWorld3dContent(source: World3dSource, opts?: { smooth?: boo
 
   let precip = weather ? createPrecipitation(scene, weather) : null;
   const applyAtmosphere = (ref: PrevisWorldRef | undefined) => {
-    const resolved = resolveWorldLook(ref);
+    const resolved = resolveWorldLook(ref, opts?.lighting);
     Object.assign(look, resolved.look);
     scene.background = new THREE.Color(resolved.look.sky);
     if (scene.fog instanceof THREE.Fog) {

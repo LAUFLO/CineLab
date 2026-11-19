@@ -6,7 +6,7 @@ import type {
 import type { DirectorStageDoc } from '@shared/stage-schema'
 import { ingestAsset } from '../assets/ingest'
 import { getCurrentProjectRoot } from '../project/manager'
-import { exportStagePreview } from '../stage/export'
+import { exportStagePreview, exportStageProgram } from '../stage/export'
 import {
   createStageFile,
   deleteStageFile,
@@ -27,6 +27,8 @@ function readStageId(value: unknown): string {
   }
   return value.trim()
 }
+
+const activeExports = new Map<string, AbortController>()
 
 export function registerStageIpc(): void {
   ipcMain.handle('stage:create', async (_event, name: unknown) => {
@@ -64,11 +66,12 @@ export function registerStageIpc(): void {
       throw new Error('导出参数无效')
     }
     const value = input as Partial<StageExportInput>
-    if (
-      typeof value.stageId !== 'string' ||
-      typeof value.shotId !== 'string'
-    ) {
-      throw new Error('缺少场景或镜头 ID')
+    if (typeof value.stageId !== 'string') {
+      throw new Error('缺少场景 ID')
+    }
+    const scope = value.scope === 'program' ? 'program' : 'shot'
+    if (scope === 'shot' && typeof value.shotId !== 'string') {
+      throw new Error('缺少镜头 ID')
     }
 
     const win = BrowserWindow.fromWebContents(event.sender)
@@ -77,16 +80,42 @@ export function registerStageIpc(): void {
       win.webContents.send('stage:export-progress', progress)
     }
 
-    return exportStagePreview(
-      requireProjectRoot(),
-      {
-        stageId: value.stageId,
-        shotId: value.shotId,
-        resolution: value.resolution === '1080p' ? '1080p' : '720p',
-        fps: value.fps === 30 ? 30 : 24
-      },
-      send
-    )
+    const request: StageExportInput = {
+      stageId: value.stageId,
+      scope,
+      shotId: scope === 'shot' ? value.shotId : undefined,
+      resolution: value.resolution === '1080p' ? '1080p' : '720p',
+      fps: value.fps === 30 ? 30 : 24,
+      ...(value.items ? { items: value.items } : {}),
+      ...(value.frameDensity
+        ? { frameDensity: value.frameDensity }
+        : {})
+    }
+
+    const controller = new AbortController()
+    activeExports.set(value.stageId, controller)
+    try {
+      return scope === 'program'
+        ? await exportStageProgram(
+            requireProjectRoot(),
+            request,
+            send,
+            controller.signal
+          )
+        : await exportStagePreview(
+            requireProjectRoot(),
+            request,
+            send,
+            controller.signal
+          )
+    } finally {
+      activeExports.delete(value.stageId)
+    }
+  })
+
+  ipcMain.handle('stage:export-cancel', async (_event, stageId: unknown) => {
+    const id = readStageId(stageId)
+    activeExports.get(id)?.abort()
   })
 
   ipcMain.handle('stage:capture', async (_event, input: unknown) => {

@@ -252,14 +252,14 @@ export function StudioWindow() {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[85] flex bg-black/55 p-[48px_20px_20px] backdrop-blur-[4px] [-webkit-app-region:no-drag]"
+      className="fixed inset-0 z-[85] flex bg-overlay p-[48px_20px_20px] backdrop-blur-[4px] [-webkit-app-region:no-drag]"
       role="dialog"
       aria-label="剪辑室"
       data-scope="studio"
     >
       <div
         data-window="studio"
-        className="grid min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden rounded-panel border border-border bg-canvas p-1.5 text-fg shadow-menu [grid-template-areas:'top_top_top'_'left_preview_right'_'timeline_timeline_timeline'] [grid-template-columns:var(--studio-left,360px)_minmax(0,1fr)_var(--studio-right,300px)] data-[left-open=false]:![--studio-left:0px] data-[right-open=false]:![--studio-right:0px] max-[1400px]:[--studio-left:300px] max-[1400px]:[--studio-right:260px] max-[1100px]:[--studio-left:260px] max-[1100px]:[--studio-right:240px]"
+        className="grid min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden rounded-panel border border-border bg-canvas p-1.5 text-fg shadow-float [grid-template-areas:'top_top_top'_'left_preview_right'_'timeline_timeline_timeline'] [grid-template-columns:var(--studio-left,360px)_minmax(0,1fr)_var(--studio-right,300px)] data-[left-open=false]:![--studio-left:0px] data-[right-open=false]:![--studio-right:0px] max-[1400px]:[--studio-left:300px] max-[1400px]:[--studio-right:260px] max-[1100px]:[--studio-left:260px] max-[1100px]:[--studio-right:240px]"
         data-left-open={leftOpen}
         data-right-open={rightOpen}
         style={{

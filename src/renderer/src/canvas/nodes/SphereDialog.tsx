@@ -5,6 +5,7 @@ import { Icon } from '../../components/Icon'
 import { useSettingsStore } from '../../stores/settings'
 import {
   Button,
+  DIALOG_PANEL,
   Dialog,
   IconButton,
   Input,
@@ -160,8 +161,8 @@ export function SphereDialog({
       onClose={busy ? () => {} : onClose}
       bare
       ariaLabel={mode === 'light' ? '自定义光位' : '自定义机位'}
-      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-black/55 px-6 py-12"
-      panelClassName="w-[520px] rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
+      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-overlay px-6 py-12"
+      panelClassName={`w-[520px] ${DIALOG_PANEL}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -291,7 +292,7 @@ export function SphereDialog({
                 type="button"
                 variant="secondary"
                 size="none"
-                className="h-7 !rounded-[7px] bg-surface-hover px-3 text-xs data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
+                className="h-7 !rounded-md bg-surface-hover px-3 text-xs data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
                 data-active={temperature === value ? '' : undefined}
                 onClick={() => setTemperature(value)}
               >
@@ -315,7 +316,7 @@ export function SphereDialog({
                 type="button"
                 variant="secondary"
                 size="none"
-                className="h-7 !rounded-[7px] bg-surface-hover px-3 text-xs data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
+                className="h-7 !rounded-md bg-surface-hover px-3 text-xs data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
                 data-active={shotSize === value ? '' : undefined}
                 onClick={() => setShotSize(value)}
               >
@@ -327,7 +328,7 @@ export function SphereDialog({
       )}
 
       {models.length === 0 ? (
-        <div className="mt-4 flex flex-col gap-2 rounded-[9px] border border-border bg-surface-hover p-[14px] text-xs text-fg-muted">
+        <div className="mt-4 flex flex-col gap-2 rounded-card border border-border bg-surface-hover p-[14px] text-xs text-fg-muted">
           <p>还没有可用的图片模型。</p>
           <Button
             type="button"
@@ -361,7 +362,7 @@ export function SphereDialog({
         </label>
       )}
 
-      <div className="mt-3 max-h-[88px] overflow-y-auto rounded-[8px] border border-border bg-surface-hover p-2.5 text-[11px] leading-[1.6] text-fg-subtle">
+      <div className="mt-3 max-h-[88px] overflow-y-auto rounded-card border border-border bg-surface-hover p-2.5 text-[11px] leading-[1.6] text-fg-subtle">
         {prompt}
       </div>
 

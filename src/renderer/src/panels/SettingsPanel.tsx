@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   CAPABILITY_LABEL,
   MEDIA_INPUT_LABEL,
@@ -38,7 +38,14 @@ import { SkillsSection } from './SkillsSection'
 import { ObjectPresetsSection } from './ObjectPresetsSection'
 import { ModelConfigDialog } from '../canvas/nodes/ModelConfigDialog'
 import type { ModelConfigValue } from '../canvas/nodes/ModelConfigDialog'
-import { Button, Dialog, IconButton, Input, Select } from '../components/ui'
+import {
+  Button,
+  Dialog,
+  IconButton,
+  Input,
+  Popover,
+  Select
+} from '../components/ui'
 
 type SectionId =
   | 'general'
@@ -154,6 +161,8 @@ function ModelsSection() {
     null
   )
   const [config, setConfig] = useState<ModelsConfigStatus | null>(null)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const advancedRef = useRef<HTMLButtonElement>(null)
   const [remoteModels, setRemoteModels] = useState<string[]>([])
   const [fetching, setFetching] = useState(false)
   const [manualModel, setManualModel] = useState('')
@@ -475,7 +484,7 @@ function ModelsSection() {
           type="button"
           variant="ghost"
           size="none"
-          className="sticky top-0 z-[8] -ml-2.5 mb-3.5 self-start rounded-lg bg-surface px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg"
+          className="sticky top-0 z-[8] -ml-2.5 mb-3.5 self-start rounded-card bg-surface px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg"
           onClick={() => setDraft(null)}
         >
           ← 返回列表
@@ -495,7 +504,7 @@ function ModelsSection() {
             value={draft.name}
             onChange={(event) => updateField('name', event.target.value)}
             placeholder="例如：我的中转站"
-            className="!h-[34px] !rounded-lg border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+            className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
         </label>
 
@@ -518,7 +527,7 @@ function ModelsSection() {
             value={draft.baseUrl}
             onChange={(event) => updateField('baseUrl', event.target.value)}
             placeholder="https://api.example.com/v1"
-            className="!h-[34px] !rounded-lg border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+            className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
         </label>
 
@@ -534,7 +543,7 @@ function ModelsSection() {
             placeholder={
               draft.type === 'kling' ? 'Access Key 或 API Key' : 'sk-...'
             }
-            className="!h-[34px] !rounded-lg border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+            className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
           {activePreset?.keyHelpUrl ? (
             <div className="text-[11px] leading-[1.6] text-fg-subtle">
@@ -554,7 +563,7 @@ function ModelsSection() {
               value={draft.secretKey ?? ''}
               onChange={(event) => updateField('secretKey', event.target.value)}
               placeholder="可灵 Secret Key"
-              className="!h-[34px] !rounded-lg border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+              className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
             />
           </label>
         ) : null}
@@ -585,7 +594,7 @@ function ModelsSection() {
                     onChange={(event) =>
                       updateHeaderRow(index, { key: event.target.value })
                     }
-                    className="!h-8 min-w-0 flex-1 !rounded-[7px] border-border-strong bg-surface-hover !px-2 !text-xs focus:border-border-selected"
+                    className="!h-8 min-w-0 flex-1 !rounded-md border-border-strong bg-surface-hover !px-2 !text-xs focus:border-border-selected"
                   />
                   <Input
                     value={row.value}
@@ -593,7 +602,7 @@ function ModelsSection() {
                     onChange={(event) =>
                       updateHeaderRow(index, { value: event.target.value })
                     }
-                    className="!h-8 min-w-0 flex-1 !rounded-[7px] border-border-strong bg-surface-hover !px-2 !text-xs focus:border-border-selected"
+                    className="!h-8 min-w-0 flex-1 !rounded-md border-border-strong bg-surface-hover !px-2 !text-xs focus:border-border-selected"
                   />
                   <IconButton
                     label="删除请求头"
@@ -625,7 +634,7 @@ function ModelsSection() {
             {draft.models.map((model) => (
               <div
                 key={model.id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-border px-2.5 py-2"
+                className="flex items-center justify-between gap-2 rounded-card border border-border px-2.5 py-2"
               >
                 <div>
                   <div className="text-[13px] text-fg">{model.name}</div>
@@ -762,7 +771,7 @@ function ModelsSection() {
                   addManualModel()
                 }
               }}
-              className="!h-[34px] min-w-0 flex-1 !rounded-lg border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+              className="!h-[34px] min-w-0 flex-1 !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
             />
             <Button
               type="button"
@@ -860,7 +869,7 @@ function ModelsSection() {
   return (
     <div className="flex flex-col">
       {config ? (
-        <div className="mb-3 rounded-[10px] border border-border bg-surface-raised p-3">
+        <div className="mb-3 rounded-card border border-border bg-surface-raised p-3">
           <div className="flex items-start justify-between gap-2.5">
             <div>
               <div className="mb-[3px] text-[13px] text-fg">
@@ -879,11 +888,24 @@ function ModelsSection() {
               >
                 下载配置 Skill
               </Button>
-              <details className="relative">
-                <summary className="inline-flex h-7 cursor-pointer list-none items-center rounded-lg border border-border px-2.5 text-xs text-fg-muted [&::-webkit-details-marker]:hidden">
+              <>
+                <Button
+                  ref={advancedRef}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setAdvancedOpen((open) => !open)}
+                >
                   高级
-                </summary>
-                <div className="absolute right-0 top-[calc(100%+6px)] z-20 w-80 rounded-[10px] border border-border bg-surface p-2.5 shadow-menu">
+                </Button>
+                <Popover
+                  open={advancedOpen}
+                  onClose={() => setAdvancedOpen(false)}
+                  anchorRef={advancedRef}
+                  align="end"
+                  width={320}
+                  className="!p-2.5"
+                >
                   <div
                     className="break-all text-[11px] leading-[1.5] text-fg-subtle"
                     title={config.activeFile ?? ''}
@@ -908,12 +930,12 @@ function ModelsSection() {
                       打开文件
                     </Button>
                   </div>
-                </div>
-              </details>
+                </Popover>
+              </>
             </div>
           </div>
           {pending?.exists ? (
-            <div className="mt-2.5 flex items-center justify-between gap-2.5 rounded-[10px] border border-[color-mix(in_srgb,var(--link)_35%,var(--border))] bg-[color-mix(in_srgb,var(--link)_8%,transparent)] px-3 py-2.5">
+            <div className="mt-2.5 flex items-center justify-between gap-2.5 rounded-card border border-[color-mix(in_srgb,var(--link)_35%,var(--border))] bg-[color-mix(in_srgb,var(--link)_8%,transparent)] px-3 py-2.5">
               <div>
                 <div className="text-xs text-fg">发现新的模型配置</div>
                 <div className="mt-0.5 text-[11px] text-fg-subtle">
@@ -946,14 +968,14 @@ function ModelsSection() {
             </div>
           ) : null}
           {config.warnings.length > 0 ? (
-            <div className="mt-2 break-all rounded-lg border border-border bg-surface px-2.5 py-2 text-[11px] leading-[1.6] text-fg-muted">
+            <div className="mt-2 break-all rounded-card border border-border bg-surface px-2.5 py-2 text-[11px] leading-[1.6] text-fg-muted">
               {config.warnings.map((warning, index) => (
                 <div key={index}>{warning}</div>
               ))}
             </div>
           ) : null}
           {config.errors.length > 0 ? (
-            <div className="mt-2 break-all rounded-lg bg-[rgba(239,68,68,0.08)] px-2.5 py-2 text-[11px] leading-[1.6] text-danger">
+            <div className="mt-2 break-all rounded-card bg-[rgba(239,68,68,0.08)] px-2.5 py-2 text-[11px] leading-[1.6] text-danger">
               {config.errors.map((error, index) => (
                 <div key={index}>{error}</div>
               ))}
@@ -966,7 +988,7 @@ function ModelsSection() {
         {providers.map((provider) => (
           <div
             key={provider.id}
-            className="mb-2.5 flex items-start justify-between gap-2 rounded-[10px] border border-border bg-surface-raised p-3"
+            className="mb-2.5 flex items-start justify-between gap-2 rounded-card border border-border bg-surface-raised p-3"
           >
             <div>
               <div className="mb-1 text-[13px] text-fg">{provider.name}</div>
@@ -1079,7 +1101,7 @@ function ModelsSection() {
       >
         <div className="flex flex-col gap-2.5">
           {pending?.errors.length ? (
-            <div className="break-all rounded-lg bg-[rgba(239,68,68,0.08)] px-2.5 py-2 text-[11px] leading-[1.6] text-danger">
+            <div className="break-all rounded-card bg-[rgba(239,68,68,0.08)] px-2.5 py-2 text-[11px] leading-[1.6] text-danger">
               {pending.errors.map((error, index) => (
                 <div key={index}>{error}</div>
               ))}
@@ -1087,7 +1109,7 @@ function ModelsSection() {
           ) : null}
           {pending?.providers.map((provider) => (
             <div
-              className="rounded-[10px] border border-border bg-surface-hover p-2.5"
+              className="rounded-card border border-border bg-surface-hover p-2.5"
               key={provider.id}
             >
               <div className="text-[13px] text-fg">{provider.name}</div>
@@ -1134,9 +1156,8 @@ function ModelsSection() {
         onClose={() => setSkillDialogOpen(false)}
         title="配置 Skill 已下载"
         size="md"
-        panelClassName="model-skill-dialog"
       >
-        <div className="break-all rounded-lg bg-surface-hover px-2.5 py-2 text-[11px] text-fg-muted">
+        <div className="break-all rounded-card bg-surface-hover px-2.5 py-2 text-[11px] text-fg-muted">
           {skillPath}
         </div>
         <ol className="my-3 list-decimal pl-[18px] text-xs leading-[1.9] text-fg-muted">
@@ -1147,7 +1168,7 @@ function ModelsSection() {
           <li>附上下面的提示词，让 Agent 读文档并生成配置。</li>
           <li>回到 CineLab，模型配置会自动重新加载。</li>
         </ol>
-        <pre className="m-0 max-h-[180px] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-hover px-3 py-2.5 font-[inherit] text-[11px] leading-[1.7] text-fg-muted">
+        <pre className="m-0 max-h-[180px] overflow-auto whitespace-pre-wrap break-words rounded-card bg-surface-hover px-3 py-2.5 font-[inherit] text-[11px] leading-[1.7] text-fg-muted">
           {skillPrompt}
         </pre>
         <div className="mt-3 flex justify-end">
@@ -1185,7 +1206,7 @@ function LibrarySection() {
         提示词」。
       </p>
 
-      <div className="mt-3.5 overflow-hidden rounded-lg border border-border bg-surface-raised px-3 py-2.5">
+      <div className="mt-3.5 overflow-hidden rounded-card border border-border bg-surface-raised px-3 py-2.5">
         <code className="block overflow-hidden text-ellipsis whitespace-nowrap text-[11.5px] text-fg-muted">
           {root || '加载中…'}
         </code>
@@ -1261,7 +1282,7 @@ function AppearanceSection() {
             type="button"
             variant="ghost"
             size="none"
-            className={`flex-col !items-start gap-[3px] rounded-[10px] border bg-surface-raised px-3.5 py-3 !text-left hover:border-border-strong ${
+            className={`flex-col !items-start gap-[3px] rounded-card border bg-surface-raised px-3.5 py-3 !text-left hover:border-border-strong ${
               mode === option.id ? 'border-border-selected' : 'border-border'
             }`}
             onClick={() => apply(option.id as 'light' | 'dark' | 'system')}
@@ -1357,7 +1378,7 @@ function AboutSection() {
         </Button>
       </div>
 
-      <div className="mt-[18px] rounded-[10px] border border-border bg-surface-raised p-3.5">
+      <div className="mt-[18px] rounded-card border border-border bg-surface-raised p-3.5">
         <div className="flex items-center justify-between gap-3">
           <span className="text-[13px] text-fg">软件更新</span>
           <Button
@@ -1465,11 +1486,11 @@ export function SettingsPanel() {
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 backdrop-blur-[2px] [-webkit-app-region:no-drag]"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay backdrop-blur-[2px] [-webkit-app-region:no-drag]"
       onPointerDown={close}
     >
       <div
-        className="flex h-[660px] max-h-[calc(100vh-80px)] w-[920px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface shadow-menu [-webkit-app-region:no-drag]"
+        className="flex h-[660px] max-h-[calc(100vh-80px)] w-[920px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface-raised shadow-float [-webkit-app-region:no-drag]"
         onPointerDown={(event) => event.stopPropagation()}
       >
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-divider pl-5 pr-4 text-[15px] font-semibold">
@@ -1487,7 +1508,7 @@ export function SettingsPanel() {
                 type="button"
                 variant="ghost"
                 size="none"
-                className={`h-9 !justify-start gap-[9px] rounded-lg px-2.5 text-[13px] !font-normal ${
+                className={`h-9 !justify-start gap-[9px] rounded-card px-2.5 text-[13px] !font-normal ${
                   active === section.id
                     ? 'bg-surface-raised text-fg shadow-[inset_0_0_0_1px_var(--border)]'
                     : ''

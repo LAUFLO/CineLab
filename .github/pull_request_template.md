@@ -17,6 +17,7 @@
 - [ ] `corepack pnpm typecheck`
 - [ ] `corepack pnpm test:coverage`
 - [ ] `corepack pnpm check:docs`
+- [ ] `corepack pnpm check:ui`
 - [ ] `corepack pnpm build`
 - [ ] `corepack pnpm audit --prod --audit-level high` (dependency changes)
 

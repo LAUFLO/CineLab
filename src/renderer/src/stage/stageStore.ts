@@ -10,6 +10,15 @@ import type {
   StageVec3
 } from '@shared/stage-schema'
 import { solveStageShotIntent } from '@shared/stage-shot-intent'
+import { buildProgramTimeline, programAt } from '@shared/stage-program'
+import {
+  buildAutoCoverage,
+  type AutoCoverageOptions
+} from '@shared/stage-auto-coverage'
+import {
+  buildDialogueCoverage,
+  parseDialogue
+} from '@shared/stage-dialogue'
 import {
   applyStageCommands,
   createStageHistory,
@@ -22,6 +31,7 @@ import {
 import { isStageNode, useCanvasStore } from '../stores/canvas'
 import { setActiveStageNode } from './stage-active'
 
+export type StagePlaybackScope = 'shot' | 'program'
 export type StageViewMode = 'director' | 'camera'
 export type StageTransformMode = 'translate' | 'rotate' | 'scale'
 
@@ -53,6 +63,8 @@ interface StageState {
   transformMode: StageTransformMode
   playing: boolean
   playbackMs: number
+  playbackScope: StagePlaybackScope
+  programMs: number
   loading: boolean
   saving: boolean
   dirty: boolean
@@ -70,6 +82,11 @@ interface StageState {
   selectCamera: (cameraId: string | null) => void
   selectShot: (shotId: string | null) => void
   addShot: () => string | null
+  autoCoverage: (options: AutoCoverageOptions) => boolean
+  dialogueCoverage: (
+    script: string,
+    options?: { pace?: number }
+  ) => boolean
   removeSelectedShot: () => boolean
   setShotDuration: (durationMs: number) => boolean
   setShotIntent: (intent: StageShotIntent) => boolean
@@ -77,6 +94,8 @@ interface StageState {
   captureKeyframe: () => boolean
   removeKeyframe: (index: number) => boolean
   seek: (timeMs: number) => void
+  seekProgram: (timeMs: number) => void
+  setPlaybackScope: (scope: StagePlaybackScope) => void
   play: () => void
   pause: () => void
   registerViewCapture: (
@@ -132,6 +151,8 @@ export const useStageStore = create<StageState>((set, get) => ({
   transformMode: 'translate',
   playing: false,
   playbackMs: 0,
+  playbackScope: 'shot',
+  programMs: 0,
   loading: false,
   saving: false,
   dirty: false,
@@ -164,6 +185,8 @@ export const useStageStore = create<StageState>((set, get) => ({
       transformMode: 'translate',
       playing: false,
       playbackMs: 0,
+      playbackScope: 'shot',
+      programMs: 0,
       dirty: false
     })
 
@@ -184,7 +207,9 @@ export const useStageStore = create<StageState>((set, get) => ({
         selectedKeyframeIndex: null,
         viewMode: 'director',
         playing: false,
-        playbackMs: 0
+        playbackMs: 0,
+        playbackScope: 'shot',
+        programMs: 0
       })
       syncStageNodeSummary(nodeId, doc)
     } catch (error) {
@@ -216,6 +241,8 @@ export const useStageStore = create<StageState>((set, get) => ({
       viewMode: 'director',
       playing: false,
       playbackMs: 0,
+      playbackScope: 'shot',
+      programMs: 0,
       loading: false,
       saving: false,
       dirty: false,
@@ -238,11 +265,20 @@ export const useStageStore = create<StageState>((set, get) => ({
     const shouldPushHistory = !turnId || !commandTurns.has(turnId)
     if (turnId && shouldPushHistory) commandTurns.add(turnId)
 
+    const affectsProgram =
+      result.change.programChanged ||
+      result.change.updatedShotIds.length > 0 ||
+      result.change.deletedShotIds.length > 0
+    const programMs = affectsProgram
+      ? Math.min(get().programMs, buildProgramTimeline(result.doc).durationMs)
+      : get().programMs
+
     set({
       doc: result.doc,
       history: shouldPushHistory ? pushStageHistory(history, doc) : history,
       dirty: true,
-      error: null
+      error: null,
+      programMs
     })
     syncStageNodeSummary(nodeId, result.doc)
     return true
@@ -257,7 +293,11 @@ export const useStageStore = create<StageState>((set, get) => ({
     if (!doc || !nodeId) return
     const next = undoStageHistory(history, doc)
     if (!next) return
-    set({ doc: next.doc, history: next.history, dirty: true })
+    const programMs = Math.min(
+      get().programMs,
+      buildProgramTimeline(next.doc).durationMs
+    )
+    set({ doc: next.doc, history: next.history, dirty: true, programMs })
     syncStageNodeSummary(nodeId, next.doc)
   },
 
@@ -266,7 +306,11 @@ export const useStageStore = create<StageState>((set, get) => ({
     if (!doc || !nodeId) return
     const next = redoStageHistory(history, doc)
     if (!next) return
-    set({ doc: next.doc, history: next.history, dirty: true })
+    const programMs = Math.min(
+      get().programMs,
+      buildProgramTimeline(next.doc).durationMs
+    )
+    set({ doc: next.doc, history: next.history, dirty: true, programMs })
     syncStageNodeSummary(nodeId, next.doc)
   },
 
@@ -289,13 +333,22 @@ export const useStageStore = create<StageState>((set, get) => ({
     set({ selectedCameraId: null, viewMode: 'director', playing: false })
   },
 
-  selectShot: (shotId) =>
+  selectShot: (shotId) => {
+    const { doc, playbackScope } = get()
+    const segment =
+      shotId && doc && playbackScope === 'program'
+        ? buildProgramTimeline(doc).segments.find(
+            (item) => item.shotId === shotId
+          )
+        : undefined
     set({
       selectedShotId: shotId,
       selectedKeyframeIndex: null,
       playbackMs: 0,
+      ...(segment ? { programMs: segment.startMs } : {}),
       playing: false
-    }),
+    })
+  },
 
   addShot: () => {
     const { doc, selectedCameraId } = get()
@@ -322,6 +375,65 @@ export const useStageStore = create<StageState>((set, get) => ({
       playing: false
     })
     return shot.id
+  },
+
+  autoCoverage: (options) => {
+    const { doc } = get()
+    if (!doc) return false
+    const plan = buildAutoCoverage(doc, options)
+    if (plan.shots.length === 0) {
+      set({ error: plan.notes[0] ?? '自动分镜没有生成镜头' })
+      return false
+    }
+    const applied = get().applyCommands([
+      {
+        type: 'replaceCoverage',
+        cameras: plan.cameras,
+        shots: plan.shots,
+        mode: options.replace === false ? 'append' : 'replace'
+      }
+    ])
+    if (!applied) return false
+    set({
+      selectedShotId: plan.shots[0]?.id ?? null,
+      playbackScope: 'program',
+      programMs: 0,
+      playbackMs: 0,
+      selectedKeyframeIndex: null
+    })
+    return true
+  },
+
+  dialogueCoverage: (script, options) => {
+    const { doc } = get()
+    if (!doc) return false
+    const lines = parseDialogue(script)
+    if (lines.length === 0) {
+      set({ error: '没有识别到对白，请按「角色：台词」每行一句' })
+      return false
+    }
+    const plan = buildDialogueCoverage(doc, lines, options)
+    if (plan.shots.length === 0) {
+      set({ error: plan.notes[0] ?? '按对白分镜没有生成镜头' })
+      return false
+    }
+    const applied = get().applyCommands([
+      {
+        type: 'replaceCoverage',
+        cameras: plan.cameras,
+        shots: plan.shots,
+        mode: 'replace'
+      }
+    ])
+    if (!applied) return false
+    set({
+      selectedShotId: plan.shots[0]?.id ?? null,
+      playbackScope: 'program',
+      programMs: 0,
+      playbackMs: 0,
+      selectedKeyframeIndex: null
+    })
+    return true
   },
 
   removeSelectedShot: () => {
@@ -491,9 +603,70 @@ export const useStageStore = create<StageState>((set, get) => ({
     })
   },
 
+  seekProgram: (timeMs) => {
+    const { doc } = get()
+    const duration = doc ? buildProgramTimeline(doc).durationMs : 0
+    set({
+      programMs: Math.round(Math.min(duration, Math.max(0, timeMs)))
+    })
+  },
+
+  setPlaybackScope: (scope) => {
+    const {
+      doc,
+      playbackScope,
+      playbackMs,
+      programMs,
+      selectedShotId
+    } = get()
+    if (!doc || scope === playbackScope) {
+      set({ playbackScope: scope })
+      return
+    }
+
+    const timeline = buildProgramTimeline(doc)
+    if (scope === 'program') {
+      const segment = timeline.segments.find(
+        (item) => item.shotId === selectedShotId
+      )
+      set({
+        playbackScope: scope,
+        programMs: segment
+          ? segment.startMs +
+            Math.min(playbackMs, segment.endMs - segment.startMs)
+          : Math.min(programMs, timeline.durationMs)
+      })
+      return
+    }
+
+    const active = programAt(timeline, programMs)
+    set({
+      playbackScope: scope,
+      playbackMs: active
+        ? Math.min(programMs - active.startMs, active.endMs - active.startMs)
+        : 0
+    })
+  },
+
   play: () => {
-    const { doc, selectedShotId, playbackMs } = get()
-    const shot = doc?.shots.find((item) => item.id === selectedShotId)
+    const { doc, playbackScope, selectedShotId, playbackMs, programMs } = get()
+    if (!doc) {
+      set({ error: '请先打开场景' })
+      return
+    }
+    if (playbackScope === 'program') {
+      const timeline = buildProgramTimeline(doc)
+      if (timeline.durationMs <= 0) {
+        set({ error: '成片还没有镜头' })
+        return
+      }
+      set({
+        playing: true,
+        programMs: programMs >= timeline.durationMs ? 0 : programMs
+      })
+      return
+    }
+    const shot = doc.shots.find((item) => item.id === selectedShotId)
     if (!shot) {
       set({ error: '请先选择一个镜头' })
       return

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Dialog } from '../components/ui'
+import { Button, DIALOG_PANEL, Dialog } from '../components/ui'
 import { useUIStore } from '../stores/ui'
 
 export function ConfirmDialog() {
@@ -36,8 +36,8 @@ export function ConfirmDialog() {
       onClose={closeConfirm}
       bare
       ariaLabel={confirm.title}
-      overlayClassName="fixed inset-0 z-[300] flex items-center justify-center bg-black/35 p-6"
-      panelClassName="w-[min(420px,100%)] rounded-[16px] border border-border bg-surface p-6 shadow-float"
+      overlayClassName="fixed inset-0 z-[300] flex items-center justify-center bg-overlay p-6"
+      panelClassName={`w-[min(420px,100%)] ${DIALOG_PANEL}`}
     >
       <div className="mb-2.5 text-[16px] text-fg">{confirm.title}</div>
       <p className="mb-[22px] mt-0 text-[13px] leading-[1.7] text-fg-muted">

@@ -287,7 +287,7 @@ export function AudioPlayer({
         {hasSelection ? (
           <>
             <div
-              className="pointer-events-none absolute top-1.5 bottom-1.5 rounded-[6px] bg-[color-mix(in_srgb,var(--text-1)_12%,transparent)]"
+              className="pointer-events-none absolute top-1.5 bottom-1.5 rounded-md bg-[color-mix(in_srgb,var(--text-1)_12%,transparent)]"
               style={{
                 left: `${selectionStart * 100}%`,
                 width: `${(selectionEnd - selectionStart) * 100}%`
@@ -314,13 +314,13 @@ export function AudioPlayer({
 
       {busy ? (
         <div className="pointer-events-none absolute inset-x-2.5 top-1.5 bottom-[42px] flex items-center justify-center">
-          <div className="pointer-events-auto flex items-center gap-3 rounded-[10px] border border-border-strong bg-surface-raised px-3.5 py-2 text-xs text-fg">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-card border border-border-strong bg-surface-raised px-3.5 py-2 text-xs text-fg">
             <span>生成中…</span>
             <Button
               type="button"
               variant="ghost"
               size="none"
-              className="nodrag nopan rounded-[6px] px-0 text-xs !font-normal text-fg-muted hover:!bg-transparent hover:text-fg"
+              className="nodrag nopan rounded-md px-0 text-xs !font-normal text-fg-muted hover:!bg-transparent hover:text-fg"
               onClick={(event) => {
                 event.stopPropagation()
                 onCancel?.()

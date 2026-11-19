@@ -30,6 +30,7 @@ import type { HttpTemplate } from '@shared/http-template'
 import { Icon } from '../../components/Icon'
 import {
   Button,
+  DIALOG_PANEL,
   Dialog,
   Input,
   Select,
@@ -773,8 +774,8 @@ export function ModelConfigDialog({
       onClose={onCancel}
       bare
       ariaLabel="模型配置"
-      overlayClassName="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 backdrop-blur-[2px] [-webkit-app-region:no-drag]"
-      panelClassName="flex max-h-[82vh] w-[720px] max-w-[calc(100vw_-_48px)] flex-col gap-3 overflow-y-auto rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu [&>*]:flex-none"
+      overlayClassName="fixed inset-0 z-[90] flex items-center justify-center bg-overlay backdrop-blur-[2px] [-webkit-app-region:no-drag]"
+      panelClassName={`flex max-h-[82vh] w-[720px] max-w-[calc(100vw_-_48px)] flex-col gap-3 overflow-y-auto [&>*]:flex-none ${DIALOG_PANEL}`}
     >
       <header className="flex items-start justify-between gap-3">
         <div>
@@ -790,7 +791,7 @@ export function ModelConfigDialog({
           type="button"
           variant="ghost"
           size="none"
-          className="h-7 w-7 !rounded-[7px]"
+          className="h-7 w-7 !rounded-md"
           title="关闭"
           onClick={onCancel}
         >
@@ -799,7 +800,7 @@ export function ModelConfigDialog({
       </header>
 
       {modeSectionVisible ? (
-        <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface p-3">
+        <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-3">
           <div className="text-[13px] font-medium text-fg">能力模式</div>
           <div className="text-xs leading-[1.7] text-fg-subtle">
             这些是这个模型支持的生成方式。点击已启用的卡片可以取消。
@@ -814,7 +815,7 @@ export function ModelConfigDialog({
                     type="button"
                     variant="ghost"
                     size="none"
-                    className="!block w-full rounded-lg border border-link bg-[color-mix(in_srgb,var(--link)_10%,transparent)] px-2.5 py-2 text-left hover:!bg-[color-mix(in_srgb,var(--link)_10%,transparent)]"
+                    className="!block w-full rounded-card border border-link bg-[color-mix(in_srgb,var(--link)_10%,transparent)] px-2.5 py-2 text-left hover:!bg-[color-mix(in_srgb,var(--link)_10%,transparent)]"
                     key={mode.id}
                     title="点击取消这个模式"
                     onClick={() => toggleMode(mode.id)}
@@ -873,7 +874,7 @@ export function ModelConfigDialog({
         会根据当前节点已引用的图片或视频，自动置灰不支持的模型。
       </div>
 
-      <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface p-3">
+      <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-3">
         <div className="text-[13px] font-medium text-fg">输入能力</div>
         <div className="grid grid-cols-2 gap-2">
           {MEDIA_INPUTS.map((input) => {
@@ -889,7 +890,7 @@ export function ModelConfigDialog({
                 variant="ghost"
                 size="none"
                 className={cn(
-                  '!h-11 w-full !justify-start gap-2 rounded-lg border border-border bg-surface-hover px-3 !text-[13px] !font-normal text-fg-muted hover:!bg-surface-hover disabled:!pointer-events-auto disabled:!opacity-100',
+                  '!h-11 w-full !justify-start gap-2 rounded-card border border-border bg-surface-hover px-3 !text-[13px] !font-normal text-fg-muted hover:!bg-surface-hover disabled:!pointer-events-auto disabled:!opacity-100',
                   checked &&
                     'border-link !bg-[color-mix(in_srgb,var(--link)_10%,transparent)] !text-fg hover:!bg-[color-mix(in_srgb,var(--link)_10%,transparent)]',
                   locked && 'cursor-default'
@@ -904,7 +905,7 @@ export function ModelConfigDialog({
               >
                 <span
                   className={cn(
-                    'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border text-[11px] text-fg-inverse',
+                    'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-md border text-[11px] text-fg-inverse',
                     checked ? 'border-link bg-link' : 'border-border'
                   )}
                 >
@@ -926,7 +927,7 @@ export function ModelConfigDialog({
       </div>
 
       {isVideo ? (
-        <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface p-3">
+        <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-3">
           <div className="text-[13px] font-medium text-fg">视频操作</div>
           <div className="text-[11px] leading-[1.7] text-fg-subtle">
             只有使用自定义协议的视频接口需要勾选。勾选后该模型会出现在片段重拍、元素替换、智能续写的模型列表里。
@@ -946,7 +947,7 @@ export function ModelConfigDialog({
                   variant="ghost"
                   size="none"
                   className={cn(
-                    '!h-11 w-full !justify-start gap-2 rounded-lg border border-border bg-surface-hover px-3 !text-[13px] !font-normal text-fg-muted hover:!bg-surface-hover disabled:!pointer-events-auto disabled:!opacity-100',
+                    '!h-11 w-full !justify-start gap-2 rounded-card border border-border bg-surface-hover px-3 !text-[13px] !font-normal text-fg-muted hover:!bg-surface-hover disabled:!pointer-events-auto disabled:!opacity-100',
                     checked &&
                       'border-link !bg-[color-mix(in_srgb,var(--link)_10%,transparent)] !text-fg hover:!bg-[color-mix(in_srgb,var(--link)_10%,transparent)]'
                   )}
@@ -956,7 +957,7 @@ export function ModelConfigDialog({
                 >
                   <span
                     className={cn(
-                      'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border text-[11px] text-fg-inverse',
+                      'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-md border text-[11px] text-fg-inverse',
                       checked ? 'border-link bg-link' : 'border-border'
                     )}
                   >
@@ -1025,7 +1026,7 @@ export function ModelConfigDialog({
                     variant="secondary"
                     size="none"
                     className={cn(
-                      '!h-7 !justify-start gap-1.5 rounded-lg border-border bg-surface-hover px-2.5 !text-[11.5px] !font-normal !text-fg duration-[120ms]',
+                      '!h-7 !justify-start gap-1.5 rounded-card border-border bg-surface-hover px-2.5 !text-[11.5px] !font-normal !text-fg duration-[120ms]',
                       added
                         ? 'cursor-default opacity-45 disabled:!opacity-45'
                         : 'hover:!border-border-selected hover:bg-surface-raised'
@@ -1063,7 +1064,7 @@ export function ModelConfigDialog({
             return (
               <div
                 className={cn(
-                  'flex flex-col gap-2 rounded-[10px] border border-border p-[11px]',
+                  'flex flex-col gap-2 rounded-card border border-border p-[11px]',
                   expanded ? 'bg-surface' : 'bg-surface-hover'
                 )}
                 key={`${row.key}-${index}`}
@@ -1106,7 +1107,7 @@ export function ModelConfigDialog({
                   <div className="flex flex-col gap-2 border-t border-divider pt-2">
                     <div className="flex items-center gap-2">
                       <Input
-                        className="!h-8 min-w-0 flex-1 !rounded-[7px] border-border-strong bg-surface !px-[9px] !text-[13px] font-medium focus:!border-border-selected"
+                        className="!h-8 min-w-0 flex-1 !rounded-md border-border-strong bg-surface !px-[9px] !text-[13px] font-medium focus:!border-border-selected"
                         value={row.label}
                         placeholder="参数显示名，例如「画面比例」"
                         onChange={(event) =>
@@ -1134,7 +1135,7 @@ export function ModelConfigDialog({
                       <label className="flex flex-col gap-1 text-[10.5px] text-fg-subtle">
                         <span>分组</span>
                         <Input
-                          className="!h-[30px] !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
+                          className="!h-[30px] !rounded-md border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
                           value={row.group ?? ''}
                           placeholder="例如：比例 / 画质 / 数量"
                           onChange={(event) =>
@@ -1151,7 +1152,7 @@ export function ModelConfigDialog({
                       <label className="mt-1.5 flex flex-col gap-1">
                         <span>接口字段名</span>
                         <Input
-                          className="!h-[30px] !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
+                          className="!h-[30px] !rounded-md border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
                           value={row.key}
                           placeholder="例如：ratio"
                           onChange={(event) =>
@@ -1162,7 +1163,7 @@ export function ModelConfigDialog({
                     </details>
 
                     {row.key === 'duration' && row.type === 'select' ? (
-                      <div className="flex items-center justify-between gap-2.5 rounded-[7px] border border-dashed border-border bg-surface px-[9px] py-2 text-[10.5px] leading-[1.55] text-fg-subtle">
+                      <div className="flex items-center justify-between gap-2.5 rounded-md border border-dashed border-border bg-surface px-[9px] py-2 text-[10.5px] leading-[1.55] text-fg-subtle">
                         <span>
                           如果模型支持 4–12
                           秒这类连续秒数，可以改为滑条；只支持固定档位的模型请保留下拉。
@@ -1171,7 +1172,7 @@ export function ModelConfigDialog({
                           type="button"
                           variant="secondary"
                           size="none"
-                          className="!h-[26px] flex-none !rounded-[6px] bg-surface-hover px-[9px] !text-[10.5px] text-fg-muted hover:!border-border-selected hover:text-fg"
+                          className="!h-[26px] flex-none !rounded-md bg-surface-hover px-[9px] !text-[10.5px] text-fg-muted hover:!border-border-selected hover:text-fg"
                           onClick={() => convertDurationToRange(index)}
                         >
                           改为时长滑条
@@ -1180,14 +1181,14 @@ export function ModelConfigDialog({
                     ) : null}
 
                     {row.type === 'select' ? (
-                      <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-2">
+                      <div className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-2">
                         <div className="flex items-center justify-between gap-2 text-[10.5px] text-fg-subtle">
                           <span>可选项</span>
                           <Button
                             type="button"
                             variant="secondary"
                             size="none"
-                            className="!h-6 !rounded-[6px] bg-surface-hover px-2 !text-[10.5px] text-fg-muted hover:!border-border-selected hover:text-fg"
+                            className="!h-6 !rounded-md bg-surface-hover px-2 !text-[10.5px] text-fg-muted hover:!border-border-selected hover:text-fg"
                             onClick={() => addOption(index)}
                           >
                             + 添加选项
@@ -1200,7 +1201,7 @@ export function ModelConfigDialog({
                             key={`${index}-${optionIndex}`}
                           >
                             <Input
-                              className="!h-7 !rounded-[6px] border-border-strong bg-surface-hover !px-2 !text-[11px] focus:!border-border-selected"
+                              className="!h-7 !rounded-md border-border-strong bg-surface-hover !px-2 !text-[11px] focus:!border-border-selected"
                               value={option.label}
                               placeholder="显示名，例如 16:9"
                               onChange={(event) =>
@@ -1210,7 +1211,7 @@ export function ModelConfigDialog({
                               }
                             />
                             <Input
-                              className="!h-7 !rounded-[6px] border-border-strong bg-surface-hover !px-2 !text-[11px] focus:!border-border-selected"
+                              className="!h-7 !rounded-md border-border-strong bg-surface-hover !px-2 !text-[11px] focus:!border-border-selected"
                               value={option.value}
                               placeholder="接口值，例如 16:9"
                               onChange={(event) =>
@@ -1269,7 +1270,7 @@ export function ModelConfigDialog({
                           <span>默认值</span>
                           <Input
                             type="number"
-                            className="!h-[30px] !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
+                            className="!h-[30px] !rounded-md border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
                             value={String(row.defaultValue ?? '')}
                             placeholder="默认值"
                             onChange={(event) =>
@@ -1283,7 +1284,7 @@ export function ModelConfigDialog({
                           <span>最小值</span>
                           <Input
                             type="number"
-                            className="!h-[30px] !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
+                            className="!h-[30px] !rounded-md border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
                             value={row.min ?? ''}
                             placeholder="最小值"
                             onChange={(event) =>
@@ -1300,7 +1301,7 @@ export function ModelConfigDialog({
                           <span>最大值</span>
                           <Input
                             type="number"
-                            className="!h-[30px] !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
+                            className="!h-[30px] !rounded-md border-border-strong bg-surface !px-2 !text-xs focus:!border-border-selected"
                             value={row.max ?? ''}
                             placeholder="最大值"
                             onChange={(event) =>
@@ -1320,7 +1321,7 @@ export function ModelConfigDialog({
                       <div className="flex items-center gap-2 text-[11px] text-fg-subtle">
                         <span>默认值</span>
                         <Input
-                          className="!h-[30px] flex-1 !rounded-[6px] border-border-strong bg-surface !px-2 !text-xs"
+                          className="!h-[30px] flex-1 !rounded-md border-border-strong bg-surface !px-2 !text-xs"
                           value={String(row.defaultValue ?? '')}
                           placeholder="默认文本"
                           onChange={(event) =>
@@ -1357,7 +1358,7 @@ export function ModelConfigDialog({
         )}
       </div>
 
-      <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface p-3">
+      <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-3">
         <Button
           type="button"
           variant="ghost"
@@ -1382,13 +1383,13 @@ export function ModelConfigDialog({
             <div className="flex flex-col gap-1.5 text-[11px] text-fg-subtle">
               <div className="flex items-center justify-between gap-2">
                 <span>请求扩展 — 追加到请求体的字段</span>
-                <div className="inline-flex gap-0.5 rounded-[7px] bg-surface-hover p-0.5">
+                <div className="inline-flex gap-0.5 rounded-md bg-surface-hover p-0.5">
                   <Button
                     type="button"
                     variant="ghost"
                     size="none"
                     className={cn(
-                      '!h-[22px] !rounded-[5px] px-2 !text-[11px]',
+                      '!h-[22px] !rounded-md px-2 !text-[11px]',
                       extraBodyMode === 'rows'
                         ? 'bg-surface !text-fg hover:!bg-surface'
                         : '!text-fg-subtle hover:!bg-transparent'
@@ -1402,7 +1403,7 @@ export function ModelConfigDialog({
                     variant="ghost"
                     size="none"
                     className={cn(
-                      '!h-[22px] !rounded-[5px] px-2 !text-[11px]',
+                      '!h-[22px] !rounded-md px-2 !text-[11px]',
                       extraBodyMode === 'json'
                         ? 'bg-surface !text-fg hover:!bg-surface'
                         : '!text-fg-subtle hover:!bg-transparent'
@@ -1449,7 +1450,7 @@ export function ModelConfigDialog({
                         />
                       ) : row.type === 'json' ? (
                         <Textarea
-                          className="!h-[34px] !min-h-[34px] !rounded-lg border-border bg-surface-hover !px-2 !py-1.5 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
+                          className="!h-[34px] !min-h-[34px] !rounded-card border-border bg-surface-hover !px-2 !py-1.5 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
                           value={row.value}
                           spellCheck={false}
                           onChange={(event) =>
@@ -1505,7 +1506,7 @@ export function ModelConfigDialog({
                 </div>
               ) : (
                 <Textarea
-                  className="!min-h-[84px] !rounded-lg border-border bg-surface-hover !px-2.5 !py-2 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
+                  className="!min-h-[84px] !rounded-card border-border bg-surface-hover !px-2.5 !py-2 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
                   value={extraBodyText}
                   spellCheck={false}
                   placeholder={
@@ -1521,7 +1522,7 @@ export function ModelConfigDialog({
 
             <div className="flex flex-col gap-1.5 text-[11px] text-fg-subtle">
               <span>删除字段 — 从默认请求体移除的字段</span>
-              <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-surface-hover px-2 py-1.5">
+              <div className="flex flex-wrap items-center gap-1.5 rounded-card border border-border bg-surface-hover px-2 py-1.5">
                 {omitBodyTags.map((tag) => (
                   <span
                     className="inline-flex h-[22px] items-center gap-1 rounded-full bg-surface px-1.5 text-[11px] text-fg"
@@ -1569,7 +1570,7 @@ export function ModelConfigDialog({
                   </Button>
                 </div>
                 <Textarea
-                  className="!min-h-[180px] !rounded-lg border-border bg-surface-hover !px-2.5 !py-2 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
+                  className="!min-h-[180px] !rounded-card border-border bg-surface-hover !px-2.5 !py-2 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
                   value={templateText}
                   spellCheck={false}
                   onChange={(event) => {
@@ -1584,7 +1585,7 @@ export function ModelConfigDialog({
       </div>
 
       {error ? (
-        <div className="mb-3 break-all rounded-[6px] bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] px-2.5 py-2 text-xs leading-[1.6] text-danger">
+        <div className="mb-3 break-all rounded-md bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] px-2.5 py-2 text-xs leading-[1.6] text-danger">
           {error}
         </div>
       ) : null}

@@ -113,7 +113,7 @@ export function AudioActionBar({
 
   return createPortal(
     <div
-      className="nodrag nopan fixed z-[60] flex min-w-[430px] -translate-x-1/2 items-center gap-2.5 rounded-[12px] border border-border-strong bg-[color-mix(in_srgb,var(--surface-raised)_94%,transparent)] px-2.5 py-2 text-xs text-fg shadow-float"
+      className="nodrag nopan fixed z-[60] flex min-w-[430px] -translate-x-1/2 items-center gap-2.5 rounded-card border border-border-strong bg-[color-mix(in_srgb,var(--surface-raised)_94%,transparent)] px-2.5 py-2 text-xs text-fg shadow-float"
       style={{
         left: anchor.left + anchor.width / 2,
         top
@@ -125,7 +125,7 @@ export function AudioActionBar({
         type="button"
         variant="ghost"
         size="none"
-        className="h-6 w-6 shrink-0 !rounded-[6px] p-0 text-fg-subtle hover:text-fg"
+        className="h-6 w-6 shrink-0 !rounded-md p-0 text-fg-subtle hover:text-fg"
         title="关闭"
         onClick={onClose}
       >
@@ -139,7 +139,7 @@ export function AudioActionBar({
       {mode === 'trim' ? (
         <div className="ml-auto flex items-center gap-1.5">
           <Input
-            className="!h-7 !w-[66px] !rounded-[7px] !px-1.5 text-center !text-xs tabular-nums focus:!border-border-selected"
+            className="!h-7 !w-[66px] !rounded-md !px-1.5 text-center !text-xs tabular-nums focus:!border-border-selected"
             value={startText}
             spellCheck={false}
             onFocus={(event) => event.currentTarget.select()}
@@ -155,7 +155,7 @@ export function AudioActionBar({
           />
           <span className="text-fg-subtle">–</span>
           <Input
-            className="!h-7 !w-[66px] !rounded-[7px] !px-1.5 text-center !text-xs tabular-nums focus:!border-border-selected"
+            className="!h-7 !w-[66px] !rounded-md !px-1.5 text-center !text-xs tabular-nums focus:!border-border-selected"
             value={endText}
             spellCheck={false}
             onFocus={(event) => event.currentTarget.select()}
@@ -188,7 +188,7 @@ export function AudioActionBar({
             4.0x
           </span>
           <Input
-            className="!h-7 !w-14 !rounded-[7px] !px-1 text-center !text-xs tabular-nums focus:!border-border-selected"
+            className="!h-7 !w-14 !rounded-md !px-1 text-center !text-xs tabular-nums focus:!border-border-selected"
             type="number"
             min={0.1}
             max={4}
@@ -212,7 +212,7 @@ export function AudioActionBar({
         type="button"
         variant="primary"
         size="none"
-        className="h-[30px] shrink-0 rounded-[8px] border border-transparent !bg-pick-bar px-3.5 text-xs font-semibold"
+        className="h-[30px] shrink-0 rounded-card border border-transparent !bg-pick-bar px-3.5 text-xs font-semibold"
         disabled={busy}
         onClick={onSubmit}
       >

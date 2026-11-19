@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, Dialog, Input } from '../../components/ui'
+import { Button, DIALOG_PANEL, Dialog, Input } from '../../components/ui'
 
 interface NameDialogProps {
   title: string
@@ -37,8 +37,8 @@ export function NameDialog({
       onClose={onCancel}
       bare
       ariaLabel={title}
-      overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-black/50"
-      panelClassName="w-[420px] rounded-[12px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-menu"
+      overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-overlay"
+      panelClassName={`w-[420px] ${DIALOG_PANEL}`}
     >
       <div className="mb-[14px] text-sm text-fg">{title}</div>
 
@@ -52,7 +52,7 @@ export function NameDialog({
           onKeyDown={(event) => {
             if (event.key === 'Enter') submit()
           }}
-          className="!h-[34px] !rounded-[8px] !bg-surface-hover !px-2.5 !text-[13px]"
+          className="!h-[34px] !rounded-card !bg-surface-hover !px-2.5 !text-[13px]"
         />
       </label>
 

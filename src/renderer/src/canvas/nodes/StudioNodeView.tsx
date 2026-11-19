@@ -56,7 +56,7 @@ const CARD_CLASS =
   'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms]'
 
 const BTN_CLASS =
-  '!h-7 gap-[5px] !rounded-[7px] !border !border-border !bg-surface !px-2.5 !text-[11.5px] !font-normal !text-fg whitespace-nowrap hover:!bg-surface-hover hover:!text-fg'
+  '!h-7 gap-[5px] !rounded-md !border !border-border !bg-surface !px-2.5 !text-[11.5px] !font-normal !text-fg whitespace-nowrap hover:!bg-surface-hover hover:!text-fg'
 
 export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
   const [editingTitle, setEditingTitle] = useState(false)
@@ -451,7 +451,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
           <Icon name="film" size={12} />
           {editingTitle ? (
             <Input
-              className="nodrag nopan !h-5 !w-[140px] !rounded-[5px] !border-border-strong !bg-surface-hover !px-1.5 !text-xs"
+              className="nodrag nopan !h-5 !w-[140px] !rounded-md !border-border-strong !bg-surface-hover !px-1.5 !text-xs"
               value={titleDraft}
               autoFocus
               onChange={(event) => setTitleDraft(event.target.value)}
@@ -574,7 +574,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
             )}
 
             {busy ? (
-              <div className="absolute bottom-2.5 left-2.5 rounded-[6px] bg-black/[0.62] px-2 py-[3px] text-[11px] text-white">
+              <div className="absolute bottom-2.5 left-2.5 rounded-md bg-black/[0.62] px-2 py-[3px] text-[11px] text-white">
                 {filmStatus === 'rendering'
                   ? `渲染中 ${progress}%`
                   : `生成中 ${progress}%`}
@@ -672,7 +672,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
               VTT
             </Button>
             <Select
-              className="nodrag nopan !h-7 !w-auto !min-w-0 !flex-none !rounded-[7px] !bg-surface !px-2 !text-[11.5px]"
+              className="nodrag nopan !h-7 !w-auto !min-w-0 !flex-none !rounded-md !bg-surface !px-2 !text-[11.5px]"
               title="导出编码"
               value={codec}
               disabled={busy}
@@ -687,7 +687,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
               type="button"
               variant="primary"
               size="none"
-              className="ml-auto !h-7 !rounded-[7px] !border-0 !px-2.5 !text-[11.5px] !font-semibold disabled:!cursor-not-allowed disabled:!opacity-40"
+              className="ml-auto !h-7 !rounded-md !border-0 !px-2.5 !text-[11.5px] !font-semibold disabled:!cursor-not-allowed disabled:!opacity-40"
               onClick={(event) => void exportFilm(event)}
               disabled={filmStatus === 'empty' || filmStatus === 'missing'}
             >
@@ -718,11 +718,11 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
       {previewOpen && (current || (previewDoc && previewDoc.clips.length > 0))
         ? createPortal(
             <div
-              className="fixed inset-0 z-[250] flex items-center justify-center bg-black/[0.72] p-12"
+              className="fixed inset-0 z-[250] flex items-center justify-center bg-overlay p-12"
               onPointerDown={() => setPreviewOpen(false)}
             >
               <div
-                className="relative flex aspect-video max-h-[calc(100vh-96px)] w-[min(1280px,calc(100vw-96px))] items-center justify-center overflow-hidden rounded-[10px] bg-media-bg shadow-float"
+                className="relative flex aspect-video max-h-[calc(100vh-96px)] w-[min(1280px,calc(100vw-96px))] items-center justify-center overflow-hidden rounded-card bg-media-bg shadow-float"
                 onPointerDown={(event) => event.stopPropagation()}
               >
                 <div className="nodrag nopan absolute top-3 left-3 z-10 flex gap-1 rounded-pill bg-black/45 p-1 backdrop-blur">

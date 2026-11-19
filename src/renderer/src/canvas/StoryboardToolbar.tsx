@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import {
   GROUP_RATIOS,
   GROUP_RATIO_LABEL,
@@ -13,7 +13,7 @@ import {
 import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
 import { createStudioFromNodes } from '../studio/nodes'
-import { Button } from '../components/ui'
+import { Button, Popover } from '../components/ui'
 
 type MenuKind = 'ratio' | 'grid' | null
 
@@ -46,6 +46,8 @@ export function StoryboardToolbar() {
   const showToast = useUIStore((state) => state.showToast)
   const openStudio = useStudioStore((state) => state.openStudio)
 
+  const ratioRef = useRef<HTMLButtonElement>(null)
+  const gridRef = useRef<HTMLButtonElement>(null)
   const selected = nodes.filter((node) => node.selected)
   const group =
     selected.length === 1 &&
@@ -180,7 +182,7 @@ export function StoryboardToolbar() {
 
   return (
     <div
-      className="nodrag nopan fixed z-[92] flex h-[42px] items-center gap-0.5 rounded-[12px] border border-border bg-surface px-1.5 whitespace-nowrap shadow-float [animation:menu-in_120ms_ease-out] [translate:-50%_0]"
+      className="nodrag nopan fixed z-[92] flex h-[42px] items-center gap-0.5 rounded-card border border-border bg-surface px-1.5 whitespace-nowrap shadow-float [animation:menu-in_120ms_ease-out] [translate:-50%_0]"
       style={{ left: position.left, top: position.top }}
       onPointerDown={(event) => event.stopPropagation()}
     >
@@ -189,9 +191,10 @@ export function StoryboardToolbar() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal ${
+          className={`h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal ${
             menu === 'ratio' ? 'bg-surface-hover !text-fg' : ''
           }`}
+          ref={ratioRef}
           onClick={() => setMenu(menu === 'ratio' ? null : 'ratio')}
         >
           <Icon name="frame" size={14} />
@@ -199,7 +202,14 @@ export function StoryboardToolbar() {
           <Icon name="chevron-down" size={12} />
         </Button>
         {menu === 'ratio' ? (
-          <div className="absolute top-[38px] left-1/2 z-[93] min-w-[108px] -translate-x-1/2 rounded-[10px] border border-border bg-surface p-1.5 shadow-menu">
+          <Popover
+            open={menu === 'ratio'}
+            onClose={() => setMenu(null)}
+            anchorRef={ratioRef}
+            align="center"
+            width={120}
+            className="!p-1.5"
+          >
             {GROUP_RATIOS.map((value) => (
               <Button
                 key={value}
@@ -217,7 +227,7 @@ export function StoryboardToolbar() {
                 {GROUP_RATIO_LABEL[value]}
               </Button>
             ))}
-          </div>
+          </Popover>
         ) : null}
       </div>
 
@@ -226,9 +236,10 @@ export function StoryboardToolbar() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal ${
+          className={`h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal ${
             menu === 'grid' ? 'bg-surface-hover !text-fg' : ''
           }`}
+          ref={gridRef}
           onClick={() => setMenu(menu === 'grid' ? null : 'grid')}
         >
           <Icon name="grid" size={14} />
@@ -238,7 +249,14 @@ export function StoryboardToolbar() {
           <Icon name="chevron-down" size={12} />
         </Button>
         {menu === 'grid' ? (
-          <div className="absolute top-[38px] left-1/2 z-[93] min-w-[108px] -translate-x-1/2 rounded-[10px] border border-border bg-surface p-1.5 shadow-menu">
+          <Popover
+            open={menu === 'grid'}
+            onClose={() => setMenu(null)}
+            anchorRef={gridRef}
+            align="center"
+            width={120}
+            className="!p-1.5"
+          >
             {GRID_OPTIONS.map(([nextCols, nextRows]) => (
               <Button
                 key={`${nextCols}x${nextRows}`}
@@ -258,7 +276,7 @@ export function StoryboardToolbar() {
                 {nextCols}×{nextRows}
               </Button>
             ))}
-          </div>
+          </Popover>
         ) : null}
       </div>
 
@@ -266,7 +284,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
         title="按分镜比例与当前宫格（含间距）拼接，默认 2K 分辨率"
         disabled={stitching}
         onClick={() => void stitch()}
@@ -279,7 +297,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
         title="把分镜组内素材送入剪辑室"
         onClick={makeStudio}
       >
@@ -291,7 +309,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className={`h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal ${
+        className={`h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal ${
           group.data.showIndex === false ? '' : 'bg-surface-hover !text-fg'
         }`}
         title="显示或隐藏序号"
@@ -305,7 +323,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
         onClick={clearChildren}
       >
         <Icon name="trash" size={14} />
@@ -318,7 +336,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
         onClick={() => setGroupMode(group.id, 'normal')}
       >
         <Icon name="grid" size={14} />
@@ -329,7 +347,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal hover:!bg-danger hover:!text-fg-inverse"
+        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal hover:!bg-danger hover:!text-fg-inverse"
         onClick={() => ungroup(group.id)}
       >
         <Icon name="minimize" size={14} />

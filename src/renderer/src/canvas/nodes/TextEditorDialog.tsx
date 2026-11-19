@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { renderMarkdown, MARKDOWN_CLASS } from './text-markdown'
-import { Button, Dialog, IconButton, Textarea } from '../../components/ui'
+import {
+  Button,
+  DIALOG_SURFACE,
+  Dialog,
+  IconButton,
+  Textarea
+} from '../../components/ui'
 
 interface TextEditorDialogProps {
   open: boolean
@@ -84,8 +90,8 @@ export function TextEditorDialog({
       onClose={onClose}
       bare
       ariaLabel="编辑文本"
-      overlayClassName="fixed inset-0 z-[950] flex items-center justify-center bg-[color-mix(in_srgb,var(--canvas-bg)_72%,transparent)] p-6"
-      panelClassName="flex h-[min(720px,calc(100vh_-_48px))] w-[min(860px,calc(100vw_-_48px))] flex-col overflow-hidden rounded-[14px] border border-border bg-surface shadow-float"
+      overlayClassName="fixed inset-0 z-[950] flex items-center justify-center bg-overlay p-6"
+      panelClassName={`flex h-[min(720px,calc(100vh_-_48px))] w-[min(860px,calc(100vw_-_48px))] flex-col overflow-hidden ${DIALOG_SURFACE}`}
     >
       <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-divider pl-[18px] pr-[14px]">
         <div className="flex min-w-0 items-center gap-[7px] text-[13px] text-fg">
@@ -108,7 +114,7 @@ export function TextEditorDialog({
               type="button"
               variant="ghost"
               size="none"
-              className="h-[26px] !rounded-[6px] bg-surface-hover px-2.5 text-[11px] text-fg-muted hover:text-fg"
+              className="h-[26px] !rounded-md bg-surface-hover px-2.5 text-[11px] text-fg-muted hover:text-fg"
               onClick={() => insert(item.before, item.after ?? '')}
             >
               {item.label}
@@ -121,7 +127,7 @@ export function TextEditorDialog({
           type="button"
           variant="secondary"
           size="none"
-          className="ml-auto h-[26px] !rounded-[6px] px-3 text-[11px]"
+          className="ml-auto h-[26px] !rounded-md px-3 text-[11px]"
           onClick={() =>
             setView((current) => (current === 'edit' ? 'preview' : 'edit'))
           }

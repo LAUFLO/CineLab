@@ -26,11 +26,11 @@ export function StudioTopBar() {
   )
 
   return (
-    <header className="flex min-w-0 items-center justify-between gap-3 rounded-[10px] border border-border bg-surface px-3 [grid-area:top]">
+    <header className="flex min-w-0 items-center justify-between gap-3 rounded-card border border-border bg-surface px-3 [grid-area:top]">
       <div className="flex min-w-0 items-center gap-1.5">
         <IconButton
           label="返回画布"
-          className="!w-auto !rounded-[7px] !px-2"
+          className="!w-auto !rounded-md !px-2"
           onClick={close}
         >
           <Icon name="chevron-left" size={14} />
@@ -48,7 +48,7 @@ export function StudioTopBar() {
         <span className="h-3 w-px bg-divider" />
         {doc ? (
           <Select
-            className="!h-6 !w-[86px] !rounded-[6px] !px-[7px] !text-[11px]"
+            className="!h-6 !w-[86px] !rounded-md !px-[7px] !text-[11px]"
             value={ratio ? `${ratio.width}x${ratio.height}` : ''}
             options={[
               ...(ratio
@@ -80,14 +80,14 @@ export function StudioTopBar() {
       <div className="flex min-w-0 items-center gap-1.5">
         <IconButton
           label="切换素材池"
-          className="!w-auto !rounded-[7px] !px-2 !text-fg"
+          className="!w-auto !rounded-md !px-2 !text-fg"
           onClick={toggleLeft}
         >
           <Icon name="library" size={14} />
         </IconButton>
         <IconButton
           label="切换检查器"
-          className="!w-auto !rounded-[7px] !px-2 !text-fg"
+          className="!w-auto !rounded-md !px-2 !text-fg"
           onClick={toggleRight}
         >
           <Icon name="layers" size={14} />
@@ -97,7 +97,7 @@ export function StudioTopBar() {
         </span>
         <IconButton
           label="关闭"
-          className="!w-auto !rounded-[7px] !px-2 !text-fg"
+          className="!w-auto !rounded-md !px-2 !text-fg"
           onClick={close}
         >
           <Icon name="close" size={14} />

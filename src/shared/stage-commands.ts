@@ -12,7 +12,9 @@ import {
   type PreviewOptions,
   type StageBackground,
   type StageCamera,
+  type StageLightingOverride,
   type StageObject,
+  type StageProgram,
   type StageShot,
   type StageTransform,
   type StageVec3
@@ -56,6 +58,14 @@ export type StageCommand =
   | { type: 'setActionTrack'; shotId: string; track: ActionTrack }
   | { type: 'setActiveCamera'; cameraId: string | null }
   | { type: 'setBackground'; background: StageBackground }
+  | { type: 'setProgram'; program?: StageProgram }
+  | { type: 'setLighting'; lighting?: StageLightingOverride }
+  | {
+      type: 'replaceCoverage'
+      cameras: StageCamera[]
+      shots: StageShot[]
+      mode: 'append' | 'replace'
+    }
   | { type: 'captureFrame'; cameraId: string; shotId?: string }
   | {
       type: 'renderPreview'
@@ -80,6 +90,8 @@ export interface StageChange {
   activeCameraChanged: boolean
   backgroundChanged: boolean
   worldChanged: boolean
+  programChanged: boolean
+  lightingChanged: boolean
 }
 
 export interface StageCommandResult {
@@ -107,7 +119,9 @@ export function emptyStageChange(): StageChange {
     deletedShotIds: [],
     activeCameraChanged: false,
     backgroundChanged: false,
-    worldChanged: false
+    worldChanged: false,
+    programChanged: false,
+    lightingChanged: false
   }
 }
 
@@ -128,6 +142,8 @@ function mergeChange(target: StageChange, source: StageChange): void {
   target.activeCameraChanged ||= source.activeCameraChanged
   target.backgroundChanged ||= source.backgroundChanged
   target.worldChanged ||= source.worldChanged
+  target.programChanged ||= source.programChanged
+  target.lightingChanged ||= source.lightingChanged
 }
 
 function fail(
@@ -256,6 +272,9 @@ function validateShot(
 ): string | null {
   if (!isName(shot.id)) return '镜头 ID 无效'
   if (shot.name !== undefined && !isName(shot.name)) return '镜头名称无效'
+  if (shot.caption !== undefined && !isName(shot.caption, 500)) {
+    return '镜头字幕无效'
+  }
   if (!cameraIds.has(shot.cameraId)) return '镜头引用的机位不存在'
   if (
     !isFiniteNumber(shot.durationMs) ||
@@ -278,6 +297,39 @@ function validateShot(
     }
   }
 
+  return null
+}
+
+function validateProgram(
+  program: StageProgram,
+  shots: StageShot[]
+): string | null {
+  if (program.version !== 1) return '成片版本无效'
+  if (!Array.isArray(program.entries)) return '成片 entries 必须是数组'
+  if (program.entries.length > STAGE_LIMITS.maxProgramEntries) {
+    return `成片条数不能超过 ${STAGE_LIMITS.maxProgramEntries}`
+  }
+  const shotIds = new Set(shots.map((shot) => shot.id))
+  for (const [index, entry] of program.entries.entries()) {
+    if (!shotIds.has(entry.shotId)) {
+      return `成片第 ${index + 1} 条引用的镜头不存在`
+    }
+    if (
+      entry.startMs !== undefined &&
+      (!isFiniteNumber(entry.startMs) || entry.startMs < 0)
+    ) {
+      return `成片第 ${index + 1} 条的起点无效`
+    }
+    if (
+      entry.front !== undefined &&
+      (!isFiniteNumber(entry.front) ||
+        !Number.isInteger(entry.front) ||
+        entry.front < 0 ||
+        entry.front > 1_000_000)
+    ) {
+      return `成片第 ${index + 1} 条的优先级无效`
+    }
+  }
   return null
 }
 
@@ -555,6 +607,15 @@ export function applyStageCommand(
     case 'removeShot': {
       if (!findShot(doc, command.shotId)) return fail(doc, '镜头不存在')
       next.shots = doc.shots.filter((shot) => shot.id !== command.shotId)
+      if (next.program) {
+        const entries = next.program.entries.filter(
+          (entry) => entry.shotId !== command.shotId
+        )
+        if (entries.length !== next.program.entries.length) {
+          next.program = { ...next.program, entries }
+          change.programChanged = true
+        }
+      }
       change.deletedShotIds.push(command.shotId)
       break
     }
@@ -688,6 +749,111 @@ export function applyStageCommand(
       }
       next.background = { ...command.background }
       change.backgroundChanged = true
+      break
+    }
+
+    case 'replaceCoverage': {
+      if (command.mode === 'replace') {
+        const autoShotIds = new Set(
+          doc.shots
+            .filter((shot) => shot.source === 'auto')
+            .map((shot) => shot.id)
+        )
+        const autoCameraIds = new Set(
+          doc.cameras
+            .filter((camera) => camera.source === 'auto')
+            .map((camera) => camera.id)
+        )
+        next.shots = doc.shots.filter((shot) => !autoShotIds.has(shot.id))
+        next.cameras = doc.cameras.filter(
+          (camera) => !autoCameraIds.has(camera.id)
+        )
+        if (next.program) {
+          next.program = {
+            ...next.program,
+            entries: next.program.entries.filter(
+              (entry) => !autoShotIds.has(entry.shotId)
+            )
+          }
+        }
+        for (const shotId of autoShotIds) {
+          change.deletedShotIds.push(shotId)
+        }
+        for (const cameraId of autoCameraIds) {
+          change.deletedCameraIds.push(cameraId)
+        }
+      }
+
+      const cameraIds = new Set(next.cameras.map((camera) => camera.id))
+      const objectIds = new Set(next.objects.map((object) => object.id))
+
+      for (const camera of command.cameras) {
+        const error = validateCamera(camera)
+        if (error) return fail(doc, error)
+        if (cameraIds.has(camera.id)) {
+          return fail(doc, `机位 ${camera.id} 已存在`)
+        }
+        next.cameras.push(camera)
+        cameraIds.add(camera.id)
+        change.createdCameraIds.push(camera.id)
+      }
+
+      for (const shot of command.shots) {
+        const normalized: StageShot = {
+          ...shot,
+          cameraTrack: shot.cameraTrack
+            ? sortByTime(shot.cameraTrack)
+            : undefined,
+          actionTracks: shot.actionTracks?.map((track) => ({
+            ...track,
+            keys: sortByTime(track.keys)
+          }))
+        }
+        const error = validateShot(normalized, cameraIds, objectIds)
+        if (error) return fail(doc, error)
+        if (next.shots.some((item) => item.id === normalized.id)) {
+          return fail(doc, `镜头 ${normalized.id} 已存在`)
+        }
+        if (next.shots.length >= STAGE_LIMITS.maxShots) {
+          return fail(doc, '镜头数量超过上限')
+        }
+        next.shots.push(normalized)
+        change.createdShotIds.push(normalized.id)
+      }
+
+      if (next.program && command.shots.length > 0) {
+        next.program = {
+          ...next.program,
+          entries: [
+            ...next.program.entries,
+            ...command.shots.map((shot) => ({ shotId: shot.id }))
+          ]
+        }
+      }
+      change.programChanged = true
+      break
+    }
+
+    case 'setLighting': {
+      next.lighting = command.lighting
+        ? structuredClone(command.lighting)
+        : undefined
+      change.lightingChanged = true
+      break
+    }
+
+    case 'setProgram': {
+      if (command.program) {
+        const error = validateProgram(command.program, doc.shots)
+        if (error) return fail(doc, error)
+      }
+      next.program = command.program
+        ? {
+            ...command.program,
+            entries: command.program.entries.map((entry) => ({ ...entry }))
+          }
+        : undefined
+      change.programChanged = true
       break
     }
 

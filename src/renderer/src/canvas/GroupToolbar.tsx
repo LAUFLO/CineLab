@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import {
   GROUP_COLORS,
   GROUP_LABELS,
@@ -7,7 +7,7 @@ import {
 import { Icon } from '../components/Icon'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
-import { Button } from '../components/ui'
+import { Button, Popover } from '../components/ui'
 
 type MenuKind = 'arrange' | 'color'
 
@@ -37,6 +37,8 @@ export function GroupToolbar() {
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   const showToast = useUIStore((state) => state.showToast)
 
+  const arrangeRef = useRef<HTMLButtonElement>(null)
+  const colorRef = useRef<HTMLButtonElement>(null)
   const selected = nodes.filter((node) => node.selected)
   const group =
     selected.length === 1 &&
@@ -94,7 +96,7 @@ export function GroupToolbar() {
 
   return (
     <div
-      className="nodrag nopan fixed z-[92] flex h-[42px] items-center gap-0.5 rounded-[12px] border border-border bg-surface px-1.5 whitespace-nowrap shadow-float [animation:menu-in_120ms_ease-out] [translate:-50%_0]"
+      className="nodrag nopan fixed z-[92] flex h-[42px] items-center gap-0.5 rounded-card border border-border bg-surface px-1.5 whitespace-nowrap shadow-float [animation:menu-in_120ms_ease-out] [translate:-50%_0]"
       style={{ left: position.left, top: position.top }}
       onPointerDown={(event) => event.stopPropagation()}
     >
@@ -102,7 +104,7 @@ export function GroupToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
         onClick={() => startGroupRename(group.id)}
       >
         <Icon name="text" size={14} />
@@ -114,16 +116,24 @@ export function GroupToolbar() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal ${
+          className={`h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal ${
             menu === 'arrange' ? 'bg-surface-hover !text-fg' : ''
           }`}
+          ref={arrangeRef}
           onClick={() => setMenu(menu === 'arrange' ? null : 'arrange')}
         >
           <Icon name="grid" size={14} />
           <span>排列</span>
         </Button>
         {menu === 'arrange' ? (
-          <div className="absolute top-[38px] left-1/2 z-[93] min-w-[108px] -translate-x-1/2 rounded-[10px] border border-border bg-surface p-1.5 shadow-menu">
+          <Popover
+            open={menu === 'arrange'}
+            onClose={() => setMenu(null)}
+            anchorRef={arrangeRef}
+            align="center"
+            width={120}
+            className="!p-1.5"
+          >
             {(
               [
                 ['row', '横排'],
@@ -145,7 +155,7 @@ export function GroupToolbar() {
                 {label}
               </Button>
             ))}
-          </div>
+          </Popover>
         ) : null}
       </div>
 
@@ -154,9 +164,10 @@ export function GroupToolbar() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal ${
+          className={`h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal ${
             menu === 'color' ? 'bg-surface-hover !text-fg' : ''
           }`}
+          ref={colorRef}
           onClick={() => setMenu(menu === 'color' ? null : 'color')}
         >
           <span
@@ -165,7 +176,14 @@ export function GroupToolbar() {
           <span>颜色</span>
         </Button>
         {menu === 'color' ? (
-          <div className="absolute top-[38px] left-1/2 z-[93] grid min-w-0 -translate-x-1/2 grid-cols-[repeat(5,22px)] gap-1.5 rounded-[10px] border border-border bg-surface p-2 shadow-menu">
+          <Popover
+            open={menu === 'color'}
+            onClose={() => setMenu(null)}
+            anchorRef={colorRef}
+            align="center"
+            width={150}
+            className="!p-2 grid grid-cols-[repeat(5,22px)] gap-1.5"
+          >
             {GROUP_COLORS.map((color) => (
               <Button
                 key={color}
@@ -184,7 +202,7 @@ export function GroupToolbar() {
                 }}
               />
             ))}
-          </div>
+          </Popover>
         ) : null}
       </div>
 
@@ -194,7 +212,7 @@ export function GroupToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
         onClick={() => ungroup(group.id)}
       >
         <Icon name="minimize" size={14} />
@@ -205,7 +223,7 @@ export function GroupToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal hover:!bg-danger hover:!text-fg-inverse"
+        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal hover:!bg-danger hover:!text-fg-inverse"
         onClick={remove}
       >
         <Icon name="close" size={14} />

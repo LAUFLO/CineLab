@@ -21,7 +21,7 @@ export function ThoughtGroup({ tools }: { tools: AgentMessage[] }) {
 
   return (
     <details
-      className="group shrink-0 overflow-hidden rounded-[10px] border border-border bg-surface"
+      className="group shrink-0 overflow-hidden rounded-card border border-border bg-surface"
       open={open}
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >

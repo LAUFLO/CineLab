@@ -34,10 +34,10 @@ export function TemplateGrid({
       {filtered.map((template) => (
         <div
           key={template.id}
-          className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface-raised px-[14px] py-3 hover:border-border-strong"
+          className="flex flex-col gap-2 rounded-card border border-border bg-surface-raised px-[14px] py-3 hover:border-border-strong"
         >
           <div className="flex min-w-0 items-center gap-2">
-            <span className="shrink-0 rounded-[5px] border border-border bg-surface px-1.5 py-px text-[10px] text-fg-subtle">
+            <span className="shrink-0 rounded-md border border-border bg-surface px-1.5 py-px text-[10px] text-fg-subtle">
               {NODE_META[template.kind].label}
             </span>
             <span
@@ -67,7 +67,7 @@ export function TemplateGrid({
               variant="ghost"
               size="xs"
               title="编辑"
-              className="!h-6 !w-6 !rounded-[5px] !px-0 cursor-pointer !text-fg-subtle"
+              className="!h-6 !w-6 !rounded-md !px-0 cursor-pointer !text-fg-subtle"
               onClick={() => onEdit(template)}
             >
               <Icon name="edit" size={13} />
@@ -77,7 +77,7 @@ export function TemplateGrid({
               variant="ghost"
               size="xs"
               title="删除"
-              className="!h-6 !w-6 !rounded-[5px] !px-0 cursor-pointer !text-fg-subtle"
+              className="!h-6 !w-6 !rounded-md !px-0 cursor-pointer !text-fg-subtle"
               onClick={() => onDelete(template)}
             >
               <Icon name="trash" size={13} />
@@ -104,7 +104,7 @@ export function TemplateGrid({
         type="button"
         variant="secondary"
         size="none"
-        className="mt-2.5 h-8 gap-[5px] self-center rounded-[8px] px-3 text-xs"
+        className="mt-2.5 h-8 gap-[5px] self-center rounded-card px-3 text-xs"
         onClick={onCreate}
       >
         <Icon name="plus" size={14} />

@@ -5,7 +5,8 @@ import {
   type MediaInput,
   type ModeContext
 } from '@shared/provider-schema'
-import { MenuItem } from '../../components/ui'
+import type { RefObject } from 'react'
+import { MenuItem, Popover } from '../../components/ui'
 import type { ModelOption } from '../promptbar-model'
 
 interface ModelMenuProps {
@@ -14,6 +15,8 @@ interface ModelMenuProps {
   activeKey?: string
   requiredInputs: MediaInput[]
   modeContext: ModeContext
+  onClose: () => void
+  anchorRef: RefObject<HTMLElement | null>
   onSelect: (
     item: ModelOption,
     missing: MediaInput[],
@@ -25,9 +28,8 @@ interface ModelMenuProps {
 const inputLabel = (inputs: MediaInput[]): string =>
   inputs.map((input) => MEDIA_INPUT_LABEL[input]).join('·')
 
-const MENU =
-  'absolute bottom-8 left-0 z-[60] max-h-[280px] w-60 overflow-y-auto rounded-[10px] border border-border bg-surface p-1 shadow-menu'
-const ITEM = '!h-8 !rounded-[6px] !px-2 !py-0 text-xs'
+const MENU = '!max-h-[280px]'
+const ITEM = '!h-8 !rounded-md !px-2 !py-0 text-xs'
 const ITEM_IDLE = '!text-fg-muted hover:!text-fg'
 const ITEM_ACTIVE = '!text-fg'
 const ITEM_DISABLED =
@@ -39,12 +41,18 @@ export function ModelMenu({
   activeKey,
   requiredInputs,
   modeContext,
-  onSelect
+  onSelect,
+  onClose,
+  anchorRef
 }: ModelMenuProps) {
-  if (!open) return null
-
   return (
-    <div className={MENU}>
+    <Popover
+      open={open}
+      onClose={onClose}
+      anchorRef={anchorRef}
+      width={240}
+      className={MENU}
+    >
       {models.map((item) => {
         const missing = missingInputsFor(item.model, requiredInputs)
         const compatibility = modelModeCompatibility(item.model, modeContext)
@@ -81,6 +89,6 @@ export function ModelMenu({
           </MenuItem>
         )
       })}
-    </div>
+    </Popover>
   )
 }

@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { PrevisWorldRef } from '@shared/previs/world-gen'
+import type { StageLighting } from '@shared/stage-lighting'
 import { buildWorld3dContent } from './world-content'
 
 export interface StageWorldRender {
@@ -13,9 +14,10 @@ export interface StageWorldRender {
  * 世界内部的坐标转换由 world-content 负责（x/h/-y）。
  */
 export function createStageWorldRender(
-  ref: PrevisWorldRef
+  ref: PrevisWorldRef,
+  lighting?: StageLighting
 ): StageWorldRender {
-  const content = buildWorld3dContent({ world: ref })
+  const content = buildWorld3dContent({ world: ref }, { lighting })
   const group = new THREE.Group()
   group.name = 'stage-world'
 

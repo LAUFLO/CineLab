@@ -345,13 +345,13 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         ) : null}
 
         {selected && !multiSelected && !current && !isBusy ? (
-          <div className="nodrag nopan absolute bottom-[calc(100%+var(--node-toolbar-offset,10px))] left-1/2 z-10 flex h-9 items-center gap-px rounded-[10px] border border-border bg-surface px-1.5 text-fg whitespace-nowrap shadow-float [translate:-50%_0] [transform:scale(var(--canvas-zoom-inverse,1))] [transform-origin:bottom_center]">
+          <div className="nodrag nopan absolute bottom-[calc(100%+var(--node-toolbar-offset,10px))] left-1/2 z-10 flex h-9 items-center gap-px rounded-card border border-border bg-surface px-1.5 text-fg whitespace-nowrap shadow-float [translate:-50%_0] [transform:scale(var(--canvas-zoom-inverse,1))] [transform-origin:bottom_center]">
             {data.kind === 'text' ? (
               <Button
                 type="button"
                 variant="ghost"
                 size="none"
-                className="!h-7 gap-[3px] !rounded-[7px] !px-[5px] !text-xs !font-normal"
+                className="!h-7 gap-[3px] !rounded-md !px-[5px] !text-xs !font-normal"
                 title="编辑文本（支持 Markdown）"
                 onClick={(event) => {
                   event.stopPropagation()
@@ -366,7 +366,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               type="button"
               variant="ghost"
               size="none"
-              className="!h-7 gap-[3px] !rounded-[7px] !px-[5px] !text-xs !font-normal"
+              className="!h-7 gap-[3px] !rounded-md !px-[5px] !text-xs !font-normal"
               title="用当前节点创建剪辑室"
               onClick={createStudio}
             >
@@ -387,7 +387,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           <Icon name={NODE_ICON[data.kind]} size={12} />
           {editingTitle ? (
             <Input
-              className="nodrag nopan !h-5 !w-[140px] !rounded-[5px] !border-border-strong !bg-surface-hover !px-1.5 !text-xs"
+              className="nodrag nopan !h-5 !w-[140px] !rounded-md !border-border-strong !bg-surface-hover !px-1.5 !text-xs"
               value={titleDraft}
               autoFocus
               onChange={(event) => setTitleDraft(event.target.value)}
@@ -511,7 +511,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
                 {isBusy && data.kind !== 'audio' ? (
                   <div className="absolute inset-0 z-[2] flex flex-col items-center justify-center bg-surface-raised">
-                    <div className="rounded-[8px] border border-border bg-canvas px-3.5 py-2 text-xs text-fg">
+                    <div className="rounded-card border border-border bg-canvas px-3.5 py-2 text-xs text-fg">
                       {data.status === 'queued' ? '排队中…' : '生成中…'}
                     </div>
                     <Button
@@ -531,7 +531,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
                 {data.status === 'error' ? (
                   <div
-                    className="absolute inset-x-2 bottom-2 flex max-h-[52px] items-center gap-2 overflow-hidden rounded-[6px] bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] px-2 py-1.5 text-[11px] leading-[1.5] text-danger"
+                    className="absolute inset-x-2 bottom-2 flex max-h-[52px] items-center gap-2 overflow-hidden rounded-md bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] px-2 py-1.5 text-[11px] leading-[1.5] text-danger"
                     title={data.error}
                   >
                     <span className="line-clamp-2 min-w-0 flex-1">
@@ -541,7 +541,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                       type="button"
                       variant="ghost"
                       size="none"
-                      className="nodrag nopan !h-6 shrink-0 !rounded-[6px] !border !border-[color-mix(in_srgb,var(--danger)_45%,transparent)] !bg-transparent !px-2 !text-[11px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger"
+                      className="nodrag nopan !h-6 shrink-0 !rounded-md !border !border-[color-mix(in_srgb,var(--danger)_45%,transparent)] !bg-transparent !px-2 !text-[11px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger"
                       onClick={(event) => {
                         event.stopPropagation()
                         useSettingsStore.getState().openPanel('models')
@@ -553,7 +553,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                       type="button"
                       variant="ghost"
                       size="none"
-                      className="nodrag nopan !h-6 shrink-0 !rounded-[6px] !border !border-[color-mix(in_srgb,var(--danger)_45%,transparent)] !bg-transparent !px-2 !text-[11px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger"
+                      className="nodrag nopan !h-6 shrink-0 !rounded-md !border !border-[color-mix(in_srgb,var(--danger)_45%,transparent)] !bg-transparent !px-2 !text-[11px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger"
                       onClick={(event) => {
                         event.stopPropagation()
                         retryGeneration()
@@ -666,7 +666,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
       (current.kind === 'image' || current.kind === 'video')
         ? createPortal(
             <div
-              className="fixed inset-0 z-[250] flex items-center justify-center bg-black/[0.72] p-12 [&_img]:max-h-full [&_img]:max-w-full [&_img]:rounded-[10px] [&_img]:object-contain [&_img]:shadow-float [&_video]:max-h-full [&_video]:max-w-full [&_video]:rounded-[10px] [&_video]:object-contain [&_video]:shadow-float"
+              className="fixed inset-0 z-[250] flex items-center justify-center bg-overlay p-12 [&_img]:max-h-full [&_img]:max-w-full [&_img]:rounded-card [&_img]:object-contain [&_img]:shadow-float [&_video]:max-h-full [&_video]:max-w-full [&_video]:rounded-card [&_video]:object-contain [&_video]:shadow-float"
               onPointerDown={() => setPreviewOpen(false)}
             >
               {canPanorama ? (
@@ -674,7 +674,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="absolute top-5 right-5 z-[2] !h-[34px] !rounded-[8px] !border !border-white/24 !bg-black/55 !px-3.5 !text-xs !font-normal !text-white backdrop-blur-[8px] hover:!bg-black/[0.72] hover:!text-white"
+                  className="absolute top-5 right-5 z-[2] !h-[34px] !rounded-card !border !border-white/24 !bg-black/55 !px-3.5 !text-xs !font-normal !text-white backdrop-blur-[8px] hover:!bg-black/[0.72] hover:!text-white"
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={() => {
                     setPreviewOpen(false)
@@ -700,7 +700,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                 />
               ) : (
                 <div
-                  className="aspect-video max-h-[calc(100vh-96px)] w-[min(1280px,calc(100vw-96px))] overflow-hidden rounded-[10px] bg-media-bg shadow-float"
+                  className="aspect-video max-h-[calc(100vh-96px)] w-[min(1280px,calc(100vw-96px))] overflow-hidden rounded-card bg-media-bg shadow-float"
                   onPointerDown={(event) => event.stopPropagation()}
                 >
                   <VideoPlayer

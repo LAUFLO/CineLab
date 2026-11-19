@@ -10,6 +10,7 @@ export interface MenuProps {
   width?: number
   children: ReactNode
   className?: string
+  onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void
 }
 
 export function Menu({
@@ -19,7 +20,8 @@ export function Menu({
   y,
   width = 200,
   children,
-  className
+  className,
+  onContextMenu
 }: MenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -71,6 +73,8 @@ export function Menu({
     <div
       ref={menuRef}
       role="menu"
+      onPointerDown={(event) => event.stopPropagation()}
+      onContextMenu={onContextMenu}
       className={cn(
         'fixed z-[1000] rounded-card border border-border bg-surface-raised p-1 shadow-menu',
         className

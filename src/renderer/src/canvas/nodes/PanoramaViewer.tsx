@@ -171,7 +171,7 @@ export function PanoramaViewer({ open, src, onClose }: PanoramaViewerProps) {
           type="button"
           variant="ghost"
           size="none"
-          className="pointer-events-auto h-[34px] w-[34px] !rounded-[9px] border border-white/20 !bg-black/45 !text-white hover:!bg-black/70 hover:!text-white"
+          className="pointer-events-auto h-[34px] w-[34px] !rounded-card border border-white/20 !bg-black/45 !text-white hover:!bg-black/70 hover:!text-white"
           title="退出全景"
           onClick={onClose}
         >
@@ -180,12 +180,12 @@ export function PanoramaViewer({ open, src, onClose }: PanoramaViewerProps) {
       </div>
 
       {loading ? (
-        <div className="absolute top-1/2 left-1/2 z-[2] -translate-x-1/2 -translate-y-1/2 rounded-[8px] bg-black/60 px-3.5 py-2 text-xs text-white/75">
+        <div className="absolute top-1/2 left-1/2 z-[2] -translate-x-1/2 -translate-y-1/2 rounded-card bg-black/60 px-3.5 py-2 text-xs text-white/75">
           正在加载全景图…
         </div>
       ) : null}
       {error ? (
-        <div className="absolute top-1/2 left-1/2 z-[2] -translate-x-1/2 -translate-y-1/2 rounded-[8px] bg-black/60 px-3.5 py-2 text-xs text-[#ff9aa9]">
+        <div className="absolute top-1/2 left-1/2 z-[2] -translate-x-1/2 -translate-y-1/2 rounded-card bg-black/60 px-3.5 py-2 text-xs text-danger">
           {error}
         </div>
       ) : null}

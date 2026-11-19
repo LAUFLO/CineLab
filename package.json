@@ -20,6 +20,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,mjs,json}\"",
     "check:encryption": "node scripts/check-encryption.mjs",
     "check:docs": "node scripts/check-docs.mjs",
+    "check:ui": "node scripts/check-ui.mjs",
     "notify:release": "node scripts/notify-feishu.mjs",
     "models:check": "node scripts/models-check.mjs",
     "dist": "electron-vite build && electron-builder",

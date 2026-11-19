@@ -3,7 +3,7 @@
 日期：2026-11-18
 状态：现行
 适用版本：v0.2.1
-最后核对：2026-11-18
+最后核对：2026-11-19
 
 > 远程仓库只保留稳定契约、参考文档和一份精简的归档。过程记录、截图和批次 evidence 放本地 `.opencode/`，不入库。
 
@@ -33,6 +33,7 @@
 | [doc-impact.md](doc-impact.md) | 代码路径 → 文档影响映射 |
 | [studio-node-live-preview-plan.md](studio-node-live-preview-plan.md) | 剪辑室节点实时预览，待实施 |
 | [previs-adaptation-plan.md](previs-adaptation-plan.md) | Previs 语义镜头、程序化世界与场景图白膜，M1–M5 已完成 |
+| [stage-previs-upgrade-plan.md](stage-previs-upgrade-plan.md) | 导演台整片/每镜预演、重叠优先级、交付物、光照预设与人物动作改造，待实施 |
 
 ## 3. 历史归档
 

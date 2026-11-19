@@ -8,9 +8,9 @@ import { useUIStore } from '../stores/ui'
 import { duplicateSelectionDeep } from './context-actions'
 import { requestDeleteSelection } from './delete-actions'
 import { createStudioFromNodes } from '../studio/nodes'
-import { Button } from '../components/ui'
+import { Button, Popover } from '../components/ui'
 
-const BTN_CLASS = 'h-8 gap-1.5 rounded-lg px-2.5 text-[13px] !font-normal'
+const BTN_CLASS = 'h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal'
 
 export function MultiSelectBar() {
   const nodes = useCanvasStore((state) => state.nodes)
@@ -30,22 +30,7 @@ export function MultiSelectBar() {
     top: number
   } | null>(null)
   const [groupMenuOpen, setGroupMenuOpen] = useState(false)
-  const groupMenuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!groupMenuOpen) return
-    const onPointerDown = (event: PointerEvent): void => {
-      if (
-        groupMenuRef.current &&
-        event.target instanceof Node &&
-        !groupMenuRef.current.contains(event.target)
-      ) {
-        setGroupMenuOpen(false)
-      }
-    }
-    window.addEventListener('pointerdown', onPointerDown)
-    return () => window.removeEventListener('pointerdown', onPointerDown)
-  }, [groupMenuOpen])
+  const groupTriggerRef = useRef<HTMLButtonElement>(null)
 
   useLayoutEffect(() => {
     if (selected.length < 2) {
@@ -208,14 +193,15 @@ export function MultiSelectBar() {
 
   return (
     <div
-      className="fixed z-[90] flex h-[42px] -translate-x-1/2 items-center gap-0.5 whitespace-nowrap rounded-xl border border-border bg-surface px-1.5 shadow-float animate-[menu-in_120ms_ease-out] nodrag nopan"
+      className="fixed z-[90] flex h-[42px] -translate-x-1/2 items-center gap-0.5 whitespace-nowrap rounded-card border border-border bg-surface px-1.5 shadow-float animate-[menu-in_120ms_ease-out] nodrag nopan"
       style={{ left: position.left, top: position.top }}
       onPointerDown={(event) => event.stopPropagation()}
     >
       {canGroup ? (
         canStoryboard ? (
-          <div className="relative" ref={groupMenuRef}>
+          <div>
             <Button
+              ref={groupTriggerRef}
               type="button"
               variant="ghost"
               size="none"
@@ -227,7 +213,14 @@ export function MultiSelectBar() {
               <Icon name="chevron-down" size={12} />
             </Button>
             {groupMenuOpen ? (
-              <div className="absolute left-0 top-[46px] z-[95] min-w-[148px] rounded-[10px] border border-border bg-surface p-1.5 shadow-menu">
+              <Popover
+                open={groupMenuOpen}
+                onClose={() => setGroupMenuOpen(false)}
+                anchorRef={groupTriggerRef}
+                align="start"
+                width={160}
+                className="!p-1.5"
+              >
                 <Button
                   type="button"
                   variant="ghost"
@@ -252,7 +245,7 @@ export function MultiSelectBar() {
                 >
                   合并分镜组
                 </Button>
-              </div>
+              </Popover>
             ) : null}
           </div>
         ) : (

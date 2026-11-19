@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { NODE_KINDS, NODE_META, type NodeKind } from '@shared/canvas-schema'
 import type { TemplateInput } from '@shared/library-schema'
-import { Button, Dialog, Input, Select, Textarea } from '../../components/ui'
+import {
+  Button,
+  DIALOG_PANEL,
+  Dialog,
+  Input,
+  Select,
+  Textarea
+} from '../../components/ui'
 
 interface TemplateDialogProps {
   initial: TemplateInput | null
@@ -34,8 +41,8 @@ export function TemplateDialog({
       onClose={onCancel}
       bare
       ariaLabel={initial ? '编辑提示词模板' : '新建提示词模板'}
-      overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-black/50"
-      panelClassName="w-[560px] rounded-[12px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-menu"
+      overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-overlay"
+      panelClassName={`w-[560px] ${DIALOG_PANEL}`}
     >
       <div className="mb-[14px] text-sm text-fg">
         {initial ? '编辑提示词模板' : '新建提示词模板'}
@@ -48,7 +55,7 @@ export function TemplateDialog({
           onChange={(event) => setName(event.target.value)}
           placeholder="例如：雪夜电影感"
           autoFocus
-          className="!h-[34px] !rounded-[8px] !bg-surface-hover !px-2.5 !text-[13px]"
+          className="!h-[34px] !rounded-card !bg-surface-hover !px-2.5 !text-[13px]"
         />
       </label>
 
@@ -67,7 +74,7 @@ export function TemplateDialog({
       <label className="mb-[14px] flex flex-col gap-1.5">
         <span className="text-xs text-fg-muted">提示词</span>
         <Textarea
-          className="!min-h-[76px] resize-y !rounded-[8px] !bg-surface-hover !px-2.5 !py-2 !text-[13px]"
+          className="!min-h-[76px] resize-y !rounded-card !bg-surface-hover !px-2.5 !py-2 !text-[13px]"
           rows={6}
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}

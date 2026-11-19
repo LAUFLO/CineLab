@@ -49,7 +49,7 @@ export function BezierEditor({
   return (
     <svg
       ref={svgRef}
-      className="mt-0.5 mb-1 h-auto w-full touch-none rounded-[6px]"
+      className="mt-0.5 mb-1 h-auto w-full touch-none rounded-md"
       viewBox={`0 0 ${width} ${height}`}
       onPointerMove={update}
       onPointerUp={() => setDragging(null)}

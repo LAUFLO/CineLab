@@ -230,7 +230,7 @@ export function GeneralSettingsSection() {
   return (
     <div className="flex flex-col">
       <div className="mb-3 text-[13px] font-semibold text-fg">启动与项目</div>
-      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow
           title="启动时打开最近项目"
           hint="关闭后启动进入项目中心，不自动打开上次的项目"
@@ -294,7 +294,7 @@ export function GeneralSettingsSection() {
       </div>
 
       <div className="mb-3 text-[13px] font-semibold text-fg">画布与交互</div>
-      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow title="网格吸附" hint="拖动节点时按 16px 网格对齐">
           <Switch
             checked={preferences.canvas.snapToGrid}
@@ -348,7 +348,7 @@ export function GeneralSettingsSection() {
       </div>
 
       <div className="mb-3 text-[13px] font-semibold text-fg">生成与提示词</div>
-      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         {MODEL_GROUPS.map((group) => (
           <SettingRow
             key={group.key}
@@ -415,7 +415,7 @@ export function GeneralSettingsSection() {
       </div>
 
       <div className="mb-3 text-[13px] font-semibold text-fg">通知与更新</div>
-      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow
           title="生成完成通知"
           hint="窗口不在前台时，生成完成会发送系统通知"
@@ -448,7 +448,7 @@ export function GeneralSettingsSection() {
       </div>
 
       <div className="mb-3 text-[13px] font-semibold text-fg">存储与数据</div>
-      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow
           title="缩略图缓存"
           hint={
@@ -512,7 +512,7 @@ export function GeneralSettingsSection() {
       </div>
 
       <div className="mb-3 text-[13px] font-semibold text-fg">界面</div>
-      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow title="界面缩放" hint="主题仍在「外观」分区调整">
           <Select
             value={String(preferences.ui.scale)}
@@ -523,7 +523,7 @@ export function GeneralSettingsSection() {
       </div>
 
       <div className="mb-3 text-[13px] font-semibold text-fg">网络与请求</div>
-      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow
           title="模型请求代理"
           hint="模型接口和素材下载使用的网络代理"
@@ -562,7 +562,7 @@ export function GeneralSettingsSection() {
       </div>
 
       <div className="mb-3 text-[13px] font-semibold text-fg">高级</div>
-      <div className="mb-[22px] flex flex-col overflow-hidden rounded-[10px] border border-border bg-surface-raised">
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow
           title="备份通用设置"
           hint="导出或导入 preferences.json，不含模型密钥"

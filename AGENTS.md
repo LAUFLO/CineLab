@@ -2,7 +2,7 @@
 
 # CineLab
 
-本地运行的 AI 创作无限画布工具。1:1 复刻 LibTV 画布体验，模型接入完全开放，数据存在本地项目文件夹。
+本地运行的 AI 创作无限画布工具。围绕无限画布与节点式生成构建，模型接入完全开放，数据存在本地项目文件夹。
 
 技术栈：Electron 45 + React 19 + React Flow 12 + Zustand + Tailwind 4 + TypeScript 7。
 

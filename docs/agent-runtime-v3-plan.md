@@ -680,7 +680,11 @@ pi 的 `createAgentSession` 支持子会话和 `SessionManager` 分支。CineLab
 - 阻塞：
   - 本机透明加密导致 `asar: true` 时 app 文件在 app.asar 内偏移错乱，生成的安装包不可用；需要在 CI 或加密白名单环境重建；
   - `CineLab.exe` 直接构建仍遇 `EXDEV`；用预解压 `electronDist` 可绕过并产出安装包；
-- 四空间：canvas / stage 已通过；timeline / film 需要对应项目数据后复测；
+- 四空间回归：
+  - canvas：真实模型 `canvas_get` 通过；
+  - stage：真实模型 `stage_add_object` 通过；
+  - timeline：合成 5 秒视频片段，`timeline_get` / `timeline_set_video` 桥接测试通过；
+  - film：合成 `FilmStudy`，`film_study_get` 桥接测试通过；
 - 前端 activity 事件 dispatch 已验证，待真实 UI 截图复测。
 
 ## 10. 测试与验收

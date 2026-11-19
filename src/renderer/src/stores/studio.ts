@@ -54,3 +54,9 @@ export const useStudioStore = create<StudioStore>((set) => ({
     }),
   setTab: (tab) => set({ tab })
 }))
+
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  ;(
+    window as unknown as { __studioStore?: typeof useStudioStore }
+  ).__studioStore = useStudioStore
+}

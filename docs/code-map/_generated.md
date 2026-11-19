@@ -9,7 +9,7 @@
 |---|---|---|---|
 | 01 | [画布](./01-canvas.md) | 70 | 23268 |
 | 02 | [生成与模型](./02-generation.md) | 50 | 11170 |
-| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9420 |
+| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9426 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20196 |
 | 05 | [拉片室](./05-film-study.md) | 6 | 2863 |
 | 06 | [CineBot 与 Agent](./06-agent.md) | 49 | 16483 |
@@ -173,6 +173,8 @@
 - `src/main/settings/__tests__/models-config.test.ts`
 - `src/main/stage/__tests__/storage.test.ts`
 - `src/main/update/__tests__/fallback.test.ts`
+- `src/renderer/src/agent/__tests__/filmBridge.test.ts`
+- `src/renderer/src/agent/__tests__/timelineBridge.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/text-markdown.test.ts`
 - `src/renderer/src/components/ui/native-controls.test.ts`
 - `src/renderer/src/stores/__tests__/canvas.test.ts`

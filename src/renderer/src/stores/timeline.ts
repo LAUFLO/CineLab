@@ -124,7 +124,7 @@ export const useTimelineStore = create<TimelineStore>((set, get) => ({
   togglePlay: () => set((state) => ({ playing: !state.playing })),
   setReferenceIssues: (referenceIssues) => set({ referenceIssues })
 }))
-if (import.meta.env.DEV) {
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   ;(
     window as unknown as { __timelineStore?: typeof useTimelineStore }
   ).__timelineStore = useTimelineStore

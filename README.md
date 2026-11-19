@@ -33,7 +33,7 @@
 
 CineLab 是一个本地优先的 AI 创作工作台。图片、视频、音频和文本生成都在同一张无限画布上完成，节点、连线、素材、生成历史和 Agent 会话都保存在你自己的 `.cinelab` 项目文件夹里。
 
-它把创作过程拆成四个工作台：无限画布负责素材和生成，剪辑室负责时间线，导演台负责 3D 预演，逐帧拉片负责分镜拆解。CineBot 用自然语言操作这四个空间，也可以把模型类操作登记成生成提案，等你确认后再提交。
+它把创作过程拆成四个工作台：无限画布负责素材和生成，剪辑室负责时间线，导演台负责 3D 预演，逐帧拉片把参考片拆成可生成的分镜和复刻工作流。CineBot 用自然语言操作这四个空间，也可以把模型类操作登记成生成提案，等你确认后再提交。
 
 CineLab 的模型层完全开放：供应商、模型、Base URL、API Key、请求头和参数都由你自己配置。可以直接接任意 OpenAI 兼容接口、自建服务和中转站，也可以用自定义 HTTP 模板适配其他协议；内置预设只是可选快捷方式，不限制你接入任何模型。
 
@@ -76,10 +76,13 @@ CineLab 的模型层完全开放：供应商、模型、Base URL、API Key、请
 
 ### 逐帧拉片
 
-- 视频节点 → 拉片节点 → 自动生成分镜组和分镜表
-- 镜头检测或固定间隔拆分
-- AI 描述景别、机位、运镜、光线、画面和提示词
-- 段落编辑、内嵌字幕提取、Markdown 和拉片包导出
+- 视频节点 → 拉片节点，自动切镜并抽首/中/尾帧
+- 逐镜理解景别、机位、运镜、光线、画面、台词和提示词
+- 确定性取证：静帧、静态图推拉、代码渲染、录屏、实拍、AI、3D，并给出证据
+- 自动分场，按场生成镜头三节点（首帧、尾帧、文本）
+- 角色表、风格档案、场景与音频组，可直接沉淀到资产库
+- 选角/选景后一键复刻：为每个镜头建生成节点并连好首尾帧与提示词，只建图、不自动扣费
+- 单镜重跑，只更新该镜的帧、描述和提示词
 
 ### 本地媒体
 
@@ -101,12 +104,12 @@ CineLab 的模型层完全开放：供应商、模型、Base URL、API Key、请
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
 
-当前版本 **v0.3.2**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **v0.4.0**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 | 平台 | 推荐文件 | 系统要求 |
 |---|---|---|
-| Windows | `CineLab-0.3.2-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.3.2-arm64.dmg` | macOS 12+，Apple Silicon |
+| Windows | `CineLab-0.4.0-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.4.0-arm64.dmg` | macOS 12+，Apple Silicon |
 
 ### Windows
 
@@ -141,12 +144,13 @@ Bug 和功能建议请提到 [GitHub Issues](https://github.com/LAUFLO/CineLab/i
 ## 文档
 
 - [文档索引](docs/README.md)：现行文档、已实施方案和历史归档
+- [代码地图](docs/code-map/README.md)：按模块查现状、入口和已有实现
 - [更新日志](CHANGELOG.md)：每个版本的变更记录
 - [技术架构](docs/architecture.md)：主进程架构、项目文件格式、Provider 接口、任务系统
 - [模型配置](docs/models.md)：`models.json` 格式与 Provider 配置
 - [界面规格](docs/ui-spec.md)：布局尺寸、节点结构、prompt bar、工具栏清单
 - [CineBot 能力清单](docs/agent-capabilities.md)：当前工具、参数校验、确认规则和回合撤销
-- [剪辑室](docs/archive/clip-studio-plan.md) · [导演台](docs/archive/director-stage-plan.md)
+- [剪辑室](docs/code-map/03-clip-studio.md) · [导演台](docs/code-map/04-director-stage.md) · [逐帧拉片](docs/code-map/05-film-study.md)
 
 ## 开发
 

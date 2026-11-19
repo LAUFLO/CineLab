@@ -1,13 +1,9 @@
-import { useEffect, useRef } from 'react'
 import { useCanvasStore } from '../stores/canvas'
 import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
 import { createStudioAt } from '../studio/nodes'
 import { pasteAt, uploadMaterialsAt } from './context-actions'
-import { Button } from '../components/ui'
-
-const MENU_WIDTH = 224
-const MENU_HEIGHT = 304
+import { Button, Menu } from '../components/ui'
 
 export function CanvasContextMenu() {
   const menu = useUIStore((state) => state.contextMenu)
@@ -20,59 +16,23 @@ export function CanvasContextMenu() {
   const undo = useCanvasStore((state) => state.undo)
   const redo = useCanvasStore((state) => state.redo)
 
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!menu) return
-
-    const onPointerDown = (event: PointerEvent): void => {
-      if (
-        ref.current &&
-        event.target instanceof Node &&
-        !ref.current.contains(event.target)
-      ) {
-        close()
-      }
-    }
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') close()
-    }
-    const onResize = (): void => close()
-
-    window.addEventListener('pointerdown', onPointerDown)
-    window.addEventListener('keydown', onKeyDown)
-    window.addEventListener('resize', onResize)
-    return () => {
-      window.removeEventListener('pointerdown', onPointerDown)
-      window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('resize', onResize)
-    }
-  }, [menu, close])
-
   if (!menu) return null
 
-  const left = Math.max(
-    12,
-    Math.min(menu.screen.x, window.innerWidth - MENU_WIDTH - 12)
-  )
-  const top = Math.max(
-    12,
-    Math.min(menu.screen.y, window.innerHeight - MENU_HEIGHT - 12)
-  )
-
   return (
-    <div
-      ref={ref}
-      className="fixed z-[120] rounded-[12px] border border-border bg-surface p-1.5 shadow-menu [animation:menu-in_120ms_ease-out]"
-      style={{ left, top, width: MENU_WIDTH }}
-      onPointerDown={(event) => event.stopPropagation()}
+    <Menu
+      open
+      onClose={close}
+      x={menu.screen.x}
+      y={menu.screen.y}
+      width={224}
+      className="!p-1.5 [animation:menu-in_120ms_ease-out]"
       onContextMenu={(event) => event.preventDefault()}
     >
       <Button
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           void uploadMaterialsAt(menu.flow)
@@ -85,7 +45,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         disabled
       >
         <span>保存到我的资产</span>
@@ -95,7 +55,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           openMenu({ screen: menu.screen, flow: menu.flow })
@@ -108,7 +68,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           const studioId = createStudioAt(menu.flow)
@@ -124,7 +84,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         disabled={!canUndo}
         onClick={() => {
           undo()
@@ -139,7 +99,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         disabled={!canRedo}
         onClick={() => {
           redo()
@@ -156,7 +116,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-lg px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           void pasteAt(menu.flow)
@@ -165,6 +125,6 @@ export function CanvasContextMenu() {
         <span>粘贴</span>
         <span className="text-xs text-fg-subtle">Ctrl+V</span>
       </Button>
-    </div>
+    </Menu>
   )
 }

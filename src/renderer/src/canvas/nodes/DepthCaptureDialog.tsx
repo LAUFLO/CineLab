@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ComponentStatus } from '@shared/components'
 import { Icon } from '../../components/Icon'
-import { Button, Dialog, IconButton, Select } from '../../components/ui'
+import { Button, DIALOG_PANEL, Dialog, IconButton, Select } from '../../components/ui'
 
 type Quality = 'fast' | 'standard' | 'long'
 
@@ -59,8 +59,8 @@ export function DepthCaptureDialog({
       onClose={checking ? () => {} : onClose}
       bare
       ariaLabel="深度捕捉"
-      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-black/55 px-6 py-12"
-      panelClassName="w-[380px] rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
+      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-overlay px-6 py-12"
+      panelClassName={`w-[380px] ${DIALOG_PANEL}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>

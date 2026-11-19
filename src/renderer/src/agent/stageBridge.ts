@@ -21,6 +21,11 @@ import type {
 } from '@shared/stage-schema'
 import type { PrevisWorldRef } from '@shared/previs/world-gen'
 import { solveStageShotIntent } from '@shared/stage-shot-intent'
+import { buildAutoCoverage } from '@shared/stage-auto-coverage'
+import {
+  buildDialogueCoverage,
+  parseDialogue
+} from '@shared/stage-dialogue'
 import {
   isStageNode,
   useCanvasStore
@@ -586,6 +591,101 @@ export async function executeStageTool(
     }
   }
 
+  if (call.name === 'stage_auto_coverage') {
+    await ensureStageOpen(nodeId)
+    const { doc } = await readDoc(nodeId)
+    const subjectIds = Array.isArray(call.args.subjectIds)
+      ? call.args.subjectIds.map((id) => String(id))
+      : []
+    const rawMode = String(call.args.mode ?? 'auto')
+    const mode = (
+      ['auto', 'single', 'dialogue', 'group'].includes(rawMode)
+        ? rawMode
+        : 'auto'
+    ) as 'auto' | 'single' | 'dialogue' | 'group'
+    const pace =
+      typeof call.args.pace === 'number' ? call.args.pace : 1
+    const replace = call.args.replace !== false
+    const plan = buildAutoCoverage(doc, {
+      subjectIds,
+      mode,
+      pace,
+      replace
+    })
+    if (plan.shots.length === 0) {
+      return {
+        ok: false,
+        error: plan.notes[0] ?? '自动分镜没有生成镜头'
+      }
+    }
+    const updated = await applyToStage(
+      nodeId,
+      [
+        {
+          type: 'replaceCoverage',
+          cameras: plan.cameras,
+          shots: plan.shots,
+          mode: replace ? 'replace' : 'append'
+        }
+      ],
+      call.turnId
+    )
+    return {
+      ok: true,
+      result: {
+        shotIds: plan.shots.map((shot) => shot.id),
+        shotCount: plan.shots.length,
+        shotTotal: updated.shots.length,
+        notes: plan.notes
+      },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_dialogue_coverage') {
+    await ensureStageOpen(nodeId)
+    const script = String(call.args.script ?? '')
+    const lines = parseDialogue(script)
+    if (lines.length === 0) {
+      return {
+        ok: false,
+        error: '没有识别到对白，请按「角色：台词」每行一句'
+      }
+    }
+    const { doc } = await readDoc(nodeId)
+    const pace =
+      typeof call.args.pace === 'number' ? call.args.pace : 1
+    const plan = buildDialogueCoverage(doc, lines, { pace })
+    if (plan.shots.length === 0) {
+      return {
+        ok: false,
+        error: plan.notes[0] ?? '按对白分镜没有生成镜头'
+      }
+    }
+    const updated = await applyToStage(
+      nodeId,
+      [
+        {
+          type: 'replaceCoverage',
+          cameras: plan.cameras,
+          shots: plan.shots,
+          mode: 'replace'
+        }
+      ],
+      call.turnId
+    )
+    return {
+      ok: true,
+      result: {
+        shotIds: plan.shots.map((shot) => shot.id),
+        shotCount: plan.shots.length,
+        shotTotal: updated.shots.length,
+        notes: plan.notes
+      },
+      change: stageChange()
+    }
+  }
+
   if (call.name === 'stage_set_world') {
     await ensureStageOpen(nodeId)
     const world = call.args.world
@@ -714,22 +814,39 @@ export async function executeStageTool(
   }
 
   if (call.name === 'stage_export_preview') {
-    const shotId = String(call.args.shotId ?? '')
     const { doc } = await readDoc(nodeId)
-    if (!doc.shots.some((shot) => shot.id === shotId)) {
+    const scope = call.args.scope === 'program' ? 'program' : 'shot'
+    const shotId =
+      typeof call.args.shotId === 'string' ? call.args.shotId : ''
+    if (scope === 'shot' && !doc.shots.some((shot) => shot.id === shotId)) {
       return { ok: false, error: '找不到这个镜头' }
     }
     const stageNodeEntry = stageNode(nodeId)
     const resolution =
       call.args.resolution === '1080p' ? '1080p' : '720p'
     const fps = call.args.fps === 30 ? 30 : 24
+    const items =
+      call.args.items && typeof call.args.items === 'object'
+        ? (call.args.items as Parameters<
+            typeof exportStagePreviewToCanvas
+          >[0]['items'])
+        : undefined
+    const frameDensity =
+      call.args.frameDensity === 'first-only'
+        ? 'first-only'
+        : call.args.frameDensity === 'three'
+          ? 'three'
+          : undefined
 
     const result = await exportStagePreviewToCanvas({
       stageNodeId: stageNodeEntry.id,
       stageId: doc.stageId,
-      shotId,
+      scope,
+      ...(scope === 'shot' ? { shotId } : {}),
       resolution,
       fps,
+      ...(items ? { items } : {}),
+      ...(frameDensity ? { frameDensity } : {}),
       turnId: call.turnId
     })
 
@@ -741,7 +858,10 @@ export async function executeStageTool(
         path: result.path,
         nodeId: result.nodeIds[0] ?? null,
         width: result.asset.width ?? null,
-        height: result.asset.height ?? null
+        height: result.asset.height ?? null,
+        clipCount: result.clips?.length ?? 0,
+        frameCount: result.frames?.length ?? 0,
+        documentCount: result.documents?.length ?? 0
       },
       change
     }

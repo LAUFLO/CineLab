@@ -35,9 +35,9 @@ function formatTime(value: string): string {
 const ACTION_BAR = 'flex gap-0.5 opacity-0 group-hover:opacity-100'
 const ACTION_BAR_STATIC = 'flex gap-0.5 opacity-100'
 const ACTION_BUTTON =
-  'h-7 w-7 !rounded-[7px] hover:!bg-surface hover:!text-fg'
+  'h-7 w-7 !rounded-md hover:!bg-surface hover:!text-fg'
 const THUMB =
-  'flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[8px]'
+  'flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-card'
 const THUMB_ERROR =
   'bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] text-danger'
 const ROW_SUB = 'mt-[3px] flex gap-2.5 text-[11px]'
@@ -166,7 +166,7 @@ export function HistoryPanel() {
       onPointerDown={close}
     >
       <div
-        className="flex max-h-[min(680px,calc(100vh-96px))] w-[760px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface shadow-menu"
+        className="flex max-h-[min(680px,calc(100vh-96px))] w-[760px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface-raised shadow-float"
         onPointerDown={(event) => event.stopPropagation()}
       >
         <header className="flex h-[54px] shrink-0 items-center gap-2.5 border-b border-divider pl-5 pr-3.5 text-[15px] font-semibold">
@@ -194,7 +194,7 @@ export function HistoryPanel() {
               {failures.map((entry) => (
                 <div
                   key={`fail:${entry.nodeId}:${entry.createdAt}`}
-                  className="flex items-center gap-3 rounded-[10px] px-2.5 py-2 hover:bg-surface-hover"
+                  className="flex items-center gap-3 rounded-card px-2.5 py-2 hover:bg-surface-hover"
                 >
                   <div className={`${THUMB} ${THUMB_ERROR}`}>
                     <Icon
@@ -222,7 +222,7 @@ export function HistoryPanel() {
                     {entry.status === 'error' ? (
                       <Button
                         type="button"
-                        className="h-7 px-2 text-xs !rounded-[7px] !font-normal !text-fg hover:!bg-surface"
+                        className="h-7 px-2 text-xs !rounded-md !font-normal !text-fg hover:!bg-surface"
                         title="重试"
                         onClick={() => retry(entry)}
                         variant="ghost"
@@ -247,7 +247,7 @@ export function HistoryPanel() {
               {items.map((item) => (
                 <div
                   key={item.key}
-                  className="group flex items-center gap-3 rounded-[10px] px-2.5 py-2 hover:bg-surface-hover"
+                  className="group flex items-center gap-3 rounded-card px-2.5 py-2 hover:bg-surface-hover"
                 >
                   <div className={`${THUMB} bg-surface-hover text-fg-subtle`}>
                     {item.output.kind === 'image' ? (

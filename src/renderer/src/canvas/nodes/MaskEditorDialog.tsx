@@ -5,7 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent
 } from 'react'
 import { Icon } from '../../components/Icon'
-import { Button, Dialog, IconButton, Input } from '../../components/ui'
+import { Button, DIALOG_PANEL, Dialog, IconButton, Input } from '../../components/ui'
 
 interface MaskEditorDialogProps {
   open: boolean
@@ -242,8 +242,8 @@ export function MaskEditorDialog({
       onClose={busy ? () => {} : onClose}
       bare
       ariaLabel={title}
-      overlayClassName="fixed inset-0 z-[250] flex items-center justify-center bg-black/[0.62] px-6 py-10"
-      panelClassName="flex w-[min(760px,calc(100vw-48px))] max-h-[calc(100vh-80px)] flex-col gap-3 rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
+      overlayClassName="fixed inset-0 z-[250] flex items-center justify-center bg-overlay px-6 py-10"
+      panelClassName={`flex w-[min(760px,calc(100vw-48px))] max-h-[calc(100vh-80px)] flex-col gap-3 ${DIALOG_PANEL}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -268,7 +268,7 @@ export function MaskEditorDialog({
           type="button"
           variant="secondary"
           size="none"
-          className="h-[30px] !rounded-[7px] bg-surface-hover px-3 text-xs disabled:!opacity-45 data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
+          className="h-[30px] !rounded-md bg-surface-hover px-3 text-xs disabled:!opacity-45 data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
           data-active={tool === 'brush' ? '' : undefined}
           onClick={() => setTool('brush')}
         >
@@ -278,7 +278,7 @@ export function MaskEditorDialog({
           type="button"
           variant="secondary"
           size="none"
-          className="h-[30px] !rounded-[7px] bg-surface-hover px-3 text-xs disabled:!opacity-45 data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
+          className="h-[30px] !rounded-md bg-surface-hover px-3 text-xs disabled:!opacity-45 data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
           data-active={tool === 'rect' ? '' : undefined}
           onClick={() => setTool('rect')}
         >
@@ -288,7 +288,7 @@ export function MaskEditorDialog({
           type="button"
           variant="secondary"
           size="none"
-          className="h-[30px] !rounded-[7px] bg-surface-hover px-3 text-xs disabled:!opacity-45 data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
+          className="h-[30px] !rounded-md bg-surface-hover px-3 text-xs disabled:!opacity-45 data-[active]:border-border-selected data-[active]:bg-surface-raised data-[active]:text-fg"
           data-active={tool === 'eraser' ? '' : undefined}
           onClick={() => setTool('eraser')}
         >
@@ -310,7 +310,7 @@ export function MaskEditorDialog({
           type="button"
           variant="secondary"
           size="none"
-          className="h-[30px] !rounded-[7px] bg-surface-hover px-3 text-xs disabled:!opacity-45"
+          className="h-[30px] !rounded-md bg-surface-hover px-3 text-xs disabled:!opacity-45"
           disabled={historySize === 0}
           onClick={undo}
         >
@@ -320,7 +320,7 @@ export function MaskEditorDialog({
           type="button"
           variant="secondary"
           size="none"
-          className="h-[30px] !rounded-[7px] bg-surface-hover px-3 text-xs disabled:!opacity-45"
+          className="h-[30px] !rounded-md bg-surface-hover px-3 text-xs disabled:!opacity-45"
           disabled={!hasMask}
           onClick={clear}
         >
@@ -329,7 +329,7 @@ export function MaskEditorDialog({
       </div>
 
       <div
-        className="relative w-full max-h-[56vh] overflow-hidden rounded-[10px] border border-border bg-canvas"
+        className="relative w-full max-h-[56vh] overflow-hidden rounded-card border border-border bg-canvas"
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
       >
         <img

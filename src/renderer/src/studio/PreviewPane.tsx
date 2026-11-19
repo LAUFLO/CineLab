@@ -18,11 +18,11 @@ export function PreviewPane() {
   }
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-col gap-2 overflow-hidden rounded-[10px] border border-border bg-surface p-2.5 [grid-area:preview]">
-      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[8px] bg-media-bg [container-type:size]">
+    <section className="flex min-h-0 min-w-0 flex-col gap-2 overflow-hidden rounded-card border border-border bg-surface p-2.5 [grid-area:preview]">
+      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-card bg-media-bg [container-type:size]">
         <PreviewStage />
         {doc && doc.clips.length === 0 ? (
-          <div className="pointer-events-none absolute left-1/2 top-1/2 flex aspect-[16/9] w-[min(100cqw,calc(100cqh_*_16_/_9))] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1.5 rounded-[8px] border border-dashed border-border-strong text-[13px] text-fg-subtle">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 flex aspect-[16/9] w-[min(100cqw,calc(100cqh_*_16_/_9))] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1.5 rounded-card border border-dashed border-border-strong text-[13px] text-fg-subtle">
             <span>预览画布</span>
             <small className="text-[11px] text-fg-subtle opacity-70">
               从左侧拖入素材开始
@@ -36,7 +36,7 @@ export function PreviewPane() {
           type="button"
           variant="ghost"
           size="none"
-          className="h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal"
+          className="h-7 gap-1 !rounded-md px-2 text-xs !font-normal"
           onClick={() => {
             pause()
             setPlayhead(0)
@@ -49,7 +49,7 @@ export function PreviewPane() {
           type="button"
           variant="ghost"
           size="none"
-          className="h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal"
+          className="h-7 gap-1 !rounded-md px-2 text-xs !font-normal"
           onClick={toggle}
           title={playing ? '暂停' : '播放'}
         >

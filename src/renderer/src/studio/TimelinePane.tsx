@@ -70,7 +70,7 @@ function clipClass(
   dragging?: boolean
 ): string {
   return cn(
-    'studio-clip absolute top-0.5 bottom-0.5 flex cursor-pointer touch-none select-none items-center overflow-hidden rounded-[4px] border px-1.5',
+    'studio-clip absolute top-0.5 bottom-0.5 flex cursor-pointer touch-none select-none items-center overflow-hidden rounded-md border px-1.5',
     selected ? 'border-border-selected' : 'border-border',
     clipTone(clip),
     selected ? 'z-[2] shadow-[0_0_0_1px_var(--border-selected)]' : '',
@@ -100,13 +100,13 @@ const CLIP_LABEL =
   'relative z-[1] truncate text-[10px] [text-shadow:0_1px_4px_var(--overlay)]'
 
 const CLIP_BADGE =
-  'pointer-events-none absolute right-1.5 top-1 max-w-[calc(100%-12px)] truncate rounded-[4px] border border-border-strong bg-surface px-[5px] text-[10px] leading-4 text-fg'
+  'pointer-events-none absolute right-1.5 top-1 max-w-[calc(100%-12px)] truncate rounded-md border border-border-strong bg-surface px-[5px] text-[10px] leading-4 text-fg'
 
 const CLIP_META =
-  'pointer-events-none absolute bottom-1 rounded-[4px] border border-border bg-surface px-1 text-[10px] leading-[15px] text-fg'
+  'pointer-events-none absolute bottom-1 rounded-md border border-border bg-surface px-1 text-[10px] leading-[15px] text-fg'
 
 const PANEL_ROOT =
-  'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[10px] border border-border bg-surface [grid-area:timeline]'
+  'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-card border border-border bg-surface [grid-area:timeline]'
 
 function subtitleText(content: string) {
   return {
@@ -820,7 +820,7 @@ export function TimelinePane() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap ${
+          className={`h-7 gap-1 !rounded-md px-2 text-xs !font-normal whitespace-nowrap ${
             tool === 'select' ? '!bg-surface-hover !text-fg' : ''
           }`}
           onClick={() => setTool('select')}
@@ -833,7 +833,7 @@ export function TimelinePane() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap ${
+          className={`h-7 gap-1 !rounded-md px-2 text-xs !font-normal whitespace-nowrap ${
             tool === 'cut' ? '!bg-surface-hover !text-fg' : ''
           }`}
           onClick={() => setTool('cut')}
@@ -846,7 +846,7 @@ export function TimelinePane() {
           type="button"
           variant="ghost"
           size="none"
-          className="h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap"
+          className="h-7 gap-1 !rounded-md px-2 text-xs !font-normal whitespace-nowrap"
           onClick={addSubtitle}
           title="在播放头添加字幕"
         >
@@ -857,7 +857,7 @@ export function TimelinePane() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap ${
+          className={`h-7 gap-1 !rounded-md px-2 text-xs !font-normal whitespace-nowrap ${
             transcribing ? '!bg-surface-hover !text-fg' : ''
           }`}
           onClick={() => void runAutoSubtitles()}
@@ -878,7 +878,7 @@ export function TimelinePane() {
           type="button"
           variant="ghost"
           size="none"
-          className="h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap"
+          className="h-7 gap-1 !rounded-md px-2 text-xs !font-normal whitespace-nowrap"
           onClick={() => void importSubtitles()}
           title="导入 SRT / VTT 字幕文件"
         >
@@ -905,7 +905,7 @@ export function TimelinePane() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap ${
+          className={`h-7 gap-1 !rounded-md px-2 text-xs !font-normal whitespace-nowrap ${
             snap ? '!bg-surface-hover !text-fg' : ''
           }`}
           onClick={toggleSnap}
@@ -917,7 +917,7 @@ export function TimelinePane() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal whitespace-nowrap ${
+          className={`h-7 gap-1 !rounded-md px-2 text-xs !font-normal whitespace-nowrap ${
             magnet ? '!bg-surface-hover !text-fg' : ''
           }`}
           onClick={toggleMagnet}
@@ -963,7 +963,7 @@ export function TimelinePane() {
             >
               <div className="flex min-w-0 items-center gap-1.5">
                 <span
-                  className={`inline-flex h-4 w-4 items-center justify-center rounded-[4px] bg-surface-hover text-[9px] font-bold ${KIND_TONE[track.kind]}`}
+                  className={`inline-flex h-4 w-4 items-center justify-center rounded-md bg-surface-hover text-[9px] font-bold ${KIND_TONE[track.kind]}`}
                 >
                   {KIND_LETTER[track.kind]}
                 </span>
@@ -981,7 +981,7 @@ export function TimelinePane() {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="h-[18px] w-[18px] !rounded-[4px] text-[9px] !font-normal !text-fg-subtle hover:!text-fg"
+                  className="h-[18px] w-[18px] !rounded-md text-[9px] !font-normal !text-fg-subtle hover:!text-fg"
                   title="可见"
                 >
                   ◉
@@ -990,7 +990,7 @@ export function TimelinePane() {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="h-[18px] w-[18px] !rounded-[4px] text-[9px] !font-normal !text-fg-subtle hover:!text-fg"
+                  className="h-[18px] w-[18px] !rounded-md text-[9px] !font-normal !text-fg-subtle hover:!text-fg"
                   title="锁定"
                 >
                   ▣

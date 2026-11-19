@@ -220,7 +220,7 @@ export default function App() {
           type="button"
           variant="secondary"
           size="none"
-          className="h-11 gap-2 !rounded-[10px] bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
+          className="h-11 gap-2 !rounded-card bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
           onClick={() => void bootstrap()}
         >
           重试

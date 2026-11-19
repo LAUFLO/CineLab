@@ -1,5 +1,6 @@
+import type { RefObject } from 'react'
 import type { ParamDef } from '@shared/provider-schema'
-import { Button, Input, Switch } from '../../components/ui'
+import { Button, Input, Popover, Switch } from '../../components/ui'
 import { ratioOf } from '../promptbar-model'
 
 interface ParamPanelProps {
@@ -12,15 +13,16 @@ interface ParamPanelProps {
   onEnableCustom: (param: ParamDef) => void
   onChangeValue: (key: string, value: unknown) => void
   onWatermarkChange: (next: boolean) => void
+  onClose: () => void
+  anchorRef: RefObject<HTMLElement | null>
 }
 
-const PANEL =
-  'absolute bottom-[34px] left-0 z-[70] max-h-[62vh] w-[420px] overflow-y-auto rounded-[16px] border border-border bg-surface p-4 shadow-menu animate-[menu-in_120ms_ease-out]'
+const PANEL = '!p-4 !max-h-[62vh] animate-[menu-in_120ms_ease-out]'
 const SECTION = '[&+&]:mt-[18px]'
 const SECTION_TITLE = 'mb-2 text-xs text-fg-muted'
 const GRID = 'grid gap-2'
 const OPTION =
-  'min-h-[38px] !rounded-[9px] !px-2 !py-1.5 !font-normal text-xs bg-surface-hover'
+  'min-h-[38px] !rounded-card !px-2 !py-1.5 !font-normal text-xs bg-surface-hover'
 const OPTION_IDLE = '!text-fg-muted hover:!text-fg'
 const OPTION_ACTIVE =
   '!border-border-selected !bg-surface-raised !text-fg hover:!border-border-selected hover:!text-fg'
@@ -29,14 +31,14 @@ const OPTION_CUSTOM = 'border-dashed'
 const OPTION_CUSTOM_IDLE = '!text-fg-subtle hover:!text-fg'
 const OPTION_CUSTOM_ACTIVE = '!border-solid !text-fg hover:!text-fg'
 const CUSTOM_INPUT =
-  '!col-span-full !h-[34px] !rounded-[8px] !border-border-strong !bg-surface !px-[9px] !text-xs focus:!border-border-selected'
+  '!col-span-full !h-[34px] !rounded-card !border-border-strong !bg-surface !px-[9px] !text-xs focus:!border-border-selected'
 const RATIO_BOX = 'w-5 max-h-5 rounded-[3px] border-[1.5px] border-current'
 const RANGE = 'flex items-center gap-3'
 const RANGE_INPUT = '!h-auto flex-1 !border-0 !bg-transparent !p-0 accent-fg'
 const RANGE_VALUE = 'min-w-[38px] text-right text-xs text-fg tabular-nums'
 const INPUT_ROW = 'flex items-center gap-2.5 text-xs text-fg-muted'
 const ROW_INPUT =
-  'nodrag nopan !h-[30px] flex-1 !rounded-[6px] !border-border-strong !bg-surface-hover !px-2 !text-xs focus:!border-border-selected'
+  'nodrag nopan !h-[30px] flex-1 !rounded-md !border-border-strong !bg-surface-hover !px-2 !text-xs focus:!border-border-selected'
 const SWITCH_ROW =
   'mt-[18px] flex items-center justify-between border-t border-divider pt-3.5 text-xs text-fg-muted'
 
@@ -49,10 +51,18 @@ export function ParamPanel({
   onSelectPreset,
   onEnableCustom,
   onChangeValue,
-  onWatermarkChange
+  onWatermarkChange,
+  onClose,
+  anchorRef
 }: ParamPanelProps) {
   return (
-    <div className={PANEL}>
+    <Popover
+      open
+      onClose={onClose}
+      anchorRef={anchorRef}
+      width={420}
+      className={PANEL}
+    >
       {groups.map((group) => (
         <div className={SECTION} key={group.name}>
           <div className={SECTION_TITLE}>{group.name}</div>
@@ -210,6 +220,6 @@ export function ParamPanel({
           onChange={onWatermarkChange}
         />
       </div>
-    </div>
+    </Popover>
   )
 }

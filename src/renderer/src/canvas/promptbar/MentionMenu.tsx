@@ -1,5 +1,6 @@
+import type { RefObject } from 'react'
 import { Icon } from '../../components/Icon'
-import { MenuItem } from '../../components/ui'
+import { MenuItem, Popover } from '../../components/ui'
 import { assetUrl } from '../../lib/asset-url'
 import { isVideoPath, type MentionItem } from '../promptbar-model'
 
@@ -11,17 +12,19 @@ interface MentionMenuProps {
   activeIndex: number
   onHover: (index: number) => void
   onSelect: (item: MentionItem) => void
+  onClose: () => void
+  anchorRef: RefObject<HTMLElement | null>
 }
 
 const MENU =
-  'mention-menu absolute left-0 top-[calc(100%+8px)] z-20 flex max-h-[340px] w-[330px] flex-col overflow-hidden rounded-[12px] border border-border bg-surface-raised shadow-menu animate-[menu-in_120ms_ease-out]'
+  'mention-menu !p-0 flex !max-h-[340px] flex-col !overflow-hidden animate-[menu-in_120ms_ease-out]'
 const HEAD =
   'flex h-9 shrink-0 items-center gap-[7px] border-b border-divider px-3 text-xs text-fg-subtle'
 const LIST = 'flex-1 overflow-y-auto p-[5px]'
 const SECTION = '[&+&]:mt-1'
 const SECTION_TITLE = 'px-2 py-[5px] text-[10.5px] text-fg-subtle'
 const ITEM =
-  'mention-menu__item !min-h-[34px] !rounded-[7px] !px-2 !py-1 text-xs [&>span:first-child]:text-current'
+  'mention-menu__item !min-h-[34px] !rounded-md !px-2 !py-1 text-xs [&>span:first-child]:text-current'
 const ITEM_IDLE = '!text-fg-muted hover:!text-fg'
 const ITEM_ACTIVE = '!text-fg'
 const EMPTY = 'px-2.5 py-[18px] text-center text-xs text-fg-subtle'
@@ -33,12 +36,18 @@ export function MentionMenu({
   flat,
   activeIndex,
   onHover,
-  onSelect
+  onSelect,
+  onClose,
+  anchorRef
 }: MentionMenuProps) {
-  if (!open) return null
-
   return (
-    <div className={MENU}>
+    <Popover
+      open={open}
+      onClose={onClose}
+      anchorRef={anchorRef}
+      width={330}
+      className={MENU}
+    >
       <div className={HEAD}>
         <Icon name="search" size={12} />
         <span>{query || '搜索画布、资产库和角色'}</span>
@@ -59,7 +68,7 @@ export function MentionMenu({
                     index === activeIndex ? ITEM_ACTIVE : ITEM_IDLE
                   }`}
                   icon={
-                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-[6px] bg-surface-hover">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-hover">
                       {item.thumb ? (
                         item.kind === 'video' && isVideoPath(item.thumb) ? (
                           <video
@@ -107,6 +116,6 @@ export function MentionMenu({
 
         {flat.length === 0 ? <div className={EMPTY}>没有匹配的素材</div> : null}
       </div>
-    </div>
+    </Popover>
   )
 }

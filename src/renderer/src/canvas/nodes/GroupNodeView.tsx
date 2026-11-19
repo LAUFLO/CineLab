@@ -61,7 +61,7 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
     <div
       data-node-kind="group"
       data-selected={selected || undefined}
-      className={`relative h-full w-full rounded-[14px] transition-[border-color,box-shadow] duration-[120ms] ${
+      className={`relative h-full w-full rounded-panel transition-[border-color,box-shadow] duration-[120ms] ${
         data.mode === 'storyboard'
           ? 'border-[1.5px] border-dashed'
           : 'border border-solid'
@@ -87,7 +87,7 @@ export function GroupNodeView({ id, data, selected }: NodeProps<GroupNode>) {
         {editing ? (
           <Input
             ref={inputRef}
-            className="nodrag !h-6 min-w-0 flex-1 !rounded-[6px] !border-[var(--group-color)] !bg-surface !px-1.5 !text-[13px]"
+            className="nodrag !h-6 min-w-0 flex-1 !rounded-md !border-[var(--group-color)] !bg-surface !px-1.5 !text-[13px]"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onPointerDown={(event) => event.stopPropagation()}

@@ -316,7 +316,7 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
   {
     id: 'stage.exportPreview',
     name: 'stage_export_preview',    description:
-      '把导演台的一个镜头渲染导出为白模预演视频，并自动在画布上创建一个视频节点。shotId 必须来自 stage_get；导出耗时较长，执行前需要用户确认。',
+      '导出导演台的白模预演：scope=shot 导出当前镜头，scope=program 导出整片并生成每镜片段；可选分镜图、鸟瞰、镜头表和脚本。回画布自动建视频/图片/文本节点。导出耗时较长，执行前需要用户确认。',
     profiles: ['canvas', 'stage'],
     readOnly: false,
     scope: 'stage',
@@ -325,11 +325,37 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       type: 'object',
       properties: {
         nodeId: stageNodeIdParameter,
-        shotId: { type: 'string', description: '镜头 ID，来自 stage_get 的 shots' },
+        scope: {
+          type: 'string',
+          enum: ['shot', 'program'],
+          description: '默认 shot；program 导出整片和每镜片段'
+        },
+        shotId: {
+          type: 'string',
+          description: 'scope=shot 时必填；镜头 ID 来自 stage_get 的 shots'
+        },
         resolution: { type: 'string', enum: ['720p', '1080p'] },
-        fps: { type: 'number', enum: [24, 30] }
+        fps: { type: 'number', enum: [24, 30] },
+        items: {
+          type: 'object',
+          properties: {
+            previs: { type: 'boolean' },
+            clips: { type: 'boolean' },
+            frames: { type: 'boolean' },
+            overview: { type: 'boolean' },
+            shotList: { type: 'boolean' },
+            script: { type: 'boolean' }
+          },
+          additionalProperties: false,
+          description: '缺省 previs/clips/frames/shotList=true，overview/script=false'
+        },
+        frameDensity: {
+          type: 'string',
+          enum: ['three', 'first-only'],
+          description: '分镜图每镜三张或仅首帧'
+        }
       },
-      required: ['nodeId', 'shotId'],
+      required: ['nodeId'],
       additionalProperties: false
     },
     replay: 'unsafe',
@@ -414,6 +440,65 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
         shotId: { type: 'string', description: '镜头 ID' }
       },
       required: ['nodeId', 'shotId'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.autoCoverage',
+    name: 'stage_auto_coverage',
+    description:
+      '按主体自动排一组分镜：单人全景/中景/近景，两人正反打，3-8 人群戏。只替换 source=auto 的镜头，手工镜头保留。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        subjectIds: {
+          type: 'array',
+          items: { type: 'string' },
+          minItems: 1,
+          maxItems: 8,
+          description: '主体对象 ID，来自 stage_get 的 objects'
+        },
+        mode: {
+          type: 'string',
+          enum: ['auto', 'single', 'dialogue', 'group']
+        },
+        pace: { type: 'number', minimum: 0.6, maximum: 1.6 },
+        replace: {
+          type: 'boolean',
+          description: '默认 true；只替换自动分镜镜头'
+        }
+      },
+      required: ['nodeId', 'subjectIds'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.dialogueCoverage',
+    name: 'stage_dialogue_coverage',
+    description:
+      '按「角色：台词」脚本切分镜：两人正反打、多人全景+说话人近景，台词写入字幕。只替换 source=auto 的镜头。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        script: {
+          type: 'string',
+          description: '每行「角色：台词」，角色名与场景人物名一致'
+        },
+        pace: { type: 'number', minimum: 0.6, maximum: 1.6 }
+      },
+      required: ['nodeId', 'script'],
       additionalProperties: false
     },
     replay: 'safe'

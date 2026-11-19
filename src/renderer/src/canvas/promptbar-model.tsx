@@ -108,7 +108,7 @@ export function renderMentionText(text: string, names: string[]): ReactNode[] {
     return mentioned ? (
       <span
         key={index}
-        className="rounded-[4px] bg-[color-mix(in_srgb,var(--link)_16%,transparent)] text-link"
+        className="rounded-md bg-[color-mix(in_srgb,var(--link)_16%,transparent)] text-link"
       >
         {part}
       </span>

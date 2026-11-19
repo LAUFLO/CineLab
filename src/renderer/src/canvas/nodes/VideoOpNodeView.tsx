@@ -59,9 +59,9 @@ const FIELD_CLASS =
 const RANGE_CLASS = 'w-full accent-link !h-6 !border-0 !bg-transparent !px-0'
 
 const NUMBER_CLASS =
-  'w-full !h-[26px] !rounded-[6px] !bg-surface-hover !px-1.5 !text-[11px]'
+  'w-full !h-[26px] !rounded-md !bg-surface-hover !px-1.5 !text-[11px]'
 
-const TAB_BASE = '!h-6 !rounded-[6px] !px-2 !text-[11px] !font-normal'
+const TAB_BASE = '!h-6 !rounded-md !px-2 !text-[11px] !font-normal'
 
 const tabClass = (active: boolean): string =>
   `${TAB_BASE} ${
@@ -71,7 +71,7 @@ const tabClass = (active: boolean): string =>
   }`
 
 const modelClass = (active: boolean, disabled: boolean): string =>
-  `flex !h-8 w-full !justify-between !rounded-[7px] !px-2 !text-[11.5px] !font-normal ${
+  `flex !h-8 w-full !justify-between !rounded-md !px-2 !text-[11.5px] !font-normal ${
     active
       ? '!border !border-link !bg-surface-hover !text-fg'
       : '!bg-surface-hover !text-fg-muted'
@@ -433,7 +433,7 @@ export function VideoOpNodeView({
         <Icon name={OPERATION_ICON[data.operation]} size={12} />
         <span>{data.title}</span>
         <span
-          className={`ml-auto rounded-[4px] bg-surface-hover px-1.5 py-px text-[10px] ${
+          className={`ml-auto rounded-md bg-surface-hover px-1.5 py-px text-[10px] ${
             BADGE_TONE[resultStatus] ?? 'text-fg-subtle'
           }`}
         >
@@ -463,7 +463,7 @@ export function VideoOpNodeView({
           type="button"
           variant="ghost"
           size="none"
-          className="nodrag nopan !h-[26px] self-start !rounded-[6px] !bg-surface-hover !px-2.5 !text-[11px] !font-normal !text-fg-muted hover:!bg-surface-hover hover:!text-fg-muted"
+          className="nodrag nopan !h-[26px] self-start !rounded-md !bg-surface-hover !px-2.5 !text-[11px] !font-normal !text-fg-muted hover:!bg-surface-hover hover:!text-fg-muted"
           onClick={() => patchVideoOpNode(id, { expanded: !data.expanded })}
         >
           {data.expanded ? '收起参数' : '设置参数'}
@@ -472,7 +472,7 @@ export function VideoOpNodeView({
         {data.expanded ? (
           <div className="nodrag nopan flex flex-col gap-3 border-t border-border pt-1">
             {sourceOutput ? (
-              <div className="relative aspect-video w-full overflow-hidden rounded-[8px] bg-media-bg">
+              <div className="relative aspect-video w-full overflow-hidden rounded-card bg-media-bg">
                 <VideoPreview
                   src={assetUrl(sourceOutput.path, sourceOutput.scope)}
                   path={sourceOutput.path}
@@ -484,7 +484,7 @@ export function VideoOpNodeView({
                 />
               </div>
             ) : (
-              <div className="rounded-[8px] border border-dashed border-danger p-2.5 text-center text-[11px] text-danger">
+              <div className="rounded-card border border-dashed border-danger p-2.5 text-center text-[11px] text-danger">
                 源节点没有视频输出
               </div>
             )}
@@ -498,7 +498,7 @@ export function VideoOpNodeView({
                   </span>
                 </div>
 
-                <div className="flex h-14 overflow-hidden rounded-[8px] bg-surface-hover">
+                <div className="flex h-14 overflow-hidden rounded-card bg-surface-hover">
                   {thumbs.map((item) => (
                     <img
                       key={item.at}
@@ -667,11 +667,11 @@ export function VideoOpNodeView({
                 </div>
 
                 {reference ? (
-                  <div className="flex items-center gap-2 rounded-[8px] bg-surface-hover p-1.5">
+                  <div className="flex items-center gap-2 rounded-card bg-surface-hover p-1.5">
                     <img
                       src={assetUrl(reference.thumb, reference.scope)}
                       alt=""
-                      className="h-11 w-11 rounded-[6px] object-cover"
+                      className="h-11 w-11 rounded-md object-cover"
                     />
                     <span className="min-w-0 flex-1 truncate text-[11.5px] text-fg-muted">
                       {reference.name}
@@ -680,7 +680,7 @@ export function VideoOpNodeView({
                       type="button"
                       variant="ghost"
                       size="none"
-                      className="!h-7 !w-7 shrink-0 !rounded-[8px] !text-fg-muted hover:!bg-surface-hover hover:!text-fg"
+                      className="!h-7 !w-7 shrink-0 !rounded-card !text-fg-muted hover:!bg-surface-hover hover:!text-fg"
                       title="移除"
                       onClick={() => setReference(null)}
                     >
@@ -688,13 +688,13 @@ export function VideoOpNodeView({
                     </Button>
                   </div>
                 ) : (
-                  <div className="rounded-[8px] border border-dashed border-border p-2.5 text-center text-[11px] text-fg-subtle">
+                  <div className="rounded-card border border-dashed border-border p-2.5 text-center text-[11px] text-fg-subtle">
                     还没有选择替换目标
                   </div>
                 )}
 
                 {pickerOpen ? (
-                  <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-surface-raised p-2">
+                  <div className="flex flex-col gap-2 rounded-card border border-border bg-surface-raised p-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex gap-1">
                         <Button
@@ -734,7 +734,7 @@ export function VideoOpNodeView({
                           type="button"
                           variant="ghost"
                           size="none"
-                          className={`aspect-square overflow-hidden !rounded-[6px] !border !p-0 ${
+                          className={`aspect-square overflow-hidden !rounded-md !border !p-0 ${
                             reference?.path === item.path &&
                             (reference?.scope ?? 'project') ===
                               (item.scope ?? 'project')
@@ -825,7 +825,7 @@ export function VideoOpNodeView({
                       ? '描述延长部分发生的动作'
                       : '描述这一段应该怎么重拍'
                 }
-                className="!rounded-[8px] !bg-surface-hover !p-2 !text-xs !min-h-0"
+                className="!rounded-card !bg-surface-hover !p-2 !text-xs !min-h-0"
                 onChange={(event) => setPrompt(event.target.value)}
               />
             </label>
@@ -834,7 +834,7 @@ export function VideoOpNodeView({
               type="button"
               variant="primary"
               size="none"
-              className="nodrag nopan !h-[34px] w-full !rounded-[8px] !text-[13px]"
+              className="nodrag nopan !h-[34px] w-full !rounded-card !text-[13px]"
               disabled={Boolean(activeMissing) || !prompt.trim()}
               onClick={handleGenerate}
             >

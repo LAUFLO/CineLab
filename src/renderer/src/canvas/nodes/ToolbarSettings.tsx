@@ -53,7 +53,7 @@ export function ToolbarSettings() {
       onPointerDown={closeSettings}
     >
       <div
-        className="flex max-h-[72vh] w-[440px] flex-col rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
+        className="flex max-h-[72vh] w-[440px] flex-col rounded-panel border border-border bg-surface-raised p-[18px] text-fg shadow-float"
         onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -68,7 +68,7 @@ export function ToolbarSettings() {
             type="button"
             variant="ghost"
             size="none"
-            className="h-7 w-7 !rounded-[7px] p-0"
+            className="h-7 w-7 !rounded-md p-0"
             title="关闭"
             onClick={closeSettings}
           >
@@ -86,7 +86,7 @@ export function ToolbarSettings() {
 
             return (
               <div
-                className="flex h-11 items-center gap-2.5 rounded-lg px-1.5 hover:bg-surface-hover"
+                className="flex h-11 items-center gap-2.5 rounded-card px-1.5 hover:bg-surface-hover"
                 key={op.id}
               >
                 <Icon name={op.icon} size={15} className="text-fg-muted" />

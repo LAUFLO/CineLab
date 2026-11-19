@@ -182,7 +182,7 @@ export function ComponentsSection() {
         return (
           <div
             key={item.kind}
-            className="mt-2.5 flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3.5"
+            className="mt-2.5 flex items-center justify-between gap-4 rounded-card border border-border px-4 py-3.5"
           >
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-semibold text-fg">

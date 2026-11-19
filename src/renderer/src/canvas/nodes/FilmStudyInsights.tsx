@@ -28,20 +28,20 @@ const INSIGHTS_CLASS = 'flex flex-col gap-[7px]'
 const SIDE_TITLE_CLASS = 'mb-1.5 text-[11px] text-fg-subtle'
 const EMPTY_CLASS = 'py-2 text-[11px] text-fg-subtle'
 const LANE_CLASS =
-  'rounded-lg border border-border bg-surface-raised px-2 py-[7px]'
+  'rounded-card border border-border bg-surface-raised px-2 py-[7px]'
 const LANE_HEAD_CLASS =
   'flex items-center justify-between gap-2 px-0.5 pt-px pb-[5px] text-[11px] text-fg-muted'
 const LANE_COUNT_CLASS = 'text-fg-subtle tabular-nums'
 const LANE_EMPTY_CLASS = 'px-0.5 py-[3px] text-[10px] text-fg-subtle'
 const ROW_CLASS =
-  '!flex w-full !items-center !justify-start gap-[7px] !rounded-[6px] px-1.5 py-[5px] text-left !font-normal'
+  '!flex w-full !items-center !justify-start gap-[7px] !rounded-md px-1.5 py-[5px] text-left !font-normal'
 const ROW_ACTIVE_CLASS = 'bg-surface-hover !text-fg'
 const TREE_CLASS =
-  'rounded-lg border border-border bg-surface-raised px-2 py-1.5 [&[open]>summary]:mb-[3px]'
+  'rounded-card border border-border bg-surface-raised px-2 py-1.5 [&[open]>summary]:mb-[3px]'
 const TREE_SUMMARY_CLASS =
   'flex cursor-pointer items-center justify-between gap-2 py-0.5 text-[11px] text-fg-muted select-none [&::-webkit-details-marker]:hidden'
 const CHART_CARD_CLASS =
-  'rounded-lg border border-border bg-surface-raised p-[7px]'
+  'rounded-card border border-border bg-surface-raised p-[7px]'
 const ROW_TIME_CLASS = 'shrink-0 text-[10px] text-fg-subtle tabular-nums'
 const ROW_TITLE_CLASS = 'min-w-0 flex-1 truncate text-[11.5px] font-medium'
 

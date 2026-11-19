@@ -284,6 +284,11 @@ Prompt Bar / Agent proposal
 
 - 场景保存为 `stages/<stageId>.json`。
 - `StageCommand` 是唯一写入口。
+- `StageProgram`（`program.entries`）是成片编排；`stage-program.ts` 提供 `buildProgramTimeline` / `programAt`，缺省回退到镜头数组顺序。
+- 重叠按 `front` 取最高，`front` 相同取靠后的 entry；删除镜头级联删除 entries。
+- `stage-lighting.ts` 统一解析舞台光照与 10 个预设；`stage-motions.ts` 提供 13 关节程序化动作库。
+- 程序化世界通过 `createStageWorldRender(ref, lighting)` 接收同一份 `StageLighting`，天空、太阳和环境光与舞台对象一致；未传时回退世界自己的 `TIME_LOOK`。
+- `stage-auto-coverage.ts` / `stage-dialogue.ts` 生成自动分镜；自动镜头/机位标记 `source='auto'`，可整体替换而不影响手工镜头。
 - 白模预演在隐藏 BrowserWindow 的 `stage-render.html` 中逐帧渲染，再交给 ffmpeg 编码。
 - 导出结果写回画布视频节点。
 

@@ -68,7 +68,7 @@ export function AssetGrid({
       {filtered.map((asset) => (
         <div
           key={asset.path}
-          className={`group relative flex flex-col overflow-hidden rounded-[10px] border bg-surface-raised [contain-intrinsic-size:auto_220px] [content-visibility:auto] hover:border-border-strong ${
+          className={`group relative flex flex-col overflow-hidden rounded-card border bg-surface-raised [contain-intrinsic-size:auto_220px] [content-visibility:auto] hover:border-border-strong ${
             selectedPaths.has(asset.path)
               ? '!border-border-selected shadow-[0_0_0_1px_var(--border-selected)]'
               : 'border-border'
@@ -149,13 +149,13 @@ export function AssetGrid({
             ) : null}
           </div>
 
-          <div className="absolute right-1.5 top-1.5 flex gap-0.5 rounded-[7px] bg-black/55 p-[3px] opacity-0 transition-opacity duration-[120ms] group-hover:opacity-100">
+          <div className="absolute right-1.5 top-1.5 flex gap-0.5 rounded-md bg-black/55 p-[3px] opacity-0 transition-opacity duration-[120ms] group-hover:opacity-100">
             {selectionMode ? null : (
               <>
                 <IconButton
                   label="添加到画布"
                   size="xs"
-                  className="!h-[22px] !w-[22px] !rounded-[5px] cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
+                  className="!h-[22px] !w-[22px] !rounded-md cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
                   onClick={() => onAddToCanvas(asset)}
                 >
                   <Icon name="plus" size={13} />
@@ -163,7 +163,7 @@ export function AssetGrid({
                 <IconButton
                   label="导出到本地"
                   size="xs"
-                  className="!h-[22px] !w-[22px] !rounded-[5px] cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
+                  className="!h-[22px] !w-[22px] !rounded-md cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
                   onClick={() => onExport(asset)}
                 >
                   <Icon name="download" size={13} />
@@ -171,7 +171,7 @@ export function AssetGrid({
                 <IconButton
                   label="移动到文件夹"
                   size="xs"
-                  className="!h-[22px] !w-[22px] !rounded-[5px] cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
+                  className="!h-[22px] !w-[22px] !rounded-md cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
                   onClick={() => onMove(asset)}
                 >
                   <Icon name="move" size={13} />
@@ -179,7 +179,7 @@ export function AssetGrid({
                 <IconButton
                   label="重命名"
                   size="xs"
-                  className="!h-[22px] !w-[22px] !rounded-[5px] cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
+                  className="!h-[22px] !w-[22px] !rounded-md cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
                   onClick={() => onRename(asset)}
                 >
                   <Icon name="edit" size={13} />
@@ -187,7 +187,7 @@ export function AssetGrid({
                 <IconButton
                   label="编辑标签"
                   size="xs"
-                  className="!h-[22px] !w-[22px] !rounded-[5px] cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
+                  className="!h-[22px] !w-[22px] !rounded-md cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
                   onClick={() => onEditTags(asset)}
                 >
                   <Icon name="pin" size={13} />
@@ -195,7 +195,7 @@ export function AssetGrid({
                 <IconButton
                   label="在资源管理器中显示"
                   size="xs"
-                  className="!h-[22px] !w-[22px] !rounded-[5px] cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
+                  className="!h-[22px] !w-[22px] !rounded-md cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
                   onClick={() => onReveal(asset)}
                 >
                   <Icon name="folder" size={13} />
@@ -203,7 +203,7 @@ export function AssetGrid({
                 <IconButton
                   label="删除"
                   size="xs"
-                  className="!h-[22px] !w-[22px] !rounded-[5px] cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
+                  className="!h-[22px] !w-[22px] !rounded-md cursor-pointer !text-white/80 hover:!bg-white/16 hover:!text-white"
                   onClick={() => onDelete(asset)}
                 >
                   <Icon name="trash" size={13} />

@@ -61,7 +61,7 @@ export function ProjectCenter() {
       className="absolute inset-0 flex items-start justify-center overflow-y-auto bg-canvas bg-[radial-gradient(var(--border)_1px,transparent_1px)] p-8 [background-size:20px_20px]"
     >
       <div
-        className={`my-auto rounded-[20px] border border-border bg-surface p-[44px_48px] text-center shadow-float animate-[welcome-in_220ms_ease-out] max-[720px]:p-[36px_28px] ${
+        className={`my-auto rounded-panel border border-border bg-surface p-[44px_48px] text-center shadow-float animate-[welcome-in_220ms_ease-out] max-[720px]:p-[36px_28px] ${
           recent.length > 0 ? 'w-[min(960px,100%)]' : 'w-[min(560px,100%)]'
         }`}
       >
@@ -77,7 +77,7 @@ export function ProjectCenter() {
             type="button"
             variant="primary"
             size="none"
-            className="inline-flex h-12 items-center gap-2 rounded-xl px-[22px] text-[14px] hover:opacity-90"
+            className="inline-flex h-12 items-center gap-2 rounded-card px-[22px] text-[14px] hover:opacity-90"
             onClick={() => setTemplateOpen(true)}
           >
             <Icon name="plus" size={20} />
@@ -87,7 +87,7 @@ export function ProjectCenter() {
             type="button"
             variant="secondary"
             size="none"
-            className="h-12 rounded-xl px-5 text-[13px]"
+            className="h-12 rounded-card px-5 text-[13px]"
             onClick={() => void openExisting()}
           >
             打开已有项目
@@ -99,7 +99,7 @@ export function ProjectCenter() {
             type="button"
             variant="ghost"
             size="none"
-            className="mt-[22px] flex w-full max-w-[468px] items-center gap-3 rounded-xl border border-border bg-surface-hover px-3.5 py-3 !text-left text-fg transition-[border-color,background] duration-[120ms] hover:border-border-strong hover:bg-surface-raised"
+            className="mt-[22px] flex w-full max-w-[468px] items-center gap-3 rounded-card border border-border bg-surface-hover px-3.5 py-3 !text-left text-fg transition-[border-color,background] duration-[120ms] hover:border-border-strong hover:bg-surface-raised"
             onClick={() => openSettings('models')}
           >
             <Icon name="settings" size={16} className="shrink-0 text-fg-muted" />
@@ -149,11 +149,11 @@ export function ProjectCenter() {
 
       {templateOpen ? (
         <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px] [-webkit-app-region:no-drag]"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay p-4 backdrop-blur-[2px] [-webkit-app-region:no-drag]"
           onPointerDown={() => setTemplateOpen(false)}
         >
           <div
-            className="w-[640px] max-w-[calc(100vw-48px)] rounded-2xl border border-border bg-surface p-5 shadow-menu"
+            className="w-[640px] max-w-[calc(100vw-48px)] rounded-panel border border-border bg-surface-raised p-5 shadow-float"
             onPointerDown={(event) => event.stopPropagation()}
           >
             <header className="mb-4 flex items-start justify-between gap-4">
@@ -181,7 +181,7 @@ export function ProjectCenter() {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="flex flex-col !items-start gap-1.5 rounded-xl border border-border bg-surface-hover p-3.5 !text-left transition-[border-color,background] duration-[120ms] hover:border-border-selected hover:bg-surface-raised"
+                  className="flex flex-col !items-start gap-1.5 rounded-card border border-border bg-surface-hover p-3.5 !text-left transition-[border-color,background] duration-[120ms] hover:border-border-selected hover:bg-surface-raised"
                   onClick={() => {
                     setTemplateOpen(false)
                     void startNew(template.id)

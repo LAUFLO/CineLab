@@ -379,7 +379,7 @@ export function SkillsSection() {
       ) : null}
 
       {creating ? (
-        <div className="flex flex-col gap-2 rounded-[9px] border border-border-strong bg-surface p-2.5">
+        <div className="flex flex-col gap-2 rounded-card border border-border-strong bg-surface p-2.5">
           <div className="text-xs font-semibold">新建技能</div>
           <div className="grid grid-cols-[1fr_1.2fr_0.7fr] gap-2 max-[900px]:grid-cols-2">
             <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
@@ -484,7 +484,7 @@ export function SkillsSection() {
       ) : null}
 
       <div className="grid min-h-[460px] flex-1 grid-cols-[260px_minmax(0,1fr)] gap-2.5 max-[900px]:grid-cols-[210px_minmax(0,1fr)]">
-        <aside className="min-h-0 min-w-0 overflow-y-auto rounded-[9px] border border-border bg-surface p-2">
+        <aside className="min-h-0 min-w-0 overflow-y-auto rounded-card border border-border bg-surface p-2">
           {loading ? (
             <div className="p-3.5 text-[11px] leading-[1.6] text-fg-subtle">
               正在读取技能…
@@ -524,7 +524,7 @@ export function SkillsSection() {
                       type="button"
                       variant="ghost"
                       size="none"
-                      className={`flex w-full flex-col !items-start gap-[3px] rounded-[7px] border px-2 py-[7px] !text-left ${
+                      className={`flex w-full flex-col !items-start gap-[3px] rounded-md border px-2 py-[7px] !text-left ${
                         active
                           ? 'border-border-strong bg-surface-hover'
                           : 'border-transparent bg-transparent hover:bg-surface-hover'
@@ -557,7 +557,7 @@ export function SkillsSection() {
           )}
         </aside>
 
-        <section className="flex min-h-0 min-w-0 flex-col gap-2.5 overflow-y-auto rounded-[9px] border border-border bg-surface p-3">
+        <section className="flex min-h-0 min-w-0 flex-col gap-2.5 overflow-y-auto rounded-card border border-border bg-surface p-3">
           {!selected ? (
             <div className="p-3.5 text-[11px] leading-[1.6] text-fg-subtle">
               选择一个技能查看详情，或新建技能。
@@ -660,7 +660,7 @@ export function SkillsSection() {
                 </div>
               </header>
 
-              <div className="flex flex-wrap gap-4 rounded-[7px] border border-border bg-surface-raised px-2.5 py-2">
+              <div className="flex flex-wrap gap-4 rounded-md border border-border bg-surface-raised px-2.5 py-2">
                 <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-fg-muted">
                   <Input
                     type="checkbox"
@@ -732,7 +732,7 @@ export function SkillsSection() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="rounded-[7px] border border-dashed border-border px-2.5 py-2 text-[11px] leading-[1.6] text-fg-subtle">
+                  <div className="rounded-md border border-dashed border-border px-2.5 py-2 text-[11px] leading-[1.6] text-fg-subtle">
                     内置技能只读。需要修改时，请在全局或项目中创建同名技能覆盖它。
                   </div>
                 )}
@@ -805,7 +805,7 @@ export function SkillsSection() {
                             type="button"
                             variant="ghost"
                             size="none"
-                            className={`!h-[22px] !w-[22px] shrink-0 rounded-[5px] p-0 text-fg-subtle hover:bg-surface-raised hover:text-danger ${
+                            className={`!h-[22px] !w-[22px] shrink-0 rounded-md p-0 text-fg-subtle hover:bg-surface-raised hover:text-danger ${
                               active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                             }`}
                             title="删除文件"
@@ -819,7 +819,7 @@ export function SkillsSection() {
                   })}
                 </div>
                 {preview ? (
-                  <div className="overflow-hidden rounded-[7px] border border-border bg-surface-raised">
+                  <div className="overflow-hidden rounded-md border border-border bg-surface-raised">
                     <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-[5px] font-mono text-[10px] text-fg-subtle">
                       <span>{preview.path}</span>
                       <Button

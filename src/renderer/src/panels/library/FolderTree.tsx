@@ -47,7 +47,7 @@ function TreeRow({
   return (
     <div>
       <div
-        className={`group flex h-[30px] items-center gap-0.5 rounded-[7px] pr-1.5 text-fg-muted hover:bg-surface-hover hover:text-fg ${
+        className={`group flex h-[30px] items-center gap-0.5 rounded-md pr-1.5 text-fg-muted hover:bg-surface-hover hover:text-fg ${
           current === node.path ? 'bg-surface-hover text-fg' : ''
         }`}
         style={{ paddingLeft: `${8 + depth * 14}px` }}
@@ -78,7 +78,7 @@ function TreeRow({
           <Icon name="folder" size={14} />
           <span className="min-w-0 flex-1 truncate">{node.name}</span>
           {node.assetCount > 0 ? (
-            <span className="h-4 min-w-[18px] shrink-0 rounded-[8px] border border-border bg-surface px-[5px] text-center text-[10px] leading-[14px] text-fg-subtle">
+            <span className="h-4 min-w-[18px] shrink-0 rounded-card border border-border bg-surface px-[5px] text-center text-[10px] leading-[14px] text-fg-subtle">
               {node.assetCount}
             </span>
           ) : null}
@@ -89,7 +89,7 @@ function TreeRow({
             <IconButton
               label="新建子文件夹"
               size="xs"
-              className="!h-[21px] !w-[21px] !rounded-[5px] cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-fg"
+              className="!h-[21px] !w-[21px] !rounded-md cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-fg"
               onClick={() => onCreate(node.path)}
             >
               <Icon name="folder-plus" size={13} />
@@ -99,7 +99,7 @@ function TreeRow({
                 <IconButton
                   label="重命名"
                   size="xs"
-                  className="!h-[21px] !w-[21px] !rounded-[5px] cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-fg"
+                  className="!h-[21px] !w-[21px] !rounded-md cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-fg"
                   onClick={() => onRename(node)}
                 >
                   <Icon name="edit" size={13} />
@@ -107,7 +107,7 @@ function TreeRow({
                 <IconButton
                   label="删除空文件夹"
                   size="xs"
-                  className="!h-[21px] !w-[21px] !rounded-[5px] cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-danger"
+                  className="!h-[21px] !w-[21px] !rounded-md cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-danger"
                   onClick={() => onDelete(node)}
                 >
                   <Icon name="trash" size={13} />
@@ -169,7 +169,7 @@ export function FolderTree(props: FolderTreeProps) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-1.5 py-2">
       <div
-        className={`group flex h-[30px] items-center gap-0.5 rounded-[7px] pr-1.5 text-fg-muted hover:bg-surface-hover hover:text-fg ${
+        className={`group flex h-[30px] items-center gap-0.5 rounded-md pr-1.5 text-fg-muted hover:bg-surface-hover hover:text-fg ${
           current === '' ? 'bg-surface-hover text-fg' : ''
         }`}
       >
@@ -191,7 +191,7 @@ export function FolderTree(props: FolderTreeProps) {
             <IconButton
               label="新建文件夹"
               size="xs"
-              className="!h-[21px] !w-[21px] !rounded-[5px] cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-fg"
+              className="!h-[21px] !w-[21px] !rounded-md cursor-pointer !text-fg-subtle hover:!bg-surface hover:!text-fg"
               onClick={() => onCreate('')}
             >
               <Icon name="folder-plus" size={13} />

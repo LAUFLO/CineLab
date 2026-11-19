@@ -45,6 +45,7 @@ corepack pnpm typecheck    # 主进程 + 渲染进程类型检查
 corepack pnpm test         # Vitest 单元测试
 corepack pnpm check:encryption # 检查透明加密文件与 Git blob 是否为明文
 corepack pnpm check:docs   # 检查文档状态、链接、索引和 Agent 工具清单
+corepack pnpm check:ui     # 检查 UI 控件、圆角、浮层和硬编码色值
 corepack pnpm build        # 构建
 corepack pnpm dist:win     # 打包 Windows 安装包
 corepack pnpm dist:mac     # 打包 macOS 安装包（需在 macOS 上运行）
@@ -65,6 +66,7 @@ corepack pnpm dist:mac     # 打包 macOS 安装包（需在 macOS 上运行）
 ## 硬性约定
 
 - 主题颜色只通过 `src/renderer/src/styles/tokens.css` 的 CSS 变量引用，组件内禁止硬编码色值。
+- 新增 UI 前先查 `src/renderer/src/components/ui/index.ts`：下拉用 `Select`/`NativeSelect`，菜单/浮层用 `Menu`/`Popover`/`Dialog`，按钮/输入用 `Button`/`Input`/`Textarea`。禁止业务代码自建浮层或原生控件；提交前运行 `corepack pnpm check:ui`。
 - 节点与画布的数据结构放在 `src/shared/`，前后端共用。
 - 所有文件读写、模型请求走主进程，渲染进程禁止直接访问文件系统或外部 API。
 - 左侧 `+` 只作为 target 接收连线，右侧 `+` 才发起下游生成。

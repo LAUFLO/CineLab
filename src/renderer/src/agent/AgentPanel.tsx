@@ -19,7 +19,7 @@ import {
   type AgentMessage
 } from './agentStore'
 import agentIcon from '../assets/agent-icon.svg'
-import { Button, Input, Textarea } from '../components/ui'
+import { Button, Input, Popover, Textarea } from '../components/ui'
 
 import { ContextRing } from './panel/ContextRing'
 import { MessageBubble } from './panel/MessageBubble'
@@ -105,7 +105,9 @@ export function AgentPanel() {
   const mentionLoadedRef = useRef(false)
   const listRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const panelRef = useRef<HTMLElement>(null)
+  const sessionButtonRef = useRef<HTMLButtonElement>(null)
+  const permissionButtonRef = useRef<HTMLButtonElement>(null)
+  const skillButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!visible) return
@@ -124,39 +126,6 @@ export function AgentPanel() {
     const element = listRef.current
     if (element) element.scrollTop = element.scrollHeight
   }, [messages, visible])
-
-  useEffect(() => {
-    if (
-      !sessionMenuOpen &&
-      !modelPickerOpen &&
-      !permissionMenuOpen &&
-      !skillPickerOpen
-    ) {
-      return
-    }
-    const onPointerDown = (event: PointerEvent): void => {
-      if (!panelRef.current) return
-      if (
-        event.target instanceof Node &&
-        panelRef.current.contains(event.target)
-      ) {
-        return
-      }
-      setSessionMenuOpen(false)
-      setModelPickerOpen(false)
-      setPermissionMenuOpen(false)
-      setSkillPickerOpen(false)
-      setMentionOpen(false)
-    }
-    window.addEventListener('pointerdown', onPointerDown)
-    return () => window.removeEventListener('pointerdown', onPointerDown)
-  }, [
-    sessionMenuOpen,
-    modelPickerOpen,
-    permissionMenuOpen,
-    skillPickerOpen,
-    mentionOpen
-  ])
 
   const submit = (): void => {
     const text = draft.trim()
@@ -421,12 +390,12 @@ export function AgentPanel() {
       {visible ? (
         <section
           data-testid="agent-panel"
-          className="fixed bottom-4 right-3 top-12 z-[95] flex w-[420px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[18px] border border-border-strong bg-surface-raised text-[13px] text-fg shadow-float max-[560px]:inset-x-2 max-[560px]:bottom-4 max-[560px]:top-[44px] max-[560px]:w-auto"
+          className="fixed bottom-4 right-3 top-12 z-[95] flex w-[420px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-panel border border-border-strong bg-surface-raised text-[13px] text-fg shadow-float max-[560px]:inset-x-2 max-[560px]:bottom-4 max-[560px]:top-[44px] max-[560px]:w-auto"
           aria-label="CineBot"
-          ref={panelRef}
         >
           <header className="flex shrink-0 items-center justify-between gap-2.5 border-b border-border px-3 py-2.5">
             <Button
+              ref={sessionButtonRef}
               type="button"
               className="min-w-0 max-w-[280px] justify-start gap-[5px] px-2 py-1 text-[13px] !font-semibold !text-fg"
               onClick={() => setSessionMenuOpen((open) => !open)}
@@ -470,9 +439,16 @@ export function AgentPanel() {
           </header>
 
           {sessionMenuOpen ? (
-            <div className="absolute inset-x-2.5 top-[52px] z-20 flex max-h-[420px] flex-col gap-2 overflow-hidden rounded-[12px] border border-border-strong bg-surface-raised p-2.5 shadow-menu">
+            <Popover
+              open={sessionMenuOpen}
+              onClose={() => setSessionMenuOpen(false)}
+              anchorRef={sessionButtonRef}
+              align="start"
+              width={400}
+              className="!p-2.5 flex !max-h-[420px] flex-col gap-2 !overflow-hidden"
+            >
               <div className="text-xs font-semibold text-fg">历史对话</div>
-              <div className="flex shrink-0 items-center gap-1.5 rounded-[8px] border border-border bg-surface px-2 py-1.5 text-fg-subtle">
+              <div className="flex shrink-0 items-center gap-1.5 rounded-card border border-border bg-surface px-2 py-1.5 text-fg-subtle">
                 <Icon name="search" size={13} />
                 <Input
                   autoFocus
@@ -484,7 +460,7 @@ export function AgentPanel() {
               </div>
               <Button
                 type="button"
-                className="shrink-0 justify-start gap-1.5 rounded-[8px] border border-border bg-surface px-2 py-[7px] text-left text-xs !font-normal !text-fg disabled:!opacity-100"
+                className="shrink-0 justify-start gap-1.5 rounded-card border border-border bg-surface px-2 py-[7px] text-left text-xs !font-normal !text-fg disabled:!opacity-100"
                 onClick={() => {
                   setSessionMenuOpen(false)
                   void newSession()
@@ -505,7 +481,7 @@ export function AgentPanel() {
                   filteredSessions.map((session) => (
                     <div
                       key={session.sessionId}
-                      className={`group flex items-center gap-0.5 rounded-[7px] border pr-1 text-xs ${
+                      className={`group flex items-center gap-0.5 rounded-md border pr-1 text-xs ${
                         session.sessionId === sessionId
                           ? 'border-border-strong bg-surface-hover text-fg'
                           : 'border-transparent text-fg-muted hover:bg-surface-hover'
@@ -529,7 +505,7 @@ export function AgentPanel() {
                       </Button>
                       <Button
                         type="button"
-                        className={`size-[22px] shrink-0 !rounded-[5px] !p-0 !text-fg-subtle hover:!bg-surface-raised hover:!text-danger disabled:!opacity-30 ${
+                        className={`size-[22px] shrink-0 !rounded-md !p-0 !text-fg-subtle hover:!bg-surface-raised hover:!text-danger disabled:!opacity-30 ${
                           session.sessionId === sessionId
                             ? 'opacity-100'
                             : 'opacity-0 group-hover:opacity-100'
@@ -549,7 +525,7 @@ export function AgentPanel() {
                   ))
                 )}
               </div>
-            </div>
+            </Popover>
           ) : null}
 
           <div
@@ -573,7 +549,7 @@ export function AgentPanel() {
                 </div>
                 <Button
                   type="button"
-                  className="max-w-full !justify-start !rounded-[9px] bg-surface px-2.5 py-2 text-left text-xs !font-normal"
+                  className="max-w-full !justify-start !rounded-card bg-surface px-2.5 py-2 text-left text-xs !font-normal"
                   onClick={() => {
                     setDraft(suggestion)
                     textareaRef.current?.focus()
@@ -596,7 +572,7 @@ export function AgentPanel() {
           </div>
 
           {pendingConfirm ? (
-            <section className="mx-3 mb-2 shrink-0 rounded-[10px] border border-[color-mix(in_srgb,var(--warning)_55%,var(--border-strong))] bg-surface p-2.5 text-[11px]">
+            <section className="mx-3 mb-2 shrink-0 rounded-card border border-[color-mix(in_srgb,var(--warning)_55%,var(--border-strong))] bg-surface p-2.5 text-[11px]">
               <header className="flex items-center justify-between gap-2 text-xs font-semibold text-warning">
                 <span>需要确认</span>
                 <span className="text-[10px] font-normal text-fg-subtle">
@@ -609,7 +585,7 @@ export function AgentPanel() {
               <div className="mt-2 flex justify-end gap-2">
                 <Button
                   type="button"
-                  className="!rounded-[6px] px-2.5 py-1 text-[11px] !font-normal"
+                  className="!rounded-md px-2.5 py-1 text-[11px] !font-normal"
                   disabled={confirming}
                   onClick={() => void confirmTool(true)}
                   variant="primary"
@@ -619,7 +595,7 @@ export function AgentPanel() {
                 </Button>
                 <Button
                   type="button"
-                  className="!rounded-[6px] px-2.5 py-1 text-[11px] !font-normal"
+                  className="!rounded-md px-2.5 py-1 text-[11px] !font-normal"
                   disabled={confirming}
                   onClick={() => void confirmTool(false)}
                   variant="secondary"
@@ -642,13 +618,13 @@ export function AgentPanel() {
 
           {error ? (
             <div
-              className="mx-3 mb-2 flex shrink-0 items-center justify-between gap-2 rounded-[8px] border border-[color-mix(in_srgb,var(--danger)_30%,var(--border))] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] px-2.5 py-[7px] text-[11px] text-danger"
+              className="mx-3 mb-2 flex shrink-0 items-center justify-between gap-2 rounded-card border border-[color-mix(in_srgb,var(--danger)_30%,var(--border))] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] px-2.5 py-[7px] text-[11px] text-danger"
               role="status"
             >
               <span>{error}</span>
               <Button
                 type="button"
-                className="shrink-0 !rounded-[5px] px-1.5 py-0.5 text-[10px] !font-normal !text-inherit hover:!text-inherit"
+                className="shrink-0 !rounded-md px-1.5 py-0.5 text-[10px] !font-normal !text-inherit hover:!text-inherit"
                 onClick={clearError}
                 variant="secondary"
                 size="none"
@@ -659,11 +635,11 @@ export function AgentPanel() {
           ) : null}
 
           {changedCount > 0 ? (
-            <div className="mx-3 mb-2 flex shrink-0 items-center justify-between gap-2 rounded-[8px] border border-border px-2.5 py-[7px] text-[11px] text-fg-muted">
+            <div className="mx-3 mb-2 flex shrink-0 items-center justify-between gap-2 rounded-card border border-border px-2.5 py-[7px] text-[11px] text-fg-muted">
               <span>本轮修改了 {changedCount} 处</span>
               <Button
                 type="button"
-                className="!rounded-[5px] px-2 py-[3px] text-[11px] !font-normal !text-fg"
+                className="!rounded-md px-2 py-[3px] text-[11px] !font-normal !text-fg"
                 onClick={undoLastTurn}
                 disabled={running}
                 variant="secondary"
@@ -674,12 +650,12 @@ export function AgentPanel() {
             </div>
           ) : null}
 
-          <div className="relative mx-2.5 mb-2.5 mt-2 shrink-0 rounded-[14px] border border-border-strong bg-surface p-2">
+          <div className="relative mx-2.5 mb-2.5 mt-2 shrink-0 rounded-panel border border-border-strong bg-surface p-2">
             {attachments.length > 0 || references.length > 0 ? (
               <div className="flex flex-wrap gap-1 px-0.5 pb-1.5 pt-0.5">
                 {attachments.map((item) => (
                   <span
-                    className="inline-flex max-w-[180px] items-center gap-1 rounded-[6px] border border-border bg-surface-raised py-[3px] pl-1.5 pr-[5px] text-[10px] text-fg-muted"
+                    className="inline-flex max-w-[180px] items-center gap-1 rounded-md border border-border bg-surface-raised py-[3px] pl-1.5 pr-[5px] text-[10px] text-fg-muted"
                     key={item.nodeId}
                   >
                     <Icon
@@ -695,7 +671,7 @@ export function AgentPanel() {
                     <span className="truncate">{item.name}</span>
                     <Button
                       type="button"
-                      className="size-4 !rounded-[4px] !p-0 !text-fg-subtle disabled:!opacity-40"
+                      className="size-4 !rounded-md !p-0 !text-fg-subtle disabled:!opacity-40"
                       title="移除附件"
                       disabled={running}
                       onClick={() => removeAttachment(item.nodeId)}
@@ -708,7 +684,7 @@ export function AgentPanel() {
                 ))}
                 {references.map((item) => (
                   <span
-                    className="inline-flex max-w-[180px] items-center gap-1 rounded-[6px] border border-[color-mix(in_srgb,var(--accent)_45%,var(--border))] bg-surface-raised py-[3px] pl-1.5 pr-[5px] text-[10px] text-fg"
+                    className="inline-flex max-w-[180px] items-center gap-1 rounded-md border border-[color-mix(in_srgb,var(--accent)_45%,var(--border))] bg-surface-raised py-[3px] pl-1.5 pr-[5px] text-[10px] text-fg"
                     key={`${item.scope}:${item.path}`}
                   >
                     <Icon
@@ -724,7 +700,7 @@ export function AgentPanel() {
                     <span className="truncate">@{item.name}</span>
                     <Button
                       type="button"
-                      className="size-4 !rounded-[4px] !p-0 !text-fg-subtle disabled:!opacity-40"
+                      className="size-4 !rounded-md !p-0 !text-fg-subtle disabled:!opacity-40"
                       title="移除引用"
                       disabled={running}
                       onClick={() => removeReference(item)}
@@ -738,7 +714,14 @@ export function AgentPanel() {
               </div>
             ) : null}
             {mentionOpen ? (
-              <div className="absolute inset-x-2 bottom-[calc(100%+8px)] z-[26] flex max-h-[300px] flex-col gap-2 rounded-[12px] border border-border-strong bg-surface-raised p-2.5 shadow-menu">
+              <Popover
+                open={mentionOpen}
+                onClose={() => setMentionOpen(false)}
+                anchorRef={textareaRef}
+                align="center"
+                width={400}
+                className="!p-2.5 flex !max-h-[300px] flex-col gap-2"
+              >
                 <div className="text-xs font-semibold text-fg">引用素材</div>
                 <div className="flex min-h-0 flex-col gap-0.5 overflow-y-auto">
                   {filteredMentionItems.length === 0 ? (
@@ -750,7 +733,7 @@ export function AgentPanel() {
                       <Button
                         key={item.key}
                         type="button"
-                        className={`!justify-start gap-2 !rounded-[6px] px-2 py-[7px] text-left text-xs !font-normal ${
+                        className={`!justify-start gap-2 !rounded-md px-2 py-[7px] text-left text-xs !font-normal ${
                           index === mentionIndex
                             ? '!bg-surface-hover !text-fg'
                             : ''
@@ -778,7 +761,7 @@ export function AgentPanel() {
                     ))
                   )}
                 </div>
-              </div>
+              </Popover>
             ) : null}
             <Textarea
               ref={textareaRef}
@@ -841,7 +824,7 @@ export function AgentPanel() {
               <div className="flex min-w-0 flex-wrap gap-1">
                 <Button
                   type="button"
-                  className="max-w-[150px] truncate !justify-start gap-1 !rounded-[7px] px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
+                  className="max-w-[150px] truncate !justify-start gap-1 !rounded-md px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
                   onClick={() => void attachLocalAssets()}
                   disabled={running}
                   title="上传本地素材到画布"
@@ -853,7 +836,7 @@ export function AgentPanel() {
                 </Button>
                 <Button
                   type="button"
-                  className="max-w-[150px] truncate !justify-start gap-1 !rounded-[7px] px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
+                  className="max-w-[150px] truncate !justify-start gap-1 !rounded-md px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
                   onClick={() => {
                     setModelTab('text')
                     setModelPickerOpen(true)
@@ -867,8 +850,9 @@ export function AgentPanel() {
                 </Button>
                 <span className="relative inline-flex">
                   <Button
+                    ref={permissionButtonRef}
                     type="button"
-                    className="max-w-[150px] truncate !justify-start gap-1 !rounded-[7px] px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
+                    className="max-w-[150px] truncate !justify-start gap-1 !rounded-md px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
                     onClick={() => setPermissionMenuOpen((open) => !open)}
                     title="权限范围"
                     variant="ghost"
@@ -878,10 +862,16 @@ export function AgentPanel() {
                     {permissionMode === 'read-only' ? '只读' : '当前空间'}
                   </Button>
                   {permissionMenuOpen ? (
-                    <div className="absolute bottom-[calc(100%+8px)] left-1/2 z-[25] flex w-[250px] -translate-x-1/2 flex-col rounded-[10px] border border-border-strong bg-surface-raised p-1 shadow-menu">
+                    <Popover
+                      open={permissionMenuOpen}
+                      onClose={() => setPermissionMenuOpen(false)}
+                      anchorRef={permissionButtonRef}
+                      align="center"
+                      width={250}
+                    >
                       <Button
                         type="button"
-                        className={`!h-auto flex-col !items-stretch !justify-start gap-0.5 !rounded-[7px] px-2 py-[7px] text-left text-xs !font-normal ${
+                        className={`!h-auto flex-col !items-stretch !justify-start gap-0.5 !rounded-md px-2 py-[7px] text-left text-xs !font-normal ${
                           permissionMode === 'read-only'
                             ? '!bg-surface-hover !text-fg'
                             : ''
@@ -900,7 +890,7 @@ export function AgentPanel() {
                       </Button>
                       <Button
                         type="button"
-                        className={`!h-auto flex-col !items-stretch !justify-start gap-0.5 !rounded-[7px] px-2 py-[7px] text-left text-xs !font-normal ${
+                        className={`!h-auto flex-col !items-stretch !justify-start gap-0.5 !rounded-md px-2 py-[7px] text-left text-xs !font-normal ${
                           permissionMode === 'current'
                             ? '!bg-surface-hover !text-fg'
                             : ''
@@ -917,13 +907,14 @@ export function AgentPanel() {
                           允许修改当前画布或时间线
                         </small>
                       </Button>
-                    </div>
+                    </Popover>
                   ) : null}
                 </span>
                 <span className="relative inline-flex">
                   <Button
+                    ref={skillButtonRef}
                     type="button"
-                    className="max-w-[150px] truncate !justify-start gap-1 !rounded-[7px] px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
+                    className="max-w-[150px] truncate !justify-start gap-1 !rounded-md px-[7px] py-1 text-[10px] !font-normal !text-fg-subtle hover:!bg-transparent disabled:!opacity-45"
                     onClick={openSkillPicker}
                     title="选择技能"
                     variant="ghost"
@@ -933,11 +924,18 @@ export function AgentPanel() {
                     技能
                   </Button>
                   {skillPickerOpen ? (
-                    <div className="absolute bottom-[calc(100%+8px)] left-1/2 z-[25] flex max-h-[360px] w-[300px] -translate-x-1/2 flex-col gap-2 rounded-[12px] border border-border-strong bg-surface-raised p-2.5 shadow-menu">
+                    <Popover
+                      open={skillPickerOpen}
+                      onClose={() => setSkillPickerOpen(false)}
+                      anchorRef={skillButtonRef}
+                      align="center"
+                      width={300}
+                      className="!p-2.5 flex !max-h-[360px] flex-col gap-2"
+                    >
                       <div className="text-xs font-semibold text-fg">
                         选择技能
                       </div>
-                      <div className="flex shrink-0 items-center gap-1.5 rounded-[8px] border border-border bg-surface px-2 py-1.5 text-fg-subtle">
+                      <div className="flex shrink-0 items-center gap-1.5 rounded-card border border-border bg-surface px-2 py-1.5 text-fg-subtle">
                         <Icon name="search" size={13} />
                         <Input
                           autoFocus
@@ -989,7 +987,7 @@ export function AgentPanel() {
                             <Button
                               key={`${skill.scope}:${skill.name}`}
                               type="button"
-                              className={`!h-auto !justify-between gap-2.5 !rounded-[8px] border !border-transparent px-[9px] py-2 text-left !font-normal ${
+                              className={`!h-auto !justify-between gap-2.5 !rounded-card border !border-transparent px-[9px] py-2 text-left !font-normal ${
                                 index === skillIndex ? '!bg-surface-hover' : ''
                               }`}
                               onMouseEnter={() => setSkillIndex(index)}
@@ -1014,7 +1012,7 @@ export function AgentPanel() {
                       </div>
                       <Button
                         type="button"
-                        className="!justify-center gap-[5px] !rounded-[7px] border border-border !bg-surface px-2 py-1.5 text-[11px] !font-normal !text-fg-muted hover:!border-border-strong hover:!bg-surface hover:!text-fg"
+                        className="!justify-center gap-[5px] !rounded-md border border-border !bg-surface px-2 py-1.5 text-[11px] !font-normal !text-fg-muted hover:!border-border-strong hover:!bg-surface hover:!text-fg"
                         onClick={() => {
                           setSkillPickerOpen(false)
                           openSettings('skills')
@@ -1025,7 +1023,7 @@ export function AgentPanel() {
                         <Icon name="settings" size={12} />
                         管理技能
                       </Button>
-                    </div>
+                    </Popover>
                   ) : null}
                 </span>
               </div>
@@ -1039,7 +1037,7 @@ export function AgentPanel() {
               {running ? (
                 <Button
                   type="button"
-                  className="size-[30px] shrink-0 !rounded-[10px] !border !border-border-strong !bg-surface-hover p-0 !text-fg disabled:!opacity-[0.35]"
+                  className="size-[30px] shrink-0 !rounded-card !border !border-border-strong !bg-surface-hover p-0 !text-fg disabled:!opacity-[0.35]"
                   onClick={() => void cancel()}
                   title="停止"
                   variant="primary"
@@ -1065,11 +1063,11 @@ export function AgentPanel() {
 
           {modelPickerOpen ? (
             <div
-              className="absolute inset-0 z-30 flex items-start justify-center bg-[color-mix(in_srgb,var(--canvas-bg)_62%,transparent)] px-3 pb-3 pt-[54px] backdrop-blur-[2px]"
+              className="absolute inset-0 z-30 flex items-start justify-center bg-overlay px-3 pb-3 pt-[54px] backdrop-blur-[2px]"
               onPointerDown={() => setModelPickerOpen(false)}
             >
               <div
-                className="flex max-h-full w-full flex-col overflow-hidden rounded-[14px] border border-border-strong bg-surface-raised shadow-menu"
+                className="flex max-h-full w-full flex-col overflow-hidden rounded-panel border border-border-strong bg-surface-raised shadow-float"
                 onPointerDown={(event) => event.stopPropagation()}
               >
                 <header className="flex items-start justify-between gap-2.5 border-b border-border p-3">
@@ -1127,7 +1125,7 @@ export function AgentPanel() {
                     </header>
                     <Button
                       type="button"
-                      className={`!h-auto !justify-between gap-2.5 !rounded-[8px] border !border-transparent px-[9px] py-2 text-left !font-normal ${
+                      className={`!h-auto !justify-between gap-2.5 !rounded-card border !border-transparent px-[9px] py-2 text-left !font-normal ${
                         !activeModelGroup.selected
                           ? '!border-border-strong !bg-surface-hover'
                           : ''
@@ -1154,7 +1152,7 @@ export function AgentPanel() {
                         <Button
                           key={`${activeModelGroup.key}:${key}`}
                           type="button"
-                          className={`!h-auto !justify-between gap-2.5 !rounded-[8px] border !border-transparent px-[9px] py-2 text-left !font-normal ${
+                          className={`!h-auto !justify-between gap-2.5 !rounded-card border !border-transparent px-[9px] py-2 text-left !font-normal ${
                             activeModelGroup.selected === key
                               ? '!border-border-strong !bg-surface-hover'
                               : ''
@@ -1193,7 +1191,7 @@ export function AgentPanel() {
       ) : (
         <Button
           type="button"
-          className="fixed bottom-[26px] right-[26px] z-[95] size-11 !rounded-full !border-0 !bg-transparent p-0 shadow-float hover:-translate-y-px hover:!bg-transparent hover:shadow-menu"
+          className="fixed bottom-[26px] right-[26px] z-[95] size-11 !rounded-full !border-0 !bg-transparent p-0 shadow-float hover:-translate-y-px hover:!bg-transparent hover:shadow-float"
           onClick={toggle}
           aria-label="打开 CineBot"
           title="CineBot（Ctrl+Shift+A）"

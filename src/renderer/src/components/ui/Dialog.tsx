@@ -27,6 +27,13 @@ const SIZES = {
   lg: 'max-w-2xl'
 } as const
 
+/** 对话框表面：无内边距，供全出血布局使用。 */
+export const DIALOG_SURFACE =
+  'rounded-panel border border-border bg-surface-raised text-fg shadow-float'
+
+/** bare 面板统一表面；尺寸、间距由调用方追加。 */
+export const DIALOG_PANEL = `${DIALOG_SURFACE} p-[18px]`
+
 const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
@@ -131,11 +138,7 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
-        className={cn(
-          'w-full rounded-panel border border-border bg-surface-raised p-5 text-fg shadow-menu',
-          SIZES[size],
-          className
-        )}
+        className={cn('w-full', DIALOG_PANEL, SIZES[size], className)}
         onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">

@@ -51,18 +51,18 @@ const SIDE_TITLE_CLASS = 'mb-1.5 text-[11px] text-fg-subtle'
 const EMPTY_CLASS = 'py-2 text-[11px] text-fg-subtle'
 
 const EDITOR_INPUT_CLASS =
-  '!h-auto !min-h-[30px] !rounded-[6px] !border-border-strong !px-2 !py-1.5 !text-xs !leading-[1.5] focus:!border-border-selected'
+  '!h-auto !min-h-[30px] !rounded-md !border-border-strong !px-2 !py-1.5 !text-xs !leading-[1.5] focus:!border-border-selected'
 const EDITOR_TEXTAREA_CLASS =
-  '!min-h-12 !rounded-[6px] !border-border-strong !px-2 !py-1.5 !text-xs !leading-[1.5] focus:!border-border-selected'
+  '!min-h-12 !rounded-md !border-border-strong !px-2 !py-1.5 !text-xs !leading-[1.5] focus:!border-border-selected'
 
 const SUBTITLE_ROW_CLASS =
-  '!flex w-full !items-start !justify-start gap-1.5 !rounded-[5px] px-[5px] py-1 text-left !font-normal text-fg-muted'
+  '!flex w-full !items-start !justify-start gap-1.5 !rounded-md px-[5px] py-1 text-left !font-normal text-fg-muted'
 
 const SEGMENT_MAIN_CLASS =
   '!flex min-w-0 flex-1 !items-center !justify-start gap-[7px] px-[5px] py-1 text-left !font-normal text-fg-muted hover:!bg-transparent hover:!text-fg-muted'
 
 const FRAME_BASE_CLASS =
-  '!absolute top-3 !flex h-[112px] w-[104px] flex-col !items-stretch !justify-start gap-1 !rounded-lg border border-border bg-surface p-[5px] text-left !font-normal !text-fg-subtle hover:!border-border-strong hover:!bg-surface hover:!text-fg-subtle'
+  '!absolute top-3 !flex h-[112px] w-[104px] flex-col !items-stretch !justify-start gap-1 !rounded-card border border-border bg-surface p-[5px] text-left !font-normal !text-fg-subtle hover:!border-border-strong hover:!bg-surface hover:!text-fg-subtle'
 const FRAME_ACTIVE_CLASS = '!border-border-selected !text-fg hover:!text-fg'
 
 export function FilmStudyRoom() {
@@ -460,7 +460,7 @@ export function FilmStudyRoom() {
 
   return (
     <div
-      className="fixed inset-0 z-[900] flex items-center justify-center bg-[color-mix(in_srgb,var(--canvas-bg)_72%,transparent)] p-6"
+      className="fixed inset-0 z-[900] flex items-center justify-center bg-overlay p-6"
       onPointerDown={closeRoom}
     >
       <div
@@ -526,7 +526,7 @@ export function FilmStudyRoom() {
         </header>
 
         <div className="flex min-h-0 flex-1">
-          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-media-bg p-4 [&_.video-node]:h-full [&_.video-node]:w-[min(100%,760px)] [&_.video-node]:overflow-hidden [&_.video-node]:rounded-lg">
+          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-media-bg p-4 [&_.video-node]:h-full [&_.video-node]:w-[min(100%,760px)] [&_.video-node]:overflow-hidden [&_.video-node]:rounded-card">
             <VideoPlayer
               ref={playerRef}
               src={sourceUrl}
@@ -537,7 +537,7 @@ export function FilmStudyRoom() {
           </div>
 
           <aside className="w-[284px] shrink-0 overflow-y-auto border-l border-divider p-[18px]">
-            <div className="mb-3.5 flex gap-0.5 rounded-lg bg-surface-hover p-0.5">
+            <div className="mb-3.5 flex gap-0.5 rounded-card bg-surface-hover p-0.5">
               {(
                 [
                   ['notes', '笔记'],
@@ -551,7 +551,7 @@ export function FilmStudyRoom() {
                   variant="ghost"
                   size="none"
                   className={cn(
-                    'h-[26px] flex-1 !rounded-[6px] text-[11px] !font-normal',
+                    'h-[26px] flex-1 !rounded-md text-[11px] !font-normal',
                     tab === id
                       ? 'bg-surface !text-fg hover:!bg-surface'
                       : '!text-fg-subtle hover:!text-fg-muted'
@@ -589,13 +589,13 @@ export function FilmStudyRoom() {
                 </div>
 
                 <Textarea
-                  className="mt-3 !min-h-[76px] !rounded-lg !border-border-strong !px-[9px] !py-2 !text-xs !leading-[1.55] focus:!border-border-selected"
+                  className="mt-3 !min-h-[76px] !rounded-card !border-border-strong !px-[9px] !py-2 !text-xs !leading-[1.55] focus:!border-border-selected"
                   value={selected?.note ?? ''}
                   placeholder="记录这一帧的画面、表演、构图或声音…"
                   onChange={(event) => updateFrameNote(event.target.value)}
                 />
 
-                <div className="mt-3.5 rounded-lg border border-border bg-surface-raised px-[9px] py-2">
+                <div className="mt-3.5 rounded-card border border-border bg-surface-raised px-[9px] py-2">
                   <div className="flex items-center justify-between gap-2 text-[11px] text-fg-muted">
                     <span>字幕 {study.subtitles?.length ?? 0} 条</span>
                     <div className="flex gap-1">
@@ -701,7 +701,7 @@ export function FilmStudyRoom() {
                         <div
                           key={segment.id}
                           className={cn(
-                            'flex items-center gap-0.5 rounded-[7px] border border-transparent p-[3px]',
+                            'flex items-center gap-0.5 rounded-md border border-transparent p-[3px]',
                             segment.id === selectedSegmentId &&
                               'border-border-strong bg-surface-raised'
                           )}
@@ -723,7 +723,7 @@ export function FilmStudyRoom() {
                           <IconButton
                             label="播放本段"
                             size="xs"
-                            className="!h-[22px] !w-[22px] !rounded-[5px] !text-fg-subtle"
+                            className="!h-[22px] !w-[22px] !rounded-md !text-fg-subtle"
                             onClick={() => playSegment(segment)}
                           >
                             <Icon name="play" size={12} />
@@ -731,7 +731,7 @@ export function FilmStudyRoom() {
                           <IconButton
                             label="删除段落"
                             size="xs"
-                            className="!h-[22px] !w-[22px] !rounded-[5px] !text-fg-subtle"
+                            className="!h-[22px] !w-[22px] !rounded-md !text-fg-subtle"
                             onClick={() => deleteSegment(segment)}
                           >
                             <Icon name="trash" size={12} />
@@ -947,7 +947,7 @@ export function FilmStudyRoom() {
                     src={assetUrl(frame.file, 'project')}
                     alt=""
                     loading="lazy"
-                    className="min-h-0 w-full flex-1 rounded-[4px] bg-media-bg object-cover"
+                    className="min-h-0 w-full flex-1 rounded-md bg-media-bg object-cover"
                   />
                   <span className="shrink-0 pl-0.5 text-[10px] tabular-nums">
                     {studyTime(frame.time)}
@@ -971,7 +971,7 @@ export function FilmStudyRoom() {
               结果将替换当前段落。
             </div>
             {textModels.length === 0 ? (
-              <div className="rounded-[7px] bg-surface p-2.5 text-[11px] text-fg-subtle">
+              <div className="rounded-md bg-surface p-2.5 text-[11px] text-fg-subtle">
                 还没有 text.chat 模型，请先在设置中配置。
               </div>
             ) : (

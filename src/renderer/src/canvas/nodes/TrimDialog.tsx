@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Icon } from '../../components/Icon'
-import { Button, Dialog, IconButton, Input } from '../../components/ui'
+import { Button, DIALOG_PANEL, Dialog, IconButton, Input } from '../../components/ui'
 
 interface TrimDialogProps {
   open: boolean
@@ -43,8 +43,8 @@ export function TrimDialog({
       onClose={busy ? () => {} : onClose}
       bare
       ariaLabel="片段截取"
-      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-black/55 px-6 py-12"
-      panelClassName="w-[380px] rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
+      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-overlay px-6 py-12"
+      panelClassName={`w-[380px] ${DIALOG_PANEL}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -74,7 +74,7 @@ export function TrimDialog({
             step="0.1"
             value={start}
             onChange={(event) => setStart(event.target.value)}
-            className="!h-8 !rounded-[7px] !border-border-strong !bg-surface-hover !px-2 !text-xs focus:!border-border-selected"
+            className="!h-8 !rounded-md !border-border-strong !bg-surface-hover !px-2 !text-xs focus:!border-border-selected"
           />
         </label>
         <label className="flex flex-col gap-1.5 text-xs text-fg-muted">
@@ -86,7 +86,7 @@ export function TrimDialog({
             step="0.1"
             value={end}
             onChange={(event) => setEnd(event.target.value)}
-            className="!h-8 !rounded-[7px] !border-border-strong !bg-surface-hover !px-2 !text-xs focus:!border-border-selected"
+            className="!h-8 !rounded-md !border-border-strong !bg-surface-hover !px-2 !text-xs focus:!border-border-selected"
           />
         </label>
       </div>

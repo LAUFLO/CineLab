@@ -63,7 +63,7 @@ export function ProposalCard({
 
   return (
     <section
-      className={`mx-3 mb-2 shrink-0 rounded-[10px] border bg-surface p-2.5 text-[11px] ${
+      className={`mx-3 mb-2 shrink-0 rounded-card border bg-surface p-2.5 text-[11px] ${
         BORDER_CLASS[proposal.status] ?? 'border-border-strong'
       }`}
     >
@@ -112,7 +112,7 @@ export function ProposalCard({
         <span className={ROW_LABEL}>数量</span>
         <strong className={ROW_VALUE}>{proposal.count}</strong>
       </div>
-      <div className="mt-1.5 max-h-[66px] overflow-auto whitespace-pre-wrap break-words rounded-[6px] border border-border bg-surface-raised px-2 py-1.5 leading-[1.5] text-fg-muted">
+      <div className="mt-1.5 max-h-[66px] overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-surface-raised px-2 py-1.5 leading-[1.5] text-fg-muted">
         {proposal.request.prompt}
       </div>
       {proposal.error ? (
@@ -122,7 +122,7 @@ export function ProposalCard({
         <div className="mt-2 flex justify-end gap-2">
           <Button
             type="button"
-            className="!rounded-[6px] px-2.5 py-1 text-[11px] !font-normal disabled:!opacity-50"
+            className="!rounded-md px-2.5 py-1 text-[11px] !font-normal disabled:!opacity-50"
             onClick={onSubmit}
             disabled={busy}
             variant="primary"
@@ -132,7 +132,7 @@ export function ProposalCard({
           </Button>
           <Button
             type="button"
-            className="!rounded-[6px] px-2.5 py-1 text-[11px] !font-normal disabled:!opacity-50"
+            className="!rounded-md px-2.5 py-1 text-[11px] !font-normal disabled:!opacity-50"
             onClick={onCancel}
             disabled={busy}
             variant="secondary"

@@ -444,24 +444,76 @@ export interface AgentApi {
   onToolCall(callback: (call: AgentToolCallRequest) => void): () => void
 }
 
+export type StageExportScope = 'shot' | 'program'
+
+export interface StageExportItems {
+  previs: boolean
+  clips: boolean
+  frames: boolean
+  overview: boolean
+  shotList: boolean
+  script: boolean
+}
+
+export type StageFrameDensity = 'three' | 'first-only'
+
 export interface StageExportInput {
   stageId: string
-  shotId: string
+  /** 缺省按 'shot' 解释，兼容旧调用 */
+  scope?: StageExportScope
+  /** scope='shot' 必填；scope='program' 忽略 */
+  shotId?: string
   resolution: '720p' | '1080p'
   fps: 24 | 30
+  items?: Partial<StageExportItems>
+  /** 分镜图密度：每镜三张（首/中/尾）或仅首帧 */
+  frameDensity?: StageFrameDensity
+}
+
+export interface StageExportClip {
+  shotId: string
+  /** 第几镜，从 1 开始 */
+  index: number
+  asset: GeneratedAsset
+  path: string
 }
 
 export interface StageExportProgress {
   stageId: string
-  shotId: string
+  shotId?: string
   frame: number
   total: number
-  stage: 'rendering' | 'encoding' | 'done'
+  stage: 'rendering' | 'encoding' | 'clips' | 'frames' | 'shot-list' | 'done'
+  clipIndex?: number
+  clipTotal?: number
+}
+
+export interface StageExportFrame {
+  shotId: string
+  label: string
+  asset: GeneratedAsset
+  path: string
+}
+
+export interface StageExportDocument {
+  label: string
+  text: string
+  path?: string
 }
 
 export interface StageExportResult {
   asset: GeneratedAsset
   path: string
+  /** 整片导出时的每镜片段 */
+  clips?: StageExportClip[]
+  /** 每镜分镜图（首/中/尾） */
+  frames?: StageExportFrame[]
+  /** 场景鸟瞰 */
+  overview?: { asset: GeneratedAsset; path: string }
+  /** 镜头表、分镜脚本等文本产物 */
+  documents?: StageExportDocument[]
+  /** 导出被取消，只保留已完成产物 */
+  partial?: boolean
 }
 
 export interface SkillsApi {
@@ -499,6 +551,7 @@ export interface StageApi {
   duplicate(stageId: string): Promise<DirectorStageDoc>
   capture(input: { stageId: string; dataUrl: string }): Promise<GeneratedAsset>
   exportPreview(input: StageExportInput): Promise<StageExportResult>
+  cancelExport(stageId: string): Promise<void>
   onExportProgress(
     callback: (progress: StageExportProgress) => void
   ): () => void

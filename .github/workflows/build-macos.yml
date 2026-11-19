@@ -35,6 +35,7 @@ jobs:
 
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm check:ui
       - run: pnpm build
 
       - name: Build macOS arm64

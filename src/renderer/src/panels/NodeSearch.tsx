@@ -65,11 +65,11 @@ export function NodeSearch() {
 
   return (
     <div
-      className="fixed inset-0 z-[240] flex justify-center bg-black/35 pt-[12vh] [-webkit-app-region:no-drag]"
+      className="fixed inset-0 z-[240] flex justify-center bg-overlay pt-[12vh] [-webkit-app-region:no-drag]"
       onPointerDown={close}
     >
       <div
-        className="flex max-h-[420px] w-[560px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-[14px] border border-border bg-surface shadow-menu"
+        className="flex max-h-[420px] w-[560px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface-raised shadow-float"
         onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="flex h-12 items-center gap-2 border-b border-divider px-3.5 text-fg-subtle">
@@ -121,7 +121,7 @@ export function NodeSearch() {
                 type="button"
                 variant="ghost"
                 size="none"
-                className={`!flex h-9 w-full items-center gap-2.5 !justify-start rounded-lg px-2.5 text-left text-[13px] !font-normal ${
+                className={`!flex h-9 w-full items-center gap-2.5 !justify-start rounded-card px-2.5 text-left text-[13px] !font-normal ${
                   index === active ? '!bg-surface-hover !text-fg' : ''
                 }`}
                 onPointerEnter={() => setActive(index)}

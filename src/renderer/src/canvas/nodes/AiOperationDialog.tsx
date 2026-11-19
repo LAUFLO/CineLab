@@ -5,6 +5,7 @@ import { Icon } from '../../components/Icon'
 import { useSettingsStore } from '../../stores/settings'
 import {
   Button,
+  DIALOG_PANEL,
   Dialog,
   IconButton,
   Select,
@@ -87,8 +88,8 @@ export function AiOperationDialog({
       onClose={busy ? () => {} : onClose}
       bare
       ariaLabel={title}
-      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-black/55 px-6 py-12"
-      panelClassName="w-[520px] rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
+      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-overlay px-6 py-12"
+      panelClassName={`w-[520px] ${DIALOG_PANEL}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -113,7 +114,7 @@ export function AiOperationDialog({
       </div>
 
       {models.length === 0 ? (
-        <div className="mt-4 flex flex-col gap-2 rounded-[9px] border border-border bg-surface-hover p-[14px] text-xs text-fg-muted">
+        <div className="mt-4 flex flex-col gap-2 rounded-card border border-border bg-surface-hover p-[14px] text-xs text-fg-muted">
           <p>还没有可用的图片模型。</p>
           <p>P1 操作需要支持图生图的模型，请先在设置中添加。</p>
           <Button
@@ -151,7 +152,7 @@ export function AiOperationDialog({
           <label className="flex flex-col gap-1.5 text-xs text-fg-muted">
             <span>提示词</span>
             <Textarea
-              className="!min-h-[132px] !rounded-[7px] !border-border-strong !bg-surface-hover !px-2 !py-2 !text-xs leading-[1.6] focus:!border-border-selected"
+              className="!min-h-[132px] !rounded-md !border-border-strong !bg-surface-hover !px-2 !py-2 !text-xs leading-[1.6] focus:!border-border-selected"
               rows={7}
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}

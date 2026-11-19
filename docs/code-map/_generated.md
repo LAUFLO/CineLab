@@ -138,6 +138,8 @@
 
 ## 测试清单
 
+- `src/main/__tests__/capability-audit.test.ts`
+- `src/main/__tests__/protocol.test.ts`
 - `src/main/agent/__tests__/capabilities.test.ts`
 - `src/main/agent/__tests__/compact.test.ts`
 - `src/main/agent/__tests__/model.test.ts`
@@ -169,8 +171,6 @@
 - `src/main/settings/__tests__/models-config.test.ts`
 - `src/main/stage/__tests__/storage.test.ts`
 - `src/main/update/__tests__/fallback.test.ts`
-- `src/main/__tests__/capability-audit.test.ts`
-- `src/main/__tests__/protocol.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/text-markdown.test.ts`
 - `src/renderer/src/components/ui/native-controls.test.ts`
 - `src/renderer/src/stores/__tests__/canvas.test.ts`

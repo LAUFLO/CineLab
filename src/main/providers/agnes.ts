@@ -20,6 +20,16 @@ interface AgnesVideoRef {
   mime: string
 }
 
+/**
+ * Agnes 的 keyframe 参数接受图片 URL 或纯 base64；这里去掉 data URL 前缀，
+ * 避免首帧图片被当作普通参考。参考模式仍使用 data URL。
+ */
+function rawBase64(dataUrl: string): string {
+  if (!dataUrl.startsWith('data:')) return dataUrl
+  const comma = dataUrl.indexOf(',')
+  return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
+}
+
 export function buildAgnesBody(
   model: ModelDef,
   prompt: string,
@@ -50,8 +60,8 @@ export function buildAgnesBody(
   }
 
   if (mode === 'keyframe') {
-    if (firstFrame) body.first_frame = firstFrame.dataUrl
-    if (lastFrame) body.last_frame = lastFrame.dataUrl
+    if (firstFrame) body.first_frame = rawBase64(firstFrame.dataUrl)
+    if (lastFrame) body.last_frame = rawBase64(lastFrame.dataUrl)
   } else if (mode === 'reference') {
     if (images.length > 0) body.images = images.map((ref) => ref.dataUrl)
     if (audios.length > 0) body.audios = audios.map((ref) => ref.dataUrl)

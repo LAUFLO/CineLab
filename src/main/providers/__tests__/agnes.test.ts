@@ -52,7 +52,7 @@ describe('buildAgnesBody', () => {
     ])
 
     expect(body.mode).toBe('keyframe')
-    expect(body.first_frame).toBe(image.dataUrl)
+    expect(body.first_frame).toBe('AAAA')
     expect(body.audios).toBeUndefined()
   })
 

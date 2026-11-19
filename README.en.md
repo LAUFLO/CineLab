@@ -12,7 +12,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-black.svg"></a>
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-1f1f1f.svg">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.1-1f1f1f.svg">
+  <a href="https://github.com/LAUFLO/CineLab/releases/latest"><img alt="Version" src="https://img.shields.io/github/v/release/LAUFLO/CineLab?label=version&color=1f1f1f"></a>
 </p>
 
 <p align="center">
@@ -61,11 +61,16 @@ The canvas interaction is modelled after LibTV's infinite canvas, with the goal 
 - Trim, split, snap, speed, volume, fades and transitions
 - Auto rough cut: remove silence, split by shot, beat markers and beat splitting
 - Local Whisper subtitles, ffmpeg export written back to the canvas
+- Canvas nodes preview the timeline live without exporting a film first, and can play inline
+- Export versions can be deleted together with their files and stale edges
 
 ### Director Stage
 
 - three.js 3D scene: mannequins, primitives, planes, crowd arrays and local glTF
 - Multiple cameras, keyframed camera moves, shot duration and aspect ratio
+- Semantic shots: describe framing such as "over-the-shoulder from A to B" or "two-shot medium", and the camera is solved automatically without crossing the line
+- Deterministic procedural worlds: streets, plazas and interiors with weather, water, landmarks and themes, reproducible from the same seed
+- Scene-to-whitebox: drop in a concept image and get a shootable 3D scene
 - Object position, rotation, scale, pose, color, visibility and background
 - Previs export to video and back to the canvas
 
@@ -83,14 +88,23 @@ The canvas interaction is modelled after LibTV's infinite canvas, with the goal 
 - Matting, outpainting, layer separation, grid split and storyboard stitching
 - Models and runtimes download on demand instead of shipping in the installer
 
+### Model access
+
+- Any OpenAI-compatible endpoint, self-hosted service or proxy, with presets for Kling, Volcengine Ark, MiniMax and Vidu
+- Reference audio and video: Agnes Video 2.5 accepts audio/video references, and CineBot can submit audio assets
+- Capability consistency: declared and executed capabilities stay aligned, and unsupported inputs fail at the generation entry instead of being dropped silently
+- Custom HTTP templates and parameter panels
+
 ## Download and install
 
 Download the latest release from [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest):
 
+Current version: **v0.3.0**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
+
 | Platform | Recommended file | Requirements |
 |---|---|---|
-| Windows | `CineLab-0.1.1-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.1.1-arm64.dmg` | macOS 12+, Apple Silicon |
+| Windows | `CineLab-0.3.0-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.3.0-arm64.dmg` | macOS 12+, Apple Silicon |
 
 ### Windows
 
@@ -106,6 +120,8 @@ Download the latest release from [GitHub Releases](https://github.com/LAUFLO/Cin
 - Settings live in `~/Library/Application Support/CineLab`.
 
 Verify downloads against `SHA256SUMS.txt` on the release page.
+
+If checking for or downloading an update fails, the app offers "Open release page" and "Download in browser" actions, falling back from mirror proxies to the original GitHub URL.
 
 ## First run
 
@@ -125,11 +141,12 @@ Do not open a public issue for security problems. Follow [SECURITY.md](SECURITY.
 Most design documents are currently written in Chinese.
 
 - [Document index](docs/README.md)
+- [Changelog](CHANGELOG.md)
 - [Architecture](docs/architecture.md)
 - [Model configuration](docs/models.md)
 - [UI specification](docs/ui-spec.md)
 - [CineBot capabilities](docs/agent-capabilities.md)
-- [Clip Studio](docs/clip-studio-plan.md) · [Director Stage](docs/director-stage-plan.md) · [Film study](docs/film-study-plan.md)
+- [Clip Studio](docs/archive/clip-studio-plan.md) · [Director Stage](docs/archive/director-stage-plan.md)
 
 ## Development
 

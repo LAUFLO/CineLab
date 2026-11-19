@@ -26,6 +26,8 @@ import {
   packageFrameName,
   parseSrt
 } from './analysis'
+import { splitScenes } from './scenes'
+import { analyzeShots } from './shots'
 import { zipDirectory } from '../export/zip'
 
 
@@ -387,7 +389,120 @@ export async function analyzeFilmStudy(
     .replace(/\s*```$/, '')
   const parsed = JSON.parse(cleaned) as unknown
   const normalized = normalizeFilmStudyAnalysis(study, parsed)
-  return saveFilmStudy(root, normalized)
+  const scenes = await splitScenes(normalized, root, modelKey)
+  return saveFilmStudy(root, { ...normalized, scenes })
+}
+
+/** 重新分场：只改 scenes，不动镜头和其他数据。 */
+export async function resplitFilmStudyScenes(
+  root: string,
+  studyId: string,
+  modelKey?: string
+): Promise<FilmStudy> {
+  const study = await loadFilmStudy(root, studyId)
+  const scenes = await splitScenes(
+    study,
+    root,
+    modelKey ?? study.analysisModel ?? null
+  )
+  const withBase = scenes.map((scene) => ({
+    ...scene,
+    ...(study.shots?.[scene.shots[0] - 1]?.midFrame
+      ? { basePath: study.shots[scene.shots[0] - 1].midFrame }
+      : {})
+  }))
+  return saveFilmStudy(root, {
+    ...study,
+    scenes: withBase,
+    updatedAt: new Date().toISOString()
+  })
+}
+
+/** 只重跑一个镜头：重抽首/中/尾帧，可选重新逐镜理解。 */export async function rerunFilmStudyShot(
+  root: string,
+  studyId: string,
+  index: number,
+  modelKey?: string
+): Promise<FilmStudy> {
+  const study = await loadFilmStudy(root, studyId)
+  const shot = study.shots?.find((item) => item.index === index)
+  if (!shot) throw new Error('找不到该镜头')
+
+  const absolute = await resolveMediaPath(
+    root,
+    study.sourcePath,
+    study.sourceScope
+  )
+  const duration = Math.max(0, shot.endTime - shot.startTime)
+  const times = {
+    first: Math.max(0, shot.startTime + Math.min(0.05, duration / 4)),
+    mid: shot.startTime + duration / 2,
+    last: Math.max(
+      shot.startTime,
+      shot.endTime - Math.min(0.08, duration / 4)
+    )
+  }
+  const dir = `assets/study/${studyId}/frames`
+  const prefix = `shot_${String(index).padStart(3, '0')}`
+  const paths = {
+    first: `${dir}/${prefix}_first.jpg`,
+    mid: `${dir}/${prefix}_mid.jpg`,
+    last: `${dir}/${prefix}_last.jpg`
+  }
+
+  const grab = async (time: number, target: string): Promise<void> => {
+    await runFfmpeg([
+      '-y',
+      '-ss',
+      time.toFixed(3),
+      '-i',
+      absolute,
+      '-frames:v',
+      '1',
+      '-vf',
+      'scale=640:-2',
+      '-q:v',
+      '3',
+      join(root, target)
+    ])
+  }
+
+  await grab(times.first, paths.first)
+  await grab(times.mid, paths.mid)
+  await grab(times.last, paths.last)
+
+  let next: FilmStudy = {
+    ...study,
+    shots: study.shots?.map((item) =>
+      item.index === index
+        ? {
+            ...item,
+            firstFrame: paths.first,
+            midFrame: paths.mid,
+            lastFrame: paths.last
+          }
+        : item
+    )
+  }
+
+  if (modelKey) {
+    next = {
+      ...next,
+      shots: await analyzeShots(
+        next,
+        root,
+        modelKey,
+        undefined,
+        undefined,
+        index
+      )
+    }
+  }
+
+  return saveFilmStudy(root, {
+    ...next,
+    updatedAt: new Date().toISOString()
+  })
 }
 
 export async function exportFilmStudyBundle(

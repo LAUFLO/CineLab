@@ -1,4 +1,10 @@
 import type { FilmStudy, FilmStudySegment } from '@shared/film-study'
+import type {
+  FilmStudyCast,
+  FilmStudyScene,
+  FilmStudyShot,
+  FilmStudyStyle
+} from '@shared/film-study-v2'
 
 export function studyClock(seconds: number): string {
   const total = Math.max(0, seconds)
@@ -65,6 +71,53 @@ function escapeCell(value?: string): string {
 }
 
 export function buildStudyTableMarkdown(study: FilmStudy): string {
+  const shots = study.shots ?? []
+  if (shots.length > 0) {
+    const header =
+      '| 镜号 | 时间 | 时长 | 景别 | 机位 | 运镜 | 光线 | 画面 | 台词 | 制作方式 | 提示词 |'
+    const divider =
+      '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
+    const rows = shots.map((shot) => {
+      const scene = study.scenes?.find(
+        (item) =>
+          shot.index >= item.shots[0] && shot.index <= item.shots[1]
+      )
+      const dialogue = shot.dialogue
+        ?.map(
+          (line) =>
+            `${line.speaker ? `${line.speaker}：` : ''}${line.text}`
+        )
+        .join(' / ')
+      const production = shot.production
+        ? `${PRODUCTION_LABEL[shot.production.label] ?? shot.production.label} ${Math.round(shot.production.confidence * 100)}%`
+        : ''
+      return [
+        `| ${String(shot.index).padStart(2, '0')}`,
+        `${studyClock(shot.startTime)} – ${studyClock(shot.endTime)}`,
+        `${shot.duration.toFixed(1)}s`,
+        escapeCell(shot.shotSize),
+        escapeCell(shot.cameraAngle),
+        escapeCell(shot.cameraMove),
+        escapeCell(shot.lighting),
+        escapeCell(shot.visualDescription ?? scene?.name),
+        escapeCell(dialogue),
+        escapeCell(production),
+        `${escapeCell(shot.imagePrompt)} |`
+      ].join(' | ')
+    })
+
+    return [
+      `# ${study.sourceName} · 分镜表`,
+      '',
+      `片长 ${studyClock(study.duration)} · ${shots.length} 个镜头`,
+      study.analysisModel ? `分析模型 ${study.analysisModel}` : '',
+      '',
+      header,
+      divider,
+      ...rows
+    ].join('\n')
+  }
+
   const header =
     '| 镜号 | 时间 | 时长 | 景别 | 机位 | 运镜 | 光线 | 画面 | 提示词 | 人声 / 音乐 |'
   const divider =
@@ -98,6 +151,138 @@ export function buildStudyTableMarkdown(study: FilmStudy): string {
     divider,
     ...rows
   ].join('\n')
+}
+
+const PRODUCTION_LABEL: Record<string, string> = {
+  live_action: '实拍',
+  ai_video: 'AI 生成',
+  avatar: '数字人',
+  cg_3d: '3D 渲染',
+  code_render: '代码渲染',
+  screen_capture: '录屏',
+  still_motion: '静态图推拉',
+  static_hold: '静帧',
+  anim_2d: '2D 动画',
+  stop_motion: '定格动画',
+  film_footage: '影视片段'
+}
+
+export function buildShotMarkdown(
+  shot: FilmStudyShot,
+  scene?: FilmStudyScene,
+  cast: FilmStudyCast[] = []
+): string {
+  const lines: string[] = [
+    `## 镜 ${String(shot.index).padStart(2, '0')} · ${studyClock(shot.startTime)} – ${studyClock(shot.endTime)}（${shot.duration.toFixed(1)}s）`,
+    ''
+  ]
+
+  const meta = [
+    shot.shotSize ? `景别 ${shot.shotSize}` : '',
+    shot.cameraAngle ? `机位 ${shot.cameraAngle}` : '',
+    shot.cameraMove ? `运镜 ${shot.cameraMove}` : ''
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  if (meta) lines.push(`- ${meta}`)
+  if (shot.lighting) lines.push(`- 光线：${shot.lighting}`)
+  if (shot.visualDescription) lines.push(`- 画面：${shot.visualDescription}`)
+  if (shot.actionSummary) lines.push(`- 动作：${shot.actionSummary}`)
+  if (shot.dialogue?.length) {
+    lines.push(
+      `- 台词：${shot.dialogue
+        .map((line) => `${line.speaker ? `${line.speaker}：` : ''}${line.text}`)
+        .join(' / ')}`
+    )
+  }
+  if (shot.sfx?.length) {
+    lines.push(
+      `- 音效：${shot.sfx
+        .map(
+          (item) =>
+            `${studyClock(item.time)} ${item.type}${item.event ? `（${item.event}）` : ''}`
+        )
+        .join(' / ')}`
+    )
+  }
+  if (shot.production) {
+    const label =
+      PRODUCTION_LABEL[shot.production.label] ?? shot.production.label
+    const evidence = shot.production.evidence.length
+      ? `（${shot.production.evidence.join('；')}）`
+      : ''
+    lines.push(
+      `- 制作方式：${label} ${Math.round(shot.production.confidence * 100)}%${evidence}`
+    )
+  }
+  const castNames = (shot.castIds ?? [])
+    .map((id) => cast.find((item) => item.id === id)?.name ?? id)
+    .filter(Boolean)
+  if (castNames.length) lines.push(`- 角色：${castNames.join('、')}`)
+  if (scene) lines.push(`- 场景：${scene.id} · ${scene.name}`)
+
+  if (shot.imagePrompt) {
+    lines.push('', '### 提示词', '', shot.imagePrompt)
+  }
+  if (shot.videoPrompt) {
+    lines.push('', '### 视频提示词', '', shot.videoPrompt)
+  }
+
+  return lines.join('\n')
+}
+
+export function buildRemakePrompt(shot: FilmStudyShot): string {
+  return (
+    shot.videoPrompt ||
+    shot.imagePrompt ||
+    shot.visualDescription ||
+    shot.actionSummary ||
+    ''
+  )
+}
+
+export function buildStyleMarkdown(style: FilmStudyStyle): string {  const lines: string[] = ['# 风格档案', '']
+  if (style.look) lines.push(`- 画风：${style.look}`)
+  if (style.palette) lines.push(`- 色调：${style.palette}`)
+  if (style.composition) lines.push(`- 构图：${style.composition}`)
+  if (style.camera) lines.push(`- 运镜：${style.camera}`)
+  if (style.pacing) lines.push(`- 节奏：${style.pacing}`)
+  if (style.prompt) {
+    lines.push('', '## 风格提示词', '', style.prompt)
+  }
+  return lines.join('\n')
+}
+
+export interface ShotGroup {
+  title: string
+  scene?: FilmStudyScene
+  shots: FilmStudyShot[]
+}
+
+export function groupShotsByScene(
+  shots: FilmStudyShot[],
+  scenes?: FilmStudyScene[]
+): ShotGroup[] {
+  if (!scenes || scenes.length === 0) {
+    const groups: ShotGroup[] = []
+    for (let start = 0; start < shots.length; start += 10) {
+      groups.push({
+        title: `第 ${groups.length + 1} 段`,
+        shots: shots.slice(start, start + 10)
+      })
+    }
+    return groups
+  }
+
+  return scenes
+    .map((scene) => ({
+      scene,
+      title: `${scene.id} · ${scene.name}`,
+      shots: shots.filter(
+        (shot) => shot.index >= scene.shots[0] && shot.index <= scene.shots[1]
+      )
+    }))
+    .filter((group) => group.shots.length > 0)
 }
 
 export function segmentCopyText(

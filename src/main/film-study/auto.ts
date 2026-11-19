@@ -10,18 +10,26 @@ import type {
   FilmStudyProgress,
   FilmStudySegment
 } from '@shared/film-study'
+import type { FilmStudyShot } from '@shared/film-study-v2'
 import { modelInputs, type ModelDef } from '@shared/provider-schema'
 import { probeMedia, runFfmpeg, runFfmpegCapture } from '../media/ffmpeg'
 import { resolveInside, resolveMediaPath } from '../media/paths'
 import { httpFetch } from '../providers/http'
 import { listProviders, resolveProvider } from '../settings/store'
 import { saveFilmStudy } from './service'
+import { splitScenes } from './scenes'
 import {
   analyzeVideoFrames,
   buildCandidateTimes,
   detectShotCuts,
-  detectMotionPeaks
+  detectMotionPeaks,
+  type FrameStats
 } from './shot-detect'
+import { analyzeProduction } from './production'
+import { reviewProduction } from './production-review'
+import { aggregateCast } from './cast'
+import { aggregateStyle } from './style'
+import { analyzeShots } from './shots'
 
 type ProgressEmitter = (progress: FilmStudyProgress) => void
 
@@ -125,6 +133,20 @@ export function mergeToLimit(shots: ShotRange[], limit: number): ShotRange[] {
 
 function representativeTime(shot: ShotRange): number {
   return shot.start + (shot.end - shot.start) / 2
+}
+
+/** 首/中/尾帧的抽取时间；首尾各向内收一点，避免抽到转场帧。 */
+export function shotFrameTimes(shot: ShotRange): {
+  first: number
+  mid: number
+  last: number
+} {
+  const duration = Math.max(0, shot.end - shot.start)
+  return {
+    first: Math.max(0, shot.start + Math.min(0.05, duration / 4)),
+    mid: representativeTime(shot),
+    last: Math.max(shot.start, shot.end - Math.min(0.08, duration / 4))
+  }
 }
 
 function cutsToShots(cuts: number[]): ShotRange[] {
@@ -441,6 +463,7 @@ export async function autoFilmStudy(
     let shots: ShotRange[]
     let cuts: number[]
     let usedShotDetection = false
+    let frameStats: FrameStats | null = null
     const requestedInterval = Number.isFinite(input.interval)
       ? Math.max(0, input.interval ?? 0)
       : 0
@@ -450,13 +473,10 @@ export async function autoFilmStudy(
       cuts = [0, ...shots.map((shot) => shot.end)]
     } else {
       try {
-        const stats = await analyzeVideoFrames(
-          absolute,
-          controller.signal
-        )
-        const detected = detectShotCuts(stats)
+        frameStats = await analyzeVideoFrames(absolute, controller.signal)
+        const detected = detectShotCuts(frameStats)
         const motion =
-          detected.length < 2 ? detectMotionPeaks(stats) : []
+          detected.length < 2 ? detectMotionPeaks(frameStats) : []
         cuts = buildCandidateTimes([...detected, ...motion], duration)
         usedShotDetection = detected.length > 0
       } catch {
@@ -488,31 +508,55 @@ export async function autoFilmStudy(
     await fs.mkdir(frameDir, { recursive: true })
 
     const frames: FilmStudyFrame[] = []
+    const shotsData: FilmStudyShot[] = []
     for (let index = 0; index < shots.length; index += 1) {
       if (controller.signal.aborted) throw new Error('已取消')
-      const time = representativeTime(shots[index])
+      const shot = shots[index]
+      const times = shotFrameTimes(shot)
       const file = `assets/study/${studyId}/frames/frame_${String(index + 1).padStart(6, '0')}.jpg`
-      await runFfmpeg(
-        [
-          '-y',
-          '-ss',
-          time.toFixed(3),
-          '-i',
-          absolute,
-          '-frames:v',
-          '1',
-          '-vf',
-          `scale=${FRAME_WIDTH}:-2`,
-          '-q:v',
-          '3',
-          join(root, file)
-        ],
-        { signal: controller.signal }
-      )
+      const prefix = `shot_${String(index + 1).padStart(3, '0')}`
+      const firstFile = `assets/study/${studyId}/frames/${prefix}_first.jpg`
+      const midFile = `assets/study/${studyId}/frames/${prefix}_mid.jpg`
+      const lastFile = `assets/study/${studyId}/frames/${prefix}_last.jpg`
+
+      const grab = async (time: number, target: string): Promise<void> => {
+        await runFfmpeg(
+          [
+            '-y',
+            '-ss',
+            time.toFixed(3),
+            '-i',
+            absolute,
+            '-frames:v',
+            '1',
+            '-vf',
+            `scale=${FRAME_WIDTH}:-2`,
+            '-q:v',
+            '3',
+            join(root, target)
+          ],
+          { signal: controller.signal }
+        )
+      }
+
+      await grab(times.first, firstFile)
+      await grab(times.mid, midFile)
+      await grab(times.last, lastFile)
+      await fs.copyFile(join(root, midFile), join(root, file))
+
       frames.push({
         index: index + 1,
-        time: Math.round(time * 1000) / 1000,
+        time: Math.round(times.mid * 1000) / 1000,
         file
+      })
+      shotsData.push({
+        index: index + 1,
+        startTime: shot.start,
+        endTime: shot.end,
+        duration: Math.max(0, shot.end - shot.start),
+        firstFrame: firstFile,
+        midFrame: midFile,
+        lastFrame: lastFile
       })
 
       emit({
@@ -522,7 +566,7 @@ export async function autoFilmStudy(
         percent: 6 + Math.round((70 * (index + 1)) / shots.length),
         current: index + 1,
         total: shots.length,
-        message: '正在抽取分镜代表帧'
+        message: '正在抽取首/中/尾帧'
       })
     }
 
@@ -632,6 +676,7 @@ export async function autoFilmStudy(
           : Math.round((duration / Math.max(1, shots.length)) * 100) / 100,
       frames,
       segments: buildAutoSegments(shots, frames),
+      shots: shotsData,
       createdAt: now,
       updatedAt: now
     }
@@ -645,7 +690,73 @@ export async function autoFilmStudy(
         nodeId: input.nodeId,
         studyId,
         status: 'running',
-        percent: 92,
+        percent: 70,
+        message: '正在逐镜理解'
+      })
+      try {
+        study = {
+          ...study,
+          shots: await analyzeShots(
+            study,
+            root,
+            modelKey,
+            controller.signal,
+            (done, total) => {
+              emit({
+                nodeId: input.nodeId,
+                studyId,
+                status: 'running',
+                percent: 70 + Math.round((18 * done) / total),
+                current: done,
+                total,
+                message: `正在逐镜理解 ${done}/${total}`
+              })
+            }
+          )
+        }
+      } catch {
+        // 逐镜理解失败不阻塞整片分析
+      }
+
+      emit({
+        nodeId: input.nodeId,
+        studyId,
+        status: 'running',
+        percent: 86,
+        message: '正在聚合角色'
+      })
+      study = {
+        ...study,
+        cast: await aggregateCast(
+          study,
+          root,
+          modelKey,
+          controller.signal
+        )
+      }
+
+      emit({
+        nodeId: input.nodeId,
+        studyId,
+        status: 'running',
+        percent: 87,
+        message: '正在提取风格'
+      })
+      study = {
+        ...study,
+        style: await aggregateStyle(
+          study,
+          root,
+          modelKey,
+          controller.signal
+        )
+      }
+
+      emit({
+        nodeId: input.nodeId,
+        studyId,
+        status: 'running',
+        percent: 88,
         message: '正在分析分镜'
       })
       try {
@@ -655,6 +766,66 @@ export async function autoFilmStudy(
       } catch (error) {
         analysisError =
           error instanceof Error ? error.message : String(error)
+      }
+    }
+
+    study = {
+      ...study,
+      shots: analyzeProduction(study.shots ?? [], frameStats)
+    }
+
+    if (modelKey) {
+      emit({
+        nodeId: input.nodeId,
+        studyId,
+        status: 'running',
+        percent: 93,
+        message: '正在复核制作方式'
+      })
+      study = {
+        ...study,
+        shots: await reviewProduction(
+          study.shots ?? [],
+          study.sourceName,
+          root,
+          modelKey,
+          controller.signal
+        )
+      }
+    }
+
+    emit({
+      nodeId: input.nodeId,
+      studyId,
+      status: 'running',
+      percent: 94,
+      message: '正在分场'
+    })
+    study = {
+      ...study,
+      scenes: await splitScenes(study, root, modelKey, controller.signal)
+    }
+    study = {
+      ...study,
+      scenes: (study.scenes ?? []).map((scene) => ({
+        ...scene,
+        ...(study.shots?.[scene.shots[0] - 1]?.midFrame
+          ? { basePath: study.shots[scene.shots[0] - 1].midFrame }
+          : {})
+      }))
+    }
+    emit({
+      nodeId: input.nodeId,
+      studyId,
+      status: 'running',
+      percent: 98,
+      message: '分场完成'
+    })
+
+    if (music?.path) {
+      study = {
+        ...study,
+        audio: { ...(study.audio ?? {}), bgmPath: music.path }
       }
     }
 
@@ -674,7 +845,7 @@ export async function autoFilmStudy(
 
     return {
       study: saved,
-      shotCount: saved.segments.length,
+      shotCount: saved.shots?.length ?? saved.segments.length,
       usedShotDetection,
       analyzed,
       analysisError,

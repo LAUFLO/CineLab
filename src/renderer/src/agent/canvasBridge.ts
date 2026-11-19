@@ -27,7 +27,6 @@ import {
   type NodeOperation
 } from '../canvas/nodes/node-operations'
 import { listNodeOperations, executeNodeOperation } from '../canvas/nodes/node-operation-runner'
-import { useFilmStudyStore } from '../stores/film-study'
 import { useStageStore } from '../stage/stageStore'
 import { useStudioStore } from '../stores/studio'
 import { useTimelineStore } from '../stores/timeline'
@@ -277,6 +276,12 @@ const SPACE_TOOLS: Record<string, string[]> = {
     'generation_propose',
     'library_search',
     'film_study_get',
+    'film_study_get_shot',
+    'film_study_update_shot',
+    'film_study_remake',
+    'film_study_split_scenes',
+    'film_study_map_cast',
+    'film_study_build_timeline',
     'film_study_auto',
     'film_study_export',
     'skill_list',
@@ -314,15 +319,20 @@ const SPACE_TOOLS: Record<string, string[]> = {
   ],
   film: [
     'film_study_get',
+    'film_study_get_shot',
+    'film_study_update_shot',
+    'film_study_remake',
+    'film_study_split_scenes',
+    'film_study_map_cast',
+    'film_study_build_timeline',
     'film_study_auto',
     'film_study_export'
   ]
 }
 
-function currentSpace(): 'canvas' | 'clip' | 'stage' | 'film' {
+function currentSpace(): 'canvas' | 'clip' | 'stage' {
   if (useStudioStore.getState().open) return 'clip'
   if (useStageStore.getState().open) return 'stage'
-  if (useFilmStudyStore.getState().roomNodeId) return 'film'
   return 'canvas'
 }
 
@@ -333,8 +343,7 @@ function capabilityCatalog(args: {
   const space =
     args.space === 'canvas' ||
     args.space === 'clip' ||
-    args.space === 'stage' ||
-    args.space === 'film'
+    args.space === 'stage'
       ? args.space
       : currentSpace()
   const canvas = useCanvasStore.getState()
@@ -345,7 +354,6 @@ function capabilityCatalog(args: {
     : null
   const timeline = useTimelineStore.getState()
   const stage = useStageStore.getState()
-  const film = useFilmStudyStore.getState()
 
   return {
     space,
@@ -402,17 +410,6 @@ function capabilityCatalog(args: {
               'remove_object',
               'export_preview'
             ]
-          }
-        }
-      : {}),
-    ...(space === 'film' && film.study
-      ? {
-          film: {
-            studyId: film.study.id,
-            sourceName: film.study.sourceName,
-            frameCount: film.study.frames.length,
-            segmentCount: film.study.segments.length,
-            availableFilmActions: ['study_get', 'study_auto', 'study_export']
           }
         }
       : {})

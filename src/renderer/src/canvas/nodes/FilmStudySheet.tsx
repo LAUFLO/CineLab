@@ -21,7 +21,6 @@ export function FilmStudySheet() {
   const study = useFilmStudyStore((state) => state.sheetStudy)
   const loading = useFilmStudyStore((state) => state.sheetLoading)
   const close = useFilmStudyStore((state) => state.closeSheet)
-  const openRoom = useFilmStudyStore((state) => state.openRoom)
   const showToast = useUIStore((state) => state.showToast)
 
   if (!nodeId) return null
@@ -187,18 +186,6 @@ export function FilmStudySheet() {
               }
             >
               导出 Markdown
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                const target = nodeId
-                close()
-                void openRoom(target)
-              }}
-            >
-              高级编辑
             </Button>
             <IconButton label="关闭" size="sm" onClick={close}>
               <Icon name="close" size={14} />

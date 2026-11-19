@@ -20,6 +20,8 @@ import {
   importFilmStudyAnalysis,
   importFilmStudySubtitles,
   loadFilmStudy,
+  rerunFilmStudyShot,
+  resplitFilmStudyScenes,
   saveFilmStudy
 } from '../film-study/service'
 
@@ -219,6 +221,18 @@ export function registerFilmStudyIpc(): void {
     'film-study:analyze',
     (_event, studyId: string, modelKey: string) =>
       analyzeFilmStudy(requireProjectRoot(), studyId, modelKey)
+  )
+
+  ipcMain.handle(
+    'film-study:rerun-shot',
+    (_event, studyId: string, index: number, modelKey?: string) =>
+      rerunFilmStudyShot(requireProjectRoot(), studyId, index, modelKey)
+  )
+
+  ipcMain.handle(
+    'film-study:split-scenes',
+    (_event, studyId: string, modelKey?: string) =>
+      resplitFilmStudyScenes(requireProjectRoot(), studyId, modelKey)
   )
 
   ipcMain.handle(

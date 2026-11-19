@@ -6,7 +6,7 @@
 最后核对：2026-11-13
 关联：`docs/agent-architecture-plan.md`
 
-当前注册 61 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库和技能。
+当前注册 67 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库和技能。
 本文件记录已开放给 CineBot 的能力、参数校验、确认规则和回合撤销方式。
 所有写操作都走命令层；UI 和 Agent 共用执行器。
 
@@ -28,7 +28,7 @@
 
 `timeline_get`、`timeline_select_clips`、`timeline_set_video`、`timeline_move_clips`、`timeline_trim_clip`、`timeline_split_clips`、`timeline_split_by_shots`、`timeline_beat_markers`、`timeline_beat_split`、`timeline_remove_clips`、`timeline_update_clip`、`timeline_set_track`、`timeline_add_marker`、`timeline_auto_subtitles`、`timeline_remove_silence`、`timeline_set_transition`、`timeline_export`
 
-### 拉片（5）
+### 拉片（11）
 
 `film_study_get`、`film_study_auto`、`film_study_update_segment`、`film_study_extract_subtitles`、`film_study_export`
 
@@ -106,6 +106,12 @@
 | 工具 | 能力 ID | 只读 | 确认 | 回合撤销 |
 |---|---|---|---|---|
 | `film_study_get` | `film.studyGet` | 是 | 否 | 不适用 |
+| `film_study_get_shot` | `film.studyGetShot` | 是 | 否 | 不适用 |
+| `film_study_update_shot` | `film.studyUpdateShot` | 否 | 否 | 拉片快照 |
+| `film_study_remake` | `film.studyRemake` | 否 | 是 | 画布历史（生成节点 + 连线） |
+| `film_study_split_scenes` | `film.studySplitScenes` | 否 | 是 | 拉片快照 |
+| `film_study_map_cast` | `film.studyMapCast` | 否 | 否 | 拉片快照 |
+| `film_study_build_timeline` | `film.studyBuildTimeline` | 否 | 是 | 剪辑室创建 |
 | `film_study_auto` | `film.studyAuto` | 否 | 是 | 画布历史（拉片节点 + 输出节点） |
 | `film_study_update_segment` | `film.studyUpdateSegment` | 否 | 否 | 拉片快照 + 时间线式撤销提示 |
 | `film_study_extract_subtitles` | `film.studyExtractSubtitles` | 否 | 是 | 拉片快照 |
@@ -114,8 +120,11 @@
 实现说明：
 
 - `nodeId` 可以是拉片节点，也可以是它上游的视频节点；`studyId` 可直接指定。
+- `film_study_get` 返回 L0 摘要：镜头数、场数、制作方式占比、主要角色、场次、复刻进度；单镜细节用 `film_study_get_shot` 按镜号读取。
+- `film_study_update_shot` 改单镜字段；`film_study_split_scenes` 只重跑分场；`film_study_map_cast` 写选角/选景映射。
+- `film_study_remake` 按镜号建复刻生成节点（只建图，不提交生成）；`film_study_build_timeline` 按镜号汇总已生成的视频节点并建剪辑室。
 - `film_study_auto` 复用 `src/renderer/src/canvas/nodes/film-study-runner.ts` 创建拉片节点，并复用 `useFilmStudyStore.runAuto` 执行自动拉片。
-- 拉片期间创建的拉片节点、分镜组、分镜表、动态切片和 BGM 节点通过 `beginToolTurn` 合并为一条画布撤销记录。
+- 拉片期间创建的拉片节点、镜头三节点（首帧/尾帧/文本）、分镜表、角色/场景/风格/音频节点通过 `beginToolTurn` 合并为一条画布撤销记录。
 - `film_study_update_segment` 可修改标题、时间、类型、结构角色、景别、机位、运镜、光线、画面描述、提示词、人声、音乐和备注；修改前把整份 study 快照存入 `useFilmStudyStore.rememberFilmTurn`，本轮撤销时恢复。
 - `film_study_extract_subtitles` 调用本地字幕运行时提取内嵌字幕；执行前确认，修改同样进入拉片快照。
 - 输出选项：`storyboard / sheet / motion / music`，默认生成分镜组和分镜表。

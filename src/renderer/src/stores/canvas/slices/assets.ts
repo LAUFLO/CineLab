@@ -1,10 +1,12 @@
-import { GROUP_GAP, GROUP_HEADER_HEIGHT, GROUP_PADDING, NODE_META, TITLE_HEIGHT, type OutputRef } from '@shared/canvas-schema'
+import { GROUP_COLORS, GROUP_GAP, GROUP_HEADER_HEIGHT, GROUP_PADDING, NODE_META, TITLE_HEIGHT, type OutputRef } from '@shared/canvas-schema'
+import type { FilmStudy } from '@shared/film-study'
+import { buildShotMarkdown, groupShotsByScene } from '../../../canvas/nodes/study-sheet'
 import { isGroupNode, isStudioNode, isFilmNode, selectedNodeOutput, nextId, findFreeOrigin, absolutePosition, type CineNode, type GroupNode, type CineEdge } from '../../canvas-model'
 
 import type { StateCreator } from 'zustand'
 import type { CanvasStore } from '../../canvas'
 
-type AssetsSlice = Pick<CanvasStore, 'setStudioFilmStatus' | 'applyStudioOutput' | 'detachStudioOutput' | 'addAssetNodes' | 'addPendingNodes' | 'convertFilmToMedia'>
+type AssetsSlice = Pick<CanvasStore, 'setStudioFilmStatus' | 'applyStudioOutput' | 'detachStudioOutput' | 'addAssetNodes' | 'addShotNodes' | 'addPendingNodes' | 'convertFilmToMedia'>
 
 export const createAssetsSlice: StateCreator<
   CanvasStore,
@@ -229,7 +231,149 @@ addAssetNodes: (kind, origin, assets, titlePrefix, sourceNodeId, layout) => {
     if (group) layout?.onGroupCreated?.(group.id)
     return ids
   },
-addPendingNodes: (kind, origin, count, titlePrefix, sourceNodeId, layout) => {
+addShotNodes: (study, origin, sourceNodeId) => {
+    const shots = study.shots ?? []
+    if (shots.length === 0) return []
+
+    get().pushHistory()
+
+    const imageWidth = 240
+    const textWidth = 320
+    const cellHeight = Math.round(imageWidth * (9 / 16)) + TITLE_HEIGHT
+    const gap = GROUP_GAP
+    const groupWidth =
+      GROUP_PADDING * 2 + imageWidth * 2 + textWidth + gap * 2
+    const createdAt = new Date().toISOString()
+    const groups = groupShotsByScene(shots, study.scenes)
+    const createdNodes: Array<CineNode | GroupNode> = []
+    const createdEdges: CineEdge[] = []
+    const ids: string[] = []
+    let cursorY = origin.y
+
+    for (const [groupIndex, group] of groups.entries()) {
+      const rows = group.shots.length
+      const contentHeight =
+        rows * cellHeight + Math.max(0, rows - 1) * gap
+      const groupHeight =
+        GROUP_HEADER_HEIGHT + GROUP_PADDING + contentHeight
+      const start = findFreeOrigin(
+        [...get().nodes, ...createdNodes],
+        { x: origin.x, y: cursorY },
+        groupWidth,
+        groupHeight,
+        gap
+      )
+      cursorY = start.y + groupHeight + gap
+
+      const groupId = nextId('group')
+      ids.push(groupId)
+      createdNodes.push({
+        id: groupId,
+        type: 'group',
+        position: start,
+        data: {
+          title: group.title,
+          color: GROUP_COLORS[groupIndex % GROUP_COLORS.length]
+        },
+        style: { width: groupWidth, height: groupHeight },
+        selected: false,
+        zIndex: 0
+      })
+
+      group.shots.forEach((shot, row) => {
+        const y = GROUP_HEADER_HEIGHT + row * (cellHeight + gap)
+        const frames = [
+          { path: shot.firstFrame, label: '首', x: GROUP_PADDING },
+          {
+            path: shot.lastFrame,
+            label: '尾',
+            x: GROUP_PADDING + imageWidth + gap
+          }
+        ]
+
+        for (const frame of frames) {
+          const output: OutputRef = {
+            id: `${study.id}-${shot.index}-${frame.label}`,
+            path: frame.path,
+            scope: 'project',
+            kind: 'image',
+            createdAt,
+            model: '逐帧拉片',
+            width: 640,
+            height: 360
+          }
+          const id = nextId('image')
+          ids.push(id)
+          createdNodes.push({
+            id,
+            type: 'cine',
+            parentId: groupId,
+            position: { x: frame.x, y },
+            selected: false,
+            zIndex: 1,
+            data: {
+              kind: 'image',
+              title: `镜 ${String(shot.index).padStart(2, '0')} ${frame.label}`,
+              status: 'done',
+              outputs: [output],
+              selectedOutputId: output.id,
+              templates: NODE_META.image.templates,
+              studyRef: {
+                studyId: study.id,
+                kind: 'shot',
+                index: shot.index
+              }
+            },
+            style: { width: imageWidth, height: cellHeight }
+          })
+        }
+
+        const textId = nextId('text')
+        ids.push(textId)
+        createdNodes.push({
+          id: textId,
+          type: 'cine',
+          parentId: groupId,
+          position: {
+            x: GROUP_PADDING + imageWidth * 2 + gap * 2,
+            y
+          },
+          selected: false,
+          zIndex: 1,
+          data: {
+            kind: 'text',
+            title: `镜 ${String(shot.index).padStart(2, '0')} 详情`,
+            status: 'done',
+            text: buildShotMarkdown(shot, group.scene, study.cast ?? []),
+            templates: NODE_META.text.templates,
+            studyRef: {
+              studyId: study.id,
+              kind: 'shot-text',
+              index: shot.index
+            }
+          },
+          style: { width: textWidth, height: cellHeight }
+        })
+      })
+
+      if (sourceNodeId) {
+        createdEdges.push({
+          id: nextId('edge'),
+          source: sourceNodeId,
+          target: groupId,
+          type: 'flow',
+          data: { role: 'auto' }
+        })
+      }
+    }
+
+    set({
+      nodes: [...get().nodes, ...createdNodes],
+      edges: [...get().edges, ...createdEdges]
+    })
+    return ids
+  },
+  addPendingNodes: (kind, origin, count, titlePrefix, sourceNodeId, layout) => {
     const total = Math.max(1, Math.round(count))
     get().pushHistory()
 

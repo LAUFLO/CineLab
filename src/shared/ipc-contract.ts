@@ -409,6 +409,12 @@ export interface FilmStudyApi {
   extractSubtitles(studyId: string): Promise<FilmStudy>
   importSubtitles(studyId: string): Promise<FilmStudy | null>
   analyze(studyId: string, modelKey: string): Promise<FilmStudy>
+  rerunShot(
+    studyId: string,
+    index: number,
+    modelKey?: string
+  ): Promise<FilmStudy>
+  splitScenes(studyId: string, modelKey?: string): Promise<FilmStudy>
   contactSheet(studyId: string): Promise<GeneratedAsset>
   onProgress(callback: (progress: FilmStudyProgress) => void): () => void
 }

@@ -67,8 +67,10 @@ const CANVAS_SYSTEM_PROMPT = `你是 CineBot，CineLab 的画布助手。你可�
 - 节点工具栏操作先调用 canvas_node_operations 查看 operationId、itemId、参数、agentExecutable 和 generationProposable，再决定调用 canvas_node_operation 还是 generation_propose。
 - 需要选择模型的操作改用 generation_propose，并传 operationId 和 itemId；它会自动复用该操作的提示词并写入目标节点。蒙版类操作仍需在界面完成。
 - 不确定当前空间能做什么时，先调用 capability_catalog。
-- 需要逐帧拉片时，对一个选中视频节点调用 film_study_auto；会创建拉片节点、分镜组和分镜表。先用 film_study_get 读取已有拉片结果。
-- 修改拉片段落用 film_study_update_segment；提取内嵌字幕用 film_study_extract_subtitles。
+- 需要逐帧拉片时，对一个选中视频节点调用 film_study_auto；会创建拉片节点、镜头三节点和分镜表。先用 film_study_get 读取已有拉片结果，读单镜用 film_study_get_shot。
+- 修改拉片段落用 film_study_update_segment；改镜头用 film_study_update_shot；重新分场用 film_study_split_scenes。
+- 选角/选景用 film_study_map_cast 写映射；复刻建图用 film_study_remake；建时间线用 film_study_build_timeline。
+- 提取内嵌字幕用 film_study_extract_subtitles。
 - 导演台镜头用 stage_add_shot / stage_update_shot / stage_remove_shot；运镜用 stage_set_camera_track；背景用 stage_set_background。
 - 不确定工具名时，用 capability_search 按关键词搜索已注册工具。
 - 需要生成图片、视频、音频或文本时，先调用 generation_catalog 确认模型和参数，再调用 generation_propose 登记提案。

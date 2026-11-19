@@ -7,9 +7,15 @@ import type {
   FilmStudyOutputOptions,
   FilmStudySegment
 } from '@shared/film-study'
+import type {
+  FilmStudyMapping,
+  FilmStudyShot
+} from '@shared/film-study-v2'
 import { createStudyNodeFromVideo, runFilmStudyAuto } from '../canvas/nodes/film-study-runner'
-import { useCanvasStore } from '../stores/canvas'
+import { createStudioFromNodes } from '../studio/nodes'
+import { useCanvasStore, type CanvasNode } from '../stores/canvas'
 import { useFilmStudyStore } from '../stores/film-study'
+import { useStudioStore } from '../stores/studio'
 
 export interface FilmToolResult {
   ok: boolean
@@ -37,6 +43,12 @@ function emptyChange(): AgentTurnChange {
 
 function filmChange(): AgentTurnChange {
   return { ...emptyChange(), filmUpdated: true }
+}
+
+function shotIndexOf(node: CanvasNode): number | undefined {
+  if (node.type !== 'cine') return undefined
+  const ref = node.data.studyRef as { index?: number } | undefined
+  return typeof ref?.index === 'number' ? ref.index : undefined
 }
 
 function nodeById(nodeId: string) {
@@ -189,6 +201,65 @@ function studySummary(study: FilmStudy): Record<string, unknown> {
   }
 }
 
+function studySummaryV2(study: FilmStudy): Record<string, unknown> {
+  const shots = study.shots ?? []
+  const scenes = study.scenes ?? []
+  const cast = study.cast ?? []
+  const weights = { live: 0, ai: 0, cg: 0, code: 0 }
+  let total = 0
+
+  for (const shot of shots) {
+    const label = shot.production?.label
+    const weight = shot.production?.confidence ?? 0
+    if (!weight) continue
+    if (label === 'live_action') weights.live += weight
+    else if (label === 'ai_video' || label === 'avatar') weights.ai += weight
+    else if (label === 'cg_3d') weights.cg += weight
+    else if (label === 'code_render' || label === 'screen_capture')
+      weights.code += weight
+    total += weight
+  }
+
+  const share = (value: number): number =>
+    total > 0 ? Math.round((value / total) * 100) / 100 : 0
+  const generated = shots.filter((shot) => shot.status === 'generated').length
+
+  return {
+    studyId: study.id,
+    sourceName: study.sourceName,
+    duration: Math.round(study.duration * 10) / 10,
+    shotCount: shots.length || study.segments.length,
+    sceneCount: scenes.length,
+    ...(total > 0
+      ? {
+          production: {
+            live: share(weights.live),
+            ai: share(weights.ai),
+            cg: share(weights.cg),
+            code: share(weights.code)
+          }
+        }
+      : {}),
+    cast: cast.slice(0, 5).map((item) => ({
+      id: item.id,
+      name: item.name,
+      ...(item.role ? { role: item.role } : {})
+    })),
+    scenes: scenes.slice(0, 8).map((scene) => ({
+      id: scene.id,
+      name: scene.name,
+      shots: scene.shots
+    })),
+    remake: {
+      total: shots.length,
+      generated,
+      pending: Math.max(0, shots.length - generated)
+    },
+    ...(study.analysisModel ? { analysisModel: study.analysisModel } : {}),
+    ...(study.mapping ? { mapping: study.mapping } : {})
+  }
+}
+
 function nodeChange(before: {
   nodeIds: Set<string>
   edgeIds: Set<string>
@@ -252,9 +323,242 @@ export async function executeFilmTool(
       return {
         ok: true,
         result: {
-          ...studySummary(study),
+          ...studySummaryV2(study),
           ...(ref.studyNodeId ? { studyNodeId: ref.studyNodeId } : {})
         }
+      }
+    }
+
+    if (call.name === 'film_study_get_shot') {
+      const ref = resolveStudy(nodeId, studyId)
+      const study = await window.api.filmStudy.load(ref.studyId)
+      const index = Number(call.args.index)
+      const shot = study.shots?.find((item) => item.index === index)
+      if (!shot) {
+        return { ok: false, error: '找不到该镜头' }
+      }
+      const scene = study.scenes?.find(
+        (item) => index >= item.shots[0] && index <= item.shots[1]
+      )
+      const cast = (shot.castIds ?? []).map((id) => {
+        const item = study.cast?.find((member) => member.id === id)
+        return {
+          id,
+          name: item?.name ?? id,
+          ...(item?.role ? { role: item.role } : {})
+        }
+      })
+      return {
+        ok: true,
+        result: {
+          ...shot,
+          ...(scene ? { scene } : {}),
+          cast
+        }
+      }
+    }
+
+    if (call.name === 'film_study_update_shot') {
+      const ref = resolveStudy(nodeId, studyId)
+      const study = await window.api.filmStudy.load(ref.studyId)
+      const index = Number(call.args.index)
+      const shot = study.shots?.find((item) => item.index === index)
+      if (!shot) return { ok: false, error: '找不到该镜头' }
+
+      const raw = call.args.patch
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        return { ok: false, error: 'patch 不能为空' }
+      }
+      const fields = [
+        'shotSize',
+        'cameraAngle',
+        'cameraMove',
+        'lighting',
+        'visualDescription',
+        'actionSummary',
+        'emotion',
+        'imagePrompt',
+        'videoPrompt'
+      ] as const
+      const patch: Partial<FilmStudyShot> = {}
+      for (const field of fields) {
+        const value = (raw as Record<string, unknown>)[field]
+        if (typeof value === 'string') patch[field] = value
+      }
+      const status = (raw as Record<string, unknown>).status
+      if (status === 'pending' || status === 'generated' || status === 'edited') {
+        patch.status = status
+      }
+      if (Object.keys(patch).length === 0) {
+        return { ok: false, error: 'patch 没有可修改的字段' }
+      }
+
+      useFilmStudyStore.getState().rememberFilmTurn(call.turnId, study)
+      const saved = await window.api.filmStudy.save({
+        ...study,
+        shots: study.shots?.map((item) =>
+          item.index === index ? { ...item, ...patch, index } : item
+        ),
+        updatedAt: new Date().toISOString()
+      })
+      if (useFilmStudyStore.getState().study?.id === saved.id) {
+        useFilmStudyStore.getState().replaceStudy(saved)
+      }
+      return {
+        ok: true,
+        result: {
+          studyId: saved.id,
+          index,
+          shot: saved.shots?.find((item) => item.index === index) ?? null
+        },
+        change: filmChange()
+      }
+    }
+
+    if (call.name === 'film_study_remake') {
+      const ref = resolveStudy(nodeId, studyId)
+      const study = await window.api.filmStudy.load(ref.studyId)
+      const raw = call.args.indices
+      const indexes = Array.isArray(raw)
+        ? raw.map((value) => Number(value)).filter(Number.isInteger)
+        : []
+      const canvas = useCanvasStore.getState()
+      const targets = canvas.nodes
+        .filter(
+          (node) =>
+            node.type === 'cine' &&
+            node.data.studyRef?.studyId === study.id &&
+            node.data.studyRef?.kind === 'shot-text'
+        )
+        .filter((node) => {
+          const index = shotIndexOf(node)
+          return indexes.length === 0 || (index !== undefined && indexes.includes(index))
+        })
+        .map((node) => node.id)
+      if (targets.length === 0) {
+        return { ok: false, error: '没有镜头文本节点，请先拉片' }
+      }
+
+      const choices =
+        call.args.choices &&
+        typeof call.args.choices === 'object' &&
+        !Array.isArray(call.args.choices)
+          ? (call.args.choices as Record<string, string>)
+          : {}
+      const before = {
+        nodeIds: new Set(canvas.nodes.map((node) => node.id)),
+        edgeIds: new Set(canvas.edges.map((edge) => edge.id))
+      }
+      await useFilmStudyStore.getState().remakeShots(targets, choices)
+      return {
+        ok: true,
+        result: { count: targets.length },
+        change: nodeChange(before)
+      }
+    }
+
+    if (call.name === 'film_study_split_scenes') {
+      const ref = resolveStudy(nodeId, studyId)
+      const modelKey =
+        typeof call.args.modelKey === 'string' ? call.args.modelKey : undefined
+      const saved = await window.api.filmStudy.splitScenes(ref.studyId, modelKey)
+      if (useFilmStudyStore.getState().study?.id === saved.id) {
+        useFilmStudyStore.getState().replaceStudy(saved)
+      }
+      return {
+        ok: true,
+        result: { studyId: saved.id, scenes: saved.scenes ?? [] },
+        change: filmChange()
+      }
+    }
+
+    if (call.name === 'film_study_map_cast') {
+      const ref = resolveStudy(nodeId, studyId)
+      const study = await window.api.filmStudy.load(ref.studyId)
+      const mapping: FilmStudyMapping = {
+        cast: { ...(study.mapping?.cast ?? {}) },
+        scenes: { ...(study.mapping?.scenes ?? {}) }
+      }
+
+      const apply = (
+        target: unknown,
+        key: 'cast' | 'scenes'
+      ): void => {
+        if (!target || typeof target !== 'object' || Array.isArray(target)) {
+          return
+        }
+        for (const [id, value] of Object.entries(target)) {
+          if (!value || typeof value !== 'object' || Array.isArray(value)) {
+            continue
+          }
+          const item = value as Record<string, unknown>
+          const kind =
+            item.kind === 'node'
+              ? 'node'
+              : item.kind === 'asset'
+                ? 'asset'
+                : 'original'
+          mapping[key][id] = {
+            kind,
+            ...(typeof item.path === 'string' ? { path: item.path } : {}),
+            ...(typeof item.nodeId === 'string'
+              ? { nodeId: item.nodeId }
+              : {}),
+            ...(typeof item.name === 'string' ? { name: item.name } : {})
+          }
+        }
+      }
+      apply(call.args.cast, 'cast')
+      apply(call.args.scenes, 'scenes')
+
+      const saved = await window.api.filmStudy.save({
+        ...study,
+        mapping,
+        updatedAt: new Date().toISOString()
+      })
+      if (useFilmStudyStore.getState().study?.id === saved.id) {
+        useFilmStudyStore.getState().replaceStudy(saved)
+      }
+      return {
+        ok: true,
+        result: { studyId: saved.id, mapping },
+        change: filmChange()
+      }
+    }
+
+    if (call.name === 'film_study_build_timeline') {
+      const ref = resolveStudy(nodeId, studyId)
+      const study = await window.api.filmStudy.load(ref.studyId)
+      const raw = call.args.indices
+      const indexes = Array.isArray(raw)
+        ? raw.map((value) => Number(value)).filter(Number.isInteger)
+        : []
+      const canvas = useCanvasStore.getState()
+      const videos = canvas.nodes
+        .filter(
+          (node) =>
+            node.type === 'cine' &&
+            node.data.kind === 'video' &&
+            node.data.studyRef?.studyId === study.id &&
+            node.data.studyRef?.kind === 'shot'
+        )
+        .filter((node) => {
+          const index = shotIndexOf(node)
+          return indexes.length === 0 || (index !== undefined && indexes.includes(index))
+        })
+        .sort((a, b) => (shotIndexOf(a) ?? 0) - (shotIndexOf(b) ?? 0))
+        .map((node) => node.id)
+      if (videos.length === 0) {
+        return { ok: false, error: '还没有复刻生成的视频节点' }
+      }
+
+      const studioId = createStudioFromNodes(videos)
+      if (!studioId) return { ok: false, error: '创建剪辑室失败' }
+      useStudioStore.getState().openStudio(studioId)
+      return {
+        ok: true,
+        result: { studioId, count: videos.length },
+        change: filmChange()
       }
     }
 

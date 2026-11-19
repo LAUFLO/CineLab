@@ -2,9 +2,31 @@ import { describe, expect, it } from 'vitest'
 import {
   detectCuts,
   mergeToLimit,
+  shotFrameTimes,
   splitByCuts,
   splitByInterval
 } from '../auto'
+
+describe('shotFrameTimes', () => {
+  it('insets the first and last frame of a normal shot', () => {
+    const times = shotFrameTimes({ start: 2, end: 4 })
+    expect(times.first).toBeCloseTo(2.05)
+    expect(times.mid).toBeCloseTo(3)
+    expect(times.last).toBeCloseTo(3.92)
+  })
+
+  it('keeps the last frame inside a very short shot', () => {
+    const times = shotFrameTimes({ start: 1, end: 1.1 })
+    expect(times.first).toBeGreaterThanOrEqual(1)
+    expect(times.last).toBeLessThanOrEqual(1.1)
+    expect(times.last).toBeGreaterThanOrEqual(times.first)
+  })
+
+  it('handles a zero-length shot', () => {
+    const times = shotFrameTimes({ start: 5, end: 5 })
+    expect(times).toEqual({ first: 5, mid: 5, last: 5 })
+  })
+})
 
 describe('auto film study shot splitting', () => {
   it('read scdet timestamps from ffmpeg stderr', () => {

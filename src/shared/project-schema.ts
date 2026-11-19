@@ -114,6 +114,22 @@ export const cineNodeSchema = z.object({
     studyAnalyzed: z.boolean().optional(),
     studyAnalysisError: z.string().max(2000).optional(),
     studyOutputNodeIds: z.array(z.string().max(120)).max(80).optional(),
+    studyRef: z
+      .object({
+        studyId: z.string().max(120),
+        kind: z.enum([
+          'shot',
+          'shot-text',
+          'cast',
+          'scene',
+          'style',
+          'audio',
+          'sheet'
+        ]),
+        index: z.number().optional(),
+        key: z.string().max(120).optional()
+      })
+      .optional(),
     studySummary: z
       .object({
         studyId: z.string().max(120),
@@ -121,7 +137,25 @@ export const cineNodeSchema = z.object({
         segmentCount: z.number(),
         interval: z.number(),
         duration: z.number(),
-        fps: z.number()
+        fps: z.number(),
+        shotCount: z.number().optional(),
+        sceneCount: z.number().optional(),
+        castCount: z.number().optional(),
+        dialogueCount: z.number().optional(),
+        kind: z
+          .enum(['live', 'ai', '2d', '3d', 'motion-comic', 'commentary'])
+          .optional(),
+        production: z
+          .object({
+            live: z.number().optional(),
+            ai: z.number().optional(),
+            cg: z.number().optional(),
+            code: z.number().optional(),
+            screen: z.number().optional(),
+            still: z.number().optional()
+          })
+          .optional(),
+        coverPaths: z.array(z.string().max(2000)).max(3).optional()
       })
       .optional(),
     outputUrl: z.string().max(2000).optional(),

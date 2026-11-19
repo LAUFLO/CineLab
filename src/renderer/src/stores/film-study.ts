@@ -8,13 +8,19 @@ import type {
   FilmStudyOutputOptions,
   FilmStudyProgress
 } from '@shared/film-study'
+import type { FilmStudyMapping } from '@shared/film-study-v2'
 import {
   absolutePosition,
   nodeSize,
   useCanvasStore
 } from './canvas'
 import { useUIStore } from './ui'
-import { buildStudySheetMarkdown } from '../canvas/nodes/study-sheet'
+import {
+  buildRemakePrompt,
+  buildShotMarkdown,
+  buildStudyTableMarkdown,
+  buildStyleMarkdown
+} from '../canvas/nodes/study-sheet'
 
 interface StudyRunConfig {
   interval?: number
@@ -23,9 +29,7 @@ interface StudyRunConfig {
 }
 
 interface FilmStudyState {
-  roomNodeId: string | null
   study: FilmStudy | null
-  opening: boolean
   sheetNodeId: string | null
   sheetStudy: FilmStudy | null
   sheetLoading: boolean
@@ -34,7 +38,20 @@ interface FilmStudyState {
   runAuto: (nodeId: string, config?: StudyRunConfig) => Promise<void>
   cancel: (nodeId: string) => Promise<void>
   retry: (nodeId: string) => Promise<void>
-  openRoom: (nodeId: string) => Promise<void>
+  rerunShot: (nodeId: string) => Promise<void>
+  addStudyGroup: (
+    nodeId: string,
+    kind: 'cast' | 'scene' | 'style' | 'audio'
+  ) => Promise<void>
+  remake: { nodeId: string; study: FilmStudy } | null
+  remakeShot: (nodeId: string) => Promise<void>
+  remakeAll: (nodeId: string) => Promise<void>
+  remakeShots: (
+    nodeIds: string[],
+    choices?: Record<string, string>
+  ) => Promise<void>
+  confirmRemake: (choices: Record<string, string>) => Promise<void>
+  cancelRemake: () => void
   openSheet: (nodeId: string) => Promise<void>
   closeSheet: () => void
   updateStudy: (updater: (study: FilmStudy) => FilmStudy) => void
@@ -42,7 +59,6 @@ interface FilmStudyState {
   rememberFilmTurn: (turnId: string, study: FilmStudy) => void
   undoFilmTurn: (turnId: string) => Promise<boolean>
   saveNow: () => Promise<void>
-  closeRoom: () => void
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
@@ -51,19 +67,6 @@ const filmTurnSnapshots = new Map<string, FilmStudy>()
 
 function patchNode(nodeId: string, patch: Partial<CineNodeData>): void {
   useCanvasStore.getState().patchNodeData(nodeId, patch)
-}
-
-function patchSummary(nodeId: string, study: FilmStudy): void {
-  patchNode(nodeId, {
-    studySummary: {
-      studyId: study.id,
-      frameCount: study.frames.length,
-      segmentCount: study.segments.length,
-      interval: study.frameInterval,
-      duration: study.duration,
-      fps: study.fps
-    }
-  })
 }
 
 function applyProgress(progress: FilmStudyProgress): void {
@@ -130,6 +133,15 @@ function studyNode(nodeId: string): CineNodeData | null {
   return node.data as CineNodeData
 }
 
+/** 任意 cine 节点的 data：镜头文本、首尾帧、拉片节点都用它。 */
+function cineNode(nodeId: string): CineNodeData | null {
+  const node = useCanvasStore
+    .getState()
+    .nodes.find((entry) => entry.id === nodeId)
+  if (!node || node.type !== 'cine') return null
+  return node.data as CineNodeData
+}
+
 function studyOrigin(nodeId: string): { x: number; y: number } {
   const state = useCanvasStore.getState()
   const node = state.nodes.find((entry) => entry.id === nodeId)
@@ -160,7 +172,7 @@ function createStudyOutputs(
     })
     canvas.patchNodeData(sheetId, {
       title: `${sourceName} · 分镜表`,
-      text: buildStudySheetMarkdown(study),
+      text: buildStudyTableMarkdown(study),
       status: 'done'
     })
     canvas.resizeNode(sheetId, 520)
@@ -168,7 +180,14 @@ function createStudyOutputs(
     created.push(sheetId)
   }
 
-  if (outputs.storyboard !== false && study.frames.length > 0) {
+  if (outputs.storyboard !== false && (study.shots?.length ?? 0) > 0) {
+    const ids = canvas.addShotNodes(
+      study,
+      { x: origin.x + 420, y: origin.y },
+      nodeId
+    )
+    created.push(...ids)
+  } else if (outputs.storyboard !== false && study.frames.length > 0) {
     const assets: GeneratedAsset[] = study.frames.map((frame) => ({
       id: `${study.id}-${frame.index}`,
       path: frame.file,
@@ -283,12 +302,11 @@ function removeStudyOutputs(nodeId: string): void {
 }
 
 export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
-  roomNodeId: null,
   study: null,
-  opening: false,
   sheetNodeId: null,
   sheetStudy: null,
   sheetLoading: false,
+  remake: null,
 
   subscribe: () => window.api.filmStudy.onProgress(applyProgress),
 
@@ -372,7 +390,17 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
           segmentCount: study.segments.length,
           interval: study.frameInterval,
           duration: study.duration,
-          fps: study.fps
+          fps: study.fps,
+          ...(study.shots?.length ? { shotCount: study.shots.length } : {}),
+          ...(study.scenes?.length ? { sceneCount: study.scenes.length } : {}),
+          ...(study.cast?.length ? { castCount: study.cast.length } : {}),
+          ...(study.frames.length > 0
+            ? {
+                coverPaths: study.frames
+                  .slice(0, 3)
+                  .map((frame) => frame.file)
+              }
+            : {})
         },
         studyAnalyzed: result.analyzed,
         studyAnalysisError: result.analysisError
@@ -418,21 +446,440 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
     })
   },
 
-  openRoom: async (nodeId) => {
+  rerunShot: async (nodeId) => {
+    const data = cineNode(nodeId)
+    if (!data) return
+    const ref = data.studyRef
+    if (!ref || ref.kind !== 'shot-text' || !ref.index) return
+
+    const study = await window.api.filmStudy.rerunShot(
+      ref.studyId,
+      ref.index,
+      data.studyModelKey
+    )
+    const shot = study.shots?.find((item) => item.index === ref.index)
+    if (!shot) return
+    const scene = study.scenes?.find(
+      (item) =>
+        shot.index >= item.shots[0] && shot.index <= item.shots[1]
+    )
+
+    const canvas = useCanvasStore.getState()
+    for (const node of canvas.nodes) {
+      if (node.type !== 'cine') continue
+      const nodeRef = node.data.studyRef
+      if (
+        !nodeRef ||
+        nodeRef.studyId !== ref.studyId ||
+        nodeRef.index !== ref.index
+      ) {
+        continue
+      }
+
+      if (nodeRef.kind === 'shot') {
+        const outputs = node.data.outputs
+        if (!outputs?.length) continue
+        const isFirst = String(node.data.title ?? '').endsWith('首')
+        canvas.patchNodeData(node.id, {
+          outputs: [
+            { ...outputs[0], path: isFirst ? shot.firstFrame : shot.lastFrame }
+          ]
+        })
+      } else if (nodeRef.kind === 'shot-text') {
+        canvas.patchNodeData(node.id, {
+          text: buildShotMarkdown(shot, scene, study.cast ?? [])
+        })
+      }
+    }
+  },
+
+  remakeShot: async (nodeId) => {
+    const data = cineNode(nodeId)
+    const ref = data?.studyRef
+    if (!ref || ref.kind !== 'shot-text' || !ref.index) return
+    const study = await window.api.filmStudy.load(ref.studyId)
+    set({ remake: { nodeId, study } })
+  },
+
+  remakeAll: async (nodeId) => {
     const data = studyNode(nodeId)
     if (!data?.studyId) return
+    const study = await window.api.filmStudy.load(data.studyId)
+    const canvas = useCanvasStore.getState()
+    const ids = canvas.nodes
+      .filter(
+        (node) =>
+          node.type === 'cine' &&
+          node.data.studyRef?.studyId === study.id &&
+          node.data.studyRef.kind === 'shot-text'
+      )
+      .map((node) => node.id)
+    if (ids.length === 0) {
+      useUIStore.getState().showToast('还没有镜头节点')
+      return
+    }
+    await get().remakeShots(ids)
+  },
 
-    set({ opening: true })
-    try {
-      const study = await window.api.filmStudy.load(data.studyId)
-      set({ roomNodeId: nodeId, study, opening: false })
-    } catch (error) {
-      set({ opening: false })
-      patchNode(nodeId, {
-        status: 'error',
-        error: error instanceof Error ? error.message : String(error)
+  remakeShots: async (nodeIds, choices = {}) => {
+    if (nodeIds.length === 0) return
+    const first = cineNode(nodeIds[0])
+    const ref = first?.studyRef
+    if (!ref) return
+    const study = await window.api.filmStudy.load(ref.studyId)
+    const valid = nodeIds.filter((id) => {
+      const node = useCanvasStore
+        .getState()
+        .nodes.find((item) => item.id === id)
+      return (
+        node?.type === 'cine' &&
+        node.data.studyRef?.studyId === study.id &&
+        node.data.studyRef.kind === 'shot-text'
+      )
+    })
+    for (const id of valid) {
+      set({ remake: { nodeId: id, study } })
+      await get().confirmRemake(choices)
+    }
+  },
+
+  cancelRemake: () => set({ remake: null }),
+
+  confirmRemake: async (choices) => {
+    const current = get().remake
+    if (!current) return
+    const { nodeId, study } = current
+    const ref = cineNode(nodeId)?.studyRef
+    const shot = study.shots?.find((item) => item.index === ref?.index)
+    const source = useCanvasStore
+      .getState()
+      .nodes.find((node) => node.id === nodeId)
+    if (!shot || !source) {
+      set({ remake: null })
+      return
+    }
+
+    const canvas = useCanvasStore.getState()
+    const position = absolutePosition(source, canvas.nodes)
+    const size = nodeSize(source)
+    const videoPosition = {
+      x: position.x + size.width + 80,
+      y: position.y
+    }
+    const videoId = canvas.addNode('video', videoPosition)
+    canvas.patchNodeData(videoId, {
+      title: `镜 ${String(shot.index).padStart(2, '0')} 复刻`,
+      status: 'idle',
+      studyRef: {
+        studyId: study.id,
+        kind: 'shot',
+        index: shot.index
+      }
+    })
+
+    const next = useCanvasStore.getState()
+    const frames = next.nodes
+      .filter(
+        (node) =>
+          node.type === 'cine' &&
+          node.data.kind === 'image' &&
+          node.data.studyRef?.studyId === study.id &&
+          node.data.studyRef.index === shot.index &&
+          node.data.studyRef.kind === 'shot'
+      )
+      .sort((a, b) =>
+        String(a.data.title ?? '').endsWith('首') ? -1 : 1
+      )
+    for (const frame of frames) {
+      next.onConnect({ source: frame.id, target: videoId })
+    }
+    next.onConnect({ source: nodeId, target: videoId })
+
+    const mapping: FilmStudyMapping = { cast: {}, scenes: {} }
+    let prompt = buildRemakePrompt(shot)
+    let offset = 0
+
+    for (const item of study.cast ?? []) {
+      const choice = choices[`cast:${item.id}`] ?? 'original'
+      if (choice === 'original') {
+        mapping.cast[item.id] = { kind: 'original' }
+        continue
+      }
+      if (choice === 'new') {
+        const id = useCanvasStore.getState().addNode('image', {
+          x: videoPosition.x - 320,
+          y: videoPosition.y + offset
+        })
+        offset += 220
+        useCanvasStore.getState().patchNodeData(id, {
+          title: `${item.name} · 待生成`,
+          status: 'idle',
+          prompt: item.appearance ?? '',
+          studyRef: {
+            studyId: study.id,
+            kind: 'cast',
+            key: item.id
+          }
+        })
+        useCanvasStore.getState().onConnect({ source: id, target: videoId })
+        mapping.cast[item.id] = {
+          kind: 'node',
+          nodeId: id,
+          name: item.name
+        }
+        continue
+      }
+      if (choice.startsWith('asset:')) {
+        const path = choice.slice('asset:'.length)
+        const name =
+          path.split('/').pop()?.replace(/\.[^.]+$/, '') ?? item.name
+        const ids = useCanvasStore.getState().addAssetNodes(
+          'image',
+          { x: videoPosition.x - 320, y: videoPosition.y + offset },
+          [
+            {
+              id: `${study.id}-map-${item.id}`,
+              path,
+              kind: 'image',
+              createdAt: new Date().toISOString(),
+              model: '资产库'
+            }
+          ],
+          name,
+          undefined,
+          { scope: 'global', cellWidth: 240 }
+        )
+        offset += 220
+        if (ids[0]) {
+          useCanvasStore
+            .getState()
+            .onConnect({ source: ids[0], target: videoId })
+        }
+        mapping.cast[item.id] = { kind: 'asset', path, name }
+      }
+    }
+
+    for (const scene of study.scenes ?? []) {
+      const choice = choices[`scene:${scene.id}`] ?? 'original'
+      if (choice === 'original') {
+        mapping.scenes[scene.id] = { kind: 'original' }
+        continue
+      }
+      if (choice.startsWith('asset:')) {
+        const path = choice.slice('asset:'.length)
+        const name =
+          path.split('/').pop()?.replace(/\.[^.]+$/, '') ?? scene.name
+        const ids = useCanvasStore.getState().addAssetNodes(
+          'image',
+          { x: videoPosition.x - 320, y: videoPosition.y + offset },
+          [
+            {
+              id: `${study.id}-scene-map-${scene.id}`,
+              path,
+              kind: 'image',
+              createdAt: new Date().toISOString(),
+              model: '资产库'
+            }
+          ],
+          name,
+          undefined,
+          { scope: 'global', cellWidth: 240 }
+        )
+        offset += 220
+        if (ids[0]) {
+          useCanvasStore
+            .getState()
+            .onConnect({ source: ids[0], target: videoId })
+        }
+        mapping.scenes[scene.id] = { kind: 'asset', path, name }
+      }
+    }
+
+    for (const item of study.cast ?? []) {
+      const target = mapping.cast[item.id]
+      if (
+        target?.name &&
+        target.kind !== 'original' &&
+        target.name !== item.name
+      ) {
+        prompt = prompt.split(item.name).join(target.name)
+      }
+    }
+    for (const scene of study.scenes ?? []) {
+      const target = mapping.scenes[scene.id]
+      if (
+        target?.name &&
+        target.kind !== 'original' &&
+        target.name !== scene.name
+      ) {
+        prompt = prompt.split(scene.name).join(target.name)
+      }
+    }
+
+    useCanvasStore.getState().patchNodeData(videoId, { prompt })
+    void window.api.filmStudy
+      .save({ ...study, mapping, updatedAt: new Date().toISOString() })
+      .catch(() => undefined)
+    set({ remake: null })
+  },
+
+  addStudyGroup: async (nodeId, kind) => {
+    const data = studyNode(nodeId)
+    if (!data?.studyId) return
+    const study = await window.api.filmStudy.load(data.studyId)
+    const canvas = useCanvasStore.getState()
+    const origin = studyOrigin(nodeId)
+
+    if (kind === 'cast') {
+      const items = (study.cast ?? []).filter((item) => item.facePath)
+      if (items.length === 0) {
+        useUIStore.getState().showToast('还没有角色数据')
+        return
+      }
+      const assets: GeneratedAsset[] = items.map((item) => ({
+        id: `${study.id}-cast-${item.id}`,
+        path: item.facePath as string,
+        kind: 'image',
+        createdAt: study.updatedAt,
+        model: '逐帧拉片',
+        width: 480,
+        height: 270
+      }))
+      const ids = canvas.addAssetNodes(
+        'image',
+        { x: origin.x - 460, y: origin.y },
+        assets,
+        '角色',
+        nodeId,
+        {
+          groupTitle: '角色',
+          groupColor: 'teal',
+          columns: 4,
+          cellWidth: 200,
+          scope: 'project',
+          connectGroup: true
+        }
+      )
+      ids.forEach((id, index) => {
+        const item = items[index]
+        canvas.patchNodeData(id, {
+          title: item.name,
+          studyRef: { studyId: study.id, kind: 'cast', key: item.id }
+        })
+      })
+      return
+    }
+
+    if (kind === 'scene') {
+      const items = (study.scenes ?? []).filter((item) => item.basePath)
+      if (items.length === 0) {
+        useUIStore.getState().showToast('还没有场景数据')
+        return
+      }
+      const assets: GeneratedAsset[] = items.map((item) => ({
+        id: `${study.id}-scene-${item.id}`,
+        path: item.basePath as string,
+        kind: 'image',
+        createdAt: study.updatedAt,
+        model: '逐帧拉片',
+        width: 480,
+        height: 270
+      }))
+      const ids = canvas.addAssetNodes(
+        'image',
+        { x: origin.x - 460, y: origin.y + 420 },
+        assets,
+        '场景',
+        nodeId,
+        {
+          groupTitle: '场景',
+          groupColor: 'green',
+          columns: 4,
+          cellWidth: 220,
+          scope: 'project',
+          connectGroup: true
+        }
+      )
+      ids.forEach((id, index) => {
+        const item = items[index]
+        canvas.patchNodeData(id, {
+          title: `${item.id} · ${item.name}`,
+          studyRef: { studyId: study.id, kind: 'scene', key: item.id }
+        })
+      })
+      return
+    }
+
+    if (kind === 'style') {
+      if (!study.style) {
+        useUIStore.getState().showToast('还没有风格数据')
+        return
+      }
+      const id = canvas.addNode('text', {
+        x: origin.x - 460,
+        y: origin.y + 840
+      })
+      canvas.patchNodeData(id, {
+        title: '风格档案',
+        text: buildStyleMarkdown(study.style),
+        status: 'done',
+        studyRef: { studyId: study.id, kind: 'style' }
+      })
+      canvas.resizeNode(id, 360)
+      canvas.onConnect({ source: nodeId, target: id })
+      return
+    }
+
+    const assets: GeneratedAsset[] = []
+    if (study.audio?.bgmPath) {
+      assets.push({
+        id: `${study.id}-bgm`,
+        path: study.audio.bgmPath,
+        kind: 'audio',
+        createdAt: study.updatedAt,
+        model: '逐帧拉片',
+        hasAudio: true
       })
     }
+    for (const item of study.cast ?? []) {
+      if (!item.voicePath) continue
+      assets.push({
+        id: `${study.id}-voice-${item.id}`,
+        path: item.voicePath,
+        kind: 'audio',
+        createdAt: study.updatedAt,
+        model: '逐帧拉片',
+        hasAudio: true
+      })
+    }
+    if (assets.length === 0) {
+      useUIStore.getState().showToast('还没有音频数据')
+      return
+    }
+    const ids = canvas.addAssetNodes(
+      'audio',
+      { x: origin.x - 460, y: origin.y + 840 },
+      assets,
+      '音频',
+      nodeId,
+      {
+        groupTitle: '音频',
+        groupColor: 'amber',
+        columns: 3,
+        cellWidth: 260,
+        scope: 'project',
+        connectGroup: true
+      }
+    )
+    ids.forEach((id, index) => {
+      canvas.patchNodeData(id, {
+        title:
+          index === 0 && study.audio?.bgmPath
+            ? 'BGM'
+            : `声音样本 ${index + 1}`,
+        studyRef: { studyId: study.id, kind: 'audio' }
+      })
+    })
   },
 
   openSheet: async (nodeId) => {
@@ -463,8 +910,6 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
       updatedAt: new Date().toISOString()
     }
     set({ study: next })
-    const nodeId = get().roomNodeId
-    if (nodeId) patchSummary(nodeId, next)
 
     if (saveTimer) clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
@@ -473,11 +918,7 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
     }, 600)
   },
 
-  replaceStudy: (study) => {
-    set({ study })
-    const nodeId = get().roomNodeId
-    if (nodeId) patchSummary(nodeId, study)
-  },
+  replaceStudy: (study) => set({ study }),
 
   rememberFilmTurn: (turnId, study) => {
     if (!turnId) return
@@ -497,8 +938,6 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
     try {
       const saved = await window.api.filmStudy.save(snapshot)
       if (get().study?.id === saved.id) set({ study: saved })
-      const nodeId = get().roomNodeId
-      if (nodeId) patchSummary(nodeId, saved)
       return true
     } catch {
       return false
@@ -516,15 +955,8 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
     try {
       const saved = await window.api.filmStudy.save(current)
       if (get().study?.id === saved.id) set({ study: saved })
-      const nodeId = get().roomNodeId
-      if (nodeId) patchSummary(nodeId, saved)
     } catch {
       // 本地编辑保留，下一次保存重试
     }
-  },
-
-  closeRoom: () => {
-    void get().saveNow()
-    set({ roomNodeId: null, study: null })
   }
 }))

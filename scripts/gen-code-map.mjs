@@ -101,10 +101,14 @@ const MODULES = [
   },
   {
     id: '05',
-    name: '拉片室',
+    name: '逐帧拉片',
     file: 'docs/code-map/05-film-study.md',
     dirs: ['src/main/film-study'],
-    files: ['src/shared/film-study.ts', 'src/renderer/src/stores/film-study.ts']
+    files: [
+      'src/shared/film-study.ts',
+      'src/shared/film-study-v2.ts',
+      'src/renderer/src/stores/film-study.ts'
+    ]
   },
   {
     id: '06',

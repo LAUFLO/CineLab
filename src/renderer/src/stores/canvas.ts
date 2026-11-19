@@ -11,6 +11,7 @@ import {
   type XYPosition
 } from '@xyflow/react'
 import { create } from 'zustand'
+import type { FilmStudy } from '@shared/film-study'
 import {
   GROUP_GAP,
   GROUP_HEADER_HEIGHT,
@@ -120,6 +121,11 @@ export interface CanvasStore {
     titlePrefix: string,
     sourceNodeId?: string,
     layout?: AddAssetLayout
+  ) => string[]
+  addShotNodes: (
+    study: FilmStudy,
+    origin: XYPosition,
+    sourceNodeId?: string
   ) => string[]
   addPendingNodes: (
     kind: NodeKind,

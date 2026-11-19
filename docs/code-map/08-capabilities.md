@@ -29,7 +29,7 @@
 | 04 | 13 关节骨架 + 17 个动作 | `src/shared/stage-motions.ts`、`stage-figure.ts` |
 | 04 | 自动分镜与按对白分镜 | `stage-auto-coverage.ts`、`stage-dialogue.ts` |
 | 04 | 单镜预演导出与截图回画布 | `src/main/stage/export.ts`、`StageWindow.tsx` |
-| 05 | 拉片、自动镜头检测、分镜表、切片、BGM | `src/main/film-study/`、`stores/film-study.ts` |
+| 05 | 切镜/转场、首中尾帧、逐镜理解、取证与复核、分场、角色/风格、镜头三节点、分镜表、复刻建图 | `src/main/film-study/`、`stores/film-study.ts` |
 | 06 | CineBot 工具、生成提案、会话、技能 | `src/main/agent/` |
 | 07 | IPC、preload、设置、素材库、安全、更新 | `src/main/ipc/`、`src/preload/` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |

@@ -85,7 +85,7 @@ describe('film bridge', () => {
     expect(result.ok).toBe(true)
     expect(result.result).toMatchObject({
       studyId: 'study-test',
-      segmentCount: 1,
+      shotCount: 1,
       studyNodeId: 'study-node'
     })
   })

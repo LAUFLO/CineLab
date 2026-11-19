@@ -72,16 +72,24 @@
 | 场景图 → 白膜 | VLM + 校准（深度未接） | `src/main/scene/analyze.ts` | 部分实现 |
 | 截图回画布 | `stage.capture` | `src/main/ipc/stage.ts` | 已实现 |
 
-## 拉片室
+## 逐帧拉片
 
 | 关键词 | 已有实现 | 入口 | 状态 |
 |---|---|---|---|
-| 拉片、抽帧 | `FilmStudy`、抽帧/进度/取消 | `src/main/film-study/service.ts` | 已实现 |
-| 镜头检测 | 直方图/像素差/亮度 | `src/main/film-study/shot-detect.ts` | 已实现 |
-| 自动分镜、AI 描述 | auto + analysis | `src/main/film-study/auto.ts`、`analysis.ts` | 已实现 |
-| 分镜表 | Markdown/表格 | `src/renderer/src/canvas/nodes/study-sheet.ts` | 已实现 |
-| 动态切片、BGM | 按镜切片/整条音轨 | `src/main/film-study/auto.ts` | 已实现 |
+| 切镜、转场 | 硬切/跳切/溶解/划像/闪白 | `src/main/film-study/shot-detect.ts` | 已实现 |
+| 首/中/尾帧 | 每镜三帧 | `src/main/film-study/auto.ts` | 已实现 |
+| 逐镜理解 | 5 镜一批视觉模型 | `src/main/film-study/shots.ts` | 已实现 |
+| 确定性取证 | 标签、置信度、证据 | `src/main/film-study/production.ts` | 已实现 |
+| VLM 复核 | 低置信镜头融合 | `src/main/film-study/production-review.ts` | 已实现 |
+| 分场 | VLM 分场 + 每 10 镜兜底 | `src/main/film-study/scenes.ts` | 已实现 |
+| 角色表 | 跨镜合并、抽帧头像 | `src/main/film-study/cast.ts` | 已实现（未裁脸） |
+| 风格档案 | 画风/色调/构图/运镜/节奏 | `src/main/film-study/style.ts` | 已实现 |
+| 镜头三节点 | 首帧/尾帧/文本，按场分组 | `src/renderer/src/canvas/nodes/StudyNodeCard.tsx` | 已实现 |
+| 分镜表 | Markdown 表格，含制作方式 | `src/renderer/src/canvas/nodes/study-sheet.ts` | 已实现 |
+| 单镜重跑 | 重抽首/中/尾帧 + 重跑该镜 | `src/main/film-study/service.ts` | 已实现 |
+| 选角/选景、复刻建图 | mapping + 普通视频节点 | `RemakeMappingDialog.tsx`、`stores/film-study.ts` | 已实现 |
 | 分析包导入导出 | SRT/ZIP/README | `src/main/film-study/analysis.ts` | 已实现 |
+| 字幕 OCR、音频分轨、裁脸 | 未接 | — | 待做 |
 
 ## Agent 与存储
 

@@ -17,13 +17,28 @@ export interface FrameStats {
   changed: number[]
   /** 平均亮度 0..255 */
   luma: number[]
+  /** 半分辨率灰度缩略图（48×27），用于渐变转场检测；旧调用可以没有 */
+  thumbs?: Uint8Array[]
 }
 
-export type CutKind = 'cut' | 'jump' | 'motion'
+export type CutKind =
+  | 'cut'
+  | 'jump'
+  | 'motion'
+  | 'dissolve'
+  | 'wipe'
+  | 'flash'
 
 export interface DetectedCut {
   time: number
   kind: CutKind
+  score: number
+}
+
+export interface GradualTransition {
+  start: number
+  end: number
+  kind: 'dissolve' | 'wipe' | 'flash'
   score: number
 }
 
@@ -94,6 +109,10 @@ export async function analyzeVideoFrames(
   const pixDiff: number[] = []
   const changed: number[] = []
   const luma: number[] = []
+  const thumbs: Uint8Array[] = []
+  const thumbW = Math.max(1, Math.floor(width / 2))
+  const thumbH = Math.max(1, Math.floor(height / 2))
+  const thumbAcc = new Float32Array(thumbW * thumbH)
 
   let previousOffset = -1
 
@@ -101,6 +120,7 @@ export async function analyzeVideoFrames(
     const offset = index * frameSize
     const buckets = new Float32Array(64)
     let lumaSum = 0
+    thumbAcc.fill(0)
 
     for (let pixel = 0; pixel < pixels; pixel += 1) {
       const base = offset + pixel * 3
@@ -109,8 +129,21 @@ export async function analyzeVideoFrames(
       const b = buffer[base + 2]
       const bucket = (r >> 6) * 16 + (g >> 6) * 4 + (b >> 6)
       buckets[bucket] += 1
-      lumaSum += 0.299 * r + 0.587 * g + 0.114 * b
+      const value = 0.299 * r + 0.587 * g + 0.114 * b
+      lumaSum += value
+      const x = pixel % width
+      const y = (pixel / width) | 0
+      thumbAcc[
+        Math.min(thumbH - 1, y >> 1) * thumbW +
+          Math.min(thumbW - 1, x >> 1)
+      ] += value
     }
+
+    const thumb = new Uint8Array(thumbW * thumbH)
+    for (let i = 0; i < thumb.length; i += 1) {
+      thumb[i] = Math.round(thumbAcc[i] / 4)
+    }
+    thumbs.push(thumb)
 
     for (let bucket = 0; bucket < buckets.length; bucket += 1) {
       buckets[bucket] /= pixels
@@ -151,7 +184,8 @@ export async function analyzeVideoFrames(
     hist,
     pixDiff,
     changed,
-    luma
+    luma,
+    thumbs
   }
 }
 
@@ -161,6 +195,180 @@ function histDistance(a: Float32Array, b: Float32Array): number {
     sum += Math.sqrt(a[index] * b[index])
   }
   return Math.sqrt(Math.max(0, 1 - sum))
+}
+
+const GRADUAL_MIN_FRAMES = 3
+const GRADUAL_MIN_DIFF = 0.012
+const GRADUAL_MAX_DIFF = 0.35
+const DISSOLVE_MAX_MAE = 16
+const WIPE_MIN_COLUMNS = 2
+
+function mae(a: Uint8Array, b: Uint8Array): number {
+  const length = Math.min(a.length, b.length)
+  if (length === 0) return 255
+  let sum = 0
+  for (let index = 0; index < length; index += 1) {
+    sum += Math.abs(a[index] - b[index])
+  }
+  return sum / length
+}
+
+function blendMae(
+  a: Uint8Array,
+  b: Uint8Array,
+  middle: Uint8Array,
+  alpha: number
+): number {
+  const length = Math.min(a.length, b.length, middle.length)
+  if (length === 0) return 255
+  let sum = 0
+  for (let index = 0; index < length; index += 1) {
+    sum += Math.abs(middle[index] - (alpha * a[index] + (1 - alpha) * b[index]))
+  }
+  return sum / length
+}
+
+/** 连续多帧处于「明显在变、但没到硬切」的区间，返回首尾帧下标。 */
+function gradualSpans(stats: FrameStats): Array<[number, number]> {
+  const diffs = stats.pixDiff
+  if (diffs.length < GRADUAL_MIN_FRAMES + 2) return []
+
+  const radius = Math.max(2, Math.round(stats.fps * 0.5))
+  const base = localMedian(diffs, radius)
+  const spans: Array<[number, number]> = []
+  let start = -1
+
+  for (let index = 1; index < diffs.length; index += 1) {
+    const value = diffs[index]
+    const gradual =
+      value > GRADUAL_MIN_DIFF &&
+      value < GRADUAL_MAX_DIFF &&
+      value > base[index] * 1.15
+
+    if (gradual) {
+      if (start < 0) start = index
+    } else if (start >= 0) {
+      if (index - start >= GRADUAL_MIN_FRAMES) {
+        spans.push([Math.max(0, start - 1), Math.min(diffs.length - 1, index)])
+      }
+      start = -1
+    }
+  }
+
+  if (start >= 0 && diffs.length - start >= GRADUAL_MIN_FRAMES) {
+    spans.push([Math.max(0, start - 1), diffs.length - 1])
+  }
+  return spans
+}
+
+/** 从左往右第一列更像首帧的下标；全像尾帧返回列数。 */
+function wipeEdge(
+  middle: Uint8Array,
+  a: Uint8Array,
+  b: Uint8Array,
+  width: number,
+  height: number,
+  columns = 8
+): number {
+  const columnWidth = Math.max(1, Math.floor(width / columns))
+  for (let column = 0; column < columns; column += 1) {
+    const from = column * columnWidth
+    const to = column === columns - 1 ? width : from + columnWidth
+    let sumA = 0
+    let sumB = 0
+    let count = 0
+    for (let y = 0; y < height; y += 1) {
+      for (let x = from; x < to; x += 1) {
+        const index = y * width + x
+        sumA += Math.abs(middle[index] - a[index])
+        sumB += Math.abs(middle[index] - b[index])
+        count += 1
+      }
+    }
+    if (count > 0 && sumA < sumB) return column
+  }
+  return columns
+}
+
+/**
+ * 渐变转场：溶解、划像、闪白。
+ * 只在有半分辨率缩略图时工作；返回的是转场区间，调用方取中点作为切点。
+ */
+export function detectGradualTransitions(
+  stats: FrameStats
+): GradualTransition[] {
+  if (!stats.thumbs || stats.thumbs.length < stats.count) return []
+
+  const thumbs = stats.thumbs
+  const width = Math.max(1, Math.floor(stats.width / 2))
+  const height = Math.max(1, Math.floor(stats.height / 2))
+  const out: GradualTransition[] = []
+
+  for (const [start, end] of gradualSpans(stats)) {
+    if (end - start < GRADUAL_MIN_FRAMES) continue
+    const a = thumbs[start]
+    const b = thumbs[end]
+    if (!a || !b) continue
+
+    const startTime = start / stats.fps
+    const endTime = end / stats.fps
+
+    const baseLuma = (stats.luma[start] + stats.luma[end]) / 2
+    let peakLuma = 0
+    for (let index = start + 1; index < end; index += 1) {
+      peakLuma = Math.max(peakLuma, stats.luma[index])
+    }
+    if (peakLuma > baseLuma + 40 && mae(a, b) < 14) {
+      out.push({ start: startTime, end: endTime, kind: 'flash', score: 0.8 })
+      continue
+    }
+
+    // 首尾几乎一样：同一镜头内的缓慢变化，不是溶解/划像
+    if (mae(a, b) < 25) continue
+
+    const middles = thumbs.slice(start + 1, end)
+    if (middles.length === 0) continue
+
+    let best = Number.POSITIVE_INFINITY
+    for (const middle of middles) {
+      for (let alpha = 0.15; alpha <= 0.85; alpha += 0.05) {
+        best = Math.min(best, blendMae(a, b, middle, alpha))
+      }
+    }
+    if (best < DISSOLVE_MAX_MAE) {
+      out.push({
+        start: startTime,
+        end: endTime,
+        kind: 'dissolve',
+        score: Math.max(0.5, 1 - best / DISSOLVE_MAX_MAE)
+      })
+      continue
+    }
+
+    const edges = middles.map((middle) =>
+      wipeEdge(middle, a, b, width, height)
+    )
+    let increasing = 0
+    let decreasing = 0
+    for (let index = 1; index < edges.length; index += 1) {
+      if (edges[index] > edges[index - 1]) increasing += 1
+      if (edges[index] < edges[index - 1]) decreasing += 1
+    }
+    const steps = edges.length - 1
+    const directed =
+      steps > 0 && Math.max(increasing, decreasing) / steps >= 0.6
+    const span = Math.max(...edges) - Math.min(...edges)
+    if (directed && span >= WIPE_MIN_COLUMNS) {
+      out.push({
+        start: startTime,
+        end: endTime,
+        kind: 'wipe',
+        score: 0.7
+      })
+    }
+  }
+
+  return out
 }
 
 /** 硬切 + 同机位跳切检测 */
@@ -184,19 +392,26 @@ export function detectShotCuts(stats: FrameStats): DetectedCut[] {
   for (let index = 1; index < count; index += 1) {
     const value = score[index]
     const changed = stats.changed[index]
+    const a = stats.thumbs?.[index - 1]
+    const b = stats.thumbs?.[index]
+    const duplicate = Boolean(a && b && mae(a, b) < 20)
 
     const hardCut =
+      !duplicate &&
       value > 0.3 &&
       value > base[index] * 2.5 + 0.06 &&
       changed > 0.25
 
     const relative =
+      !duplicate &&
       changed > 0.45 &&
       changed > changedBase[index] * 3 + 0.2 &&
       value > base[index] * 4 + 0.03
 
     const jump =
+      !duplicate &&
       changed > 0.17 &&
+      histDistance(stats.hist[index - 1], stats.hist[index]) > 0.08 &&
       changed > 2.5 * (changedBase[index] + 0.02) &&
       stats.pixDiff[index] > 2 * (diffBase[index] + 0.004)
 
@@ -205,6 +420,12 @@ export function detectShotCuts(stats: FrameStats): DetectedCut[] {
     } else if (jump) {
       cuts.push({ time: index / fps, kind: 'jump', score: changed })
     }
+  }
+
+  for (const transition of detectGradualTransitions(stats)) {
+    const time = (transition.start + transition.end) / 2
+    if (cuts.some((cut) => Math.abs(cut.time - time) < 0.35)) continue
+    cuts.push({ time, kind: transition.kind, score: transition.score })
   }
 
   return mergeNear(cuts, 0.35)

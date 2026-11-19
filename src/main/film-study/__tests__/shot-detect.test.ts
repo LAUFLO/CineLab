@@ -1,10 +1,135 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildCandidateTimes,
+  detectGradualTransitions,
   detectMotionPeaks,
   type DetectedCut,
   type FrameStats
 } from '../shot-detect'
+
+const THUMB_W = 48
+const THUMB_H = 27
+
+function frame(value: number): Uint8Array {
+  return new Uint8Array(THUMB_W * THUMB_H).fill(value)
+}
+
+function blend(a: Uint8Array, b: Uint8Array, alpha: number): Uint8Array {
+  const out = new Uint8Array(a.length)
+  for (let index = 0; index < a.length; index += 1) {
+    out[index] = Math.round(alpha * a[index] + (1 - alpha) * b[index])
+  }
+  return out
+}
+
+function wipe(
+  a: Uint8Array,
+  b: Uint8Array,
+  edge: number
+): Uint8Array {
+  const out = new Uint8Array(a.length)
+  for (let y = 0; y < THUMB_H; y += 1) {
+    for (let x = 0; x < THUMB_W; x += 1) {
+      const index = y * THUMB_W + x
+      out[index] = x < edge ? b[index] : a[index]
+    }
+  }
+  return out
+}
+
+function gradualStats(
+  thumbs: Uint8Array[],
+  pixDiff: number[],
+  luma: number[],
+  fps = 8
+): FrameStats {
+  return {
+    width: THUMB_W * 2,
+    height: THUMB_H * 2,
+    fps,
+    count: thumbs.length,
+    hist: thumbs.map(() => new Float32Array(64)),
+    pixDiff,
+    changed: pixDiff.map((value) => Math.min(1, value * 4)),
+    luma,
+    thumbs
+  }
+}
+
+describe('detectGradualTransitions', () => {
+  const black = frame(0)
+  const white = frame(255)
+
+  it('detects a dissolve between two shots', () => {
+    const stats = gradualStats(
+      [
+        black,
+        black,
+        blend(black, white, 0.75),
+        blend(black, white, 0.5),
+        blend(black, white, 0.25),
+        white,
+        white
+      ],
+      [0, 0, 0.06, 0.06, 0.06, 0, 0],
+      [0, 0, 64, 128, 191, 255, 255]
+    )
+    const out = detectGradualTransitions(stats)
+    expect(out).toHaveLength(1)
+    expect(out[0].kind).toBe('dissolve')
+    expect(out[0].start).toBeCloseTo(1 / 8)
+    expect(out[0].end).toBeCloseTo(5 / 8)
+  })
+
+  it('detects a wipe moving across the frame', () => {
+    const stats = gradualStats(
+      [
+        black,
+        black,
+        wipe(black, white, 16),
+        wipe(black, white, 32),
+        wipe(black, white, 48),
+        white,
+        white
+      ],
+      [0, 0, 0.08, 0.08, 0.08, 0, 0],
+      [0, 0, 85, 170, 255, 255, 255]
+    )
+    const out = detectGradualTransitions(stats)
+    expect(out).toHaveLength(1)
+    expect(out[0].kind).toBe('wipe')
+  })
+
+  it('detects a flash to white', () => {
+    const stats = gradualStats(
+      [black, black, frame(180), frame(255), frame(180), black, black],
+      [0, 0, 0.06, 0.06, 0.06, 0, 0],
+      [0, 0, 180, 255, 180, 0, 0]
+    )
+    const out = detectGradualTransitions(stats)
+    expect(out).toHaveLength(1)
+    expect(out[0].kind).toBe('flash')
+  })
+
+  it('ignores a hard cut', () => {
+    const stats = gradualStats(
+      [black, black, white, white],
+      [0, 0.9, 0, 0],
+      [0, 0, 255, 255]
+    )
+    expect(detectGradualTransitions(stats)).toEqual([])
+  })
+
+  it('returns nothing without thumbs', () => {
+    const stats = gradualStats(
+      [black, black, white, white],
+      [0, 0.06, 0.06, 0],
+      [0, 0, 255, 255]
+    )
+    delete (stats as Partial<FrameStats>).thumbs
+    expect(detectGradualTransitions(stats)).toEqual([])
+  })
+})
 
 function makeStats(
   pixDiff: number[],

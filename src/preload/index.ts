@@ -373,6 +373,10 @@ const api: CineApi = {
       ipcRenderer.invoke('film-study:import-subtitles', studyId),
     analyze: (studyId: string, modelKey: string) =>
       ipcRenderer.invoke('film-study:analyze', studyId, modelKey),
+    rerunShot: (studyId: string, index: number, modelKey?: string) =>
+      ipcRenderer.invoke('film-study:rerun-shot', studyId, index, modelKey),
+    splitScenes: (studyId: string, modelKey?: string) =>
+      ipcRenderer.invoke('film-study:split-scenes', studyId, modelKey),
     contactSheet: (studyId: string) =>
       ipcRenderer.invoke('film-study:contact-sheet', studyId),
     onProgress: (callback: (progress: FilmStudyProgress) => void) => {

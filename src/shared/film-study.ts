@@ -1,4 +1,12 @@
 import type { AssetScope } from './asset-schema'
+import type {
+  FilmStudyAudio,
+  FilmStudyCast,
+  FilmStudyMapping,
+  FilmStudyScene,
+  FilmStudyShot,
+  FilmStudyStyle
+} from './film-study-v2'
 
 export interface FilmStudyFrame {
   index: number
@@ -100,6 +108,18 @@ export interface FilmStudy {
   frameInterval: number
   frames: FilmStudyFrame[]
   segments: FilmStudySegment[]
+  /** v2 镜头：首/中/尾帧与时间；旧数据没有 */
+  shots?: FilmStudyShot[]
+  /** v2 分场结果；旧数据没有 */
+  scenes?: FilmStudyScene[]
+  /** v2 角色表；旧数据没有 */
+  cast?: FilmStudyCast[]
+  /** v2 风格档案；旧数据没有 */
+  style?: FilmStudyStyle
+  /** v2 音频分析；旧数据没有 */
+  audio?: FilmStudyAudio
+  /** 复刻映射：原片角色/场景 → 用户资产或占位节点 */
+  mapping?: FilmStudyMapping
   macroAnalysis?: FilmStudyMacroAnalysis
   storyLines?: FilmStudyStoryLine[]
   audienceCurvePoints?: FilmStudyAudiencePoint[]

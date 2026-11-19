@@ -5,6 +5,7 @@ import {
   type CanvasNode
 } from '../stores/canvas'
 import { useFilmStudyStore } from '../stores/film-study'
+import { useLibraryStore } from '../stores/library'
 import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
 import { createStudioFromNode } from '../studio/nodes'
@@ -110,6 +111,39 @@ interface MenuContext {
   close: () => void
 }
 
+async function saveNodeToLibrary(
+  node: CanvasNode,
+  folder: string
+): Promise<void> {
+  if (node.type !== 'cine') return
+  const output =
+    node.data.outputs?.find(
+      (item) => item.id === node.data.selectedOutputId
+    ) ?? node.data.outputs?.[0]
+  if (!output) return
+  try {
+    await window.api.library.saveAssets(
+      [
+        {
+          path: output.path,
+          scope: output.scope ?? 'project',
+          name: node.data.title
+        }
+      ],
+      folder
+    )
+    await useLibraryStore.getState().refresh()
+    useUIStore.getState().showToast(`已加入资产库 · ${folder}`)
+  } catch (error) {
+    useUIStore
+      .getState()
+      .showToast(
+        error instanceof Error ? error.message : '加入资产库失败',
+        'error'
+      )
+  }
+}
+
 function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
   const sections: MenuSection[] = []
   const command = (
@@ -200,6 +234,22 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
     sections.push({
       title: '图像',
       actions: [
+        ...(cine.data.studyRef?.kind === 'cast'
+          ? [
+              {
+                label: '加入资产库（角色）',
+                run: () => void saveNodeToLibrary(node, '角色')
+              }
+            ]
+          : []),
+        ...(cine.data.studyRef?.kind === 'scene'
+          ? [
+              {
+                label: '加入资产库（场景）',
+                run: () => void saveNodeToLibrary(node, '场景')
+              }
+            ]
+          : []),
         { label: '九宫格', run: () => operation('grid-generate', 'multi') },
         { label: '角色四视图', run: () => operation('character-sheet') },
         { label: '抠图', run: () => operation('cutout') },
@@ -210,10 +260,51 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
     })
   }
 
+  if (cine?.data.kind === 'audio') {
+    sections.push({
+      title: '音频',
+      actions: [
+        {
+          label: '加入资产库（音频）',
+          run: () => void saveNodeToLibrary(node, '音频')
+        }
+      ]
+    })
+  }
+
   if (cine?.data.kind === 'text') {
     sections.push({
       title: '文本',
       actions: [
+        ...(cine.data.studyRef?.kind === 'shot-text'
+          ? [
+              {
+                label: '复刻这一镜',
+                run: () =>
+                  void useFilmStudyStore.getState().remakeShot(node.id)
+              },
+              {
+                label: '只重跑这一镜',
+                run: () =>
+                  void useFilmStudyStore.getState().rerunShot(node.id)
+              }
+            ]
+          : []),
+        ...(cine.data.studyRef?.kind === 'style'
+          ? [
+              {
+                label: '保存为提示词模板',
+                disabled: !cine.data.text?.trim(),
+                run: () => {
+                  void useLibraryStore.getState().saveTemplate({
+                    kind: 'text',
+                    name: '风格档案',
+                    prompt: cine.data.text ?? ''
+                  })
+                }
+              }
+            ]
+          : []),
         {
           label: '编辑文本',
           run: () => {
@@ -256,6 +347,11 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
           label: '重新拉片',
           disabled: !cine.data.sourcePath,
           run: () => void ctx.runAuto(node.id)
+        },
+        {
+          label: '整片复刻',
+          disabled: !cine.data.studyId,
+          run: () => void useFilmStudyStore.getState().remakeAll(node.id)
         }
       ]
     })

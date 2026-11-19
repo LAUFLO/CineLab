@@ -22,14 +22,14 @@ const StageWindow = lazy(() =>
     default: module.StageWindow
   }))
 )
-const FilmStudyRoom = lazy(() =>
-  import('./canvas/nodes/FilmStudyRoom').then((module) => ({
-    default: module.FilmStudyRoom
-  }))
-)
 const FilmStudySheet = lazy(() =>
   import('./canvas/nodes/FilmStudySheet').then((module) => ({
     default: module.FilmStudySheet
+  }))
+)
+const RemakeMappingDialog = lazy(() =>
+  import('./canvas/nodes/RemakeMappingDialog').then((module) => ({
+    default: module.RemakeMappingDialog
   }))
 )
 import { AgentPanel } from './agent/AgentPanel'
@@ -66,7 +66,6 @@ export default function App() {
 
   const studioOpen = useStudioStore((state) => state.open)
   const stageOpen = useStageStore((state) => state.open)
-  const studyOpen = useFilmStudyStore((state) => Boolean(state.study))
   const sheetOpen = useFilmStudyStore((state) => Boolean(state.sheetNodeId))
 
   const loadProviders = useSettingsStore((state) => state.load)
@@ -259,16 +258,14 @@ export default function App() {
           <StageWindow />
         </Suspense>
       ) : null}
-      {studyOpen ? (
-        <Suspense fallback={null}>
-          <FilmStudyRoom />
-        </Suspense>
-      ) : null}
       {sheetOpen ? (
         <Suspense fallback={null}>
           <FilmStudySheet />
         </Suspense>
       ) : null}
+      <Suspense fallback={null}>
+        <RemakeMappingDialog />
+      </Suspense>
       {phase === 'ready' ? <AgentPanel /> : null}
       <WindowControls theme={resolved} onToggleTheme={toggle} />
       <Toast />

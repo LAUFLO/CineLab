@@ -71,6 +71,13 @@ export interface CineNodeData extends Record<string, unknown> {
   studyAnalysisError?: string
   /** 拉片节点：自动生成的输出节点 id，重新拉片时用于替换 */
   studyOutputNodeIds?: string[]
+  /** v2：指向 study 的镜头/角色/场景等，节点只存引用 */
+  studyRef?: {
+    studyId: string
+    kind: 'shot' | 'shot-text' | 'cast' | 'scene' | 'style' | 'audio' | 'sheet'
+    index?: number
+    key?: string
+  }
   studySummary?: {
     studyId: string
     frameCount: number
@@ -78,6 +85,22 @@ export interface CineNodeData extends Record<string, unknown> {
     interval: number
     duration: number
     fps: number
+    /** v2：镜头数；旧数据没有时回退到 segmentCount */
+    shotCount?: number
+    sceneCount?: number
+    castCount?: number
+    dialogueCount?: number
+    kind?: 'live' | 'ai' | '2d' | '3d' | 'motion-comic' | 'commentary'
+    production?: {
+      live?: number
+      ai?: number
+      cg?: number
+      code?: number
+      screen?: number
+      still?: number
+    }
+    /** 联系表封面，相对项目根，最多 3 张 */
+    coverPaths?: string[]
   }
   templates: string[]
   /** 纯素材节点：由上传创建，不显示提示词输入框 */

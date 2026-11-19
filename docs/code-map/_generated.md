@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 70 | 23268 |
+| 01 | [画布](./01-canvas.md) | 70 | 22945 |
 | 02 | [生成与模型](./02-generation.md) | 50 | 11170 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9426 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20196 |
-| 05 | [拉片室](./05-film-study.md) | 6 | 2863 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 49 | 16486 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 65 | 11185 |
-| 10 | [UI 组件与面板](./10-ui.md) | 43 | 8773 |
+| 05 | [逐帧拉片](./05-film-study.md) | 13 | 5792 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 49 | 17084 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 65 | 11243 |
+| 10 | [UI 组件与面板](./10-ui.md) | 43 | 8770 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -31,7 +31,7 @@
 | `MediaApi` | `splitGrid`、`stitch`、`extractFrame`、`splitAv`、`cropVideo`、`probe`、`exists`、`existsMany`、`thumbnail`、`proxy`、`audioPeaks`、`listSounds`、`importSound`、`cropImage`、`cropImageRect`、`trimVideo`、`trimAudio`、`audioSpeed`、`removeSubtitles`、`detectSubtitleRect`、`captureDepth`、`startDepthCapture`、`cancelDepthCapture`、`onDepthCaptureEvent`、`startVisionTask`、`cancelVisionTask`、`onVisionTaskEvent` |
 | `ComponentsApi` | `status`、`install`、`pause`、`remove`、`onEvent` |
 | `TimelineApi` | `load`、`save`、`duplicate`、`exportVtt`、`export`、`cancelExport`、`onExportProgress`、`onTimelineChanged`、`transcribe`、`cancelTranscribe`、`onTranscribeProgress`、`analyze`、`importSubtitles` |
-| `FilmStudyApi` | `extract`、`auto`、`cancel`、`load`、`save`、`exportMarkdown`、`exportAnalysisPackage`、`exportBundle`、`importAnalysis`、`extractSubtitles`、`importSubtitles`、`analyze`、`contactSheet`、`onProgress` |
+| `FilmStudyApi` | `extract`、`auto`、`cancel`、`load`、`save`、`exportMarkdown`、`exportAnalysisPackage`、`exportBundle`、`importAnalysis`、`extractSubtitles`、`importSubtitles`、`analyze`、`rerunShot`、`splitScenes`、`contactSheet`、`onProgress` |
 | `AgentApi` | `chat`、`cancel`、`toolResult`、`confirm`、`sessionLoad`、`sessionList`、`sessionCreate`、`sessionRename`、`sessionDelete`、`sessionCompact`、`modelInfo`、`textModels`、`models`、`proposalCreate`、`proposalActive`、`proposalSubmit`、`proposalCancel`、`onEvent`、`onToolCall` |
 | `SkillsApi` | `list`、`files`、`readFile`、`create`、`save`、`remove`、`uploadFiles`、`removeFile`、`clone`、`setOverride`、`openDirectory`、`openFile` |
 | `StageApi` | `create`、`load`、`save`、`delete`、`duplicate`、`capture`、`exportPreview`、`cancelExport`、`onExportProgress` |
@@ -56,6 +56,12 @@
 | `capability_catalog` | `capability.catalog` |  | 是 |
 | `capability_search` | `capability.search` |  | 是 |
 | `film_study_get` | `film.studyGet` |  | 是 |
+| `film_study_get_shot` | `film.studyGetShot` |  | 是 |
+| `film_study_update_shot` | `film.studyUpdateShot` |  |  |
+| `film_study_remake` | `film.studyRemake` |  |  |
+| `film_study_split_scenes` | `film.studySplitScenes` | 是 |  |
+| `film_study_map_cast` | `film.studyMapCast` |  |  |
+| `film_study_build_timeline` | `film.studyBuildTimeline` | 是 |  |
 | `film_study_auto` | `film.studyAuto` |  |  |
 | `film_study_export` | `film.studyExport` |  |  |
 | `film_study_update_segment` | `film.studyUpdateSegment` |  |  |
@@ -117,13 +123,13 @@
 | `DepthCaptureDialog.tsx` |
 | `FilmNodeView.tsx` |
 | `FilmStudyInsights.tsx` |
-| `FilmStudyRoom.tsx` |
 | `FilmStudySheet.tsx` |
 | `GroupNodeView.tsx` |
 | `MaskEditorDialog.tsx` |
 | `ModelConfigDialog.tsx` |
 | `NodeToolbar.tsx` |
 | `PanoramaViewer.tsx` |
+| `RemakeMappingDialog.tsx` |
 | `SphereDialog.tsx` |
 | `StageNodeView.tsx` |
 | `StudioNodeView.tsx` |
@@ -157,8 +163,14 @@
 - `src/main/export/__tests__/project-export.test.ts`
 - `src/main/film-study/__tests__/analysis.test.ts`
 - `src/main/film-study/__tests__/auto.test.ts`
+- `src/main/film-study/__tests__/cast.test.ts`
 - `src/main/film-study/__tests__/package.test.ts`
+- `src/main/film-study/__tests__/production-review.test.ts`
+- `src/main/film-study/__tests__/production.test.ts`
+- `src/main/film-study/__tests__/scenes.test.ts`
 - `src/main/film-study/__tests__/shot-detect.test.ts`
+- `src/main/film-study/__tests__/shots.test.ts`
+- `src/main/film-study/__tests__/style.test.ts`
 - `src/main/ipc/__tests__/index.test.ts`
 - `src/main/library/__tests__/store.test.ts`
 - `src/main/library/__tests__/tag-utils.test.ts`
@@ -178,6 +190,7 @@
 - `src/main/update/__tests__/fallback.test.ts`
 - `src/renderer/src/agent/__tests__/filmBridge.test.ts`
 - `src/renderer/src/agent/__tests__/timelineBridge.test.ts`
+- `src/renderer/src/canvas/nodes/__tests__/study-sheet.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/text-markdown.test.ts`
 - `src/renderer/src/components/ui/native-controls.test.ts`
 - `src/renderer/src/stores/__tests__/canvas.test.ts`
@@ -188,6 +201,7 @@
 - `src/shared/__tests__/canvas-commands.test.ts`
 - `src/shared/__tests__/canvas-schema.test.ts`
 - `src/shared/__tests__/capabilities.test.ts`
+- `src/shared/__tests__/film-study-v2.test.ts`
 - `src/shared/__tests__/filters.test.ts`
 - `src/shared/__tests__/model-inputs.test.ts`
 - `src/shared/__tests__/model-modes.test.ts`

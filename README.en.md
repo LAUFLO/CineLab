@@ -33,7 +33,7 @@
 
 CineLab is a local-first AI creative workspace. Image, video, audio and text generation all happen on one infinite canvas, and nodes, edges, assets, generation history and agent sessions stay inside your own `.cinelab` project folder.
 
-The creative process is split into four workspaces: the infinite canvas for assets and generation, Clip Studio for the timeline, Director Stage for 3D previs, and frame-by-frame film study for shot breakdown. CineBot operates all four in natural language, and can register model operations as proposals that only run after you confirm.
+The creative process is split into four workspaces: the infinite canvas for assets and generation, Clip Studio for the timeline, Director Stage for 3D previs, and frame-by-frame film study that turns a reference into shots and a remake graph. CineBot operates all four in natural language, and can register model operations as proposals that only run after you confirm.
 
 CineLab keeps the model layer fully open: providers, models, base URLs, API keys, headers and parameters are all yours to configure. Connect any OpenAI-compatible endpoint, self-hosted service or proxy, or use custom HTTP templates for other protocols. Built-in presets are optional shortcuts and never limit which models you can add.
 
@@ -76,10 +76,13 @@ The canvas is built around an infinite, node-based workflow, with an emphasis on
 
 ### Frame-by-frame film study
 
-- Video node → film-study node → storyboard group and sheet created automatically
-- Shot detection or fixed-interval splitting
-- AI descriptions for shot size, camera, movement, lighting, image and prompt
-- Section editing, embedded subtitle extraction, Markdown and study-package export
+- Video node → film-study node: shot cuts, first/middle/last frame per shot
+- Per-shot reading of shot size, camera, movement, lighting, image, dialogue and prompt
+- Deterministic production forensics: static hold, still pan/zoom, code render, screen capture, live action, AI and 3D, with evidence
+- Automatic scene grouping; each scene becomes shot triples (first frame, last frame, Markdown note)
+- Cast table, style profile, scene and audio groups, ready to save into the asset library
+- Pick replacements for cast and scenes, then build a generation node per shot with first/last frames and prompt wired; no automatic generation
+- Rerun a single shot without touching the rest
 
 ### Local media
 
@@ -101,12 +104,12 @@ The canvas is built around an infinite, node-based workflow, with an emphasis on
 
 Download the latest release from [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest):
 
-Current version: **v0.3.2**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
+Current version: **v0.4.0**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
 
 | Platform | Recommended file | Requirements |
 |---|---|---|
-| Windows | `CineLab-0.3.2-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.3.2-arm64.dmg` | macOS 12+, Apple Silicon |
+| Windows | `CineLab-0.4.0-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.4.0-arm64.dmg` | macOS 12+, Apple Silicon |
 
 ### Windows
 
@@ -143,12 +146,13 @@ Do not open a public issue for security problems. Follow [SECURITY.md](SECURITY.
 Most design documents are currently written in Chinese.
 
 - [Document index](docs/README.md)
+- [Code map](docs/code-map/README.md)
 - [Changelog](CHANGELOG.md)
 - [Architecture](docs/architecture.md)
 - [Model configuration](docs/models.md)
 - [UI specification](docs/ui-spec.md)
 - [CineBot capabilities](docs/agent-capabilities.md)
-- [Clip Studio](docs/archive/clip-studio-plan.md) · [Director Stage](docs/archive/director-stage-plan.md)
+- [Clip Studio](docs/code-map/03-clip-studio.md) · [Director Stage](docs/code-map/04-director-stage.md) · [Film study](docs/code-map/05-film-study.md)
 
 ## Development
 

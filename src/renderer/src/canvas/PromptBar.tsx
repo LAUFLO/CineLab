@@ -32,6 +32,7 @@ import {
   IconButton,
   Input,
   MenuItem,
+  Popover,
   Select,
   Switch,
   Button,
@@ -88,25 +89,25 @@ interface ModeSlotView {
 }
 
 const TOOL_CLASS =
-  'inline-flex h-6 items-center gap-[5px] whitespace-nowrap !rounded-[6px] px-[7px] text-xs !font-normal transition-colors'
+  'inline-flex h-6 items-center gap-[5px] whitespace-nowrap !rounded-md px-[7px] text-xs !font-normal transition-colors'
 const TOOL_ACTIVE_CLASS =
   'bg-fg !text-fg-inverse hover:!bg-fg hover:!text-fg-inverse'
 
 const CHIP_CLASS =
-  'inline-flex h-[26px] items-center gap-1 whitespace-nowrap !rounded-[6px] px-2 text-xs !font-normal'
+  'inline-flex h-[26px] items-center gap-1 whitespace-nowrap !rounded-md px-2 text-xs !font-normal'
 const CHIP_IDLE_CLASS = 'bg-surface-hover'
 const CHIP_WARN_CLASS =
   'bg-[color-mix(in_srgb,var(--danger)_12%,var(--surface-hover))] !text-danger hover:!text-danger'
 
 const SLOT_FRAME_CLASS =
-  '!flex h-10 w-10 overflow-hidden !rounded-[6px] border border-border p-0'
+  '!flex h-10 w-10 overflow-hidden !rounded-md border border-border p-0'
 const SLOT_THUMB_CLASS = `${SLOT_FRAME_CLASS} bg-surface-hover`
 const SLOT_THUMB_MASK_CLASS = `${SLOT_FRAME_CLASS} bg-[color-mix(in_srgb,var(--danger)_26%,transparent)] hover:!bg-[color-mix(in_srgb,var(--danger)_26%,transparent)]`
 const SLOT_MEDIA_CLASS = 'block h-full w-full object-cover'
 const SLOT_EMPTY_CLASS =
-  'flex h-10 w-10 items-center justify-center overflow-hidden rounded-[6px] border border-border bg-surface-hover text-[10px] text-fg-subtle'
+  'flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-border bg-surface-hover text-[10px] text-fg-subtle'
 const SLOT_EMPTY_ACTION_CLASS =
-  '!flex h-10 w-10 overflow-hidden !rounded-[6px] border border-dashed border-border bg-surface-hover p-0 text-[10px] !font-normal !text-fg-subtle enabled:hover:border-link enabled:hover:!text-link disabled:cursor-not-allowed disabled:!pointer-events-auto disabled:hover:!text-fg-subtle disabled:!opacity-60'
+  '!flex h-10 w-10 overflow-hidden !rounded-md border border-dashed border-border bg-surface-hover p-0 text-[10px] !font-normal !text-fg-subtle enabled:hover:border-link enabled:hover:!text-link disabled:cursor-not-allowed disabled:!pointer-events-auto disabled:hover:!text-fg-subtle disabled:!opacity-60'
 
 const MIRROR_CLASS =
   'pointer-events-none absolute inset-0 h-full w-full overflow-hidden whitespace-pre-wrap break-words bg-transparent px-1.5 py-2 text-sm leading-5 text-fg [word-break:break-word]'
@@ -192,27 +193,16 @@ export function PromptBar() {
   } | null>(null)
   const suppressClickRef = useRef(false)
   const uploadRef = useRef<HTMLDivElement>(null)
+  const modelRef = useRef<HTMLDivElement>(null)
+  const paramRef = useRef<HTMLDivElement>(null)
+  const advancedRef = useRef<HTMLButtonElement>(null)
+  const mentionRef = useRef<HTMLDivElement>(null)
   const refClickTimer = useRef<number | null>(null)
   const promptRef = useRef('')
   const promptSaveTimer = useRef<number | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const mirrorRef = useRef<HTMLDivElement>(null)
   const showToast = useUIStore((state) => state.showToast)
-
-  useEffect(() => {
-    if (!uploadMenuOpen) return
-    const onPointerDown = (event: PointerEvent): void => {
-      if (
-        uploadRef.current &&
-        event.target instanceof Node &&
-        !uploadRef.current.contains(event.target)
-      ) {
-        setUploadMenuOpen(false)
-      }
-    }
-    window.addEventListener('pointerdown', onPointerDown)
-    return () => window.removeEventListener('pointerdown', onPointerDown)
-  }, [uploadMenuOpen])
 
   const selectedNodes = nodes.filter((item) => item.selected)
   const single = selectedNodes.length === 1 ? selectedNodes[0] : undefined
@@ -1496,7 +1486,7 @@ export function PromptBar() {
   return (
     <>
       {picking ? (
-        <div className="canvas-pick-bar fixed left-1/2 top-3 z-[120] flex h-10 -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-[12px] bg-pick-bar px-2 pl-3.5 text-[13px] text-fg-inverse shadow-float [-webkit-app-region:no-drag]">
+        <div className="canvas-pick-bar fixed left-1/2 top-3 z-[120] flex h-10 -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-card bg-pick-bar px-2 pl-3.5 text-[13px] text-fg-inverse shadow-float [-webkit-app-region:no-drag]">
           <Icon name="frame" size={14} />
           <span>从画布选择节点作为参考</span>
           <span className="text-[11px] opacity-[0.72]">Esc 退出</span>
@@ -1504,7 +1494,7 @@ export function PromptBar() {
             type="button"
             variant="secondary"
             size="none"
-            className="!h-[26px] !rounded-[7px] !border-current !px-2.5 !py-0 text-xs !font-normal !text-inherit opacity-[0.85] hover:!border-current hover:!text-inherit hover:opacity-100"
+            className="!h-[26px] !rounded-md !border-current !px-2.5 !py-0 text-xs !font-normal !text-inherit opacity-[0.85] hover:!border-current hover:!text-inherit hover:opacity-100"
             onClick={(event) => {
               event.stopPropagation()
               setPicking(false)
@@ -1517,7 +1507,7 @@ export function PromptBar() {
 
       <div
         data-slot="promptbar"
-        className={`flex flex-col rounded-[14px] border border-border bg-surface shadow-float ${
+        className={`flex flex-col rounded-panel border border-border bg-surface shadow-float ${
           expanded
             ? 'fixed left-1/2 top-1/2 z-[240] h-auto min-h-[320px] max-h-[calc(100vh-120px)] w-[min(920px,calc(100vw-96px))] -translate-x-1/2 -translate-y-1/2 px-3 pb-3 pt-2'
             : 'absolute z-50 h-[196px] animate-[promptbar-in_180ms_ease-out] px-2.5 pb-2 pt-1'
@@ -1530,7 +1520,7 @@ export function PromptBar() {
         onPointerDown={(event) => event.stopPropagation()}
       >
         {pickHint ? (
-          <div className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-[5] whitespace-nowrap rounded-[8px] bg-danger px-3 py-[7px] text-xs text-media-text">
+          <div className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-[5] whitespace-nowrap rounded-card bg-danger px-3 py-[7px] text-xs text-media-text">
             {pickHint}
           </div>
         ) : null}
@@ -1552,6 +1542,8 @@ export function PromptBar() {
 
             <UploadMenu
               open={uploadMenuOpen}
+              onClose={() => setUploadMenuOpen(false)}
+              anchorRef={uploadRef}
               onLocalUpload={() => void handleLocalUpload()}
               onLibraryUpload={() => {
                 setUploadMenuOpen(false)
@@ -1585,7 +1577,7 @@ export function PromptBar() {
           <IconButton
             label={expanded ? '收起输入框' : '展开输入框'}
             size="xs"
-            className="h-6 w-6 rounded-[6px]"
+            className="h-6 w-6 rounded-md"
             onClick={() => setExpanded((open) => !open)}
           >
             <Icon name="expand" size={13} />
@@ -1728,7 +1720,7 @@ export function PromptBar() {
             ))}
             {videoOverflow > 0 ? (
               <span
-                className="inline-flex h-10 shrink-0 items-center rounded-[6px] border border-dashed border-border px-2 text-[10px] text-fg-subtle"
+                className="inline-flex h-10 shrink-0 items-center rounded-md border border-dashed border-border px-2 text-[10px] text-fg-subtle"
                 title="当前数据结构只支持 1 个参考视频"
               >
                 参考视频仅支持 1 个
@@ -1739,6 +1731,7 @@ export function PromptBar() {
 
         {/* data-promptbar-input：提及菜单用 closest 判定点击是否在输入区内 */}
         <div
+          ref={mentionRef}
           data-promptbar-input
           className={`relative flex-1 ${expanded ? 'min-h-[200px]' : 'min-h-0'}`}
         >
@@ -1806,6 +1799,8 @@ export function PromptBar() {
 
           <MentionMenu
             open={mentionOpen}
+            onClose={() => setMentionOpen(false)}
+            anchorRef={mentionRef}
             query={mentionQuery}
             groups={mentionGroups}
             flat={flatMentions}
@@ -1819,7 +1814,7 @@ export function PromptBar() {
           {availableModes.length > 0 && slotMode ? (
             <div className="flex shrink-0">
               <Select
-                className="!h-[26px] !w-28 !min-w-0 !rounded-[6px] !border-0 !px-2 !text-xs !text-fg-muted hover:!text-fg"
+                className="!h-[26px] !w-28 !min-w-0 !rounded-md !border-0 !px-2 !text-xs !text-fg-muted hover:!text-fg"
                 value={slotMode}
                 options={availableModes.map((option) => ({
                   value: option.id,
@@ -1844,7 +1839,7 @@ export function PromptBar() {
               <Icon name="chevron-down" size={11} />
             </Button>
           ) : (
-            <div className="relative">
+            <div className="relative" ref={modelRef}>
               <Button
                 type="button"
                 variant="ghost"
@@ -1861,7 +1856,7 @@ export function PromptBar() {
               >
                 {active?.model.name ?? '选择模型'}
                 {activeMissing.length > 0 ? (
-                  <span className="rounded-[4px] bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] px-1 py-px text-[10px] text-danger">
+                  <span className="rounded-md bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] px-1 py-px text-[10px] text-danger">
                     不支持{inputLabel(activeMissing)}
                   </span>
                 ) : null}
@@ -1870,6 +1865,8 @@ export function PromptBar() {
 
               <ModelMenu
                 open={menuOpen}
+                onClose={() => setMenuOpen(false)}
+                anchorRef={modelRef}
                 models={models}
                 activeKey={active?.key}
                 requiredInputs={requiredInputs}
@@ -1894,7 +1891,7 @@ export function PromptBar() {
 
           {active ? (
             <div className="flex min-w-0 items-center gap-1 overflow-visible">
-              <div className="param-picker relative">
+              <div className="param-picker relative" ref={paramRef}>
                 <Button
                   type="button"
                   variant="ghost"
@@ -1915,6 +1912,8 @@ export function PromptBar() {
 
           {paramMenuKey === '__all__' ? (
             <ParamPanel
+              onClose={() => setParamMenuKey(null)}
+              anchorRef={paramRef}
               groups={paramGroups}
               values={values}
               watermark={watermark}
@@ -1941,6 +1940,7 @@ export function PromptBar() {
 
           <div className="flex-1" />
           <IconButton
+            ref={advancedRef}
             label="高级设置"
             size="sm"
             className={advancedOpen ? 'bg-surface-hover text-fg' : undefined}
@@ -1974,7 +1974,14 @@ export function PromptBar() {
         </div>
 
         {advancedOpen ? (
-          <div data-promptbar-advanced className="absolute right-0 top-[calc(100%+8px)] z-[70] w-[268px] rounded-[12px] border border-border bg-surface p-3 shadow-menu">
+          <Popover
+            open={advancedOpen}
+            onClose={() => setAdvancedOpen(false)}
+            anchorRef={advancedRef}
+            align="end"
+            width={268}
+            className="!p-3"
+          >
             <div className="mb-2.5 text-xs text-fg-muted">高级设置</div>
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -1993,7 +2000,7 @@ export function PromptBar() {
                 }}
               />
             </div>
-          </div>
+          </Popover>
         ) : null}
       </div>
 
@@ -2006,7 +2013,7 @@ export function PromptBar() {
         ? createPortal(
             <div
               data-ref-preview
-              className="pointer-events-none fixed z-[400] -translate-x-1/2 -translate-y-full rounded-[10px] border border-border bg-surface p-1 shadow-menu"
+              className="pointer-events-none fixed z-[400] -translate-x-1/2 -translate-y-full rounded-card border border-border bg-surface-raised p-1 shadow-float"
               style={{ left: refPreview.x, top: refPreview.y }}
             >
               {refPreview.kind === 'video' ? (
@@ -2019,7 +2026,7 @@ export function PromptBar() {
                   preload="metadata"
                 />
               ) : refPreview.kind === 'audio' ? (
-                <div className="flex items-center gap-2 rounded-[6px] px-3 py-2 text-xs text-fg-muted">
+                <div className="flex items-center gap-2 rounded-md px-3 py-2 text-xs text-fg-muted">
                   <Icon name="audio" size={16} />
                   <span className="max-w-[180px] truncate">
                     {refPreview.path.split(/[\\/]/).pop()}

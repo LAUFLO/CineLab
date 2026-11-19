@@ -12,7 +12,6 @@ import type {
   AgentToolResultInput
 } from '@shared/agent'
 import { listAgentModels, listTextModels, resolveTextModel } from '../agent/model'
-import { compactSession } from '../agent/compact'
 import {
   activeProposal,
   cancelProposal,
@@ -27,15 +26,16 @@ import {
   resolveConfirmation,
   resolveToolResult,
   startTurn
-} from '../agent/runtime'
+} from '../agent/pi/runtime'
 import {
-  createSession,
-  deleteSession,
-  listSessions,
-  loadSession,
-  renameSession,
-  requireProjectRoot
-} from '../agent/session'
+  compactPiSession,
+  createPiSession,
+  deletePiSession,
+  listPiSessions,
+  loadPiSession,
+  renamePiSession
+} from '../agent/pi/session'
+import { requireProjectRoot } from '../agent/session'
 
 function broadcastProposal(proposal: AgentProposal): void {
   const event: AgentEvent = { type: 'proposal', proposal }
@@ -285,15 +285,15 @@ export function registerAgentIpc(): void {
       win.webContents.send('agent:tool-call', call)
     }
 
-    return startTurn(request, { sendEvent, sendToolCall })
+    return startTurn(request, { sendEvent, sendToolCall }, event.sender.id)
   })
 
-  ipcMain.handle('agent:cancel', (_event, turnId: unknown) => {
+  ipcMain.handle('agent:cancel', (event, turnId: unknown) => {
     if (typeof turnId !== 'string') return
-    cancelTurn(turnId)
+    cancelTurn(turnId, event.sender.id)
   })
 
-  ipcMain.handle('agent:tool-result', (_event, input: unknown) => {
+  ipcMain.handle('agent:tool-result', (event, input: unknown) => {
     if (!input || typeof input !== 'object' || Array.isArray(input)) return
     const result = input as AgentToolResultInput
     if (
@@ -303,10 +303,10 @@ export function registerAgentIpc(): void {
     ) {
       return
     }
-    resolveToolResult(result)
+    resolveToolResult(result, event.sender.id)
   })
 
-  ipcMain.handle('agent:confirm', (_event, input: unknown) => {
+  ipcMain.handle('agent:confirm', (event, input: unknown) => {
     if (!input || typeof input !== 'object' || Array.isArray(input)) return
     const value = input as Partial<AgentConfirmInput>
     if (
@@ -316,11 +316,14 @@ export function registerAgentIpc(): void {
     ) {
       return
     }
-    resolveConfirmation({
-      turnId: value.turnId,
-      callId: value.callId,
-      approved: value.approved
-    })
+    resolveConfirmation(
+      {
+        turnId: value.turnId,
+        callId: value.callId,
+        approved: value.approved
+      },
+      event.sender.id
+    )
   })
 
   ipcMain.handle('agent:session-load', async (_event, sessionId: unknown) => {
@@ -328,15 +331,15 @@ export function registerAgentIpc(): void {
       throw new Error('缺少会话 ID')
     }
     const root = requireProjectRoot()
-    return loadSession(root, sessionId.trim())
+    return loadPiSession(root, sessionId.trim())
   })
 
   ipcMain.handle('agent:session-list', async () => {
-    return listSessions(requireProjectRoot())
+    return listPiSessions(requireProjectRoot())
   })
 
   ipcMain.handle('agent:session-create', async (_event, title: unknown) => {
-    return createSession(
+    return createPiSession(
       requireProjectRoot(),
       typeof title === 'string' ? title : '新对话'
     )
@@ -348,7 +351,7 @@ export function registerAgentIpc(): void {
       if (typeof sessionId !== 'string' || typeof title !== 'string') {
         throw new Error('会话参数无效')
       }
-      return renameSession(requireProjectRoot(), sessionId, title)
+      return renamePiSession(requireProjectRoot(), sessionId, title)
     }
   )
 
@@ -359,7 +362,7 @@ export function registerAgentIpc(): void {
         throw new Error('缺少会话 ID')
       }
       const root = requireProjectRoot()
-      await deleteSession(root, sessionId.trim())
+      await deletePiSession(root, sessionId.trim())
       await deleteSessionProposals(root, sessionId.trim())
     }
   )
@@ -370,7 +373,7 @@ export function registerAgentIpc(): void {
       if (typeof sessionId !== 'string' || !sessionId.trim()) {
         throw new Error('缺少会话 ID')
       }
-      return compactSession(
+      return compactPiSession(
         requireProjectRoot(),
         sessionId.trim(),
         typeof modelKey === 'string' ? modelKey : undefined

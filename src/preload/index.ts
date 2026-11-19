@@ -517,6 +517,8 @@ const api: CineApi = {
       ipcRenderer.invoke('stage:capture', input),
     exportPreview: (input: import('../shared/ipc-contract').StageExportInput) =>
       ipcRenderer.invoke('stage:export-preview', input),
+    cancelExport: (stageId: string) =>
+      ipcRenderer.invoke('stage:export-cancel', stageId),
     onExportProgress: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

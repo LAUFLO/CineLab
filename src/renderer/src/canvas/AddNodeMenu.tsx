@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NODE_KINDS, NODE_META, type NodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../components/Icon'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
@@ -6,7 +6,7 @@ import { useUIStore } from '../stores/ui'
 import { useStudioStore } from '../stores/studio'
 import { createStudioAt } from '../studio/nodes'
 import { uploadMaterialsAt } from './context-actions'
-import { Input, Button } from '../components/ui'
+import { Input, Button, Menu } from '../components/ui'
 
 const ICONS: Record<NodeKind, IconName> = {
   text: 'text',
@@ -15,9 +15,6 @@ const ICONS: Record<NodeKind, IconName> = {
   audio: 'audio',
   study: 'film'
 }
-
-const MENU_WIDTH = 220
-const MENU_HEIGHT = 420
 
 export function AddNodeMenu() {
   const menu = useUIStore((state) => state.menu)
@@ -29,35 +26,10 @@ export function AddNodeMenu() {
 
   const [query, setQuery] = useState('')
   const [creatingStage, setCreatingStage] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setQuery('')
   }, [menu])
-
-  useEffect(() => {
-    if (!menu) return
-
-    const onPointerDown = (event: PointerEvent): void => {
-      if (
-        ref.current &&
-        event.target instanceof Node &&
-        !ref.current.contains(event.target)
-      ) {
-        closeMenu()
-      }
-    }
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') closeMenu()
-    }
-
-    window.addEventListener('pointerdown', onPointerDown)
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      window.removeEventListener('pointerdown', onPointerDown)
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [menu, closeMenu])
 
   if (!menu) return null
 
@@ -112,26 +84,8 @@ export function AddNodeMenu() {
   }
 
   const above = menu.placement === 'above'
-  const left = above
-    ? Math.max(
-        12,
-        Math.min(
-          menu.screen.x - MENU_WIDTH / 2,
-          window.innerWidth - MENU_WIDTH - 12
-        )
-      )
-    : Math.max(12, Math.min(menu.screen.x, window.innerWidth - MENU_WIDTH - 12))
-  const top = Math.max(
-    12,
-    Math.min(menu.screen.y, window.innerHeight - MENU_HEIGHT - 12)
-  )
-  const style = above
-    ? {
-        left,
-        bottom: window.innerHeight - menu.screen.y + 14,
-        width: MENU_WIDTH
-      }
-    : { left, top, width: MENU_WIDTH }
+  const anchorX = above ? menu.screen.x - 110 : menu.screen.x
+  const anchorY = menu.screen.y + 14
 
   const wire = (() => {
     if (!menu.source) return null
@@ -166,12 +120,13 @@ export function AddNodeMenu() {
         </svg>
       ) : null}
 
-      <div
-        ref={ref}
-        data-add-menu
-        className="fixed z-[100] max-h-[calc(100vh-120px)] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 shadow-menu [animation:menu-in_120ms_ease-out]"
-        style={style}
-        onPointerDown={(event) => event.stopPropagation()}
+      <Menu
+        open
+        onClose={closeMenu}
+        x={anchorX}
+        y={anchorY}
+        width={220}
+        className={`!p-1 max-h-[calc(100vh-120px)] overflow-y-auto [animation:menu-in_120ms_ease-out] ${above ? '[transform:translateY(-100%)]' : ''}`}
       >
         <div className="px-2 pt-1.5 pb-1 text-[11px] text-fg-subtle">
           {menu.source
@@ -297,7 +252,7 @@ export function AddNodeMenu() {
             </Button>
           </>
         ) : null}
-      </div>
+      </Menu>
     </>
   )
 }

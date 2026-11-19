@@ -12,7 +12,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-black.svg"></a>
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-1f1f1f.svg">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.1-1f1f1f.svg">
+  <a href="https://github.com/LAUFLO/CineLab/releases/latest"><img alt="Version" src="https://img.shields.io/github/v/release/LAUFLO/CineLab?label=version&color=1f1f1f"></a>
 </p>
 
 <p align="center">
@@ -35,9 +35,9 @@ CineLab 是一个本地优先的 AI 创作工作台。图片、视频、音频�
 
 它把创作过程拆成四个工作台：无限画布负责素材和生成，剪辑室负责时间线，导演台负责 3D 预演，逐帧拉片负责分镜拆解。CineBot 用自然语言操作这四个空间，也可以把模型类操作登记成生成提案，等你确认后再提交。
 
-CineLab 不绑定模型供应商。可以接入任意 OpenAI 兼容接口、自建服务和中转站，也支持可灵、火山方舟、MiniMax、Vidu 等视频服务，以及自定义 HTTP 模板。
+CineLab 的模型层完全开放：供应商、模型、Base URL、API Key、请求头和参数都由你自己配置。可以直接接任意 OpenAI 兼容接口、自建服务和中转站，也可以用自定义 HTTP 模板适配其他协议；内置预设只是可选快捷方式，不限制你接入任何模型。
 
-画布交互参考 LibTV 的无限画布产品，目标是体验一致、模型层开放。
+画布以无限画布和节点式生成为核心，重点是流畅的拖拽连线、清晰的生成链路，以及完全开放的模型层。
 
 ## 核心能力
 
@@ -61,11 +61,16 @@ CineLab 不绑定模型供应商。可以接入任意 OpenAI 兼容接口、自�
 - 裁剪、切分、吸附、速度、音量、淡入淡出、转场
 - 自动粗剪：删静音、按镜头切分、节拍标记、节拍切分
 - 本地 Whisper 字幕，ffmpeg 导出成片并写回画布
+- 画布节点实时预览时间线，无需先导出成片；节点内可直接播放
+- 导出版本可删除，并同步清理文件与失效连线
 
 ### 导演台
 
 - three.js 3D 场景：人物素模、基础几何体、平面、群众阵列、本地 glTF
 - 多机位、机位关键帧运镜、镜头时长和画幅
+- 语义镜头：用「过肩拍 A 看 B」「双人中景」描述构图，自动解算机位并处理不越轴
+- 确定性程序化世界：街道、广场、室内等布局，支持天气、水域、地标和主题，同 seed 可复现
+- 场景图白膜：拖入一张概念图，自动生成可开拍的 3D 场景
 - 对象位置、旋转、缩放、姿势、颜色、可见性、背景
 - 白模预演导出为视频并回到画布
 
@@ -83,14 +88,25 @@ CineLab 不绑定模型供应商。可以接入任意 OpenAI 兼容接口、自�
 - 抠图、扩图、图层分离、宫格切分、分镜拼接
 - 模型和运行时按需下载，不随安装包分发
 
+### 完全开放的模型配置
+
+- 供应商、模型、Base URL、API Key、请求头和参数全部本地可配，不依赖内置列表
+- 任意 OpenAI 兼容接口、自建服务和中转站；内置预设（可灵、火山方舟、MiniMax、Vidu 等）可自由增删改，不锁定供应商
+- 自定义 HTTP 模板，适配非 OpenAI 协议的模型服务
+- 模型级能力配置：输入媒体（文本 / 图片 / 音频 / 视频）、生成模式、参考音频 / 参考视频、参数面板和输出特性，全部按模型声明
+- 配置保存在本地 `models.json`，可备份、迁移和版本管理
+- 能力一致性校验：声明与适配器实际执行对齐，不支持的输入在生成入口直接报错
+
 ## 下载与安装
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
 
+当前版本 **v0.3.2**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
+
 | 平台 | 推荐文件 | 系统要求 |
 |---|---|---|
-| Windows | `CineLab-0.1.1-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.1.1-arm64.dmg` | macOS 12+，Apple Silicon |
+| Windows | `CineLab-0.3.2-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.3.2-arm64.dmg` | macOS 12+，Apple Silicon |
 
 ### Windows
 
@@ -106,6 +122,8 @@ CineLab 不绑定模型供应商。可以接入任意 OpenAI 兼容接口、自�
 - 配置保存在 `~/Library/Application Support/CineLab`
 
 下载后可对照 Release 页的 `SHA256SUMS.txt` 校验安装包。
+
+检查或下载更新失败时，应用会提供「打开发布页」和「浏览器下载」入口，并按镜像代理 → GitHub 原始链接的顺序兜底。
 
 ## 第一次使用
 
@@ -123,6 +141,7 @@ Bug 和功能建议请提到 [GitHub Issues](https://github.com/LAUFLO/CineLab/i
 ## 文档
 
 - [文档索引](docs/README.md)：现行文档、已实施方案和历史归档
+- [更新日志](CHANGELOG.md)：每个版本的变更记录
 - [技术架构](docs/architecture.md)：主进程架构、项目文件格式、Provider 接口、任务系统
 - [模型配置](docs/models.md)：`models.json` 格式与 Provider 配置
 - [界面规格](docs/ui-spec.md)：布局尺寸、节点结构、prompt bar、工具栏清单

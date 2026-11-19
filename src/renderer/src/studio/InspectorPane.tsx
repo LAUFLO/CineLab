@@ -57,31 +57,31 @@ const DEFAULT_TEXT: TextStyle = {
 const FIELD = 'flex items-center gap-2'
 const FIELD_LABEL = 'w-16 shrink-0 text-[11px] text-fg-subtle'
 const FIELD_INPUT =
-  '!h-7 min-w-0 flex-1 !rounded-[6px] !bg-surface-raised !px-2 !py-0 !text-xs'
+  '!h-7 min-w-0 flex-1 !rounded-md !bg-surface-raised !px-2 !py-0 !text-xs'
 const FIELD_SELECT =
-  '!h-[30px] !w-auto min-w-0 !rounded-[7px] !bg-surface-raised !px-1.5 !py-0 !text-xs'
+  '!h-[30px] !w-auto min-w-0 !rounded-md !bg-surface-raised !px-1.5 !py-0 !text-xs'
 const FIELD_ROW = 'flex items-center gap-3.5 pb-2 pt-1'
 const FIELD_HINT = '-mt-0.5 mb-2 block text-[10px] text-fg-subtle'
 const CHECK_ROW = 'inline-flex items-center gap-[5px] text-xs text-fg-muted'
 const CHECKBOX =
   '!h-[13px] !w-[13px] !rounded-none !border-0 !bg-transparent !p-0 accent-pick-bar'
 const INSPECTOR_BTN =
-  'h-7 justify-start gap-1 !rounded-[7px] !font-normal whitespace-nowrap bg-surface-raised px-2 text-xs'
+  'h-7 justify-start gap-1 !rounded-md !font-normal whitespace-nowrap bg-surface-raised px-2 text-xs'
 const TAB_BTN =
   '!justify-center !rounded-none !border-x-0 !border-t-0 !border-b-2 px-2.5 text-xs !font-normal hover:!bg-transparent'
 const TAB_IDLE = '!border-b-transparent !text-fg-subtle'
 const TAB_ACTIVE = '!border-b-pick-bar !font-semibold !text-fg'
 const KEYFRAME_INPUT =
-  '!h-6 !w-[52px] shrink-0 !rounded-[5px] !bg-surface-raised !px-1 !py-0 !text-[11px]'
+  '!h-6 !w-[52px] shrink-0 !rounded-md !bg-surface-raised !px-1 !py-0 !text-[11px]'
 const KEYFRAME_SELECT =
-  '!h-6 !w-auto !max-w-[72px] !rounded-[5px] !bg-surface-raised !px-[3px] !py-0 !text-[11px]'
+  '!h-6 !w-auto !max-w-[72px] !rounded-md !bg-surface-raised !px-[3px] !py-0 !text-[11px]'
 const KEYFRAME_PROP_SELECT =
-  '!h-7 !w-auto !rounded-[6px] !bg-surface-raised !px-1.5 !py-0 !text-xs'
+  '!h-7 !w-auto !rounded-md !bg-surface-raised !px-1.5 !py-0 !text-xs'
 const RATIO_BTN =
-  'h-[26px] min-w-0 !rounded-[6px] bg-surface-raised px-1 text-[10.5px] !font-normal whitespace-nowrap'
+  'h-[26px] min-w-0 !rounded-md bg-surface-raised px-1 text-[10.5px] !font-normal whitespace-nowrap'
 const RATIO_BTN_ACTIVE = '!border-border-selected !bg-surface-hover !text-fg'
 const PANE =
-  'min-h-0 min-w-0 overflow-x-hidden overflow-y-auto rounded-[10px] border border-border bg-surface [grid-area:right]'
+  'min-h-0 min-w-0 overflow-x-hidden overflow-y-auto rounded-card border border-border bg-surface [grid-area:right]'
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -165,7 +165,7 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
       <label className={FIELD}>
         <span className={FIELD_LABEL}>内容</span>
         <Textarea
-          className="!min-h-[76px] resize-y !rounded-[7px] !bg-surface-raised !px-2 !py-1.5 !text-xs leading-normal"
+          className="!min-h-[76px] resize-y !rounded-md !bg-surface-raised !px-2 !py-1.5 !text-xs leading-normal"
           rows={4}
           value={content}
           onChange={(event) => setContent(event.target.value)}

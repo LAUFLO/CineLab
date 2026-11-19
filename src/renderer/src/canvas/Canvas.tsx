@@ -73,7 +73,7 @@ function EmptyState({ onCreate }: { onCreate: (kind: NodeKind) => void }) {
           type="button"
           variant="secondary"
           size="none"
-          className="h-11 gap-2 !rounded-[10px] bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
+          className="h-11 gap-2 !rounded-card bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
           onClick={() => onCreate('image')}
         >
           <Icon name="image" size={18} />
@@ -83,7 +83,7 @@ function EmptyState({ onCreate }: { onCreate: (kind: NodeKind) => void }) {
           type="button"
           variant="secondary"
           size="none"
-          className="h-11 gap-2 !rounded-[10px] bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
+          className="h-11 gap-2 !rounded-card bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
           onClick={() => onCreate('video')}
         >
           <Icon name="video" size={18} />
@@ -93,7 +93,7 @@ function EmptyState({ onCreate }: { onCreate: (kind: NodeKind) => void }) {
           type="button"
           variant="secondary"
           size="none"
-          className="h-11 gap-2 !rounded-[10px] bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
+          className="h-11 gap-2 !rounded-card bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
           onClick={() => onCreate('audio')}
         >
           <Icon name="audio" size={18} />
@@ -103,7 +103,7 @@ function EmptyState({ onCreate }: { onCreate: (kind: NodeKind) => void }) {
           type="button"
           variant="secondary"
           size="none"
-          className="h-11 gap-2 !rounded-[10px] bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
+          className="h-11 gap-2 !rounded-card bg-surface px-4 text-[13px] !font-normal hover:bg-surface-hover"
           onClick={() => onCreate('text')}
         >
           <Icon name="text" size={18} />

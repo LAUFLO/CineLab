@@ -46,6 +46,8 @@ export interface StageCamera {
   target: StageVec3
   fov: number
   aspect?: StageAspect
+  /** 来源：手工或自动分镜 */
+  source?: 'manual' | 'auto'
 }
 
 export interface CameraKeyframe {
@@ -117,6 +119,42 @@ export interface StageShot {
   intent?: StageShotIntent
   /** 求解器写入的时间戳。 */
   intentSolvedAt?: string
+  /** 台词或画面说明；导出时作字幕与镜头表备注。 */
+  caption?: string
+  /** 来源：手工或自动分镜 */
+  source?: 'manual' | 'auto'
+}
+
+/** 成片编排的一条 entry；shotId 可重复，表示复用同一镜头 */
+export interface StageProgramEntry {
+  shotId: string
+  /** 成片时间轴起点（ms）；缺省接在上一条之后 */
+  startMs?: number
+  /** 重叠时播哪条；越大越优先，默认 0 */
+  front?: number
+}
+
+export interface StageProgram {
+  version: 1
+  entries: StageProgramEntry[]
+}
+
+export interface StageLightingOverride {
+  background?: string
+  exposure?: number
+  ambient?: { color?: string; intensity?: number }
+  hemi?: { sky?: string; ground?: string; intensity?: number }
+  sun?: {
+    color?: string
+    intensity?: number
+    position?: [number, number, number]
+  }
+  fill?: {
+    color?: string
+    intensity?: number
+    position?: [number, number, number]
+  }
+  fog?: { color?: string; near?: number; far?: number }
 }
 
 export interface StageBackground {
@@ -135,6 +173,10 @@ export interface DirectorStageDoc {
   activeCameraId?: string
   /** 程序化 previs 世界；缺省时行为不变。 */
   world?: PrevisWorldRef
+  /** 成片编排；缺省时按 shots 数组顺序串行。 */
+  program?: StageProgram
+  /** 手调光照；缺省按 world 时段/天气推导。 */
+  lighting?: StageLightingOverride
   updatedAt: string
 }
 
@@ -169,9 +211,18 @@ export const STAGE_OBJECT_TYPES: StageObjectType[] = [
 export const STAGE_POSE_PRESETS = [
   'stand',
   'sit',
+  'kneel',
+  'crouch',
+  'fallen',
+  'armsCrossed',
+  'wave',
+  'point',
   'walk',
   'run',
-  'kneel',
+  'sitDown',
+  'standUp',
+  'bow',
+  'nod',
   'reach',
   'confront',
   'lookBack'
@@ -185,6 +236,7 @@ export const STAGE_LIMITS = {
   maxShots: 100,
   maxCameraTrackKeys: 100,
   maxActionTrackKeys: 500,
+  maxProgramEntries: 200,
   maxDurationMs: 15_000,
   maxNameLength: 100,
   maxStageNameLength: 200
@@ -291,6 +343,13 @@ function validateCameraFields(
   ) {
     errors.push(`${path}.aspect 无效`)
   }
+  if (
+    camera.source !== undefined &&
+    camera.source !== 'manual' &&
+    camera.source !== 'auto'
+  ) {
+    errors.push(`${path}.source 无效`)
+  }
 }
 
 function validateShot(
@@ -308,6 +367,16 @@ function validateShot(
     !isNonEmptyString(shot.name, STAGE_LIMITS.maxNameLength)
   ) {
     errors.push(`${path}.name 无效`)
+  }
+  if (shot.caption !== undefined && !isNonEmptyString(shot.caption, 500)) {
+    errors.push(`${path}.caption 无效`)
+  }
+  if (
+    shot.source !== undefined &&
+    shot.source !== 'manual' &&
+    shot.source !== 'auto'
+  ) {
+    errors.push(`${path}.source 无效`)
   }
   if (typeof shot.cameraId !== 'string' || !cameraIds.has(shot.cameraId)) {
     errors.push(`${path}.cameraId 不存在`)
@@ -423,6 +492,55 @@ function validateShot(
       })
     }
   }
+}
+
+function validateProgram(
+  value: unknown,
+  shotIds: Set<string>,
+  errors: string[]
+): void {
+  if (value === undefined) return
+  if (!isRecord(value)) {
+    errors.push('program 必须是对象')
+    return
+  }
+  if (value.version !== 1) {
+    errors.push('program.version 必须是 1')
+  }
+  if (!Array.isArray(value.entries)) {
+    errors.push('program.entries 必须是数组')
+    return
+  }
+  if (value.entries.length > STAGE_LIMITS.maxProgramEntries) {
+    errors.push(
+      `program.entries 不能超过 ${STAGE_LIMITS.maxProgramEntries} 条`
+    )
+  }
+  value.entries.forEach((entry, index) => {
+    const path = `program.entries[${index}]`
+    if (!isRecord(entry)) {
+      errors.push(`${path} 必须是对象`)
+      return
+    }
+    if (typeof entry.shotId !== 'string' || !shotIds.has(entry.shotId)) {
+      errors.push(`${path}.shotId 不存在`)
+    }
+    if (
+      entry.startMs !== undefined &&
+      (!isFiniteNumber(entry.startMs) || entry.startMs < 0)
+    ) {
+      errors.push(`${path}.startMs 必须是非负有限数字`)
+    }
+    if (
+      entry.front !== undefined &&
+      (!isFiniteNumber(entry.front) ||
+        !Number.isInteger(entry.front) ||
+        entry.front < 0 ||
+        entry.front > 1_000_000)
+    ) {
+      errors.push(`${path}.front 必须是 0-1000000 的整数`)
+    }
+  })
 }
 
 /** 校验场景文档；返回空数组表示有效 */
@@ -552,6 +670,8 @@ export function validateStageDoc(value: unknown): string[] {
     }
     validateShot(shot, path, cameraIds, objectIds, errors)
   })
+
+  validateProgram(value.program, shotIds, errors)
 
   return errors
 }

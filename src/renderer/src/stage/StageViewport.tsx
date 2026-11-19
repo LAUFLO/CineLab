@@ -2,8 +2,12 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
-import type { StageCamera } from '@shared/stage-schema'
+import type { StageCamera, StageShot } from '@shared/stage-schema'
 import { sampleCameraTrack } from '@shared/stage-timeline'
+import { buildProgramTimeline, programAt } from '@shared/stage-program'
+import { resolveStageLighting } from '@shared/stage-lighting'
+import { isStagePoseName } from '@shared/stage-motions'
+import { applyStageFigurePose } from './stage-figure'
 import {
   createStageObject,
   disposeObject3D as disposeObject
@@ -73,6 +77,10 @@ export function StageViewport() {
   const directorCameraRef = useRef<THREE.PerspectiveCamera | null>(null)
   const shotCameraRef = useRef<THREE.PerspectiveCamera | null>(null)
   const activeCameraRef = useRef<THREE.PerspectiveCamera | null>(null)
+  const ambientRef = useRef<THREE.AmbientLight | null>(null)
+  const hemiRef = useRef<THREE.HemisphereLight | null>(null)
+  const sunRef = useRef<THREE.DirectionalLight | null>(null)
+  const fillRef = useRef<THREE.DirectionalLight | null>(null)
   const controlsRef = useRef<OrbitControls | null>(null)
   const transformRef = useRef<TransformControls | null>(null)
   const transformHelperRef = useRef<THREE.Object3D | null>(null)
@@ -114,7 +122,10 @@ export function StageViewport() {
     if (!host) return
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(DEFAULT_BACKGROUND)
+    const lighting = resolveStageLighting(
+      useStageStore.getState().doc ?? { world: undefined, lighting: undefined }
+    )
+    scene.background = new THREE.Color(lighting.background)
     sceneRef.current = scene
 
     const director = new THREE.PerspectiveCamera(50, FALLBACK_ASPECT, 0.1, 300)
@@ -188,11 +199,35 @@ export function StageViewport() {
     }
     transform.addEventListener('objectChange', onTransformChange)
 
-    const ambient = new THREE.AmbientLight(0xffffff, 1.4)
+    const ambient = new THREE.AmbientLight(
+      lighting.ambient.color,
+      lighting.ambient.intensity
+    )
     scene.add(ambient)
-    const directional = new THREE.DirectionalLight(0xffffff, 1.8)
-    directional.position.set(6, 10, 4)
+    ambientRef.current = ambient
+    const hemi = new THREE.HemisphereLight(
+      lighting.hemi.sky,
+      lighting.hemi.ground,
+      lighting.hemi.intensity
+    )
+    scene.add(hemi)
+    hemiRef.current = hemi
+    const directional = new THREE.DirectionalLight(
+      lighting.sun.color,
+      lighting.sun.intensity
+    )
+    directional.position.set(...lighting.sun.position)
     scene.add(directional)
+    sunRef.current = directional
+    const fill = new THREE.DirectionalLight(
+      lighting.fill?.color ?? '#ffffff',
+      lighting.fill?.intensity ?? 0
+    )
+    if (lighting.fill) fill.position.set(...lighting.fill.position)
+    scene.add(fill)
+    fillRef.current = fill
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = lighting.exposure
 
     const grid = new THREE.GridHelper(40, 40, 0x555555, 0x2a2a2a)
     scene.add(grid)
@@ -267,10 +302,51 @@ export function StageViewport() {
 
     renderer.setAnimationLoop(() => {
       const state = useStageStore.getState()
-      const shot =
-        state.playing && state.selectedShotId
-          ? state.doc?.shots.find((item) => item.id === state.selectedShotId)
-          : undefined
+      let shot: StageShot | undefined
+      let shotTimeMs = state.playbackMs
+
+      if (state.playing) {
+        if (state.playbackScope === 'program' && state.doc) {
+          const timeline = buildProgramTimeline(state.doc)
+          const segment = programAt(timeline, state.programMs)
+          if (segment) {
+            shot = state.doc.shots.find((item) => item.id === segment.shotId)
+            shotTimeMs = Math.max(0, state.programMs - segment.startMs)
+          }
+        } else if (state.selectedShotId) {
+          shot = state.doc?.shots.find(
+            (item) => item.id === state.selectedShotId
+          )
+          shotTimeMs = state.playbackMs
+        }
+      }
+
+      if (shot) {
+        for (const track of shot.actionTracks ?? []) {
+          const group = objectsGroup.children.find(
+            (child) => child.userData.stageObjectId === track.objectId
+          )
+          if (!(group instanceof THREE.Group)) continue
+          const keys = [...track.keys].sort((a, b) => a.timeMs - b.timeMs)
+          let key = keys[0]
+          for (const candidate of keys) {
+            if (candidate.timeMs <= shotTimeMs) key = candidate
+          }
+          if (key?.pose && isStagePoseName(key.pose)) {
+            const figure = group.children.find(
+              (child) => child.name === 'stageFigure'
+            )
+            if (figure instanceof THREE.Group) {
+              applyStageFigurePose(
+                figure,
+                key.pose,
+                shotTimeMs - (key.timeMs ?? 0)
+              )
+            }
+          }
+        }
+      }
+
       const shotSource =
         shot && state.doc
           ? state.doc.cameras.find((camera) => camera.id === shot.cameraId)
@@ -278,11 +354,7 @@ export function StageViewport() {
 
       if (shot && shotSource && shotCameraRef.current) {
         const shotCamera = shotCameraRef.current
-        const sample = sampleCameraTrack(
-          shotSource,
-          shot,
-          state.playbackMs
-        )
+        const sample = sampleCameraTrack(shotSource, shot, shotTimeMs)
         shotCamera.position.fromArray(sample.position)
         shotCamera.fov = sample.fov
         shotCamera.aspect = aspectRef.current
@@ -389,10 +461,11 @@ export function StageViewport() {
     const cameraGroup = cameraGroupRef.current
     if (!scene || !objectsGroup || !cameraGroup || !doc) return
 
+    const lighting = resolveStageLighting(doc)
     scene.background = new THREE.Color(
       doc.background.kind === 'color' && doc.background.value
         ? doc.background.value
-        : DEFAULT_BACKGROUND
+        : lighting.background
     )
 
     disposeObject(objectsGroup)
@@ -406,7 +479,7 @@ export function StageViewport() {
       worldRef.current = null
     }
     if (doc.world) {
-      const world = createStageWorldRender(doc.world)
+      const world = createStageWorldRender(doc.world, lighting)
       worldRef.current = world
       scene.add(world.group)
     }
@@ -589,6 +662,40 @@ export function StageViewport() {
     syncTransformControls()
     syncShotCamera()
   }, [viewMode, selectedCameraId, doc])
+
+  useEffect(() => {
+    if (!doc) return
+    const lighting = resolveStageLighting(doc)
+    if (ambientRef.current) {
+      ambientRef.current.color.set(lighting.ambient.color)
+      ambientRef.current.intensity = lighting.ambient.intensity
+    }
+    if (hemiRef.current) {
+      hemiRef.current.color.set(lighting.hemi.sky)
+      hemiRef.current.groundColor.set(lighting.hemi.ground)
+      hemiRef.current.intensity = lighting.hemi.intensity
+    }
+    if (sunRef.current) {
+      sunRef.current.color.set(lighting.sun.color)
+      sunRef.current.intensity = lighting.sun.intensity
+      sunRef.current.position.set(...lighting.sun.position)
+    }
+    if (fillRef.current) {
+      if (lighting.fill) {
+        fillRef.current.color.set(lighting.fill.color)
+        fillRef.current.intensity = lighting.fill.intensity
+        fillRef.current.position.set(...lighting.fill.position)
+      } else {
+        fillRef.current.intensity = 0
+      }
+    }
+    if (rendererRef.current) {
+      rendererRef.current.toneMappingExposure = lighting.exposure
+    }
+    if (sceneRef.current) {
+      sceneRef.current.background = new THREE.Color(lighting.background)
+    }
+  }, [doc])
 
   return <div ref={hostRef} className="absolute inset-0" />
 }

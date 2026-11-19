@@ -9,7 +9,7 @@ export function MessageActions({ content }: { content: string }) {
     <div className="flex gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
       <Button
         type="button"
-        className="h-[22px] w-6 !rounded-[5px] p-0 !font-normal !text-fg-subtle"
+        className="h-[22px] w-6 !rounded-md p-0 !font-normal !text-fg-subtle"
         title="复制"
         onClick={() => {
           void navigator.clipboard

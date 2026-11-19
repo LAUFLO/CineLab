@@ -32,6 +32,7 @@ jobs:
       - run: pnpm audit --prod --audit-level high
       - run: pnpm check:encryption
       - run: pnpm check:docs
+      - run: pnpm check:ui
       - run: pnpm build
 
       - run: pnpm exec electron-builder --win --publish never

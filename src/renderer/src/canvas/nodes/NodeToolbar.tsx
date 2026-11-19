@@ -59,7 +59,7 @@ interface NodeToolbarProps {
 const SECTION_ORDER: OperationSection[] = ['generate', 'edit', 'video']
 const MAX_PRIMARY = 6
 const TOOLBAR_BTN =
-  '!h-7 gap-[3px] !rounded-[7px] !px-[5px] !text-xs !font-normal'
+  '!h-7 gap-[3px] !rounded-md !px-[5px] !text-xs !font-normal'
 const TOOLBAR_MENU_ITEM =
   '!min-h-8 !rounded-md !px-2 !py-0 !text-xs !text-fg-muted hover:!text-fg'
 const TOOLBAR_MENU_ITEM_DISABLED =
@@ -722,7 +722,7 @@ export function NodeToolbar({
   return (
     <>
       <div
-        className={`nodrag nopan absolute bottom-[calc(100%+var(--node-toolbar-offset,10px))] z-10 flex h-9 items-center gap-px rounded-[10px] border border-border bg-surface px-[5px] text-fg whitespace-nowrap shadow-float ${
+        className={`nodrag nopan absolute bottom-[calc(100%+var(--node-toolbar-offset,10px))] z-10 flex h-9 items-center gap-px rounded-card border border-border bg-surface px-[5px] text-fg whitespace-nowrap shadow-float ${
           align === 'left'
             ? 'left-0'
             : align === 'right'
@@ -765,7 +765,7 @@ export function NodeToolbar({
               </Button>
 
               {openId === op.id && op.menu ? (
-                <div className="absolute top-[calc(100%+8px)] bottom-auto left-0 z-[80] max-h-[min(360px,55vh)] min-w-[196px] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 whitespace-normal shadow-menu">
+                <div className="absolute top-[calc(100%+8px)] bottom-auto left-0 z-[80] max-h-[min(360px,55vh)] min-w-[196px] overflow-y-auto rounded-card border border-border bg-surface-raised p-1 whitespace-normal shadow-float">
                   {op.menu.map((item) => (
                     <MenuItem
                       key={item.id}
@@ -809,7 +809,7 @@ export function NodeToolbar({
             </Button>
 
             {openId === 'more' ? (
-              <div className="absolute top-[calc(100%+8px)] bottom-auto right-0 left-auto z-[80] max-h-[min(360px,55vh)] min-w-[232px] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 whitespace-normal shadow-menu">
+              <div className="absolute top-[calc(100%+8px)] bottom-auto right-0 left-auto z-[80] max-h-[min(360px,55vh)] min-w-[232px] overflow-y-auto rounded-card border border-border bg-surface-raised p-1 whitespace-normal shadow-float">
                 {moreGroups.map((group) => (
                   <div key={group.section}>
                     <div className="px-2 pt-1.5 pb-1 text-[11px] text-fg-subtle">
@@ -1019,7 +1019,7 @@ export function NodeToolbar({
         ? createPortal(
             <div
               data-toolbar-submenu
-              className="fixed z-[320] max-h-[60vh] min-w-[176px] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 whitespace-normal shadow-menu"
+              className="fixed z-[320] max-h-[60vh] min-w-[176px] overflow-y-auto rounded-card border border-border bg-surface-raised p-1 whitespace-normal shadow-float"
               style={{ top: moreSub.top, left: moreSub.left }}
               onMouseEnter={cancelSubClose}
               onMouseLeave={scheduleSubClose}

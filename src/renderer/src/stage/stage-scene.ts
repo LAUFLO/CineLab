@@ -1,28 +1,18 @@
 import * as THREE from 'three'
 import type { StageObject } from '@shared/stage-schema'
+import {
+  isStagePoseName,
+  type StagePoseName
+} from '@shared/stage-motions'
+import { createStageFigure } from './stage-figure'
 
 const OBJECT_COLOR = '#9ca3af'
 
-export function createHuman(color: string): THREE.Group {
-  const group = new THREE.Group()
-  const material = new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.85,
-    metalness: 0.05
-  })
-
-  const body = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.3, 1.05, 6, 12),
-    material
-  )
-  body.position.y = 0.85
-  group.add(body)
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 16, 12), material)
-  head.position.y = 1.78
-  group.add(head)
-
-  return group
+export function createHuman(
+  color: string,
+  pose: StagePoseName = 'stand'
+): THREE.Group {
+  return createStageFigure(color, pose)
 }
 
 export function createStageObject(object: StageObject): THREE.Object3D {
@@ -40,15 +30,18 @@ export function createStageObject(object: StageObject): THREE.Object3D {
     metalness: 0.08
   })
 
+  const pose =
+    object.pose && isStagePoseName(object.pose) ? object.pose : 'stand'
+
   if (object.type === 'human') {
-    group.add(createHuman(color))
+    group.add(createStageFigure(color, pose))
     return group
   }
 
   if (object.type === 'crowd' || object.type === 'gltf') {
     const count = object.type === 'crowd' ? Math.max(1, object.count ?? 3) : 1
     for (let index = 0; index < count; index += 1) {
-      const person = createHuman(color)
+      const person = createStageFigure(color, 'stand')
       if (object.type === 'gltf') {
         person.traverse((child) => {
           if (child instanceof THREE.Mesh) {

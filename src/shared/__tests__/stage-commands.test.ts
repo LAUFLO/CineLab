@@ -544,3 +544,88 @@ describe('stage history', () => {
     expect(history.past).toHaveLength(3)
   })
 })
+
+describe('stage program commands', () => {
+  function withShots(): ReturnType<typeof createStageDoc> {
+    let doc = baseDoc()
+    doc = applyStageCommand(doc, {
+      type: 'addCamera',
+      camera: camera('cam_a')
+    }).doc
+    doc = applyStageCommand(doc, {
+      type: 'addShot',
+      shot: shot('shot_a', 'cam_a')
+    }).doc
+    doc = applyStageCommand(doc, {
+      type: 'addShot',
+      shot: shot('shot_b', 'cam_a')
+    }).doc
+    return doc
+  }
+
+  it('sets and clears program entries', () => {
+    const doc = withShots()
+    const set = applyStageCommand(doc, {
+      type: 'setProgram',
+      program: {
+        version: 1,
+        entries: [
+          { shotId: 'shot_b' },
+          { shotId: 'shot_a', startMs: 1000, front: 2 }
+        ]
+      }
+    })
+    expect(set.ok).toBe(true)
+    expect(set.change.programChanged).toBe(true)
+    expect(set.doc.program?.entries).toHaveLength(2)
+
+    const cleared = applyStageCommand(set.doc, { type: 'setProgram' })
+    expect(cleared.ok).toBe(true)
+    expect(cleared.doc.program).toBeUndefined()
+  })
+
+  it('rejects invalid program entries', () => {
+    const doc = withShots()
+
+    const missing = applyStageCommand(doc, {
+      type: 'setProgram',
+      program: { version: 1, entries: [{ shotId: 'missing' }] }
+    })
+    expect(missing.ok).toBe(false)
+
+    const negative = applyStageCommand(doc, {
+      type: 'setProgram',
+      program: { version: 1, entries: [{ shotId: 'shot_a', startMs: -1 }] }
+    })
+    expect(negative.ok).toBe(false)
+
+    const front = applyStageCommand(doc, {
+      type: 'setProgram',
+      program: { version: 1, entries: [{ shotId: 'shot_a', front: -1 }] }
+    })
+    expect(front.ok).toBe(false)
+  })
+
+  it('cascades program entries when removing a shot', () => {
+    const doc = withShots()
+    const withProgram = applyStageCommand(doc, {
+      type: 'setProgram',
+      program: {
+        version: 1,
+        entries: [
+          { shotId: 'shot_a' },
+          { shotId: 'shot_b' },
+          { shotId: 'shot_a' }
+        ]
+      }
+    }).doc
+
+    const removed = applyStageCommand(withProgram, {
+      type: 'removeShot',
+      shotId: 'shot_a'
+    })
+    expect(removed.ok).toBe(true)
+    expect(removed.change.programChanged).toBe(true)
+    expect(removed.doc.program?.entries).toEqual([{ shotId: 'shot_b' }])
+  })
+})

@@ -14,7 +14,7 @@ interface StudyNodeCardProps {
 }
 
 const CHIP_CLASS =
-  'h-[22px] rounded-[5px] bg-surface-hover px-1 text-[10.5px] !font-normal !text-fg-subtle'
+  'h-[22px] rounded-md bg-surface-hover px-1 text-[10.5px] !font-normal !text-fg-subtle'
 const CHIP_DISABLED_CLASS = 'disabled:!opacity-40 disabled:!cursor-not-allowed'
 
 const STAGES = ['切镜', '逐镜', '取证', '聚合'] as const
@@ -114,14 +114,14 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
 
   return (
     <div
-      className="flex h-full w-full flex-col gap-1.5 overflow-y-auto rounded-[10px] border border-border bg-surface px-3 py-2.5"
+      className="flex h-full w-full flex-col gap-1.5 overflow-y-auto rounded-card border border-border bg-surface px-3 py-2.5"
       onDoubleClick={(event) => {
         event.stopPropagation()
         if (ready) void openSheet(nodeId)
       }}
     >
       <div className="flex min-w-0 items-center gap-2">
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-[5px] bg-surface-hover px-1.5 py-0.5 text-[10px] text-fg-muted">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-surface-hover px-1.5 py-0.5 text-[10px] text-fg-muted">
           <Icon name="film" size={12} />
           逐帧拉片
         </span>
@@ -134,7 +134,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
       </div>
 
       {covers.length > 0 ? (
-        <div className="grid shrink-0 grid-cols-3 gap-1 overflow-hidden rounded-[6px]">
+        <div className="grid shrink-0 grid-cols-3 gap-1 overflow-hidden rounded-md">
           {covers.slice(0, 3).map((path) => (
             <img
               key={path}
@@ -318,7 +318,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
               variant="ghost"
               size="none"
               disabled={opening}
-              className="nodrag nopan h-[30px] gap-[5px] rounded-[7px] border border-border-strong bg-surface-hover px-[11px] text-xs !font-normal !text-fg enabled:hover:!border-border-selected enabled:hover:!bg-surface-raised disabled:!pointer-events-auto disabled:!cursor-not-allowed disabled:!opacity-45"
+              className="nodrag nopan h-[30px] gap-[5px] rounded-md border border-border-strong bg-surface-hover px-[11px] text-xs !font-normal !text-fg enabled:hover:!border-border-selected enabled:hover:!bg-surface-raised disabled:!pointer-events-auto disabled:!cursor-not-allowed disabled:!opacity-45"
               onClick={(event) => {
                 event.stopPropagation()
                 void openSheet(nodeId)
@@ -331,7 +331,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
               type="button"
               variant="secondary"
               size="none"
-              className="nodrag nopan h-[30px] rounded-[7px] px-[11px] text-xs"
+              className="nodrag nopan h-[30px] rounded-md px-[11px] text-xs"
               onClick={(event) => {
                 event.stopPropagation()
                 start()
@@ -345,7 +345,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
             type="button"
             variant="primary"
             size="none"
-            className="nodrag nopan h-[30px] rounded-[7px] px-[11px] text-xs"
+            className="nodrag nopan h-[30px] rounded-md px-[11px] text-xs"
             onClick={(event) => {
               event.stopPropagation()
               start()
@@ -363,7 +363,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
             type="button"
             variant="secondary"
             size="none"
-            className="nodrag nopan h-[30px] rounded-[7px] px-[11px] text-xs"
+            className="nodrag nopan h-[30px] rounded-md px-[11px] text-xs"
             onClick={(event) => {
               event.stopPropagation()
               void useCanvasStore.getState().patchNodeData(nodeId, {

@@ -3,7 +3,7 @@
 日期：2026-11-18
 状态：现行
 适用版本：v0.2.1
-最后核对：2026-11-18
+最后核对：2026-11-19
 
 > 远程仓库只保留稳定契约、参考文档和一份精简的归档。过程记录、截图和批次 evidence 放本地 `.opencode/`，不入库。
 
@@ -28,14 +28,38 @@
 | 文档 | 内容 |
 |---|---|
 | [agent-architecture-plan.md](agent-architecture-plan.md) | AgentRuntime 设计参考 |
+| [agent-runtime-v3-plan.md](agent-runtime-v3-plan.md) | CineBot 运行时 v3：pi-coding-agent 整包重构方案，已评审 |
+| [agent-runtime-v3-spike.md](agent-runtime-v3-spike.md) | M0 spike 报告：动态 import、最小闭环、包体与安装包结论 |
 | [agent-full-scope.md](agent-full-scope.md) | Agent 完整范围总表 |
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 |
 | [doc-impact.md](doc-impact.md) | 代码路径 → 文档影响映射 |
 | [studio-node-live-preview-plan.md](studio-node-live-preview-plan.md) | 剪辑室节点实时预览，待实施 |
 | [previs-adaptation-plan.md](previs-adaptation-plan.md) | Previs 语义镜头、程序化世界与场景图白膜，M1–M5 已完成 |
 | [film-study-rebuild-plan.md](film-study-rebuild-plan.md) | 逐帧拉片重构：拉片为画布服务、删除拉片室、image 首尾帧 + 文本节点、复刻建图与手动生成 |
+| [stage-previs-upgrade-plan.md](stage-previs-upgrade-plan.md) | 导演台整片/每镜预演、重叠优先级、交付物、光照预设与人物动作改造，已实施 |
 
-## 3. 历史归档
+## 3. 代码地图
+
+入库的代码上下文，跨机器同步；出方案前先读。能力判断以代码为准。
+
+| 文档 | 内容 |
+|---|---|
+| [code-map/README.md](code-map/README.md) | 模块索引、需求→模块、阅读顺序 |
+| [code-map/00-overview.md](code-map/00-overview.md) | 技术栈、进程模型、目录职责、项目结构 |
+| [code-map/01-canvas.md](code-map/01-canvas.md) | 画布、节点、连线、项目画布 |
+| [code-map/02-generation.md](code-map/02-generation.md) | 供应商、模型、生成任务、参数、参考输入 |
+| [code-map/03-clip-studio.md](code-map/03-clip-studio.md) | 时间线、剪辑、字幕、音频 |
+| [code-map/04-director-stage.md](code-map/04-director-stage.md) | 导演台、StageDoc、语义镜头、程序化世界、白模导出 |
+| [code-map/05-film-study.md](code-map/05-film-study.md) | 拉片、自动分镜、分镜表 |
+| [code-map/06-agent.md](code-map/06-agent.md) | CineBot、工具、提案、会话、技能 |
+| [code-map/07-storage-ipc.md](code-map/07-storage-ipc.md) | 项目存储、IPC、preload、设置、安全 |
+| [code-map/08-capabilities.md](code-map/08-capabilities.md) | 已实现 / 部分实现 / 仅文档 |
+| [code-map/09-dev-workflow.md](code-map/09-dev-workflow.md) | 方案、实施、更新地图、校验 |
+| [code-map/10-ui.md](code-map/10-ui.md) | 通用 UI 组件、设置/素材库面板、主题与样式 |
+| [code-map/11-feature-index.md](code-map/11-feature-index.md) | 按关键词查已有实现，防重复造轮子 |
+| [code-map/_generated.md](code-map/_generated.md) | 自动生成的模块规模、IPC、Agent 工具、测试清单 |
+
+## 4. 历史归档
 
 [`archive/`](archive/) 只保留关键设计，共 21 份，不再维护：
 
@@ -46,7 +70,7 @@
 - 视频与操作：`video-operations-plan.md`、`node-toolbar-plan.md`、`placeholder-operations-plan.md`
 - 其他方案：`bottom-toolbar-plan.md`、`depth-capture-plan.md`、`group-nodes.md`、`derived-nodes-group-plan.md`、`error-feedback-plan.md`、`runtime-components-plan.md`、`capability-consistency-plan.md`
 
-## 4. 工程与协作
+## 5. 工程与协作
 
 | 文档 | 内容 |
 |---|---|
@@ -54,7 +78,7 @@
 | [../SECURITY.md](../SECURITY.md) | 漏洞报告与支持范围 |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | 开发、测试、PR 与发布约定 |
 
-## 5. 维护约定
+## 6. 维护约定
 
 1. 现行文档头部必须写清：日期、状态（现行）、适用版本、最后核对。
 2. 只有「现行系统文档」要求跟代码同步；参考文档和归档不要求。

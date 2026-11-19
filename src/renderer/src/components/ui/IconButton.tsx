@@ -45,7 +45,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
           unstyled
             ? className
             : cn(
-                'inline-flex shrink-0 items-center justify-center rounded-[8px] transition-colors',
+                'inline-flex shrink-0 items-center justify-center rounded-card transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
                 'disabled:pointer-events-none disabled:opacity-50',
                 VARIANTS[variant],

@@ -10,6 +10,7 @@ export type IconName =
   | 'help'
   | 'settings'
   | 'download'
+  | 'refresh'
   | 'copy'
   | 'folder'
   | 'grid'
@@ -96,6 +97,12 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   download: <path d="M12 3.5v11M7.5 10 12 14.5 16.5 10M4 20h16" />,
+  refresh: (
+    <>
+      <path d="M20 11a8 8 0 1 0-2.3 6.3" />
+      <path d="M20 4.5V11h-6.5" />
+    </>
+  ),
   copy: (
     <>
       <rect x="9" y="9" width="11" height="11" rx="2" />

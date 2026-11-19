@@ -41,7 +41,7 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
         <Icon name="frame" size={12} />
         {editingTitle ? (
           <Input
-            className="nodrag nopan !h-5 !w-[140px] !rounded-[5px] !border-border-strong !bg-surface-hover !px-1.5 !text-xs"
+            className="nodrag nopan !h-5 !w-[140px] !rounded-md !border-border-strong !bg-surface-hover !px-1.5 !text-xs"
             value={titleDraft}
             autoFocus
             onChange={(event) => setTitleDraft(event.target.value)}
@@ -89,7 +89,7 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
           type="button"
           variant="ghost"
           size="none"
-          className="nodrag nopan !h-[30px] gap-[5px] self-center !rounded-[7px] !border !border-border !bg-surface !px-3 !text-xs !font-normal !text-fg hover:!bg-surface-hover hover:!text-fg"
+          className="nodrag nopan !h-[30px] gap-[5px] self-center !rounded-md !border !border-border !bg-surface !px-3 !text-xs !font-normal !text-fg hover:!bg-surface-hover hover:!text-fg"
           onClick={(event) => {
             event.stopPropagation()
             void openStage(id)

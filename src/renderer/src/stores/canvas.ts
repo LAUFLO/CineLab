@@ -203,7 +203,7 @@ boxSelecting: false,
   ...createHistorySlice(set, get, api)
 }))
 // 开发期调试：供 scripts/cdp-*.mjs 访问画布状态
-if (import.meta.env.DEV) {
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   ;(window as unknown as { __canvasStore?: typeof useCanvasStore }).__canvasStore =
     useCanvasStore
 }

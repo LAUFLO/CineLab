@@ -21,14 +21,14 @@ const TYPE_LABEL: Record<StageObject['type'], string> = {
 
 const ASPECTS: StageAspect[] = ['16:9', '9:16', '1:1']
 
-const FIELD_CLASS = '!h-[26px] !rounded-[5px] !px-1.5 !text-[10px] font-mono'
+const FIELD_CLASS = '!h-[26px] !rounded-md !px-1.5 !text-[10px] font-mono'
 const FIELD_LABEL_CLASS =
   'flex items-baseline justify-between text-[11px] text-fg-subtle'
 const FIELD_GROUP_CLASS = 'mt-2 flex flex-col gap-1'
 const DANGER_BUTTON_CLASS =
-  'mt-2.5 h-7 !rounded-[7px] border border-[color-mix(in_srgb,var(--danger)_40%,var(--border))] bg-transparent text-[11px] !font-normal !text-danger hover:bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
+  'mt-2.5 h-7 !rounded-md border border-[color-mix(in_srgb,var(--danger)_40%,var(--border))] bg-transparent text-[11px] !font-normal !text-danger hover:bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
 const ACTION_BUTTON_CLASS =
-  'mt-2.5 h-7 !rounded-[7px] bg-surface text-[11px] !font-normal !text-fg hover:bg-surface-hover hover:!text-fg'
+  'mt-2.5 h-7 !rounded-md bg-surface text-[11px] !font-normal !text-fg hover:bg-surface-hover hover:!text-fg'
 
 function format(value: number, scale = 1): string {
   const result = value * scale
@@ -260,7 +260,7 @@ function ObjectInspector({ object }: { object: StageObject }) {
       <label className={FIELD_GROUP_CLASS}>
         <span className={FIELD_LABEL_CLASS}>颜色</span>
         <Input
-          className="!h-7 !rounded-[5px] !p-0.5 cursor-pointer"
+          className="!h-7 !rounded-md !p-0.5 cursor-pointer"
           type="color"
           value={object.color ?? '#9ca3af'}
           onChange={(event) =>

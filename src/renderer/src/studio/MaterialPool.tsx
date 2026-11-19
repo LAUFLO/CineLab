@@ -198,7 +198,7 @@ export function MaterialPool() {
   }
 
   return (
-    <aside className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[10px] border border-border bg-surface [grid-area:left]">
+    <aside className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-card border border-border bg-surface [grid-area:left]">
       <div className="flex shrink-0 gap-0.5 border-b border-divider p-2">
         {TABS.map((item) => (
           <Button
@@ -206,7 +206,7 @@ export function MaterialPool() {
             type="button"
             variant="ghost"
             size="none"
-            className={`h-[26px] min-w-0 flex-1 !rounded-[6px] !font-normal text-xs ${
+            className={`h-[26px] min-w-0 flex-1 !rounded-md !font-normal text-xs ${
               tab === item.id ? '!bg-surface-hover !text-fg' : ''
             }`}
             onClick={() => setTab(item.id)}
@@ -227,7 +227,7 @@ export function MaterialPool() {
             type="button"
             variant="ghost"
             size="none"
-            className="h-7 gap-1 !rounded-[7px] px-2 text-xs !font-normal"
+            className="h-7 gap-1 !rounded-md px-2 text-xs !font-normal"
             disabled={uploading || !studioNodeId}
             onClick={() => void upload()}
           >
@@ -253,7 +253,7 @@ export function MaterialPool() {
                 onDoubleClick={() => void addSound(sound)}
               >
                 <div
-                  className={`relative aspect-[16/10] w-full overflow-hidden rounded-[6px] border border-border bg-surface-raised group-hover:border-border-strong group-hover:brightness-[1.08] ${THUMB_GRADIENT.audio}`}
+                  className={`relative aspect-[16/10] w-full overflow-hidden rounded-md border border-border bg-surface-raised group-hover:border-border-strong group-hover:brightness-[1.08] ${THUMB_GRADIENT.audio}`}
                 >
                   <Icon name="audio" size={16} />
                   <span className="absolute bottom-1 right-1 rounded-[3px] bg-black/66 px-1 py-px text-[10px] tabular-nums text-media-text">
@@ -300,7 +300,7 @@ export function MaterialPool() {
               onDoubleClick={() => addToMain(item)}
             >
               <div
-                className={`relative aspect-[16/10] w-full overflow-hidden rounded-[6px] border border-border bg-surface-raised group-hover:border-border-strong group-hover:brightness-[1.08] ${THUMB_GRADIENT[item.kind]}`}
+                className={`relative aspect-[16/10] w-full overflow-hidden rounded-md border border-border bg-surface-raised group-hover:border-border-strong group-hover:brightness-[1.08] ${THUMB_GRADIENT[item.kind]}`}
               >
                 <AssetThumbnail asset={item} />
                 <span className="absolute bottom-1 right-1 rounded-[3px] bg-black/66 px-1 py-px text-[10px] tabular-nums text-media-text">
@@ -330,7 +330,7 @@ export function MaterialPool() {
           type="button"
           variant="ghost"
           size="none"
-          className="h-7 w-full gap-1 !rounded-[7px] border border-border px-2 text-xs !font-normal"
+          className="h-7 w-full gap-1 !rounded-md border border-border px-2 text-xs !font-normal"
           disabled={uploading || !studioNodeId}
           onClick={() => void upload()}
         >

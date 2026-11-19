@@ -3,7 +3,7 @@ import type { RecentProject } from '@shared/project-schema'
 import { assetUrl } from '../lib/asset-url'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { Icon } from './Icon'
-import { Button } from './ui'
+import { Button, Popover } from './ui'
 
 interface ProjectCardProps {
   project: RecentProject
@@ -62,7 +62,7 @@ export function ProjectCard({
   const [menuOpen, setMenuOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [busy, setBusy] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const canvasImages = useCanvasImages(pickerOpen && canPickCanvas)
 
   const refreshCover = async (): Promise<void> => {
@@ -73,26 +73,6 @@ export function ProjectCard({
   useEffect(() => {
     void refreshCover()
   }, [project.path])
-
-  useEffect(() => {
-    if (!menuOpen) return
-
-    const onPointerDown = (event: PointerEvent): void => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') setMenuOpen(false)
-    }
-
-    window.addEventListener('pointerdown', onPointerDown)
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      window.removeEventListener('pointerdown', onPointerDown)
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [menuOpen])
 
   const setLocal = async (): Promise<void> => {
     setMenuOpen(false)
@@ -140,13 +120,13 @@ export function ProjectCard({
   return (
     <div
       data-testid="project-card"
-      className="group relative rounded-xl border border-border bg-surface-raised p-3 text-left hover:border-border-strong hover:bg-surface-hover"
+      className="group relative rounded-card border border-border bg-surface-raised p-3 text-left hover:border-border-strong hover:bg-surface-hover"
     >
       <Button
         type="button"
         variant="ghost"
         size="none"
-        className="mb-2.5 flex aspect-square w-full items-center justify-center rounded-lg border-0 bg-surface-hover p-0 text-fg-subtle"
+        className="mb-2.5 flex aspect-square w-full items-center justify-center rounded-card border-0 bg-surface-hover p-0 text-fg-subtle"
         onClick={() => onOpen(project.path)}
         title={`打开 ${project.name}`}
       >
@@ -176,12 +156,13 @@ export function ProjectCard({
         </span>
       </Button>
 
-      <div className="absolute right-2.5 top-2.5 z-[5]" ref={menuRef}>
+      <div className="absolute right-2.5 top-2.5 z-[5]">
         <Button
+          ref={triggerRef}
           type="button"
           variant="ghost"
           size="none"
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-surface p-0 text-fg-muted opacity-0 transition-opacity duration-150 hover:bg-surface-hover hover:text-fg focus-visible:opacity-100 group-hover:opacity-100"
+          className="flex h-7 w-7 items-center justify-center rounded-card border border-border bg-surface p-0 text-fg-muted opacity-0 transition-opacity duration-150 hover:bg-surface-hover hover:text-fg focus-visible:opacity-100 group-hover:opacity-100"
           title="更换封面"
           onClick={() => setMenuOpen((open) => !open)}
           disabled={busy}
@@ -190,7 +171,13 @@ export function ProjectCard({
         </Button>
 
         {menuOpen ? (
-          <div className="absolute right-0 top-8 flex min-w-[132px] flex-col rounded-lg border border-border bg-surface-raised p-1 shadow-menu">
+          <Popover
+            open={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            anchorRef={triggerRef}
+            align="end"
+            width={148}
+          >
             <Button
               type="button"
               variant="ghost"
@@ -225,17 +212,17 @@ export function ProjectCard({
                 移除封面
               </Button>
             ) : null}
-          </div>
+          </Popover>
         ) : null}
       </div>
 
       {pickerOpen ? (
         <div
-          className="fixed inset-0 z-[320] flex items-center justify-center bg-black/40 p-8"
+          className="fixed inset-0 z-[320] flex items-center justify-center bg-overlay p-8"
           onPointerDown={() => setPickerOpen(false)}
         >
           <div
-            className="flex max-h-[min(560px,80vh)] w-[min(760px,100%)] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-float"
+            className="flex max-h-[min(560px,80vh)] w-[min(760px,100%)] flex-col overflow-hidden rounded-panel border border-border bg-surface shadow-float"
             onPointerDown={(event) => event.stopPropagation()}
           >
             <header className="flex h-12 shrink-0 items-center justify-between border-b border-divider px-4 text-[14px] text-fg">
@@ -260,7 +247,7 @@ export function ProjectCard({
                       type="button"
                       variant="ghost"
                       size="none"
-                      className="rounded-[10px] border border-border bg-surface-raised p-2 !text-left hover:border-border-strong hover:bg-surface-hover"
+                      className="rounded-card border border-border bg-surface-raised p-2 !text-left hover:border-border-strong hover:bg-surface-hover"
                       onClick={() => void setAsset(image.path)}
                     >
                       <img

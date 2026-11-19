@@ -18,6 +18,9 @@ interface SelectProps<T extends string> {
   disabled?: boolean
   className?: string
   title?: string
+  id?: string
+  name?: string
+  ariaLabel?: string
   /** trigger: 菜单与按钮同宽；auto: 至少 180px */
   menuWidth?: 'trigger' | 'auto'
 }
@@ -36,6 +39,9 @@ export function Select<T extends string>({
   disabled,
   className,
   title,
+  id,
+  name,
+  ariaLabel,
   menuWidth = 'auto'
 }: SelectProps<T>) {
   const [open, setOpen] = useState(false)
@@ -145,11 +151,14 @@ export function Select<T extends string>({
         ref={triggerRef}
         type="button"
         className={cn(
-          'inline-flex h-[34px] min-w-[120px] items-center justify-between gap-2 rounded-[8px] border border-border bg-surface-hover px-[10px] text-[13px] text-fg transition-colors',
-          'hover:border-border-selected focus-visible:border-border-selected focus-visible:outline-none',
+          'inline-flex h-9 min-w-[120px] items-center justify-between gap-2 rounded-card border border-border bg-surface px-3 text-sm text-fg transition-colors',
+          'hover:border-border-selected hover:bg-surface-hover focus-visible:border-border-selected focus-visible:outline-none',
           'disabled:pointer-events-none disabled:opacity-55',
           className
         )}
+        id={id}
+        name={name}
+        aria-label={ariaLabel}
         disabled={disabled}
         title={title ?? selected?.label}
         aria-haspopup="listbox"
@@ -172,7 +181,7 @@ export function Select<T extends string>({
             <div
               ref={menuRef}
               className={cn(
-                'fixed z-[1000] max-h-[280px] overflow-y-auto rounded-[10px] border border-border bg-surface p-1 shadow-menu',
+                'fixed z-[1000] max-h-[280px] overflow-y-auto rounded-card border border-border bg-surface-raised p-1 shadow-menu',
                 position?.placement === 'top' ? 'is-top' : ''
               )}
               role="listbox"
@@ -193,7 +202,7 @@ export function Select<T extends string>({
                   role="option"
                   aria-selected={option.value === value}
                   className={cn(
-                    'flex min-h-8 w-full items-center rounded-[7px] px-2 text-left text-[13px] leading-8 transition-colors',
+                    'flex min-h-8 w-full items-center rounded-md px-2 text-left text-sm leading-8 transition-colors',
                     'hover:bg-surface-hover hover:text-fg',
                     option.value === value
                       ? 'bg-surface-hover font-medium text-fg'

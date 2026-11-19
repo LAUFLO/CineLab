@@ -45,7 +45,7 @@ export function FilmStudySheet() {
   ) : (
     <>
       {!study.autoAnalyzedAt ? (
-        <div className="mb-2.5 rounded-lg border border-[color-mix(in_srgb,var(--warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] px-2.5 py-2 text-[11px] leading-[1.55] text-warning">
+        <div className="mb-2.5 rounded-card border border-[color-mix(in_srgb,var(--warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] px-2.5 py-2 text-[11px] leading-[1.55] text-warning">
           当前只有基础分镜，景别 / 运镜 / 提示词尚未生成。可在拉片节点选择 AI
           描述后重新拉片。
         </div>
@@ -131,11 +131,11 @@ export function FilmStudySheet() {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[950] flex items-center justify-center bg-[color-mix(in_srgb,var(--canvas-bg)_72%,transparent)] px-6 pt-12 pb-6"
+      className="fixed inset-0 z-[950] flex items-center justify-center bg-overlay px-6 pt-12 pb-6"
       onPointerDown={close}
     >
       <div
-        className="flex h-[min(900px,calc(100vh_-_72px))] w-[min(1440px,calc(100vw_-_48px))] flex-col overflow-hidden rounded-[14px] border border-border bg-surface shadow-float"
+        className="flex h-[min(900px,calc(100vh_-_72px))] w-[min(1440px,calc(100vw_-_48px))] flex-col overflow-hidden rounded-panel border border-border bg-surface shadow-float"
         onPointerDown={(event) => event.stopPropagation()}
       >
         <header className="flex h-[52px] shrink-0 items-center gap-4 border-b border-divider pr-3.5 pl-[18px]">

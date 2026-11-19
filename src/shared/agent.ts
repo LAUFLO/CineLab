@@ -175,6 +175,10 @@ export type AgentEvent =
   | { type: 'turn_start'; turn: AgentTurn }
   | { type: 'text'; turnId: string; text: string }
   | { type: 'text_delta'; turnId: string; text: string }
+  | { type: 'thinking_delta'; turnId: string; text: string }
+  | { type: 'compaction'; turnId?: string; active: boolean }
+  | { type: 'retry'; turnId?: string; message?: string }
+  | { type: 'queue'; turnId?: string; steering: string[]; followUp: string[] }
   | { type: 'tool_start'; turnId: string; call: AgentToolCall }
   | { type: 'tool_end'; turnId: string; result: AgentToolResult }
   | {

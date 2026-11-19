@@ -40,6 +40,14 @@ export interface AgentMessage {
   toolStatus?: 'running' | 'ok' | 'error'
 }
 
+export interface AgentActivity {
+  thinking: string
+  compaction: boolean
+  retry: string | null
+  steering: string[]
+  followUp: string[]
+}
+
 /** 为 new-node 提案创建占位节点并返回节点 ID */
 function createProposalTargetNode(proposal: AgentProposal): string | null {
   const state = useCanvasStore.getState()
@@ -91,6 +99,7 @@ interface AgentState {
   textModels: AgentModelInfo[]
   allModels: AgentModelInfo[]
   error: string | null
+  activity: AgentActivity
   lastTurn: AgentTurn | null
   proposal: AgentProposal | null
   proposalBusy: boolean
@@ -307,6 +316,13 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   textModels: [],
   allModels: [],
   error: null,
+  activity: {
+    thinking: '',
+    compaction: false,
+    retry: null,
+    steering: [],
+    followUp: []
+  },
   lastTurn: null,
   proposal: null,
   proposalBusy: false,
@@ -489,6 +505,13 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         contextSummary: session.summary ?? null,
         compacting: false,
         lastTurn: session.turns[session.turns.length - 1] ?? null,
+        activity: {
+          thinking: '',
+          compaction: false,
+          retry: null,
+          steering: [],
+          followUp: []
+        },
         running: false,
         currentTurnId: null,
         proposal: null,
@@ -818,30 +841,89 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           sessionTitle:
             state.sessionTitle === '新对话' && event.turn.userText.trim()
               ? event.turn.userText.trim().slice(0, 40)
-              : state.sessionTitle
+              : state.sessionTitle,
+          activity: {
+            thinking: '',
+            compaction: false,
+            retry: null,
+            steering: [],
+            followUp: []
+          }
         }))
         break
       case 'text':
       case 'text_delta':
         set((state) => ({
-          messages: appendText(state.messages, event.turnId, event.text)
+          messages: appendText(state.messages, event.turnId, event.text),
+          activity: state.activity.thinking
+            ? { ...state.activity, thinking: '' }
+            : state.activity
+        }))
+        break
+      case 'thinking_delta':
+        set((state) => ({
+          activity: {
+            ...state.activity,
+            thinking: state.activity.thinking + event.text
+          }
+        }))
+        break
+      case 'compaction':
+        set((state) => ({
+          activity: { ...state.activity, compaction: event.active }
+        }))
+        break
+      case 'retry':
+        set((state) => ({
+          activity: {
+            ...state.activity,
+            retry: event.message ?? '正在重试'
+          }
+        }))
+        break
+      case 'queue':
+        set((state) => ({
+          activity: {
+            ...state.activity,
+            steering: event.steering,
+            followUp: event.followUp
+          }
         }))
         break
       case 'tool_start':
-        set((state) => ({
-          messages: [
-            ...state.messages,
-            {
-              id: nextMessageId(),
-              role: 'tool',
+        set((state) => {
+          const index = state.messages.findIndex(
+            (message) =>
+              message.role === 'tool' &&
+              message.callId === event.call.callId &&
+              message.turnId === event.turnId
+          )
+          if (index >= 0) {
+            const next = [...state.messages]
+            next[index] = {
+              ...next[index],
               content: JSON.stringify(event.call.args),
               turnId: event.turnId,
-              callId: event.call.callId,
               toolName: event.call.name,
               toolStatus: 'running'
             }
-          ]
-        }))
+            return { messages: next }
+          }
+          return {
+            messages: [
+              ...state.messages,
+              {
+                id: nextMessageId(),
+                role: 'tool',
+                content: JSON.stringify(event.call.args),
+                turnId: event.turnId,
+                callId: event.call.callId,
+                toolName: event.call.name,
+                toolStatus: 'running'
+              }
+            ]
+          }
+        })
         break
       case 'tool_end':
         set((state) => {
@@ -850,7 +932,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
             const message = state.messages[cursor]
             if (
               message.role === 'tool' &&
-              message.callId === event.result.callId
+              message.callId === event.result.callId &&
+              message.turnId === event.turnId
             ) {
               index = cursor
               break
@@ -911,6 +994,13 @@ export const useAgentStore = create<AgentState>((set, get) => ({
             lastTurn: event.turn,
             pendingConfirm: null,
             confirming: false,
+            activity: {
+              thinking: '',
+              compaction: false,
+              retry: null,
+              steering: [],
+              followUp: []
+            },
             turns: [...state.turns, event.turn],
             messages:
               event.turn.status === 'cancelled'

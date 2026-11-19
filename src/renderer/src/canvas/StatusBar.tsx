@@ -18,12 +18,12 @@ export function StatusBar() {
   const requestArrange = useUIStore((state) => state.requestArrange)
 
   return (
-    <div data-slot="statusbar" className="absolute bottom-4 left-4 z-20 flex h-10 items-center gap-0.5 rounded-xl border border-border bg-surface px-1.5 py-1 text-xs text-fg-muted shadow-float">
+    <div data-slot="statusbar" className="absolute bottom-4 left-4 z-20 flex h-10 items-center gap-0.5 rounded-card border border-border bg-surface px-1.5 py-1 text-xs text-fg-muted shadow-float">
       <Button
         type="button"
         variant="ghost"
         size="none"
-        className="h-[30px] gap-1.5 rounded-lg px-2 !font-normal"
+        className="h-[30px] gap-1.5 rounded-card px-2 !font-normal"
         onClick={() => openLibrary('角色')}
       >
         <Icon name="folder" size={15} />
@@ -34,7 +34,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-[30px] w-[30px] rounded-lg"
+        className="h-[30px] w-[30px] rounded-card"
         title="整理画布 Alt+Shift+F"
         onClick={requestArrange}
       >
@@ -45,7 +45,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-[30px] w-[30px] rounded-lg"
+        className="h-[30px] w-[30px] rounded-card"
         title="适应视图"
         onClick={requestFitView}
       >
@@ -56,7 +56,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className={`h-[30px] w-[30px] rounded-lg ${
+        className={`h-[30px] w-[30px] rounded-card ${
           edgesVisible ? '' : '!bg-surface-hover !text-fg'
         }`}
         title={edgesVisible ? '隐藏节点连线' : '显示节点连线'}
@@ -69,7 +69,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className={`h-[30px] w-[30px] rounded-lg ${
+        className={`h-[30px] w-[30px] rounded-card ${
           snapToGrid ? '!bg-surface-hover !text-fg' : ''
         }`}
         title="网格吸附"
@@ -82,7 +82,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className={`h-[30px] w-[30px] rounded-lg ${
+        className={`h-[30px] w-[30px] rounded-card ${
           minimapVisible ? '!bg-surface-hover !text-fg' : ''
         }`}
         title="小地图"

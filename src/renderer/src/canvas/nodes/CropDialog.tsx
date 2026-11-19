@@ -1,6 +1,6 @@
 import { Icon } from '../../components/Icon'
 import { useBoxEditor } from './useBoxEditor'
-import { Button, Dialog, IconButton } from '../../components/ui'
+import { Button, DIALOG_PANEL, Dialog, IconButton } from '../../components/ui'
 
 interface CropDialogProps {
   open: boolean
@@ -66,8 +66,8 @@ export function CropDialog({
       onClose={busy ? () => {} : onClose}
       bare
       ariaLabel="自由裁剪"
-      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-black/55 px-6 py-12"
-      panelClassName="max-w-[calc(100vw-48px)] rounded-[14px] border border-border bg-surface p-[18px] text-fg shadow-menu"
+      overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-overlay px-6 py-12"
+      panelClassName={`max-w-[calc(100vw-48px)] ${DIALOG_PANEL}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -88,7 +88,7 @@ export function CropDialog({
       </div>
 
       <div
-        className="relative mt-3.5 overflow-hidden rounded-[10px] bg-canvas select-none touch-none"
+        className="relative mt-3.5 overflow-hidden rounded-card bg-canvas select-none touch-none"
         style={{ width: displayWidth, height: displayHeight }}
       >
         <img

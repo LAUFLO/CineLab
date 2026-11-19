@@ -14,7 +14,13 @@ import type {
 } from '@shared/library-schema'
 import { PROMPT_FOLDER } from '@shared/library-schema'
 import { Icon } from '../../components/Icon'
-import { Button, Dialog, IconButton, Input } from '../../components/ui'
+import {
+  Button,
+  DIALOG_PANEL,
+  Dialog,
+  IconButton,
+  Input
+} from '../../components/ui'
 import { isGroupNode, useCanvasStore } from '../../stores/canvas'
 import { useLibraryStore } from '../../stores/library'
 import { useUIStore } from '../../stores/ui'
@@ -388,12 +394,12 @@ export function LibraryWindow() {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[250] flex items-center justify-center bg-black/42"
+      className="fixed inset-0 z-[250] flex items-center justify-center bg-overlay"
       onPointerDown={close}
     >
       <div
         data-testid="library-window"
-        className="flex h-[min(720px,calc(100vh-80px))] w-[min(1120px,calc(100vw-64px))] flex-col overflow-hidden rounded-[14px] border border-border bg-surface shadow-menu"
+        className="flex h-[min(720px,calc(100vh-80px))] w-[min(1120px,calc(100vw-64px))] flex-col overflow-hidden rounded-panel border border-border bg-surface-raised shadow-float"
         onPointerDown={(event) => event.stopPropagation()}
       >
         <header className="flex h-[52px] shrink-0 items-center justify-between gap-4 border-b border-divider pl-[18px] pr-3">
@@ -411,7 +417,7 @@ export function LibraryWindow() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <div className="flex h-7 items-center gap-1.5 rounded-[8px] border border-border bg-surface-raised px-[9px] text-fg-subtle focus-within:border-border-strong">
+            <div className="flex h-7 items-center gap-1.5 rounded-card border border-border bg-surface-raised px-[9px] text-fg-subtle focus-within:border-border-strong">
               <Icon name="search" size={13} />
               <Input
                 value={query}
@@ -471,7 +477,7 @@ export function LibraryWindow() {
                 type="button"
                 variant="ghost"
                 size="none"
-                className="cursor-pointer rounded-[4px] px-1 py-0.5 text-xs text-fg-muted"
+                className="cursor-pointer rounded-md px-1 py-0.5 text-xs text-fg-muted"
                 onClick={() => handleSelectFolder('')}
               >
                 全部
@@ -485,7 +491,7 @@ export function LibraryWindow() {
                       type="button"
                       variant="ghost"
                       size="none"
-                      className="cursor-pointer rounded-[4px] px-1 py-0.5 text-xs text-fg-muted"
+                      className="cursor-pointer rounded-md px-1 py-0.5 text-xs text-fg-muted"
                       onClick={() => handleSelectFolder(path)}
                     >
                       {segment}
@@ -678,15 +684,15 @@ export function LibraryWindow() {
           onClose={() => setMoveTargets([])}
           bare
           ariaLabel="移动素材"
-          overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-black/50"
-          panelClassName="w-[420px] rounded-[12px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-menu"
+          overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-overlay"
+          panelClassName={`w-[420px] ${DIALOG_PANEL}`}
         >
           <div className="mb-[14px] text-sm text-fg">
             {moveTargets.length === 1
               ? `移动「${moveTargets[0].name}」到`
               : `移动 ${moveTargets.length} 个素材到`}
           </div>
-          <div className="mt-3 max-h-[340px] overflow-y-auto rounded-[8px] border border-border bg-surface-raised p-1.5">
+          <div className="mt-3 max-h-[340px] overflow-y-auto rounded-card border border-border bg-surface-raised p-1.5">
             <FolderTree
               tree={tree}
               current={moveFolder}
@@ -718,8 +724,8 @@ export function LibraryWindow() {
           onClose={() => setConcatOpen(false)}
           bare
           ariaLabel="合成视频"
-          overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-black/50"
-          panelClassName="w-[560px] rounded-[12px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-menu"
+          overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-overlay"
+          panelClassName={`w-[560px] ${DIALOG_PANEL}`}
         >
           <div className="mb-[14px] text-sm text-fg">合成视频</div>
           <div className="mb-5 mt-4 flex flex-col gap-4">
@@ -732,7 +738,7 @@ export function LibraryWindow() {
                     type="button"
                     variant="secondary"
                     size="none"
-                    className={`h-[34px] min-w-20 rounded-[8px] bg-surface-hover px-[14px] text-xs ${
+                    className={`h-[34px] min-w-20 rounded-card bg-surface-hover px-[14px] text-xs ${
                       concatResolution === value
                         ? '!border-border-selected !bg-surface-raised !text-fg'
                         : ''
@@ -759,7 +765,7 @@ export function LibraryWindow() {
                     type="button"
                     variant="secondary"
                     size="none"
-                    className={`h-[34px] min-w-20 rounded-[8px] bg-surface-hover px-[14px] text-xs ${
+                    className={`h-[34px] min-w-20 rounded-card bg-surface-hover px-[14px] text-xs ${
                       concatQuality === value
                         ? '!border-border-selected !bg-surface-raised !text-fg'
                         : ''
@@ -779,7 +785,7 @@ export function LibraryWindow() {
                   type="button"
                   variant="secondary"
                   size="none"
-                  className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
+                  className="h-[30px] shrink-0 rounded-md bg-surface-hover px-[10px] text-[11px] text-fg"
                   onClick={() =>
                     void window.api.export
                       .pickFile('subtitle')
@@ -801,7 +807,7 @@ export function LibraryWindow() {
                     type="button"
                     variant="secondary"
                     size="none"
-                    className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
+                    className="h-[30px] shrink-0 rounded-md bg-surface-hover px-[10px] text-[11px] text-fg"
                     onClick={() => setConcatSubtitle(null)}
                   >
                     清除
@@ -817,7 +823,7 @@ export function LibraryWindow() {
                   type="button"
                   variant="secondary"
                   size="none"
-                  className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
+                  className="h-[30px] shrink-0 rounded-md bg-surface-hover px-[10px] text-[11px] text-fg"
                   onClick={() =>
                     void window.api.export
                       .pickFile('audio')
@@ -837,7 +843,7 @@ export function LibraryWindow() {
                     type="button"
                     variant="secondary"
                     size="none"
-                    className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
+                    className="h-[30px] shrink-0 rounded-md bg-surface-hover px-[10px] text-[11px] text-fg"
                     onClick={() => setConcatBgm(null)}
                   >
                     清除
@@ -853,7 +859,7 @@ export function LibraryWindow() {
                   type="button"
                   variant="secondary"
                   size="none"
-                  className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
+                  className="h-[30px] shrink-0 rounded-md bg-surface-hover px-[10px] text-[11px] text-fg"
                   onClick={() =>
                     void window.api.export
                       .pickFile('audio')
@@ -875,7 +881,7 @@ export function LibraryWindow() {
                     type="button"
                     variant="secondary"
                     size="none"
-                    className="h-[30px] shrink-0 rounded-[7px] bg-surface-hover px-[10px] text-[11px] text-fg"
+                    className="h-[30px] shrink-0 rounded-md bg-surface-hover px-[10px] text-[11px] text-fg"
                     onClick={() => setConcatNarration(null)}
                   >
                     清除
@@ -969,14 +975,14 @@ export function LibraryWindow() {
           onClose={() => setTagTarget(null)}
           bare
           ariaLabel={`标签「${tagTarget.name}」`}
-          overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-black/50"
-          panelClassName="w-[420px] rounded-[12px] border border-border bg-surface px-5 pb-4 pt-[18px] shadow-menu"
+          overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-overlay"
+          panelClassName={`w-[420px] ${DIALOG_PANEL}`}
         >
           <div className="mb-[14px] text-sm text-fg">
             标签「{tagTarget.name}」
           </div>
           <Input
-            className="!mt-[14px] !h-[38px] !rounded-[8px] !border-border-strong !bg-surface-hover !px-2.5 !text-[13px] focus:!border-border-selected"
+            className="!mt-[14px] !h-[38px] !rounded-card !border-border-strong !bg-surface-hover !px-2.5 !text-[13px] focus:!border-border-selected"
             value={tagDraft}
             placeholder="多个标签用逗号分隔，例如：人物, 夜景"
             autoFocus

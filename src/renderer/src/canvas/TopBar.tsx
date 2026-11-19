@@ -366,7 +366,7 @@ export function TopBar() {
               }
               onClick={() => openSettings('about')}
             >
-              <Icon name="download" />
+              <Icon name="refresh" />
               <span className="absolute right-[5px] top-[5px] h-1.5 w-1.5 rounded-full bg-pick-bar" />
             </Button>
           ) : null}

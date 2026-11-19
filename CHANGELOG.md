@@ -3,7 +3,7 @@
 本项目的版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循语义化版本。
 
-## [未发布]
+## [0.3.1] - 2026-11-19
 
 ### 新增
 
@@ -15,6 +15,24 @@
 - 导演台批次 6：按对白分镜（角色台词解析、长句切分、过肩正反打、台词字幕）；新增 `stage_dialogue_coverage` Agent 工具。
 - 导演台收尾：回画布节点按镜号/首中尾命名；Agent 导出支持整片、产物勾选和仅首帧；自动分镜支持 1–8 个主体多选；程序化世界与舞台共用同一份光照。
 - UI 控件统一：`NativeSelect` 兼容包装为 `Select`，所有下拉共用自定义浮层；`Menu`/`Popover`/`Dialog` 收口全部自建浮层；对话框统一 `DIALOG_PANEL`/`DIALOG_SURFACE`；遮罩统一 `bg-overlay`；全局圆角收敛到 `md`/`card`/`panel` 三档；`Button md` 与 `Input`/`Select` 对齐；`check:ui` 取消白名单。
+
+- 代码地图：新增 `docs/code-map/`（总览、01–07 模块地图、08 能力清单、09 开发流程、10 UI、11 功能索引、自动生成附录），跨机器同步当前代码能力。
+- 代码地图工具：`map:code` 生成 AUTO 区，`check:code-map` 校验生成物与文件覆盖；`check:docs` 联动检查。
+- Agent 协作：`AGENTS.md` 方案阶段要求先查功能索引，并写「已有实现检查（复用/扩展/新建）」，减少重复造轮子。
+
+### 变更
+
+- `docs/stage-previs-upgrade-plan.md` 标记为已实施；导演台模块地图补充整片/每镜/光照/动作/自动分镜现状。
+
+### 修复
+
+- 修复代码地图在 Windows CI 上因 CRLF/LF 差异误报 AUTO 区过期。
+
+### 已知限制
+
+- 安装包未签名：Windows 会提示 SmartScreen，macOS 需手动放行 Gatekeeper。
+- macOS 暂不支持自动更新，需要手动下载新版本。
+- glTF 对象类型仍为 wireframe 占位；场景图深度校准未接入。
 
 ## [0.3.0] - 2026-11-19
 

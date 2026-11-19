@@ -101,12 +101,12 @@ The canvas is built around an infinite, node-based workflow, with an emphasis on
 
 Download the latest release from [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest):
 
-Current version: **v0.3.0**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
+Current version: **v0.3.1**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
 
 | Platform | Recommended file | Requirements |
 |---|---|---|
-| Windows | `CineLab-0.3.0-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.3.0-arm64.dmg` | macOS 12+, Apple Silicon |
+| Windows | `CineLab-0.3.1-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.3.1-arm64.dmg` | macOS 12+, Apple Silicon |
 
 ### Windows
 

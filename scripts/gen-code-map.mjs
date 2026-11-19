@@ -277,7 +277,9 @@ function buildGenerated() {
   const toolsDir = 'src/main/agent/tools'
   const toolRows = []
   if (existsSync(join(root, toolsDir))) {
-    for (const file of readdirSync(join(root, toolsDir)).filter((name) => name.endsWith('.ts'))) {
+    for (const file of readdirSync(join(root, toolsDir))
+      .filter((name) => name.endsWith('.ts'))
+      .sort()) {
       const text = readFileSync(join(root, toolsDir, file), 'utf8')
       const pattern = /id: '([^']+)',\s*\n\s*name: '([^']+)'/g
       let match
@@ -309,6 +311,7 @@ function buildGenerated() {
     }
   }
   collectTests('src')
+  tests.sort()
 
   return `# 代码地图附录（自动生成）
 

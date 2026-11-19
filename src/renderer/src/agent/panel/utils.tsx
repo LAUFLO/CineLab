@@ -126,7 +126,7 @@ export function buildRenderItems(messages: AgentMessage[]): RenderItem[] {
     if (tools.length === 0) return
     items.push({
       kind: 'thoughts',
-      id: tools[0].callId ?? tools[0].id,
+      id: `${tools[0].turnId ?? ''}:${tools[0].callId ?? tools[0].id}`,
       tools
     })
     tools = []

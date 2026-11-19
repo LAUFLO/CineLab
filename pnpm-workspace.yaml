@@ -1,7 +1,9 @@
 allowBuilds:
+  '@google/genai': true
   electron: true
   electron-winstaller: true
   esbuild: true
   ffmpeg-static: true
+  protobufjs: true
 minimumReleaseAgeExclude:
   - electron@45.2.2

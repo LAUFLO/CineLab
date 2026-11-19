@@ -9,11 +9,11 @@
 |---|---|---|---|
 | 01 | [画布](./01-canvas.md) | 70 | 23268 |
 | 02 | [生成与模型](./02-generation.md) | 50 | 11170 |
-| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9420 |
+| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9426 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20196 |
 | 05 | [拉片室](./05-film-study.md) | 6 | 2863 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 38 | 14255 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 65 | 11182 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 49 | 16486 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 65 | 11185 |
 | 10 | [UI 组件与面板](./10-ui.md) | 43 | 8773 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
@@ -147,6 +147,11 @@
 - `src/main/agent/__tests__/session.test.ts`
 - `src/main/agent/__tests__/skills-admin.test.ts`
 - `src/main/agent/__tests__/tools.test.ts`
+- `src/main/agent/pi/__tests__/events.test.ts`
+- `src/main/agent/pi/__tests__/model-runtime.test.ts`
+- `src/main/agent/pi/__tests__/session-lock.test.ts`
+- `src/main/agent/pi/__tests__/session.test.ts`
+- `src/main/agent/pi/__tests__/tools.test.ts`
 - `src/main/components/__tests__/zip-extract.test.ts`
 - `src/main/engine/__tests__/generation-error.test.ts`
 - `src/main/export/__tests__/project-export.test.ts`
@@ -171,6 +176,8 @@
 - `src/main/settings/__tests__/models-config.test.ts`
 - `src/main/stage/__tests__/storage.test.ts`
 - `src/main/update/__tests__/fallback.test.ts`
+- `src/renderer/src/agent/__tests__/filmBridge.test.ts`
+- `src/renderer/src/agent/__tests__/timelineBridge.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/text-markdown.test.ts`
 - `src/renderer/src/components/ui/native-controls.test.ts`
 - `src/renderer/src/stores/__tests__/canvas.test.ts`

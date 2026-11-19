@@ -3,6 +3,32 @@
 本项目的版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循语义化版本。
 
+## [0.3.2] - 2026-11-19
+
+### 新增
+
+- CineBot 运行时 v3：接入 `@earendil-works/pi-coding-agent` 1.5.2，使用 `AgentSession` 管理工具、会话、压缩和重试。
+- v2 会话：`.cinelab/agent/sessions/v2` 完整保存 tool call / tool result；旧 v1 会话保留为冷备，不再展示。
+- 自动续跑：模型只输出过渡语时自动催促继续，默认最多 2 次，可在设置关闭。
+- 新事件：thinking、compaction、retry、queue 在 CineBot 面板显示，思考过程默认折叠。
+- 63 个工具的适配器与一致性审计；权限、确认、提案和撤销仍由 CineLab 规则控制。
+
+### 变更
+
+- 文本模型请求层改为自定义 `streamSimple`，保留 Electron 网络栈与代理设置。
+- 同会话单写者锁；不同会话、不同窗口可并发。
+- 工具消息按 `turnId + callId` 匹配，修复跨回合重复 key。
+
+### 修复
+
+- 模型回复被 length 截断、429 重试、上下文压缩无内容等错误处理。
+
+### 已知限制
+
+- 旧 v1 会话不迁移、不展示，文件保留在原目录。
+- pi 依赖体积较大：asar 约 128 MB，Windows 安装包约 171 MB。
+- 正式 asar 安装包需要在无透明加密的 CI 环境构建。
+
 ## [0.3.1] - 2026-11-19
 
 ### 新增

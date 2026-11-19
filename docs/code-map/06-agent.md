@@ -55,6 +55,16 @@ CineBot 会话、工具注册与执行、生成提案、技能、能力审计。
 1. **主进程工具**：`main-tools.ts` 直接查目录、发请求、读项目文件；
 2. **渲染进程操作**：通过 `AgentApi.toolResult` 与四个 bridge（`canvasBridge`、`filmBridge`、`stageBridge`、`timelineBridge`）把工具调用落到对应 store/UI。
 
+### v3 运行时（M1，分支 spike/agent-runtime-v3）
+
+- 主进程通过 `pi/loader.ts` 动态 import ESM-only 的 pi-coding-agent；
+- `pi/runtime.ts` 用 `createAgentSession` 替换旧循环，保留 `startTurn/cancelTurn/resolve*` API；
+- `pi/model-runtime.ts` 自定义 `streamSimple`，复用 `httpFetch`；
+- `pi/session.ts` 只读写 `.cinelab/agent/sessions/v2`，`pi/session-lock.ts` 提供单写者锁；
+- `pi/tools.ts` 用 `Type.Unsafe` 把 63 个工具注册为 `customTools`；
+- 权限和确认规则仍由 CineLab 拥有，extension `tool_call` 内联在 `pi/runtime.ts`；
+- 旧 `runtime.ts` / `session.ts` 仍在，作为回退，M5 删除。
+
 ## 生成提案
 
 `AgentProposal`：`id`、`sessionId`、`turnId`、`status`、`request: GenerateRequest`、`outputTarget`（`version` / `new-node`）、`nodeTitle`、`modelName`、`capability`、`count`、`createdAt/expiresAt`、`submittedAt`、`runId`、`error`。
@@ -120,6 +130,7 @@ AgentPanel
 | 技能 | 已实现 | `skills.ts`、`skills-admin.ts`、`skills.test.ts` |
 | 能力审计 | 已实现 | `capabilities/registry.ts`、`capability-audit.test.ts` |
 | 四个 bridge | 已实现 | `src/renderer/src/agent/*Bridge.ts` |
+| v3 运行时（pi） | 部分实现 | `src/main/agent/pi/*`；M1–M3 已接入；M4 四空间回归通过（canvas/stage 真模型，timeline/film 桥接），正式 asar 待复测 |
 
 ## 已知限制
 
@@ -127,6 +138,8 @@ AgentPanel
 - 渲染进程 bridge 依赖对应界面/store 可用；自动化测试覆盖有限。
 - 长任务有独立超时，导出/拉片可能等待数分钟。
 - 提案结果写回依赖节点仍存在；删除源节点会使提案失效。
+- v3 运行时的 thinking/compaction/retry/queue 事件已发送，但前端展示在 M3 接入。
+- v1 会话只保留冷备，不在界面展示，也不读取。
 
 ## 常见改动入口
 
@@ -134,7 +147,7 @@ AgentPanel
 |---|---|
 | 新增工具 | `src/main/agent/tools/*.ts` + `docs/agent-capabilities.md` |
 | 工具确认规则 | `src/main/agent/tools/index.ts` 的 `toolConfirmationReason` |
-| 运行时/超时 | `src/main/agent/runtime.ts` |
+| 运行时/超时 | `src/main/agent/runtime.ts`（旧）、`src/main/agent/pi/runtime.ts`（v3） |
 | 提案 | `src/main/agent/proposals.ts`、`src/shared/agent-proposal.ts` |
 | 会话/压缩 | `src/main/agent/session.ts`、`compact.ts` |
 | 技能 | `src/main/agent/skills.ts`、`skills-admin.ts` |
@@ -151,6 +164,17 @@ AgentPanel
 | `src/main/agent/compact.ts` | 93 |
 | `src/main/agent/main-tools.ts` | 228 |
 | `src/main/agent/model.ts` | 375 |
+| `src/main/agent/pi/events.ts` | 127 |
+| `src/main/agent/pi/loader.ts` | 34 |
+| `src/main/agent/pi/model-runtime.ts` | 724 |
+| `src/main/agent/pi/permissions.ts` | 28 |
+| `src/main/agent/pi/prompt.ts` | 134 |
+| `src/main/agent/pi/resources.ts` | 41 |
+| `src/main/agent/pi/runtime.ts` | 583 |
+| `src/main/agent/pi/session-lock.ts` | 55 |
+| `src/main/agent/pi/session.ts` | 244 |
+| `src/main/agent/pi/timeouts.ts` | 19 |
+| `src/main/agent/pi/tools.ts` | 120 |
 | `src/main/agent/proposals.ts` | 499 |
 | `src/main/agent/runtime.ts` | 756 |
 | `src/main/agent/session.ts` | 407 |
@@ -167,8 +191,8 @@ AgentPanel
 | `src/main/agent/tools/skills.ts` | 90 |
 | `src/main/agent/tools/stage.ts` | 1121 |
 | `src/main/agent/tools/timeline.ts` | 930 |
-| `src/renderer/src/agent/AgentPanel.tsx` | 1214 |
-| `src/renderer/src/agent/agentStore.ts` | 999 |
+| `src/renderer/src/agent/AgentPanel.tsx` | 1242 |
+| `src/renderer/src/agent/agentStore.ts` | 1089 |
 | `src/renderer/src/agent/canvasBridge.ts` | 1116 |
 | `src/renderer/src/agent/filmBridge.ts` | 443 |
 | `src/renderer/src/agent/panel/ContextRing.tsx` | 55 |
@@ -181,7 +205,7 @@ AgentPanel
 | `src/renderer/src/agent/timelineBridge.ts` | 1078 |
 | `src/shared/agent-proposal.ts` | 140 |
 | `src/shared/agent-tools.ts` | 59 |
-| `src/shared/agent.ts` | 257 |
+| `src/shared/agent.ts` | 261 |
 | `src/shared/capabilities.ts` | 290 |
 | `src/shared/skills.ts` | 168 |
 <!-- AUTO:files:end -->
@@ -194,6 +218,17 @@ AgentPanel
 | `src/main/agent/compact.ts` | `compactSession` |
 | `src/main/agent/main-tools.ts` | `MainToolResult`、`executeMainTool` |
 | `src/main/agent/model.ts` | `AgentRuntimeModel`、`AgentChatMessage`、`AgentChatResult`、`listAgentModels`、`listTextModels`、`resolveTextModel`、`chatWithTools` |
+| `src/main/agent/pi/events.ts` | `createAgentTurn`、`mergeChange`、`textOfContent`、`usageOf`、`assistantTextOf`、`looksLikePreamble`、`toolCallOf` |
+| `src/main/agent/pi/loader.ts` | `loadPiCodingAgent`、`loadPiAi` |
+| `src/main/agent/pi/model-runtime.ts` | `PiModelHandle`、`createPiModelRuntime` |
+| `src/main/agent/pi/permissions.ts` | `piPermissionBlock`、`piConfirmationReason` |
+| `src/main/agent/pi/prompt.ts` | `systemPromptFor`、`attachmentContext`、`referenceContext`、`generationModelsContext` |
+| `src/main/agent/pi/resources.ts` | `PiResourceInput`、`createPiResourceLoader` |
+| `src/main/agent/pi/runtime.ts` | `AgentTurnCallbacks`、`startTurn`、`cancelTurn`、`resolveToolResult`、`resolveConfirmation`、`getActiveTurnInfo` |
+| `src/main/agent/pi/session-lock.ts` | `acquirePiSessionLock`、`isPiSessionLocked` |
+| `src/main/agent/pi/session.ts` | `piSessionDirectory`、`createPiSessionId`、`findPiSessionPath`、`listPiSessions`、`createPiSession`、`openPiSessionManager`、`loadPiSession`、`renamePiSession`、`deletePiSession`、`compactPiSession` |
+| `src/main/agent/pi/timeouts.ts` | `TOOL_TIMEOUT_MS`、`LONG_TOOL_TIMEOUTS`、`toolTimeoutMs` |
+| `src/main/agent/pi/tools.ts` | `PiToolRuntime`、`createPiTools` |
 | `src/main/agent/proposals.ts` | `setProposalChangeListener`、`proposalDirectory`、`createProposal`、`activeProposal`、`expireSessionProposals`、`submitProposal`、`cancelProposal`、`deleteSessionProposals`、`updateProposalFromRun` |
 | `src/main/agent/runtime.ts` | `AgentTurnCallbacks`、`startTurn`、`resolveToolResult`、`resolveConfirmation`、`cancelTurn`、`getActiveTurnInfo` |
 | `src/main/agent/session.ts` | `sessionDirectory`、`sessionFile`、`createSessionId`、`ensureSession`、`appendSessionEntry`、`appendMessage`、`appendTurn`、`loadSession`、`listSessions`、`createSession`、`deleteSession`、`renameSession`、`ensureSessionTitle`、`appendSessionSummary`、`requireProjectRoot` |
@@ -211,7 +246,7 @@ AgentPanel
 | `src/main/agent/tools/stage.ts` | `STAGE_TOOLS`、`validateStageToolArgs` |
 | `src/main/agent/tools/timeline.ts` | `TIMELINE_TOOLS`、`isTimelineWriteTool`、`validateTimelineToolArgs` |
 | `src/renderer/src/agent/AgentPanel.tsx` | `AgentPanel` |
-| `src/renderer/src/agent/agentStore.ts` | `AgentMessage`、`agentTurnChangeCount`、`AGENT_CONTEXT_BUDGET_TOKENS`、`AGENT_KEEP_RECENT_MESSAGES`、`AgentContextStats`、`agentContextStats`、`useAgentStore` |
+| `src/renderer/src/agent/agentStore.ts` | `AgentMessage`、`AgentActivity`、`agentTurnChangeCount`、`AGENT_CONTEXT_BUDGET_TOKENS`、`AGENT_KEEP_RECENT_MESSAGES`、`AgentContextStats`、`agentContextStats`、`useAgentStore` |
 | `src/renderer/src/agent/canvasBridge.ts` | `initAgentCanvasBridge` |
 | `src/renderer/src/agent/filmBridge.ts` | `FilmToolResult`、`executeFilmTool` |
 | `src/renderer/src/agent/panel/ContextRing.tsx` | `ContextRing` |

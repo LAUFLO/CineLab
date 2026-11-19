@@ -12,7 +12,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-black.svg"></a>
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-1f1f1f.svg">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.1-1f1f1f.svg">
+  <a href="https://github.com/LAUFLO/CineLab/releases/latest"><img alt="Version" src="https://img.shields.io/github/v/release/LAUFLO/CineLab?label=version&color=1f1f1f"></a>
 </p>
 
 <p align="center">
@@ -61,11 +61,16 @@ CineLab 不绑定模型供应商。可以接入任意 OpenAI 兼容接口、自�
 - 裁剪、切分、吸附、速度、音量、淡入淡出、转场
 - 自动粗剪：删静音、按镜头切分、节拍标记、节拍切分
 - 本地 Whisper 字幕，ffmpeg 导出成片并写回画布
+- 画布节点实时预览时间线，无需先导出成片；节点内可直接播放
+- 导出版本可删除，并同步清理文件与失效连线
 
 ### 导演台
 
 - three.js 3D 场景：人物素模、基础几何体、平面、群众阵列、本地 glTF
 - 多机位、机位关键帧运镜、镜头时长和画幅
+- 语义镜头：用「过肩拍 A 看 B」「双人中景」描述构图，自动解算机位并处理不越轴
+- 确定性程序化世界：街道、广场、室内等布局，支持天气、水域、地标和主题，同 seed 可复现
+- 场景图白膜：拖入一张概念图，自动生成可开拍的 3D 场景
 - 对象位置、旋转、缩放、姿势、颜色、可见性、背景
 - 白模预演导出为视频并回到画布
 
@@ -83,14 +88,23 @@ CineLab 不绑定模型供应商。可以接入任意 OpenAI 兼容接口、自�
 - 抠图、扩图、图层分离、宫格切分、分镜拼接
 - 模型和运行时按需下载，不随安装包分发
 
+### 模型接入
+
+- 任意 OpenAI 兼容接口、自建服务和中转站，内置可灵、火山方舟、MiniMax、Vidu 等预设
+- 参考音频与参考视频：Agnes Video 2.5 支持音频/视频参考，CineBot 可提交音频素材
+- 能力一致性：模型声明与实际执行对齐，不支持的输入在生成入口直接报错，不再静默丢弃
+- 自定义 HTTP 模板与参数面板
+
 ## 下载与安装
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
 
+当前版本 **v0.3.0**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
+
 | 平台 | 推荐文件 | 系统要求 |
 |---|---|---|
-| Windows | `CineLab-0.1.1-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.1.1-arm64.dmg` | macOS 12+，Apple Silicon |
+| Windows | `CineLab-0.3.0-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.3.0-arm64.dmg` | macOS 12+，Apple Silicon |
 
 ### Windows
 
@@ -106,6 +120,8 @@ CineLab 不绑定模型供应商。可以接入任意 OpenAI 兼容接口、自�
 - 配置保存在 `~/Library/Application Support/CineLab`
 
 下载后可对照 Release 页的 `SHA256SUMS.txt` 校验安装包。
+
+检查或下载更新失败时，应用会提供「打开发布页」和「浏览器下载」入口，并按镜像代理 → GitHub 原始链接的顺序兜底。
 
 ## 第一次使用
 
@@ -123,6 +139,7 @@ Bug 和功能建议请提到 [GitHub Issues](https://github.com/LAUFLO/CineLab/i
 ## 文档
 
 - [文档索引](docs/README.md)：现行文档、已实施方案和历史归档
+- [更新日志](CHANGELOG.md)：每个版本的变更记录
 - [技术架构](docs/architecture.md)：主进程架构、项目文件格式、Provider 接口、任务系统
 - [模型配置](docs/models.md)：`models.json` 格式与 Provider 配置
 - [界面规格](docs/ui-spec.md)：布局尺寸、节点结构、prompt bar、工具栏清单

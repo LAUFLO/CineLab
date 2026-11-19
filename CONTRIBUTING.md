@@ -75,3 +75,10 @@ Releases are built from `v*` tags by the `Release` workflow. The tag must match 
 - 预演：`pnpm notify:release --dry-run` 只打印卡片 JSON，不发送。
 
 Webhook 不写入仓库、文档、日志或提交信息。卡片模板见 `scripts/notify-feishu.mjs`（版本、下载产物、CHANGELOG 摘要、Release 按钮）。
+
+发版时必须同步更新 README：
+
+- `README.md` 与 `README.en.md`：更新「当前版本」、下载安装包文件名和核心能力列表。
+- 两边保持相同章节结构；所有链接必须指向存在的文件。
+- 版本徽章使用 GitHub Release 动态徽章，不需要手改；若改回静态徽章，必须在发版 PR 中同步版本号。
+- 发版 PR 合并前运行 `corepack pnpm check:docs`。

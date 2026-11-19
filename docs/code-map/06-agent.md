@@ -130,7 +130,7 @@ AgentPanel
 | 技能 | 已实现 | `skills.ts`、`skills-admin.ts`、`skills.test.ts` |
 | 能力审计 | 已实现 | `capabilities/registry.ts`、`capability-audit.test.ts` |
 | 四个 bridge | 已实现 | `src/renderer/src/agent/*Bridge.ts` |
-| v3 运行时（pi） | 部分实现 | `src/main/agent/pi/*`；M1–M3 已接入，M4 真实模型回归未完成 |
+| v3 运行时（pi） | 部分实现 | `src/main/agent/pi/*`；M1–M3 已接入；M4 canvas/stage 真实模型与打包冒烟通过，timeline/film 与正式 asar 待复测 |
 
 ## 已知限制
 

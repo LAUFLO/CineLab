@@ -670,6 +670,19 @@ pi 的 `createAgentSession` 支持子会话和 `SessionManager` 分支。CineLab
 - 会话列表和加载只走 v2，旧 v1 入口不再出现；
 - `pnpm typecheck`、`pnpm check:ui` 通过；待 E2E 复测。
 
+### M4 进度（2026-11-19）
+
+- 真实 Agnes 模型：
+  - 开发实例 `canvas_get` 通过，正确返回节点数；
+  - 开发实例 `stage_add_object` 通过，`stageUpdated=true`；
+- 打包冒烟（`asar: false` + `electron.exe resources/app`）：真实模型 `canvas_get` 通过，pi 动态 import 与 v2 会话在打包后可用；
+- 安装包体积：asar 构建的 exe 171.3MB、zip 220.1MB、app.asar 128.3MB；
+- 阻塞：
+  - 本机透明加密导致 `asar: true` 时 app 文件在 app.asar 内偏移错乱，生成的安装包不可用；需要在 CI 或加密白名单环境重建；
+  - `CineLab.exe` 直接构建仍遇 `EXDEV`；用预解压 `electronDist` 可绕过并产出安装包；
+- 四空间：canvas / stage 已通过；timeline / film 需要对应项目数据后复测；
+- 前端 activity 事件 dispatch 已验证，待真实 UI 截图复测。
+
 ## 10. 测试与验收
 
 ### 10.1 单元测试

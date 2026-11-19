@@ -35,9 +35,9 @@ CineLab is a local-first AI creative workspace. Image, video, audio and text gen
 
 The creative process is split into four workspaces: the infinite canvas for assets and generation, Clip Studio for the timeline, Director Stage for 3D previs, and frame-by-frame film study for shot breakdown. CineBot operates all four in natural language, and can register model operations as proposals that only run after you confirm.
 
-CineLab does not lock you to a model vendor. It works with any OpenAI-compatible endpoint, self-hosted services and proxies, and ships adapters for Kling, Volcengine Ark, MiniMax, Vidu and custom HTTP templates.
+CineLab keeps the model layer fully open: providers, models, base URLs, API keys, headers and parameters are all yours to configure. Connect any OpenAI-compatible endpoint, self-hosted service or proxy, or use custom HTTP templates for other protocols. Built-in presets are optional shortcuts and never limit which models you can add.
 
-The canvas interaction is modelled after LibTV's infinite canvas, with the goal of matching its feel while keeping the model layer open.
+The canvas is built around an infinite, node-based workflow, with an emphasis on smooth drag-to-connect editing, clear generation chains and a fully open model layer.
 
 ## Core capabilities
 
@@ -88,12 +88,14 @@ The canvas interaction is modelled after LibTV's infinite canvas, with the goal 
 - Matting, outpainting, layer separation, grid split and storyboard stitching
 - Models and runtimes download on demand instead of shipping in the installer
 
-### Model access
+### Fully open model configuration
 
-- Any OpenAI-compatible endpoint, self-hosted service or proxy, with presets for Kling, Volcengine Ark, MiniMax and Vidu
-- Reference audio and video: Agnes Video 2.5 accepts audio/video references, and CineBot can submit audio assets
-- Capability consistency: declared and executed capabilities stay aligned, and unsupported inputs fail at the generation entry instead of being dropped silently
-- Custom HTTP templates and parameter panels
+- Configure providers, models, base URLs, API keys, headers and parameters locally, with no dependency on a built-in list
+- Any OpenAI-compatible endpoint, self-hosted service or proxy; built-in presets (Kling, Volcengine Ark, MiniMax, Vidu and more) can be added, edited or removed without locking you to a vendor
+- Custom HTTP templates for model services that do not follow the OpenAI protocol
+- Per-model capabilities: input media (text / image / audio / video), generation modes, reference audio / video, parameter panels and output features, all declared per model
+- Configuration lives in a local `models.json` that you can back up, migrate and version
+- Capability consistency checks keep declarations aligned with what adapters actually execute, and unsupported inputs fail at the generation entry
 
 ## Download and install
 

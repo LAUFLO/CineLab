@@ -5,7 +5,7 @@ import {
   statSync,
   writeFileSync
 } from 'node:fs'
-import { join, relative } from 'node:path'
+import { join } from 'node:path'
 
 const root = process.cwd()
 const check = process.argv.includes('--check')

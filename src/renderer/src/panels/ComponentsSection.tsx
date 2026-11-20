@@ -32,7 +32,7 @@ const COMPONENT_META: Record<
   'whisper-runtime': {
     name: '本地字幕运行时',
     description:
-      'whisper.cpp v1.7.6 Windows x64 运行时，用于本地语音转写。安装后「自动字幕」才能离线运行，不上传音频。',
+      'whisper.cpp v1.7.6 本地运行时，用于本地语音转写。安装后「自动字幕」才能离线运行，不上传音频。',
     uninstallHint:
       '卸载后，「自动字幕」将无法使用。已生成的字幕轨不受影响，可随时重新下载。'
   },

@@ -3,6 +3,29 @@
 本项目的版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循语义化版本。
 
+## [0.4.1] - 2026-11-20
+
+### 新增
+
+- macOS 本地视觉增强：抠像、图层分离、视频抠像、智能去字幕、主体消除和扩图，复用深度运行时的 Python/PyTorch 环境。
+
+### 修复
+
+- macOS 安装包补齐模型配置技能资源，修复设置页读取失败。
+- 字幕烧录字体按平台选择：Windows 使用 Microsoft YaHei，macOS 使用 PingFang SC。
+- 修正组件设置页将本地字幕运行时描述为 Windows 专用的文案。
+
+### 变更
+
+- 视觉模型资产改为平台通用命名 `vision-models-v1.zip`，Windows 与 macOS 共用同一份包。
+- 发版流程为 macOS 安装包增加资源校验 smoke。
+
+### 已知限制
+
+- macOS 视觉增强依赖「深度动作捕捉运行时」，需先在设置中安装。
+- macOS 安装包未签名，暂不支持应用内自动更新，需要手动下载新版本。
+- macOS 仅支持 Apple Silicon（arm64），不支持 Intel Mac。
+
 ## [0.4.0] - 2026-11-19
 
 ### 新增

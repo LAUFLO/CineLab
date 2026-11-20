@@ -104,12 +104,12 @@ CineLab 的模型层完全开放：供应商、模型、Base URL、API Key、请
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
 
-当前版本 **v0.4.0**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **v0.4.1**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 | 平台 | 推荐文件 | 系统要求 |
 |---|---|---|
-| Windows | `CineLab-0.4.0-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.4.0-arm64.dmg` | macOS 12+，Apple Silicon |
+| Windows | `CineLab-0.4.1-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.4.1-arm64.dmg` | macOS 12+，Apple Silicon |
 
 ### Windows
 
@@ -120,7 +120,7 @@ CineLab 的模型层完全开放：供应商、模型、Base URL、API Key、请
 ### macOS
 
 - 安装包未签名、未公证，首次打开需右键 → 打开，或在「系统设置 → 隐私与安全性」放行
-- 深度捕捉、视觉增强和本地字幕组件会按平台自动下载
+- 深度捕捉、视觉增强和本地字幕组件会按平台自动下载；视觉增强依赖「深度动作捕捉运行时」
 - macOS 首版暂不支持自动更新，需要手动下载新版本
 - 配置保存在 `~/Library/Application Support/CineLab`
 

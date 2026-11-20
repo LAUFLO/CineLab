@@ -37,8 +37,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload vision-components-v1 \
-            "dist/vision-models-win32-x64-v1.zip#vision-models-v1.zip" \
+          cp dist/vision-models-win32-x64-v1.zip dist/vision-models-v1.zip
+          gh release upload vision-components-v1 dist/vision-models-v1.zip \
             --repo "${{ github.repository }}" \
             --clobber
 

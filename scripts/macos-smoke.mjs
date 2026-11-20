@@ -26,10 +26,13 @@ const ffprobe = join(
   resources,
   'app.asar.unpacked/node_modules/ffprobe-static/bin/darwin/arm64/ffprobe'
 )
+const modelSkill = join(resources, 'model-config-skill/SKILL.md')
 
-for (const file of [bin, ffmpeg, ffprobe]) {
+for (const file of [bin, ffmpeg, ffprobe, modelSkill]) {
   if (!existsSync(file)) throw new Error(`missing ${file}`)
 }
+
+console.log('model-config-skill: ok')
 
 console.log(
   'ffmpeg:',
@@ -235,6 +238,7 @@ print('WORKER_OK')`
     const vision = await install('vision-models')
     console.log('vision installed:', vision.path)
     const python = join(depthPath, 'python', 'bin', 'python3')
+
     const worker = execFileSync(
       python,
       [
@@ -244,6 +248,54 @@ print('WORKER_OK')`
       { cwd: vision.path, encoding: 'utf8' }
     )
     console.log('vision worker:', worker.trim())
+
+    const models = execFileSync(
+      python,
+      [
+        '-c',
+        `import sys
+sys.path.insert(0, '.')
+from worker import Vision
+v = Vision('models')
+v.inspyrenet()
+v.lama()
+print('VISION_MODELS_OK')`
+      ],
+      { cwd: vision.path, encoding: 'utf8' }
+    )
+    console.log('vision models:', models.trim())
+
+    const testImage = '/tmp/cinelab-vision-smoke-in.png'
+    const testOutput = '/tmp/cinelab-vision-smoke-out.png'
+    execFileSync(python, [
+      '-c',
+      `import cv2, numpy as np
+cv2.imwrite('${testImage}', np.full((64, 64, 3), 128, np.uint8))`
+    ])
+    const inferred = execFileSync(
+      python,
+      [
+        join(vision.path, 'worker.py'),
+        '--task',
+        'matte-image',
+        '--models',
+        join(vision.path, 'models'),
+        '--input',
+        testImage,
+        '--output',
+        testOutput
+      ],
+      { cwd: vision.path, encoding: 'utf8' }
+    )
+    const lastLine = inferred.trim().split('\n').pop() ?? ''
+    const result = JSON.parse(lastLine)
+    if (result.stage !== 'done') {
+      throw new Error(`vision inference failed: ${lastLine}`)
+    }
+    if (!existsSync(testOutput)) {
+      throw new Error('vision inference produced no output')
+    }
+    console.log('vision inference:', lastLine, 'output:', testOutput)
   }
 
   if (installWhisper) {

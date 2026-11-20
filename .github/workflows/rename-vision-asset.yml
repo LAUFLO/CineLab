@@ -1,0 +1,48 @@
+name: Rename vision asset
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Download old asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download vision-components-v1 \
+            --repo "${{ github.repository }}" \
+            --pattern "vision-models-win32-x64-v1.zip" \
+            --dir dist
+
+      - name: Verify checksum
+        run: |
+          cd dist
+          echo "c00b66f631cb0231eaf286777170662658b7346123ccf16a09f5747e57a1a7f0  vision-models-win32-x64-v1.zip" | sha256sum -c -
+
+      - name: Upload as portable name
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload vision-components-v1 \
+            "dist/vision-models-win32-x64-v1.zip#vision-models-v1.zip" \
+            --repo "${{ github.repository }}" \
+            --clobber
+
+      - name: Verify uploaded asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download vision-components-v1 \
+            --repo "${{ github.repository }}" \
+            --pattern "vision-models-v1.zip" \
+            --dir verify
+          cd verify
+          sha256sum vision-models-v1.zip
+          test "$(stat -c%s vision-models-v1.zip)" = "526828343"
+          echo "asset size ok"

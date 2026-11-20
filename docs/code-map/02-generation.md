@@ -71,7 +71,7 @@
 - `grid.ts` 宫格切分；`stitch.ts` 拼接；
 - `frames.ts` 抽帧；`video.ts`/`video-ops.ts` 视频操作；
 - `depth.ts`/`depth-tasks.ts` 深度捕获；
-- `vision.ts`/`vision-tasks.ts` 视觉任务；
+- `vision.ts`/`vision-tasks.ts` 视觉任务；模型资产是纯 Python 源码加权重，Windows/macOS 共用同一份包，不放平台二进制；字幕烧录字体按平台选择（Windows `Microsoft YaHei`，macOS `PingFang SC`）；
 - `thumbnail.ts`/`proxy.ts` 缩略图与代理；
 - `audio.ts`/`audio-peaks.ts`/`sound-library.ts` 音频；
 - `paths.ts` 媒体路径解析；`ffmpeg.ts` 进程封装。
@@ -133,7 +133,7 @@ Prompt Bar / 节点操作
 | `src/main/engine/start-generation.ts` | 416 |
 | `src/main/media/audio-peaks.ts` | 127 |
 | `src/main/media/audio.ts` | 133 |
-| `src/main/media/concat.ts` | 298 |
+| `src/main/media/concat.ts` | 301 |
 | `src/main/media/depth-tasks.ts` | 98 |
 | `src/main/media/depth.ts` | 236 |
 | `src/main/media/ffmpeg.ts` | 304 |

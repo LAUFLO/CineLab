@@ -7,6 +7,20 @@ describe('normalizePreferences', () => {
     expect(normalizePreferences({})).toEqual(DEFAULT_PREFERENCES)
   })
 
+  it('normalizes saved operation prompts', () => {
+    const preferences = normalizePreferences({
+      operationPrompts: {
+        'relight:top': '  自定义顶光提示词  ',
+        'reverse-prompt:default': '',
+        invalid: 42
+      }
+    })
+
+    expect(preferences.operationPrompts).toEqual({
+      'relight:top': '自定义顶光提示词'
+    })
+  })
+
   it('keeps valid values', () => {
     const preferences = normalizePreferences({
       startup: { openRecentProject: false },

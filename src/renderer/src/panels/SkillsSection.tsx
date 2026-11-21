@@ -447,7 +447,7 @@ export function SkillsSection() {
           <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
             <span>SKILL.md 正文</span>
             <Textarea
-              className="min-h-[120px] w-full resize-y !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] font-mono leading-[1.55] text-fg focus:border-border-strong"
+              className="min-h-[120px] w-full resize-none !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] font-mono leading-[1.55] text-fg focus:border-border-strong"
               value={draft.body}
               rows={10}
               onChange={(event) =>
@@ -712,7 +712,7 @@ export function SkillsSection() {
                 <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
                   <span>SKILL.md 正文</span>
                   <Textarea
-                    className="min-h-[120px] w-full resize-y !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] font-mono leading-[1.55] text-fg focus:border-border-strong"
+                    className="min-h-[120px] w-full resize-none !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] font-mono leading-[1.55] text-fg focus:border-border-strong"
                     value={body}
                     disabled={!selected.editable}
                     rows={14}

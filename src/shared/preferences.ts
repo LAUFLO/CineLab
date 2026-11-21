@@ -57,6 +57,8 @@ export interface Preferences {
     /** 界面缩放百分比 */
     scale: number
   }
+  /** 操作弹窗中保存的提示词覆盖项；每个操作/菜单项只保留一个版本 */
+  operationPrompts: Record<string, string>
   network: {
     proxyMode: ProxyMode
     /** 手动代理地址，例如 http://127.0.0.1:7890 */
@@ -119,6 +121,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   ui: {
     scale: 100
   },
+  operationPrompts: {},
   network: {
     proxyMode: 'direct',
     proxyUrl: '',
@@ -178,6 +181,17 @@ export function normalizePreferences(input: unknown): Preferences {
   const storage = isRecord(raw.storage) ? raw.storage : {}
   const ui = isRecord(raw.ui) ? raw.ui : {}
   const network = isRecord(raw.network) ? raw.network : {}
+  const operationPrompts = isRecord(raw.operationPrompts)
+    ? raw.operationPrompts
+    : {}
+  const prompts: Record<string, string> = {}
+  for (const [key, value] of Object.entries(operationPrompts)) {
+    if (!key || key.length > 200 || typeof value !== 'string') continue
+    const text = value.trim().slice(0, 20000)
+    if (!text) continue
+    prompts[key] = text
+    if (Object.keys(prompts).length >= 200) break
+  }
 
   return {
     version: PREFERENCES_VERSION,
@@ -294,6 +308,7 @@ export function normalizePreferences(input: unknown): Preferences {
         DEFAULT_PREFERENCES.ui.scale
       )
     },
+    operationPrompts: prompts,
     network: {
       proxyMode: readEnum(
         network.proxyMode,

@@ -20,6 +20,8 @@ interface PreferencesState {
   updateStorage: (patch: Partial<Preferences['storage']>) => Promise<void>
   updateUi: (patch: Partial<Preferences['ui']>) => Promise<void>
   updateNetwork: (patch: Partial<Preferences['network']>) => Promise<void>
+  setOperationPrompt: (key: string, prompt: string) => Promise<void>
+  resetOperationPrompt: (key: string) => Promise<void>
   setDefaultModel: (group: CapabilityGroup, key: string | null) => Promise<void>
   toggleSnap: () => Promise<void>
   toggleMinimap: () => Promise<void>
@@ -158,6 +160,26 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => {
         ...current,
         network: { ...current.network, ...patch }
       })
+    },
+
+    setOperationPrompt: async (key, prompt) => {
+      await loaded()
+      const text = prompt.trim()
+      if (!key || !text) return
+      const current = get().preferences
+      await commit({
+        ...current,
+        operationPrompts: { ...current.operationPrompts, [key]: text }
+      })
+    },
+
+    resetOperationPrompt: async (key) => {
+      await loaded()
+      const current = get().preferences
+      if (!(key in current.operationPrompts)) return
+      const next = { ...current.operationPrompts }
+      delete next[key]
+      await commit({ ...current, operationPrompts: next })
     },
 
     setDefaultModel: async (group, key) => {

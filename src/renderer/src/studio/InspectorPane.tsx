@@ -165,7 +165,7 @@ function SubtitleSection({ clip }: { clip: TimelineClip }) {
       <label className={FIELD}>
         <span className={FIELD_LABEL}>内容</span>
         <Textarea
-          className="!min-h-[76px] resize-y !rounded-md !bg-surface-raised !px-2 !py-1.5 !text-xs leading-normal"
+          className="!min-h-[76px] resize-none !rounded-md !bg-surface-raised !px-2 !py-1.5 !text-xs leading-normal"
           rows={4}
           value={content}
           onChange={(event) => setContent(event.target.value)}

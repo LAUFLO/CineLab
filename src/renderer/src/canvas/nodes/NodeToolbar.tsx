@@ -57,7 +57,7 @@ interface NodeToolbarProps {
 }
 
 const SECTION_ORDER: OperationSection[] = ['generate', 'edit', 'video']
-const MAX_PRIMARY = 6
+const MAX_PRIMARY = 7
 const TOOLBAR_BTN =
   '!h-7 gap-[3px] !rounded-md !px-[5px] !text-xs !font-normal'
 const TOOLBAR_MENU_ITEM =
@@ -487,6 +487,41 @@ export function NodeToolbar({
 
     const label = aiDialog.item?.label ?? aiDialog.op.label
     const opId = aiDialog.op.id
+
+    if (opId === 'reverse-prompt') {
+      const source = sourceNode()
+      if (!source) return
+      const targetId = useCanvasStore
+        .getState()
+        .addPendingNodes(
+          'text',
+          source.origin,
+          1,
+          `${source.title} · 提示词`,
+          nodeId
+        )[0]
+      setAiDialog(null)
+      if (!targetId) return
+      showToast('已提交「反推提示词」')
+
+      void useGenerationStore.getState().run({
+        nodeId: targetId,
+        modelKey,
+        prompt,
+        params: { ...defaultParams(model), watermark: false },
+        refs: [
+          {
+            path: current.path,
+            role: 'reference',
+            media: 'image',
+            ...(current.scope ? { scope: current.scope } : {})
+          }
+        ],
+        op: opId
+      })
+      return
+    }
+
     const targetNodeId =
       aiDialog.op.outputTarget === 'new-node'
         ? createOutputNode(aiDialog.op, label)
@@ -1077,7 +1112,18 @@ export function NodeToolbar({
         initialPrompt={aiDialog?.prompt ?? ''}
         busy={running}
         masked={Boolean(aiDialog?.mask)}
-        createsNode={aiDialog?.op.outputTarget === 'new-node'}
+        createsNode={
+          aiDialog?.op.outputTarget === 'new-node' ||
+          aiDialog?.op.id === 'reverse-prompt'
+        }
+        modelKind={
+          aiDialog?.op.id === 'reverse-prompt' ? 'text' : 'image'
+        }
+        operationKey={
+          aiDialog
+            ? `${aiDialog.op.id}:${aiDialog.item?.id ?? 'default'}`
+            : undefined
+        }
         onClose={() => setAiDialog(null)}
         onConfirm={(prompt, key, model) =>
           handleAiConfirm(prompt, key, model, aiDialog?.mask)

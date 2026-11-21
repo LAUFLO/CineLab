@@ -74,7 +74,7 @@ export function TemplateDialog({
       <label className="mb-[14px] flex flex-col gap-1.5">
         <span className="text-xs text-fg-muted">提示词</span>
         <Textarea
-          className="!min-h-[76px] resize-y !rounded-card !bg-surface-hover !px-2.5 !py-2 !text-[13px]"
+          className="!min-h-[76px] resize-none !rounded-card !bg-surface-hover !px-2.5 !py-2 !text-[13px]"
           rows={6}
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}

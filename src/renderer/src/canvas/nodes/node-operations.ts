@@ -144,6 +144,9 @@ const PROMPT_RELIGHT: Record<string, string> = {
     '改为蓝调时刻光线，冷蓝色环境光与少量暖色实用光形成对比，氛围安静克制，电影感强。'
 }
 
+const PROMPT_REVERSE =
+  '分析这张图的画面逻辑，不单是描述内容，而是从主体设定、人物或物体动作、镜头视角、构图方式、光线方向、色彩体系、材质细节、背景氛围、画面风格九个维度进行拆解。基于拆解结果，反推出一段可以直接用于生成相似画面的完整中文提示词，并补充推荐比例、清晰度、风格词和避坑词。'
+
 const PROMPT_ANGLE_PREFIX =
   '保持同一角色、服装、发型、场景、光线和画风不变，只改变机位：'
 
@@ -282,6 +285,7 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '九宫格',
     icon: 'grid',
     kinds: ['image'],
+    defaultPrimary: true,
     implemented: true,
     section: 'generate',
     hint: '多机位 / 剧情推演',
@@ -363,6 +367,7 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '打光',
     icon: 'sun',
     kinds: ['image'],
+    defaultPrimary: true,
     implemented: true,
     section: 'edit',
     hint: '预设光位',
@@ -396,6 +401,7 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '扩图',
     icon: 'expand',
     kinds: ['image'],
+    defaultPrimary: true,
     implemented: true,
     section: 'edit',
     prompt: PROMPT_OUTPAINT,
@@ -414,6 +420,7 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     label: '抠图',
     icon: 'image',
     kinds: ['image'],
+    defaultPrimary: true,
     implemented: true,
     section: 'edit',
     prompt: PROMPT_CUTOUT
@@ -463,6 +470,17 @@ export const NODE_OPERATIONS: NodeOperation[] = [
       label: '需要安装视觉组件（批次 2）',
       panel: 'components'
     }
+  },
+  {
+    id: 'reverse-prompt',
+    label: '反推提示词',
+    icon: 'text',
+    kinds: ['image'],
+    defaultPrimary: true,
+    implemented: true,
+    section: 'generate',
+    prompt: PROMPT_REVERSE,
+    hint: '生成文本节点'
   },
 
   // ---------- 视频：更多 ----------

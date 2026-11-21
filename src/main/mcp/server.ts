@@ -13,6 +13,7 @@ import {
 } from './config'
 import { registerCineLabTools } from './tools'
 import { registerCineLabAppTools } from './app-tools'
+import { registerCineLabWriteTools } from './write-tools'
 
 interface McpSession {
   server: McpServer
@@ -41,6 +42,7 @@ async function createSession(): Promise<McpSession> {
   })
   registerCineLabTools(server)
   registerCineLabAppTools(server)
+  registerCineLabWriteTools(server)
 
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),

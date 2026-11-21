@@ -38,6 +38,7 @@
 | 06 | CineBot 工具、生成提案、会话、技能 | `src/main/agent/` |
 | 06 | 本地可信适配器 MCP server（HTTP + stdio）、认证与工具 | `src/main/mcp/`、`docs/mcp.md` |
 | 06 | MCP 项目/画布/节点/模型只读工具 | `src/main/mcp/app-tools.ts`、`src/shared/canvas-summary.ts` |
+| 06 | MCP 画布写工具与生成提交（应用内确认） | `src/main/mcp/write-tools.ts`、`src/renderer/src/mcp/commandBridge.ts` |
 | 07 | IPC、preload、设置、素材库、安全、更新 | `src/main/ipc/`、`src/preload/` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
 

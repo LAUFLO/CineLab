@@ -642,7 +642,9 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
         title,
         status: 'idle',
         templates: meta.templates,
-        ...(kind === 'text' ? { text: '' } : {})
+        ...(kind === 'text'
+          ? { text: String(call.args.text ?? '') }
+          : {})
       },
       style: { width: meta.width, height: meta.height + TITLE_HEIGHT }
     }
@@ -1084,6 +1086,16 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
   }
 
   return { ok: false, error: `未实现的工具：${call.name}` }
+}
+
+/** 供 MCP 写命令等非 CineBot 入口复用画布工具执行器 */
+export async function executeAgentTool(call: AgentToolCallRequest): Promise<{
+  ok: boolean
+  result?: unknown
+  error?: string
+  change?: AgentTurnChange
+}> {
+  return executeTool(call)
 }
 
 export function initAgentCanvasBridge(): () => void {

@@ -14,6 +14,7 @@ import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
 import type { Preferences } from '../shared/preferences'
 import type { LocalAdapterStatus } from '../shared/local-adapter'
+import type { McpWriteCommand, McpWriteResult } from '../shared/mcp-command'
 import type { TimelineDoc } from '../shared/timeline-schema'
 import type { DirectorStageDoc } from '../shared/stage-schema'
 import type { StageExportProgress } from '../shared/ipc-contract'
@@ -152,6 +153,19 @@ const api: CineApi = {
       return () =>
         ipcRenderer.removeListener('local-adapters:changed', listener)
     }
+  },
+  mcp: {
+    onCommand: (callback: (command: McpWriteCommand) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        command: McpWriteCommand
+      ): void => callback(command)
+
+      ipcRenderer.on('mcp:command', listener)
+      return () => ipcRenderer.removeListener('mcp:command', listener)
+    },
+    sendResult: (result: McpWriteResult) =>
+      ipcRenderer.send('mcp:command-result', result)
   },
   generate: {
     run: (request: GenerateRequest) => ipcRenderer.invoke('generate:run', request),

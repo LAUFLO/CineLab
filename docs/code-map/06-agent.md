@@ -26,7 +26,7 @@ CineBot 会话、工具注册与执行、生成提案、技能、能力审计。
 
 ## MCP server
 
-外部 Agent 通过 `src/main/mcp/` 连接 CineLab：内置 Streamable HTTP server（`127.0.0.1` + Bearer token），以及 stdio 桥接进程。当前暴露 `local_adapter_*`、`project_list`、`project_current`、`canvas_get`、`node_list`、`model_list`；项目/画布/模型均为只读，后续按模块扩展生成、时间线和导出。配置与安全说明见 `docs/mcp.md`。
+外部 Agent 通过 `src/main/mcp/` 连接 CineLab：内置 Streamable HTTP server（`127.0.0.1` + Bearer token），以及 stdio 桥接进程。当前暴露 `local_adapter_*`、项目/画布/节点/模型只读工具，以及节点创建/修改/移动/删除/连线和提交生成。写操作执行前需要应用内确认；配置与安全说明见 `docs/mcp.md`。
 
 ## 工具分组
 
@@ -197,12 +197,13 @@ AgentPanel
 | `src/main/agent/tools/timeline.ts` | 930 |
 | `src/main/mcp/app-tools.ts` | 221 |
 | `src/main/mcp/config.ts` | 54 |
-| `src/main/mcp/server.ts` | 188 |
+| `src/main/mcp/server.ts` | 190 |
 | `src/main/mcp/stdio-bridge.ts` | 104 |
 | `src/main/mcp/tools.ts` | 75 |
+| `src/main/mcp/write-tools.ts` | 285 |
 | `src/renderer/src/agent/AgentPanel.tsx` | 1248 |
 | `src/renderer/src/agent/agentStore.ts` | 1100 |
-| `src/renderer/src/agent/canvasBridge.ts` | 1113 |
+| `src/renderer/src/agent/canvasBridge.ts` | 1125 |
 | `src/renderer/src/agent/filmBridge.ts` | 747 |
 | `src/renderer/src/agent/panel/ContextRing.tsx` | 55 |
 | `src/renderer/src/agent/panel/MessageActions.tsx` | 31 |
@@ -212,10 +213,12 @@ AgentPanel
 | `src/renderer/src/agent/panel/utils.tsx` | 146 |
 | `src/renderer/src/agent/stageBridge.ts` | 872 |
 | `src/renderer/src/agent/timelineBridge.ts` | 1078 |
+| `src/renderer/src/mcp/commandBridge.ts` | 97 |
 | `src/shared/agent-proposal.ts` | 140 |
 | `src/shared/agent-tools.ts` | 59 |
 | `src/shared/agent.ts` | 264 |
 | `src/shared/capabilities.ts` | 321 |
+| `src/shared/mcp-command.ts` | 14 |
 | `src/shared/skills.ts` | 168 |
 <!-- AUTO:files:end -->
 
@@ -258,9 +261,10 @@ AgentPanel
 | `src/main/mcp/config.ts` | `McpStdioConfig`、`McpServerConfig`、`mcpConfigPath`、`createMcpToken`、`readMcpConfig`、`writeMcpConfig`、`removeMcpConfigSync` |
 | `src/main/mcp/server.ts` | `startMcpServer`、`stopMcpServer`、`mcpStatus` |
 | `src/main/mcp/tools.ts` | `registerCineLabTools` |
+| `src/main/mcp/write-tools.ts` | `registerMcpCommandIpc`、`registerCineLabWriteTools` |
 | `src/renderer/src/agent/AgentPanel.tsx` | `AgentPanel` |
 | `src/renderer/src/agent/agentStore.ts` | `AgentMessage`、`AgentActivity`、`agentTurnChangeCount`、`AGENT_CONTEXT_BUDGET_TOKENS`、`AGENT_KEEP_RECENT_MESSAGES`、`AgentContextStats`、`agentContextStats`、`useAgentStore` |
-| `src/renderer/src/agent/canvasBridge.ts` | `initAgentCanvasBridge` |
+| `src/renderer/src/agent/canvasBridge.ts` | `executeAgentTool`、`initAgentCanvasBridge` |
 | `src/renderer/src/agent/filmBridge.ts` | `FilmToolResult`、`executeFilmTool` |
 | `src/renderer/src/agent/panel/ContextRing.tsx` | `ContextRing` |
 | `src/renderer/src/agent/panel/MessageActions.tsx` | `MessageActions` |
@@ -270,9 +274,11 @@ AgentPanel
 | `src/renderer/src/agent/panel/utils.tsx` | `toolLabel`、`relativeTime`、`modelNameOf`、`MentionItem`、`renderInline`、`RenderItem`、`buildRenderItems` |
 | `src/renderer/src/agent/stageBridge.ts` | `StageToolResult`、`executeStageTool` |
 | `src/renderer/src/agent/timelineBridge.ts` | `TimelineToolResult`、`executeTimelineTool` |
+| `src/renderer/src/mcp/commandBridge.ts` | `initMcpCommandBridge` |
 | `src/shared/agent-proposal.ts` | `PROPOSAL_TTL_MS`、`proposalExpiresAt`、`isProposalExpired`、`NormalizedParams`、`normalizeGenerationParams`、`proposalCount`、`proposalStatusLabel` |
 | `src/shared/agent-tools.ts` | `AgentToolScope`、`AgentToolDefinition`、`filterAgentTools`、`toModelTools` |
 | `src/shared/agent.ts` | `AgentProfileId`、`AgentPermissionMode`、`AgentScope`、`AgentAttachment`、`AgentReference`、`AgentChatRequest`、`AgentModelInfo`、`AgentGenerationModels`、`AgentSessionInfo`、`AgentUsage`、`AgentProposalStatus`、`AgentProposal`、`AgentProposalDraft`、`AgentToolCall`、`AgentToolResult`、`AgentTurnChange`、`AgentTurnStatus`、`AgentTurn`、`AgentEvent`、`AgentSessionMessage`、`AgentSessionSnapshot`、`AgentToolCallRequest`、`AgentToolResultInput`、`AgentConfirmInput` …（共 26 个） |
 | `src/shared/capabilities.ts` | `ModelInputFeature`、`ModelOutputFeature`、`AdapterCapability`、`CapabilityGapKind`、`CapabilityGap`、`EffectiveCapabilities`、`ADAPTER_CAPABILITIES`、`resolveAdapter`、`contractFor`、`normalizeFeatureSets`、`effectiveCapabilities` |
+| `src/shared/mcp-command.ts` | `McpWriteCommand`、`McpWriteResult` |
 | `src/shared/skills.ts` | `SkillScope`、`SkillFrontmatter`、`SkillSummary`、`SkillAdminEntry`、`SkillFileEntry`、`SkillFileContent`、`SkillWriteInput`、`SkillOverrideInput`、`SkillUploadFolder`、`SkillUploadResult`、`SkillCloneInput`、`SkillReadResult`、`SKILL_NAME_PATTERN`、`MAX_SKILL_DESCRIPTION_LENGTH`、`MAX_SKILL_BODY_BYTES`、`MAX_SKILL_REFERENCE_BYTES`、`MAX_SKILL_PATH_LENGTH`、`MAX_SKILL_UPLOAD_FILES`、`MAX_SKILL_UPLOAD_BYTES`、`parseSkillMarkdown`、`normalizeSkillPath` |
 <!-- AUTO:exports:end -->

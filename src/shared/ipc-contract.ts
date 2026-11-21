@@ -22,6 +22,7 @@ import type {
 import type { ComponentEvent, ComponentKind, ComponentStatus } from './components'
 import type { Preferences } from './preferences'
 import type { LocalAdapterStatus } from './local-adapter'
+import type { McpWriteCommand, McpWriteResult } from './mcp-command'
 import type {
   FilmStudy,
   FilmStudyAutoRequest,
@@ -584,6 +585,11 @@ export interface LocalAdapterApi {
   onChanged(callback: (statuses: LocalAdapterStatus[]) => void): () => void
 }
 
+export interface McpApi {
+  onCommand(callback: (command: McpWriteCommand) => void): () => void
+  sendResult(result: McpWriteResult): void
+}
+
 export interface CineApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -600,6 +606,7 @@ export interface CineApi {
   project: ProjectApi
   settings: SettingsApi
   localAdapters: LocalAdapterApi
+  mcp: McpApi
   generate: GenerateApi
   library: LibraryApi
   clipboard: ClipboardApi

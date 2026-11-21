@@ -101,6 +101,7 @@ Prompt Bar / 节点操作
 | 参考输入 | 已实现 | `reference-inputs.ts`、`model-inputs.test.ts` |
 | 首尾帧载荷与校验 | 已实现；Agnes 首帧已真实复测 | `main/providers/media.ts`、`reference-inputs.ts`、`minimax.test.ts` |
 | 协议族契约与 golden 请求体 | 已实现 | `shared/model-contracts.ts`、`golden-bodies.test.ts`、`capability-audit.test.ts` |
+| 本地适配器 registry / utilityProcess | 已实现（S2a） | `main/local-adapters/`、`shared/local-adapter.ts` |
 | 媒体处理 | 已实现 | `main/media/`、`concat.test.ts` |
 | 错误文案 | 已实现 | `generation-error.test.ts` |
 
@@ -113,6 +114,8 @@ Prompt Bar / 节点操作
 - MiniMax H3 `role`、Agnes 尾帧和 http-template 新变量仍需真实 Key 复测（`REAL-API-VERIFY` gate）。Agnes 首帧已用真实 Key 生成 5.18 秒视频，首帧与输入图 SSIM 0.889。
 - 官方模型保存时会校验协议族契约（字段、角色、模式），缺口会阻止保存；用户自定义模型只记录警告。
 - Kling、火山和旧版 MiniMax 的尺寸/体积限制为通用推断（source confidence 为 medium），需按官方文档复核。
+- 本地适配器当前只支持 `type: code`；`config` / `template`、设置页管理和 MCP 控制分别留待后续。
+- 打包后的 esbuild 二进制尚未在安装包中验证。
 - 视频操作对模型支持程度不一，`OperationSupport` 只是声明，实际仍可能被供应商拒绝。
 
 ## 常见改动入口
@@ -136,7 +139,13 @@ Prompt Bar / 节点操作
 | `src/main/assets/ingest.ts` | 155 |
 | `src/main/engine/generation-error.ts` | 55 |
 | `src/main/engine/queue.ts` | 87 |
-| `src/main/engine/start-generation.ts` | 420 |
+| `src/main/engine/start-generation.ts` | 437 |
+| `src/main/local-adapters/build.ts` | 64 |
+| `src/main/local-adapters/host-process.ts` | 166 |
+| `src/main/local-adapters/host.ts` | 256 |
+| `src/main/local-adapters/manifest.ts` | 175 |
+| `src/main/local-adapters/registry.ts` | 251 |
+| `src/main/local-adapters/runtime.ts` | 88 |
 | `src/main/media/audio-peaks.ts` | 127 |
 | `src/main/media/audio.ts` | 133 |
 | `src/main/media/concat.ts` | 298 |
@@ -176,6 +185,7 @@ Prompt Bar / 节点操作
 | `src/shared/filters.ts` | 112 |
 | `src/shared/generation.ts` | 141 |
 | `src/shared/http-template.ts` | 55 |
+| `src/shared/local-adapter.ts` | 13 |
 | `src/shared/media.ts` | 233 |
 | `src/shared/model-contracts.ts` | 395 |
 | `src/shared/model-modes.ts` | 278 |
@@ -183,8 +193,8 @@ Prompt Bar / 节点操作
 | `src/shared/param-presets.ts` | 304 |
 | `src/shared/protocol-templates.ts` | 1341 |
 | `src/shared/provider-presets.ts` | 313 |
-| `src/shared/provider-schema.ts` | 1312 |
-| `src/shared/reference-inputs.ts` | 143 |
+| `src/shared/provider-schema.ts` | 1314 |
+| `src/shared/reference-inputs.ts` | 146 |
 <!-- AUTO:files:end -->
 
 <!-- AUTO:exports:start -->
@@ -194,6 +204,11 @@ Prompt Bar / 节点操作
 | `src/main/engine/generation-error.ts` | `formatGenerationError` |
 | `src/main/engine/queue.ts` | `QueueJob`、`generationQueue` |
 | `src/main/engine/start-generation.ts` | `startGeneration` |
+| `src/main/local-adapters/build.ts` | `LocalAdapterBuildResult`、`resolveLocalAdapterEntry`、`buildLocalAdapter` |
+| `src/main/local-adapters/host.ts` | `LocalAdapterOutput`、`LocalAdapterGenerateOptions`、`LocalAdapterHost` |
+| `src/main/local-adapters/manifest.ts` | `LocalAdapterType`、`LocalAdapterManifest`、`LocalAdapterProviderConfig`、`LocalAdapterData`、`parseManifest`、`parseModelsFile`、`readLocalAdapter` |
+| `src/main/local-adapters/registry.ts` | `LocalProviderRuntime`、`localAdaptersDir`、`listLocalAdapterStatuses`、`localAdapterProviders`、`localProviderRuntime`、`localAdapterRecord`、`startLocalAdapterRegistry`、`stopLocalAdapterRegistry`、`reloadLocalAdapter` |
+| `src/main/local-adapters/runtime.ts` | `generateWithLocalAdapter` |
 | `src/main/media/audio-peaks.ts` | `computeAudioPeaks` |
 | `src/main/media/audio.ts` | `buildAtempoFilter`、`trimAudio`、`changeAudioSpeed` |
 | `src/main/media/concat.ts` | `ConcatResolution`、`ConcatQuality`、`ConcatOptions`、`concatVideoFiles`、`concatVideos` |
@@ -233,6 +248,7 @@ Prompt Bar / 节点操作
 | `src/shared/filters.ts` | `DEFAULT_FILTER`、`FilterPreset`、`FILTER_PRESETS`、`canvasFilterString`、`hasActiveFilter` |
 | `src/shared/generation.ts` | `OutputKind`、`ReferenceMedia`、`ReferenceRole`、`VideoRange`、`VideoOperationOptions`、`ReferenceInput`、`LayerBounds`、`LayerBox`、`AssetLayer`、`TextRecognitionStyle`、`TextRecognitionRun`、`TextRecognitionLine`、`TextRecognition`、`GeneratedAsset`、`GenerateRequest`、`GenerationEvent`、`GenerateHandle` |
 | `src/shared/http-template.ts` | `HttpTemplateMode`、`HttpTemplateAuth`、`HttpTemplateSubmit`、`HttpTemplatePoll`、`HttpTemplate`、`LEGACY_KEYFRAME_VARIABLE_WARNING`、`hasLegacyKeyframeVariables` |
+| `src/shared/local-adapter.ts` | `LocalAdapterStatusKind`、`LocalAdapterStatus` |
 | `src/shared/media.ts` | `AudioPeaksRequest`、`GridSplitRequest`、`GridSplitResult`、`StitchRequest`、`StitchResult`、`FrameMode`、`ExtractFrameRequest`、`ExtractFrameResult`、`SplitAvRequest`、`SplitAvResult`、`CropVideoRequest`、`CropVideoResult`、`AudioTrimRequest`、`AudioTrimResult`、`AudioSpeedRequest`、`AudioSpeedResult`、`MediaProbe`、`SubtitleRect`、`CropImageRequest`、`CropImageResult`、`CropImageRectRequest`、`RemoveSubtitlesRequest`、`RemoveSubtitlesResult`、`TrimVideoRequest` …（共 37 个） |
 | `src/shared/model-contracts.ts` | `ContractTransport`、`ModelContractFields`、`ModelContractTransports`、`ModelContractRoles`、`ModelContractLimits`、`ModelContractSource`、`ModelContract`、`ContractGap`、`AGNES_VIDEO_CONTRACT`、`KLING_VIDEO_CONTRACT`、`MINIMAX_VIDEO_CONTRACT`、`MINIMAX_LEGACY_CONTRACT`、`VOLCENGINE_VIDEO_CONTRACT`、`SORA_VIDEO_CONTRACT`、`OPENAI_COMPAT_CONTRACT`、`HTTP_TEMPLATE_CONTRACT`、`OFFICIAL_CONTRACTS`、`contractForAdapter`、`isOfficialModel`、`contractGapsForAdapter` |
 | `src/shared/model-modes.ts` | `ModelModeId`、`MediaKind`、`SlotRole`、`InputSlot`、`OperationSupport`、`ModelModeConfig`、`ModelModeDefinition`、`MODEL_MODE_DEFINITIONS`、`MODEL_MODE_LABEL`、`OPERATION_SUPPORT_LABEL`、`isModelModeId`、`getModelModeDefinition`、`normalizeModeConfig`、`normalizeModelModes`、`modeMediaKinds`、`modeSupportsOperation`、`modeOperationIds`、`highestOperationSupport` |

@@ -123,6 +123,8 @@ export interface ModelDef {
   providerType?: ProviderType
   /** 生成执行器，缺省按 remoteModel 推断 */
   adapter?: string
+  /** 本地适配器 ID；adapter 为 local:<id> 时由本地宿主执行 */
+  localAdapter?: string
   /** http-template 执行器的请求/轮询模板 */
   template?: HttpTemplate
   /** 引用自哪个内置预设，用于恢复预设默认值 */

@@ -227,7 +227,6 @@ function adapterCapabilityFor(model: ModelDef): AdapterCapability {
  */
 export function effectiveCapabilities(model: ModelDef): EffectiveCapabilities {
   const adapter = resolveAdapter(model)
-  const base = adapterCapabilityFor(model)
 
   const declaredMedia =
     model.inputs && model.inputs.length > 0
@@ -235,6 +234,21 @@ export function effectiveCapabilities(model: ModelDef): EffectiveCapabilities {
       : inferModelInputs(model)
   const declaredModes = modelModeIds(model)
   const declaredFeatures = normalizeFeatureSets(model)
+
+  // 本地适配器完全信任：直接采用模型声明，不受官方能力白名单过滤。
+  if (adapter.startsWith('local:')) {
+    return {
+      adapter,
+      media: declaredMedia,
+      modes: declaredModes,
+      inputFeatures: declaredFeatures.input,
+      outputFeatures: declaredFeatures.output,
+      contract: null,
+      gaps: []
+    }
+  }
+
+  const base = adapterCapabilityFor(model)
   const contract = contractForAdapter(adapter)
 
   const gaps: CapabilityGap[] = [

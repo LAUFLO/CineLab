@@ -13,6 +13,7 @@ import type { DepthTaskEvent } from '../shared/media'
 import type { UpdateStatus } from '../shared/update'
 import type { AssetRef } from '../shared/asset-schema'
 import type { Preferences } from '../shared/preferences'
+import type { LocalAdapterStatus } from '../shared/local-adapter'
 import type { TimelineDoc } from '../shared/timeline-schema'
 import type { DirectorStageDoc } from '../shared/stage-schema'
 import type { StageExportProgress } from '../shared/ipc-contract'
@@ -135,6 +136,21 @@ const api: CineApi = {
       const listener = (): void => callback()
       ipcRenderer.on('settings:models-changed', listener)
       return () => ipcRenderer.removeListener('settings:models-changed', listener)
+    }
+  },
+  localAdapters: {
+    list: () => ipcRenderer.invoke('local-adapters:list'),
+    reload: (id: string) => ipcRenderer.invoke('local-adapters:reload', id),
+    openDir: () => ipcRenderer.invoke('local-adapters:open-dir'),
+    onChanged: (callback: (statuses: LocalAdapterStatus[]) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: LocalAdapterStatus[]
+      ): void => callback(payload)
+
+      ipcRenderer.on('local-adapters:changed', listener)
+      return () =>
+        ipcRenderer.removeListener('local-adapters:changed', listener)
     }
   },
   generate: {

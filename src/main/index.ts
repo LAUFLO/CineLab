@@ -10,6 +10,10 @@ import { reportCapabilityGaps } from './settings/capability-report'
 import { getPreferences } from './settings/preferences'
 import { applyRuntimePreferences } from './settings/apply'
 import { startModelsWatcher } from './settings/models-watch'
+import {
+  startLocalAdapterRegistry,
+  stopLocalAdapterRegistry
+} from './local-adapters/registry'
 import { log, setupLogging } from './logger'
 import { appendFileSync } from 'node:fs'
 
@@ -134,6 +138,7 @@ if (!hasLock) {
     }
 
     startModelsWatcher()
+    void startLocalAdapterRegistry()
 
     registerAssetProtocol()
     diagLog('registerAssetProtocol done')
@@ -185,6 +190,7 @@ if (!hasLock) {
   })
 
   app.on('before-quit', () => {
+    stopLocalAdapterRegistry()
     log.info('app quitting')
   })
 }

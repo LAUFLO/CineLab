@@ -100,7 +100,10 @@ export function referenceInputErrors(
       errors.push('首尾帧模式不支持参考音频，请切换到全能参考模式')
     } else if (hasSourceVideo && hasVideoOperation) {
       errors.push('视频编辑模式不支持参考音频')
-    } else if (capabilities.adapter !== 'agnes-video') {
+    } else if (
+      capabilities.adapter !== 'agnes-video' &&
+      !capabilities.adapter.startsWith('local:')
+    ) {
       errors.push('当前视频适配器暂不支持参考音频')
     }
   }

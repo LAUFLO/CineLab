@@ -206,7 +206,7 @@ AgentPanel
 | `src/shared/agent-proposal.ts` | 140 |
 | `src/shared/agent-tools.ts` | 59 |
 | `src/shared/agent.ts` | 264 |
-| `src/shared/capabilities.ts` | 307 |
+| `src/shared/capabilities.ts` | 321 |
 | `src/shared/skills.ts` | 168 |
 <!-- AUTO:files:end -->
 

@@ -23,6 +23,10 @@ import { mergeHeaders } from '../providers/headers'
 import { httpFetch } from '../providers/http'
 import { log } from '../logger'
 import {
+  localAdapterProviders,
+  localProviderRuntime
+} from '../local-adapters/registry'
+import {
   enqueueModelsWrite,
   loadModelsConfig,
   removeModelsProvider,
@@ -235,9 +239,11 @@ export async function listProviders(): Promise<ProviderConfig[]> {
   await ensureMigrated()
   const [config, raw] = await Promise.all([loadModelsConfig(), readRawSettings()])
 
-  return config.providers.map((provider) =>
+  const providers = config.providers.map((provider) =>
     toModelsProvider(provider, raw.providerKeys[provider.id])
   )
+
+  return [...providers, ...localAdapterProviders()]
 }
 
 export interface ResolvedProvider {
@@ -250,6 +256,19 @@ export interface ResolvedProvider {
 }
 
 export async function resolveProvider(id: string): Promise<ResolvedProvider | null> {
+  if (id.startsWith('local:')) {
+    const local = localProviderRuntime(id)
+    if (!local) return null
+    return {
+      type: 'openai-compat',
+      baseUrl: local.baseUrl,
+      ...(local.headers ? { headers: local.headers } : {}),
+      apiKey: local.apiKey,
+      secretKey: '',
+      models: local.models
+    }
+  }
+
   await ensureMigrated()
   const [config, raw] = await Promise.all([loadModelsConfig(), readRawSettings()])
   const provider = config.providers.find((item) => item.id === id)

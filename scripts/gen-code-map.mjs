@@ -35,7 +35,13 @@ const MODULES = [
     id: '02',
     name: '生成与模型',
     file: 'docs/code-map/02-generation.md',
-    dirs: ['src/main/providers', 'src/main/engine', 'src/main/media', 'src/main/assets'],
+    dirs: [
+      'src/main/providers',
+      'src/main/engine',
+      'src/main/media',
+      'src/main/assets',
+      'src/main/local-adapters'
+    ],
     files: [
       'src/renderer/src/stores/generation.ts',
       'src/renderer/src/stores/generation-history.ts',
@@ -51,7 +57,8 @@ const MODULES = [
       'src/shared/media.ts',
       'src/shared/protocol-templates.ts',
       'src/shared/http-template.ts',
-      'src/shared/model-contracts.ts'
+      'src/shared/model-contracts.ts',
+      'src/shared/local-adapter.ts'
     ]
   },
   {

@@ -37,7 +37,7 @@
 | [previs-adaptation-plan.md](previs-adaptation-plan.md) | Previs 语义镜头、程序化世界与场景图白膜，M1–M5 已完成 |
 | [film-study-rebuild-plan.md](film-study-rebuild-plan.md) | 逐帧拉片重构：拉片为画布服务、删除拉片室、image 首尾帧 + 文本节点、复刻建图与手动生成 |
 | [stage-previs-upgrade-plan.md](stage-previs-upgrade-plan.md) | 导演台整片/每镜预演、重叠优先级、交付物、光照预设与人物动作改造，已实施 |
-| [video-keyframe-payload-plan.md](video-keyframe-payload-plan.md) | 视频首尾帧媒体传输：data URL / base64 / 公网 URL 的统一方案 |
+| [model-adapter-plan.md](model-adapter-plan.md) | 模型适配体系：契约、媒体载荷、本地适配器、Agent 接入与首尾帧修复 |
 
 ## 3. 代码地图
 

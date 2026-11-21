@@ -172,7 +172,7 @@ Prompt Bar / 节点操作
 | `src/shared/media.ts` | 233 |
 | `src/shared/model-modes.ts` | 278 |
 | `src/shared/param-constraints.ts` | 107 |
-| `src/shared/param-presets.ts` | 303 |
+| `src/shared/param-presets.ts` | 304 |
 | `src/shared/protocol-templates.ts` | 1341 |
 | `src/shared/provider-presets.ts` | 313 |
 | `src/shared/provider-schema.ts` | 1312 |

@@ -137,7 +137,7 @@ export function TopBar() {
         <div
           className="pointer-events-auto ml-1 flex items-center gap-1 pt-4 [-webkit-app-region:no-drag] [[data-platform='darwin']_&]:pl-[68px]"
         >
-          <div className="relative flex h-10 items-center rounded-panel border border-border bg-surface px-1.5">
+          <div className="relative flex h-10 items-center rounded-card border border-border bg-surface px-1.5 py-1 shadow-float">
             <Button
               type="button"
               variant="ghost"

@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeSkillPath, parseSkillMarkdown } from '../skills'
+import {
+  isDefaultHiddenBuiltinSkill,
+  normalizeSkillPath,
+  parseSkillMarkdown
+} from '../skills'
+
+describe('default hidden builtin skills', () => {
+  it('hides canvas-basics only when it is builtin', () => {
+    expect(
+      isDefaultHiddenBuiltinSkill({ scope: 'builtin', name: 'canvas-basics' })
+    ).toBe(true)
+    expect(
+      isDefaultHiddenBuiltinSkill({ scope: 'global', name: 'canvas-basics' })
+    ).toBe(false)
+    expect(
+      isDefaultHiddenBuiltinSkill({ scope: 'builtin', name: 'other-skill' })
+    ).toBe(false)
+  })
+})
 
 describe('skill frontmatter', () => {
   it('parses a valid SKILL.md', () => {

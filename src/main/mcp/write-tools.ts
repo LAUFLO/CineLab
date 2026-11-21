@@ -51,7 +51,8 @@ function appWindow(): BrowserWindow | null {
 
 function sendCommand(
   tool: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  timeoutMs = 30_000
 ): Promise<McpWriteResult> {
   const win = appWindow()
   if (!win) {
@@ -70,7 +71,7 @@ function sendCommand(
     const timer = setTimeout(() => {
       pending.delete(id)
       reject(new Error('渲染进程响应超时'))
-    }, 30_000)
+    }, timeoutMs)
 
     pending.set(id, { resolve, timer })
     win.webContents.send('mcp:command', command)
@@ -104,13 +105,14 @@ async function runWrite(
   tool: string,
   summary: string,
   args: Record<string, unknown>,
-  destructive = false
+  destructive = false,
+  timeoutMs = 30_000
 ): Promise<CallToolResult> {
   if (!(await confirm(summary, args, destructive))) {
     return result({ cancelled: true })
   }
 
-  const commandResult = await sendCommand(tool, args)
+  const commandResult = await sendCommand(tool, args, timeoutMs)
   if (!commandResult.ok) {
     return errorResult(commandResult.error ?? '执行失败')
   }
@@ -490,6 +492,27 @@ export function registerCineLabWriteTools(server: McpServer): void {
           type,
           ...(durationMs !== undefined ? { durationMs } : {})
         }
+      )
+  )
+
+  server.registerTool(
+    'timeline_export',
+    {
+      title: '导出时间线',
+      description:
+        '把当前剪辑室时间线导出为视频文件。导出可能耗时，执行前会弹出确认框。',
+      inputSchema: {
+        codec: z.enum(['h264', 'hevc', 'av1']).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ codec }) =>
+      runWrite(
+        'timeline_export',
+        `导出时间线（${codec ?? 'h264'}）`,
+        { codec: codec ?? 'h264' },
+        false,
+        10 * 60_000
       )
   )
 }

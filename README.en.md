@@ -100,16 +100,22 @@ The canvas is built around an infinite, node-based workflow, with an emphasis on
 - Configuration lives in a local `models.json` that you can back up, migrate and version
 - Capability consistency checks keep declarations aligned with what adapters actually execute, and unsupported inputs fail at the generation entry
 
+### MCP and local adapters
+
+- Built-in MCP server over HTTP and stdio, covering the app, canvas, Clip Studio, Director Stage and frame-by-frame film study
+- Read-only and write tools are declared separately; writes still go through confirmations and turn transactions
+- Local adapters run in a separate utilityProcess with health checks, same-name model overrides and `http-template` extensions
+
 ## Download and install
 
 Download the latest release from [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest):
 
-Current version: **v0.4.1**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
+Current version: **v0.4.2**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
 
 | Platform | Recommended file | Requirements |
 |---|---|---|
-| Windows | `CineLab-0.4.1-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.4.1-arm64.dmg` | macOS 12+, Apple Silicon |
+| Windows | `CineLab-0.4.2-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.4.2-arm64.dmg` | macOS 12+, Apple Silicon |
 
 ### Windows
 

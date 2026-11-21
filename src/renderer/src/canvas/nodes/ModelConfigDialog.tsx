@@ -161,6 +161,10 @@ function chipSummary(def: ParamDef): string {
 /** 时长统一用滑条：旧的固定秒数下拉自动转成数值范围 */
 function normalizeParam(def: ParamDef): ParamRow {
   const row = cloneDef(def)
+  // 旧配置里的默认标签，统一为更明确的「最大输出 token」
+  if (row.key === 'max_tokens' && row.label === '最大 token') {
+    row.label = '最大输出 token'
+  }
   if (row.key !== 'duration' || row.type !== 'select') return row
 
   const values = (row.options ?? [])

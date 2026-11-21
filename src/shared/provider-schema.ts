@@ -624,7 +624,7 @@ const RAW_MODEL_PRESETS: ModelDef[] = [
     inputs: ['text'],
     params: [
       { key: 'temperature', label: '温度', type: 'number', defaultValue: 0.7, min: 0, max: 2 },
-      { key: 'max_tokens', label: '最大输出', type: 'number', defaultValue: 2048, min: 64, max: 32768 }
+      { key: 'max_tokens', label: '最大输出 token', type: 'number', defaultValue: 2048, min: 64, max: 32768 }
     ]
   },
   {

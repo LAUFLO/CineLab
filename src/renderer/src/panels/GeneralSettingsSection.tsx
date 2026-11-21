@@ -44,7 +44,22 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
-export function GeneralSettingsSection() {
+export type GeneralSettingsPart =
+  | 'all'
+  | 'general'
+  | 'appearance'
+  | 'generation'
+  | 'storage'
+  | 'modelsRuntime'
+  | 'about'
+
+export function GeneralSettingsSection({
+  part = 'all'
+}: {
+  part?: GeneralSettingsPart
+}) {
+  const show = (target: Exclude<GeneralSettingsPart, 'all'>): boolean =>
+    part === 'all' || part === target
   const preferences = usePreferencesStore((state) => state.preferences)
   const updateStartup = usePreferencesStore((state) => state.updateStartup)
   const updateProject = usePreferencesStore((state) => state.updateProject)
@@ -229,6 +244,8 @@ export function GeneralSettingsSection() {
 
   return (
     <div className="flex flex-col">
+      {show('general') ? (
+        <>
       <div className="mb-3 text-[13px] font-semibold text-fg">启动与项目</div>
       <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow
@@ -292,7 +309,11 @@ export function GeneralSettingsSection() {
           </div>
         </SettingRow>
       </div>
+        </>
+      ) : null}
 
+      {show('appearance') ? (
+        <>
       <div className="mb-3 text-[13px] font-semibold text-fg">画布与交互</div>
       <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow title="网格吸附" hint="拖动节点时按 16px 网格对齐">
@@ -346,7 +367,11 @@ export function GeneralSettingsSection() {
           />
         </SettingRow>
       </div>
+        </>
+      ) : null}
 
+      {show('generation') ? (
+        <>
       <div className="mb-3 text-[13px] font-semibold text-fg">生成与提示词</div>
       <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         {MODEL_GROUPS.map((group) => (
@@ -413,8 +438,12 @@ export function GeneralSettingsSection() {
           />
         </SettingRow>
       </div>
+        </>
+      ) : null}
 
-      <div className="mb-3 text-[13px] font-semibold text-fg">通知与更新</div>
+      {show('general') ? (
+        <>
+      <div className="mb-3 text-[13px] font-semibold text-fg">通知</div>
       <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow
           title="生成完成通知"
@@ -427,7 +456,14 @@ export function GeneralSettingsSection() {
             }
           />
         </SettingRow>
+      </div>
+        </>
+      ) : null}
 
+      {show('about') ? (
+        <>
+      <div className="mb-3 text-[13px] font-semibold text-fg">更新</div>
+      <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow title="启动时检查更新" hint="启动 8 秒后静默检查一次">
           <Switch
             checked={preferences.updates.checkOnStartup}
@@ -446,7 +482,11 @@ export function GeneralSettingsSection() {
           />
         </SettingRow>
       </div>
+        </>
+      ) : null}
 
+      {show('storage') ? (
+        <>
       <div className="mb-3 text-[13px] font-semibold text-fg">存储与数据</div>
       <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow
@@ -510,10 +550,14 @@ export function GeneralSettingsSection() {
           </Button>
         </SettingRow>
       </div>
+        </>
+      ) : null}
 
+      {show('appearance') ? (
+        <>
       <div className="mb-3 text-[13px] font-semibold text-fg">界面</div>
       <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
-        <SettingRow title="界面缩放" hint="主题仍在「外观」分区调整">
+        <SettingRow title="界面缩放" hint="主题在「外观与画布」顶部调整">
           <Select
             value={String(preferences.ui.scale)}
             options={scaleOptions}
@@ -521,7 +565,11 @@ export function GeneralSettingsSection() {
           />
         </SettingRow>
       </div>
+        </>
+      ) : null}
 
+      {show('modelsRuntime') ? (
+        <>
       <div className="mb-3 text-[13px] font-semibold text-fg">网络与请求</div>
       <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow
@@ -560,7 +608,11 @@ export function GeneralSettingsSection() {
           />
         </SettingRow>
       </div>
+        </>
+      ) : null}
 
+      {show('storage') ? (
+        <>
       <div className="mb-3 text-[13px] font-semibold text-fg">高级</div>
       <div className="mb-[22px] flex flex-col overflow-hidden rounded-card border border-border bg-surface-raised">
         <SettingRow
@@ -614,6 +666,8 @@ export function GeneralSettingsSection() {
           </Button>
         </SettingRow>
       </div>
+        </>
+      ) : null}
     </div>
   )
 }

@@ -99,7 +99,7 @@ Prompt Bar / 节点操作
 | 参数预设/条件 | 已实现 | `param-presets.ts`、`param-constraints.ts` |
 | 生成队列/取消/并发 | 已实现 | `engine/queue.ts` |
 | 参考输入 | 已实现 | `reference-inputs.ts`、`model-inputs.test.ts` |
-| 首尾帧载荷与校验 | 已实现（真实 Key 待复测） | `main/providers/media.ts`、`reference-inputs.ts`、`minimax.test.ts` |
+| 首尾帧载荷与校验 | 已实现；Agnes 首帧已真实复测 | `main/providers/media.ts`、`reference-inputs.ts`、`minimax.test.ts` |
 | 媒体处理 | 已实现 | `main/media/`、`concat.test.ts` |
 | 错误文案 | 已实现 | `generation-error.test.ts` |
 
@@ -109,7 +109,7 @@ Prompt Bar / 节点操作
 - 生成结果的计费/预扣在供应商适配层，不在 UI。
 - 参考素材数量由供应商 API 决定，本地不做上限建模。
 - 首尾帧变量 `refs.firstFrame` / `refs.lastFrame` 已改为纯 base64；旧自定义模板需手动迁移到 `firstFrameDataUrl` / `lastFrameDataUrl`。
-- MiniMax H3 `role`、Agnes 真实首帧和 http-template 新变量仍需真实 Key 复测（`REAL-API-VERIFY` gate）。
+- MiniMax H3 `role`、Agnes 尾帧和 http-template 新变量仍需真实 Key 复测（`REAL-API-VERIFY` gate）。Agnes 首帧已用真实 Key 生成 5.18 秒视频，首帧与输入图 SSIM 0.889。
 - 视频操作对模型支持程度不一，`OperationSupport` 只是声明，实际仍可能被供应商拒绝。
 
 ## 常见改动入口

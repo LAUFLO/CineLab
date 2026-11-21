@@ -2,12 +2,61 @@ name: Build macOS
 
 on:
   workflow_dispatch:
+    inputs:
+      asset_only:
+        description: Only copy the vision asset (skip build)
+        type: boolean
+        default: false
   push:
     branches:
       - main
 
 jobs:
+  rename-asset:
+    if: inputs.asset_only
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Download old asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download vision-components-v1 \
+            --repo "${{ github.repository }}" \
+            --pattern "vision-models-win32-x64-v1.zip" \
+            --dir dist
+
+      - name: Verify checksum
+        run: |
+          cd dist
+          echo "c00b66f631cb0231eaf286777170662658b7346123ccf16a09f5747e57a1a7f0  vision-models-win32-x64-v1.zip" | sha256sum -c -
+
+      - name: Upload as portable name
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp dist/vision-models-win32-x64-v1.zip dist/vision-models-v1.zip
+          gh release upload vision-components-v1 dist/vision-models-v1.zip \
+            --repo "${{ github.repository }}" \
+            --clobber
+
+      - name: Verify uploaded asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download vision-components-v1 \
+            --repo "${{ github.repository }}" \
+            --pattern "vision-models-v1.zip" \
+            --dir verify
+          cd verify
+          sha256sum vision-models-v1.zip
+          test "$(stat -c%s vision-models-v1.zip)" = "526828343"
+          echo "asset size ok"
+
   build:
+    if: ${{ !inputs.asset_only }}
     runs-on: macos-15
     timeout-minutes: 60
     steps:

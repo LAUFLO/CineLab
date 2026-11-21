@@ -48,3 +48,5 @@ extraResources:
     to: sounds
   - from: resources/skills
     to: skills
+  - from: resources/model-config-skill
+    to: model-config-skill

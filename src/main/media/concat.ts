@@ -9,6 +9,9 @@ import { resolveInside } from './paths'
 export type ConcatResolution = '720p' | '1080p'
 export type ConcatQuality = 'standard' | 'high'
 
+const SUBTITLE_FONT =
+  process.platform === 'darwin' ? 'PingFang SC' : 'Microsoft YaHei'
+
 export interface ConcatOptions {
   resolution?: ConcatResolution
   quality?: ConcatQuality
@@ -207,7 +210,7 @@ export async function concatVideos(
           '-i',
           current,
           '-vf',
-          `subtitles=filename='${escaped}':force_style='FontName=Microsoft YaHei,FontSize=18,Outline=1,Shadow=0'`,
+          `subtitles=filename='${escaped}':force_style='FontName=${SUBTITLE_FONT},FontSize=18,Outline=1,Shadow=0'`,
           '-c:v',
           'libx264',
           '-preset',

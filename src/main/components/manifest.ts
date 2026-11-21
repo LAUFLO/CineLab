@@ -119,11 +119,11 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
     kind: 'vision-models',
     label: '视觉模型（InSPyReNet + LaMa）',
     directory: 'vision-models',
-    manifestUrl: isWindows
-      ? `${visionBaseUrl}/vision-models-manifest.json`
-      : undefined,
+    // 资产内容为纯 Python 源码 + 权重，不含平台二进制，Windows/macOS 共用。
+    // 若未来加入 .so/.pyd/DLL 等平台文件，必须拆分为按平台的资产。
+    manifestUrl: `${visionBaseUrl}/vision-models-manifest.json`,
     fallback: fallback('vision-models', [
-      `${visionBaseUrl}/vision-models-win32-x64-v1.zip`
+      `${visionBaseUrl}/vision-models-v1.zip`
     ], {
       size: 526_828_343,
       expandedSize: 573_254_295,

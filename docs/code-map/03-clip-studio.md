@@ -108,6 +108,7 @@ StudioWindow → TimelineApi.export
 - 导出依赖 ffmpeg 与项目 `exports` 目录；长片导出耗时。
 - `MAX_CLIPS = 5000`、`MAX_TRACKS = 50`；超大工程要拆分。
 - 转录依赖组件运行时，未安装时不可用。
+- 字幕烧录字体按平台选择：Windows 用 `Microsoft YaHei`，macOS 用 `PingFang SC`。
 
 ## 常见改动入口
 

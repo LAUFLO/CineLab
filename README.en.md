@@ -104,12 +104,12 @@ The canvas is built around an infinite, node-based workflow, with an emphasis on
 
 Download the latest release from [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest):
 
-Current version: **v0.4.0**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
+Current version: **v0.4.1**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
 
 | Platform | Recommended file | Requirements |
 |---|---|---|
-| Windows | `CineLab-0.4.0-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.4.0-arm64.dmg` | macOS 12+, Apple Silicon |
+| Windows | `CineLab-0.4.1-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.4.1-arm64.dmg` | macOS 12+, Apple Silicon |
 
 ### Windows
 
@@ -120,7 +120,7 @@ Current version: **v0.4.0**. See [CHANGELOG.md](CHANGELOG.md) for the full chang
 ### macOS
 
 - The package is unsigned and not notarized. On first launch, right-click → Open, or allow it in System Settings → Privacy & Security.
-- Depth capture, vision enhancement and local subtitle runtimes are downloaded per platform.
+- Depth capture, vision enhancement and local subtitle runtimes are downloaded per platform; vision enhancement requires the depth capture runtime.
 - Auto-update is disabled in the first macOS release; download new versions manually.
 - Settings live in `~/Library/Application Support/CineLab`.
 

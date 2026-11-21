@@ -40,6 +40,7 @@
 | [model-adapter-plan.md](model-adapter-plan.md) | 模型适配体系：契约、媒体载荷、本地适配器、Agent 接入与首尾帧修复 |
 | [local-adapters.md](local-adapters.md) | 本地可信适配器：目录、manifest、接口、构建与热重载 |
 | [mcp.md](mcp.md) | MCP server：HTTP、stdio 桥接、认证、工具与排查 |
+| [macos-packaging-gaps-plan.md](macos-packaging-gaps-plan.md) | macOS 打包资源缺口、视觉组件复用、字幕字体与发版校验，待实施 |
 
 ## 3. 代码地图
 

@@ -100,16 +100,22 @@ CineLab 的模型层完全开放：供应商、模型、Base URL、API Key、请
 - 配置保存在本地 `models.json`，可备份、迁移和版本管理
 - 能力一致性校验：声明与适配器实际执行对齐，不支持的输入在生成入口直接报错
 
+### MCP 与本地适配器
+
+- 内置 MCP server，支持 HTTP 与 stdio 接入，覆盖应用、画布、剪辑室、导演台和逐帧拉片
+- 只读工具与写工具分开声明，写操作仍走确认与回合事务
+- 本地适配器在独立 utilityProcess 中运行，支持健康检查、同名模型覆盖和 `http-template` 扩展
+
 ## 下载与安装
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
 
-当前版本 **v0.4.1**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **v0.4.2**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 | 平台 | 推荐文件 | 系统要求 |
 |---|---|---|
-| Windows | `CineLab-0.4.1-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.4.1-arm64.dmg` | macOS 12+，Apple Silicon |
+| Windows | `CineLab-0.4.2-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.4.2-arm64.dmg` | macOS 12+，Apple Silicon |
 
 ### Windows
 

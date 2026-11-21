@@ -43,17 +43,17 @@ export function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex shrink-0 items-center rounded-[2px] transition-colors',
+        'relative inline-flex shrink-0 items-center rounded-md transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
         metrics.root,
-        checked ? 'bg-pick-bar' : 'bg-border-strong',
+        checked ? 'bg-switch-on' : 'bg-border-strong',
         disabled && 'pointer-events-none opacity-50',
         className
       )}
     >
       <span
         className={cn(
-          'block bg-surface transition-transform',
+          'block rounded-[3px] bg-switch-knob transition-transform',
           metrics.knob,
           checked ? metrics.on : metrics.off
         )}

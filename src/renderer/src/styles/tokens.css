@@ -22,6 +22,8 @@
   --accent: #e8e8ea;
   --accent-hover: #ffffff;
   --pick-bar: #e8e8ea;
+  --switch-on: #4867f7;
+  --switch-knob: #ffffff;
   --link: #8b8b90;
   --success: #4ade80;
   --warning: #fbbf24;
@@ -70,6 +72,8 @@
   --accent: #18181b;
   --accent-hover: #000000;
   --pick-bar: #18181b;
+  --switch-on: #4867f7;
+  --switch-knob: #ffffff;
   --link: #71717a;
   --success: #16a34a;
   --warning: #d97706;

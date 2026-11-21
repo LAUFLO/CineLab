@@ -3,6 +3,8 @@ import type { ModelDef } from '@shared/provider-schema'
 import type { VideoOperationOptions } from '@shared/generation'
 import { mergeHeaders } from './headers'
 import { sleep } from './retry'
+import { contractFor } from '@shared/capabilities'
+import type { ModelContract } from '@shared/model-contracts'
 import { applyModelRequestBody } from './model-body'
 import type { AdapterContext, ImageOutput, ProviderRuntime } from './openai-compat'
 
@@ -24,10 +26,10 @@ export interface ArkVideoInput {
   absolutePath?: string
 }
 
-function roleName(role: string): string {
-  if (role === 'firstFrame') return 'first_frame'
-  if (role === 'lastFrame') return 'last_frame'
-  return 'reference_image'
+function roleName(role: string, contract: ModelContract | null): string {
+  if (role === 'firstFrame') return contract?.roles.firstFrame ?? 'first_frame'
+  if (role === 'lastFrame') return contract?.roles.lastFrame ?? 'last_frame'
+  return contract?.roles.reference ?? 'reference_image'
 }
 
 function operationHint(
@@ -74,12 +76,13 @@ export async function generateVideoArk(
   const hint = operationHint(videoOptions)
   const finalPrompt = hint ? `${prompt}\n\n${hint}` : prompt
   const content: unknown[] = [{ type: 'text', text: finalPrompt }]
+  const contract = contractFor(model)
 
   for (const ref of refs) {
     content.push({
       type: 'image_url',
       image_url: { url: ref.dataUrl },
-      role: roleName(ref.role)
+      role: roleName(ref.role, contract)
     })
   }
 

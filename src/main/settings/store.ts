@@ -12,6 +12,8 @@ import type {
   ProviderType
 } from '@shared/provider-schema'
 import type { ModelsFileProvider } from '@shared/models-file'
+import { effectiveCapabilities } from '@shared/capabilities'
+import { isOfficialModel } from '@shared/model-contracts'
 import {
   isVideoOperation,
   type OperationBindings
@@ -19,6 +21,7 @@ import {
 import { klingAuthorization } from '../providers/kling-auth'
 import { mergeHeaders } from '../providers/headers'
 import { httpFetch } from '../providers/http'
+import { log } from '../logger'
 import {
   enqueueModelsWrite,
   loadModelsConfig,
@@ -282,6 +285,24 @@ export async function saveProvider(input: ProviderInput): Promise<ProviderConfig
     const config = await loadModelsConfig()
     if (config.errors.length > 0) {
       throw new Error(config.errors[0])
+    }
+
+    const blockers: string[] = []
+    const warnings: string[] = []
+    for (const model of input.models) {
+      const gaps = effectiveCapabilities(model).gaps.filter(
+        (gap) => gap.kind === 'contract'
+      )
+      if (gaps.length === 0) continue
+      const message = `${model.name || model.id}：${gaps[0].message}`
+      if (isOfficialModel(model)) blockers.push(message)
+      else warnings.push(message)
+    }
+    if (blockers.length > 0) {
+      throw new Error(`模型配置与协议契约不一致：${blockers[0]}`)
+    }
+    if (warnings.length > 0) {
+      log.warn('model contract warnings', { warnings })
     }
 
     const id = input.id ?? randomUUID()

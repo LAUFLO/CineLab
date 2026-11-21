@@ -206,7 +206,7 @@ AgentPanel
 | `src/shared/agent-proposal.ts` | 140 |
 | `src/shared/agent-tools.ts` | 59 |
 | `src/shared/agent.ts` | 264 |
-| `src/shared/capabilities.ts` | 290 |
+| `src/shared/capabilities.ts` | 307 |
 | `src/shared/skills.ts` | 168 |
 <!-- AUTO:files:end -->
 
@@ -260,6 +260,6 @@ AgentPanel
 | `src/shared/agent-proposal.ts` | `PROPOSAL_TTL_MS`、`proposalExpiresAt`、`isProposalExpired`、`NormalizedParams`、`normalizeGenerationParams`、`proposalCount`、`proposalStatusLabel` |
 | `src/shared/agent-tools.ts` | `AgentToolScope`、`AgentToolDefinition`、`filterAgentTools`、`toModelTools` |
 | `src/shared/agent.ts` | `AgentProfileId`、`AgentPermissionMode`、`AgentScope`、`AgentAttachment`、`AgentReference`、`AgentChatRequest`、`AgentModelInfo`、`AgentGenerationModels`、`AgentSessionInfo`、`AgentUsage`、`AgentProposalStatus`、`AgentProposal`、`AgentProposalDraft`、`AgentToolCall`、`AgentToolResult`、`AgentTurnChange`、`AgentTurnStatus`、`AgentTurn`、`AgentEvent`、`AgentSessionMessage`、`AgentSessionSnapshot`、`AgentToolCallRequest`、`AgentToolResultInput`、`AgentConfirmInput` …（共 26 个） |
-| `src/shared/capabilities.ts` | `ModelInputFeature`、`ModelOutputFeature`、`AdapterCapability`、`CapabilityGapKind`、`CapabilityGap`、`EffectiveCapabilities`、`ADAPTER_CAPABILITIES`、`resolveAdapter`、`normalizeFeatureSets`、`effectiveCapabilities` |
+| `src/shared/capabilities.ts` | `ModelInputFeature`、`ModelOutputFeature`、`AdapterCapability`、`CapabilityGapKind`、`CapabilityGap`、`EffectiveCapabilities`、`ADAPTER_CAPABILITIES`、`resolveAdapter`、`contractFor`、`normalizeFeatureSets`、`effectiveCapabilities` |
 | `src/shared/skills.ts` | `SkillScope`、`SkillFrontmatter`、`SkillSummary`、`SkillAdminEntry`、`SkillFileEntry`、`SkillFileContent`、`SkillWriteInput`、`SkillOverrideInput`、`SkillUploadFolder`、`SkillUploadResult`、`SkillCloneInput`、`SkillReadResult`、`SKILL_NAME_PATTERN`、`MAX_SKILL_DESCRIPTION_LENGTH`、`MAX_SKILL_BODY_BYTES`、`MAX_SKILL_REFERENCE_BYTES`、`MAX_SKILL_PATH_LENGTH`、`MAX_SKILL_UPLOAD_FILES`、`MAX_SKILL_UPLOAD_BYTES`、`parseSkillMarkdown`、`normalizeSkillPath` |
 <!-- AUTO:exports:end -->

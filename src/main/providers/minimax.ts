@@ -8,6 +8,8 @@ import type {
 import { sleep } from './retry'
 import { mergeHeaders } from './headers'
 import type { LoadedRef } from './media'
+import { contractFor } from '@shared/capabilities'
+import type { ModelContract } from '@shared/model-contracts'
 
 interface MiniMaxTask {
   task_id?: string
@@ -66,31 +68,38 @@ async function downloadVideo(
   return [{ data: Buffer.from(await response.arrayBuffer()), mime }]
 }
 
-function contentFromRefs(prompt: string, refs: LoadedRef[]): unknown[] {
+function contentFromRefs(
+  prompt: string,
+  refs: LoadedRef[],
+  contract: ModelContract | null
+): unknown[] {
   const content: unknown[] = [{ type: 'text', text: prompt }]
   const first = refs.find((ref) => ref.role === 'firstFrame')
   const last = refs.find((ref) => ref.role === 'lastFrame')
   const references = refs.filter((ref) => ref.role === 'reference')
+  const firstRole = contract?.roles.firstFrame ?? 'first_frame'
+  const lastRole = contract?.roles.lastFrame ?? 'last_frame'
+  const referenceRole = contract?.roles.reference ?? 'reference_image'
 
   if (first) {
     content.push({
       type: 'image_url',
       image_url: { url: first.dataUrl },
-      role: 'first_frame'
+      role: firstRole
     })
   }
   if (last) {
     content.push({
       type: 'image_url',
       image_url: { url: last.dataUrl },
-      role: 'last_frame'
+      role: lastRole
     })
   }
   for (const ref of references) {
     content.push({
       type: 'image_url',
       image_url: { url: ref.dataUrl },
-      role: 'reference_image'
+      role: referenceRole
     })
   }
 
@@ -110,7 +119,7 @@ async function generateH3(
 
   const body = {
     model: model.remoteModel,
-    content: contentFromRefs(prompt, refs),
+    content: contentFromRefs(prompt, refs, contractFor(model)),
     duration: Number(params.duration ?? 6),
     resolution: String(params.resolution ?? '768P'),
     ratio: String(params.ratio ?? '16:9')
@@ -183,6 +192,9 @@ async function generateLegacy(
   const headers = baseHeaders(provider)
   const first = refs.find((ref) => ref.role === 'firstFrame')
   const last = refs.find((ref) => ref.role === 'lastFrame')
+  const contract = contractFor(model)
+  const firstFrameField = contract?.fields.firstFrame ?? 'first_frame_image'
+  const lastFrameField = contract?.fields.lastFrame ?? 'last_frame_image'
 
   const body: Record<string, unknown> = {
     model: model.remoteModel,
@@ -190,8 +202,8 @@ async function generateLegacy(
     duration: Number(params.duration ?? 6),
     resolution: String(params.resolution ?? '768P')
   }
-  if (first) body.first_frame_image = first.dataUrl
-  if (last) body.last_frame_image = last.dataUrl
+  if (first) body[firstFrameField] = first.dataUrl
+  if (last) body[lastFrameField] = last.dataUrl
 
   ctx.onProgress(5, '提交视频任务')
 

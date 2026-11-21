@@ -8,6 +8,7 @@ import type {
 import { mergeHeaders } from './headers'
 import { sleep } from './retry'
 import type { LoadedRef } from './media'
+import { contractFor } from '@shared/capabilities'
 
 interface AgnesVideoRef {
   dataUrl: string
@@ -27,6 +28,10 @@ export function buildAgnesBody(
     (ref) => ref.media !== 'audio' && ref.role === 'reference'
   )
   const audios = refs.filter((ref) => ref.media === 'audio')
+  const contract = contractFor(model)
+  const firstFrameField = contract?.fields.firstFrame ?? 'first_frame'
+  const lastFrameField = contract?.fields.lastFrame ?? 'last_frame'
+  const referenceField = contract?.fields.referenceImage ?? 'images'
   const mode =
     firstFrame || lastFrame
       ? 'keyframe'
@@ -44,10 +49,10 @@ export function buildAgnesBody(
   }
 
   if (mode === 'keyframe') {
-    if (firstFrame) body.first_frame = firstFrame.base64
-    if (lastFrame) body.last_frame = lastFrame.base64
+    if (firstFrame) body[firstFrameField] = firstFrame.base64
+    if (lastFrame) body[lastFrameField] = lastFrame.base64
   } else if (mode === 'reference') {
-    if (images.length > 0) body.images = images.map((ref) => ref.dataUrl)
+    if (images.length > 0) body[referenceField] = images.map((ref) => ref.dataUrl)
     if (audios.length > 0) body.audios = audios.map((ref) => ref.dataUrl)
     if (video) {
       if (/^agnes-video-2\.5-flash/i.test(model.remoteModel)) {

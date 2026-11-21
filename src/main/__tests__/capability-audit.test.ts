@@ -12,9 +12,11 @@ import {
   recommendedModelsForPreset
 } from '@shared/provider-presets'
 import {
+  ADAPTER_CAPABILITIES,
   effectiveCapabilities,
   type CapabilityGap
 } from '@shared/capabilities'
+import { OFFICIAL_CONTRACTS } from '@shared/model-contracts'
 import { getModelModeDefinition } from '@shared/model-modes'
 
 type AuditSource = 'preset' | 'recommended' | 'template'
@@ -117,5 +119,46 @@ describe('capability audit', () => {
     }
 
     expect(unexempted).toEqual([])
+  })
+})
+
+describe('model contracts', () => {
+  it('covers every official adapter with matching modes', () => {
+    for (const [adapter, capability] of Object.entries(
+      ADAPTER_CAPABILITIES
+    )) {
+      const contract = OFFICIAL_CONTRACTS[adapter]
+      expect(contract, adapter).toBeDefined()
+      expect(new Set(contract.modes), adapter).toEqual(
+        new Set(capability.modes)
+      )
+    }
+  })
+
+  it('declares fields for every keyframe and reference mode', () => {
+    for (const [adapter, contract] of Object.entries(OFFICIAL_CONTRACTS)) {
+      if (
+        contract.modes.includes('first-frame') ||
+        contract.modes.includes('first-last')
+      ) {
+        expect(contract.fields.firstFrame, adapter).toBeTruthy()
+      }
+      if (contract.modes.includes('first-last')) {
+        expect(contract.fields.lastFrame, adapter).toBeTruthy()
+      }
+      if (contract.modes.includes('reference')) {
+        expect(contract.fields.referenceImage, adapter).toBeTruthy()
+      }
+    }
+  })
+
+  it('includes source metadata for every contract', () => {
+    for (const [adapter, contract] of Object.entries(OFFICIAL_CONTRACTS)) {
+      expect(contract.source.url, adapter).toBeTruthy()
+      expect(contract.source.retrievedAt, adapter).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(['high', 'medium', 'low'], adapter).toContain(
+        contract.source.confidence
+      )
+    }
   })
 })

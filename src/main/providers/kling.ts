@@ -9,6 +9,7 @@ import type {
 } from './openai-compat'
 import { sleep } from './retry'
 import type { LoadedRef } from './media'
+import { contractFor } from '@shared/capabilities'
 
 interface KlingTask {
   code?: number
@@ -56,6 +57,37 @@ async function downloadVideo(
   return [{ data: Buffer.from(await response.arrayBuffer()), mime }]
 }
 
+export function buildKlingBody(
+  model: ModelDef,
+  prompt: string,
+  params: Record<string, unknown>,
+  refs: LoadedRef[]
+): Record<string, unknown> {
+  const first = refs.find((ref) => ref.role === 'firstFrame')
+  const last = refs.find((ref) => ref.role === 'lastFrame')
+  const contract = contractFor(model)
+  const firstFrameField = contract?.fields.firstFrame ?? 'image'
+  const lastFrameField = contract?.fields.lastFrame ?? 'image_tail'
+  const body: Record<string, unknown> = {
+    model_name: model.remoteModel,
+    prompt,
+    mode: String(params.mode ?? 'std'),
+    duration: String(params.duration ?? '5'),
+    aspect_ratio: String(params.ratio ?? '16:9'),
+    cfg_scale: Number(params.cfg_scale ?? 0.5)
+  }
+
+  const negativePrompt = params.negative_prompt
+  if (typeof negativePrompt === 'string' && negativePrompt.trim()) {
+    body.negative_prompt = negativePrompt.trim()
+  }
+
+  if (first) body[firstFrameField] = first.base64
+  if (last) body[lastFrameField] = last.base64
+
+  return body
+}
+
 export async function generateVideoKling(
   model: ModelDef,
   provider: ProviderRuntime,
@@ -78,22 +110,7 @@ export async function generateVideoKling(
     provider.headers
   )
 
-  const body: Record<string, unknown> = {
-    model_name: model.remoteModel,
-    prompt,
-    mode: String(params.mode ?? 'std'),
-    duration: String(params.duration ?? '5'),
-    aspect_ratio: String(params.ratio ?? '16:9'),
-    cfg_scale: Number(params.cfg_scale ?? 0.5)
-  }
-
-  const negativePrompt = params.negative_prompt
-  if (typeof negativePrompt === 'string' && negativePrompt.trim()) {
-    body.negative_prompt = negativePrompt.trim()
-  }
-
-  if (first) body.image = first.base64
-  if (last) body.image_tail = last.base64
+  const body = buildKlingBody(model, prompt, params, refs)
 
   ctx.onProgress(5, '提交视频任务')
 

@@ -50,7 +50,8 @@ const MODULES = [
       'src/shared/reference-inputs.ts',
       'src/shared/media.ts',
       'src/shared/protocol-templates.ts',
-      'src/shared/http-template.ts'
+      'src/shared/http-template.ts',
+      'src/shared/model-contracts.ts'
     ]
   },
   {

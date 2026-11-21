@@ -7,7 +7,6 @@ import {
 export type CapabilityGroup = 'image' | 'video' | 'text' | 'audio'
 export type CanvasScrollMode = 'pan' | 'zoom'
 export type CanvasGridStyle = 'dots' | 'lines' | 'none'
-export type UpdateChannel = 'stable' | 'beta'
 export type ProxyMode = 'direct' | 'system' | 'manual'
 
 export interface Preferences {
@@ -53,7 +52,6 @@ export interface Preferences {
   updates: {
     /** 启动后静默检查更新 */
     checkOnStartup: boolean
-    channel: UpdateChannel
   }
   storage: {
     /** 自动清理缩略图缓存的天数，0 表示不清理 */
@@ -81,7 +79,7 @@ export interface Preferences {
 export const PREFERENCES_VERSION = 1
 
 export const AUTO_SAVE_DELAYS = [300, 600, 1000, 3000] as const
-export const GENERATION_CONCURRENCY = [1, 2, 3, 4] as const
+export const GENERATION_CONCURRENCY = [1, 2, 3, 4, 6, 8] as const
 export const HISTORY_LIMITS = [0, 20, 50, 100] as const
 export const AUTO_RETRY_COUNTS = [0, 1, 2] as const
 export const UI_SCALES = [90, 100, 110, 125] as const
@@ -114,7 +112,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
       text: null,
       audio: null
     },
-    concurrency: 2,
+    concurrency: 8,
     notifyOnComplete: true,
     autoLink: true,
     autoRetry: 0,
@@ -122,8 +120,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
     historyLimit: 50
   },
   updates: {
-    checkOnStartup: true,
-    channel: 'stable'
+    checkOnStartup: true
   },
   storage: {
     autoCleanCacheDays: 90
@@ -315,11 +312,6 @@ export function normalizePreferences(input: unknown): Preferences {
       checkOnStartup: readBoolean(
         updates.checkOnStartup,
         DEFAULT_PREFERENCES.updates.checkOnStartup
-      ),
-      channel: readEnum(
-        updates.channel,
-        ['stable', 'beta'] as const,
-        DEFAULT_PREFERENCES.updates.channel
       )
     },
     storage: {

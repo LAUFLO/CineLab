@@ -178,14 +178,6 @@ export function GeneralSettingsSection({
     { value: 'none', label: '不显示' }
   ]
 
-  const updateChannelOptions: Array<{
-    value: Preferences['updates']['channel']
-    label: string
-  }> = [
-    { value: 'stable', label: '稳定版' },
-    { value: 'beta', label: '测试版' }
-  ]
-
   const proxyModeOptions: Array<{
     value: Preferences['network']['proxyMode']
     label: string
@@ -468,17 +460,6 @@ export function GeneralSettingsSection({
           <Switch
             checked={preferences.updates.checkOnStartup}
             onChange={(next) => void updateUpdates({ checkOnStartup: next })}
-          />
-        </SettingRow>
-
-        <SettingRow
-          title="更新通道"
-          hint="测试版需要更新源提供对应通道；否则效果与稳定版相同"
-        >
-          <Select
-            value={preferences.updates.channel}
-            options={updateChannelOptions}
-            onChange={(next) => void updateUpdates({ channel: next })}
           />
         </SettingRow>
       </div>

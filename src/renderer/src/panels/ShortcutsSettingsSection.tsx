@@ -130,18 +130,20 @@ export function ShortcutsSettingsSection() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <div className="text-[15px] font-semibold">快捷键</div>
           <div className="mt-1 max-w-[560px] text-[11px] leading-[1.6] text-fg-subtle">
             点击「录制」后按下组合键；Esc 取消。应用、画布、剪辑室和导演台分别检测冲突。
           </div>
         </div>
-        <Input
-          className="!h-8 w-[190px] shrink-0 !rounded-md !border-border !bg-surface !px-2.5 !text-xs"
-          value={search}
-          placeholder="搜索动作或按键"
-          onChange={(event) => setSearch(event.target.value)}
-        />
+        <div className="w-[190px] shrink-0">
+          <Input
+            className="!h-8 !rounded-md !border-border !bg-surface !px-2.5 !text-xs"
+            value={search}
+            placeholder="搜索动作或按键"
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">

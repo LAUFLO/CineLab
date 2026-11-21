@@ -21,7 +21,6 @@ import { VIDEO_OPERATIONS } from '@shared/operation-schema'
 import {
   HOT_PROVIDER_IDS,
   PROVIDER_PRESETS,
-  recommendedModelsForPreset,
   type ProviderPreset
 } from '@shared/provider-presets'
 import type { UpdateStatus } from '@shared/update'
@@ -473,10 +472,6 @@ function ModelsSection() {
           draft.baseUrl.trim().replace(/\/+$/, '')
       )
     : undefined
-  const recommendedModels = activePreset
-    ? recommendedModelsForPreset(activePreset.id)
-    : []
-
   if (draft) {
     return (
       <div className="flex flex-col">
@@ -727,35 +722,7 @@ function ModelsSection() {
             ))}
             {draft.models.length === 0 ? (
               <div className="p-2 text-xs text-fg-subtle">
-                还没有添加模型。填好 Key 后点「获取模型列表」，或点击下方推荐。
-              </div>
-            ) : null}
-            {recommendedModels.length > 0 ? (
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-fg-subtle">推荐</span>
-                {recommendedModels.map((model) => {
-                  const added = draft.models.some(
-                    (item) => item.id === model.id
-                  )
-                  return (
-                    <Button
-                      key={model.id}
-                      type="button"
-                      variant="ghost"
-                      size="none"
-                      className={`h-[26px] rounded-full border border-border px-2.5 text-xs ${
-                        added
-                          ? 'cursor-default text-fg-muted opacity-45'
-                          : 'text-fg-muted hover:border-border-strong hover:text-fg'
-                      }`}
-                      disabled={added}
-                      title={added ? '已添加' : `添加 ${model.name}`}
-                      onClick={() => addModel(model)}
-                    >
-                      {model.name}
-                    </Button>
-                  )
-                })}
+                还没有添加模型。填好 Key 后点「获取模型列表」，或手动输入模型 ID 添加。
               </div>
             ) : null}
           </div>

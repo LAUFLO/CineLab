@@ -151,7 +151,7 @@ Prompt Bar / 节点操作
 | `src/main/media/video.ts` | 245 |
 | `src/main/media/vision-tasks.ts` | 102 |
 | `src/main/media/vision.ts` | 457 |
-| `src/main/providers/agnes.ts` | 206 |
+| `src/main/providers/agnes.ts` | 216 |
 | `src/main/providers/headers.ts` | 30 |
 | `src/main/providers/http-template.ts` | 484 |
 | `src/main/providers/http.ts` | 27 |

@@ -19,8 +19,6 @@ interface VideoPlayerProps {
   onPlay?: () => void
   onPause?: () => void
   onEnded?: () => void
-  /** 节点小窗强制静音时隐藏音量按钮 */
-  hideVolume?: boolean
 }
 
 export interface VideoPlayerHandle {
@@ -44,8 +42,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       onDurationChange,
       onPlay,
       onPause,
-      onEnded,
-      hideVolume
+      onEnded
     },
     ref
   ) {
@@ -302,18 +299,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
             <span className="flex-1" />
 
-            {hideVolume ? null : (
-              <Button
-                type="button"
-                variant="ghost"
-                size="none"
-                className={BTN_CLASS}
-                onClick={toggleMute}
-                title={muted ? '取消静音' : '静音'}
-              >
-                <Icon name={muted ? 'volume-mute' : 'volume'} size={15} />
-              </Button>
-            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="none"
+              className={BTN_CLASS}
+              onClick={toggleMute}
+              title={muted ? '取消静音' : '静音'}
+            >
+              <Icon name={muted ? 'volume-mute' : 'volume'} size={15} />
+            </Button>
             <Button
               type="button"
               variant="ghost"

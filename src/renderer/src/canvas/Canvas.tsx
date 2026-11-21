@@ -26,6 +26,7 @@ import { activeStageNodeId } from '../stage/stage-active'
 import { useUIStore } from '../stores/ui'
 import { usePreferencesStore } from '../stores/preferences'
 import { studioOpen } from '../studio/scope'
+import { shortcutMatches } from '../shortcuts/useShortcut'
 import { AddNodeMenu } from './AddNodeMenu'
 import { AlignmentGuides, type AlignmentGuide } from './AlignmentGuides'
 import { computeAlignment } from './alignment'
@@ -195,18 +196,19 @@ function CanvasInner({ theme }: { theme: Theme }) {
   }, [addMenuAnchor, addMenuToken, openMenu, screenToFlowPosition])
 
   useEffect(() => {
-    const editable = (target: EventTarget | null): boolean =>
-      target instanceof Element &&
-      Boolean(target.closest('input, textarea, [contenteditable="true"]'))
-
     const onKeyDown = (event: KeyboardEvent): void => {
       if (studioOpen()) return
-      if (event.code !== 'Space' || editable(event.target)) return
+      if (!shortcutMatches(event, 'canvas.tool.tempHand')) return
       event.preventDefault()
       setSpaceHeld(true)
     }
     const onKeyUp = (event: KeyboardEvent): void => {
-      if (event.code === 'Space') setSpaceHeld(false)
+      if (
+        event.code === 'Space' ||
+        shortcutMatches(event, 'canvas.tool.tempHand')
+      ) {
+        setSpaceHeld(false)
+      }
     }
     const onBlur = (): void => setSpaceHeld(false)
 
@@ -234,25 +236,14 @@ function CanvasInner({ theme }: { theme: Theme }) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (studioOpen()) return
-      if (event.altKey && event.shiftKey && event.key.toLowerCase() === 'f') {
+
+      if (shortcutMatches(event, 'canvas.arrange')) {
         event.preventDefault()
         useUIStore.getState().requestArrange()
         return
       }
 
-      const target = event.target
-      if (
-        target instanceof Element &&
-        target.closest('input, textarea, [contenteditable="true"]')
-      ) {
-        return
-      }
-
-      if (
-        !event.ctrlKey &&
-        !event.metaKey &&
-        (event.key === 'Delete' || event.key === 'Backspace')
-      ) {
+      if (shortcutMatches(event, 'canvas.delete')) {
         const state = useCanvasStore.getState()
         const selectedEdges = state.edges.filter((edge) => edge.selected)
         if (selectedEdges.length > 0) {
@@ -267,46 +258,39 @@ function CanvasInner({ theme }: { theme: Theme }) {
         return
       }
 
-      if (!event.ctrlKey && !event.metaKey && !event.altKey) {
-        const plainKey = event.key.toLowerCase()
-        if (plainKey === 'v') {
-          event.preventDefault()
-          setTool('select')
-          return
-        }
-        if (plainKey === 'h') {
-          event.preventDefault()
-          setTool('hand')
-          return
-        }
+      if (shortcutMatches(event, 'canvas.tool.select')) {
+        event.preventDefault()
+        setTool('select')
+        return
       }
-
-      if (!event.ctrlKey && !event.metaKey) return
-
-      const key = event.key.toLowerCase()
-
-      if (key === 'f') {
+      if (shortcutMatches(event, 'canvas.tool.hand')) {
+        event.preventDefault()
+        setTool('hand')
+        return
+      }
+      if (shortcutMatches(event, 'canvas.search')) {
         event.preventDefault()
         openSearch()
         return
       }
-
-      if (key === 'z') {
+      if (shortcutMatches(event, 'canvas.undo')) {
         event.preventDefault()
-        if (event.shiftKey) useCanvasStore.getState().redo()
-        else useCanvasStore.getState().undo()
+        useCanvasStore.getState().undo()
         return
       }
-
-      if (key === 'c' && !event.shiftKey) {
+      if (shortcutMatches(event, 'canvas.redo')) {
+        event.preventDefault()
+        useCanvasStore.getState().redo()
+        return
+      }
+      if (shortcutMatches(event, 'canvas.copy')) {
         if (!useCanvasStore.getState().nodes.some((node) => node.selected))
           return
         event.preventDefault()
         copySelection()
         return
       }
-
-      if (key === 'v' && !event.shiftKey) {
+      if (shortcutMatches(event, 'canvas.paste')) {
         event.preventDefault()
         void pasteAt()
       }
@@ -374,6 +358,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
             y: flow.y - height / 2 + index * 40
           })
           store.patchNodeData(id, {
+            assetOnly: true,
             status: 'done',
             outputs: [
               {

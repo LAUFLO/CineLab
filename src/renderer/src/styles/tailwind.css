@@ -18,6 +18,8 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-pick-bar: var(--pick-bar);
+  --color-switch-on: var(--switch-on);
+  --color-switch-knob: var(--switch-knob);
   --color-link: var(--link);
   --color-success: var(--success);
   --color-warning: var(--warning);

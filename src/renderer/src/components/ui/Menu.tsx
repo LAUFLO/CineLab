@@ -1,4 +1,11 @@
-import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode
+} from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from './cn'
 
@@ -11,6 +18,10 @@ export interface MenuProps {
   children: ReactNode
   className?: string
   onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void
+  /** cursor: x/y 为左上角；auto: 优先向下，空间不足向上翻；above: y 为菜单底边 */
+  placement?: 'cursor' | 'auto' | 'above'
+  /** 菜单内容最大高度；不传时按锚点可用空间计算 */
+  maxHeight?: number
 }
 
 export function Menu({
@@ -21,9 +32,15 @@ export function Menu({
   width = 200,
   children,
   className,
-  onContextMenu
+  onContextMenu,
+  placement = 'cursor',
+  maxHeight
 }: MenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
+  const [layout, setLayout] = useState<{
+    top: number
+    maxHeight?: number
+  } | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -67,6 +84,58 @@ export function Menu({
     }
   }, [open, onClose])
 
+  useLayoutEffect(() => {
+    if (!open) {
+      setLayout(null)
+      return
+    }
+    const element = menuRef.current
+    if (!element) return
+
+    const measure = (): void => {
+      const padding = 8
+      const naturalHeight = element.scrollHeight
+
+      if (placement === 'cursor' && maxHeight === undefined) {
+        const top = Math.max(padding, Math.min(y, window.innerHeight - padding))
+        setLayout((current) =>
+          current?.top === top && current.maxHeight === undefined
+            ? current
+            : { top }
+        )
+        return
+      }
+
+      const spaceBelow = Math.max(120, window.innerHeight - y - padding)
+      const spaceAbove = Math.max(120, y - padding)
+      const flip =
+        placement === 'above' ||
+        (placement === 'auto' &&
+          naturalHeight > spaceBelow &&
+          spaceAbove > spaceBelow)
+      const available = flip ? spaceAbove : spaceBelow
+      const height = Math.min(naturalHeight, maxHeight ?? available, available)
+      const top = flip
+        ? Math.max(padding, y - height)
+        : Math.min(y, window.innerHeight - height - padding)
+
+      setLayout((current) =>
+        current?.top === top && current.maxHeight === height
+          ? current
+          : { top, maxHeight: height }
+      )
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    window.addEventListener('resize', measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [open, y, placement, maxHeight])
+
   if (!open) return null
 
   return createPortal(
@@ -81,8 +150,13 @@ export function Menu({
       )}
       style={{
         left: Math.max(8, Math.min(x, window.innerWidth - width - 8)),
-        top: Math.max(8, Math.min(y, window.innerHeight - 8)),
-        width
+        top:
+          layout?.top ??
+          Math.max(8, Math.min(y, window.innerHeight - 8)),
+        width,
+        maxHeight: layout?.maxHeight,
+        overflowY: layout?.maxHeight ? 'auto' : undefined,
+        visibility: layout ? 'visible' : 'hidden'
       }}
     >
       {children}

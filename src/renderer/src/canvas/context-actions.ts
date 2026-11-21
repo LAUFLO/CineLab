@@ -7,6 +7,7 @@ import {
 } from '@shared/canvas-schema'
 import type { LibraryAsset } from '@shared/library-schema'
 import { useCanvasStore, isGroupNode, isStudioNode } from '../stores/canvas'
+import { fitNodeToMedia, probeMediaSize } from './media-size'
 import { activeStageNodeId } from '../stage/stage-active'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
@@ -51,6 +52,8 @@ export async function uploadMaterialsAt(flow: XYPosition): Promise<number> {
           ? 'audio'
           : 'image'
     const meta = NODE_META[kind]
+    const output = materialOutput(material)
+    const size = await probeMediaSize(output.path)
     const id = store.addNode(kind, {
       x: flow.x,
       y: flow.y + offsetY
@@ -59,11 +62,13 @@ export async function uploadMaterialsAt(flow: XYPosition): Promise<number> {
     store.patchNodeData(id, {
       title: material.name,
       status: 'done',
-      outputs: [materialOutput(material)],
-      selectedOutputId: material.path
+      assetOnly: true,
+      outputs: [{ ...output, width: size?.width, height: size?.height }],
+      selectedOutputId: output.id
     })
 
-    offsetY += meta.height + TITLE_HEIGHT + 24
+    const applied = fitNodeToMedia(id, size)
+    offsetY += (applied ?? meta.height + TITLE_HEIGHT) + 24
   }
 
   toast(`已上传 ${materials.length} 个素材`)

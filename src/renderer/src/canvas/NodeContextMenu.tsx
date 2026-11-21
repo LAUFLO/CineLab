@@ -16,6 +16,7 @@ import {
 } from './context-actions'
 import { requestDeleteSelection } from './delete-actions'
 import { Button, Menu } from '../components/ui'
+import { useShortcutLabel } from '../shortcuts/useShortcut'
 
 interface MenuAction {
   label: string
@@ -42,6 +43,9 @@ export function NodeContextMenu() {
   const node = useCanvasStore((state) =>
     menu ? state.nodes.find((entry) => entry.id === menu.nodeId) : undefined
   )
+  const copyLabel = useShortcutLabel('canvas.copy')
+  const pasteLabel = useShortcutLabel('canvas.paste')
+  const deleteLabel = useShortcutLabel('canvas.delete')
   if (!menu || !node) return null
 
   const sections = buildSections(node, {
@@ -51,7 +55,12 @@ export function NodeContextMenu() {
     openStudio,
     openSheet,
     runAuto,
-    close
+    close,
+    shortcuts: {
+      copy: copyLabel,
+      paste: pasteLabel,
+      delete: deleteLabel
+    }
   })
 
   return (
@@ -109,6 +118,7 @@ interface MenuContext {
   openSheet: (nodeId: string) => Promise<void>
   runAuto: (nodeId: string, config?: { interval?: number }) => Promise<void>
   close: () => void
+  shortcuts: { copy: string; paste: string; delete: string }
 }
 
 async function saveNodeToLibrary(
@@ -449,17 +459,17 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
       },
       {
         label: '复制',
-        hint: 'Ctrl+C',
+        hint: ctx.shortcuts.copy,
         run: () => copySelection()
       },
       {
         label: '粘贴',
-        hint: 'Ctrl+V',
+        hint: ctx.shortcuts.paste,
         run: () => void pasteAt()
       },
       {
         label: '删除',
-        hint: 'Delete',
+        hint: ctx.shortcuts.delete,
         danger: true,
         run: () => requestDeleteSelection()
       }

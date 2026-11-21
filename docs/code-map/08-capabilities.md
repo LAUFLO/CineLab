@@ -45,6 +45,7 @@
 | 06 | MCP 拉片读取/修改/自动拉片/复刻/导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/filmBridge.ts` |
 | 07 | IPC、preload、设置、素材库、安全、更新 | `src/main/ipc/`、`src/preload/` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
+| 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能卡片与 Markdown 预览 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx` |
 
 ## 部分实现（别当已完成）
 

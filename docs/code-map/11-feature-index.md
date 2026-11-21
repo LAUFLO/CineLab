@@ -99,6 +99,9 @@
 | 生成提案 | `AgentProposal`、`.cinelab/agent/proposals` | `src/main/agent/proposals.ts` | 已实现 |
 | 会话/压缩 | `.cinelab/agent/sessions/*.jsonl` | `src/main/agent/session.ts`、`compact.ts` | 已实现 |
 | 技能 | 内置/全局/项目三级 | `src/main/agent/skills.ts` | 已实现 |
+| 技能卡片 | 默认隐藏 canvas-basics、卡片网格、Markdown 预览 | `SkillsSection.tsx` | 已实现 |
+| 快捷键自定义 | 27 动作、录制、冲突检测、恢复默认 | `src/shared/shortcuts.ts`、`ShortcutsSettingsSection.tsx` | 已实现 |
+| 设置页分区 | 8 分区、旧 library/components/objectPresets 别名 | `SettingsPanel.tsx` | 已实现 |
 | 项目存储 | `.cinelab` 目录、原子写入 | `src/main/project/manager.ts` | 已实现 |
 | IPC/preload | `CineApi` | `src/shared/ipc-contract.ts`、`src/preload/index.ts` | 已实现 |
 | 安全/更新/组件 | 外部链接、导航、更新、运行时组件 | `src/main/security/`、`update/`、`components/` | 已实现 |

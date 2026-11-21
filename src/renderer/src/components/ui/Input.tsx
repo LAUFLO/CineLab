@@ -31,7 +31,11 @@ export const Textarea = forwardRef<
       className={
         unstyled
           ? className
-          : cn('min-h-24 resize-y py-2', FIELD_CLASS, className)
+          : cn(
+              'min-h-24 resize-none overflow-y-auto py-2',
+              FIELD_CLASS,
+              className
+            )
       }
       {...props}
     />

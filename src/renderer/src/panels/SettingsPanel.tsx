@@ -35,6 +35,7 @@ import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
 import { GeneralSettingsSection } from './GeneralSettingsSection'
 import { SkillsSection } from './SkillsSection'
+import { ShortcutsSettingsSection } from './ShortcutsSettingsSection'
 import { ObjectPresetsSection } from './ObjectPresetsSection'
 import { ModelConfigDialog } from '../canvas/nodes/ModelConfigDialog'
 import type { ModelConfigValue } from '../canvas/nodes/ModelConfigDialog'
@@ -49,14 +50,17 @@ import {
 
 type SectionId =
   | 'general'
+  | 'appearance'
+  | 'generation'
   | 'models'
   | 'skills'
-  | 'library'
-  | 'components'
-  | 'appearance'
-  | 'objectPresets'
+  | 'storage'
   | 'shortcuts'
   | 'about'
+  /** 旧深链接别名，打开时映射到新分区 */
+  | 'library'
+  | 'components'
+  | 'objectPresets'
 
 interface SectionDef {
   id: SectionId
@@ -77,15 +81,27 @@ const FEATURE_LABEL: Record<ModelFeature, string> = {
 
 const SECTIONS: SectionDef[] = [
   { id: 'general', label: '通用', icon: 'settings' },
-  { id: 'models', label: '模型服务', icon: 'robot' },
+  { id: 'appearance', label: '外观与画布', icon: 'sun' },
+  { id: 'generation', label: '创作与生成', icon: 'image' },
+  { id: 'models', label: '模型与运行时', icon: 'robot' },
   { id: 'skills', label: '技能', icon: 'sparkles' },
-  { id: 'library', label: '资产库', icon: 'library' },
-  { id: 'components', label: '组件', icon: 'layers' },
-  { id: 'appearance', label: '外观', icon: 'sun' },
-  { id: 'objectPresets', label: '物体类别', icon: 'layers' },
+  { id: 'storage', label: '资产与存储', icon: 'library' },
   { id: 'shortcuts', label: '快捷键', icon: 'help' },
-  { id: 'about', label: '关于', icon: 'logo' }
+  { id: 'about', label: '关于与更新', icon: 'logo' }
 ]
+
+const SECTION_ALIASES: Record<string, SectionId> = {
+  library: 'storage',
+  components: 'models',
+  objectPresets: 'generation'
+}
+
+function resolveSectionId(value: string): SectionId {
+  if (SECTION_ALIASES[value]) return SECTION_ALIASES[value]
+  return SECTIONS.some((section) => section.id === value)
+    ? (value as SectionId)
+    : 'general'
+}
 
 function emptyDraft(preset?: ProviderPreset): ProviderInput {
   return {
@@ -1392,21 +1408,6 @@ function AppearanceSection() {
   )
 }
 
-function PlaceholderSection({
-  title,
-  description
-}: {
-  title: string
-  description: string
-}) {
-  return (
-    <div className="flex flex-col">
-      <div className="mb-3 text-[13px] font-semibold text-fg">{title}</div>
-      <p className="mb-4 mt-0 text-xs leading-[1.8] text-fg-subtle">{description}</p>
-    </div>
-  )
-}
-
 function updateLabel(status: UpdateStatus | null): string {
   if (!status) return '正在读取更新状态…'
   switch (status.state) {
@@ -1564,7 +1565,7 @@ export function SettingsPanel() {
   const panelSection = useSettingsStore((state) => state.panelSection)
 
   useEffect(() => {
-    if (panelSection) setActive(panelSection as SectionId)
+    if (panelSection) setActive(resolveSectionId(panelSection))
   }, [panelSection])
 
   useEffect(() => {
@@ -1582,6 +1583,7 @@ export function SettingsPanel() {
 
   return (
     <div
+      data-shortcut-block
       className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay backdrop-blur-[2px] [-webkit-app-region:no-drag]"
       onPointerDown={close}
     >
@@ -1621,21 +1623,51 @@ export function SettingsPanel() {
             ))}
           </nav>
 
-          <div className="min-w-0 flex-1 overflow-y-auto px-6 py-5">
-            {active === 'general' ? <GeneralSettingsSection /> : null}
-            {active === 'models' ? <ModelsSection /> : null}
-            {active === 'skills' ? <SkillsSection /> : null}
-            {active === 'library' ? <LibrarySection /> : null}
-            {active === 'components' ? <ComponentsSection /> : null}
-            {active === 'appearance' ? <AppearanceSection /> : null}
-          {active === 'objectPresets' ? <ObjectPresetsSection /> : null}
-            {active === 'shortcuts' ? (
-              <PlaceholderSection
-                title="快捷键"
-                description="V 选择工具，F 框选，Delete 删除，Ctrl+Z 撤销，Ctrl+S 保存，Esc 取消。更多快捷键说明将在后续版本补充。"
-              />
+          <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-6 py-5">
+            {active === 'general' ? (
+              <GeneralSettingsSection part="general" />
             ) : null}
-            {active === 'about' ? <AboutSection /> : null}
+            {active === 'appearance' ? (
+              <>
+                <AppearanceSection />
+                <div className="mt-5">
+                  <GeneralSettingsSection part="appearance" />
+                </div>
+              </>
+            ) : null}
+            {active === 'generation' ? (
+              <>
+                <GeneralSettingsSection part="generation" />
+                <ObjectPresetsSection />
+              </>
+            ) : null}
+            {active === 'models' ? (
+              <>
+                <ModelsSection />
+                <ComponentsSection />
+                <div className="mt-5">
+                  <GeneralSettingsSection part="modelsRuntime" />
+                </div>
+              </>
+            ) : null}
+            {active === 'skills' ? <SkillsSection /> : null}
+            {active === 'storage' ? (
+              <>
+                <LibrarySection />
+                <div className="mt-5">
+                  <GeneralSettingsSection part="storage" />
+                </div>
+              </>
+            ) : null}
+            {active === 'shortcuts' ? <ShortcutsSettingsSection /> : null}
+            {active === 'about' ? (
+              <>
+                <GeneralSettingsSection part="about" />
+                <div className="mt-5">
+                  <AboutSection />
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
       </div>

@@ -41,6 +41,7 @@
 | [local-adapters.md](local-adapters.md) | 本地可信适配器：目录、manifest、接口、构建与热重载 |
 | [mcp.md](mcp.md) | MCP server：HTTP、stdio 桥接、认证、工具与排查 |
 | [macos-packaging-gaps-plan.md](macos-packaging-gaps-plan.md) | macOS 打包资源缺口、视觉组件复用、字幕字体与发版校验，待实施 |
+| [ui-polish-plan.md](ui-polish-plan.md) | 画布与设置页 UI 打磨：参数单位、连线光效、菜单裁切、素材节点、快捷键、技能卡片与设置重组 |
 
 ## 3. 代码地图
 

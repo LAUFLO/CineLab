@@ -505,6 +505,7 @@ applyOutput: (nodeId, asset, op) => {
             status: 'done',
             progress: 100,
             error: undefined,
+            assetOnly: undefined,
             outputs,
             selectedOutputId: output.id
           },

@@ -1,7 +1,6 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { autoUpdater, type UpdateInfo } from 'electron-updater'
 import type { UpdateState, UpdateStatus } from '@shared/update'
-import type { UpdateChannel } from '@shared/preferences'
 import { getPreferences } from '../settings/preferences'
 import {
   installerFallback,
@@ -105,14 +104,6 @@ function handleError(error: unknown): void {
 
 export function getUpdateStatus(): UpdateStatus {
   return status
-}
-
-export function applyUpdatePreferences(updates: {
-  channel: UpdateChannel
-}): void {
-  const beta = updates.channel === 'beta'
-  autoUpdater.allowPrerelease = beta
-  autoUpdater.channel = beta ? 'beta' : 'latest'
 }
 
 export async function checkForUpdates(): Promise<UpdateStatus> {

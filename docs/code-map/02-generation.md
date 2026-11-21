@@ -55,7 +55,7 @@
 
 `engine/queue.ts`：
 
-- 默认并发 2，可设 1–4；
+- 默认并发 8，可设 1/2/3/4/6/8；
 - `enqueue`、`cancel`、`cancelAll`；
 - 每个任务带 `nodeId`、`run(signal, onProgress)`；
 - 事件：`queued`、`cancelled`、进度、完成。

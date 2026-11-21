@@ -4,6 +4,7 @@ import { useUIStore } from '../stores/ui'
 import { createStudioAt } from '../studio/nodes'
 import { pasteAt, uploadMaterialsAt } from './context-actions'
 import { Button, Menu } from '../components/ui'
+import { useShortcutLabel } from '../shortcuts/useShortcut'
 
 export function CanvasContextMenu() {
   const menu = useUIStore((state) => state.contextMenu)
@@ -15,6 +16,9 @@ export function CanvasContextMenu() {
   const canRedo = useCanvasStore((state) => state.future.length > 0)
   const undo = useCanvasStore((state) => state.undo)
   const redo = useCanvasStore((state) => state.redo)
+  const undoLabel = useShortcutLabel('canvas.undo')
+  const redoLabel = useShortcutLabel('canvas.redo')
+  const pasteLabel = useShortcutLabel('canvas.paste')
 
   if (!menu) return null
 
@@ -92,7 +96,7 @@ export function CanvasContextMenu() {
         }}
       >
         <span>撤销</span>
-        <span className="text-xs text-fg-subtle">Ctrl+Z</span>
+        <span className="text-xs text-fg-subtle">{undoLabel}</span>
       </Button>
 
       <Button
@@ -107,7 +111,7 @@ export function CanvasContextMenu() {
         }}
       >
         <span>重做</span>
-        <span className="text-xs text-fg-subtle">Shift+Ctrl+Z</span>
+        <span className="text-xs text-fg-subtle">{redoLabel}</span>
       </Button>
 
       <div className="mx-2 my-[5px] h-px bg-divider" />
@@ -123,7 +127,7 @@ export function CanvasContextMenu() {
         }}
       >
         <span>粘贴</span>
-        <span className="text-xs text-fg-subtle">Ctrl+V</span>
+        <span className="text-xs text-fg-subtle">{pasteLabel}</span>
       </Button>
     </Menu>
   )

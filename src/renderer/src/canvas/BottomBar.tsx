@@ -2,6 +2,7 @@ import { useRef, useState, type MouseEvent } from 'react'
 import { Icon } from '../components/Icon'
 import { useUIStore } from '../stores/ui'
 import { Button, Popover } from '../components/ui'
+import { useShortcutLabel } from '../shortcuts/useShortcut'
 
 export function BottomBar() {
   const tool = useUIStore((state) => state.tool)
@@ -13,6 +14,8 @@ export function BottomBar() {
 
   const [toolMenuOpen, setToolMenuOpen] = useState(false)
   const toolWrapRef = useRef<HTMLDivElement>(null)
+  const selectShortcut = useShortcutLabel('canvas.tool.select')
+  const handShortcut = useShortcutLabel('canvas.tool.hand')
 
   const add = (event: MouseEvent<HTMLButtonElement>): void => {
     const rect = event.currentTarget.getBoundingClientRect()
@@ -72,7 +75,9 @@ export function BottomBar() {
             >
               <Icon name="cursor" size={14} />
               <span>选择</span>
-              <kbd className="ml-auto font-[inherit] text-[11px] text-fg-subtle">V</kbd>
+              <kbd className="ml-auto font-[inherit] text-[11px] text-fg-subtle">
+                {selectShortcut}
+              </kbd>
             </Button>
             <Button
               type="button"
@@ -88,7 +93,9 @@ export function BottomBar() {
             >
               <Icon name="move" size={14} />
               <span>抓手</span>
-              <kbd className="ml-auto font-[inherit] text-[11px] text-fg-subtle">H</kbd>
+              <kbd className="ml-auto font-[inherit] text-[11px] text-fg-subtle">
+                {handShortcut}
+              </kbd>
             </Button>
           </Popover>
         ) : null}

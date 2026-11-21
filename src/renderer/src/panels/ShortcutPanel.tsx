@@ -1,43 +1,53 @@
 import { useEffect } from 'react'
+import {
+  SHORTCUT_ACTIONS,
+  SHORTCUT_SCOPES,
+  effectiveShortcutBinding,
+  formatShortcut,
+  type ShortcutScope
+} from '@shared/shortcuts'
 import { Icon } from '../components/Icon'
+import { usePreferencesStore } from '../stores/preferences'
 import { useUIStore } from '../stores/ui'
 import { IconButton } from '../components/ui'
+import { shortcutPlatform } from '../shortcuts/useShortcut'
 
-const GROUPS: { title: string; items: [string, string][] }[] = [
-  {
-    title: '画布',
-    items: [
-      ['V', '选择工具'],
-      ['H', '抓手工具'],
-      ['Space（按住）', '临时抓手'],
-      ['双击画布', '添加节点'],
-      ['右键画布', '画布菜单'],
-      ['滚轮', '平移画布'],
-      ['Ctrl + 滚轮', '缩放画布']
-    ]
-  },
-  {
-    title: '节点',
-    items: [
-      ['Ctrl + C', '复制选中节点'],
-      ['Ctrl + V', '粘贴'],
-      ['Delete', '删除选中'],
-      ['Ctrl + Z', '撤销'],
-      ['Ctrl + Shift + Z', '重做']
-    ]
-  },
-  {
-    title: '查找与整理',
-    items: [
-      ['Ctrl + F', '搜索节点'],
-      ['Alt + Shift + F', '整理画布']
-    ]
-  }
-]
+const SCOPES: ShortcutScope[] = ['global', 'canvas', 'timeline', 'stage']
 
 export function ShortcutPanel() {
   const open = useUIStore((state) => state.shortcutsOpen)
   const close = useUIStore((state) => state.closeShortcuts)
+  const bindings = usePreferencesStore(
+    (state) => state.preferences.shortcuts.bindings
+  )
+  const isMac = shortcutPlatform() === 'mac'
+  const groups: { title: string; items: [string, string][] }[] = [
+    ...SCOPES.map((scope) => ({
+      title: SHORTCUT_SCOPES[scope],
+      items: SHORTCUT_ACTIONS.filter((action) => action.scope === scope).map(
+        (action): [string, string] => [
+          formatShortcut(
+            effectiveShortcutBinding(action.id, bindings),
+            isMac ? 'mac' : 'win'
+          ),
+          action.label
+        ]
+      )
+    })),
+    {
+      title: '鼠标',
+      items: [
+        ['双击画布', '添加节点'],
+        ['右键画布', '画布菜单'],
+        ['滚轮', '平移画布'],
+        [isMac ? '⌘ + 滚轮' : 'Ctrl + 滚轮', '缩放画布']
+      ] as [string, string][]
+    },
+    {
+      title: '固定行为',
+      items: [['Esc', '关闭浮窗或弹窗']] as [string, string][]
+    }
+  ].filter((group) => group.items.length > 0)
 
   useEffect(() => {
     if (!open) return
@@ -52,6 +62,7 @@ export function ShortcutPanel() {
 
   return (
     <div
+      data-shortcut-block
       className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay backdrop-blur-[2px] [-webkit-app-region:no-drag]"
       onPointerDown={close}
     >
@@ -72,7 +83,7 @@ export function ShortcutPanel() {
         </header>
 
         <div className="grid gap-[18px] overflow-y-auto px-5 pb-5 pt-4">
-          {GROUPS.map((group) => (
+          {groups.map((group) => (
             <section key={group.title}>
               <h4 className="mb-2 text-xs font-semibold text-fg-subtle">
                 {group.title}

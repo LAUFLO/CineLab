@@ -7,7 +7,12 @@ import {
   useViewport,
   type NodeProps
 } from '@xyflow/react'
-import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
+import {
+  NODE_META,
+  TITLE_HEIGHT,
+  type NodeKind,
+  type OutputRef
+} from '@shared/canvas-schema'
 import { Icon, type IconName } from '../../components/Icon'
 import {
   absolutePosition,
@@ -43,7 +48,7 @@ const NODE_ICON: Record<NodeKind, IconName> = {
 }
 
 const VERSION_BTN_CLASS =
-  '!h-[18px] !w-[18px] !rounded-pill !text-[11px] !text-inherit enabled:hover:!bg-white/16 disabled:!cursor-default disabled:!opacity-35'
+  '!h-5 !w-5 shrink-0 !rounded-md !p-0 !text-fg-muted enabled:hover:!bg-surface-hover enabled:hover:!text-fg disabled:!cursor-default disabled:!opacity-25'
 
 export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const meta = NODE_META[data.kind]
@@ -149,17 +154,19 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
       (previewRatio !== null && previewRatio >= 1.8))
   )
 
+  const selectOutput = (output: OutputRef): void => {
+    patchNodeData(id, { selectedOutputId: output.id })
+    if (output.width && output.height) {
+      resizeNode(
+        id,
+        Math.round((nodeWidth * output.height) / output.width) + TITLE_HEIGHT
+      )
+    }
+  }
+
   const shiftVersion = (delta: number): void => {
     const next = outputs[currentIndex + delta]
-    if (next) {
-      patchNodeData(id, { selectedOutputId: next.id })
-      if (next.width && next.height) {
-        resizeNode(
-          id,
-          Math.round((nodeWidth * next.height) / next.width) + TITLE_HEIGHT
-        )
-      }
-    }
+    if (next) selectOutput(next)
   }
 
   const exportCurrent = async (): Promise<void> => {
@@ -399,20 +406,57 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               onClick={(event) => event.stopPropagation()}
             />
           ) : (
-            <span>{data.title}</span>
+            <span className="min-w-0 truncate">{data.title}</span>
           )}
-          {data.kind === 'audio' ? (
-            current?.duration ? (
-              <span className="ml-auto pr-0.5 text-[11px] tabular-nums text-fg-subtle">
-                {timeLabel(current.duration, false)}
-              </span>
-            ) : null
-          ) : data.status === 'done' ? (
-            <span className="ml-1.5 text-[10px] text-success">已完成</span>
+          {data.kind !== 'audio' && data.status === 'done' ? (
+            <span className="ml-1.5 shrink-0 text-[10px] text-success">
+              已完成
+            </span>
           ) : null}
           {data.status === 'error' ? (
-            <span className="ml-1.5 text-[10px] text-danger">失败</span>
+            <span className="ml-1.5 shrink-0 text-[10px] text-danger">
+              失败
+            </span>
           ) : null}
+          <div className="ml-auto flex shrink-0 items-center gap-1 pl-1">
+            {data.kind === 'audio' && current?.duration ? (
+              <span className="pr-0.5 text-[11px] tabular-nums text-fg-subtle">
+                {timeLabel(current.duration, false)}
+              </span>
+            ) : null}
+            {outputs.length > 1 && !isBusy ? (
+              <div
+                className="nodrag nopan flex items-center gap-0.5"
+                onDoubleClick={(event) => event.stopPropagation()}
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className={VERSION_BTN_CLASS}
+                  title="更早的版本"
+                  disabled={currentIndex >= outputs.length - 1}
+                  onClick={() => shiftVersion(1)}
+                >
+                  <Icon name="chevron-left" size={11} />
+                </Button>
+                <span className="min-w-[24px] text-center text-[11px] leading-none tabular-nums text-fg-subtle">
+                  {outputs.length - currentIndex}/{outputs.length}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className={VERSION_BTN_CLASS}
+                  title="更新的版本"
+                  disabled={currentIndex <= 0}
+                  onClick={() => shiftVersion(-1)}
+                >
+                  <Icon name="chevron-right" size={11} />
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <div
@@ -564,39 +608,6 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                   </div>
                 ) : null}
 
-                {outputs.length > 1 && !isBusy ? (
-                  <div
-                    className={`nodrag nopan absolute right-2 z-[4] flex h-6 items-center gap-0.5 rounded-pill bg-black/[0.46] px-1 text-[11px] text-white backdrop-blur-[4px] ${
-                      data.kind === 'audio' ? 'top-2' : 'bottom-2'
-                    }`}
-                  >
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="none"
-                      className={VERSION_BTN_CLASS}
-                      title="更早的版本"
-                      disabled={currentIndex >= outputs.length - 1}
-                      onClick={() => shiftVersion(1)}
-                    >
-                      <Icon name="chevron-left" size={11} />
-                    </Button>
-                    <span className="px-0.5 tabular-nums">
-                      {outputs.length - currentIndex}/{outputs.length}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="none"
-                      className={VERSION_BTN_CLASS}
-                      title="更新的版本"
-                      disabled={currentIndex <= 0}
-                      onClick={() => shiftVersion(-1)}
-                    >
-                      <Icon name="chevron-right" size={11} />
-                    </Button>
-                  </div>
-                ) : null}
               </>
             )}
           </div>

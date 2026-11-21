@@ -131,7 +131,6 @@ export function VideoPreview({
           src={src}
           path={path}
           fps={fps}
-          hideVolume
           onTimeChange={onTimeChange}
           onDurationChange={onDurationChange}
           onPlay={handlePlay}

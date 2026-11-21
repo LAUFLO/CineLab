@@ -6,6 +6,7 @@ import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
 import { selectedNodeOutput } from '../stores/canvas-model'
 import { generateStageFromScene } from './stage-from-scene'
 import { useUIStore } from '../stores/ui'
+import { shortcutMatches } from '../shortcuts/useShortcut'
 import { StageInspector } from './StageInspector'
 import { StageTimeline } from './StageTimeline'
 import { StageViewport } from './StageViewport'
@@ -229,10 +230,14 @@ export function StageWindow() {
         closeStage()
         return
       }
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+      if (shortcutMatches(event, 'stage.undo')) {
         event.preventDefault()
-        if (event.shiftKey) redo()
-        else undo()
+        undo()
+        return
+      }
+      if (shortcutMatches(event, 'stage.redo')) {
+        event.preventDefault()
+        redo()
       }
     }
     window.addEventListener('keydown', onKeyDown)

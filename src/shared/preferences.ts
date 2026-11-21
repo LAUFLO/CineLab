@@ -1,7 +1,12 @@
+import {
+  isShortcutActionId,
+  isValidShortcutBinding,
+  type ShortcutBindings
+} from './shortcuts'
+
 export type CapabilityGroup = 'image' | 'video' | 'text' | 'audio'
 export type CanvasScrollMode = 'pan' | 'zoom'
 export type CanvasGridStyle = 'dots' | 'lines' | 'none'
-export type UpdateChannel = 'stable' | 'beta'
 export type ProxyMode = 'direct' | 'system' | 'manual'
 
 export interface Preferences {
@@ -47,7 +52,6 @@ export interface Preferences {
   updates: {
     /** 启动后静默检查更新 */
     checkOnStartup: boolean
-    channel: UpdateChannel
   }
   storage: {
     /** 自动清理缩略图缓存的天数，0 表示不清理 */
@@ -57,6 +61,12 @@ export interface Preferences {
     /** 界面缩放百分比 */
     scale: number
   }
+  /** 快捷键覆盖项；只保存用户改过的动作 */
+  shortcuts: {
+    bindings: ShortcutBindings
+  }
+  /** 操作弹窗中保存的提示词覆盖项；每个操作/菜单项只保留一个版本 */
+  operationPrompts: Record<string, string>
   network: {
     proxyMode: ProxyMode
     /** 手动代理地址，例如 http://127.0.0.1:7890 */
@@ -69,7 +79,7 @@ export interface Preferences {
 export const PREFERENCES_VERSION = 1
 
 export const AUTO_SAVE_DELAYS = [300, 600, 1000, 3000] as const
-export const GENERATION_CONCURRENCY = [1, 2, 3, 4] as const
+export const GENERATION_CONCURRENCY = [1, 2, 3, 4, 6, 8] as const
 export const HISTORY_LIMITS = [0, 20, 50, 100] as const
 export const AUTO_RETRY_COUNTS = [0, 1, 2] as const
 export const UI_SCALES = [90, 100, 110, 125] as const
@@ -102,7 +112,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
       text: null,
       audio: null
     },
-    concurrency: 2,
+    concurrency: 8,
     notifyOnComplete: true,
     autoLink: true,
     autoRetry: 0,
@@ -110,8 +120,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
     historyLimit: 50
   },
   updates: {
-    checkOnStartup: true,
-    channel: 'stable'
+    checkOnStartup: true
   },
   storage: {
     autoCleanCacheDays: 90
@@ -119,6 +128,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   ui: {
     scale: 100
   },
+  shortcuts: {
+    bindings: {}
+  },
+  operationPrompts: {},
   network: {
     proxyMode: 'direct',
     proxyUrl: '',
@@ -178,6 +191,32 @@ export function normalizePreferences(input: unknown): Preferences {
   const storage = isRecord(raw.storage) ? raw.storage : {}
   const ui = isRecord(raw.ui) ? raw.ui : {}
   const network = isRecord(raw.network) ? raw.network : {}
+  const shortcuts = isRecord(raw.shortcuts) ? raw.shortcuts : {}
+  const shortcutBindingsRaw = isRecord(shortcuts.bindings)
+    ? shortcuts.bindings
+    : {}
+  const shortcutBindings: ShortcutBindings = {}
+  for (const [id, value] of Object.entries(shortcutBindingsRaw)) {
+    if (!isShortcutActionId(id)) continue
+    if (value === null) {
+      shortcutBindings[id] = null
+      continue
+    }
+    if (typeof value === 'string' && isValidShortcutBinding(value)) {
+      shortcutBindings[id] = value
+    }
+  }
+  const operationPrompts = isRecord(raw.operationPrompts)
+    ? raw.operationPrompts
+    : {}
+  const prompts: Record<string, string> = {}
+  for (const [key, value] of Object.entries(operationPrompts)) {
+    if (!key || key.length > 200 || typeof value !== 'string') continue
+    const text = value.trim().slice(0, 20000)
+    if (!text) continue
+    prompts[key] = text
+    if (Object.keys(prompts).length >= 200) break
+  }
 
   return {
     version: PREFERENCES_VERSION,
@@ -273,11 +312,6 @@ export function normalizePreferences(input: unknown): Preferences {
       checkOnStartup: readBoolean(
         updates.checkOnStartup,
         DEFAULT_PREFERENCES.updates.checkOnStartup
-      ),
-      channel: readEnum(
-        updates.channel,
-        ['stable', 'beta'] as const,
-        DEFAULT_PREFERENCES.updates.channel
       )
     },
     storage: {
@@ -294,6 +328,8 @@ export function normalizePreferences(input: unknown): Preferences {
         DEFAULT_PREFERENCES.ui.scale
       )
     },
+    shortcuts: { bindings: shortcutBindings },
+    operationPrompts: prompts,
     network: {
       proxyMode: readEnum(
         network.proxyMode,

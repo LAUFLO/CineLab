@@ -7,6 +7,38 @@ describe('normalizePreferences', () => {
     expect(normalizePreferences({})).toEqual(DEFAULT_PREFERENCES)
   })
 
+  it('normalizes shortcut overrides', () => {
+    const preferences = normalizePreferences({
+      shortcuts: {
+        bindings: {
+          'canvas.undo': 'mod+alt+z',
+          'canvas.copy': null,
+          'unknown.action': 'mod+u',
+          'canvas.paste': 'escape'
+        }
+      }
+    })
+
+    expect(preferences.shortcuts.bindings).toEqual({
+      'canvas.undo': 'mod+alt+z',
+      'canvas.copy': null
+    })
+  })
+
+  it('normalizes saved operation prompts', () => {
+    const preferences = normalizePreferences({
+      operationPrompts: {
+        'relight:top': '  自定义顶光提示词  ',
+        'reverse-prompt:default': '',
+        invalid: 42
+      }
+    })
+
+    expect(preferences.operationPrompts).toEqual({
+      'relight:top': '自定义顶光提示词'
+    })
+  })
+
   it('keeps valid values', () => {
     const preferences = normalizePreferences({
       startup: { openRecentProject: false },
@@ -38,7 +70,7 @@ describe('normalizePreferences', () => {
         watermark: true,
         historyLimit: 0
       },
-      updates: { checkOnStartup: false, channel: 'beta' },
+      updates: { checkOnStartup: false },
       storage: { autoCleanCacheDays: 30 },
       ui: { scale: 125 },
       network: {
@@ -69,8 +101,7 @@ describe('normalizePreferences', () => {
     expect(preferences.generation.watermark).toBe(true)
     expect(preferences.generation.historyLimit).toBe(0)
     expect(preferences.updates).toEqual({
-      checkOnStartup: false,
-      channel: 'beta'
+      checkOnStartup: false
     })
     expect(preferences.storage.autoCleanCacheDays).toBe(30)
     expect(preferences.ui.scale).toBe(125)
@@ -95,7 +126,7 @@ describe('normalizePreferences', () => {
         autoRetry: 5,
         historyLimit: 55
       },
-      updates: { channel: 'nightly' },
+      updates: {},
       storage: { autoCleanCacheDays: 7 },
       ui: { scale: 300 },
       network: {
@@ -124,9 +155,6 @@ describe('normalizePreferences', () => {
     )
     expect(preferences.generation.historyLimit).toBe(
       DEFAULT_PREFERENCES.generation.historyLimit
-    )
-    expect(preferences.updates.channel).toBe(
-      DEFAULT_PREFERENCES.updates.channel
     )
     expect(preferences.storage.autoCleanCacheDays).toBe(
       DEFAULT_PREFERENCES.storage.autoCleanCacheDays

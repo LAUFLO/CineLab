@@ -68,6 +68,18 @@ export interface SkillReadResult {
   nextOffset?: number
 }
 
+/** 设置页默认隐藏的内置技能；仍会提供给 CineBot */
+export const DEFAULT_HIDDEN_BUILTIN_SKILLS = ['canvas-basics'] as const
+
+export function isDefaultHiddenBuiltinSkill(
+  entry: Pick<SkillAdminEntry, 'scope' | 'name'>
+): boolean {
+  return (
+    entry.scope === 'builtin' &&
+    (DEFAULT_HIDDEN_BUILTIN_SKILLS as readonly string[]).includes(entry.name)
+  )
+}
+
 export const SKILL_NAME_PATTERN = /^[a-z][a-zA-Z0-9-]{0,63}$/
 export const MAX_SKILL_DESCRIPTION_LENGTH = 500
 export const MAX_SKILL_BODY_BYTES = 256 * 1024

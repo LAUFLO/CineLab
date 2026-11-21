@@ -94,7 +94,15 @@ detachStudioOutput: (studioNodeId) => {
 
     return id
   },
-addAssetNodes: (kind, origin, assets, titlePrefix, sourceNodeId, layout) => {
+addAssetNodes: (
+    kind,
+    origin,
+    assets,
+    titlePrefix,
+    sourceNodeId,
+    layout,
+    assetOnly = false
+  ) => {
     if (assets.length === 0) return []
 
     get().pushHistory()
@@ -174,6 +182,7 @@ addAssetNodes: (kind, origin, assets, titlePrefix, sourceNodeId, layout) => {
           kind,
           title: `${titlePrefix} ${index + 1}`,
           status: 'done',
+          ...(assetOnly ? { assetOnly: true } : {}),
           outputs: [output],
           selectedOutputId: output.id,
           templates: meta.templates

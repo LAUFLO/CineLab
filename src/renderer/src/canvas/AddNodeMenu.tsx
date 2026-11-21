@@ -85,7 +85,7 @@ export function AddNodeMenu() {
 
   const above = menu.placement === 'above'
   const anchorX = above ? menu.screen.x - 110 : menu.screen.x
-  const anchorY = menu.screen.y + 14
+  const anchorY = above ? menu.screen.y - 8 : menu.screen.y + 14
 
   const wire = (() => {
     if (!menu.source) return null
@@ -126,7 +126,8 @@ export function AddNodeMenu() {
         x={anchorX}
         y={anchorY}
         width={220}
-        className={`!p-1 max-h-[calc(100vh-120px)] overflow-y-auto [animation:menu-in_120ms_ease-out] ${above ? '[transform:translateY(-100%)]' : ''}`}
+        placement={above ? 'above' : 'auto'}
+        className="!p-1 overscroll-contain [animation:menu-in_120ms_ease-out]"
       >
         <div className="px-2 pt-1.5 pb-1 text-[11px] text-fg-subtle">
           {menu.source

@@ -201,7 +201,7 @@ AgentPanel
 | `src/main/mcp/stdio-bridge.ts` | 104 |
 | `src/main/mcp/tools.ts` | 75 |
 | `src/main/mcp/write-tools.ts` | 1050 |
-| `src/renderer/src/agent/AgentPanel.tsx` | 1248 |
+| `src/renderer/src/agent/AgentPanel.tsx` | 1250 |
 | `src/renderer/src/agent/agentStore.ts` | 1100 |
 | `src/renderer/src/agent/canvasBridge.ts` | 1125 |
 | `src/renderer/src/agent/filmBridge.ts` | 747 |
@@ -219,7 +219,7 @@ AgentPanel
 | `src/shared/agent.ts` | 264 |
 | `src/shared/capabilities.ts` | 321 |
 | `src/shared/mcp-command.ts` | 14 |
-| `src/shared/skills.ts` | 168 |
+| `src/shared/skills.ts` | 180 |
 <!-- AUTO:files:end -->
 
 <!-- AUTO:exports:start -->
@@ -280,5 +280,5 @@ AgentPanel
 | `src/shared/agent.ts` | `AgentProfileId`、`AgentPermissionMode`、`AgentScope`、`AgentAttachment`、`AgentReference`、`AgentChatRequest`、`AgentModelInfo`、`AgentGenerationModels`、`AgentSessionInfo`、`AgentUsage`、`AgentProposalStatus`、`AgentProposal`、`AgentProposalDraft`、`AgentToolCall`、`AgentToolResult`、`AgentTurnChange`、`AgentTurnStatus`、`AgentTurn`、`AgentEvent`、`AgentSessionMessage`、`AgentSessionSnapshot`、`AgentToolCallRequest`、`AgentToolResultInput`、`AgentConfirmInput` …（共 26 个） |
 | `src/shared/capabilities.ts` | `ModelInputFeature`、`ModelOutputFeature`、`AdapterCapability`、`CapabilityGapKind`、`CapabilityGap`、`EffectiveCapabilities`、`ADAPTER_CAPABILITIES`、`resolveAdapter`、`contractFor`、`normalizeFeatureSets`、`effectiveCapabilities` |
 | `src/shared/mcp-command.ts` | `McpWriteCommand`、`McpWriteResult` |
-| `src/shared/skills.ts` | `SkillScope`、`SkillFrontmatter`、`SkillSummary`、`SkillAdminEntry`、`SkillFileEntry`、`SkillFileContent`、`SkillWriteInput`、`SkillOverrideInput`、`SkillUploadFolder`、`SkillUploadResult`、`SkillCloneInput`、`SkillReadResult`、`SKILL_NAME_PATTERN`、`MAX_SKILL_DESCRIPTION_LENGTH`、`MAX_SKILL_BODY_BYTES`、`MAX_SKILL_REFERENCE_BYTES`、`MAX_SKILL_PATH_LENGTH`、`MAX_SKILL_UPLOAD_FILES`、`MAX_SKILL_UPLOAD_BYTES`、`parseSkillMarkdown`、`normalizeSkillPath` |
+| `src/shared/skills.ts` | `SkillScope`、`SkillFrontmatter`、`SkillSummary`、`SkillAdminEntry`、`SkillFileEntry`、`SkillFileContent`、`SkillWriteInput`、`SkillOverrideInput`、`SkillUploadFolder`、`SkillUploadResult`、`SkillCloneInput`、`SkillReadResult`、`DEFAULT_HIDDEN_BUILTIN_SKILLS`、`isDefaultHiddenBuiltinSkill`、`SKILL_NAME_PATTERN`、`MAX_SKILL_DESCRIPTION_LENGTH`、`MAX_SKILL_BODY_BYTES`、`MAX_SKILL_REFERENCE_BYTES`、`MAX_SKILL_PATH_LENGTH`、`MAX_SKILL_UPLOAD_FILES`、`MAX_SKILL_UPLOAD_BYTES`、`parseSkillMarkdown`、`normalizeSkillPath` |
 <!-- AUTO:exports:end -->

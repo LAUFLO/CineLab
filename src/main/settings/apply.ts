@@ -1,7 +1,6 @@
 import { session } from 'electron'
 import type { Preferences } from '@shared/preferences'
 import { generationQueue } from '../engine/queue'
-import { applyUpdatePreferences } from '../update/service'
 
 async function applyProxy(preferences: Preferences): Promise<void> {
   const ses = session.defaultSession
@@ -27,7 +26,6 @@ export async function applyRuntimePreferences(
   preferences: Preferences
 ): Promise<void> {
   generationQueue.setConcurrency(preferences.generation.concurrency)
-  applyUpdatePreferences(preferences.updates)
 
   try {
     await applyProxy(preferences)

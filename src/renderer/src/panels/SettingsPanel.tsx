@@ -35,6 +35,7 @@ import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
 import { GeneralSettingsSection } from './GeneralSettingsSection'
 import { SkillsSection } from './SkillsSection'
+import { ShortcutsSettingsSection } from './ShortcutsSettingsSection'
 import { ObjectPresetsSection } from './ObjectPresetsSection'
 import { ModelConfigDialog } from '../canvas/nodes/ModelConfigDialog'
 import type { ModelConfigValue } from '../canvas/nodes/ModelConfigDialog'
@@ -1392,21 +1393,6 @@ function AppearanceSection() {
   )
 }
 
-function PlaceholderSection({
-  title,
-  description
-}: {
-  title: string
-  description: string
-}) {
-  return (
-    <div className="flex flex-col">
-      <div className="mb-3 text-[13px] font-semibold text-fg">{title}</div>
-      <p className="mb-4 mt-0 text-xs leading-[1.8] text-fg-subtle">{description}</p>
-    </div>
-  )
-}
-
 function updateLabel(status: UpdateStatus | null): string {
   if (!status) return '正在读取更新状态…'
   switch (status.state) {
@@ -1582,6 +1568,7 @@ export function SettingsPanel() {
 
   return (
     <div
+      data-shortcut-block
       className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay backdrop-blur-[2px] [-webkit-app-region:no-drag]"
       onPointerDown={close}
     >
@@ -1629,12 +1616,7 @@ export function SettingsPanel() {
             {active === 'components' ? <ComponentsSection /> : null}
             {active === 'appearance' ? <AppearanceSection /> : null}
           {active === 'objectPresets' ? <ObjectPresetsSection /> : null}
-            {active === 'shortcuts' ? (
-              <PlaceholderSection
-                title="快捷键"
-                description="V 选择工具，F 框选，Delete 删除，Ctrl+Z 撤销，Ctrl+S 保存，Esc 取消。更多快捷键说明将在后续版本补充。"
-              />
-            ) : null}
+            {active === 'shortcuts' ? <ShortcutsSettingsSection /> : null}
             {active === 'about' ? <AboutSection /> : null}
           </div>
         </div>

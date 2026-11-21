@@ -21,6 +21,7 @@ import {
   type TimelineClip
 } from '@shared/timeline-schema'
 import { useTimelineStore } from '../stores/timeline'
+import { useShortcutLabel } from '../shortcuts/useShortcut'
 import { applyTimelinePlan } from './timeline-plan-runner'
 import { useUIStore } from '../stores/ui'
 import {
@@ -635,6 +636,7 @@ function KeyframeSection({
 }
 
 export function InspectorPane() {
+  const undoShortcut = useShortcutLabel('timeline.undo')
   const doc = useTimelineStore((state) => state.doc)
   const selectedIds = useTimelineStore((state) => state.selectedIds)
   const dispatch = useTimelineStore((state) => state.dispatch)
@@ -1372,7 +1374,7 @@ export function InspectorPane() {
                 {runningAction === 'beat-split' ? '检测中…' : '节拍切分'}
               </Button>
               <small className={FIELD_HINT}>
-                静音两端保留 120ms，过短区间跳过；所有操作可 Ctrl+Z 恢复
+                静音两端保留 120ms，过短区间跳过；所有操作可 {undoShortcut} 恢复
               </small>
             </Section>
           ) : null}

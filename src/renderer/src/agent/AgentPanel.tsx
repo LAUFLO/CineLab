@@ -21,6 +21,7 @@ import {
 } from './agentStore'
 import agentIcon from '../assets/agent-icon.svg'
 import { Button, Input, Popover, Textarea } from '../components/ui'
+import { useShortcutLabel } from '../shortcuts/useShortcut'
 
 import { ContextRing } from './panel/ContextRing'
 import { MessageBubble } from './panel/MessageBubble'
@@ -37,6 +38,7 @@ import {
 
 export function AgentPanel() {
   const visible = useAgentStore((state) => state.visible)
+  const agentShortcut = useShortcutLabel('app.agent.toggle')
   const sessionId = useAgentStore((state) => state.sessionId)
   const sessionTitle = useAgentStore((state) => state.sessionTitle)
   const sessions = useAgentStore((state) => state.sessions)
@@ -1228,7 +1230,7 @@ export function AgentPanel() {
           className="fixed bottom-[26px] right-[26px] z-[95] size-11 !rounded-full !border-0 !bg-transparent p-0 shadow-float hover:-translate-y-px hover:!bg-transparent hover:shadow-float"
           onClick={toggle}
           aria-label="打开 CineBot"
-          title="CineBot（Ctrl+Shift+A）"
+          title={`CineBot（${agentShortcut}）`}
           variant="secondary"
           size="none"
         >

@@ -111,7 +111,11 @@ export function Dialog({
 
   if (bare) {
     return createPortal(
-      <div className={overlayClassName} onPointerDown={onClose}>
+      <div
+        className={overlayClassName}
+        data-shortcut-block
+        onPointerDown={onClose}
+      >
         <div
           ref={panelRef}
           role="dialog"
@@ -130,6 +134,7 @@ export function Dialog({
   return createPortal(
     <div
       className="fixed inset-0 z-[900] flex items-center justify-center bg-overlay p-4"
+      data-shortcut-block
       onPointerDown={onClose}
     >
       <div

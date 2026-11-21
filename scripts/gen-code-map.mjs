@@ -186,13 +186,15 @@ const MODULES = [
       'src/renderer/src/panels',
       'src/renderer/src/styles',
       'src/renderer/src/theme',
-      'src/renderer/src/lib'
+      'src/renderer/src/lib',
+      'src/renderer/src/shortcuts'
     ],
     files: [
       'src/renderer/src/App.tsx',
       'src/renderer/src/main.tsx',
       'src/renderer/src/env.d.ts',
-      'src/renderer/src/stores/ui.ts'
+      'src/renderer/src/stores/ui.ts',
+      'src/shared/shortcuts.ts'
     ]
   }
 ]

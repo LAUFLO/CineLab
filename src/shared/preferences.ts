@@ -1,3 +1,9 @@
+import {
+  isShortcutActionId,
+  isValidShortcutBinding,
+  type ShortcutBindings
+} from './shortcuts'
+
 export type CapabilityGroup = 'image' | 'video' | 'text' | 'audio'
 export type CanvasScrollMode = 'pan' | 'zoom'
 export type CanvasGridStyle = 'dots' | 'lines' | 'none'
@@ -56,6 +62,10 @@ export interface Preferences {
   ui: {
     /** 界面缩放百分比 */
     scale: number
+  }
+  /** 快捷键覆盖项；只保存用户改过的动作 */
+  shortcuts: {
+    bindings: ShortcutBindings
   }
   /** 操作弹窗中保存的提示词覆盖项；每个操作/菜单项只保留一个版本 */
   operationPrompts: Record<string, string>
@@ -121,6 +131,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
   ui: {
     scale: 100
   },
+  shortcuts: {
+    bindings: {}
+  },
   operationPrompts: {},
   network: {
     proxyMode: 'direct',
@@ -181,6 +194,21 @@ export function normalizePreferences(input: unknown): Preferences {
   const storage = isRecord(raw.storage) ? raw.storage : {}
   const ui = isRecord(raw.ui) ? raw.ui : {}
   const network = isRecord(raw.network) ? raw.network : {}
+  const shortcuts = isRecord(raw.shortcuts) ? raw.shortcuts : {}
+  const shortcutBindingsRaw = isRecord(shortcuts.bindings)
+    ? shortcuts.bindings
+    : {}
+  const shortcutBindings: ShortcutBindings = {}
+  for (const [id, value] of Object.entries(shortcutBindingsRaw)) {
+    if (!isShortcutActionId(id)) continue
+    if (value === null) {
+      shortcutBindings[id] = null
+      continue
+    }
+    if (typeof value === 'string' && isValidShortcutBinding(value)) {
+      shortcutBindings[id] = value
+    }
+  }
   const operationPrompts = isRecord(raw.operationPrompts)
     ? raw.operationPrompts
     : {}
@@ -308,6 +336,7 @@ export function normalizePreferences(input: unknown): Preferences {
         DEFAULT_PREFERENCES.ui.scale
       )
     },
+    shortcuts: { bindings: shortcutBindings },
     operationPrompts: prompts,
     network: {
       proxyMode: readEnum(

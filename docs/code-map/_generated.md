@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 72 | 23533 |
+| 01 | [画布](./01-canvas.md) | 72 | 23538 |
 | 02 | [生成与模型](./02-generation.md) | 59 | 13485 |
-| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9427 |
-| 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20196 |
+| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
+| 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20201 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5794 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 57 | 19034 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11455 |
-| 10 | [UI 组件与面板](./10-ui.md) | 43 | 9185 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 57 | 19036 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11514 |
+| 10 | [UI 组件与面板](./10-ui.md) | 46 | 9920 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -225,6 +225,7 @@
 - `src/shared/__tests__/protocol-templates.test.ts`
 - `src/shared/__tests__/reference-inputs.test.ts`
 - `src/shared/__tests__/scene-draft.test.ts`
+- `src/shared/__tests__/shortcuts.test.ts`
 - `src/shared/__tests__/skills.test.ts`
 - `src/shared/__tests__/stage-commands.test.ts`
 - `src/shared/__tests__/stage-preview.test.ts`

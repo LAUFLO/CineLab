@@ -5,6 +5,7 @@ import {
   type CapabilityGroup,
   type Preferences
 } from '@shared/preferences'
+import type { ShortcutBinding } from '@shared/shortcuts'
 import { useUIStore } from './ui'
 
 interface PreferencesState {
@@ -22,6 +23,9 @@ interface PreferencesState {
   updateNetwork: (patch: Partial<Preferences['network']>) => Promise<void>
   setOperationPrompt: (key: string, prompt: string) => Promise<void>
   resetOperationPrompt: (key: string) => Promise<void>
+  setShortcut: (actionId: string, binding: ShortcutBinding) => Promise<void>
+  resetShortcut: (actionId: string) => Promise<void>
+  resetAllShortcuts: () => Promise<void>
   setDefaultModel: (group: CapabilityGroup, key: string | null) => Promise<void>
   toggleSnap: () => Promise<void>
   toggleMinimap: () => Promise<void>
@@ -180,6 +184,32 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => {
       const next = { ...current.operationPrompts }
       delete next[key]
       await commit({ ...current, operationPrompts: next })
+    },
+
+    setShortcut: async (actionId, binding) => {
+      await loaded()
+      const current = get().preferences
+      await commit({
+        ...current,
+        shortcuts: {
+          bindings: { ...current.shortcuts.bindings, [actionId]: binding }
+        }
+      })
+    },
+
+    resetShortcut: async (actionId) => {
+      await loaded()
+      const current = get().preferences
+      if (!(actionId in current.shortcuts.bindings)) return
+      const bindings = { ...current.shortcuts.bindings }
+      delete bindings[actionId]
+      await commit({ ...current, shortcuts: { bindings } })
+    },
+
+    resetAllShortcuts: async () => {
+      await loaded()
+      const current = get().preferences
+      await commit({ ...current, shortcuts: { bindings: {} } })
     },
 
     setDefaultModel: async (group, key) => {

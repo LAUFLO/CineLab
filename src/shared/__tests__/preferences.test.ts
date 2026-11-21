@@ -7,6 +7,24 @@ describe('normalizePreferences', () => {
     expect(normalizePreferences({})).toEqual(DEFAULT_PREFERENCES)
   })
 
+  it('normalizes shortcut overrides', () => {
+    const preferences = normalizePreferences({
+      shortcuts: {
+        bindings: {
+          'canvas.undo': 'mod+alt+z',
+          'canvas.copy': null,
+          'unknown.action': 'mod+u',
+          'canvas.paste': 'escape'
+        }
+      }
+    })
+
+    expect(preferences.shortcuts.bindings).toEqual({
+      'canvas.undo': 'mod+alt+z',
+      'canvas.copy': null
+    })
+  })
+
   it('normalizes saved operation prompts', () => {
     const preferences = normalizePreferences({
       operationPrompts: {

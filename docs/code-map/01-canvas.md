@@ -134,13 +134,13 @@ CineBot
 |---|---|
 | `src/renderer/src/canvas/AddNodeMenu.tsx` | 260 |
 | `src/renderer/src/canvas/AlignmentGuides.tsx` | 29 |
-| `src/renderer/src/canvas/BottomBar.tsx` | 132 |
-| `src/renderer/src/canvas/Canvas.tsx` | 730 |
-| `src/renderer/src/canvas/CanvasContextMenu.tsx` | 131 |
+| `src/renderer/src/canvas/BottomBar.tsx` | 139 |
+| `src/renderer/src/canvas/Canvas.tsx` | 714 |
+| `src/renderer/src/canvas/CanvasContextMenu.tsx` | 135 |
 | `src/renderer/src/canvas/EdgeContextMenu.tsx` | 40 |
 | `src/renderer/src/canvas/GroupToolbar.tsx` | 235 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
-| `src/renderer/src/canvas/NodeContextMenu.tsx` | 471 |
+| `src/renderer/src/canvas/NodeContextMenu.tsx` | 481 |
 | `src/renderer/src/canvas/PromptBar.tsx` | 2118 |
 | `src/renderer/src/canvas/StatusBar.tsx` | 100 |
 | `src/renderer/src/canvas/StoryboardToolbar.tsx` | 359 |

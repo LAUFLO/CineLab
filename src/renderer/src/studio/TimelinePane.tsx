@@ -20,6 +20,10 @@ import { snapTargets, snapValue } from '@shared/timeline-snap'
 import { Icon } from '../components/Icon'
 import { IconButton, Button, cn } from '../components/ui'
 import { useTimelineStore } from '../stores/timeline'
+import {
+  shortcutMatches,
+  useShortcutLabel
+} from '../shortcuts/useShortcut'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { assetToClip, type PoolAsset } from './assets'
@@ -141,6 +145,8 @@ export function TimelinePane() {
   const select = useTimelineStore((state) => state.select)
   const undo = useTimelineStore((state) => state.undo)
   const redo = useTimelineStore((state) => state.redo)
+  const undoShortcut = useShortcutLabel('timeline.undo')
+  const redoShortcut = useShortcutLabel('timeline.redo')
   const dispatch = useTimelineStore((state) => state.dispatch)
   const showToast = useUIStore((state) => state.showToast)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
@@ -691,26 +697,43 @@ export function TimelinePane() {
               clipEnd(clip) > state.playheadMs
           )
 
-      if (event.key === 'Delete' || event.key === 'Backspace') {
+      if (shortcutMatches(event, 'timeline.deleteRipple')) {
         if (state.selectedIds.length === 0) return
         event.preventDefault()
         dispatch({
           op: 'removeClips',
           clipIds: state.selectedIds,
-          ripple: event.shiftKey
+          ripple: true
         })
         state.select([])
         return
       }
 
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+      if (shortcutMatches(event, 'timeline.delete')) {
+        if (state.selectedIds.length === 0) return
         event.preventDefault()
-        if (event.shiftKey) state.redo()
-        else state.undo()
+        dispatch({
+          op: 'removeClips',
+          clipIds: state.selectedIds,
+          ripple: false
+        })
+        state.select([])
         return
       }
 
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+      if (shortcutMatches(event, 'timeline.undo')) {
+        event.preventDefault()
+        state.undo()
+        return
+      }
+
+      if (shortcutMatches(event, 'timeline.redo')) {
+        event.preventDefault()
+        state.redo()
+        return
+      }
+
+      if (shortcutMatches(event, 'timeline.splitAtPlayhead')) {
         if (targets.length === 0) return
         event.preventDefault()
         dispatch({
@@ -721,7 +744,7 @@ export function TimelinePane() {
         return
       }
 
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      if (shortcutMatches(event, 'timeline.splitSelected')) {
         if (state.selectedIds.length === 0) return
         event.preventDefault()
         dispatch({
@@ -732,71 +755,75 @@ export function TimelinePane() {
         return
       }
 
-      if (!event.ctrlKey && !event.metaKey && !event.altKey) {
-        const key = event.key.toLowerCase()
-
-        if (key === 'q' || key === 'w') {
-          const commands: TimelineCommand[] = []
-          for (const clip of targets) {
-            const end = clipEnd(clip)
-            if (state.playheadMs <= clip.startMs || state.playheadMs >= end) {
-              continue
-            }
-            commands.push({
-              op: 'trimClip',
-              clipId: clip.id,
-              edge: key === 'q' ? 'start' : 'end',
-              deltaMs:
-                key === 'q'
-                  ? state.playheadMs - clip.startMs
-                  : state.playheadMs - end,
-              ripple: state.magnet || event.shiftKey
-            })
+      const trimStart = shortcutMatches(event, 'timeline.trimStart')
+      const trimEnd = shortcutMatches(event, 'timeline.trimEnd')
+      if (trimStart || trimEnd) {
+        const commands: TimelineCommand[] = []
+        for (const clip of targets) {
+          const end = clipEnd(clip)
+          if (state.playheadMs <= clip.startMs || state.playheadMs >= end) {
+            continue
           }
-          if (commands.length > 0) {
-            event.preventDefault()
-            dispatch({
-              op: 'batch',
-              commands,
-              label: key === 'q' ? '删除左侧' : '删除右侧'
-            })
-          }
-          return
+          commands.push({
+            op: 'trimClip',
+            clipId: clip.id,
+            edge: trimStart ? 'start' : 'end',
+            deltaMs: trimStart
+              ? state.playheadMs - clip.startMs
+              : state.playheadMs - end,
+            ripple: state.magnet || event.shiftKey
+          })
         }
-
-        if (key === 'f') {
+        if (commands.length > 0) {
           event.preventDefault()
-          void freezeFrame()
-          return
-        }
-
-        if (key === 'm') {
-          const selected = targets.filter((clip) =>
-            state.selectedIds.includes(clip.id)
-          )
-          if (selected.length === 0) return
-          event.preventDefault()
-          const shouldMute = !selected.every((clip) => clip.muted)
           dispatch({
             op: 'batch',
-            label: '切换静音',
-            commands: selected.map((clip) => ({
-              op: 'updateClip',
-              clipId: clip.id,
-              patch: { muted: shouldMute }
-            }))
+            commands,
+            label: trimStart ? '删除左侧' : '删除右侧'
           })
-          return
         }
+        return
+      }
 
-        if (key === 'n') {
-          event.preventDefault()
-          state.toggleSnap()
-          return
-        }
+      if (shortcutMatches(event, 'timeline.freeze')) {
+        event.preventDefault()
+        void freezeFrame()
+        return
+      }
 
-        if (key === 'v') state.setTool('select')
-        if (key === 'c') state.setTool('cut')
+      if (shortcutMatches(event, 'timeline.mute')) {
+        const selected = targets.filter((clip) =>
+          state.selectedIds.includes(clip.id)
+        )
+        if (selected.length === 0) return
+        event.preventDefault()
+        const shouldMute = !selected.every((clip) => clip.muted)
+        dispatch({
+          op: 'batch',
+          label: '切换静音',
+          commands: selected.map((clip) => ({
+            op: 'updateClip',
+            clipId: clip.id,
+            patch: { muted: shouldMute }
+          }))
+        })
+        return
+      }
+
+      if (shortcutMatches(event, 'timeline.snap')) {
+        event.preventDefault()
+        state.toggleSnap()
+        return
+      }
+
+      if (shortcutMatches(event, 'timeline.tool.select')) {
+        state.setTool('select')
+        return
+      }
+
+      if (shortcutMatches(event, 'timeline.tool.cut')) {
+        state.setTool('cut')
+        return
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -887,14 +914,14 @@ export function TimelinePane() {
         </Button>
         <span className="mx-1 h-4 w-px bg-divider" />
         <IconButton
-          label="撤销 (Ctrl+Z)"
+          label={`撤销 (${undoShortcut})`}
           onClick={undo}
           disabled={history.past.length === 0}
         >
           ↶
         </IconButton>
         <IconButton
-          label="重做 (Ctrl+Shift+Z)"
+          label={`重做 (${redoShortcut})`}
           onClick={redo}
           disabled={history.future.length === 0}
         >

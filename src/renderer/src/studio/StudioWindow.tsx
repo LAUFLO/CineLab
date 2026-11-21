@@ -6,6 +6,7 @@ import { useStudioStore } from '../stores/studio'
 import { useTimelineStore } from '../stores/timeline'
 import { useUIStore } from '../stores/ui'
 import { isStudioNode, useCanvasStore } from '../stores/canvas'
+import { shortcutMatches } from '../shortcuts/useShortcut'
 import { clearLegacyTimeline, loadTimeline } from './persist'
 import { createStudioAtViewportCenter, syncStudioAfterSave } from './nodes'
 import {
@@ -48,11 +49,7 @@ export function StudioWindow() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        event.shiftKey &&
-        event.key.toLowerCase() === 'e'
-      ) {
+      if (shortcutMatches(event, 'app.studio.open')) {
         event.preventDefault()
         const selected = useCanvasStore
           .getState()

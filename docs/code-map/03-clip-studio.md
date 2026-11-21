@@ -140,14 +140,14 @@ StudioWindow → TimelineApi.export
 | `src/renderer/src/stores/timeline.ts` | 132 |
 | `src/renderer/src/studio/BezierEditor.tsx` | 122 |
 | `src/renderer/src/studio/ClipMedia.tsx` | 115 |
-| `src/renderer/src/studio/InspectorPane.tsx` | 1478 |
+| `src/renderer/src/studio/InspectorPane.tsx` | 1480 |
 | `src/renderer/src/studio/MaterialPool.tsx` | 343 |
 | `src/renderer/src/studio/PreviewPane.tsx` | 72 |
 | `src/renderer/src/studio/PreviewStage.tsx` | 48 |
 | `src/renderer/src/studio/StudioTopBar.tsx` | 109 |
-| `src/renderer/src/studio/StudioWindow.tsx` | 279 |
+| `src/renderer/src/studio/StudioWindow.tsx` | 276 |
 | `src/renderer/src/studio/TimelineCanvas.tsx` | 105 |
-| `src/renderer/src/studio/TimelinePane.tsx` | 1229 |
+| `src/renderer/src/studio/TimelinePane.tsx` | 1256 |
 | `src/renderer/src/studio/assets.ts` | 99 |
 | `src/renderer/src/studio/demo.ts` | 171 |
 | `src/renderer/src/studio/docCache.ts` | 28 |

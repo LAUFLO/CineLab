@@ -35,6 +35,7 @@ const RemakeMappingDialog = lazy(() =>
 import { AgentPanel } from './agent/AgentPanel'
 import { initAgentCanvasBridge } from './agent/canvasBridge'
 import { initMcpCommandBridge } from './mcp/commandBridge'
+import { shortcutMatches } from './shortcuts/useShortcut'
 import { useAgentStore } from './agent/agentStore'
 import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
@@ -155,11 +156,7 @@ export default function App() {
     })
     const unsubscribeBridge = initAgentCanvasBridge()
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        event.shiftKey &&
-        event.key.toLowerCase() === 'a'
-      ) {
+      if (shortcutMatches(event, 'app.agent.toggle')) {
         event.preventDefault()
         useAgentStore.getState().toggle()
       }

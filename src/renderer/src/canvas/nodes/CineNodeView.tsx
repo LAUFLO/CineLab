@@ -50,71 +50,6 @@ const NODE_ICON: Record<NodeKind, IconName> = {
 const VERSION_BTN_CLASS =
   '!h-5 !w-5 shrink-0 !rounded-md !p-0 !text-fg-muted enabled:hover:!bg-surface-hover enabled:hover:!text-fg disabled:!cursor-default disabled:!opacity-25'
 
-interface OutputFanCardProps {
-  output: OutputRef
-  position: number
-  angle: number
-  offset: number
-  zClassName: string
-  onSelect: () => void
-}
-
-function OutputFanCard({
-  output,
-  position,
-  angle,
-  offset,
-  zClassName,
-  onSelect
-}: OutputFanCardProps) {
-  const [thumb, setThumb] = useState<string | null>(
-    output.kind === 'image' ? assetUrl(output.path, output.scope) : null
-  )
-
-  useEffect(() => {
-    if (output.kind !== 'video') return
-    let alive = true
-    void window.api.media
-      .thumbnail(output.path, 0, 'video')
-      .then((url) => {
-        if (alive) setThumb(url)
-      })
-      .catch(() => undefined)
-    return () => {
-      alive = false
-    }
-  }, [output.kind, output.path])
-
-  return (
-    <Button
-      unstyled
-      type="button"
-      className={`nodrag nopan absolute inset-2 origin-bottom overflow-hidden rounded-card border border-border bg-media-bg shadow-[0_4px_16px_rgba(0,0,0,0.26)] transition-shadow duration-150 hover:shadow-[0_8px_24px_rgba(0,0,0,0.34)] focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:outline-none ${zClassName}`}
-      style={{
-        transform: `translateX(${offset}px) translateY(-30px) rotate(${angle}deg) scale(0.85)`
-      }}
-      title={`切换到第 ${position} 个结果`}
-      onClick={(event) => {
-        event.stopPropagation()
-        onSelect()
-      }}
-    >
-      {thumb ? (
-        <img
-          src={thumb}
-          alt=""
-          className="h-full w-full object-cover"
-          draggable={false}
-        />
-      ) : (
-        <span className="flex h-full w-full items-center justify-center text-fg-subtle">
-          <Icon name="film" size={22} />
-        </span>
-      )}
-    </Button>
-  )
-}
-
 export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const meta = NODE_META[data.kind]
   const { screenToFlowPosition, fitView } = useReactFlow()
@@ -232,47 +167,6 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const shiftVersion = (delta: number): void => {
     const next = outputs[currentIndex + delta]
     if (next) selectOutput(next)
-  }
-
-  const fanCards: Array<{
-    output: OutputRef
-    position: number
-    angle: number
-    offset: number
-    zClassName: string
-  }> = []
-
-  if (
-    outputs.length > 1 &&
-    !isBusy &&
-    (current?.kind === 'image' || current?.kind === 'video')
-  ) {
-    const indexed = outputs.map((output, index) => ({ output, index }))
-    const earlier = indexed
-      .filter((item) => item.index < currentIndex)
-      .sort((a, b) => b.index - a.index)
-    const later = indexed
-      .filter((item) => item.index > currentIndex)
-      .sort((a, b) => a.index - b.index)
-
-    const add = (
-      item: { output: OutputRef; index: number },
-      side: -1 | 1,
-      rank: number
-    ): void => {
-      fanCards.push({
-        output: item.output,
-        position: outputs.length - item.index,
-        angle: side * (9 + rank * 3),
-        offset: side * (32 + rank * 10),
-        zClassName: rank === 0 ? 'z-[2]' : 'z-[1]'
-      })
-    }
-
-    if (earlier[0]) add(earlier[0], -1, 0)
-    if (later[0]) add(later[0], 1, 0)
-    if (fanCards.length < 2 && earlier[1]) add(earlier[1], -1, 1)
-    if (fanCards.length < 2 && later[1]) add(later[1], 1, 1)
   }
 
   const exportCurrent = async (): Promise<void> => {
@@ -578,26 +472,12 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
               data.kind === 'study' || data.kind === 'audio'
                 ? 'items-stretch justify-start'
                 : 'items-center justify-center'
-            } ${data.kind === 'study' ? 'px-[10px] pt-2 pb-[10px]' : ''} ${
-              fanCards.length > 0 ? 'p-2' : ''
-            }`}
+            } ${data.kind === 'study' ? 'px-[10px] pt-2 pb-[10px]' : ''}`}
           >
             {data.kind === 'study' ? (
               <StudyNodeCard nodeId={id} data={data} />
             ) : (
               <>
-                {fanCards.map((card) => (
-                  <OutputFanCard
-                    key={card.output.id}
-                    output={card.output}
-                    position={card.position}
-                    angle={card.angle}
-                    offset={card.offset}
-                    zClassName={card.zClassName}
-                    onSelect={() => selectOutput(card.output)}
-                  />
-                ))}
-
                 {data.kind === 'audio' ? (
                   <AudioPlayer
                     src={assetSrc ?? null}
@@ -618,29 +498,17 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                   />
                 ) : assetSrc &&
                   (current?.kind === 'video' || data.kind === 'video') ? (
-                  <div
-                    className={`relative z-[3] h-full w-full ${
-                      fanCards.length > 0
-                        ? 'overflow-hidden rounded-card shadow-[0_6px_20px_rgba(0,0,0,0.35)]'
-                        : ''
-                    }`}
-                  >
-                    <VideoPreview
-                      src={assetSrc}
-                      path={current?.path}
-                      fps={current?.fps}
-                      nodeWidth={nodeWidth}
-                    />
-                  </div>
+                  <VideoPreview
+                    src={assetSrc}
+                    path={current?.path}
+                    fps={current?.fps}
+                    nodeWidth={nodeWidth}
+                  />
                 ) : assetSrc ? (
                   <img
                     src={assetSrc}
                     alt=""
-                    className={`relative z-[3] h-full w-full object-contain ${
-                      fanCards.length > 0
-                        ? 'rounded-card shadow-[0_6px_20px_rgba(0,0,0,0.35)]'
-                        : ''
-                    }`}
+                    className="h-full w-full object-contain"
                     loading="lazy"
                   />
                 ) : data.kind === 'text' && data.text ? null : (
@@ -686,7 +554,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                 ) : null}
 
                 {isBusy && data.kind !== 'audio' ? (
-                  <div className="absolute inset-0 z-[6] flex flex-col items-center justify-center bg-surface-raised">
+                  <div className="absolute inset-0 z-[2] flex flex-col items-center justify-center bg-surface-raised">
                     <div className="rounded-card border border-border bg-canvas px-3.5 py-2 text-xs text-fg">
                       {data.status === 'queued' ? '排队中…' : '生成中…'}
                     </div>
@@ -745,7 +613,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           </div>
 
           {storyboardIndex > 0 ? (
-            <span className="pointer-events-none absolute bottom-2.5 left-2.5 z-[4] text-xl leading-none font-semibold text-white/[0.92] [text-shadow:0_1px_4px_rgba(0,0,0,0.55)]">
+            <span className="pointer-events-none absolute bottom-2.5 left-2.5 z-[2] text-xl leading-none font-semibold text-white/[0.92] [text-shadow:0_1px_4px_rgba(0,0,0,0.55)]">
               {String(storyboardIndex).padStart(2, '0')}
             </span>
           ) : null}

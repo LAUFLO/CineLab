@@ -129,6 +129,12 @@ export default function App() {
   }, [loadProviders])
 
   useEffect(() => {
+    return window.api.localAdapters.onChanged(() => {
+      void loadProviders()
+    })
+  }, [loadProviders])
+
+  useEffect(() => {
     const unsubscribe = subscribeGeneration()
     return unsubscribe
   }, [subscribeGeneration])

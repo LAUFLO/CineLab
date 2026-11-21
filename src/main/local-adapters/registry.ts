@@ -85,6 +85,10 @@ export function listLocalAdapterStatuses(): LocalAdapterStatus[] {
       status: record.status,
       ...(record.error ? { error: record.error } : {}),
       modelCount: record.models.length,
+      models: record.models.map((model) => ({
+        id: model.id,
+        name: model.name
+      })),
       updatedAt: record.updatedAt
     }))
     .sort((a, b) => a.id.localeCompare(b.id))
@@ -120,6 +124,15 @@ export function localProviderRuntime(id: string): LocalProviderRuntime | null {
       : '',
     models: record.models
   }
+}
+
+/** 本地适配器声明的模型 ID，用于覆盖同名官方模型 */
+export function localModelIds(): Set<string> {
+  const ids = new Set<string>()
+  for (const record of records.values()) {
+    for (const model of record.models) ids.add(model.id)
+  }
+  return ids
 }
 
 export function localAdapterRecord(

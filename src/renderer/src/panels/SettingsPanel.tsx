@@ -24,6 +24,7 @@ import {
   type ProviderPreset
 } from '@shared/provider-presets'
 import type { UpdateStatus } from '@shared/update'
+import type { LocalAdapterStatus } from '@shared/local-adapter'
 import { BrandIcon, BrandWordmark } from '../components/Brand'
 import { Icon, type IconName } from '../components/Icon'
 
@@ -173,6 +174,26 @@ function ModelsSection() {
   const [skillPath, setSkillPath] = useState('')
   const [pending, setPending] = useState<PendingModelsState | null>(null)
   const [pendingOpen, setPendingOpen] = useState(false)
+  const [localAdapters, setLocalAdapters] = useState<LocalAdapterStatus[]>([])
+
+  useEffect(() => {
+    let alive = true
+
+    void window.api.localAdapters.list().then((items) => {
+      if (alive) setLocalAdapters(items)
+    })
+
+    const off = window.api.localAdapters.onChanged((items) => {
+      if (!alive) return
+      setLocalAdapters(items)
+      void load()
+    })
+
+    return () => {
+      alive = false
+      off()
+    }
+  }, [load])
 
   useEffect(() => {
     void load()
@@ -334,7 +355,9 @@ function ModelsSection() {
       return
     }
 
-    const firstProvider = providers.length === 0
+    const firstProvider =
+      providers.filter((provider) => !provider.id.startsWith('local:')).length ===
+      0
     setBusy(true)
     setMessage(null)
     try {
@@ -833,6 +856,10 @@ function ModelsSection() {
     )
   }
 
+  const editableProviders = providers.filter(
+    (provider) => !provider.id.startsWith('local:')
+  )
+
   return (
     <div className="flex flex-col">
       {config ? (
@@ -952,7 +979,7 @@ function ModelsSection() {
       ) : null}
 
       <div>
-        {providers.map((provider) => (
+        {editableProviders.map((provider) => (
           <div
             key={provider.id}
             className="mb-2.5 flex items-start justify-between gap-2 rounded-card border border-border bg-surface-raised p-3"
@@ -989,7 +1016,7 @@ function ModelsSection() {
           </div>
         ))}
 
-        {providers.length === 0 ? (
+        {editableProviders.length === 0 ? (
           <div className="px-2 py-6 text-center text-xs leading-[1.8] text-fg-subtle">
             <div>第一次配置模型？按三步来：</div>
             <ol className="mt-2 list-decimal pl-[18px] text-left text-[11px] leading-[1.8] text-fg-subtle">
@@ -999,6 +1026,102 @@ function ModelsSection() {
             </ol>
           </div>
         ) : null}
+
+        <div className="mt-5 border-t border-border pt-4">
+          <div className="mb-2 flex items-start justify-between gap-2">
+            <div>
+              <div className="text-[13px] text-fg">本地适配器</div>
+              <div className="mt-0.5 text-[11px] leading-[1.6] text-fg-subtle">
+                放到适配器目录后自动加载，完全信任本地代码。
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void window.api.localAdapters.openDir()}
+            >
+              打开目录
+            </Button>
+          </div>
+
+          {localAdapters.length === 0 ? (
+            <div className="rounded-card border border-dashed border-border px-3 py-4 text-center text-[11px] leading-[1.8] text-fg-subtle">
+              还没有本地适配器。创建目录并放入 manifest.json、models.json、
+              adapter.ts 后会自动加载。
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {localAdapters.map((adapter) => (
+                <div
+                  key={adapter.id}
+                  className="rounded-card border border-border bg-surface-raised p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[13px] text-fg">{adapter.id}</span>
+                        <span
+                          className={`rounded-full px-1.5 py-px text-[10px] leading-4 ${
+                            adapter.status === 'ready'
+                              ? 'bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-success'
+                              : adapter.status === 'error'
+                                ? 'bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] text-danger'
+                                : 'bg-[color-mix(in_srgb,var(--warning)_12%,transparent)] text-warning'
+                          }`}
+                        >
+                          {adapter.status === 'ready'
+                            ? '已加载'
+                            : adapter.status === 'error'
+                              ? '错误'
+                              : '加载中'}
+                        </span>
+                        <span className="rounded-full bg-surface px-1.5 py-px text-[10px] leading-4 text-fg-subtle">
+                          本地适配器
+                        </span>
+                      </div>
+                      <div className="mt-1 break-all text-[11px] leading-[1.6] text-fg-subtle">
+                        v{adapter.version} · {adapter.modelCount} 个模型
+                      </div>
+                      <div className="mt-0.5 break-all text-[10px] leading-[1.5] text-fg-subtle">
+                        {adapter.dir}
+                      </div>
+                      {adapter.error ? (
+                        <div className="mt-1 break-all text-[11px] leading-[1.6] text-danger">
+                          {adapter.error}
+                        </div>
+                      ) : null}
+                      {adapter.models.length > 0 ? (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {adapter.models.map((model) => (
+                            <span
+                              key={model.id}
+                              className="rounded-full border border-border px-1.5 py-px text-[10px] leading-4 text-fg-muted"
+                              title={`${model.id} · 本地适配器`}
+                            >
+                              {model.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="xs"
+                      className="shrink-0"
+                      onClick={() =>
+                        void window.api.localAdapters.reload(adapter.id)
+                      }
+                    >
+                      重载
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="mt-[18px] flex flex-col gap-2">
           <div className="text-[11px] text-fg-subtle">热门供应商</div>

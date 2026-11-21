@@ -8,5 +8,6 @@ export interface LocalAdapterStatus {
   status: LocalAdapterStatusKind
   error?: string
   modelCount: number
+  models: Array<{ id: string; name: string }>
   updatedAt: string
 }

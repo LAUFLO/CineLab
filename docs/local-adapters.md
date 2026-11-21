@@ -142,6 +142,5 @@ export default {
 ## 当前限制
 
 - 只支持 `type: "code"`；`config` / `template` 类型预留，尚未接入。
-- 打包后的 esbuild 二进制需要 `asarUnpack`；安装包验证在 S2b 收尾时进行。
-- 设置页的本地适配器管理区块和模型「本地适配器」标注在 S2b。
+- 打包后的 esbuild 二进制需要 `asarUnpack`；尚未在安装包中验证。
 - MCP 控制接口在 S2c；当前通过渲染进程 API 和文件监听使用。

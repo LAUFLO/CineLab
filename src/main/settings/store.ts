@@ -24,6 +24,7 @@ import { httpFetch } from '../providers/http'
 import { log } from '../logger'
 import {
   localAdapterProviders,
+  localModelIds,
   localProviderRuntime
 } from '../local-adapters/registry'
 import {
@@ -239,9 +240,15 @@ export async function listProviders(): Promise<ProviderConfig[]> {
   await ensureMigrated()
   const [config, raw] = await Promise.all([loadModelsConfig(), readRawSettings()])
 
-  const providers = config.providers.map((provider) =>
-    toModelsProvider(provider, raw.providerKeys[provider.id])
-  )
+  const providers = config.providers.map((provider) => {
+    const resolved = toModelsProvider(provider, raw.providerKeys[provider.id])
+    const localIds = localModelIds()
+    if (localIds.size === 0) return resolved
+    return {
+      ...resolved,
+      models: resolved.models.filter((model) => !localIds.has(model.id))
+    }
+  })
 
   return [...providers, ...localAdapterProviders()]
 }
@@ -285,7 +292,9 @@ export async function resolveProvider(id: string): Promise<ResolvedProvider | nu
     ...(provider.headers ? { headers: provider.headers } : {}),
     apiKey: stored?.encryptedKey ? decryptKey(stored.encryptedKey) : envKey || '',
     secretKey: stored?.encryptedSecret ? decryptKey(stored.encryptedSecret) : '',
-    models: resolveModels(provider)
+    models: resolveModels(provider).filter(
+      (model) => !localModelIds().has(model.id)
+    )
   }
 }
 

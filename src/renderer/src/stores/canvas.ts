@@ -120,7 +120,8 @@ export interface CanvasStore {
     assets: GeneratedAsset[],
     titlePrefix: string,
     sourceNodeId?: string,
-    layout?: AddAssetLayout
+    layout?: AddAssetLayout,
+    assetOnly?: boolean
   ) => string[]
   addShotNodes: (
     study: FilmStudy,

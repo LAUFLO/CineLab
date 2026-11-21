@@ -187,7 +187,7 @@ body[data-exporting] .react-flow__minimap {
   height: 20px;
   border: none;
   background: transparent;
-  color: var(--text-2);
+  color: var(--text-1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -205,9 +205,22 @@ body[data-exporting] .react-flow__minimap {
   width: 20px;
   height: 20px;
   border-radius: 999px;
-  border: 1px solid var(--border);
+  border: 1.5px solid color-mix(in srgb, var(--text-1) 28%, transparent);
   background: var(--surface);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--text-1) 18%, transparent);
   transform: translateY(-50%);
+}
+
+.react-flow__handle[data-handle]::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--text-1) 34%, transparent);
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 [data-cnode]:hover .react-flow__handle[data-handle],
@@ -222,7 +235,7 @@ body[data-exporting] .react-flow__minimap {
 }
 
 .react-flow__handle[data-handle]:hover::before {
-  border-color: var(--border-strong);
+  border-color: color-mix(in srgb, var(--text-1) 48%, transparent);
 }
 
 .react-flow__handle[data-handle='left'] {
@@ -246,6 +259,14 @@ body[data-exporting] .react-flow__minimap {
 
 .react-flow__handle[data-handle='right']::before {
   right: -26px;
+}
+
+.react-flow__handle[data-handle='left']::after {
+  left: -23px;
+}
+
+.react-flow__handle[data-handle='right']::after {
+  right: -23px;
 }
 
 .react-flow__handle[data-handle='left'] > svg {

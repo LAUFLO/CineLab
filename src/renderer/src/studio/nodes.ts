@@ -163,7 +163,8 @@ export async function uploadAssetsToStudio(
       generated,
       '剪辑室素材',
       undefined,
-      { columns: 2, cellWidth: 240, scope: 'global' }
+      { columns: 2, cellWidth: 240, scope: 'global' },
+      true
     )
     ids.forEach((id, index) => {
       useCanvasStore

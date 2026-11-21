@@ -151,7 +151,7 @@ StudioWindow → TimelineApi.export
 | `src/renderer/src/studio/assets.ts` | 99 |
 | `src/renderer/src/studio/demo.ts` | 171 |
 | `src/renderer/src/studio/docCache.ts` | 28 |
-| `src/renderer/src/studio/nodes.ts` | 261 |
+| `src/renderer/src/studio/nodes.ts` | 262 |
 | `src/renderer/src/studio/persist.ts` | 59 |
 | `src/renderer/src/studio/references.ts` | 103 |
 | `src/renderer/src/studio/renderer.ts` | 532 |

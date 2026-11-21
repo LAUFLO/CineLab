@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
 import type { ParamDef } from '@shared/provider-schema'
 import { Button, Input, Popover, Switch } from '../../components/ui'
-import { ratioOf } from '../promptbar-model'
+import { paramLabel, ratioOf } from '../promptbar-model'
 
 interface ParamPanelProps {
   groups: Array<{ name: string; params: ParamDef[] }>
@@ -127,7 +127,8 @@ export function ParamPanel({
                       className={CUSTOM_INPUT}
                       value={String(values[param.key] ?? '')}
                       placeholder={
-                        param.key === 'ratio'
+                        param.key === 'ratio' ||
+                        param.key === 'aspect_ratio'
                           ? '例如 2:1'
                           : param.key === 'size'
                             ? '例如 2048x1152'
@@ -165,7 +166,10 @@ export function ParamPanel({
               )
             }
 
-            if (param.key === 'duration' && param.type === 'number') {
+            if (
+              (param.key === 'duration' || param.key === 'seconds') &&
+              param.type === 'number'
+            ) {
               const value = Number(values[param.key] ?? param.defaultValue ?? 5)
 
               return (
@@ -181,7 +185,9 @@ export function ParamPanel({
                       onChangeValue(param.key, Number(event.target.value))
                     }
                   />
-                  <span className={RANGE_VALUE}>{value}s</span>
+                  <span className={RANGE_VALUE}>
+                    {paramLabel(param, value)}
+                  </span>
                 </div>
               )
             }

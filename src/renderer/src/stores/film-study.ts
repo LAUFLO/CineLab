@@ -647,7 +647,8 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
           ],
           name,
           undefined,
-          { scope: 'global', cellWidth: 240 }
+          { scope: 'global', cellWidth: 240 },
+          true
         )
         offset += 220
         if (ids[0]) {
@@ -683,7 +684,8 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
           ],
           name,
           undefined,
-          { scope: 'global', cellWidth: 240 }
+          { scope: 'global', cellWidth: 240 },
+          true
         )
         offset += 220
         if (ids[0]) {

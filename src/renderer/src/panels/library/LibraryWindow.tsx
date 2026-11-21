@@ -22,6 +22,7 @@ import {
   Input
 } from '../../components/ui'
 import { isGroupNode, useCanvasStore } from '../../stores/canvas'
+import { fitNodeToMedia, probeMediaSize } from '../../canvas/media-size'
 import { useLibraryStore } from '../../stores/library'
 import { useUIStore } from '../../stores/ui'
 import { AssetGrid } from './AssetGrid'
@@ -47,7 +48,7 @@ function toOutput(asset: LibraryAsset): OutputRef {
   }
 }
 
-function addAssetToCanvas(asset: LibraryAsset): void {
+async function addAssetToCanvas(asset: LibraryAsset): Promise<void> {
   const store = useCanvasStore.getState()
   const kind: NodeKind =
     asset.kind === 'video'
@@ -62,18 +63,21 @@ function addAssetToCanvas(asset: LibraryAsset): void {
     y: (window.innerHeight / 2 - viewport.y) / viewport.zoom
   }
 
+  const output = toOutput(asset)
+  const size = await probeMediaSize(output.path)
   const id = store.addNode(kind, {
     x: center.x - meta.width / 2,
     y: center.y - (meta.height + TITLE_HEIGHT) / 2
   })
 
-  const output = toOutput(asset)
   store.patchNodeData(id, {
     title: asset.name,
     status: 'done',
-    outputs: [output],
+    assetOnly: true,
+    outputs: [{ ...output, width: size?.width, height: size?.height }],
     selectedOutputId: output.id
   })
+  fitNodeToMedia(id, size)
 }
 
 /**
@@ -336,7 +340,7 @@ export function LibraryWindow() {
   }
 
   const handleAddToCanvas = (asset: LibraryAsset): void => {
-    addAssetToCanvas(asset)
+    void addAssetToCanvas(asset)
     showToast(`已添加到画布：${asset.name}`)
     close()
   }

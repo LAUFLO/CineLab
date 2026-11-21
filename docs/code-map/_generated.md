@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 71 | 23254 |
+| 01 | [画布](./01-canvas.md) | 72 | 23376 |
 | 02 | [生成与模型](./02-generation.md) | 59 | 13485 |
-| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9426 |
+| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9427 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20196 |
-| 05 | [逐帧拉片](./05-film-study.md) | 13 | 5792 |
+| 05 | [逐帧拉片](./05-film-study.md) | 13 | 5794 |
 | 06 | [CineBot 与 Agent](./06-agent.md) | 57 | 19022 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11418 |
-| 10 | [UI 组件与面板](./10-ui.md) | 43 | 8875 |
+| 10 | [UI 组件与面板](./10-ui.md) | 43 | 8953 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -199,6 +199,8 @@
 - `src/main/update/__tests__/fallback.test.ts`
 - `src/renderer/src/agent/__tests__/filmBridge.test.ts`
 - `src/renderer/src/agent/__tests__/timelineBridge.test.ts`
+- `src/renderer/src/canvas/__tests__/media-size.test.ts`
+- `src/renderer/src/canvas/__tests__/promptbar-model.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/study-sheet.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/text-markdown.test.ts`
 - `src/renderer/src/components/ui/native-controls.test.ts`

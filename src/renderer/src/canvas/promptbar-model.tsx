@@ -29,15 +29,35 @@ export function defaultParams(model: ModelDef): Record<string, unknown> {
   return values
 }
 
+const DURATION_PARAM_KEYS = new Set(['duration', 'seconds'])
+const RESOLUTION_PARAM_KEYS = new Set(['resolution', 'size'])
+
+function isUnitlessNumber(value: unknown): boolean {
+  if (typeof value === 'number') return Number.isFinite(value)
+  return (
+    typeof value === 'string' &&
+    value.trim() !== '' &&
+    /^-?\d+(\.\d+)?$/.test(value.trim())
+  )
+}
+
 export function paramLabel(param: ParamDef, value: unknown): string {
   if (param.type === 'boolean') {
     return value ? '开' : '关'
   }
   if (param.type === 'select') {
-    return (
-      param.options?.find((option) => option.value === value)?.label ??
-      String(value ?? '')
-    )
+    const option = param.options?.find((item) => item.value === value)
+    const label = option?.label ?? String(value ?? '')
+    return RESOLUTION_PARAM_KEYS.has(param.key) &&
+      isUnitlessNumber(label.trim())
+      ? `${label}P`
+      : label
+  }
+  if (DURATION_PARAM_KEYS.has(param.key) && isUnitlessNumber(value)) {
+    return `${value}s`
+  }
+  if (RESOLUTION_PARAM_KEYS.has(param.key) && isUnitlessNumber(value)) {
+    return `${value}P`
   }
   return String(value ?? '')
 }

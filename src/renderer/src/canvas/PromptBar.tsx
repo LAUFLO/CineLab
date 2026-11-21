@@ -28,6 +28,7 @@ import {
 } from '@shared/model-modes'
 import type { ReferenceInput, ReferenceRole } from '@shared/generation'
 import { Icon } from '../components/Icon'
+import { fitNodeToMedia, probeMediaSize } from './media-size'
 import {
   IconButton,
   Input,
@@ -206,13 +207,17 @@ export function PromptBar() {
 
   const selectedNodes = nodes.filter((item) => item.selected)
   const single = selectedNodes.length === 1 ? selectedNodes[0] : undefined
+  const pureAsset =
+    single?.type === 'cine' &&
+    single.data.kind !== 'study' &&
+    (single.data.assetOnly === true ||
+      (!single.data.prompt &&
+        (single.data.outputs?.length ?? 0) === 1 &&
+        ['本地上传', '资产库'].includes(
+          single.data.outputs?.[0]?.model ?? ''
+        )))
   const node =
-    single &&
-    single.type === 'cine' &&
-    !single.data.assetOnly &&
-    single.data.kind !== 'study'
-      ? single
-      : undefined
+    single && single.type === 'cine' && !pureAsset ? single : undefined
   const kind: NodeKind = node?.data.kind ?? 'image'
   const runningMap = useGenerationStore((state) => state.running)
   const runningRunId = node ? runningMap[node.id] : undefined
@@ -520,7 +525,7 @@ export function PromptBar() {
   const paramAllowsCustom = (param: ParamDef): boolean =>
     param.allowCustom === true ||
     (param.allowCustom === undefined &&
-      ['ratio', 'size', 'resolution'].includes(param.key))
+      ['ratio', 'aspect_ratio', 'size', 'resolution'].includes(param.key))
 
   const isParamCustom = (param: ParamDef): boolean => {
     if (customParamKeys.has(param.key)) return true
@@ -678,6 +683,7 @@ export function PromptBar() {
               ? 'audio'
               : 'image'
         const meta = NODE_META[kind]
+        const size = await probeMediaSize(asset.path)
         const id = store.addNode(kind, {
           x: base.x - meta.width - 80,
           y: base.y + offsetY
@@ -695,14 +701,17 @@ export function PromptBar() {
               scope: 'global',
               kind: asset.kind === 'template' ? 'image' : asset.kind,
               createdAt: asset.modifiedAt ?? new Date().toISOString(),
-              model: '本地上传'
+              model: '本地上传',
+              width: size?.width,
+              height: size?.height
             }
           ],
           selectedOutputId: asset.path
         })
 
         store.onConnect({ source: id, target: node.id })
-        offsetY += meta.height + TITLE_HEIGHT + 24
+        const applied = fitNodeToMedia(id, size)
+        offsetY += (applied ?? meta.height + TITLE_HEIGHT) + 24
       }
 
       if (createdIds.length >= 2) {

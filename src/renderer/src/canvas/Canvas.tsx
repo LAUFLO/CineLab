@@ -374,6 +374,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
             y: flow.y - height / 2 + index * 40
           })
           store.patchNodeData(id, {
+            assetOnly: true,
             status: 'done',
             outputs: [
               {

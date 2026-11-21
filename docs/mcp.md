@@ -151,6 +151,23 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `node_disconnect` | 删除指定连线 | 危险确认 |
 | `generation_start` | 对已有节点提交生成 | 是 |
 
+### 时间线工具
+
+| 工具 | 作用 | 确认 |
+|---|---|---|
+| `timeline_open` | 创建剪辑室节点并打开时间线 | 是 |
+| `timeline_get` | 读取当前时间线摘要 | 否 |
+| `timeline_move_clips` | 移动片段 | 是 |
+| `timeline_trim_clip` | 裁剪片段起点/终点 | 是 |
+| `timeline_split_clips` | 在指定时间切分片段 | 是 |
+| `timeline_remove_clips` | 删除片段 | 危险确认 |
+| `timeline_update_clip` | 修改片段属性 | 是 |
+| `timeline_set_track` | 设置轨道可见/静音/锁定 | 是 |
+| `timeline_add_marker` | 添加时间线标记 | 是 |
+| `timeline_set_transition` | 设置片段入场转场 | 是 |
+
+时间线工具要求剪辑室已打开；可以先用 `timeline_open` 创建并打开一个剪辑室。
+
 写工具复用 CineBot 的画布执行器和生成队列，不直接改项目 JSON。
 
 ## 写操作确认
@@ -171,9 +188,9 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 当前范围
 
-- 已提供：本地适配器查询/重载/日志；项目列表/当前项目、画布摘要、节点摘要、模型能力（只读）；画布节点创建/修改/移动/删除/连线，以及提交生成。
-- 后续：时间线、导演台、拉片、导出。
-- 写操作复用 CineBot 的画布执行器和生成队列，执行前需要应用内确认。
+- 已提供：本地适配器查询/重载/日志；项目列表/当前项目、画布摘要、节点摘要、模型能力（只读）；画布节点创建/修改/移动/删除/连线，以及提交生成；剪辑室时间线读取与片段/轨道/标记/转场操作。
+- 后续：导演台、拉片、导出。
+- 写操作复用 CineBot 的画布/时间线执行器和生成队列，执行前需要应用内确认。
 
 ## 排查
 

@@ -7,6 +7,7 @@ import type {
   McpWriteCommand,
   McpWriteResult
 } from '@shared/mcp-command'
+import { TIMELINE_TRANSITION_TYPES } from '@shared/timeline-schema'
 
 interface PendingCommand {
   resolve: (result: McpWriteResult) => void
@@ -278,6 +279,216 @@ export function registerCineLabWriteTools(server: McpServer): void {
           modelKey,
           prompt,
           ...(params ? { params } : {})
+        }
+      )
+  )
+
+  server.registerTool(
+    'timeline_open',
+    {
+      title: '创建并打开剪辑室',
+      description:
+        '创建剪辑室节点并打开时间线。执行前会弹出确认框；需要先在画布中打开项目。',
+      inputSchema: {
+        x: z.number().optional(),
+        y: z.number().optional(),
+        title: z.string().max(200).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ x, y, title }) =>
+      runWrite('timeline_open', '创建并打开剪辑室', {
+        ...(x !== undefined ? { x } : {}),
+        ...(y !== undefined ? { y } : {}),
+        ...(title ? { title } : {})
+      })
+  )
+
+  server.registerTool(
+    'timeline_get',
+    {
+      title: '读取时间线',
+      description:
+        '读取当前打开的剪辑室时间线摘要。需要先在应用里打开剪辑室；只读。',
+      annotations: { readOnlyHint: true }
+    },
+    async () => {
+      const commandResult = await sendCommand('timeline_get', {})
+      if (!commandResult.ok) {
+        return errorResult(commandResult.error ?? '读取时间线失败')
+      }
+      return result(commandResult.result)
+    }
+  )
+
+  server.registerTool(
+    'timeline_move_clips',
+    {
+      title: '移动时间线片段',
+      description:
+        '移动一个或多个片段；可用 startMs 指定起点，或 deltaMs 相对移动。执行前会弹出确认框。',
+      inputSchema: {
+        clipIds: z.array(z.string().min(1)).min(1),
+        startMs: z.number().optional(),
+        deltaMs: z.number().optional(),
+        mode: z.enum(['insert', 'overwrite']).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ clipIds, startMs, deltaMs, mode }) =>
+      runWrite('timeline_move_clips', `移动 ${clipIds.length} 个时间线片段`, {
+        clipIds,
+        ...(startMs !== undefined ? { startMs } : {}),
+        ...(deltaMs !== undefined ? { deltaMs } : {}),
+        ...(mode ? { mode } : {})
+      })
+  )
+
+  server.registerTool(
+    'timeline_trim_clip',
+    {
+      title: '裁剪时间线片段',
+      description: '裁剪片段起点或终点。执行前会弹出确认框。',
+      inputSchema: {
+        clipId: z.string().min(1),
+        edge: z.enum(['start', 'end']),
+        deltaMs: z.number(),
+        ripple: z.boolean().optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ clipId, edge, deltaMs, ripple }) =>
+      runWrite('timeline_trim_clip', `裁剪片段 ${clipId} 的${edge === 'start' ? '起点' : '终点'}`, {
+        clipId,
+        edge,
+        deltaMs,
+        ...(ripple !== undefined ? { ripple } : {})
+      })
+  )
+
+  server.registerTool(
+    'timeline_split_clips',
+    {
+      title: '切分时间线片段',
+      description: '在指定时间切分片段。执行前会弹出确认框。',
+      inputSchema: {
+        clipIds: z.array(z.string().min(1)).min(1),
+        atMs: z.number()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ clipIds, atMs }) =>
+      runWrite('timeline_split_clips', `切分 ${clipIds.length} 个时间线片段`, {
+        clipIds,
+        atMs
+      })
+  )
+
+  server.registerTool(
+    'timeline_remove_clips',
+    {
+      title: '删除时间线片段',
+      description:
+        '删除一个或多个时间线片段。执行前会弹出危险操作确认框。',
+      inputSchema: {
+        clipIds: z.array(z.string().min(1)).min(1),
+        ripple: z.boolean().optional()
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true }
+    },
+    async ({ clipIds, ripple }) =>
+      runWrite(
+        'timeline_remove_clips',
+        `删除 ${clipIds.length} 个时间线片段`,
+        {
+          clipIds,
+          ...(ripple !== undefined ? { ripple } : {})
+        },
+        true
+      )
+  )
+
+  server.registerTool(
+    'timeline_update_clip',
+    {
+      title: '修改时间线片段',
+      description:
+        '修改片段属性，例如名称、静音、音量、透明度、速度、转场。执行前会弹出确认框。',
+      inputSchema: {
+        clipId: z.string().min(1),
+        patch: z.record(z.string(), z.unknown())
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ clipId, patch }) =>
+      runWrite('timeline_update_clip', `修改片段 ${clipId}`, {
+        clipId,
+        patch
+      })
+  )
+
+  server.registerTool(
+    'timeline_set_track',
+    {
+      title: '修改时间线轨道',
+      description:
+        '设置轨道的可见、静音或锁定状态。执行前会弹出确认框。',
+      inputSchema: {
+        trackId: z.string().min(1),
+        flag: z.enum(['visible', 'muted', 'locked']),
+        value: z.boolean()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ trackId, flag, value }) =>
+      runWrite(
+        'timeline_set_track',
+        `设置轨道 ${trackId} 的 ${flag}`,
+        { trackId, flag, value }
+      )
+  )
+
+  server.registerTool(
+    'timeline_add_marker',
+    {
+      title: '添加时间线标记',
+      description: '在时间线指定时间添加标记。执行前会弹出确认框。',
+      inputSchema: {
+        atMs: z.number(),
+        label: z.string().max(200).optional(),
+        color: z.string().max(40).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ atMs, label, color }) =>
+      runWrite('timeline_add_marker', `添加时间线标记 @${atMs}ms`, {
+        atMs,
+        ...(label ? { label } : {}),
+        ...(color ? { color } : {})
+      })
+  )
+
+  server.registerTool(
+    'timeline_set_transition',
+    {
+      title: '设置片段转场',
+      description:
+        '设置片段入场转场；type=none 表示移除。执行前会弹出确认框。',
+      inputSchema: {
+        clipId: z.string().min(1),
+        type: z.enum(['none', ...TIMELINE_TRANSITION_TYPES]),
+        durationMs: z.number().optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ clipId, type, durationMs }) =>
+      runWrite(
+        'timeline_set_transition',
+        `设置片段 ${clipId} 转场 ${type}`,
+        {
+          clipId,
+          type,
+          ...(durationMs !== undefined ? { durationMs } : {})
         }
       )
   )

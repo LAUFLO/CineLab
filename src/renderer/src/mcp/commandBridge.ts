@@ -1,9 +1,12 @@
 import type { McpWriteCommand } from '@shared/mcp-command'
 import type { GenerateRequest } from '@shared/generation'
 import { executeAgentTool } from '../agent/canvasBridge'
+import { createStudioAtViewportCenter } from '../studio/nodes'
 import { useCanvasStore } from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'
 import { useProjectStore } from '../stores/project'
+import { useStudioStore } from '../stores/studio'
+import { useTimelineStore } from '../stores/timeline'
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -58,6 +61,24 @@ async function handleCommand(command: McpWriteCommand): Promise<void> {
       return
     }
 
+    if (command.tool === 'timeline_open') {
+      const x = typeof command.args.x === 'number' ? command.args.x : undefined
+      const y = typeof command.args.y === 'number' ? command.args.y : undefined
+      const title =
+        typeof command.args.title === 'string' ? command.args.title : undefined
+      const studioNodeId =
+        x !== undefined && y !== undefined
+          ? useCanvasStore.getState().addStudioNode({ x, y }, title)
+          : createStudioAtViewportCenter()
+      useStudioStore.getState().openStudio(studioNodeId)
+      window.api.mcp.sendResult({
+        id: command.id,
+        ok: true,
+        result: { studioNodeId }
+      })
+      return
+    }
+
     const result = await executeAgentTool({
       callId: command.id,
       name: command.tool,
@@ -69,7 +90,13 @@ async function handleCommand(command: McpWriteCommand): Promise<void> {
         canvasId: project.canvasId ?? '',
         selectedNodeIds: canvas.nodes
           .filter((node) => node.selected)
-          .map((node) => node.id)
+          .map((node) => node.id),
+        ...(useTimelineStore.getState().doc?.id
+          ? { timelineId: useTimelineStore.getState().doc?.id }
+          : {}),
+        ...(useStudioStore.getState().nodeId
+          ? { studioNodeId: useStudioStore.getState().nodeId ?? undefined }
+          : {})
       }
     })
 

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createHmac } from 'node:crypto'
 import type { ModelDef } from '@shared/provider-schema'
 import type { HttpTemplate } from '@shared/http-template'
 
@@ -200,5 +201,118 @@ describe('http-template DSL', () => {
     )
 
     expect(outputs[0].data.toString('base64')).toBe('TEVHQUNZ')
+  })
+
+  it('signs JSON requests with HMAC-SHA256', async () => {
+    mocks.httpFetch.mockResolvedValueOnce(
+      jsonResponse({ url: 'data:image/png;base64,RESULT' })
+    )
+
+    await generateVideoHttpTemplate(
+      model({
+        auth: {
+          sign: {
+            type: 'hmac-sha256',
+            secret: '{{provider.secretKey}}',
+            payload: '{{method}}\n{{path}}\n{{timestamp}}\n{{body}}',
+            header: 'X-Signature',
+            timestampHeader: 'X-Timestamp'
+          }
+        },
+        submit: { path: '/submit', body: { prompt: '{{prompt}}' } },
+        poll: { path: '/poll', taskIdPath: 'id', resultPath: 'url' },
+        sync: true
+      }),
+      provider,
+      'prompt',
+      {},
+      [],
+      undefined,
+      undefined,
+      context
+    )
+
+    const [, init] = mocks.httpFetch.mock.calls[0]
+    const headers = init.headers as Record<string, string>
+    const timestamp = headers['X-Timestamp']
+    const expected = createHmac('sha256', 'secret')
+      .update(
+        `POST\n/submit\n${timestamp}\n${JSON.stringify({ prompt: 'prompt' })}`
+      )
+      .digest('hex')
+
+    expect(headers['X-Signature']).toBe(expected)
+  })
+
+  it('builds explicit multipart fields and files', async () => {
+    mocks.httpFetch.mockResolvedValueOnce(
+      jsonResponse({ url: 'data:image/png;base64,RESULT' })
+    )
+
+    await generateVideoHttpTemplate(
+      model({
+        submit: {
+          path: '/submit',
+          contentType: 'multipart',
+          multipart: {
+            fields: { prompt: '{{prompt}}', mode: '{{mode}}' },
+            files: [
+              {
+                field: 'image',
+                source: '{{refs.firstFrameDataUrl}}',
+                filename: 'first.png'
+              }
+            ]
+          }
+        },
+        poll: { path: '/poll', taskIdPath: 'id', resultPath: 'url' },
+        sync: true
+      }),
+      provider,
+      'prompt',
+      {},
+      [ref('AAAA', 'firstFrame')],
+      undefined,
+      undefined,
+      context
+    )
+
+    const [, init] = mocks.httpFetch.mock.calls[0]
+    const form = init.body as FormData
+    expect(form.get('prompt')).toBe('prompt')
+    expect(form.get('mode')).toBe('keyframe')
+    const file = form.get('image') as File
+    expect(file.name).toBe('first.png')
+    expect(file.type).toBe('image/png')
+  })
+
+  it('uses syncResultPath for synchronous responses', async () => {
+    mocks.httpFetch.mockResolvedValueOnce(
+      jsonResponse({
+        data: { videos: [{ url: 'data:image/png;base64,UkVTVUxU' }] }
+      })
+    )
+
+    const outputs = await generateVideoHttpTemplate(
+      model({
+        submit: { path: '/submit', body: {} },
+        poll: {
+          path: '/poll',
+          taskIdPath: 'id',
+          resultPath: 'wrong.path'
+        },
+        sync: true,
+        syncResultPath: 'data.videos[0].url'
+      }),
+      provider,
+      'prompt',
+      {},
+      [],
+      undefined,
+      undefined,
+      context
+    )
+
+    expect(outputs[0].data.toString('base64')).toBe('UkVTVUxU')
   })
 })

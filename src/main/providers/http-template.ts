@@ -1,8 +1,11 @@
+import { createHmac } from 'node:crypto'
 import { httpFetch } from './http'
 import type {
+  HttpTemplate,
   HttpTemplateCondition,
   HttpTemplateConditionalField,
   HttpTemplateMode,
+  HttpTemplateMultipart,
   HttpTemplatePoll
 } from '@shared/http-template'
 import type { ModelDef } from '@shared/provider-schema'
@@ -48,6 +51,11 @@ interface TemplateContext {
   mask?: string
   /** $map 当前项 */
   item?: ImageRef
+  /** 签名上下文 */
+  method?: string
+  path?: string
+  timestamp?: string
+  bodyText?: string
 }
 
 function normalizeBaseUrl(baseUrl: string): string {
@@ -164,6 +172,10 @@ function tokenValue(token: string, context: TemplateContext): unknown {
   if (token === 'mode') return context.mode
   if (token === 'taskId') return context.taskId
   if (token === 'baseUrl') return context.baseUrl
+  if (token === 'method') return context.method
+  if (token === 'path') return context.path
+  if (token === 'timestamp') return context.timestamp
+  if (token === 'body') return context.bodyText
   if (token === 'provider.baseUrl') return context.provider.baseUrl
   if (token === 'provider.apiKey') return context.provider.apiKey
   if (token === 'provider.secretKey') return context.provider.secretKey
@@ -491,46 +503,118 @@ function parseDataUrl(
   }
 }
 
+interface FileCounter {
+  index: number
+}
+
+function appendMultipartFormValue(
+  form: FormData,
+  key: string,
+  value: unknown,
+  counter: FileCounter
+): void {
+  if (value === undefined || value === null || value === '') return
+
+  if (typeof value === 'string' && value.startsWith('data:')) {
+    const parsed = parseDataUrl(value, counter.index)
+    counter.index += 1
+    if (parsed) form.append(key, parsed.blob, parsed.filename)
+    return
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      appendMultipartFormValue(form, key, item, counter)
+    }
+    return
+  }
+
+  if (typeof value === 'object') {
+    for (const [childKey, childValue] of Object.entries(
+      value as Record<string, unknown>
+    )) {
+      appendMultipartFormValue(
+        form,
+        key ? `${key}[${childKey}]` : childKey,
+        childValue,
+        counter
+      )
+    }
+    return
+  }
+
+  form.append(key, String(value))
+}
+
 function buildMultipart(body: unknown): FormData {
   const form = new FormData()
-  let fileIndex = 0
-
-  const append = (key: string, value: unknown): void => {
-    if (value === undefined || value === null || value === '') return
-
-    if (typeof value === 'string' && value.startsWith('data:')) {
-      const parsed = parseDataUrl(value, fileIndex)
-      fileIndex += 1
-      if (parsed) form.append(key, parsed.blob, parsed.filename)
-      return
-    }
-
-    if (Array.isArray(value)) {
-      for (const item of value) append(key, item)
-      return
-    }
-
-    if (typeof value === 'object') {
-      for (const [childKey, childValue] of Object.entries(
-        value as Record<string, unknown>
-      )) {
-        append(key ? `${key}[${childKey}]` : childKey, childValue)
-      }
-      return
-    }
-
-    form.append(key, String(value))
-  }
+  const counter = { index: 0 }
 
   if (body && typeof body === 'object' && !Array.isArray(body)) {
     for (const [key, value] of Object.entries(body as Record<string, unknown>)) {
-      append(key, value)
+      appendMultipartFormValue(form, key, value, counter)
     }
   } else {
-    append('body', body)
+    appendMultipartFormValue(form, 'body', body, counter)
   }
 
   return form
+}
+
+function buildExplicitMultipart(
+  spec: HttpTemplateMultipart,
+  context: TemplateContext
+): FormData {
+  const form = new FormData()
+  const counter = { index: 0 }
+
+  const fields = resolveTemplateValue(spec.fields ?? {}, context)
+  if (fields && typeof fields === 'object' && !Array.isArray(fields)) {
+    for (const [key, value] of Object.entries(fields)) {
+      appendMultipartFormValue(form, key, value, counter)
+    }
+  }
+
+  for (const file of spec.files ?? []) {
+    const source = String(resolveTemplateValue(file.source, context) ?? '')
+    if (!source) continue
+    const parsed = parseDataUrl(source, counter.index)
+    counter.index += 1
+    if (parsed) {
+      form.append(file.field, parsed.blob, file.filename ?? parsed.filename)
+    }
+  }
+
+  return form
+}
+
+function signHeaders(
+  template: HttpTemplate,
+  context: TemplateContext,
+  bodyText: string
+): Record<string, string> {
+  const sign = template.auth?.sign
+  if (!sign) return {}
+  if (sign.type !== 'hmac-sha256') {
+    throw new Error(`不支持的签名类型：${sign.type}`)
+  }
+
+  const timestamp = String(Math.floor(Date.now() / 1000))
+  const signingContext: TemplateContext = { ...context, timestamp, bodyText }
+  const secret = String(resolveTemplateValue(sign.secret, signingContext) ?? '')
+  if (!secret) throw new Error('签名密钥为空')
+
+  const payload = String(
+    resolveTemplateValue(sign.payload, signingContext) ?? ''
+  )
+  const digest = createHmac('sha256', secret)
+    .update(payload)
+    .digest(sign.encoding === 'base64' ? 'base64' : 'hex')
+
+  return {
+    [sign.header]: digest,
+    ...(sign.timestampHeader ? { [sign.timestampHeader]: timestamp } : {})
+  }
 }
 
 export async function generateVideoHttpTemplate(
@@ -580,7 +664,17 @@ export async function generateVideoHttpTemplate(
   body = applyConditionalFields(body, template.submit.conditional, context)
   if (template.submit.omitEmpty) body = omitEmpty(body)
 
-  const multipart = template.submit.contentType === 'multipart'
+  const multipart =
+    Boolean(template.submit.multipart) ||
+    template.submit.contentType === 'multipart'
+  const submitMethod = template.submit.method ?? 'POST'
+  const bodyText = body === undefined ? '' : JSON.stringify(body)
+  const signedHeaders = signHeaders(
+    template,
+    { ...context, method: submitMethod, path: submitPath },
+    bodyText
+  )
+
   const authHeader = template.auth?.header ?? 'Authorization'
   const baseHeaders: Record<string, string> = {
     ...(multipart ? {} : { 'Content-Type': 'application/json' }),
@@ -590,6 +684,7 @@ export async function generateVideoHttpTemplate(
   if (provider.apiKey) {
     baseHeaders[authHeader] = `${template.auth?.prefix ?? 'Bearer '}${provider.apiKey}`
   }
+  Object.assign(baseHeaders, signedHeaders)
   const headers = mergeHeaders(baseHeaders, provider.headers)
   if (multipart) {
     for (const key of Object.keys(headers)) {
@@ -599,15 +694,16 @@ export async function generateVideoHttpTemplate(
 
   ctx.onProgress(5, '提交任务')
 
-  const submitBody: BodyInit | undefined =
-    body === undefined
+  const submitBody: BodyInit | undefined = template.submit.multipart
+    ? buildExplicitMultipart(template.submit.multipart, context)
+    : body === undefined
       ? undefined
       : multipart
         ? buildMultipart(body)
         : JSON.stringify(body)
 
   const submit = await httpFetch(joinUrl(baseUrl, submitPath), {
-    method: template.submit.method ?? 'POST',
+    method: submitMethod,
     headers,
     ...(submitBody === undefined ? {} : { body: submitBody }),
     signal: ctx.signal
@@ -631,9 +727,10 @@ export async function generateVideoHttpTemplate(
   const submitted = (await submit.json()) as unknown
 
   if (template.sync) {
-    const values = resultValues(submitted, template.poll).filter(
-      (value) => value !== undefined
-    )
+    const values = (template.syncResultPath
+      ? [getPath(submitted, template.syncResultPath)]
+      : resultValues(submitted, template.poll)
+    ).filter((value) => value !== undefined)
     if (values.length === 0) {
       throw new Error('接口没有返回结果地址')
     }

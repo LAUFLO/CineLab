@@ -1,9 +1,37 @@
 export type HttpTemplateMode = 'text' | 'image' | 'keyframe' | 'reference' | 'video'
 
+export type HttpTemplateSignType = 'hmac-sha256'
+
+export interface HttpTemplateSign {
+  type: HttpTemplateSignType
+  /** 签名密钥，支持 {{provider.secretKey}} 等变量 */
+  secret: string
+  /** 参与签名的字符串，支持 {{method}} / {{path}} / {{timestamp}} / {{body}} */
+  payload: string
+  /** 写入的签名 header 名 */
+  header: string
+  /** 可选：时间戳 header 名 */
+  timestampHeader?: string
+  encoding?: 'hex' | 'base64'
+}
+
 export interface HttpTemplateAuth {
   header?: string
   prefix?: string
   headers?: Record<string, string>
+  sign?: HttpTemplateSign
+}
+
+export interface HttpTemplateMultipartFile {
+  field: string
+  /** data URL 或模板变量，例如 {{refs.firstFrame}} */
+  source: string
+  filename?: string
+}
+
+export interface HttpTemplateMultipart {
+  files?: HttpTemplateMultipartFile[]
+  fields?: Record<string, unknown>
 }
 
 export interface HttpTemplateSubmit {
@@ -17,6 +45,8 @@ export interface HttpTemplateSubmit {
   omitEmpty?: boolean
   /** 条件字段：按模式、参数或参考素材设置/删除顶层字段 */
   conditional?: HttpTemplateConditionalField[]
+  /** 显式 multipart：指定文件字段和普通字段 */
+  multipart?: HttpTemplateMultipart
 }
 
 export interface HttpTemplateCondition {
@@ -61,6 +91,8 @@ export interface HttpTemplate {
   mode?: HttpTemplateMode
   /** 同步接口：提交响应直接包含结果，不走轮询 */
   sync?: boolean
+  /** 同步接口的结果路径；省略时使用 poll.resultPath */
+  syncResultPath?: string
   /** 接口返回完整视频（full）还是新增片段（segment），默认 full */
   videoResult?: 'full' | 'segment'
 }

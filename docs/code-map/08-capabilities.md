@@ -20,7 +20,7 @@
 | 02 | 首尾帧统一载荷与校验、MiniMax H3 role | `src/main/providers/media.ts`、`src/main/providers/minimax.ts`、`src/shared/reference-inputs.ts`；Agnes 首帧已真实复测 |
 | 02 | 协议族 ModelContract、契约缺口与 golden 请求体 | `src/shared/model-contracts.ts`、`src/main/providers/__tests__/golden-bodies.test.ts`、`src/main/__tests__/capability-audit.test.ts` |
 | 02 | 本地可信适配器 registry、esbuild 构建、utilityProcess 热重载、设置页管理 | `src/main/local-adapters/`、`src/shared/local-adapter.ts`、`SettingsPanel` |
-| 02 | http-template 条件字段、$map、状态/错误映射、多结果 | `src/main/providers/http-template.ts`、`http-template-dsl.test.ts` |
+| 02 | http-template 条件字段、$map、状态/错误映射、多结果、HMAC 签名、显式 multipart、同步结果 | `src/main/providers/http-template.ts`、`http-template-dsl.test.ts` |
 | 03 | 时间线、剪辑、转场、关键帧、字幕、音频 | `src/main/timeline/`、`src/shared/timeline-*` |
 | 04 | StageDoc、机位、镜头、关键帧、Hermite 插值 | `src/shared/stage-schema.ts`、`stage-timeline.ts` |
 | 04 | 语义镜头求解（单/双/群、过肩、不越轴） | `src/shared/stage-shot-intent.ts` |

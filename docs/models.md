@@ -278,6 +278,29 @@
   }
   ```
 - `poll.statusMap`：自定义状态映射，优先于 `successValues` / `failValues`；`poll.errorPath` / `poll.errorMessagePath` 提取供应商错误；`poll.resultPaths` 返回多个结果。
+- `auth.sign`：HMAC-SHA256 签名，支持 `{{method}}`、`{{path}}`、`{{timestamp}}`、`{{body}}`：
+  ```json
+  "auth": {
+    "sign": {
+      "type": "hmac-sha256",
+      "secret": "{{provider.secretKey}}",
+      "payload": "{{method}}\n{{path}}\n{{timestamp}}\n{{body}}",
+      "header": "X-Signature",
+      "timestampHeader": "X-Timestamp",
+      "encoding": "hex"
+    }
+  }
+  ```
+- `submit.multipart`：显式指定文件字段和普通字段；文件 `source` 使用 data URL，例如 `{{refs.firstFrameDataUrl}}`：
+  ```json
+  "multipart": {
+    "fields": { "prompt": "{{prompt}}" },
+    "files": [
+      { "field": "image", "source": "{{refs.firstFrameDataUrl}}", "filename": "first.png" }
+    ]
+  }
+  ```
+- 同步接口可用 `syncResultPath` 指定结果路径；省略时使用 `poll.resultPath`。
 - `provider.apiKey` / `provider.secretKey` 只用于模板请求，不要把包含这些变量的模板分享给他人。
 
 视频编辑/续写接口使用 `mode: "video"`。当请求带 `video` 输入时，模板自动进入 video 模式：

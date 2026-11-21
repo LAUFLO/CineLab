@@ -17,6 +17,11 @@
 | 01 | 项目画布打开/保存/多画布 | `src/main/project/`、`src/shared/project-schema.ts` |
 | 02 | 多供应商模型配置、生成任务、参数预设 | `src/main/providers/`、`src/main/engine/` |
 | 02 | 参考图/视频/音频输入、素材导入 | `src/shared/reference-inputs.ts`、`src/main/assets/` |
+| 02 | 首尾帧统一载荷与校验、MiniMax H3 role | `src/main/providers/media.ts`、`src/main/providers/minimax.ts`、`src/shared/reference-inputs.ts`；Agnes 首帧已真实复测 |
+| 02 | 协议族 ModelContract、契约缺口与 golden 请求体 | `src/shared/model-contracts.ts`、`src/main/providers/__tests__/golden-bodies.test.ts`、`src/main/__tests__/capability-audit.test.ts` |
+| 02 | 本地可信适配器 registry、esbuild 构建、utilityProcess 热重载、设置页管理 | `src/main/local-adapters/`、`src/shared/local-adapter.ts`、`SettingsPanel` |
+| 02 | L4 sidecar（OpenAI / http-template）健康检查、版本与日志 | `src/main/local-adapters/registry.ts`、`docs/local-adapters.md` |
+| 02 | http-template 条件字段、$map、状态/错误映射、多结果、HMAC 签名、显式 multipart、同步结果 | `src/main/providers/http-template.ts`、`http-template-dsl.test.ts` |
 | 02 | 本地视觉增强：抠像、图层分离、视频抠像、智能去字幕、主体消除、扩图；Windows/macOS 共用模型包 | `src/main/media/vision.ts`、`resources/vision-worker/worker.py` |
 | 03 | 时间线、剪辑、转场、关键帧、字幕、音频 | `src/main/timeline/`、`src/shared/timeline-*` |
 | 04 | StageDoc、机位、镜头、关键帧、Hermite 插值 | `src/shared/stage-schema.ts`、`stage-timeline.ts` |
@@ -32,6 +37,12 @@
 | 04 | 单镜预演导出与截图回画布 | `src/main/stage/export.ts`、`StageWindow.tsx` |
 | 05 | 切镜/转场、首中尾帧、逐镜理解、取证与复核、分场、角色/风格、镜头三节点、分镜表、复刻建图 | `src/main/film-study/`、`stores/film-study.ts` |
 | 06 | CineBot 工具、生成提案、会话、技能 | `src/main/agent/` |
+| 06 | 本地可信适配器 MCP server（HTTP + stdio）、认证与工具 | `src/main/mcp/`、`docs/mcp.md` |
+| 06 | MCP 项目/画布/节点/模型只读工具 | `src/main/mcp/app-tools.ts`、`src/shared/canvas-summary.ts` |
+| 06 | MCP 画布写工具与生成提交（应用内确认） | `src/main/mcp/write-tools.ts`、`src/renderer/src/mcp/commandBridge.ts` |
+| 06 | MCP 时间线读取/写操作（片段、轨道、标记、转场、导出） | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/timelineBridge.ts` |
+| 06 | MCP 导演台对象/机位/镜头/自动分镜/预演导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/stageBridge.ts` |
+| 06 | MCP 拉片读取/修改/自动拉片/复刻/导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/filmBridge.ts` |
 | 07 | IPC、preload、设置、素材库、安全、更新 | `src/main/ipc/`、`src/preload/` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
 

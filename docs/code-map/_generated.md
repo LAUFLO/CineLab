@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 70 | 22945 |
-| 02 | [生成与模型](./02-generation.md) | 50 | 11173 |
+| 01 | [画布](./01-canvas.md) | 71 | 23117 |
+| 02 | [生成与模型](./02-generation.md) | 59 | 13485 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9426 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20196 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5792 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 49 | 17084 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 65 | 11243 |
-| 10 | [UI 组件与面板](./10-ui.md) | 43 | 8770 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 57 | 19022 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11418 |
+| 10 | [UI 组件与面板](./10-ui.md) | 43 | 8875 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -36,6 +36,8 @@
 | `SkillsApi` | `list`、`files`、`readFile`、`create`、`save`、`remove`、`uploadFiles`、`removeFile`、`clone`、`setOverride`、`openDirectory`、`openFile` |
 | `StageApi` | `create`、`load`、`save`、`delete`、`duplicate`、`capture`、`exportPreview`、`cancelExport`、`onExportProgress` |
 | `SceneApi` | `analyze`、`loadObjectPresets`、`saveObjectPresets`、`importObjectPresets`、`exportObjectPresets`、`uploadImage` |
+| `LocalAdapterApi` | `list`、`reload`、`openDir`、`onChanged` |
+| `McpApi` | `onCommand`、`sendResult` |
 
 ## Agent 工具
 
@@ -174,12 +176,19 @@
 - `src/main/ipc/__tests__/index.test.ts`
 - `src/main/library/__tests__/store.test.ts`
 - `src/main/library/__tests__/tag-utils.test.ts`
+- `src/main/local-adapters/__tests__/build.test.ts`
+- `src/main/local-adapters/__tests__/manifest.test.ts`
 - `src/main/media/__tests__/concat.test.ts`
 - `src/main/media/__tests__/paths.test.ts`
 - `src/main/media/__tests__/range.test.ts`
 - `src/main/project/__tests__/manager.test.ts`
 - `src/main/providers/__tests__/agnes.test.ts`
+- `src/main/providers/__tests__/golden-bodies.test.ts`
 - `src/main/providers/__tests__/headers.test.ts`
+- `src/main/providers/__tests__/http-template-dsl.test.ts`
+- `src/main/providers/__tests__/http-template.test.ts`
+- `src/main/providers/__tests__/media.test.ts`
+- `src/main/providers/__tests__/minimax.test.ts`
 - `src/main/providers/__tests__/model-body.test.ts`
 - `src/main/providers/__tests__/sora.test.ts`
 - `src/main/providers/__tests__/volcengine.test.ts`
@@ -200,9 +209,11 @@
 - `src/shared/__tests__/audio-fx.test.ts`
 - `src/shared/__tests__/canvas-commands.test.ts`
 - `src/shared/__tests__/canvas-schema.test.ts`
+- `src/shared/__tests__/canvas-summary.test.ts`
 - `src/shared/__tests__/capabilities.test.ts`
 - `src/shared/__tests__/film-study-v2.test.ts`
 - `src/shared/__tests__/filters.test.ts`
+- `src/shared/__tests__/model-contracts.test.ts`
 - `src/shared/__tests__/model-inputs.test.ts`
 - `src/shared/__tests__/model-modes.test.ts`
 - `src/shared/__tests__/node-operation-specs.test.ts`

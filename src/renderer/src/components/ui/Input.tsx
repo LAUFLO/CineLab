@@ -6,7 +6,7 @@ import {
 import { cn } from './cn'
 
 const FIELD_CLASS =
-  'w-full rounded-card border border-border bg-surface px-3 text-sm text-fg placeholder:text-fg-subtle outline-none transition-colors focus:border-border-strong disabled:opacity-50'
+  'w-full rounded-md border border-border bg-surface px-3 text-sm text-fg placeholder:text-fg-subtle outline-none transition-colors focus:border-border-strong disabled:opacity-50'
 
 export const Input = forwardRef<
   HTMLInputElement,

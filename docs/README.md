@@ -37,6 +37,9 @@
 | [previs-adaptation-plan.md](previs-adaptation-plan.md) | Previs 语义镜头、程序化世界与场景图白膜，M1–M5 已完成 |
 | [film-study-rebuild-plan.md](film-study-rebuild-plan.md) | 逐帧拉片重构：拉片为画布服务、删除拉片室、image 首尾帧 + 文本节点、复刻建图与手动生成 |
 | [stage-previs-upgrade-plan.md](stage-previs-upgrade-plan.md) | 导演台整片/每镜预演、重叠优先级、交付物、光照预设与人物动作改造，已实施 |
+| [model-adapter-plan.md](model-adapter-plan.md) | 模型适配体系：契约、媒体载荷、本地适配器、Agent 接入与首尾帧修复 |
+| [local-adapters.md](local-adapters.md) | 本地可信适配器：目录、manifest、接口、构建与热重载 |
+| [mcp.md](mcp.md) | MCP server：HTTP、stdio 桥接、认证、工具与排查 |
 | [macos-packaging-gaps-plan.md](macos-packaging-gaps-plan.md) | macOS 打包资源缺口、视觉组件复用、字幕字体与发版校验，待实施 |
 
 ## 3. 代码地图

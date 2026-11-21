@@ -179,7 +179,8 @@
 ```
 
 - `extraBody` 里 `{{token}}` 独占整个字符串时保留原始类型（数字、布尔、数组、对象）；内嵌在字符串里时转成文本
-- 可用变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`、`{{refs.lastFrame}}`、`{{refs.frames}}`、`{{refs.image}}`、`{{refs.images}}`、`{{refs.subject}}`、`{{refs.subjects}}`、`{{refs.style}}`、`{{refs.styles}}`、`{{refs.mask}}`
+- 可用变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`（纯 base64）、`{{refs.lastFrame}}`（纯 base64）、`{{refs.firstFrameDataUrl}}`、`{{refs.lastFrameDataUrl}}`、`{{refs.firstFrameMime}}`、`{{refs.lastFrameMime}}`、`{{refs.frames}}`（data URL 数组）、`{{refs.image}}`、`{{refs.images}}`、`{{refs.subject}}`、`{{refs.subjects}}`、`{{refs.style}}`、`{{refs.styles}}`、`{{refs.mask}}`
+- 首尾帧变量语义：`{{refs.firstFrame}}` / `{{refs.lastFrame}}` 返回纯 base64；需要 data URL 请改用 `{{refs.firstFrameDataUrl}}` / `{{refs.lastFrameDataUrl}}`。旧模板不会自动改写，模型配置对话框会显示迁移提示。
 - 主体/风格参考不单独做显式适配：PromptBar 不提供独立角色，统一按普通参考图发送，由提示词表达「保持主体一致」或「参考画风」。`refs.subject` / `refs.subjects` / `refs.style` / `refs.styles` 变量保留给自定义协议的高级用法，但不会自动写入请求。
 - 蒙版：`{{refs.mask}}` 是 PNG data URL，透明区域表示需要编辑；`contentType: "multipart"` 的模板会自动把它转成文件字段。OpenAI 兼容模型的 `/images/edits` 已内置 `mask` 字段，不需要写模板。
 - `omitBody` 只删除顶层字段
@@ -257,7 +258,50 @@
 - `submit.contentType`：`json`（默认）或 `multipart`
 - `submit.omitEmpty`：删除模板里的空字段
 - `poll.path` / `taskIdPath` / `statusPath` / `resultPath`
-- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`、`{{refs.lastFrame}}`、`{{refs.frames}}`、`{{refs.image}}`、`{{refs.images}}`、`{{video.dataUrl}}`、`{{video.base64}}`、`{{video.mime}}`、`{{video.start}}`、`{{video.end}}`、`{{video.duration}}`、`{{video.direction}}`、`{{video.operation}}`、`{{taskId}}`
+- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`（纯 base64）、`{{refs.lastFrame}}`（纯 base64）、`{{refs.firstFrameDataUrl}}`、`{{refs.lastFrameDataUrl}}`、`{{refs.firstFrameMime}}`、`{{refs.lastFrameMime}}`、`{{refs.frames}}`、`{{refs.image}}`、`{{refs.images}}`、`{{provider.baseUrl}}`、`{{provider.apiKey}}`、`{{provider.secretKey}}`、`{{video.dataUrl}}`、`{{video.base64}}`、`{{video.mime}}`、`{{video.start}}`、`{{video.end}}`、`{{video.duration}}`、`{{video.direction}}`、`{{video.operation}}`、`{{taskId}}`
+- 首尾帧变量从 data URL 改为纯 base64 是破坏性变更：旧模板不自动改写，配置对话框会提示；需要 data URL 的字段请使用 `firstFrameDataUrl` / `lastFrameDataUrl`。
+- `submit.conditional`：按模式、参数或参考素材设置/删除顶层字段：
+  ```json
+  "conditional": [
+    {
+      "when": { "mode": "keyframe", "refs": ["firstFrame"] },
+      "set": { "first_frame": "{{refs.firstFrame}}" },
+      "remove": ["prompt_image"]
+    }
+  ]
+  ```
+- `$map`：把参考素材映射为对象数组，支持 `item.dataUrl` / `item.base64` / `item.mime` / `item.role` / `item.media`：
+  ```json
+  "images": {
+    "$map": "refs.images",
+    "$as": { "url": "{{item.dataUrl}}", "role": "{{item.role}}" }
+  }
+  ```
+- `poll.statusMap`：自定义状态映射，优先于 `successValues` / `failValues`；`poll.errorPath` / `poll.errorMessagePath` 提取供应商错误；`poll.resultPaths` 返回多个结果。
+- `auth.sign`：HMAC-SHA256 签名，支持 `{{method}}`、`{{path}}`、`{{timestamp}}`、`{{body}}`：
+  ```json
+  "auth": {
+    "sign": {
+      "type": "hmac-sha256",
+      "secret": "{{provider.secretKey}}",
+      "payload": "{{method}}\n{{path}}\n{{timestamp}}\n{{body}}",
+      "header": "X-Signature",
+      "timestampHeader": "X-Timestamp",
+      "encoding": "hex"
+    }
+  }
+  ```
+- `submit.multipart`：显式指定文件字段和普通字段；文件 `source` 使用 data URL，例如 `{{refs.firstFrameDataUrl}}`：
+  ```json
+  "multipart": {
+    "fields": { "prompt": "{{prompt}}" },
+    "files": [
+      { "field": "image", "source": "{{refs.firstFrameDataUrl}}", "filename": "first.png" }
+    ]
+  }
+  ```
+- 同步接口可用 `syncResultPath` 指定结果路径；省略时使用 `poll.resultPath`。
+- `provider.apiKey` / `provider.secretKey` 只用于模板请求，不要把包含这些变量的模板分享给他人。
 
 视频编辑/续写接口使用 `mode: "video"`。当请求带 `video` 输入时，模板自动进入 video 模式：
 
@@ -349,6 +393,8 @@
 ## 与设置面板的关系
 
 设置页「模型服务」的模型卡片可以打开「模型配置」，修改输入能力、视频操作、生成参数、能力模式和高级请求字段。普通用户不需要直接编辑 `models.json`。
+
+保存模型时，官方内置模型会校验协议族契约（首帧/尾帧字段、角色名、支持模式）；契约不一致会阻止保存。用户自定义模型只记录警告，不阻塞保存。契约定义在 `src/shared/model-contracts.ts`，覆盖 8 个官方适配器。
 
 「高级」里可以下载配置 Skill。Skill 是一个单文件 Markdown，交给任意 AI Agent 后，Agent 会读官方文档并生成或修正配置。Agent 应写入用户数据目录下的 `models.pending.json`，CineLab 检测到后会显示「发现新的模型配置」，预览后应用；应用前会备份 `models.json` 为 `models.json.bak`。
 

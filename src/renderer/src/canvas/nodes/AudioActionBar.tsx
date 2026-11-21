@@ -212,7 +212,7 @@ export function AudioActionBar({
         type="button"
         variant="primary"
         size="none"
-        className="h-[30px] shrink-0 rounded-card border border-transparent !bg-pick-bar px-3.5 text-xs font-semibold"
+        className="h-[30px] shrink-0 rounded-md border border-transparent !bg-pick-bar px-3.5 text-xs font-semibold"
         disabled={busy}
         onClick={onSubmit}
       >

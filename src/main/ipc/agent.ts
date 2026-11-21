@@ -227,6 +227,13 @@ function assertChatRequest(input: unknown): AgentChatRequest {
   ) {
     throw new Error('剪辑室节点 ID 无效')
   }
+  if (
+    request.stageNodeId !== undefined &&
+    (typeof request.stageNodeId !== 'string' ||
+      request.stageNodeId.length > 120)
+  ) {
+    throw new Error('导演台节点 ID 无效')
+  }
 
   const permissionMode =
     request.permissionMode === 'read-only' ? 'read-only' : 'current'
@@ -246,6 +253,9 @@ function assertChatRequest(input: unknown): AgentChatRequest {
       : {}),
     ...(typeof request.studioNodeId === 'string'
       ? { studioNodeId: request.studioNodeId }
+      : {}),
+    ...(typeof request.stageNodeId === 'string'
+      ? { stageNodeId: request.stageNodeId }
       : {}),
     ...(selectedClipIds.length > 0 ? { selectedClipIds } : {}),
     ...(typeof request.playheadMs === 'number' &&

@@ -191,7 +191,7 @@ export function StoryboardToolbar() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal ${
+          className={`h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal ${
             menu === 'ratio' ? 'bg-surface-hover !text-fg' : ''
           }`}
           ref={ratioRef}
@@ -236,7 +236,7 @@ export function StoryboardToolbar() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal ${
+          className={`h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal ${
             menu === 'grid' ? 'bg-surface-hover !text-fg' : ''
           }`}
           ref={gridRef}
@@ -284,7 +284,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal"
         title="按分镜比例与当前宫格（含间距）拼接，默认 2K 分辨率"
         disabled={stitching}
         onClick={() => void stitch()}
@@ -297,7 +297,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal"
         title="把分镜组内素材送入剪辑室"
         onClick={makeStudio}
       >
@@ -309,7 +309,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className={`h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal ${
+        className={`h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal ${
           group.data.showIndex === false ? '' : 'bg-surface-hover !text-fg'
         }`}
         title="显示或隐藏序号"
@@ -323,7 +323,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal"
         onClick={clearChildren}
       >
         <Icon name="trash" size={14} />
@@ -336,7 +336,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal"
+        className="h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal"
         onClick={() => setGroupMode(group.id, 'normal')}
       >
         <Icon name="grid" size={14} />
@@ -347,7 +347,7 @@ export function StoryboardToolbar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal hover:!bg-danger hover:!text-fg-inverse"
+        className="h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal hover:!bg-danger hover:!text-fg-inverse"
         onClick={() => ungroup(group.id)}
       >
         <Icon name="minimize" size={14} />

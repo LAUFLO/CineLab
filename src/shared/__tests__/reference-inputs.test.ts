@@ -186,3 +186,104 @@ describe('referenceInputErrors', () => {
     expect(errors.some((item) => item.includes('图片输入'))).toBe(true)
   })
 })
+
+describe('keyframe structure', () => {
+  it('accepts exactly one first frame in first-frame mode', () => {
+    expect(
+      referenceInputError(
+        context({
+          mode: 'first-frame',
+          imageCount: 1,
+          hasKeyframe: true,
+          firstFrameCount: 1,
+          lastFrameCount: 0
+        })
+      )
+    ).toBeNull()
+  })
+
+  it('rejects extra images in first-frame mode', () => {
+    expect(
+      referenceInputError(
+        context({
+          mode: 'first-frame',
+          imageCount: 2,
+          hasKeyframe: true,
+          firstFrameCount: 1,
+          lastFrameCount: 0
+        })
+      )
+    ).toContain('首帧模式')
+  })
+
+  it('accepts one first and one last frame', () => {
+    expect(
+      referenceInputError(
+        context({
+          mode: 'first-last',
+          imageCount: 2,
+          hasKeyframe: true,
+          firstFrameCount: 1,
+          lastFrameCount: 1,
+          model: model({
+            adapter: 'minimax-video',
+            modes: ['t2v', 'first-frame', 'first-last']
+          })
+        })
+      )
+    ).toBeNull()
+  })
+
+  it('rejects first-last with only one frame', () => {
+    expect(
+      referenceInputError(
+        context({
+          mode: 'first-last',
+          imageCount: 1,
+          hasKeyframe: true,
+          firstFrameCount: 1,
+          lastFrameCount: 0
+        })
+      )
+    ).toContain('首尾帧模式需要首帧和尾帧各 1 张')
+  })
+
+  it('rejects keyframes in reference mode', () => {
+    expect(
+      referenceInputError(
+        context({
+          mode: 'reference',
+          imageCount: 1,
+          hasKeyframe: true,
+          firstFrameCount: 1
+        })
+      )
+    ).toContain('全能参考模式不能带首帧或尾帧')
+  })
+
+  it('rejects a lone last frame without a mode', () => {
+    expect(
+      referenceInputError(
+        context({
+          imageCount: 1,
+          hasKeyframe: true,
+          firstFrameCount: 0,
+          lastFrameCount: 1
+        })
+      )
+    ).toContain('尾帧不能单独使用')
+  })
+
+  it('rejects extra reference images mixed with keyframes', () => {
+    expect(
+      referenceInputError(
+        context({
+          imageCount: 3,
+          hasKeyframe: true,
+          firstFrameCount: 1,
+          lastFrameCount: 1
+        })
+      )
+    ).toContain('不能混入其他参考图')
+  })
+})

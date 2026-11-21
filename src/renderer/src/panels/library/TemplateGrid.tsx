@@ -104,7 +104,7 @@ export function TemplateGrid({
         type="button"
         variant="secondary"
         size="none"
-        className="mt-2.5 h-8 gap-[5px] self-center rounded-card px-3 text-xs"
+        className="mt-2.5 h-8 gap-[5px] self-center rounded-md px-3 text-xs"
         onClick={onCreate}
       >
         <Icon name="plus" size={14} />

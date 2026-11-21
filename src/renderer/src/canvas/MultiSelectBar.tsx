@@ -10,7 +10,7 @@ import { requestDeleteSelection } from './delete-actions'
 import { createStudioFromNodes } from '../studio/nodes'
 import { Button, Popover } from '../components/ui'
 
-const BTN_CLASS = 'h-8 gap-1.5 rounded-card px-2.5 text-[13px] !font-normal'
+const BTN_CLASS = 'h-8 gap-1.5 rounded-md px-2.5 text-[13px] !font-normal'
 
 export function MultiSelectBar() {
   const nodes = useCanvasStore((state) => state.nodes)

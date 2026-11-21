@@ -25,6 +25,8 @@ export interface ModelsFileModel {
   protocol?: string
   source?: ConfigSource
   adapter?: string
+  /** 本地适配器 ID；adapter 为 local:<id> 时由本地宿主执行 */
+  localAdapter?: string
   providerType?: ProviderType
   template?: HttpTemplate
   extraBody?: Record<string, unknown>

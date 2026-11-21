@@ -1,9 +1,37 @@
 export type HttpTemplateMode = 'text' | 'image' | 'keyframe' | 'reference' | 'video'
 
+export type HttpTemplateSignType = 'hmac-sha256'
+
+export interface HttpTemplateSign {
+  type: HttpTemplateSignType
+  /** 签名密钥，支持 {{provider.secretKey}} 等变量 */
+  secret: string
+  /** 参与签名的字符串，支持 {{method}} / {{path}} / {{timestamp}} / {{body}} */
+  payload: string
+  /** 写入的签名 header 名 */
+  header: string
+  /** 可选：时间戳 header 名 */
+  timestampHeader?: string
+  encoding?: 'hex' | 'base64'
+}
+
 export interface HttpTemplateAuth {
   header?: string
   prefix?: string
   headers?: Record<string, string>
+  sign?: HttpTemplateSign
+}
+
+export interface HttpTemplateMultipartFile {
+  field: string
+  /** data URL 或模板变量，例如 {{refs.firstFrame}} */
+  source: string
+  filename?: string
+}
+
+export interface HttpTemplateMultipart {
+  files?: HttpTemplateMultipartFile[]
+  fields?: Record<string, unknown>
 }
 
 export interface HttpTemplateSubmit {
@@ -15,6 +43,24 @@ export interface HttpTemplateSubmit {
   body?: unknown
   bodyByMode?: Partial<Record<HttpTemplateMode, unknown>>
   omitEmpty?: boolean
+  /** 条件字段：按模式、参数或参考素材设置/删除顶层字段 */
+  conditional?: HttpTemplateConditionalField[]
+  /** 显式 multipart：指定文件字段和普通字段 */
+  multipart?: HttpTemplateMultipart
+}
+
+export interface HttpTemplateCondition {
+  mode?: HttpTemplateMode
+  /** 参数键值必须全部相等 */
+  params?: Record<string, unknown>
+  /** 每个值可以是 role（firstFrame 等）或 media（audio/image/video） */
+  refs?: string[]
+}
+
+export interface HttpTemplateConditionalField {
+  when: HttpTemplateCondition
+  set?: Record<string, unknown>
+  remove?: string[]
 }
 
 export interface HttpTemplatePoll {
@@ -25,7 +71,14 @@ export interface HttpTemplatePoll {
   statusPath?: string
   successValues?: string[]
   failValues?: string[]
+  /** 自定义状态映射；优先于 successValues / failValues */
+  statusMap?: Record<string, 'success' | 'fail' | 'pending'>
+  /** 失败时优先读取的错误码/错误消息路径 */
+  errorPath?: string
+  errorMessagePath?: string
   resultPath: string
+  /** 多结果路径；存在时返回多个输出 */
+  resultPaths?: string[]
   intervalMs?: number
   maxAttempts?: number
   download?: boolean
@@ -38,6 +91,19 @@ export interface HttpTemplate {
   mode?: HttpTemplateMode
   /** 同步接口：提交响应直接包含结果，不走轮询 */
   sync?: boolean
+  /** 同步接口的结果路径；省略时使用 poll.resultPath */
+  syncResultPath?: string
   /** 接口返回完整视频（full）还是新增片段（segment），默认 full */
   videoResult?: 'full' | 'segment'
+}
+
+const LEGACY_KEYFRAME_VARIABLE =
+  /\{\{\s*refs\.(?:firstFrame|lastFrame)\s*\}\}/
+
+export const LEGACY_KEYFRAME_VARIABLE_WARNING =
+  '变量含义已变：{{refs.firstFrame}} / {{refs.lastFrame}} 现在是纯 base64；需要 data URL 请改用 {{refs.firstFrameDataUrl}} / {{refs.lastFrameDataUrl}}。'
+
+/** 检测模板或 extraBody 里是否还在使用旧的首尾帧变量语义 */
+export function hasLegacyKeyframeVariables(text: string): boolean {
+  return LEGACY_KEYFRAME_VARIABLE.test(text)
 }

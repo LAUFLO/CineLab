@@ -20,7 +20,7 @@ export function WindowControls({ theme, onToggleTheme }: WindowControlsProps) {
         type="button"
         variant="ghost"
         size="none"
-        className="h-7 w-7 rounded-card !text-fg"
+        className="h-7 w-7 rounded-md !text-fg"
         title="切换主题"
         onClick={onToggleTheme}
       >
@@ -30,7 +30,7 @@ export function WindowControls({ theme, onToggleTheme }: WindowControlsProps) {
         type="button"
         variant="ghost"
         size="none"
-        className="h-7 w-7 rounded-card !text-fg"
+        className="h-7 w-7 rounded-md !text-fg"
         title="设置"
         onClick={() => openSettings()}
       >

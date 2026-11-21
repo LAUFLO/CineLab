@@ -28,7 +28,7 @@ export function BottomBar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-7 w-7 rounded-card !bg-pick-bar !text-fg-inverse hover:!bg-[color-mix(in_srgb,var(--pick-bar)_86%,var(--text-1))] hover:!text-fg-inverse"
+        className="h-7 w-7 rounded-md !bg-pick-bar !text-fg-inverse hover:!bg-[color-mix(in_srgb,var(--pick-bar)_86%,var(--text-1))] hover:!text-fg-inverse"
         title="添加节点或资源"
         onClick={add}
       >
@@ -42,7 +42,7 @@ export function BottomBar() {
           type="button"
           variant="ghost"
           size="none"
-          className={`h-7 w-7 rounded-card ${toolMenuOpen ? '!bg-surface-hover !text-fg' : ''}`}
+          className={`h-7 w-7 rounded-md ${toolMenuOpen ? '!bg-surface-hover !text-fg' : ''}`}
           title={`当前工具：${tool === 'select' ? '选择' : '抓手'}`}
           onClick={() => setToolMenuOpen((open) => !open)}
         >
@@ -100,7 +100,7 @@ export function BottomBar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-7 w-7 rounded-card"
+        className="h-7 w-7 rounded-md"
         title="生成历史"
         onClick={openHistory}
       >
@@ -110,7 +110,7 @@ export function BottomBar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-7 w-7 rounded-card"
+        className="h-7 w-7 rounded-md"
         title="快捷键"
         onClick={openShortcuts}
       >
@@ -120,7 +120,7 @@ export function BottomBar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-7 w-7 rounded-card"
+        className="h-7 w-7 rounded-md"
         title="教程（即将支持）"
         onClick={() => showToast('教程将在后续版本提供')}
       >

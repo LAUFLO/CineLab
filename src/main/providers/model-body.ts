@@ -3,10 +3,15 @@ import {
   createTemplateResolver,
   replaceTemplateVariables
 } from '@shared/template-vars'
+import { dataUrlToBase64 } from './media'
 
 export interface ModelBodyRef {
   dataUrl: string
   role: string
+  /** 统一载荷中的纯 base64；省略时从 dataUrl 兼容提取 */
+  base64?: string
+  /** 统一载荷中的 MIME */
+  mime?: string
   /** 省略时按图片处理，兼容旧调用 */
   media?: 'image' | 'audio'
 }
@@ -19,12 +24,36 @@ export interface ModelBodyContext {
   mask?: string
 }
 
+function frameRef(
+  role: 'firstFrame' | 'lastFrame',
+  refs: ModelBodyRef[]
+): ModelBodyRef | undefined {
+  return refs.find((ref) => ref.role === role)
+}
+
+function refBase64(ref: ModelBodyRef | undefined): string | undefined {
+  if (!ref) return undefined
+  return ref.base64 ?? dataUrlToBase64(ref.dataUrl)
+}
+
 function refValue(token: string, refs: ModelBodyRef[]): unknown {
   if (token === 'refs.firstFrame') {
-    return refs.find((ref) => ref.role === 'firstFrame')?.dataUrl
+    return refBase64(frameRef('firstFrame', refs))
+  }
+  if (token === 'refs.firstFrameDataUrl') {
+    return frameRef('firstFrame', refs)?.dataUrl
+  }
+  if (token === 'refs.firstFrameMime') {
+    return frameRef('firstFrame', refs)?.mime
   }
   if (token === 'refs.lastFrame') {
-    return refs.find((ref) => ref.role === 'lastFrame')?.dataUrl
+    return refBase64(frameRef('lastFrame', refs))
+  }
+  if (token === 'refs.lastFrameDataUrl') {
+    return frameRef('lastFrame', refs)?.dataUrl
+  }
+  if (token === 'refs.lastFrameMime') {
+    return frameRef('lastFrame', refs)?.mime
   }
   if (token === 'refs.frames') {
     return refs

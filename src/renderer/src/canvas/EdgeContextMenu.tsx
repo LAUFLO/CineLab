@@ -3,7 +3,7 @@ import { useUIStore } from '../stores/ui'
 import { Button, Menu } from '../components/ui'
 
 const ITEM_CLASS =
-  '!flex h-8 w-full items-center !justify-between gap-3 rounded-card px-3 text-[12.5px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
+  '!flex h-8 w-full items-center !justify-between gap-3 rounded-md px-3 text-[12.5px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
 
 export function EdgeContextMenu() {
   const menu = useUIStore((state) => state.edgeContextMenu)

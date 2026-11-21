@@ -16,6 +16,8 @@ export interface AgentScope {
   studioNodeId?: string
   selectedClipIds?: string[]
   playheadMs?: number
+  /** CineBot 导演台作用域：当前打开的导演台画布节点 */
+  stageNodeId?: string
 }
 
 export interface AgentAttachment {
@@ -46,6 +48,7 @@ export interface AgentChatRequest {
   studioNodeId?: string
   selectedClipIds?: string[]
   playheadMs?: number
+  stageNodeId?: string
   sessionId?: string
   /** 用户选择的文本模型；省略时自动选择第一个可用模型 */
   modelKey?: string

@@ -34,6 +34,7 @@ const RemakeMappingDialog = lazy(() =>
 )
 import { AgentPanel } from './agent/AgentPanel'
 import { initAgentCanvasBridge } from './agent/canvasBridge'
+import { initMcpCommandBridge } from './mcp/commandBridge'
 import { useAgentStore } from './agent/agentStore'
 import { useCanvasStore } from './stores/canvas'
 import { useGenerationStore } from './stores/generation'
@@ -129,6 +130,12 @@ export default function App() {
   }, [loadProviders])
 
   useEffect(() => {
+    return window.api.localAdapters.onChanged(() => {
+      void loadProviders()
+    })
+  }, [loadProviders])
+
+  useEffect(() => {
     const unsubscribe = subscribeGeneration()
     return unsubscribe
   }, [subscribeGeneration])
@@ -165,6 +172,8 @@ export default function App() {
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [])
+
+  useEffect(() => initMcpCommandBridge(), [])
 
   useEffect(() => {
     if (!hydrated || phase !== 'ready') return

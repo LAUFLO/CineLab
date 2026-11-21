@@ -7,13 +7,8 @@ import type {
 } from './openai-compat'
 import { mergeHeaders } from './headers'
 import { sleep } from './retry'
-
-interface ImageRef {
-  dataUrl: string
-  role: string
-  /** 省略时按图片处理，兼容旧调用 */
-  media?: 'image' | 'audio'
-}
+import type { LoadedRef } from './media'
+import { contractFor } from '@shared/capabilities'
 
 interface AgnesVideoRef {
   dataUrl: string
@@ -24,7 +19,7 @@ export function buildAgnesBody(
   model: ModelDef,
   prompt: string,
   params: Record<string, unknown>,
-  refs: ImageRef[],
+  refs: LoadedRef[],
   video?: AgnesVideoRef
 ): Record<string, unknown> {
   const firstFrame = refs.find((ref) => ref.role === 'firstFrame')
@@ -33,6 +28,10 @@ export function buildAgnesBody(
     (ref) => ref.media !== 'audio' && ref.role === 'reference'
   )
   const audios = refs.filter((ref) => ref.media === 'audio')
+  const contract = contractFor(model)
+  const firstFrameField = contract?.fields.firstFrame ?? 'first_frame'
+  const lastFrameField = contract?.fields.lastFrame ?? 'last_frame'
+  const referenceField = contract?.fields.referenceImage ?? 'images'
   const mode =
     firstFrame || lastFrame
       ? 'keyframe'
@@ -50,10 +49,10 @@ export function buildAgnesBody(
   }
 
   if (mode === 'keyframe') {
-    if (firstFrame) body.first_frame = firstFrame.dataUrl
-    if (lastFrame) body.last_frame = lastFrame.dataUrl
+    if (firstFrame) body[firstFrameField] = firstFrame.base64
+    if (lastFrame) body[lastFrameField] = lastFrame.base64
   } else if (mode === 'reference') {
-    if (images.length > 0) body.images = images.map((ref) => ref.dataUrl)
+    if (images.length > 0) body[referenceField] = images.map((ref) => ref.dataUrl)
     if (audios.length > 0) body.audios = audios.map((ref) => ref.dataUrl)
     if (video) {
       if (/^agnes-video-2\.5-flash/i.test(model.remoteModel)) {
@@ -100,7 +99,7 @@ export async function generateVideoAgnes(
   provider: ProviderRuntime,
   prompt: string,
   params: Record<string, unknown>,
-  refs: ImageRef[],
+  refs: LoadedRef[],
   ctx: AdapterContext,
   video?: AgnesVideoRef
 ): Promise<ProviderOutput[]> {

@@ -78,7 +78,7 @@ function TreeRow({
           <Icon name="folder" size={14} />
           <span className="min-w-0 flex-1 truncate">{node.name}</span>
           {node.assetCount > 0 ? (
-            <span className="h-4 min-w-[18px] shrink-0 rounded-card border border-border bg-surface px-[5px] text-center text-[10px] leading-[14px] text-fg-subtle">
+            <span className="h-4 min-w-[18px] shrink-0 rounded-md border border-border bg-surface px-[5px] text-center text-[10px] leading-[14px] text-fg-subtle">
               {node.assetCount}
             </span>
           ) : null}

@@ -95,6 +95,19 @@ export const cineNodeSchema = z.object({
     status: nodeStatusSchema,
     text: z.string().max(20000).optional(),
     prompt: z.string().max(20000).optional(),
+    inputMode: z
+      .enum([
+        't2i',
+        'i2i',
+        't2v',
+        'first-frame',
+        'first-last',
+        'reference',
+        'video-edit',
+        'video-extend',
+        'layer'
+      ])
+      .optional(),
     refOrder: z.array(z.string().max(600)).max(64).optional(),
     studyId: z.string().max(120).optional(),
     sourceNodeId: z.string().max(120).optional(),

@@ -23,7 +23,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-[30px] gap-1.5 rounded-card px-2 !font-normal"
+        className="h-[30px] gap-1.5 rounded-md px-2 !font-normal"
         onClick={() => openLibrary('角色')}
       >
         <Icon name="folder" size={15} />
@@ -34,7 +34,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-[30px] w-[30px] rounded-card"
+        className="h-[30px] w-[30px] rounded-md"
         title="整理画布 Alt+Shift+F"
         onClick={requestArrange}
       >
@@ -45,7 +45,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-[30px] w-[30px] rounded-card"
+        className="h-[30px] w-[30px] rounded-md"
         title="适应视图"
         onClick={requestFitView}
       >
@@ -56,7 +56,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className={`h-[30px] w-[30px] rounded-card ${
+        className={`h-[30px] w-[30px] rounded-md ${
           edgesVisible ? '' : '!bg-surface-hover !text-fg'
         }`}
         title={edgesVisible ? '隐藏节点连线' : '显示节点连线'}
@@ -69,7 +69,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className={`h-[30px] w-[30px] rounded-card ${
+        className={`h-[30px] w-[30px] rounded-md ${
           snapToGrid ? '!bg-surface-hover !text-fg' : ''
         }`}
         title="网格吸附"
@@ -82,7 +82,7 @@ export function StatusBar() {
         type="button"
         variant="ghost"
         size="none"
-        className={`h-[30px] w-[30px] rounded-card ${
+        className={`h-[30px] w-[30px] rounded-md ${
           minimapVisible ? '!bg-surface-hover !text-fg' : ''
         }`}
         title="小地图"

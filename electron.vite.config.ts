@@ -44,6 +44,17 @@ function cspPlugin(): Plugin {
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/main/index.ts'),
+          'local-adapter-host': resolve(
+            'src/main/local-adapters/host-process.ts'
+          ),
+          'cinelab-mcp': resolve('src/main/mcp/stdio-bridge.ts')
+        }
+      }
+    },
     resolve: {
       alias: {
         '@shared': resolve('src/shared')

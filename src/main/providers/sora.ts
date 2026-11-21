@@ -3,6 +3,7 @@ import type { ModelDef } from '@shared/provider-schema'
 import { mergeHeaders } from './headers'
 import { sleep } from './retry'
 import { applyModelRequestBody, applyModelRequestForm } from './model-body'
+import { contractFor } from '@shared/capabilities'
 import type {
   AdapterContext,
   ProviderOutput,
@@ -99,6 +100,7 @@ export async function generateVideoSora(
 
   if (refs.length > 0) {
     // 官方 Sora 接口把参考图作为 multipart 文件接收
+    const referenceField = contractFor(model)?.fields.firstFrame ?? 'input_reference'
     const form = new FormData()
     form.append('model', model.remoteModel)
     form.append('prompt', prompt)
@@ -106,7 +108,7 @@ export async function generateVideoSora(
     if (body.size !== undefined) form.append('size', String(body.size))
 
     const parsed = parseDataUrl(refs[0].dataUrl, 0)
-    if (parsed) form.append('input_reference', parsed.blob, parsed.filename)
+    if (parsed) form.append(referenceField, parsed.blob, parsed.filename)
     applyModelRequestForm(form, model, { prompt, params, refs })
 
     const multipartHeaders = { ...headers }
@@ -140,7 +142,7 @@ export async function generateVideoSora(
       ctx.onProgress(8, '参考图表单不被支持，改用 JSON 提交')
       const fallback = {
         ...body,
-        input_reference: refs[0].dataUrl
+        [referenceField]: refs[0].dataUrl
       }
       submit = await httpFetch(submitPath, {
         method: 'POST',

@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties
@@ -12,6 +13,7 @@ import {
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
+  SelectionMode,
   useReactFlow,
   type Edge,
   type FinalConnectionState
@@ -162,6 +164,23 @@ function CanvasInner({ theme }: { theme: Theme }) {
   const selectedNodes = nodes.filter((node) => node.selected)
   const singleGroupSelected =
     selectedNodes.length === 1 && isGroupNode(selectedNodes[0])
+  const selectedNodeIdSet = useMemo(
+    () => new Set(nodes.filter((node) => node.selected).map((node) => node.id)),
+    [nodes]
+  )
+  // 连线隐藏时仍保留数据：选中节点后只显示与它直接相连的左右两侧连线
+  const displayEdges = useMemo(() => {
+    if (edgesVisible) return edges
+    if (selectedNodeIdSet.size === 0) {
+      return edges.map((edge) => ({ ...edge, hidden: true }))
+    }
+    return edges.map((edge) => ({
+      ...edge,
+      hidden:
+        !selectedNodeIdSet.has(edge.source) &&
+        !selectedNodeIdSet.has(edge.target)
+    }))
+  }, [edges, edgesVisible, selectedNodeIdSet])
 
   useEffect(() => {
     if (addMenuToken === 0 || addMenuToken === addMenuHandled.current) return
@@ -590,7 +609,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
     <>
       <ReactFlow
         nodes={nodes}
-        edges={edgesVisible ? edges : []}
+        edges={displayEdges}
         onlyRenderVisibleElements
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -636,6 +655,8 @@ function CanvasInner({ theme }: { theme: Theme }) {
         connectionMode={ConnectionMode.Strict}
         connectionRadius={60}
         selectionOnDrag={!handMode}
+        selectionMode={SelectionMode.Partial}
+        autoPanOnSelection={false}
         onSelectionStart={() => setBoxSelecting(true)}
         onSelectionEnd={() => setBoxSelecting(false)}
         zoomOnDoubleClick={canvasPreferences.zoomOnDoubleClick}

@@ -21,10 +21,10 @@ import { VIDEO_OPERATIONS } from '@shared/operation-schema'
 import {
   HOT_PROVIDER_IDS,
   PROVIDER_PRESETS,
-  recommendedModelsForPreset,
   type ProviderPreset
 } from '@shared/provider-presets'
 import type { UpdateStatus } from '@shared/update'
+import type { LocalAdapterStatus } from '@shared/local-adapter'
 import { BrandIcon, BrandWordmark } from '../components/Brand'
 import { Icon, type IconName } from '../components/Icon'
 
@@ -174,6 +174,26 @@ function ModelsSection() {
   const [skillPath, setSkillPath] = useState('')
   const [pending, setPending] = useState<PendingModelsState | null>(null)
   const [pendingOpen, setPendingOpen] = useState(false)
+  const [localAdapters, setLocalAdapters] = useState<LocalAdapterStatus[]>([])
+
+  useEffect(() => {
+    let alive = true
+
+    void window.api.localAdapters.list().then((items) => {
+      if (alive) setLocalAdapters(items)
+    })
+
+    const off = window.api.localAdapters.onChanged((items) => {
+      if (!alive) return
+      setLocalAdapters(items)
+      void load()
+    })
+
+    return () => {
+      alive = false
+      off()
+    }
+  }, [load])
 
   useEffect(() => {
     void load()
@@ -335,7 +355,12 @@ function ModelsSection() {
       return
     }
 
-    const firstProvider = providers.length === 0
+    const firstProvider =
+      providers.filter(
+        (provider) =>
+          !provider.id.startsWith('local:') &&
+          !provider.id.startsWith('sidecar:')
+      ).length === 0
     setBusy(true)
     setMessage(null)
     try {
@@ -473,10 +498,6 @@ function ModelsSection() {
           draft.baseUrl.trim().replace(/\/+$/, '')
       )
     : undefined
-  const recommendedModels = activePreset
-    ? recommendedModelsForPreset(activePreset.id)
-    : []
-
   if (draft) {
     return (
       <div className="flex flex-col">
@@ -484,7 +505,7 @@ function ModelsSection() {
           type="button"
           variant="ghost"
           size="none"
-          className="sticky top-0 z-[8] -ml-2.5 mb-3.5 self-start rounded-card bg-surface px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg"
+          className="sticky top-0 z-[8] -ml-2.5 mb-3.5 self-start rounded-md bg-surface px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg"
           onClick={() => setDraft(null)}
         >
           ← 返回列表
@@ -504,7 +525,7 @@ function ModelsSection() {
             value={draft.name}
             onChange={(event) => updateField('name', event.target.value)}
             placeholder="例如：我的中转站"
-            className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+            className="!h-[34px] !rounded-md border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
         </label>
 
@@ -527,7 +548,7 @@ function ModelsSection() {
             value={draft.baseUrl}
             onChange={(event) => updateField('baseUrl', event.target.value)}
             placeholder="https://api.example.com/v1"
-            className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+            className="!h-[34px] !rounded-md border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
         </label>
 
@@ -543,7 +564,7 @@ function ModelsSection() {
             placeholder={
               draft.type === 'kling' ? 'Access Key 或 API Key' : 'sk-...'
             }
-            className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+            className="!h-[34px] !rounded-md border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
           />
           {activePreset?.keyHelpUrl ? (
             <div className="text-[11px] leading-[1.6] text-fg-subtle">
@@ -563,7 +584,7 @@ function ModelsSection() {
               value={draft.secretKey ?? ''}
               onChange={(event) => updateField('secretKey', event.target.value)}
               placeholder="可灵 Secret Key"
-              className="!h-[34px] !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+              className="!h-[34px] !rounded-md border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
             />
           </label>
         ) : null}
@@ -727,35 +748,7 @@ function ModelsSection() {
             ))}
             {draft.models.length === 0 ? (
               <div className="p-2 text-xs text-fg-subtle">
-                还没有添加模型。填好 Key 后点「获取模型列表」，或点击下方推荐。
-              </div>
-            ) : null}
-            {recommendedModels.length > 0 ? (
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-fg-subtle">推荐</span>
-                {recommendedModels.map((model) => {
-                  const added = draft.models.some(
-                    (item) => item.id === model.id
-                  )
-                  return (
-                    <Button
-                      key={model.id}
-                      type="button"
-                      variant="ghost"
-                      size="none"
-                      className={`h-[26px] rounded-full border border-border px-2.5 text-xs ${
-                        added
-                          ? 'cursor-default text-fg-muted opacity-45'
-                          : 'text-fg-muted hover:border-border-strong hover:text-fg'
-                      }`}
-                      disabled={added}
-                      title={added ? '已添加' : `添加 ${model.name}`}
-                      onClick={() => addModel(model)}
-                    >
-                      {model.name}
-                    </Button>
-                  )
-                })}
+                还没有添加模型。填好 Key 后点「获取模型列表」，或手动输入模型 ID 添加。
               </div>
             ) : null}
           </div>
@@ -771,7 +764,7 @@ function ModelsSection() {
                   addManualModel()
                 }
               }}
-              className="!h-[34px] min-w-0 flex-1 !rounded-card border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
+              className="!h-[34px] min-w-0 flex-1 !rounded-md border-border bg-surface-hover !px-2.5 !text-[13px] focus:border-border-strong"
             />
             <Button
               type="button"
@@ -865,6 +858,12 @@ function ModelsSection() {
       </div>
     )
   }
+
+  const editableProviders = providers.filter(
+    (provider) =>
+      !provider.id.startsWith('local:') &&
+      !provider.id.startsWith('sidecar:')
+  )
 
   return (
     <div className="flex flex-col">
@@ -985,7 +984,7 @@ function ModelsSection() {
       ) : null}
 
       <div>
-        {providers.map((provider) => (
+        {editableProviders.map((provider) => (
           <div
             key={provider.id}
             className="mb-2.5 flex items-start justify-between gap-2 rounded-card border border-border bg-surface-raised p-3"
@@ -1022,7 +1021,7 @@ function ModelsSection() {
           </div>
         ))}
 
-        {providers.length === 0 ? (
+        {editableProviders.length === 0 ? (
           <div className="px-2 py-6 text-center text-xs leading-[1.8] text-fg-subtle">
             <div>第一次配置模型？按三步来：</div>
             <ol className="mt-2 list-decimal pl-[18px] text-left text-[11px] leading-[1.8] text-fg-subtle">
@@ -1032,6 +1031,103 @@ function ModelsSection() {
             </ol>
           </div>
         ) : null}
+
+        <div className="mt-5 border-t border-border pt-4">
+          <div className="mb-2 flex items-start justify-between gap-2">
+            <div>
+              <div className="text-[13px] text-fg">本地适配器</div>
+              <div className="mt-0.5 text-[11px] leading-[1.6] text-fg-subtle">
+                放到适配器目录后自动加载，完全信任本地代码。
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void window.api.localAdapters.openDir()}
+            >
+              打开目录
+            </Button>
+          </div>
+
+          {localAdapters.length === 0 ? (
+            <div className="rounded-card border border-dashed border-border px-3 py-4 text-center text-[11px] leading-[1.8] text-fg-subtle">
+              还没有本地适配器。创建目录并放入 manifest.json、models.json、
+              adapter.ts 后会自动加载。
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {localAdapters.map((adapter) => (
+                <div
+                  key={adapter.id}
+                  className="rounded-card border border-border bg-surface-raised p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[13px] text-fg">{adapter.id}</span>
+                        <span
+                          className={`rounded-full px-1.5 py-px text-[10px] leading-4 ${
+                            adapter.status === 'ready'
+                              ? 'bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-success'
+                              : adapter.status === 'error'
+                                ? 'bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] text-danger'
+                                : 'bg-[color-mix(in_srgb,var(--warning)_12%,transparent)] text-warning'
+                          }`}
+                        >
+                          {adapter.status === 'ready'
+                            ? '已加载'
+                            : adapter.status === 'error'
+                              ? '错误'
+                              : '加载中'}
+                        </span>
+                        <span className="rounded-full bg-surface px-1.5 py-px text-[10px] leading-4 text-fg-subtle">
+                          本地适配器
+                        </span>
+                      </div>
+                      <div className="mt-1 break-all text-[11px] leading-[1.6] text-fg-subtle">
+                        v{adapter.version} · {adapter.modelCount} 个模型 ·{' '}
+                        {adapter.type === 'sidecar' ? 'Sidecar' : '本地代码'}
+                      </div>
+                      <div className="mt-0.5 break-all text-[10px] leading-[1.5] text-fg-subtle">
+                        {adapter.dir}
+                      </div>
+                      {adapter.error ? (
+                        <div className="mt-1 break-all text-[11px] leading-[1.6] text-danger">
+                          {adapter.error}
+                        </div>
+                      ) : null}
+                      {adapter.models.length > 0 ? (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {adapter.models.map((model) => (
+                            <span
+                              key={model.id}
+                              className="rounded-full border border-border px-1.5 py-px text-[10px] leading-4 text-fg-muted"
+                              title={`${model.id} · 本地适配器`}
+                            >
+                              {model.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="xs"
+                      className="shrink-0"
+                      onClick={() =>
+                        void window.api.localAdapters.reload(adapter.id)
+                      }
+                    >
+                      重载
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="mt-[18px] flex flex-col gap-2">
           <div className="text-[11px] text-fg-subtle">热门供应商</div>

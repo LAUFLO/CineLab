@@ -6,7 +6,7 @@ import { useStageStore } from '../../stage/stageStore'
 import { Input, Button } from '../../components/ui'
 
 const CARD_CLASS =
-  'relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-card border p-4 text-center shadow-node transition-colors duration-[120ms]'
+  'relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-card border bg-surface-raised p-4 text-center shadow-node transition-colors duration-[120ms]'
 
 const TITLE_CLASS =
   'flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-data-[selected]:text-fg'

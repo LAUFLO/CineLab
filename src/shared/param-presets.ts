@@ -195,12 +195,12 @@ const TEXT_TEMPERATURE: ParamDef = {
 
 const TEXT_MAX_TOKENS: ParamDef = {
   key: 'max_tokens',
-  label: '最大 token',
+  label: '最大输出 token',
   group: '生成',
   type: 'number',
   defaultValue: 2048,
   min: 1,
-  max: 8192
+  max: 65536
 }
 
 const IMAGE_TEMPLATES: ParamTemplate[] = [
@@ -292,7 +292,8 @@ export const PARAM_TEMPLATES: Record<Capability, ParamTemplate[]> = {
     {
       id: 'max_tokens',
       def: TEXT_MAX_TOKENS,
-      description: '单次回复的最大长度，常用 2048'
+      description:
+        '单次回复的最大输出 token 数；上限取决于模型，Agnes 3.0 Flash 为 65536'
     }
   ]
 }

@@ -417,7 +417,7 @@ export function LibraryWindow() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <div className="flex h-7 items-center gap-1.5 rounded-card border border-border bg-surface-raised px-[9px] text-fg-subtle focus-within:border-border-strong">
+            <div className="flex h-7 items-center gap-1.5 rounded-md border border-border bg-surface-raised px-[9px] text-fg-subtle focus-within:border-border-strong">
               <Icon name="search" size={13} />
               <Input
                 value={query}
@@ -738,7 +738,7 @@ export function LibraryWindow() {
                     type="button"
                     variant="secondary"
                     size="none"
-                    className={`h-[34px] min-w-20 rounded-card bg-surface-hover px-[14px] text-xs ${
+                    className={`h-[34px] min-w-20 rounded-md bg-surface-hover px-[14px] text-xs ${
                       concatResolution === value
                         ? '!border-border-selected !bg-surface-raised !text-fg'
                         : ''
@@ -765,7 +765,7 @@ export function LibraryWindow() {
                     type="button"
                     variant="secondary"
                     size="none"
-                    className={`h-[34px] min-w-20 rounded-card bg-surface-hover px-[14px] text-xs ${
+                    className={`h-[34px] min-w-20 rounded-md bg-surface-hover px-[14px] text-xs ${
                       concatQuality === value
                         ? '!border-border-selected !bg-surface-raised !text-fg'
                         : ''

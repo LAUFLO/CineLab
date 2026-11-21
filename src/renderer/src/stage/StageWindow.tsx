@@ -880,7 +880,7 @@ export function StageWindow() {
           ) : null}
           {!loading && doc && doc.objects.length === 0 ? (
             <div className="pointer-events-none absolute bottom-4 left-1/2 max-w-[320px] -translate-x-1/2 rounded-card border border-border bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3.5 py-2.5 text-center text-xs leading-relaxed text-fg-muted">
-              场景还是空的；对象编辑与 Agent 搭景将在下一阶段接入。
+              场景还是空的；可以在左侧添加对象和机位，或让 CineBot 帮你搭景。
             </div>
           ) : null}
           <div className="pointer-events-none absolute right-2.5 bottom-2 rounded-md bg-black/35 px-1.5 py-0.5 text-[10px] text-fg-subtle">

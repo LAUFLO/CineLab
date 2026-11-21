@@ -3,6 +3,11 @@ import { inferModelInputs, modelModeIds } from './provider-schema'
 import type { ModelModeId } from './model-modes'
 import { MODEL_MODE_LABEL } from './model-modes'
 import { findProtocolTemplate } from './protocol-templates'
+import {
+  contractForAdapter,
+  contractGapsForAdapter,
+  type ModelContract
+} from './model-contracts'
 
 /** 输入侧特性：影响能接收什么素材 */
 export type ModelInputFeature = 'mask' | 'reference-audio' | 'last-frame'
@@ -35,6 +40,7 @@ export type CapabilityGapKind =
   | 'input-feature'
   | 'output-feature'
   | 'param'
+  | 'contract'
 
 export interface CapabilityGap {
   kind: CapabilityGapKind
@@ -50,6 +56,8 @@ export interface EffectiveCapabilities {
   outputFeatures: ModelOutputFeature[]
   /** 适配器读取的参数白名单；undefined 表示不限制 */
   params?: string[]
+  /** 协议族契约；用户自定义适配器为 null */
+  contract: ModelContract | null
   gaps: CapabilityGap[]
 }
 
@@ -157,6 +165,11 @@ export function resolveAdapter(model: ModelDef): string {
   return 'openai-compat'
 }
 
+/** 取模型对应协议族的契约；用户自定义适配器返回 null */
+export function contractFor(model: ModelDef): ModelContract | null {
+  return contractForAdapter(resolveAdapter(model))
+}
+
 /**
  * 把历史 `features` 拆成输入侧和输出侧。
  *
@@ -214,7 +227,6 @@ function adapterCapabilityFor(model: ModelDef): AdapterCapability {
  */
 export function effectiveCapabilities(model: ModelDef): EffectiveCapabilities {
   const adapter = resolveAdapter(model)
-  const base = adapterCapabilityFor(model)
 
   const declaredMedia =
     model.inputs && model.inputs.length > 0
@@ -223,7 +235,25 @@ export function effectiveCapabilities(model: ModelDef): EffectiveCapabilities {
   const declaredModes = modelModeIds(model)
   const declaredFeatures = normalizeFeatureSets(model)
 
-  const gaps: CapabilityGap[] = []
+  // 本地适配器完全信任：直接采用模型声明，不受官方能力白名单过滤。
+  if (adapter.startsWith('local:')) {
+    return {
+      adapter,
+      media: declaredMedia,
+      modes: declaredModes,
+      inputFeatures: declaredFeatures.input,
+      outputFeatures: declaredFeatures.output,
+      contract: null,
+      gaps: []
+    }
+  }
+
+  const base = adapterCapabilityFor(model)
+  const contract = contractForAdapter(adapter)
+
+  const gaps: CapabilityGap[] = [
+    ...contractGapsForAdapter(adapter, model)
+  ]
 
   const media = declaredMedia.filter((item) => {
     if (base.media.includes(item)) return true
@@ -284,6 +314,7 @@ export function effectiveCapabilities(model: ModelDef): EffectiveCapabilities {
     inputFeatures,
     outputFeatures,
     ...(base.params ? { params: base.params } : {}),
+    contract,
     gaps
   }
 }

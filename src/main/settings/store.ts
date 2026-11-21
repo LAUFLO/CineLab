@@ -12,6 +12,8 @@ import type {
   ProviderType
 } from '@shared/provider-schema'
 import type { ModelsFileProvider } from '@shared/models-file'
+import { effectiveCapabilities } from '@shared/capabilities'
+import { isOfficialModel } from '@shared/model-contracts'
 import {
   isVideoOperation,
   type OperationBindings
@@ -19,6 +21,13 @@ import {
 import { klingAuthorization } from '../providers/kling-auth'
 import { mergeHeaders } from '../providers/headers'
 import { httpFetch } from '../providers/http'
+import { log } from '../logger'
+import {
+  localAdapterProviders,
+  localModelIds,
+  localProviderRuntime,
+  sidecarProviderRuntime
+} from '../local-adapters/registry'
 import {
   enqueueModelsWrite,
   loadModelsConfig,
@@ -232,9 +241,17 @@ export async function listProviders(): Promise<ProviderConfig[]> {
   await ensureMigrated()
   const [config, raw] = await Promise.all([loadModelsConfig(), readRawSettings()])
 
-  return config.providers.map((provider) =>
-    toModelsProvider(provider, raw.providerKeys[provider.id])
-  )
+  const providers = config.providers.map((provider) => {
+    const resolved = toModelsProvider(provider, raw.providerKeys[provider.id])
+    const localIds = localModelIds()
+    if (localIds.size === 0) return resolved
+    return {
+      ...resolved,
+      models: resolved.models.filter((model) => !localIds.has(model.id))
+    }
+  })
+
+  return [...providers, ...localAdapterProviders()]
 }
 
 export interface ResolvedProvider {
@@ -244,9 +261,39 @@ export interface ResolvedProvider {
   apiKey: string
   secretKey: string
   models: ModelDef[]
+  /** false 表示本地适配器 / sidecar，不要求 API Key */
+  authRequired?: boolean
 }
 
 export async function resolveProvider(id: string): Promise<ResolvedProvider | null> {
+  if (id.startsWith('local:')) {
+    const local = localProviderRuntime(id)
+    if (!local) return null
+    return {
+      type: 'openai-compat',
+      baseUrl: local.baseUrl,
+      ...(local.headers ? { headers: local.headers } : {}),
+      apiKey: local.apiKey,
+      secretKey: '',
+      models: local.models,
+      authRequired: false
+    }
+  }
+
+  if (id.startsWith('sidecar:')) {
+    const sidecar = sidecarProviderRuntime(id)
+    if (!sidecar) return null
+    return {
+      type: 'openai-compat',
+      baseUrl: sidecar.baseUrl,
+      ...(sidecar.headers ? { headers: sidecar.headers } : {}),
+      apiKey: sidecar.apiKey,
+      secretKey: '',
+      models: sidecar.models,
+      authRequired: false
+    }
+  }
+
   await ensureMigrated()
   const [config, raw] = await Promise.all([loadModelsConfig(), readRawSettings()])
   const provider = config.providers.find((item) => item.id === id)
@@ -263,7 +310,9 @@ export async function resolveProvider(id: string): Promise<ResolvedProvider | nu
     ...(provider.headers ? { headers: provider.headers } : {}),
     apiKey: stored?.encryptedKey ? decryptKey(stored.encryptedKey) : envKey || '',
     secretKey: stored?.encryptedSecret ? decryptKey(stored.encryptedSecret) : '',
-    models: resolveModels(provider)
+    models: resolveModels(provider).filter(
+      (model) => !localModelIds().has(model.id)
+    )
   }
 }
 
@@ -282,6 +331,24 @@ export async function saveProvider(input: ProviderInput): Promise<ProviderConfig
     const config = await loadModelsConfig()
     if (config.errors.length > 0) {
       throw new Error(config.errors[0])
+    }
+
+    const blockers: string[] = []
+    const warnings: string[] = []
+    for (const model of input.models) {
+      const gaps = effectiveCapabilities(model).gaps.filter(
+        (gap) => gap.kind === 'contract'
+      )
+      if (gaps.length === 0) continue
+      const message = `${model.name || model.id}：${gaps[0].message}`
+      if (isOfficialModel(model)) blockers.push(message)
+      else warnings.push(message)
+    }
+    if (blockers.length > 0) {
+      throw new Error(`模型配置与协议契约不一致：${blockers[0]}`)
+    }
+    if (warnings.length > 0) {
+      log.warn('model contract warnings', { warnings })
     }
 
     const id = input.id ?? randomUUID()

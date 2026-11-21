@@ -110,6 +110,65 @@ describe('applyModelRequestBody', () => {
       'data:image/png;base64,U1k'
     ])
   })
+
+  it('uses base64 for keyframe tokens and exposes data URL and MIME variants', () => {
+    const body: Record<string, unknown> = {}
+    applyModelRequestBody(
+      body,
+      {
+        ...model,
+        extraBody: {
+          first: '{{refs.firstFrame}}',
+          firstUrl: '{{refs.firstFrameDataUrl}}',
+          firstMime: '{{refs.firstFrameMime}}',
+          last: '{{refs.lastFrame}}',
+          lastUrl: '{{refs.lastFrameDataUrl}}',
+          lastMime: '{{refs.lastFrameMime}}'
+        }
+      },
+      {
+        refs: [
+          {
+            dataUrl: 'data:image/jpeg;base64,FRAME1',
+            base64: 'FRAME1',
+            mime: 'image/jpeg',
+            role: 'firstFrame'
+          },
+          {
+            dataUrl: 'data:image/png;base64,FRAME2',
+            base64: 'FRAME2',
+            mime: 'image/png',
+            role: 'lastFrame'
+          }
+        ]
+      }
+    )
+
+    expect(body.first).toBe('FRAME1')
+    expect(body.firstUrl).toBe('data:image/jpeg;base64,FRAME1')
+    expect(body.firstMime).toBe('image/jpeg')
+    expect(body.last).toBe('FRAME2')
+    expect(body.lastUrl).toBe('data:image/png;base64,FRAME2')
+    expect(body.lastMime).toBe('image/png')
+  })
+
+  it('falls back to dataUrl when the loaded base64 is absent', () => {
+    const body: Record<string, unknown> = {}
+    applyModelRequestBody(
+      body,
+      { ...model, extraBody: { first: '{{refs.firstFrame}}' } },
+      {
+        refs: [
+          {
+            dataUrl: 'data:image/png;base64,LEGACY',
+            role: 'firstFrame'
+          }
+        ]
+      }
+    )
+
+    expect(body.first).toBe('LEGACY')
+  })
 })
 
 describe('applyModelRequestForm', () => {

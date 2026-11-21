@@ -753,6 +753,12 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       .filter((node) => node.selected)
       .map((node) => node.id)
 
+    const stage = useStageStore.getState()
+    const stageNodeId = stage.open ? stage.nodeId ?? undefined : undefined
+    if (stageNodeId && !selectedNodeIds.includes(stageNodeId)) {
+      selectedNodeIds.push(stageNodeId)
+    }
+
     const studio = useStudioStore.getState()
     const timelineState = useTimelineStore.getState()
     const studioNode =
@@ -767,7 +773,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       set({ error: '剪辑室时间线还没有加载' })
       return
     }
-    const profileId = studio.open ? 'clip' : 'canvas'
+    const profileId = stageNodeId
+      ? 'stage'
+      : studio.open
+        ? 'clip'
+        : 'canvas'
 
     set({
       error: null,
@@ -789,6 +799,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         message: text.trim(),
         canvasId: project.canvasId,
         selectedNodeIds,
+        ...(stageNodeId ? { stageNodeId } : {}),
         sessionId: state.sessionId,
         ...(state.modelKey ? { modelKey: state.modelKey } : {}),
         ...(Object.keys(state.generationModels).length > 0

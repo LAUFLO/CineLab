@@ -26,6 +26,7 @@ const MODULES = [
       'src/renderer/src/stores/toolbar.ts',
       'src/shared/canvas-commands.ts',
       'src/shared/canvas-schema.ts',
+      'src/shared/canvas-summary.ts',
       'src/shared/node-operation-specs.ts',
       'src/shared/operation-schema.ts',
       'src/shared/components.ts'
@@ -35,7 +36,13 @@ const MODULES = [
     id: '02',
     name: '生成与模型',
     file: 'docs/code-map/02-generation.md',
-    dirs: ['src/main/providers', 'src/main/engine', 'src/main/media', 'src/main/assets'],
+    dirs: [
+      'src/main/providers',
+      'src/main/engine',
+      'src/main/media',
+      'src/main/assets',
+      'src/main/local-adapters'
+    ],
     files: [
       'src/renderer/src/stores/generation.ts',
       'src/renderer/src/stores/generation-history.ts',
@@ -50,7 +57,9 @@ const MODULES = [
       'src/shared/reference-inputs.ts',
       'src/shared/media.ts',
       'src/shared/protocol-templates.ts',
-      'src/shared/http-template.ts'
+      'src/shared/http-template.ts',
+      'src/shared/model-contracts.ts',
+      'src/shared/local-adapter.ts'
     ]
   },
   {
@@ -114,13 +123,19 @@ const MODULES = [
     id: '06',
     name: 'CineBot 与 Agent',
     file: 'docs/code-map/06-agent.md',
-    dirs: ['src/main/agent', 'src/renderer/src/agent'],
+    dirs: [
+      'src/main/agent',
+      'src/main/mcp',
+      'src/renderer/src/agent',
+      'src/renderer/src/mcp'
+    ],
     files: [
       'src/shared/agent.ts',
       'src/shared/agent-proposal.ts',
       'src/shared/agent-tools.ts',
       'src/shared/capabilities.ts',
-      'src/shared/skills.ts'
+      'src/shared/skills.ts',
+      'src/shared/mcp-command.ts'
     ]
   },
   {

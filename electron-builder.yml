@@ -15,6 +15,8 @@ asar: true
 asarUnpack:
   - node_modules/ffmpeg-static/ffmpeg.exe
   - node_modules/ffprobe-static/bin/win32/x64/ffprobe.exe
+  - "node_modules/esbuild/**"
+  - "node_modules/@esbuild/**"
 win:
   icon: icon.ico
   target:

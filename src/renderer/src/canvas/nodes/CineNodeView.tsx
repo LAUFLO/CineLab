@@ -674,7 +674,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                   type="button"
                   variant="ghost"
                   size="none"
-                  className="absolute top-5 right-5 z-[2] !h-[34px] !rounded-card !border !border-white/24 !bg-black/55 !px-3.5 !text-xs !font-normal !text-white backdrop-blur-[8px] hover:!bg-black/[0.72] hover:!text-white"
+                  className="absolute top-5 right-5 z-[2] !h-[34px] !rounded-md !border !border-white/24 !bg-black/55 !px-3.5 !text-xs !font-normal !text-white backdrop-blur-[8px] hover:!bg-black/[0.72] hover:!text-white"
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={() => {
                     setPreviewOpen(false)

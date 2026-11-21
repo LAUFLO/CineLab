@@ -123,6 +123,8 @@ export interface ModelDef {
   providerType?: ProviderType
   /** 生成执行器，缺省按 remoteModel 推断 */
   adapter?: string
+  /** 本地适配器 ID；adapter 为 local:<id> 时由本地宿主执行 */
+  localAdapter?: string
   /** http-template 执行器的请求/轮询模板 */
   template?: HttpTemplate
   /** 引用自哪个内置预设，用于恢复预设默认值 */
@@ -624,7 +626,7 @@ const RAW_MODEL_PRESETS: ModelDef[] = [
     inputs: ['text'],
     params: [
       { key: 'temperature', label: '温度', type: 'number', defaultValue: 0.7, min: 0, max: 2 },
-      { key: 'max_tokens', label: '最大输出', type: 'number', defaultValue: 2048, min: 64, max: 32768 }
+      { key: 'max_tokens', label: '最大输出 token', type: 'number', defaultValue: 2048, min: 64, max: 32768 }
     ]
   },
   {

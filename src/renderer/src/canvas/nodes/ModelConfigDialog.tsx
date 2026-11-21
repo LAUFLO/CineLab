@@ -26,7 +26,11 @@ import {
   type VideoOperationId
 } from '@shared/operation-schema'
 import { paramTemplatesFor, type ParamTemplate } from '@shared/param-presets'
-import type { HttpTemplate } from '@shared/http-template'
+import {
+  hasLegacyKeyframeVariables,
+  LEGACY_KEYFRAME_VARIABLE_WARNING,
+  type HttpTemplate
+} from '@shared/http-template'
 import { Icon } from '../../components/Icon'
 import {
   Button,
@@ -161,6 +165,10 @@ function chipSummary(def: ParamDef): string {
 /** 时长统一用滑条：旧的固定秒数下拉自动转成数值范围 */
 function normalizeParam(def: ParamDef): ParamRow {
   const row = cloneDef(def)
+  // 旧配置里的默认标签，统一为更明确的「最大输出 token」
+  if (row.key === 'max_tokens' && row.label === '最大 token') {
+    row.label = '最大输出 token'
+  }
   if (row.key !== 'duration' || row.type !== 'select') return row
 
   const values = (row.options ?? [])
@@ -1026,7 +1034,7 @@ export function ModelConfigDialog({
                     variant="secondary"
                     size="none"
                     className={cn(
-                      '!h-7 !justify-start gap-1.5 rounded-card border-border bg-surface-hover px-2.5 !text-[11.5px] !font-normal !text-fg duration-[120ms]',
+                      '!h-7 !justify-start gap-1.5 rounded-md border-border bg-surface-hover px-2.5 !text-[11.5px] !font-normal !text-fg duration-[120ms]',
                       added
                         ? 'cursor-default opacity-45 disabled:!opacity-45'
                         : 'hover:!border-border-selected hover:bg-surface-raised'
@@ -1450,7 +1458,7 @@ export function ModelConfigDialog({
                         />
                       ) : row.type === 'json' ? (
                         <Textarea
-                          className="!h-[34px] !min-h-[34px] !rounded-card border-border bg-surface-hover !px-2 !py-1.5 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
+                          className="!h-[34px] !min-h-[34px] !rounded-md border-border bg-surface-hover !px-2 !py-1.5 !text-[11px] font-mono leading-[1.6] text-fg focus:border-link"
                           value={row.value}
                           spellCheck={false}
                           onChange={(event) =>
@@ -1583,6 +1591,13 @@ export function ModelConfigDialog({
           </>
         ) : null}
       </div>
+
+      {hasLegacyKeyframeVariables(templateText) ||
+      hasLegacyKeyframeVariables(extraBodyText) ? (
+        <div className="mb-3 rounded-card border border-[color-mix(in_srgb,var(--warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] px-2.5 py-2 text-[11px] leading-[1.55] text-warning">
+          {LEGACY_KEYFRAME_VARIABLE_WARNING}
+        </div>
+      ) : null}
 
       {error ? (
         <div className="mb-3 break-all rounded-md bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] px-2.5 py-2 text-xs leading-[1.6] text-danger">

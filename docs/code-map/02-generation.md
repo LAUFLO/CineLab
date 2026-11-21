@@ -99,6 +99,11 @@ Prompt Bar / 节点操作
 | 参数预设/条件 | 已实现 | `param-presets.ts`、`param-constraints.ts` |
 | 生成队列/取消/并发 | 已实现 | `engine/queue.ts` |
 | 参考输入 | 已实现 | `reference-inputs.ts`、`model-inputs.test.ts` |
+| 首尾帧载荷与校验 | 已实现；Agnes 首帧已真实复测 | `main/providers/media.ts`、`reference-inputs.ts`、`minimax.test.ts` |
+| 协议族契约与 golden 请求体 | 已实现 | `shared/model-contracts.ts`、`golden-bodies.test.ts`、`capability-audit.test.ts` |
+| http-template 完整 DSL（S3a/S3b） | 已实现 | `providers/http-template.ts`、`http-template-dsl.test.ts` |
+| 本地适配器 registry / utilityProcess | 已实现（S2a/S2b） | `main/local-adapters/`、`shared/local-adapter.ts`、设置页本地适配器区块 |
+| L4 sidecar（OpenAI / http-template） | 已实现（S4） | `main/local-adapters/registry.ts`、`docs/local-adapters.md` |
 | 媒体处理 | 已实现 | `main/media/`、`concat.test.ts` |
 | 错误文案 | 已实现 | `generation-error.test.ts` |
 
@@ -107,6 +112,13 @@ Prompt Bar / 节点操作
 - 模型能力由 `provider-schema.ts` 与模型清单决定；新增能力先改 schema 与适配器。
 - 生成结果的计费/预扣在供应商适配层，不在 UI。
 - 参考素材数量由供应商 API 决定，本地不做上限建模。
+- 首尾帧变量 `refs.firstFrame` / `refs.lastFrame` 已改为纯 base64；旧自定义模板需手动迁移到 `firstFrameDataUrl` / `lastFrameDataUrl`。
+- MiniMax H3 `role`、Agnes 尾帧和 http-template 新变量仍需真实 Key 复测（`REAL-API-VERIFY` gate）。Agnes 首帧已用真实 Key 生成 5.18 秒视频，首帧与输入图 SSIM 0.889。
+- 官方模型保存时会校验协议族契约（字段、角色、模式），缺口会阻止保存；用户自定义模型只记录警告。
+- Kling、火山和旧版 MiniMax 的尺寸/体积限制为通用推断（source confidence 为 medium），需按官方文档复核。
+- 本地适配器当前支持 `type: code` 与 `type: sidecar`；`config` / `template` 与 MCP 应用级工具留待后续。
+- sidecar 需要 `models.json`，`/models` 自动发现尚未实现。
+- 打包后的 esbuild 二进制尚未在安装包中验证。
 - 视频操作对模型支持程度不一，`OperationSupport` 只是声明，实际仍可能被供应商拒绝。
 
 ## 常见改动入口
@@ -130,7 +142,13 @@ Prompt Bar / 节点操作
 | `src/main/assets/ingest.ts` | 155 |
 | `src/main/engine/generation-error.ts` | 55 |
 | `src/main/engine/queue.ts` | 87 |
-| `src/main/engine/start-generation.ts` | 416 |
+| `src/main/engine/start-generation.ts` | 437 |
+| `src/main/local-adapters/build.ts` | 64 |
+| `src/main/local-adapters/host-process.ts` | 166 |
+| `src/main/local-adapters/host.ts` | 259 |
+| `src/main/local-adapters/manifest.ts` | 285 |
+| `src/main/local-adapters/registry.ts` | 459 |
+| `src/main/local-adapters/runtime.ts` | 88 |
 | `src/main/media/audio-peaks.ts` | 127 |
 | `src/main/media/audio.ts` | 133 |
 | `src/main/media/concat.ts` | 301 |
@@ -151,32 +169,35 @@ Prompt Bar / 节点操作
 | `src/main/media/video.ts` | 245 |
 | `src/main/media/vision-tasks.ts` | 102 |
 | `src/main/media/vision.ts` | 457 |
-| `src/main/providers/agnes.ts` | 206 |
+| `src/main/providers/agnes.ts` | 205 |
 | `src/main/providers/headers.ts` | 30 |
-| `src/main/providers/http-template.ts` | 484 |
+| `src/main/providers/http-template.ts` | 827 |
 | `src/main/providers/http.ts` | 27 |
 | `src/main/providers/kling-auth.ts` | 30 |
-| `src/main/providers/kling.ts` | 166 |
-| `src/main/providers/minimax.ts` | 277 |
-| `src/main/providers/model-body.ts` | 223 |
+| `src/main/providers/kling.ts` | 174 |
+| `src/main/providers/media.ts` | 49 |
+| `src/main/providers/minimax.ts` | 297 |
+| `src/main/providers/model-body.ts` | 252 |
 | `src/main/providers/openai-compat.ts` | 789 |
 | `src/main/providers/retry.ts` | 57 |
-| `src/main/providers/sora.ts` | 230 |
-| `src/main/providers/volcengine.ts` | 184 |
+| `src/main/providers/sora.ts` | 232 |
+| `src/main/providers/volcengine.ts` | 187 |
 | `src/renderer/src/stores/generation-history.ts` | 151 |
 | `src/renderer/src/stores/generation.ts` | 224 |
 | `src/renderer/src/stores/vision-tasks.ts` | 95 |
 | `src/shared/filters.ts` | 112 |
 | `src/shared/generation.ts` | 141 |
-| `src/shared/http-template.ts` | 44 |
+| `src/shared/http-template.ts` | 110 |
+| `src/shared/local-adapter.ts` | 14 |
 | `src/shared/media.ts` | 233 |
+| `src/shared/model-contracts.ts` | 395 |
 | `src/shared/model-modes.ts` | 278 |
 | `src/shared/param-constraints.ts` | 107 |
-| `src/shared/param-presets.ts` | 303 |
+| `src/shared/param-presets.ts` | 304 |
 | `src/shared/protocol-templates.ts` | 1341 |
 | `src/shared/provider-presets.ts` | 313 |
-| `src/shared/provider-schema.ts` | 1312 |
-| `src/shared/reference-inputs.ts` | 107 |
+| `src/shared/provider-schema.ts` | 1314 |
+| `src/shared/reference-inputs.ts` | 146 |
 <!-- AUTO:files:end -->
 
 <!-- AUTO:exports:start -->
@@ -186,6 +207,11 @@ Prompt Bar / 节点操作
 | `src/main/engine/generation-error.ts` | `formatGenerationError` |
 | `src/main/engine/queue.ts` | `QueueJob`、`generationQueue` |
 | `src/main/engine/start-generation.ts` | `startGeneration` |
+| `src/main/local-adapters/build.ts` | `LocalAdapterBuildResult`、`resolveLocalAdapterEntry`、`buildLocalAdapter` |
+| `src/main/local-adapters/host.ts` | `LocalAdapterOutput`、`LocalAdapterGenerateOptions`、`LocalAdapterHost` |
+| `src/main/local-adapters/manifest.ts` | `LocalAdapterType`、`SidecarHealthConfig`、`LocalAdapterManifest`、`LocalAdapterProviderConfig`、`LocalAdapterData`、`parseManifest`、`parseModelsFile`、`readLocalAdapter` |
+| `src/main/local-adapters/registry.ts` | `LocalProviderRuntime`、`localAdapterLogs`、`localAdaptersDir`、`listLocalAdapterStatuses`、`localAdapterProviders`、`localProviderRuntime`、`sidecarProviderRuntime`、`localModelIds`、`localAdapterRecord`、`startLocalAdapterRegistry`、`stopLocalAdapterRegistry`、`reloadLocalAdapter` |
+| `src/main/local-adapters/runtime.ts` | `generateWithLocalAdapter` |
 | `src/main/media/audio-peaks.ts` | `computeAudioPeaks` |
 | `src/main/media/audio.ts` | `buildAtempoFilter`、`trimAudio`、`changeAudioSpeed` |
 | `src/main/media/concat.ts` | `ConcatResolution`、`ConcatQuality`、`ConcatOptions`、`concatVideoFiles`、`concatVideos` |
@@ -208,10 +234,11 @@ Prompt Bar / 节点操作
 | `src/main/media/vision.ts` | `VisionOptions`、`runVisionTask` |
 | `src/main/providers/agnes.ts` | `buildAgnesBody`、`generateVideoAgnes` |
 | `src/main/providers/headers.ts` | `resolveCustomHeaders`、`mergeHeaders` |
-| `src/main/providers/http-template.ts` | `generateVideoHttpTemplate` |
+| `src/main/providers/http-template.ts` | `ImageRef`、`resolveTemplateRef`、`generateVideoHttpTemplate` |
 | `src/main/providers/http.ts` | `httpFetch` |
 | `src/main/providers/kling-auth.ts` | `createKlingJwt`、`klingAuthorization` |
-| `src/main/providers/kling.ts` | `generateVideoKling` |
+| `src/main/providers/kling.ts` | `buildKlingBody`、`generateVideoKling` |
+| `src/main/providers/media.ts` | `LoadedRef`、`LoadedRefInput`、`normalizeMime`、`dataUrlToBase64`、`toLoadedRef` |
 | `src/main/providers/minimax.ts` | `generateVideoMinimax` |
 | `src/main/providers/model-body.ts` | `ModelBodyRef`、`ModelBodyContext`、`applyModelRequestBody`、`applyModelRequestForm` |
 | `src/main/providers/openai-compat.ts` | `ProviderRuntime`、`AdapterContext`、`ProviderOutput`、`ImageOutput`、`ReferenceImage`、`generateImage`、`generateSpeech`、`ChatMessage`、`chatCompletion`、`generateText`、`generateMusic` |
@@ -223,8 +250,10 @@ Prompt Bar / 节点操作
 | `src/renderer/src/stores/vision-tasks.ts` | `trackVisionTask`、`subscribeVisionTasks` |
 | `src/shared/filters.ts` | `DEFAULT_FILTER`、`FilterPreset`、`FILTER_PRESETS`、`canvasFilterString`、`hasActiveFilter` |
 | `src/shared/generation.ts` | `OutputKind`、`ReferenceMedia`、`ReferenceRole`、`VideoRange`、`VideoOperationOptions`、`ReferenceInput`、`LayerBounds`、`LayerBox`、`AssetLayer`、`TextRecognitionStyle`、`TextRecognitionRun`、`TextRecognitionLine`、`TextRecognition`、`GeneratedAsset`、`GenerateRequest`、`GenerationEvent`、`GenerateHandle` |
-| `src/shared/http-template.ts` | `HttpTemplateMode`、`HttpTemplateAuth`、`HttpTemplateSubmit`、`HttpTemplatePoll`、`HttpTemplate` |
+| `src/shared/http-template.ts` | `HttpTemplateMode`、`HttpTemplateSignType`、`HttpTemplateSign`、`HttpTemplateAuth`、`HttpTemplateMultipartFile`、`HttpTemplateMultipart`、`HttpTemplateSubmit`、`HttpTemplateCondition`、`HttpTemplateConditionalField`、`HttpTemplatePoll`、`HttpTemplate`、`LEGACY_KEYFRAME_VARIABLE_WARNING`、`hasLegacyKeyframeVariables` |
+| `src/shared/local-adapter.ts` | `LocalAdapterStatusKind`、`LocalAdapterStatus` |
 | `src/shared/media.ts` | `AudioPeaksRequest`、`GridSplitRequest`、`GridSplitResult`、`StitchRequest`、`StitchResult`、`FrameMode`、`ExtractFrameRequest`、`ExtractFrameResult`、`SplitAvRequest`、`SplitAvResult`、`CropVideoRequest`、`CropVideoResult`、`AudioTrimRequest`、`AudioTrimResult`、`AudioSpeedRequest`、`AudioSpeedResult`、`MediaProbe`、`SubtitleRect`、`CropImageRequest`、`CropImageResult`、`CropImageRectRequest`、`RemoveSubtitlesRequest`、`RemoveSubtitlesResult`、`TrimVideoRequest` …（共 37 个） |
+| `src/shared/model-contracts.ts` | `ContractTransport`、`ModelContractFields`、`ModelContractTransports`、`ModelContractRoles`、`ModelContractLimits`、`ModelContractSource`、`ModelContract`、`ContractGap`、`AGNES_VIDEO_CONTRACT`、`KLING_VIDEO_CONTRACT`、`MINIMAX_VIDEO_CONTRACT`、`MINIMAX_LEGACY_CONTRACT`、`VOLCENGINE_VIDEO_CONTRACT`、`SORA_VIDEO_CONTRACT`、`OPENAI_COMPAT_CONTRACT`、`HTTP_TEMPLATE_CONTRACT`、`OFFICIAL_CONTRACTS`、`contractForAdapter`、`isOfficialModel`、`contractGapsForAdapter` |
 | `src/shared/model-modes.ts` | `ModelModeId`、`MediaKind`、`SlotRole`、`InputSlot`、`OperationSupport`、`ModelModeConfig`、`ModelModeDefinition`、`MODEL_MODE_DEFINITIONS`、`MODEL_MODE_LABEL`、`OPERATION_SUPPORT_LABEL`、`isModelModeId`、`getModelModeDefinition`、`normalizeModeConfig`、`normalizeModelModes`、`modeMediaKinds`、`modeSupportsOperation`、`modeOperationIds`、`highestOperationSupport` |
 | `src/shared/param-constraints.ts` | `ParamEvalContext`、`EvaluatedParam`、`evaluateParam`、`applyParamConstraints` |
 | `src/shared/param-presets.ts` | `ParamTemplate`、`PARAM_TEMPLATES`、`paramTemplatesFor` |

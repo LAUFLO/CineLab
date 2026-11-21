@@ -26,6 +26,8 @@ import { generateVideoMinimax } from '../providers/minimax'
 import { withRetry } from '../providers/retry'
 import { generateVideoSora } from '../providers/sora'
 import { generateVideoArk } from '../providers/volcengine'
+import { toLoadedRef, type LoadedRef } from '../providers/media'
+import { generateWithLocalAdapter } from '../local-adapters/runtime'
 import { resolveProvider } from '../settings/store'
 
 const MAX_REFERENCE_IMAGES = 32
@@ -60,13 +62,6 @@ const VIDEO_SIZE: Record<string, [number, number]> = {
   '4:3': [960, 720],
   '3:4': [720, 960],
   '21:9': [1680, 720]
-}
-
-interface LoadedRef {
-  dataUrl: string
-  role: string
-  media: 'image' | 'audio'
-  mime: string
 }
 
 async function loadRefs(
@@ -105,12 +100,14 @@ async function loadRefs(
     try {
       const data = await fs.readFile(absolute)
 
-      loaded.push({
-        dataUrl: `data:${mime};base64,${data.toString('base64')}`,
-        role: ref.role,
-        media: imageMime ? 'image' : 'audio',
-        mime
-      })
+      loaded.push(
+        toLoadedRef({
+          dataUrl: `data:${mime};base64,${data.toString('base64')}`,
+          role: ref.role,
+          media: imageMime ? 'image' : 'audio',
+          mime
+        })
+      )
     } catch {
       // 素材缺失时跳过
     }
@@ -150,7 +147,6 @@ export async function startGeneration(
 
   const provider = await resolveProvider(providerId)
   if (!provider) throw new Error('找不到模型供应商，请先在设置中配置')
-  if (!provider.apiKey) throw new Error('该供应商没有配置 API Key')
 
   const model = provider.models.find((item) => item.id === modelId)
   if (!model) throw new Error('找不到该模型')
@@ -169,6 +165,10 @@ export async function startGeneration(
       : isVideo
         ? 'volcengine-video'
         : 'openai-compat')
+
+  if (provider.authRequired !== false && !provider.apiKey) {
+    throw new Error('该供应商没有配置 API Key')
+  }
 
   if (!isImage && !isVideo && !isAudio && !isText) {
     throw new Error('当前只支持图片、视频、文本和语音模型')
@@ -193,6 +193,12 @@ export async function startGeneration(
       const hasKeyframe = refs.some(
         (ref) => ref.role === 'firstFrame' || ref.role === 'lastFrame'
       )
+      const firstFrameCount = imageRefs.filter(
+        (ref) => ref.role === 'firstFrame'
+      ).length
+      const lastFrameCount = imageRefs.filter(
+        (ref) => ref.role === 'lastFrame'
+      ).length
 
       const refError = referenceInputError({
         isVideo,
@@ -202,7 +208,9 @@ export async function startGeneration(
         hasSourceVideo: Boolean(video),
         hasVideoOperation: Boolean(request.videoOptions?.operation),
         hasMask: Boolean(request.mask),
-        hasKeyframe
+        hasKeyframe,
+        firstFrameCount,
+        lastFrameCount
       })
       if (refError) throw new Error(refError)
       const hasSubject =
@@ -226,6 +234,19 @@ export async function startGeneration(
       const context = { signal, onProgress }
 
       const generate = (): Promise<ProviderOutput[]> => {
+        if (adapter.startsWith('local:')) {
+          return generateWithLocalAdapter(
+            model,
+            runtime,
+            effectivePrompt,
+            request.params,
+            refs,
+            context,
+            video,
+            request.videoOptions,
+            request.mask
+          )
+        }
         if (isVideo) {
           if (
             video &&

@@ -32,7 +32,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-md px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           void uploadMaterialsAt(menu.flow)
@@ -45,7 +45,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-md px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         disabled
       >
         <span>保存到我的资产</span>
@@ -55,7 +55,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-md px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           openMenu({ screen: menu.screen, flow: menu.flow })
@@ -68,7 +68,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-md px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           const studioId = createStudioAt(menu.flow)
@@ -84,7 +84,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-md px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         disabled={!canUndo}
         onClick={() => {
           undo()
@@ -99,7 +99,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-md px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         disabled={!canRedo}
         onClick={() => {
           redo()
@@ -116,7 +116,7 @@ export function CanvasContextMenu() {
         type="button"
         variant="ghost"
         size="none"
-        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-card px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-md px-3 text-[13px] !font-normal !text-fg disabled:!text-fg-subtle disabled:!opacity-100"
         onClick={() => {
           close()
           void pasteAt(menu.flow)

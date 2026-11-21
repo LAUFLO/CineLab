@@ -179,11 +179,13 @@ function runWithTurn<T>(
   promise: Promise<T>,
   onCancel?: () => void
 ): Promise<T> {
+  // MCP 命令没有 CineBot turn，不参与 turn 结束取消。
+  const detached = turnId.startsWith('mcp-')
   let settled = false
   return new Promise<T>((resolve, reject) => {
     const timer = setInterval(() => {
       if (settled) return
-      if (useAgentStore.getState().currentTurnId === turnId) return
+      if (detached || useAgentStore.getState().currentTurnId === turnId) return
       settled = true
       clearInterval(timer)
       onCancel?.()

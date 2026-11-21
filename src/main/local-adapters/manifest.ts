@@ -1,8 +1,14 @@
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { ModelDef } from '@shared/provider-schema'
+import type { HttpTemplate } from '@shared/http-template'
 
-export type LocalAdapterType = 'config' | 'template' | 'code'
+export type LocalAdapterType = 'config' | 'template' | 'code' | 'sidecar'
+
+export interface SidecarHealthConfig {
+  path: string
+  intervalMs: number
+}
 
 export interface LocalAdapterManifest {
   id: string
@@ -11,6 +17,15 @@ export interface LocalAdapterManifest {
   entry?: string
   models?: string
   tests?: string[]
+  /** sidecar 协议；openai 复用 openai-compat，http-template 复用模板 */
+  protocol?: 'openai' | 'http-template'
+  /** http-template sidecar 的模板文件，默认 template.json */
+  template?: string
+  /** sidecar 基础地址，只允许本机 */
+  baseUrl?: string
+  headers?: Record<string, string>
+  apiKeyEnv?: string
+  health?: SidecarHealthConfig
 }
 
 export interface LocalAdapterProviderConfig {
@@ -30,7 +45,8 @@ export interface LocalAdapterData {
 const DEFAULT_ENTRY: Record<LocalAdapterType, string> = {
   code: 'adapter.ts',
   config: 'models.json',
-  template: 'template.json'
+  template: 'template.json',
+  sidecar: ''
 }
 
 function asString(value: unknown): string | undefined {
@@ -44,6 +60,14 @@ async function readJson(file: string): Promise<unknown> {
     const reason = error instanceof Error ? error.message : String(error)
     throw new Error(`读取 ${file} 失败：${reason}`)
   }
+}
+
+function parseStringRecord(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+  const entries = Object.entries(value as Record<string, unknown>)
+    .map(([key, item]) => [key, asString(item)] as const)
+    .filter((entry): entry is [string, string] => Boolean(entry[1]))
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined
 }
 
 export function parseManifest(raw: unknown): LocalAdapterManifest {
@@ -60,51 +84,105 @@ export function parseManifest(raw: unknown): LocalAdapterManifest {
 
   const version = asString(item.version) ?? '0.0.0'
   const type = asString(item.type) ?? 'code'
-  if (type !== 'config' && type !== 'template' && type !== 'code') {
-    throw new Error('manifest.type 必须是 config / template / code')
+  if (
+    type !== 'config' &&
+    type !== 'template' &&
+    type !== 'code' &&
+    type !== 'sidecar'
+  ) {
+    throw new Error('manifest.type 必须是 config / template / code / sidecar')
   }
+
+  const protocol = asString(item.protocol) as
+    | 'openai'
+    | 'http-template'
+    | undefined
+  if (
+    protocol &&
+    protocol !== 'openai' &&
+    protocol !== 'http-template'
+  ) {
+    throw new Error('manifest.protocol 必须是 openai / http-template')
+  }
+
+  const baseUrl = asString(item.baseUrl)
+  if (type === 'sidecar' && !baseUrl) {
+    throw new Error('sidecar 必须配置 manifest.baseUrl')
+  }
+
+  const healthRaw =
+    item.health && typeof item.health === 'object' && !Array.isArray(item.health)
+      ? (item.health as Record<string, unknown>)
+      : {}
+  const healthInterval = Number(healthRaw.intervalMs)
+  const health: SidecarHealthConfig | undefined =
+    type === 'sidecar'
+      ? {
+          path: asString(healthRaw.path) ?? '/health',
+          intervalMs:
+            Number.isFinite(healthInterval) && healthInterval > 0
+              ? healthInterval
+              : 30_000
+        }
+      : undefined
 
   const tests = Array.isArray(item.tests)
     ? item.tests.filter((entry): entry is string => typeof entry === 'string')
     : undefined
 
+  const entry =
+    asString(item.entry) ??
+    (type === 'sidecar' ? undefined : DEFAULT_ENTRY[type])
+
   return {
     id,
     version,
     type,
-    entry: asString(item.entry) ?? DEFAULT_ENTRY[type],
+    ...(entry ? { entry } : {}),
     models: asString(item.models) ?? 'models.json',
+    ...(type === 'sidecar' ? { protocol: protocol ?? 'openai' } : {}),
+    ...(type === 'sidecar' && (protocol ?? 'openai') === 'http-template'
+      ? { template: asString(item.template) ?? 'template.json' }
+      : {}),
+    ...(baseUrl ? { baseUrl } : {}),
+    ...(parseStringRecord(item.headers)
+      ? { headers: parseStringRecord(item.headers) }
+      : {}),
+    ...(asString(item.apiKeyEnv) ? { apiKeyEnv: asString(item.apiKeyEnv) } : {}),
+    ...(health ? { health } : {}),
     ...(tests && tests.length > 0 ? { tests } : {})
   }
 }
 
 function parseProvider(
   raw: unknown,
-  adapterId: string
+  adapterId: string,
+  type: LocalAdapterType
 ): LocalAdapterProviderConfig {
   const item =
     raw && typeof raw === 'object' && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)
       : {}
-  const headers =
-    item.headers && typeof item.headers === 'object' && !Array.isArray(item.headers)
-      ? Object.fromEntries(
-          Object.entries(item.headers as Record<string, unknown>)
-            .map(([key, value]) => [key, asString(value)])
-            .filter((entry): entry is [string, string] => Boolean(entry[1]))
-        )
-      : undefined
+  const headers = parseStringRecord(item.headers)
 
   return {
-    id: asString(item.id) ?? `local:${adapterId}`,
+    id:
+      asString(item.id) ??
+      (type === 'sidecar' ? `sidecar:${adapterId}` : `local:${adapterId}`),
     name: asString(item.name) ?? adapterId,
     baseUrl: asString(item.baseUrl) ?? '',
-    ...(headers && Object.keys(headers).length > 0 ? { headers } : {}),
+    ...(headers ? { headers } : {}),
     ...(asString(item.apiKeyEnv) ? { apiKeyEnv: asString(item.apiKeyEnv) } : {})
   }
 }
 
-function parseModel(raw: unknown, adapterId: string, index: number): ModelDef {
+function parseModel(
+  raw: unknown,
+  adapterId: string,
+  index: number,
+  type: LocalAdapterType,
+  protocol: 'openai' | 'http-template'
+): ModelDef {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     throw new Error(`models[${index}] 必须是对象`)
   }
@@ -122,6 +200,11 @@ function parseModel(raw: unknown, adapterId: string, index: number): ModelDef {
   const params = Array.isArray(item.params) ? item.params : []
   const modes = Array.isArray(item.modes) ? item.modes : undefined
   const inputs = Array.isArray(item.inputs) ? item.inputs : undefined
+  const adapter =
+    type === 'sidecar'
+      ? asString(item.adapter) ??
+        (protocol === 'http-template' ? 'http-template' : 'openai-compat')
+      : `local:${adapterId}`
 
   return {
     ...(item as unknown as ModelDef),
@@ -132,18 +215,23 @@ function parseModel(raw: unknown, adapterId: string, index: number): ModelDef {
     params: params as ModelDef['params'],
     ...(modes ? { modes: modes as ModelDef['modes'] } : {}),
     ...(inputs ? { inputs: inputs as ModelDef['inputs'] } : {}),
-    adapter: `local:${adapterId}`,
+    adapter,
     localAdapter: adapterId,
     source: {
       kind: 'manual',
-      notes: `本地适配器 ${adapterId}`
+      notes:
+        type === 'sidecar'
+          ? `Sidecar 适配器 ${adapterId}`
+          : `本地适配器 ${adapterId}`
     }
   }
 }
 
 export function parseModelsFile(
   raw: unknown,
-  adapterId: string
+  adapterId: string,
+  type: LocalAdapterType = 'code',
+  protocol: 'openai' | 'http-template' = 'openai'
 ): {
   provider: LocalAdapterProviderConfig
   models: ModelDef[]
@@ -159,9 +247,9 @@ export function parseModelsFile(
   }
 
   return {
-    provider: parseProvider(item.provider, adapterId),
+    provider: parseProvider(item.provider, adapterId, type),
     models: item.models.map((model, index) =>
-      parseModel(model, adapterId, index)
+      parseModel(model, adapterId, index, type, protocol)
     )
   }
 }
@@ -169,6 +257,28 @@ export function parseModelsFile(
 export async function readLocalAdapter(dir: string): Promise<LocalAdapterData> {
   const manifest = parseManifest(await readJson(join(dir, 'manifest.json')))
   const modelsFile = join(dir, manifest.models ?? 'models.json')
-  const parsed = parseModelsFile(await readJson(modelsFile), manifest.id)
+  const parsed = parseModelsFile(
+    await readJson(modelsFile),
+    manifest.id,
+    manifest.type,
+    manifest.protocol ?? 'openai'
+  )
+
+  if (
+    manifest.type === 'sidecar' &&
+    manifest.protocol === 'http-template' &&
+    parsed.models.some((model) => !model.template)
+  ) {
+    const templateFile = join(dir, manifest.template ?? 'template.json')
+    const template = await readJson(templateFile)
+    if (!template || typeof template !== 'object' || Array.isArray(template)) {
+      throw new Error(`${templateFile} 必须是 http-template 对象`)
+    }
+    parsed.models = parsed.models.map((model) => ({
+      ...model,
+      template: model.template ?? (template as HttpTemplate)
+    }))
+  }
+
   return { manifest, ...parsed }
 }

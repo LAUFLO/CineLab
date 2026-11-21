@@ -25,7 +25,8 @@ import { log } from '../logger'
 import {
   localAdapterProviders,
   localModelIds,
-  localProviderRuntime
+  localProviderRuntime,
+  sidecarProviderRuntime
 } from '../local-adapters/registry'
 import {
   enqueueModelsWrite,
@@ -260,6 +261,8 @@ export interface ResolvedProvider {
   apiKey: string
   secretKey: string
   models: ModelDef[]
+  /** false 表示本地适配器 / sidecar，不要求 API Key */
+  authRequired?: boolean
 }
 
 export async function resolveProvider(id: string): Promise<ResolvedProvider | null> {
@@ -272,7 +275,22 @@ export async function resolveProvider(id: string): Promise<ResolvedProvider | nu
       ...(local.headers ? { headers: local.headers } : {}),
       apiKey: local.apiKey,
       secretKey: '',
-      models: local.models
+      models: local.models,
+      authRequired: false
+    }
+  }
+
+  if (id.startsWith('sidecar:')) {
+    const sidecar = sidecarProviderRuntime(id)
+    if (!sidecar) return null
+    return {
+      type: 'openai-compat',
+      baseUrl: sidecar.baseUrl,
+      ...(sidecar.headers ? { headers: sidecar.headers } : {}),
+      apiKey: sidecar.apiKey,
+      secretKey: '',
+      models: sidecar.models,
+      authRequired: false
     }
   }
 

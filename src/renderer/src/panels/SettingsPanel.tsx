@@ -356,8 +356,11 @@ function ModelsSection() {
     }
 
     const firstProvider =
-      providers.filter((provider) => !provider.id.startsWith('local:')).length ===
-      0
+      providers.filter(
+        (provider) =>
+          !provider.id.startsWith('local:') &&
+          !provider.id.startsWith('sidecar:')
+      ).length === 0
     setBusy(true)
     setMessage(null)
     try {
@@ -857,7 +860,9 @@ function ModelsSection() {
   }
 
   const editableProviders = providers.filter(
-    (provider) => !provider.id.startsWith('local:')
+    (provider) =>
+      !provider.id.startsWith('local:') &&
+      !provider.id.startsWith('sidecar:')
   )
 
   return (
@@ -1081,7 +1086,8 @@ function ModelsSection() {
                         </span>
                       </div>
                       <div className="mt-1 break-all text-[11px] leading-[1.6] text-fg-subtle">
-                        v{adapter.version} · {adapter.modelCount} 个模型
+                        v{adapter.version} · {adapter.modelCount} 个模型 ·{' '}
+                        {adapter.type === 'sidecar' ? 'Sidecar' : '本地代码'}
                       </div>
                       <div className="mt-0.5 break-all text-[10px] leading-[1.5] text-fg-subtle">
                         {adapter.dir}

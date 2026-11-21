@@ -166,7 +166,7 @@ export async function startGeneration(
         ? 'volcengine-video'
         : 'openai-compat')
 
-  if (!adapter.startsWith('local:') && !provider.apiKey) {
+  if (provider.authRequired !== false && !provider.apiKey) {
     throw new Error('该供应商没有配置 API Key')
   }
 

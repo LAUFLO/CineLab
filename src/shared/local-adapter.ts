@@ -3,7 +3,7 @@ export type LocalAdapterStatusKind = 'loading' | 'ready' | 'error'
 export interface LocalAdapterStatus {
   id: string
   version: string
-  type: 'config' | 'template' | 'code'
+  type: 'config' | 'template' | 'code' | 'sidecar'
   dir: string
   status: LocalAdapterStatusKind
   error?: string

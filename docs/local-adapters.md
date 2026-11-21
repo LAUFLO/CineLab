@@ -72,6 +72,33 @@
 - 每个模型的 `adapter` 会被强制设为 `local:<id>`，`localAdapter` 设为 `<id>`。
 - 模型字段与 `models.json` 的官方模型一致；`capability`、`remoteModel`、`params` 必填。
 
+## Sidecar（L4）
+
+Sidecar 是用户自己启动的本地 HTTP 服务。CineLab 只连接端点，不执行 sidecar 代码，也不负责启动/停止进程。
+
+```json
+{
+  "id": "comfyui",
+  "version": "0.1.0",
+  "type": "sidecar",
+  "protocol": "openai",
+  "baseUrl": "http://127.0.0.1:8188/v1",
+  "models": "models.json",
+  "headers": {},
+  "apiKeyEnv": "COMFY_API_KEY",
+  "health": { "path": "/health", "intervalMs": 30000 }
+}
+```
+
+- `protocol: "openai"`：模型使用 `openai-compat` adapter。
+- `protocol: "http-template"`：模型使用 `http-template` adapter，模板从 `template.json` 读取；`models.json` 里的模型也可以自带 `template`。
+- `baseUrl` 只允许 `127.0.0.1` / `localhost`，拒绝远程地址。
+- `health.path` 以 `/` 开头时从主机根路径解析；例如 baseUrl 为 `/v1`、health 为 `/health`，请求 `http://127.0.0.1:8188/health`。
+- 健康检查失败时适配器标记为 `error`，模型仍保留；服务恢复后自动回到 `ready`。
+- 健康响应里的 `version` 会显示在设置页；没有时使用 manifest 版本。
+- `apiKeyEnv` 从环境变量读取，健康检查和模型请求会带 `Authorization: Bearer <key>`。
+- 当前需要 `models.json`；`/models` 自动发现按需实现。
+
 ## adapter.ts 接口
 
 ```ts
@@ -141,6 +168,7 @@ export default {
 
 ## 当前限制
 
-- 只支持 `type: "code"`；`config` / `template` 类型预留，尚未接入。
+- 当前支持 `type: "code"` 与 `type: "sidecar"`；`config` / `template` 类型预留。
 - 打包后的 esbuild 二进制需要 `asarUnpack`；尚未在安装包中验证。
+- sidecar 需要 `models.json`；`/models` 自动发现尚未实现。
 - MCP 工具目前只覆盖本地适配器（`local_adapter_*`），项目/画布/生成等能力待后续扩展。

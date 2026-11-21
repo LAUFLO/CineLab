@@ -391,7 +391,7 @@ S1/S2 建好后，官方更新从「每个模型写代码」转为「更新协�
 | S1 | `ModelContract`、能力白名单、协议族模板、官方 golden 请求体测试 | 已实施：8 个官方适配器契约、契约缺口、保存校验与 golden 请求体 |
 | S2 | 本地适配器 registry、目录监听、esbuild Node 构建、utilityProcess 宿主、CLI、自动加载/热重载 | S2a/S2b/S2c 已实施：MCP HTTP + stdio |
 | S3 | L2 `http-template` 完整声明式 HTTP：条件字段、对象/数组映射、multipart、签名 header、动态轮询/状态/错误映射、同步/异步、结果数组 | S3a/S3b 已实施：条件字段、$map、状态/错误映射、结果数组、HMAC 签名、显式 multipart、同步结果 |
-| S4 | L4 sidecar：OpenAI 兼容 + 自定义 manifest、健康检查、版本、日志 | 按需 |
+| S4 | L4 sidecar：OpenAI 兼容 + 自定义 manifest、健康检查、版本、日志 | S4a/S4b 已实施：OpenAI / http-template sidecar、健康检查、版本、日志；`/models` 自动发现按需 |
 | S5 | 可选的本地导入/导出；不做插件市场 | 长期 |
 
 S0 先完成并单独发布；S1 吸收 S0 的真实适配经验；S2 让外部 Agent 闭环；S3 补齐 L2 完整能力。

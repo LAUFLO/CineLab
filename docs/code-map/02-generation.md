@@ -103,6 +103,7 @@ Prompt Bar / 节点操作
 | 协议族契约与 golden 请求体 | 已实现 | `shared/model-contracts.ts`、`golden-bodies.test.ts`、`capability-audit.test.ts` |
 | http-template 完整 DSL（S3a/S3b） | 已实现 | `providers/http-template.ts`、`http-template-dsl.test.ts` |
 | 本地适配器 registry / utilityProcess | 已实现（S2a/S2b） | `main/local-adapters/`、`shared/local-adapter.ts`、设置页本地适配器区块 |
+| L4 sidecar（OpenAI / http-template） | 已实现（S4） | `main/local-adapters/registry.ts`、`docs/local-adapters.md` |
 | 媒体处理 | 已实现 | `main/media/`、`concat.test.ts` |
 | 错误文案 | 已实现 | `generation-error.test.ts` |
 
@@ -115,7 +116,8 @@ Prompt Bar / 节点操作
 - MiniMax H3 `role`、Agnes 尾帧和 http-template 新变量仍需真实 Key 复测（`REAL-API-VERIFY` gate）。Agnes 首帧已用真实 Key 生成 5.18 秒视频，首帧与输入图 SSIM 0.889。
 - 官方模型保存时会校验协议族契约（字段、角色、模式），缺口会阻止保存；用户自定义模型只记录警告。
 - Kling、火山和旧版 MiniMax 的尺寸/体积限制为通用推断（source confidence 为 medium），需按官方文档复核。
-- 本地适配器当前只支持 `type: code`；`config` / `template` 与 MCP 控制留待后续。
+- 本地适配器当前支持 `type: code` 与 `type: sidecar`；`config` / `template` 与 MCP 应用级工具留待后续。
+- sidecar 需要 `models.json`，`/models` 自动发现尚未实现。
 - 打包后的 esbuild 二进制尚未在安装包中验证。
 - 视频操作对模型支持程度不一，`OperationSupport` 只是声明，实际仍可能被供应商拒绝。
 
@@ -144,8 +146,8 @@ Prompt Bar / 节点操作
 | `src/main/local-adapters/build.ts` | 64 |
 | `src/main/local-adapters/host-process.ts` | 166 |
 | `src/main/local-adapters/host.ts` | 259 |
-| `src/main/local-adapters/manifest.ts` | 175 |
-| `src/main/local-adapters/registry.ts` | 292 |
+| `src/main/local-adapters/manifest.ts` | 285 |
+| `src/main/local-adapters/registry.ts` | 459 |
 | `src/main/local-adapters/runtime.ts` | 88 |
 | `src/main/media/audio-peaks.ts` | 127 |
 | `src/main/media/audio.ts` | 133 |
@@ -207,8 +209,8 @@ Prompt Bar / 节点操作
 | `src/main/engine/start-generation.ts` | `startGeneration` |
 | `src/main/local-adapters/build.ts` | `LocalAdapterBuildResult`、`resolveLocalAdapterEntry`、`buildLocalAdapter` |
 | `src/main/local-adapters/host.ts` | `LocalAdapterOutput`、`LocalAdapterGenerateOptions`、`LocalAdapterHost` |
-| `src/main/local-adapters/manifest.ts` | `LocalAdapterType`、`LocalAdapterManifest`、`LocalAdapterProviderConfig`、`LocalAdapterData`、`parseManifest`、`parseModelsFile`、`readLocalAdapter` |
-| `src/main/local-adapters/registry.ts` | `LocalProviderRuntime`、`localAdapterLogs`、`localAdaptersDir`、`listLocalAdapterStatuses`、`localAdapterProviders`、`localProviderRuntime`、`localModelIds`、`localAdapterRecord`、`startLocalAdapterRegistry`、`stopLocalAdapterRegistry`、`reloadLocalAdapter` |
+| `src/main/local-adapters/manifest.ts` | `LocalAdapterType`、`SidecarHealthConfig`、`LocalAdapterManifest`、`LocalAdapterProviderConfig`、`LocalAdapterData`、`parseManifest`、`parseModelsFile`、`readLocalAdapter` |
+| `src/main/local-adapters/registry.ts` | `LocalProviderRuntime`、`localAdapterLogs`、`localAdaptersDir`、`listLocalAdapterStatuses`、`localAdapterProviders`、`localProviderRuntime`、`sidecarProviderRuntime`、`localModelIds`、`localAdapterRecord`、`startLocalAdapterRegistry`、`stopLocalAdapterRegistry`、`reloadLocalAdapter` |
 | `src/main/local-adapters/runtime.ts` | `generateWithLocalAdapter` |
 | `src/main/media/audio-peaks.ts` | `computeAudioPeaks` |
 | `src/main/media/audio.ts` | `buildAtempoFilter`、`trimAudio`、`changeAudioSpeed` |

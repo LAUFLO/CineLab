@@ -71,7 +71,7 @@ function TreeRow({
           type="button"
           variant="ghost"
           size="none"
-          className="h-full min-w-0 flex-1 cursor-pointer !justify-start gap-[7px] !p-0 text-[12.5px] !text-inherit hover:!bg-transparent hover:!text-inherit"
+          className="h-full min-w-0 flex-1 cursor-pointer !justify-start gap-[7px] !p-0 text-left text-[12.5px] !text-inherit hover:!bg-transparent hover:!text-inherit"
           onClick={() => onSelect(node.path)}
           onDoubleClick={() => toggle(node.path)}
         >
@@ -180,7 +180,7 @@ export function FolderTree(props: FolderTreeProps) {
           type="button"
           variant="ghost"
           size="none"
-          className="h-full min-w-0 flex-1 cursor-pointer !justify-start gap-[7px] !p-0 text-[12.5px] !text-inherit hover:!bg-transparent hover:!text-inherit"
+          className="h-full min-w-0 flex-1 cursor-pointer !justify-start gap-[7px] !p-0 text-left text-[12.5px] !text-inherit hover:!bg-transparent hover:!text-inherit"
           onClick={() => onSelect('')}
         >
           <Icon name="grid" size={13} />

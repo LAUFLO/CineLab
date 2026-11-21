@@ -183,6 +183,24 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 导演台工具需要 `nodeId`；可先用 `stage_open` 创建并打开导演台。
 
+### 拉片工具
+
+| 工具 | 作用 | 确认 |
+|---|---|---|
+| `film_study_get` | 读取拉片摘要 | 否 |
+| `film_study_get_shot` | 读取单个镜头 | 否 |
+| `film_study_auto` | 对视频/拉片节点自动拉片 | 是，可能耗时 |
+| `film_study_update_shot` | 修改镜头分析字段 | 是 |
+| `film_study_split_scenes` | 自动分场 | 是，可能耗时 |
+| `film_study_update_segment` | 修改拉片段落 | 是 |
+| `film_study_extract_subtitles` | 提取字幕 | 是，可能耗时 |
+| `film_study_remake` | 复刻镜头 | 是 |
+| `film_study_build_timeline` | 用复刻视频建时间线 | 是 |
+| `film_study_map_cast` | 设置选角选景映射 | 是 |
+| `film_study_export` | 导出 Markdown / 分析 / 打包 | 是，可能耗时 |
+
+拉片工具需要 `nodeId` 或 `studyId`；`film_study_auto` 需要视频节点或已有拉片节点。
+
 时间线工具要求剪辑室已打开；可以先用 `timeline_open` 创建并打开一个剪辑室。
 
 写工具复用 CineBot 的画布执行器和生成队列，不直接改项目 JSON。
@@ -205,9 +223,9 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 当前范围
 
-- 已提供：本地适配器查询/重载/日志；项目列表/当前项目、画布摘要、节点摘要、模型能力（只读）；画布节点创建/修改/移动/删除/连线，以及提交生成；剪辑室时间线读取与片段/轨道/标记/转场操作，以及时间线导出；导演台对象/机位/镜头/自动分镜与预演导出。
-- 后续：拉片与项目导出。
-- 写操作复用 CineBot 的画布/时间线/导演台执行器和生成队列，执行前需要应用内确认。
+- 已提供：本地适配器查询/重载/日志；项目列表/当前项目、画布摘要、节点摘要、模型能力（只读）；画布节点创建/修改/移动/删除/连线，以及提交生成；剪辑室时间线读取与片段/轨道/标记/转场操作，以及时间线导出；导演台对象/机位/镜头/自动分镜与预演导出；拉片读取、修改、自动拉片、分场、字幕、复刻、建时间线与导出。
+- 后续：项目级导出与发布流程。
+- 写操作复用 CineBot 的画布/时间线/导演台/拉片执行器和生成队列，执行前需要应用内确认。
 
 ## 排查
 

@@ -750,4 +750,300 @@ export function registerCineLabWriteTools(server: McpServer): void {
         10 * 60_000
       )
   )
+
+  server.registerTool(
+    'film_study_get',
+    {
+      title: '读取拉片',
+      description: '读取拉片摘要。提供 nodeId 或 studyId。只读。',
+      inputSchema: {
+        nodeId: z.string().optional(),
+        studyId: z.string().optional()
+      },
+      annotations: { readOnlyHint: true }
+    },
+    async ({ nodeId, studyId }) => {
+      if (!nodeId && !studyId) return errorResult('至少提供 nodeId 或 studyId')
+      const commandResult = await sendCommand('film_study_get', {
+        ...(nodeId ? { nodeId } : {}),
+        ...(studyId ? { studyId } : {})
+      })
+      if (!commandResult.ok) {
+        return errorResult(commandResult.error ?? '读取拉片失败')
+      }
+      return result(commandResult.result)
+    }
+  )
+
+  server.registerTool(
+    'film_study_get_shot',
+    {
+      title: '读取拉片镜头',
+      description: '读取单个镜头的分析、场景和角色。只读。',
+      inputSchema: {
+        nodeId: z.string().optional(),
+        studyId: z.string().optional(),
+        index: z.number().int().min(0)
+      },
+      annotations: { readOnlyHint: true }
+    },
+    async ({ nodeId, studyId, index }) => {
+      if (!nodeId && !studyId) return errorResult('至少提供 nodeId 或 studyId')
+      const commandResult = await sendCommand('film_study_get_shot', {
+        ...(nodeId ? { nodeId } : {}),
+        ...(studyId ? { studyId } : {}),
+        index
+      })
+      if (!commandResult.ok) {
+        return errorResult(commandResult.error ?? '读取镜头失败')
+      }
+      return result(commandResult.result)
+    }
+  )
+
+  server.registerTool(
+    'film_study_auto',
+    {
+      title: '自动拉片',
+      description:
+        '对视频节点或拉片节点执行自动拉片，生成分镜、角色和场景。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        interval: z.number().min(0).max(60).optional(),
+        modelKey: z.string().optional(),
+        outputs: z.record(z.string(), z.unknown()).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, interval, modelKey, outputs }) =>
+      runWrite(
+        'film_study_auto',
+        '执行自动拉片',
+        {
+          nodeId,
+          ...(interval !== undefined ? { interval } : {}),
+          ...(modelKey ? { modelKey } : {}),
+          ...(outputs ? { outputs } : {})
+        },
+        false,
+        10 * 60_000
+      )
+  )
+
+  server.registerTool(
+    'film_study_update_shot',
+    {
+      title: '修改拉片镜头',
+      description:
+        '修改镜头的景别、机位、运镜、光线、描述、动作、情绪或提示词。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().optional(),
+        studyId: z.string().optional(),
+        index: z.number().int().min(0),
+        patch: z.record(z.string(), z.unknown())
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, studyId, index, patch }) => {
+      if (!nodeId && !studyId) return errorResult('至少提供 nodeId 或 studyId')
+      return runWrite(
+        'film_study_update_shot',
+        `修改拉片镜头 #${index}`,
+        {
+          ...(nodeId ? { nodeId } : {}),
+          ...(studyId ? { studyId } : {}),
+          index,
+          patch
+        }
+      )
+    }
+  )
+
+  server.registerTool(
+    'film_study_split_scenes',
+    {
+      title: '拉片自动分场',
+      description: '对拉片执行视觉分场。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().optional(),
+        studyId: z.string().optional(),
+        modelKey: z.string().optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, studyId, modelKey }) => {
+      if (!nodeId && !studyId) return errorResult('至少提供 nodeId 或 studyId')
+      return runWrite(
+        'film_study_split_scenes',
+        '执行拉片自动分场',
+        {
+          ...(nodeId ? { nodeId } : {}),
+          ...(studyId ? { studyId } : {}),
+          ...(modelKey ? { modelKey } : {})
+        },
+        false,
+        5 * 60_000
+      )
+    }
+  )
+
+  server.registerTool(
+    'film_study_update_segment',
+    {
+      title: '修改拉片段落',
+      description: '修改拉片段落属性。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().optional(),
+        studyId: z.string().optional(),
+        segmentId: z.string().min(1),
+        patch: z.record(z.string(), z.unknown())
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, studyId, segmentId, patch }) => {
+      if (!nodeId && !studyId) return errorResult('至少提供 nodeId 或 studyId')
+      return runWrite(
+        'film_study_update_segment',
+        `修改拉片段落 ${segmentId}`,
+        {
+          ...(nodeId ? { nodeId } : {}),
+          ...(studyId ? { studyId } : {}),
+          segmentId,
+          patch
+        }
+      )
+    }
+  )
+
+  server.registerTool(
+    'film_study_extract_subtitles',
+    {
+      title: '拉片提取字幕',
+      description: '从拉片视频提取字幕。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().optional(),
+        studyId: z.string().optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, studyId }) => {
+      if (!nodeId && !studyId) return errorResult('至少提供 nodeId 或 studyId')
+      return runWrite(
+        'film_study_extract_subtitles',
+        '提取拉片字幕',
+        {
+          ...(nodeId ? { nodeId } : {}),
+          ...(studyId ? { studyId } : {})
+        },
+        false,
+        10 * 60_000
+      )
+    }
+  )
+
+  server.registerTool(
+    'film_study_remake',
+    {
+      title: '拉片复刻',
+      description:
+        '为指定镜头或全部镜头创建复刻视频节点。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().optional(),
+        studyId: z.string().optional(),
+        indices: z.array(z.number().int().min(0)).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, studyId, indices }) => {
+      if (!nodeId && !studyId) return errorResult('至少提供 nodeId 或 studyId')
+      return runWrite(
+        'film_study_remake',
+        `拉片复刻${indices?.length ? ` ${indices.length} 个镜头` : '全部镜头'}`,
+        {
+          ...(nodeId ? { nodeId } : {}),
+          ...(studyId ? { studyId } : {}),
+          ...(indices ? { indices } : {})
+        },
+        false,
+        5 * 60_000
+      )
+    }
+  )
+
+  server.registerTool(
+    'film_study_build_timeline',
+    {
+      title: '拉片建时间线',
+      description:
+        '用复刻生成的视频节点创建剪辑室。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().optional(),
+        studyId: z.string().optional(),
+        indices: z.array(z.number().int().min(0)).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, studyId, indices }) => {
+      if (!nodeId && !studyId) return errorResult('至少提供 nodeId 或 studyId')
+      return runWrite('film_study_build_timeline', '拉片建时间线', {
+        ...(nodeId ? { nodeId } : {}),
+        ...(studyId ? { studyId } : {}),
+        ...(indices ? { indices } : {})
+      })
+    }
+  )
+
+  server.registerTool(
+    'film_study_map_cast',
+    {
+      title: '拉片选角选景',
+      description:
+        '设置角色和场景映射。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().optional(),
+        studyId: z.string().optional(),
+        cast: z.record(z.string(), z.unknown()).optional(),
+        scenes: z.record(z.string(), z.unknown()).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, studyId, cast, scenes }) => {
+      if (!nodeId && !studyId) return errorResult('至少提供 nodeId 或 studyId')
+      return runWrite('film_study_map_cast', '设置拉片选角选景', {
+        ...(nodeId ? { nodeId } : {}),
+        ...(studyId ? { studyId } : {}),
+        ...(cast ? { cast } : {}),
+        ...(scenes ? { scenes } : {})
+      })
+    }
+  )
+
+  server.registerTool(
+    'film_study_export',
+    {
+      title: '导出拉片',
+      description:
+        '导出拉片为 Markdown、分析或打包文件。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().optional(),
+        studyId: z.string().optional(),
+        format: z.enum(['markdown', 'analysis', 'bundle']).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, studyId, format }) => {
+      if (!nodeId && !studyId) return errorResult('至少提供 nodeId 或 studyId')
+      return runWrite(
+        'film_study_export',
+        `导出拉片（${format ?? 'markdown'}）`,
+        {
+          ...(nodeId ? { nodeId } : {}),
+          ...(studyId ? { studyId } : {}),
+          format: format ?? 'markdown'
+        },
+        false,
+        10 * 60_000
+      )
+    }
+  )
 }

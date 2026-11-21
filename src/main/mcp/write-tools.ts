@@ -515,4 +515,239 @@ export function registerCineLabWriteTools(server: McpServer): void {
         10 * 60_000
       )
   )
+
+  server.registerTool(
+    'stage_open',
+    {
+      title: '创建并打开导演台',
+      description:
+        '创建导演台节点并打开舞台。执行前会弹出确认框。',
+      inputSchema: {
+        name: z.string().max(200).optional(),
+        x: z.number().optional(),
+        y: z.number().optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ name, x, y }) =>
+      runWrite('stage_open', '创建并打开导演台', {
+        ...(name ? { name } : {}),
+        ...(x !== undefined ? { x } : {}),
+        ...(y !== undefined ? { y } : {})
+      })
+  )
+
+  server.registerTool(
+    'stage_get',
+    {
+      title: '读取导演台',
+      description: '读取指定导演台节点的对象、机位、镜头和世界摘要。只读。',
+      inputSchema: { nodeId: z.string().min(1) },
+      annotations: { readOnlyHint: true }
+    },
+    async ({ nodeId }) => {
+      const commandResult = await sendCommand('stage_get', { nodeId })
+      if (!commandResult.ok) {
+        return errorResult(commandResult.error ?? '读取导演台失败')
+      }
+      return result(commandResult.result)
+    }
+  )
+
+  server.registerTool(
+    'stage_add_object',
+    {
+      title: '添加导演台对象',
+      description:
+        '在导演台添加人物、立方体、球体、平面、模型或群众。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        type: z.enum(['human', 'box', 'sphere', 'plane', 'gltf', 'crowd']),
+        name: z.string().max(200).optional(),
+        position: z.array(z.number()).length(3).optional(),
+        rotation: z.array(z.number()).length(3).optional(),
+        scale: z.array(z.number()).length(3).optional(),
+        pose: z.string().max(80).optional(),
+        color: z.string().max(40).optional(),
+        count: z.number().int().min(1).max(500).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, type, name, position, rotation, scale, pose, color, count }) =>
+      runWrite(
+        'stage_add_object',
+        `添加导演台对象：${name ?? type}`,
+        {
+          nodeId,
+          type,
+          ...(name ? { name } : {}),
+          ...(position ? { position } : {}),
+          ...(rotation ? { rotation } : {}),
+          ...(scale ? { scale } : {}),
+          ...(pose ? { pose } : {}),
+          ...(color ? { color } : {}),
+          ...(count !== undefined ? { count } : {})
+        }
+      )
+  )
+
+  server.registerTool(
+    'stage_add_camera',
+    {
+      title: '添加导演台机位',
+      description: '在导演台添加机位。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        name: z.string().max(200).optional(),
+        position: z.array(z.number()).length(3).optional(),
+        target: z.array(z.number()).length(3).optional(),
+        fov: z.number().min(10).max(120).optional(),
+        aspect: z.enum(['16:9', '9:16', '1:1']).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, name, position, target, fov, aspect }) =>
+      runWrite(
+        'stage_add_camera',
+        `添加导演台机位${name ? `：${name}` : ''}`,
+        {
+          nodeId,
+          ...(name ? { name } : {}),
+          ...(position ? { position } : {}),
+          ...(target ? { target } : {}),
+          ...(fov !== undefined ? { fov } : {}),
+          ...(aspect ? { aspect } : {})
+        }
+      )
+  )
+
+  server.registerTool(
+    'stage_add_shot',
+    {
+      title: '添加导演台镜头',
+      description: '用指定机位创建镜头。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        cameraId: z.string().min(1),
+        name: z.string().max(200).optional(),
+        durationMs: z.number().min(100).max(600_000),
+        aspect: z.enum(['16:9', '9:16', '1:1'])
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, cameraId, name, durationMs, aspect }) =>
+      runWrite(
+        'stage_add_shot',
+        `添加导演台镜头${name ? `：${name}` : ''}`,
+        {
+          nodeId,
+          cameraId,
+          durationMs,
+          aspect,
+          ...(name ? { name } : {})
+        }
+      )
+  )
+
+  server.registerTool(
+    'stage_auto_coverage',
+    {
+      title: '导演台自动分镜',
+      description:
+        '按主体、对话或群戏自动生成机位和镜头。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        subjectIds: z.array(z.string()).optional(),
+        mode: z.enum(['auto', 'single', 'dialogue', 'group']).optional(),
+        pace: z.number().min(0.25).max(4).optional(),
+        replace: z.boolean().optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, subjectIds, mode, pace, replace }) =>
+      runWrite(
+        'stage_auto_coverage',
+        '导演台自动分镜',
+        {
+          nodeId,
+          ...(subjectIds ? { subjectIds } : {}),
+          ...(mode ? { mode } : {}),
+          ...(pace !== undefined ? { pace } : {}),
+          ...(replace !== undefined ? { replace } : {})
+        }
+      )
+  )
+
+  server.registerTool(
+    'stage_remove_object',
+    {
+      title: '删除导演台对象',
+      description: '删除导演台对象。执行前会弹出危险操作确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        objectId: z.string().min(1)
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true }
+    },
+    async ({ nodeId, objectId }) =>
+      runWrite(
+        'stage_remove_object',
+        `删除导演台对象 ${objectId}`,
+        { nodeId, objectId },
+        true
+      )
+  )
+
+  server.registerTool(
+    'stage_remove_shot',
+    {
+      title: '删除导演台镜头',
+      description: '删除导演台镜头。执行前会弹出危险操作确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        shotId: z.string().min(1)
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true }
+    },
+    async ({ nodeId, shotId }) =>
+      runWrite(
+        'stage_remove_shot',
+        `删除导演台镜头 ${shotId}`,
+        { nodeId, shotId },
+        true
+      )
+  )
+
+  server.registerTool(
+    'stage_export_preview',
+    {
+      title: '导出导演台预演',
+      description:
+        '导出整片或单镜预演并回画布。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        scope: z.enum(['shot', 'program']),
+        shotId: z.string().optional(),
+        resolution: z.enum(['720p', '1080p']).optional(),
+        fps: z.union([z.literal(24), z.literal(30)]).optional(),
+        frameDensity: z.enum(['first-only', 'three']).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, scope, shotId, resolution, fps, frameDensity }) =>
+      runWrite(
+        'stage_export_preview',
+        `导出导演台${scope === 'program' ? '整片' : '单镜'}预演`,
+        {
+          nodeId,
+          scope,
+          ...(shotId ? { shotId } : {}),
+          ...(resolution ? { resolution } : {}),
+          ...(fps !== undefined ? { fps } : {}),
+          ...(frameDensity ? { frameDensity } : {})
+        },
+        false,
+        10 * 60_000
+      )
+  )
 }

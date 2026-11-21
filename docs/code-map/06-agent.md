@@ -26,7 +26,7 @@ CineBot 会话、工具注册与执行、生成提案、技能、能力审计。
 
 ## MCP server
 
-外部 Agent 通过 `src/main/mcp/` 连接 CineLab：内置 Streamable HTTP server（`127.0.0.1` + Bearer token），以及 stdio 桥接进程。当前暴露 `local_adapter_*`、项目/画布/节点/模型只读工具、节点写工具、生成提交，以及剪辑室时间线的片段/轨道/标记/转场操作。写操作执行前需要应用内确认；配置与安全说明见 `docs/mcp.md`。
+外部 Agent 通过 `src/main/mcp/` 连接 CineLab：内置 Streamable HTTP server（`127.0.0.1` + Bearer token），以及 stdio 桥接进程。当前暴露 `local_adapter_*`、项目/画布/节点/模型只读工具、节点写工具、生成提交、剪辑室时间线操作，以及导演台对象/机位/镜头/自动分镜/预演导出。写操作执行前需要应用内确认；配置与安全说明见 `docs/mcp.md`。
 
 ## 工具分组
 
@@ -200,7 +200,7 @@ AgentPanel
 | `src/main/mcp/server.ts` | 190 |
 | `src/main/mcp/stdio-bridge.ts` | 104 |
 | `src/main/mcp/tools.ts` | 75 |
-| `src/main/mcp/write-tools.ts` | 519 |
+| `src/main/mcp/write-tools.ts` | 754 |
 | `src/renderer/src/agent/AgentPanel.tsx` | 1248 |
 | `src/renderer/src/agent/agentStore.ts` | 1100 |
 | `src/renderer/src/agent/canvasBridge.ts` | 1125 |
@@ -213,7 +213,7 @@ AgentPanel
 | `src/renderer/src/agent/panel/utils.tsx` | 146 |
 | `src/renderer/src/agent/stageBridge.ts` | 872 |
 | `src/renderer/src/agent/timelineBridge.ts` | 1080 |
-| `src/renderer/src/mcp/commandBridge.ts` | 124 |
+| `src/renderer/src/mcp/commandBridge.ts` | 146 |
 | `src/shared/agent-proposal.ts` | 140 |
 | `src/shared/agent-tools.ts` | 59 |
 | `src/shared/agent.ts` | 264 |

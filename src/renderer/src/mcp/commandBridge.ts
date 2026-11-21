@@ -5,6 +5,7 @@ import { createStudioAtViewportCenter } from '../studio/nodes'
 import { useCanvasStore } from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'
 import { useProjectStore } from '../stores/project'
+import { useStageStore } from '../stage/stageStore'
 import { useStudioStore } from '../stores/studio'
 import { useTimelineStore } from '../stores/timeline'
 
@@ -79,6 +80,24 @@ async function handleCommand(command: McpWriteCommand): Promise<void> {
       return
     }
 
+    if (command.tool === 'stage_open') {
+      const name =
+        typeof command.args.name === 'string' && command.args.name.trim()
+          ? command.args.name.trim()
+          : `导演台 ${canvas.nodes.filter((node) => node.type === 'stage').length + 1}`
+      const x = typeof command.args.x === 'number' ? command.args.x : 120
+      const y = typeof command.args.y === 'number' ? command.args.y : 120
+      const doc = await window.api.stage.create(name)
+      const nodeId = useCanvasStore.getState().addStageNode(doc, { x, y })
+      await useStageStore.getState().openStage(nodeId)
+      window.api.mcp.sendResult({
+        id: command.id,
+        ok: true,
+        result: { nodeId, stageId: doc.stageId, name }
+      })
+      return
+    }
+
     const result = await executeAgentTool({
       callId: command.id,
       name: command.tool,
@@ -96,6 +115,9 @@ async function handleCommand(command: McpWriteCommand): Promise<void> {
           : {}),
         ...(useStudioStore.getState().nodeId
           ? { studioNodeId: useStudioStore.getState().nodeId ?? undefined }
+          : {}),
+        ...(useStageStore.getState().nodeId
+          ? { stageNodeId: useStageStore.getState().nodeId ?? undefined }
           : {})
       }
     })

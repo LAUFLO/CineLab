@@ -26,6 +26,7 @@ import { generateVideoMinimax } from '../providers/minimax'
 import { withRetry } from '../providers/retry'
 import { generateVideoSora } from '../providers/sora'
 import { generateVideoArk } from '../providers/volcengine'
+import { toLoadedRef, type LoadedRef } from '../providers/media'
 import { resolveProvider } from '../settings/store'
 
 const MAX_REFERENCE_IMAGES = 32
@@ -60,13 +61,6 @@ const VIDEO_SIZE: Record<string, [number, number]> = {
   '4:3': [960, 720],
   '3:4': [720, 960],
   '21:9': [1680, 720]
-}
-
-interface LoadedRef {
-  dataUrl: string
-  role: string
-  media: 'image' | 'audio'
-  mime: string
 }
 
 async function loadRefs(
@@ -105,12 +99,14 @@ async function loadRefs(
     try {
       const data = await fs.readFile(absolute)
 
-      loaded.push({
-        dataUrl: `data:${mime};base64,${data.toString('base64')}`,
-        role: ref.role,
-        media: imageMime ? 'image' : 'audio',
-        mime
-      })
+      loaded.push(
+        toLoadedRef({
+          dataUrl: `data:${mime};base64,${data.toString('base64')}`,
+          role: ref.role,
+          media: imageMime ? 'image' : 'audio',
+          mime
+        })
+      )
     } catch {
       // 素材缺失时跳过
     }
@@ -193,6 +189,12 @@ export async function startGeneration(
       const hasKeyframe = refs.some(
         (ref) => ref.role === 'firstFrame' || ref.role === 'lastFrame'
       )
+      const firstFrameCount = imageRefs.filter(
+        (ref) => ref.role === 'firstFrame'
+      ).length
+      const lastFrameCount = imageRefs.filter(
+        (ref) => ref.role === 'lastFrame'
+      ).length
 
       const refError = referenceInputError({
         isVideo,
@@ -202,7 +204,9 @@ export async function startGeneration(
         hasSourceVideo: Boolean(video),
         hasVideoOperation: Boolean(request.videoOptions?.operation),
         hasMask: Boolean(request.mask),
-        hasKeyframe
+        hasKeyframe,
+        firstFrameCount,
+        lastFrameCount
       })
       if (refError) throw new Error(refError)
       const hasSubject =

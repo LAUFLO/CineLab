@@ -26,7 +26,11 @@ import {
   type VideoOperationId
 } from '@shared/operation-schema'
 import { paramTemplatesFor, type ParamTemplate } from '@shared/param-presets'
-import type { HttpTemplate } from '@shared/http-template'
+import {
+  hasLegacyKeyframeVariables,
+  LEGACY_KEYFRAME_VARIABLE_WARNING,
+  type HttpTemplate
+} from '@shared/http-template'
 import { Icon } from '../../components/Icon'
 import {
   Button,
@@ -1587,6 +1591,13 @@ export function ModelConfigDialog({
           </>
         ) : null}
       </div>
+
+      {hasLegacyKeyframeVariables(templateText) ||
+      hasLegacyKeyframeVariables(extraBodyText) ? (
+        <div className="mb-3 rounded-card border border-[color-mix(in_srgb,var(--warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] px-2.5 py-2 text-[11px] leading-[1.55] text-warning">
+          {LEGACY_KEYFRAME_VARIABLE_WARNING}
+        </div>
+      ) : null}
 
       {error ? (
         <div className="mb-3 break-all rounded-md bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] px-2.5 py-2 text-xs leading-[1.6] text-danger">

@@ -7,11 +7,7 @@ import type {
 } from './openai-compat'
 import { sleep } from './retry'
 import { mergeHeaders } from './headers'
-
-interface ImageRef {
-  dataUrl: string
-  role: string
-}
+import type { LoadedRef } from './media'
 
 interface MiniMaxTask {
   task_id?: string
@@ -70,20 +66,32 @@ async function downloadVideo(
   return [{ data: Buffer.from(await response.arrayBuffer()), mime }]
 }
 
-function contentFromRefs(prompt: string, refs: ImageRef[]): unknown[] {
+function contentFromRefs(prompt: string, refs: LoadedRef[]): unknown[] {
   const content: unknown[] = [{ type: 'text', text: prompt }]
   const first = refs.find((ref) => ref.role === 'firstFrame')
   const last = refs.find((ref) => ref.role === 'lastFrame')
   const references = refs.filter((ref) => ref.role === 'reference')
 
   if (first) {
-    content.push({ type: 'image_url', image_url: { url: first.dataUrl } })
+    content.push({
+      type: 'image_url',
+      image_url: { url: first.dataUrl },
+      role: 'first_frame'
+    })
   }
   if (last) {
-    content.push({ type: 'image_url', image_url: { url: last.dataUrl } })
+    content.push({
+      type: 'image_url',
+      image_url: { url: last.dataUrl },
+      role: 'last_frame'
+    })
   }
   for (const ref of references) {
-    content.push({ type: 'image_url', image_url: { url: ref.dataUrl } })
+    content.push({
+      type: 'image_url',
+      image_url: { url: ref.dataUrl },
+      role: 'reference_image'
+    })
   }
 
   return content
@@ -94,7 +102,7 @@ async function generateH3(
   provider: ProviderRuntime,
   prompt: string,
   params: Record<string, unknown>,
-  refs: ImageRef[],
+  refs: LoadedRef[],
   ctx: AdapterContext
 ): Promise<ProviderOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
@@ -168,7 +176,7 @@ async function generateLegacy(
   provider: ProviderRuntime,
   prompt: string,
   params: Record<string, unknown>,
-  refs: ImageRef[],
+  refs: LoadedRef[],
   ctx: AdapterContext
 ): Promise<ProviderOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
@@ -266,7 +274,7 @@ export async function generateVideoMinimax(
   provider: ProviderRuntime,
   prompt: string,
   params: Record<string, unknown>,
-  refs: ImageRef[],
+  refs: LoadedRef[],
   ctx: AdapterContext,
   legacy: boolean
 ): Promise<ProviderOutput[]> {

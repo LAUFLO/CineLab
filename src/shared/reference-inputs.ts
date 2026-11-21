@@ -23,6 +23,10 @@ export interface ReferenceInputContext {
   hasMask: boolean
   /** refs 中是否存在首帧或尾帧 */
   hasKeyframe: boolean
+  /** 首帧角色数量；传入后启用首尾帧结构校验 */
+  firstFrameCount?: number
+  /** 尾帧角色数量；传入后启用首尾帧结构校验 */
+  lastFrameCount?: number
 }
 
 /**
@@ -48,6 +52,38 @@ export function referenceInputErrors(
   const capabilities = ctx.capabilities ?? effectiveCapabilities(model)
   const supported = capabilities.media
   const errors: string[] = []
+  const firstFrameCount = ctx.firstFrameCount
+  const lastFrameCount = ctx.lastFrameCount
+
+  // 首尾帧结构校验：UI、主进程和 Agent 提案共用同一套规则。
+  // 新字段未传入时保持旧行为，避免影响只关心媒体类型的调用方。
+  if (firstFrameCount !== undefined || lastFrameCount !== undefined) {
+    const firsts = firstFrameCount ?? 0
+    const lasts = lastFrameCount ?? 0
+    const keyframes = firsts + lasts
+
+    if (mode === 'first-frame' && (firsts !== 1 || lasts !== 0)) {
+      errors.push('首帧模式需要 1 张首帧图片，不能带尾帧')
+    }
+    if (mode === 'first-last' && (firsts !== 1 || lasts !== 1)) {
+      errors.push('首尾帧模式需要首帧和尾帧各 1 张')
+    }
+    if (mode === 'reference' && keyframes > 0) {
+      errors.push('全能参考模式不能带首帧或尾帧，请切换输入模式')
+    }
+    if (firsts > 1) errors.push('首帧最多 1 张')
+    if (lasts > 1) errors.push('尾帧最多 1 张')
+    if (lasts > 0 && firsts === 0) {
+      errors.push('尾帧不能单独使用，请先添加首帧')
+    }
+    if (keyframes > 0 && keyframes !== imageCount) {
+      errors.push(
+        mode === 'first-frame'
+          ? '首帧模式不能混入其他参考图'
+          : '首尾帧模式不能混入其他参考图'
+      )
+    }
+  }
 
   if (audioCount > 0) {
     if (!isVideo) {

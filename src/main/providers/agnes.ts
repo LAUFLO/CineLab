@@ -7,34 +7,18 @@ import type {
 } from './openai-compat'
 import { mergeHeaders } from './headers'
 import { sleep } from './retry'
-
-interface ImageRef {
-  dataUrl: string
-  role: string
-  /** 省略时按图片处理，兼容旧调用 */
-  media?: 'image' | 'audio'
-}
+import type { LoadedRef } from './media'
 
 interface AgnesVideoRef {
   dataUrl: string
   mime: string
 }
 
-/**
- * Agnes 的 keyframe 参数接受图片 URL 或纯 base64；这里去掉 data URL 前缀，
- * 避免首帧图片被当作普通参考。参考模式仍使用 data URL。
- */
-function rawBase64(dataUrl: string): string {
-  if (!dataUrl.startsWith('data:')) return dataUrl
-  const comma = dataUrl.indexOf(',')
-  return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
-}
-
 export function buildAgnesBody(
   model: ModelDef,
   prompt: string,
   params: Record<string, unknown>,
-  refs: ImageRef[],
+  refs: LoadedRef[],
   video?: AgnesVideoRef
 ): Record<string, unknown> {
   const firstFrame = refs.find((ref) => ref.role === 'firstFrame')
@@ -60,8 +44,8 @@ export function buildAgnesBody(
   }
 
   if (mode === 'keyframe') {
-    if (firstFrame) body.first_frame = rawBase64(firstFrame.dataUrl)
-    if (lastFrame) body.last_frame = rawBase64(lastFrame.dataUrl)
+    if (firstFrame) body.first_frame = firstFrame.base64
+    if (lastFrame) body.last_frame = lastFrame.base64
   } else if (mode === 'reference') {
     if (images.length > 0) body.images = images.map((ref) => ref.dataUrl)
     if (audios.length > 0) body.audios = audios.map((ref) => ref.dataUrl)
@@ -110,7 +94,7 @@ export async function generateVideoAgnes(
   provider: ProviderRuntime,
   prompt: string,
   params: Record<string, unknown>,
-  refs: ImageRef[],
+  refs: LoadedRef[],
   ctx: AdapterContext,
   video?: AgnesVideoRef
 ): Promise<ProviderOutput[]> {

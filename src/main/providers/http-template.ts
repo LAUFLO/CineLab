@@ -10,10 +10,15 @@ import type {
 import { sleep } from './retry'
 import { mergeHeaders } from './headers'
 import { replaceTemplateVariables } from '@shared/template-vars'
+import { dataUrlToBase64 } from './media'
 
-interface ImageRef {
+export interface ImageRef {
   dataUrl: string
   role: string
+  /** 统一载荷中的纯 base64；省略时从 dataUrl 兼容提取 */
+  base64?: string
+  /** 统一载荷中的 MIME */
+  mime?: string
   /** 省略时按图片处理，兼容旧调用 */
   media?: 'image' | 'audio'
 }
@@ -56,12 +61,36 @@ function refsOfMode(refs: ImageRef[], video?: VideoRef): HttpTemplateMode {
   return 'text'
 }
 
+function frameRef(
+  role: 'firstFrame' | 'lastFrame',
+  refs: ImageRef[]
+): ImageRef | undefined {
+  return refs.find((ref) => ref.role === role)
+}
+
+function refBase64(ref: ImageRef | undefined): string | undefined {
+  if (!ref) return undefined
+  return ref.base64 ?? dataUrlToBase64(ref.dataUrl)
+}
+
 function refValue(key: string, refs: ImageRef[]): unknown {
   if (key === 'refs.firstFrame') {
-    return refs.find((ref) => ref.role === 'firstFrame')?.dataUrl
+    return refBase64(frameRef('firstFrame', refs))
+  }
+  if (key === 'refs.firstFrameDataUrl') {
+    return frameRef('firstFrame', refs)?.dataUrl
+  }
+  if (key === 'refs.firstFrameMime') {
+    return frameRef('firstFrame', refs)?.mime
   }
   if (key === 'refs.lastFrame') {
-    return refs.find((ref) => ref.role === 'lastFrame')?.dataUrl
+    return refBase64(frameRef('lastFrame', refs))
+  }
+  if (key === 'refs.lastFrameDataUrl') {
+    return frameRef('lastFrame', refs)?.dataUrl
+  }
+  if (key === 'refs.lastFrameMime') {
+    return frameRef('lastFrame', refs)?.mime
   }
   if (key === 'refs.frames') {
     return refs
@@ -111,6 +140,14 @@ function refValue(key: string, refs: ImageRef[]): unknown {
       .map((ref) => ref.dataUrl)
   }
   return undefined
+}
+
+/** 供测试与模板调试使用：解析 refs.* 变量的当前语义 */
+export function resolveTemplateRef(
+  key: string,
+  refs: ImageRef[]
+): unknown {
+  return refValue(key, refs)
 }
 
 function tokenValue(token: string, context: TemplateContext): unknown {

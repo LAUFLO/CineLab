@@ -179,7 +179,8 @@
 ```
 
 - `extraBody` 里 `{{token}}` 独占整个字符串时保留原始类型（数字、布尔、数组、对象）；内嵌在字符串里时转成文本
-- 可用变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`、`{{refs.lastFrame}}`、`{{refs.frames}}`、`{{refs.image}}`、`{{refs.images}}`、`{{refs.subject}}`、`{{refs.subjects}}`、`{{refs.style}}`、`{{refs.styles}}`、`{{refs.mask}}`
+- 可用变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`（纯 base64）、`{{refs.lastFrame}}`（纯 base64）、`{{refs.firstFrameDataUrl}}`、`{{refs.lastFrameDataUrl}}`、`{{refs.firstFrameMime}}`、`{{refs.lastFrameMime}}`、`{{refs.frames}}`（data URL 数组）、`{{refs.image}}`、`{{refs.images}}`、`{{refs.subject}}`、`{{refs.subjects}}`、`{{refs.style}}`、`{{refs.styles}}`、`{{refs.mask}}`
+- 首尾帧变量语义：`{{refs.firstFrame}}` / `{{refs.lastFrame}}` 返回纯 base64；需要 data URL 请改用 `{{refs.firstFrameDataUrl}}` / `{{refs.lastFrameDataUrl}}`。旧模板不会自动改写，模型配置对话框会显示迁移提示。
 - 主体/风格参考不单独做显式适配：PromptBar 不提供独立角色，统一按普通参考图发送，由提示词表达「保持主体一致」或「参考画风」。`refs.subject` / `refs.subjects` / `refs.style` / `refs.styles` 变量保留给自定义协议的高级用法，但不会自动写入请求。
 - 蒙版：`{{refs.mask}}` 是 PNG data URL，透明区域表示需要编辑；`contentType: "multipart"` 的模板会自动把它转成文件字段。OpenAI 兼容模型的 `/images/edits` 已内置 `mask` 字段，不需要写模板。
 - `omitBody` 只删除顶层字段
@@ -257,7 +258,8 @@
 - `submit.contentType`：`json`（默认）或 `multipart`
 - `submit.omitEmpty`：删除模板里的空字段
 - `poll.path` / `taskIdPath` / `statusPath` / `resultPath`
-- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`、`{{refs.lastFrame}}`、`{{refs.frames}}`、`{{refs.image}}`、`{{refs.images}}`、`{{video.dataUrl}}`、`{{video.base64}}`、`{{video.mime}}`、`{{video.start}}`、`{{video.end}}`、`{{video.duration}}`、`{{video.direction}}`、`{{video.operation}}`、`{{taskId}}`
+- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`（纯 base64）、`{{refs.lastFrame}}`（纯 base64）、`{{refs.firstFrameDataUrl}}`、`{{refs.lastFrameDataUrl}}`、`{{refs.firstFrameMime}}`、`{{refs.lastFrameMime}}`、`{{refs.frames}}`、`{{refs.image}}`、`{{refs.images}}`、`{{video.dataUrl}}`、`{{video.base64}}`、`{{video.mime}}`、`{{video.start}}`、`{{video.end}}`、`{{video.duration}}`、`{{video.direction}}`、`{{video.operation}}`、`{{taskId}}`
+- 首尾帧变量从 data URL 改为纯 base64 是破坏性变更：旧模板不自动改写，配置对话框会提示；需要 data URL 的字段请使用 `firstFrameDataUrl` / `lastFrameDataUrl`。
 
 视频编辑/续写接口使用 `mode: "video"`。当请求带 `video` 输入时，模板自动进入 video 模式：
 

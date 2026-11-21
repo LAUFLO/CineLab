@@ -1460,7 +1460,13 @@ export function PromptBar() {
       hasSourceVideo: Boolean(videoRef),
       hasVideoOperation: false,
       hasMask: Boolean(activeMask),
-      hasKeyframe: slotMode === 'first-frame' || slotMode === 'first-last'
+      hasKeyframe: slotMode === 'first-frame' || slotMode === 'first-last',
+      firstFrameCount: mergedRefs.filter(
+        (ref) => ref.kind === 'image' && ref.role === 'firstFrame'
+      ).length,
+      lastFrameCount: mergedRefs.filter(
+        (ref) => ref.kind === 'image' && ref.role === 'lastFrame'
+      ).length
     })
     if (refErrors.length > 0) {
       showToast(refErrors[0], 'error')

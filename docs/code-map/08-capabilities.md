@@ -17,6 +17,7 @@
 | 01 | 项目画布打开/保存/多画布 | `src/main/project/`、`src/shared/project-schema.ts` |
 | 02 | 多供应商模型配置、生成任务、参数预设 | `src/main/providers/`、`src/main/engine/` |
 | 02 | 参考图/视频/音频输入、素材导入 | `src/shared/reference-inputs.ts`、`src/main/assets/` |
+| 02 | 首尾帧统一载荷与校验、MiniMax H3 role | `src/main/providers/media.ts`、`src/main/providers/minimax.ts`、`src/shared/reference-inputs.ts` |
 | 03 | 时间线、剪辑、转场、关键帧、字幕、音频 | `src/main/timeline/`、`src/shared/timeline-*` |
 | 04 | StageDoc、机位、镜头、关键帧、Hermite 插值 | `src/shared/stage-schema.ts`、`stage-timeline.ts` |
 | 04 | 语义镜头求解（单/双/群、过肩、不越轴） | `src/shared/stage-shot-intent.ts` |

@@ -13,12 +13,16 @@ const model: ModelDef = {
 
 const image = {
   dataUrl: 'data:image/png;base64,AAAA',
+  base64: 'AAAA',
+  mime: 'image/png',
   role: 'reference',
   media: 'image' as const
 }
 
 const audio = {
   dataUrl: 'data:audio/mpeg;base64,BBBB',
+  base64: 'BBBB',
+  mime: 'audio/mpeg',
   role: 'reference',
   media: 'audio' as const
 }

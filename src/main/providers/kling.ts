@@ -8,11 +8,7 @@ import type {
   ProviderRuntime
 } from './openai-compat'
 import { sleep } from './retry'
-
-interface ImageRef {
-  dataUrl: string
-  role: string
-}
+import type { LoadedRef } from './media'
 
 interface KlingTask {
   code?: number
@@ -32,11 +28,6 @@ function normalizeBaseUrl(baseUrl: string): string {
     .trim()
     .replace(/\/+$/, '')
     .replace(/\/v1$/i, '')
-}
-
-function base64Of(dataUrl: string): string {
-  const match = /^data:[^;]+;base64,(.+)$/s.exec(dataUrl)
-  return match ? match[1] : dataUrl
 }
 
 async function downloadVideo(
@@ -70,7 +61,7 @@ export async function generateVideoKling(
   provider: ProviderRuntime,
   prompt: string,
   params: Record<string, unknown>,
-  refs: ImageRef[],
+  refs: LoadedRef[],
   ctx: AdapterContext
 ): Promise<ProviderOutput[]> {
   const baseUrl = normalizeBaseUrl(provider.baseUrl)
@@ -101,8 +92,8 @@ export async function generateVideoKling(
     body.negative_prompt = negativePrompt.trim()
   }
 
-  if (first) body.image = base64Of(first.dataUrl)
-  if (last) body.image_tail = base64Of(last.dataUrl)
+  if (first) body.image = first.base64
+  if (last) body.image_tail = last.base64
 
   ctx.onProgress(5, '提交视频任务')
 

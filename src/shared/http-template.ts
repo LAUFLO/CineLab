@@ -41,3 +41,14 @@ export interface HttpTemplate {
   /** 接口返回完整视频（full）还是新增片段（segment），默认 full */
   videoResult?: 'full' | 'segment'
 }
+
+const LEGACY_KEYFRAME_VARIABLE =
+  /\{\{\s*refs\.(?:firstFrame|lastFrame)\s*\}\}/
+
+export const LEGACY_KEYFRAME_VARIABLE_WARNING =
+  '变量含义已变：{{refs.firstFrame}} / {{refs.lastFrame}} 现在是纯 base64；需要 data URL 请改用 {{refs.firstFrameDataUrl}} / {{refs.lastFrameDataUrl}}。'
+
+/** 检测模板或 extraBody 里是否还在使用旧的首尾帧变量语义 */
+export function hasLegacyKeyframeVariables(text: string): boolean {
+  return LEGACY_KEYFRAME_VARIABLE.test(text)
+}

@@ -544,7 +544,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
           model: '{{model}}',
           input: {
             prompt: '{{prompt}}',
-            img_url: '{{refs.firstFrame}}'
+            img_url: '{{refs.firstFrameDataUrl}}'
           },
           parameters: {
             resolution: '{{params.resolution}}',
@@ -641,7 +641,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
         body: {
           model: '{{model}}',
           promptText: '{{prompt}}',
-          promptImage: '{{refs.firstFrame}}',
+          promptImage: '{{refs.firstFrameDataUrl}}',
           duration: '{{params.duration}}'
         },
         omitEmpty: true
@@ -688,7 +688,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
           duration: '{{params.duration}}',
           resolution: '{{params.resolution}}',
           keyframes: {
-            frame0: { type: 'image', url: '{{refs.firstFrame}}' }
+            frame0: { type: 'image', url: '{{refs.firstFrameDataUrl}}' }
           }
         },
         omitEmpty: true
@@ -955,7 +955,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
         body: {
           model: '{{model}}',
           prompt: '{{prompt}}',
-          image_url: '{{refs.firstFrame}}',
+          image_url: '{{refs.firstFrameDataUrl}}',
           duration: '{{params.duration}}',
           size: '{{params.size}}',
           fps: '{{params.fps}}'
@@ -1096,7 +1096,7 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
         body: {
           model: '{{model}}',
           prompt: '{{prompt}}',
-          image_url: '{{refs.firstFrame}}',
+          image_url: '{{refs.firstFrameDataUrl}}',
           duration: '{{params.duration}}',
           resolution: '{{params.resolution}}',
           ratio: '{{params.ratio}}'

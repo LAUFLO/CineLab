@@ -142,9 +142,9 @@ Prompt Bar / 节点操作
 | `src/main/engine/start-generation.ts` | 437 |
 | `src/main/local-adapters/build.ts` | 64 |
 | `src/main/local-adapters/host-process.ts` | 166 |
-| `src/main/local-adapters/host.ts` | 256 |
+| `src/main/local-adapters/host.ts` | 259 |
 | `src/main/local-adapters/manifest.ts` | 175 |
-| `src/main/local-adapters/registry.ts` | 264 |
+| `src/main/local-adapters/registry.ts` | 292 |
 | `src/main/local-adapters/runtime.ts` | 88 |
 | `src/main/media/audio-peaks.ts` | 127 |
 | `src/main/media/audio.ts` | 133 |
@@ -207,7 +207,7 @@ Prompt Bar / 节点操作
 | `src/main/local-adapters/build.ts` | `LocalAdapterBuildResult`、`resolveLocalAdapterEntry`、`buildLocalAdapter` |
 | `src/main/local-adapters/host.ts` | `LocalAdapterOutput`、`LocalAdapterGenerateOptions`、`LocalAdapterHost` |
 | `src/main/local-adapters/manifest.ts` | `LocalAdapterType`、`LocalAdapterManifest`、`LocalAdapterProviderConfig`、`LocalAdapterData`、`parseManifest`、`parseModelsFile`、`readLocalAdapter` |
-| `src/main/local-adapters/registry.ts` | `LocalProviderRuntime`、`localAdaptersDir`、`listLocalAdapterStatuses`、`localAdapterProviders`、`localProviderRuntime`、`localModelIds`、`localAdapterRecord`、`startLocalAdapterRegistry`、`stopLocalAdapterRegistry`、`reloadLocalAdapter` |
+| `src/main/local-adapters/registry.ts` | `LocalProviderRuntime`、`localAdapterLogs`、`localAdaptersDir`、`listLocalAdapterStatuses`、`localAdapterProviders`、`localProviderRuntime`、`localModelIds`、`localAdapterRecord`、`startLocalAdapterRegistry`、`stopLocalAdapterRegistry`、`reloadLocalAdapter` |
 | `src/main/local-adapters/runtime.ts` | `generateWithLocalAdapter` |
 | `src/main/media/audio-peaks.ts` | `computeAudioPeaks` |
 | `src/main/media/audio.ts` | `buildAtempoFilter`、`trimAudio`、`changeAudioSpeed` |

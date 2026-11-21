@@ -35,12 +35,35 @@ interface LocalAdapterRecord extends LocalAdapterData {
 }
 
 const records = new Map<string, LocalAdapterRecord>()
+const logBuffers = new Map<string, string[]>()
+const MAX_LOG_LINES = 200
 let watcher: FSWatcher | null = null
 let timer: NodeJS.Timeout | null = null
 let started = false
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
+}
+
+function recordLog(id: string, message: string): void {
+  const line = `${new Date().toISOString()} ${message}`
+  const list = logBuffers.get(id) ?? []
+  list.push(line)
+  if (list.length > MAX_LOG_LINES) {
+    list.splice(0, list.length - MAX_LOG_LINES)
+  }
+  logBuffers.set(id, list)
+}
+
+export function localAdapterLogs(
+  id?: string,
+  limit = 50
+): Array<{ id: string; lines: string[] }> {
+  const ids = id ? [id] : [...records.keys()]
+  return ids.map((adapterId) => ({
+    id: adapterId,
+    lines: (logBuffers.get(adapterId) ?? []).slice(-limit)
+  }))
 }
 
 export function localAdaptersDir(): string {
@@ -145,6 +168,7 @@ async function loadAdapter(dir: string): Promise<void> {
   const id = basename(dir)
   const previous = records.get(id)
   previous?.host?.dispose()
+  recordLog(id, '开始加载')
 
   const record: LocalAdapterRecord = {
     manifest: { id, version: '0.0.0', type: 'code' },
@@ -174,11 +198,15 @@ async function loadAdapter(dir: string): Promise<void> {
     const built = await buildLocalAdapter(dir, data.manifest)
     if (!built.ok) throw new Error(built.error)
 
-    record.host = new LocalAdapterHost(id, built.outfile, dir)
+    record.host = new LocalAdapterHost(id, built.outfile, dir, (message) =>
+      recordLog(id, message)
+    )
     record.status = 'ready'
+    recordLog(id, '已加载')
   } catch (error) {
     record.status = 'error'
     record.error = errorMessage(error)
+    recordLog(id, `加载失败：${record.error}`)
   }
 
   record.updatedAt = new Date().toISOString()

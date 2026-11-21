@@ -24,6 +24,10 @@ CineBot 会话、工具注册与执行、生成提案、技能、能力审计。
 
 工具按 profile 与 mode 过滤：`filterAgentTools(AGENTS_TOOLS, profile, mode)` → `toModelTools`。
 
+## MCP server
+
+外部 Agent 通过 `src/main/mcp/` 连接 CineLab：内置 Streamable HTTP server（`127.0.0.1` + Bearer token），以及 stdio 桥接进程。当前暴露 `local_adapter_list`、`local_adapter_reload`、`local_adapter_logs`，后续按模块扩展项目、画布、生成和导出。配置与安全说明见 `docs/mcp.md`。
+
 ## 工具分组
 
 `src/main/agent/tools/index.ts` 聚合 7 组：
@@ -191,6 +195,10 @@ AgentPanel
 | `src/main/agent/tools/skills.ts` | 90 |
 | `src/main/agent/tools/stage.ts` | 1122 |
 | `src/main/agent/tools/timeline.ts` | 930 |
+| `src/main/mcp/config.ts` | 54 |
+| `src/main/mcp/server.ts` | 186 |
+| `src/main/mcp/stdio-bridge.ts` | 104 |
+| `src/main/mcp/tools.ts` | 75 |
 | `src/renderer/src/agent/AgentPanel.tsx` | 1248 |
 | `src/renderer/src/agent/agentStore.ts` | 1100 |
 | `src/renderer/src/agent/canvasBridge.ts` | 1113 |
@@ -245,6 +253,9 @@ AgentPanel
 | `src/main/agent/tools/skills.ts` | `SKILL_TOOLS`、`validateSkillToolArgs` |
 | `src/main/agent/tools/stage.ts` | `STAGE_TOOLS`、`validateStageToolArgs` |
 | `src/main/agent/tools/timeline.ts` | `TIMELINE_TOOLS`、`isTimelineWriteTool`、`validateTimelineToolArgs` |
+| `src/main/mcp/config.ts` | `McpStdioConfig`、`McpServerConfig`、`mcpConfigPath`、`createMcpToken`、`readMcpConfig`、`writeMcpConfig`、`removeMcpConfigSync` |
+| `src/main/mcp/server.ts` | `startMcpServer`、`stopMcpServer`、`mcpStatus` |
+| `src/main/mcp/tools.ts` | `registerCineLabTools` |
 | `src/renderer/src/agent/AgentPanel.tsx` | `AgentPanel` |
 | `src/renderer/src/agent/agentStore.ts` | `AgentMessage`、`AgentActivity`、`agentTurnChangeCount`、`AGENT_CONTEXT_BUDGET_TOKENS`、`AGENT_KEEP_RECENT_MESSAGES`、`AgentContextStats`、`agentContextStats`、`useAgentStore` |
 | `src/renderer/src/agent/canvasBridge.ts` | `initAgentCanvasBridge` |

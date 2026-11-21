@@ -122,7 +122,7 @@ const MODULES = [
     id: '06',
     name: 'CineBot 与 Agent',
     file: 'docs/code-map/06-agent.md',
-    dirs: ['src/main/agent', 'src/renderer/src/agent'],
+    dirs: ['src/main/agent', 'src/main/mcp', 'src/renderer/src/agent'],
     files: [
       'src/shared/agent.ts',
       'src/shared/agent-proposal.ts',

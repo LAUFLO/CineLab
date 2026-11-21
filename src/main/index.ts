@@ -14,6 +14,7 @@ import {
   startLocalAdapterRegistry,
   stopLocalAdapterRegistry
 } from './local-adapters/registry'
+import { startMcpServer, stopMcpServer } from './mcp/server'
 import { log, setupLogging } from './logger'
 import { appendFileSync } from 'node:fs'
 
@@ -139,6 +140,9 @@ if (!hasLock) {
 
     startModelsWatcher()
     void startLocalAdapterRegistry()
+    void startMcpServer().catch((error) => {
+      log.warn('mcp server failed to start', error)
+    })
 
     registerAssetProtocol()
     diagLog('registerAssetProtocol done')
@@ -191,6 +195,7 @@ if (!hasLock) {
 
   app.on('before-quit', () => {
     stopLocalAdapterRegistry()
+    void stopMcpServer()
     log.info('app quitting')
   })
 }

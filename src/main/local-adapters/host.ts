@@ -63,12 +63,15 @@ export class LocalAdapterHost {
   constructor(
     private readonly adapterId: string,
     private readonly entry: string,
-    private readonly cwd: string
+    private readonly cwd: string,
+    private readonly onLog?: (message: string) => void
   ) {}
 
   private log(message: string, error?: unknown): void {
     const detail = error ? ` ${errorMessage(error)}` : ''
-    console.warn(`[local-adapter:${this.adapterId}] ${message}${detail}`)
+    const line = `${message}${detail}`
+    this.onLog?.(line)
+    console.warn(`[local-adapter:${this.adapterId}] ${line}`)
   }
 
   start(): Promise<void> {

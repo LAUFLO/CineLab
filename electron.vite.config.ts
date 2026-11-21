@@ -50,7 +50,8 @@ export default defineConfig({
           index: resolve('src/main/index.ts'),
           'local-adapter-host': resolve(
             'src/main/local-adapters/host-process.ts'
-          )
+          ),
+          'cinelab-mcp': resolve('src/main/mcp/stdio-bridge.ts')
         }
       }
     },

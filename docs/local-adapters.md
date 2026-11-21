@@ -143,4 +143,4 @@ export default {
 
 - 只支持 `type: "code"`；`config` / `template` 类型预留，尚未接入。
 - 打包后的 esbuild 二进制需要 `asarUnpack`；尚未在安装包中验证。
-- MCP 控制接口在 S2c；当前通过渲染进程 API 和文件监听使用。
+- MCP 工具目前只覆盖本地适配器（`local_adapter_*`），项目/画布/生成等能力待后续扩展。

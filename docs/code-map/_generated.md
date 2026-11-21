@@ -7,12 +7,12 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 70 | 23063 |
+| 01 | [画布](./01-canvas.md) | 71 | 23117 |
 | 02 | [生成与模型](./02-generation.md) | 59 | 13482 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9426 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20196 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5792 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 53 | 17573 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 54 | 17796 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11395 |
 | 10 | [UI 组件与面板](./10-ui.md) | 43 | 8872 |
 
@@ -208,6 +208,7 @@
 - `src/shared/__tests__/audio-fx.test.ts`
 - `src/shared/__tests__/canvas-commands.test.ts`
 - `src/shared/__tests__/canvas-schema.test.ts`
+- `src/shared/__tests__/canvas-summary.test.ts`
 - `src/shared/__tests__/capabilities.test.ts`
 - `src/shared/__tests__/film-study-v2.test.ts`
 - `src/shared/__tests__/filters.test.ts`

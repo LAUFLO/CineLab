@@ -26,6 +26,7 @@ const MODULES = [
       'src/renderer/src/stores/toolbar.ts',
       'src/shared/canvas-commands.ts',
       'src/shared/canvas-schema.ts',
+      'src/shared/canvas-summary.ts',
       'src/shared/node-operation-specs.ts',
       'src/shared/operation-schema.ts',
       'src/shared/components.ts'

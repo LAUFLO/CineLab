@@ -199,6 +199,7 @@ CineBot
 | `src/renderer/src/stores/toolbar.ts` | 70 |
 | `src/shared/canvas-commands.ts` | 303 |
 | `src/shared/canvas-schema.ts` | 322 |
+| `src/shared/canvas-summary.ts` | 54 |
 | `src/shared/components.ts` | 56 |
 | `src/shared/node-operation-specs.ts` | 363 |
 | `src/shared/operation-schema.ts` | 64 |
@@ -274,6 +275,7 @@ CineBot
 | `src/renderer/src/stores/toolbar.ts` | `PinnedMap`、`useToolbarStore`、`TOOLBAR_MAX_PRIMARY` |
 | `src/shared/canvas-commands.ts` | `CanvasCommandNode`、`CanvasCommandEdge`、`CanvasCommand`、`CanvasCommandChange`、`CanvasCommandState`、`CanvasCommandResult`、`emptyCanvasChange`、`applyCanvasCommand`、`applyCanvasBatch` |
 | `src/shared/canvas-schema.ts` | `NodeKind`、`CanvasNodeKind`、`FilmStatus`、`NodeStatus`、`OutputRef`、`CineNodeData`、`StudioNodeData`、`FilmNodeData`、`StageNodeData`、`VideoOpNodeData`、`GroupColor`、`GROUP_COLORS`、`GROUP_LABELS`、`GroupMode`、`GroupRatio`、`GROUP_RATIOS`、`GROUP_RATIO_LABEL`、`GROUP_RATIO_VALUE`、`STORYBOARD_MAX_NODES`、`STORYBOARD_CELL_WIDTH`、`STORYBOARD_GAP`、`GRID_SPLIT_CELL_WIDTH`、`GroupNodeData`、`GROUP_HEADER_HEIGHT` …（共 30 个） |
+| `src/shared/canvas-summary.ts` | `CanvasNodeSummary`、`CanvasEdgeSummary`、`summarizeCanvasNode`、`summarizeCanvasEdge` |
 | `src/shared/components.ts` | `ComponentKind`、`ComponentState`、`ComponentManifest`、`ComponentStatus`、`ComponentEvent`、`ComponentInstallResult` |
 | `src/shared/node-operation-specs.ts` | `NodeOperationAgentSpec`、`NodeOperationParamType`、`NodeOperationParamSpec`、`NodeOperationKindSpec`、`NodeOperationOutputTarget`、`nodeOperationOutputTarget`、`NODE_OPERATION_AGENT_SPECS`、`nodeOperationAgentSpec`、`isAgentOperationParamSpec`、`validateNodeOperationParams` |
 | `src/shared/operation-schema.ts` | `VideoOperationId`、`VideoOperationDef`、`VIDEO_OPERATIONS`、`OperationBindings`、`isVideoOperation` |

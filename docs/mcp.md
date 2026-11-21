@@ -106,6 +106,39 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 `id` 可省略；`limit` 默认 50，最大 200。
 
+### `project_list`
+
+列出最近打开的 CineLab 项目：路径、名称、最近打开时间。只读。
+
+### `project_current`
+
+读取当前项目：名称、画布列表、当前画布、节点/连线数量。只读。
+
+### `canvas_get`
+
+读取当前画布摘要：节点、连线、视口。
+
+参数：
+
+```json
+{ "includeEdges": true, "limit": 200 }
+```
+
+- 只返回节点摘要，不返回 outputs、prompt、媒体数据。
+- `limit` 默认 200，最大 500。
+
+### `node_list`
+
+读取当前画布节点摘要，可按 `kind` 过滤。
+
+```json
+{ "kind": "image", "limit": 200 }
+```
+
+### `model_list`
+
+列出供应商与模型能力：id、名称、能力、输入、模式。只读，不返回 API Key、Secret 或请求头。
+
 ## 安全
 
 - 只绑定 `127.0.0.1`，不监听局域网。
@@ -116,8 +149,8 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 当前范围
 
-- 已提供：本地适配器查询、重载、日志。
-- 后续：项目/画布/节点、生成提交与状态、时间线、导演台、拉片、导出。
+- 已提供：本地适配器查询/重载/日志；项目列表/当前项目、画布摘要、节点摘要、模型能力（均只读）。
+- 后续：生成提交与状态、时间线、导演台、拉片、导出。
 - 写操作会复用 CineBot 的提案/确认机制，默认不直接修改用户数据。
 
 ## 排查

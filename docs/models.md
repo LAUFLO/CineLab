@@ -258,8 +258,27 @@
 - `submit.contentType`：`json`（默认）或 `multipart`
 - `submit.omitEmpty`：删除模板里的空字段
 - `poll.path` / `taskIdPath` / `statusPath` / `resultPath`
-- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`（纯 base64）、`{{refs.lastFrame}}`（纯 base64）、`{{refs.firstFrameDataUrl}}`、`{{refs.lastFrameDataUrl}}`、`{{refs.firstFrameMime}}`、`{{refs.lastFrameMime}}`、`{{refs.frames}}`、`{{refs.image}}`、`{{refs.images}}`、`{{video.dataUrl}}`、`{{video.base64}}`、`{{video.mime}}`、`{{video.start}}`、`{{video.end}}`、`{{video.duration}}`、`{{video.direction}}`、`{{video.operation}}`、`{{taskId}}`
+- 变量：`{{prompt}}`、`{{model}}`、`{{params.*}}`、`{{refs.firstFrame}}`（纯 base64）、`{{refs.lastFrame}}`（纯 base64）、`{{refs.firstFrameDataUrl}}`、`{{refs.lastFrameDataUrl}}`、`{{refs.firstFrameMime}}`、`{{refs.lastFrameMime}}`、`{{refs.frames}}`、`{{refs.image}}`、`{{refs.images}}`、`{{provider.baseUrl}}`、`{{provider.apiKey}}`、`{{provider.secretKey}}`、`{{video.dataUrl}}`、`{{video.base64}}`、`{{video.mime}}`、`{{video.start}}`、`{{video.end}}`、`{{video.duration}}`、`{{video.direction}}`、`{{video.operation}}`、`{{taskId}}`
 - 首尾帧变量从 data URL 改为纯 base64 是破坏性变更：旧模板不自动改写，配置对话框会提示；需要 data URL 的字段请使用 `firstFrameDataUrl` / `lastFrameDataUrl`。
+- `submit.conditional`：按模式、参数或参考素材设置/删除顶层字段：
+  ```json
+  "conditional": [
+    {
+      "when": { "mode": "keyframe", "refs": ["firstFrame"] },
+      "set": { "first_frame": "{{refs.firstFrame}}" },
+      "remove": ["prompt_image"]
+    }
+  ]
+  ```
+- `$map`：把参考素材映射为对象数组，支持 `item.dataUrl` / `item.base64` / `item.mime` / `item.role` / `item.media`：
+  ```json
+  "images": {
+    "$map": "refs.images",
+    "$as": { "url": "{{item.dataUrl}}", "role": "{{item.role}}" }
+  }
+  ```
+- `poll.statusMap`：自定义状态映射，优先于 `successValues` / `failValues`；`poll.errorPath` / `poll.errorMessagePath` 提取供应商错误；`poll.resultPaths` 返回多个结果。
+- `provider.apiKey` / `provider.secretKey` 只用于模板请求，不要把包含这些变量的模板分享给他人。
 
 视频编辑/续写接口使用 `mode: "video"`。当请求带 `video` 输入时，模板自动进入 video 模式：
 

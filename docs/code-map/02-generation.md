@@ -101,6 +101,7 @@ Prompt Bar / 节点操作
 | 参考输入 | 已实现 | `reference-inputs.ts`、`model-inputs.test.ts` |
 | 首尾帧载荷与校验 | 已实现；Agnes 首帧已真实复测 | `main/providers/media.ts`、`reference-inputs.ts`、`minimax.test.ts` |
 | 协议族契约与 golden 请求体 | 已实现 | `shared/model-contracts.ts`、`golden-bodies.test.ts`、`capability-audit.test.ts` |
+| http-template 完整 DSL（S3a） | 已实现 | `providers/http-template.ts`、`http-template-dsl.test.ts` |
 | 本地适配器 registry / utilityProcess | 已实现（S2a/S2b） | `main/local-adapters/`、`shared/local-adapter.ts`、设置页本地适配器区块 |
 | 媒体处理 | 已实现 | `main/media/`、`concat.test.ts` |
 | 错误文案 | 已实现 | `generation-error.test.ts` |
@@ -115,6 +116,7 @@ Prompt Bar / 节点操作
 - 官方模型保存时会校验协议族契约（字段、角色、模式），缺口会阻止保存；用户自定义模型只记录警告。
 - Kling、火山和旧版 MiniMax 的尺寸/体积限制为通用推断（source confidence 为 medium），需按官方文档复核。
 - 本地适配器当前只支持 `type: code`；`config` / `template` 与 MCP 控制留待后续。
+- S3b（签名 header、multipart 文件字段控制、同步结果路径）尚未实施。
 - 打包后的 esbuild 二进制尚未在安装包中验证。
 - 视频操作对模型支持程度不一，`OperationSupport` 只是声明，实际仍可能被供应商拒绝。
 
@@ -168,7 +170,7 @@ Prompt Bar / 节点操作
 | `src/main/media/vision.ts` | 457 |
 | `src/main/providers/agnes.ts` | 205 |
 | `src/main/providers/headers.ts` | 30 |
-| `src/main/providers/http-template.ts` | 521 |
+| `src/main/providers/http-template.ts` | 730 |
 | `src/main/providers/http.ts` | 27 |
 | `src/main/providers/kling-auth.ts` | 30 |
 | `src/main/providers/kling.ts` | 174 |
@@ -184,7 +186,7 @@ Prompt Bar / 节点操作
 | `src/renderer/src/stores/vision-tasks.ts` | 95 |
 | `src/shared/filters.ts` | 112 |
 | `src/shared/generation.ts` | 141 |
-| `src/shared/http-template.ts` | 55 |
+| `src/shared/http-template.ts` | 78 |
 | `src/shared/local-adapter.ts` | 14 |
 | `src/shared/media.ts` | 233 |
 | `src/shared/model-contracts.ts` | 395 |
@@ -247,7 +249,7 @@ Prompt Bar / 节点操作
 | `src/renderer/src/stores/vision-tasks.ts` | `trackVisionTask`、`subscribeVisionTasks` |
 | `src/shared/filters.ts` | `DEFAULT_FILTER`、`FilterPreset`、`FILTER_PRESETS`、`canvasFilterString`、`hasActiveFilter` |
 | `src/shared/generation.ts` | `OutputKind`、`ReferenceMedia`、`ReferenceRole`、`VideoRange`、`VideoOperationOptions`、`ReferenceInput`、`LayerBounds`、`LayerBox`、`AssetLayer`、`TextRecognitionStyle`、`TextRecognitionRun`、`TextRecognitionLine`、`TextRecognition`、`GeneratedAsset`、`GenerateRequest`、`GenerationEvent`、`GenerateHandle` |
-| `src/shared/http-template.ts` | `HttpTemplateMode`、`HttpTemplateAuth`、`HttpTemplateSubmit`、`HttpTemplatePoll`、`HttpTemplate`、`LEGACY_KEYFRAME_VARIABLE_WARNING`、`hasLegacyKeyframeVariables` |
+| `src/shared/http-template.ts` | `HttpTemplateMode`、`HttpTemplateAuth`、`HttpTemplateSubmit`、`HttpTemplateCondition`、`HttpTemplateConditionalField`、`HttpTemplatePoll`、`HttpTemplate`、`LEGACY_KEYFRAME_VARIABLE_WARNING`、`hasLegacyKeyframeVariables` |
 | `src/shared/local-adapter.ts` | `LocalAdapterStatusKind`、`LocalAdapterStatus` |
 | `src/shared/media.ts` | `AudioPeaksRequest`、`GridSplitRequest`、`GridSplitResult`、`StitchRequest`、`StitchResult`、`FrameMode`、`ExtractFrameRequest`、`ExtractFrameResult`、`SplitAvRequest`、`SplitAvResult`、`CropVideoRequest`、`CropVideoResult`、`AudioTrimRequest`、`AudioTrimResult`、`AudioSpeedRequest`、`AudioSpeedResult`、`MediaProbe`、`SubtitleRect`、`CropImageRequest`、`CropImageResult`、`CropImageRectRequest`、`RemoveSubtitlesRequest`、`RemoveSubtitlesResult`、`TrimVideoRequest` …（共 37 个） |
 | `src/shared/model-contracts.ts` | `ContractTransport`、`ModelContractFields`、`ModelContractTransports`、`ModelContractRoles`、`ModelContractLimits`、`ModelContractSource`、`ModelContract`、`ContractGap`、`AGNES_VIDEO_CONTRACT`、`KLING_VIDEO_CONTRACT`、`MINIMAX_VIDEO_CONTRACT`、`MINIMAX_LEGACY_CONTRACT`、`VOLCENGINE_VIDEO_CONTRACT`、`SORA_VIDEO_CONTRACT`、`OPENAI_COMPAT_CONTRACT`、`HTTP_TEMPLATE_CONTRACT`、`OFFICIAL_CONTRACTS`、`contractForAdapter`、`isOfficialModel`、`contractGapsForAdapter` |

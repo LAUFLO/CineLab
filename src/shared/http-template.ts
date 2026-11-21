@@ -15,6 +15,22 @@ export interface HttpTemplateSubmit {
   body?: unknown
   bodyByMode?: Partial<Record<HttpTemplateMode, unknown>>
   omitEmpty?: boolean
+  /** 条件字段：按模式、参数或参考素材设置/删除顶层字段 */
+  conditional?: HttpTemplateConditionalField[]
+}
+
+export interface HttpTemplateCondition {
+  mode?: HttpTemplateMode
+  /** 参数键值必须全部相等 */
+  params?: Record<string, unknown>
+  /** 每个值可以是 role（firstFrame 等）或 media（audio/image/video） */
+  refs?: string[]
+}
+
+export interface HttpTemplateConditionalField {
+  when: HttpTemplateCondition
+  set?: Record<string, unknown>
+  remove?: string[]
 }
 
 export interface HttpTemplatePoll {
@@ -25,7 +41,14 @@ export interface HttpTemplatePoll {
   statusPath?: string
   successValues?: string[]
   failValues?: string[]
+  /** 自定义状态映射；优先于 successValues / failValues */
+  statusMap?: Record<string, 'success' | 'fail' | 'pending'>
+  /** 失败时优先读取的错误码/错误消息路径 */
+  errorPath?: string
+  errorMessagePath?: string
   resultPath: string
+  /** 多结果路径；存在时返回多个输出 */
+  resultPaths?: string[]
   intervalMs?: number
   maxAttempts?: number
   download?: boolean

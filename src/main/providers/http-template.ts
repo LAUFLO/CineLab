@@ -1,5 +1,10 @@
 import { httpFetch } from './http'
-import type { HttpTemplateMode } from '@shared/http-template'
+import type {
+  HttpTemplateCondition,
+  HttpTemplateConditionalField,
+  HttpTemplateMode,
+  HttpTemplatePoll
+} from '@shared/http-template'
 import type { ModelDef } from '@shared/provider-schema'
 import type { VideoOperationOptions } from '@shared/generation'
 import type {
@@ -33,6 +38,7 @@ interface TemplateContext {
   model: ModelDef
   params: Record<string, unknown>
   refs: ImageRef[]
+  provider: ProviderRuntime
   video?: VideoRef
   videoOptions?: VideoOperationOptions
   mode: HttpTemplateMode
@@ -40,6 +46,8 @@ interface TemplateContext {
   taskId?: string
   /** PNG data URL，透明区域表示需要编辑 */
   mask?: string
+  /** $map 当前项 */
+  item?: ImageRef
 }
 
 function normalizeBaseUrl(baseUrl: string): string {
@@ -156,6 +164,13 @@ function tokenValue(token: string, context: TemplateContext): unknown {
   if (token === 'mode') return context.mode
   if (token === 'taskId') return context.taskId
   if (token === 'baseUrl') return context.baseUrl
+  if (token === 'provider.baseUrl') return context.provider.baseUrl
+  if (token === 'provider.apiKey') return context.provider.apiKey
+  if (token === 'provider.secretKey') return context.provider.secretKey
+  if (token.startsWith('item.')) {
+    const key = token.slice('item.'.length) as keyof ImageRef
+    return context.item ? context.item[key] : undefined
+  }
   if (token === 'video.dataUrl') return context.video?.dataUrl
   if (token === 'video.mime') return context.video?.mime
   if (token === 'video.base64') {
@@ -176,8 +191,134 @@ function tokenValue(token: string, context: TemplateContext): unknown {
   return undefined
 }
 
-function replaceValue(value: unknown, context: TemplateContext): unknown {
+interface MapValue {
+  $map: string
+  $as: unknown
+}
+
+function isMapValue(value: unknown): value is MapValue {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const record = value as Record<string, unknown>
+  return typeof record.$map === 'string' && record.$as !== undefined
+}
+
+function refObjectsFor(path: string, refs: ImageRef[]): ImageRef[] {
+  if (path === 'refs.frames') {
+    return refs.filter(
+      (ref) =>
+        ref.media !== 'audio' &&
+        (ref.role === 'firstFrame' || ref.role === 'lastFrame')
+    )
+  }
+  if (path === 'refs.audios') return refs.filter((ref) => ref.media === 'audio')
+  if (path === 'refs.subjects') {
+    return refs.filter((ref) => ref.role === 'subject')
+  }
+  if (path === 'refs.styles') {
+    return refs.filter((ref) => ref.role === 'style')
+  }
+  if (path === 'refs.images') {
+    const references = refs.filter(
+      (ref) =>
+        ref.media !== 'audio' &&
+        (ref.role === 'reference' ||
+          ref.role === 'subject' ||
+          ref.role === 'style' ||
+          ref.role === 'source')
+    )
+    return references.length > 0
+      ? references
+      : refs.filter((ref) => ref.media !== 'audio' && ref.role !== 'mask')
+  }
+  return refs
+}
+
+function resolveMapValue(
+  value: MapValue,
+  context: TemplateContext
+): unknown {
+  return refObjectsFor(value.$map, context.refs).map((item) =>
+    resolveTemplateValue(value.$as, { ...context, item })
+  )
+}
+
+function resolveTemplateValue(
+  value: unknown,
+  context: TemplateContext
+): unknown {
+  if (isMapValue(value)) return resolveMapValue(value, context)
+  if (Array.isArray(value)) {
+    return value.map((item) => resolveTemplateValue(item, context))
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [
+        key,
+        resolveTemplateValue(item, context)
+      ])
+    )
+  }
   return replaceTemplateVariables(value, (token) => tokenValue(token, context))
+}
+
+function matchesCondition(
+  condition: HttpTemplateCondition,
+  context: TemplateContext
+): boolean {
+  if (condition.mode && condition.mode !== context.mode) return false
+
+  for (const [key, value] of Object.entries(condition.params ?? {})) {
+    if (context.params[key] !== value) return false
+  }
+
+  for (const ref of condition.refs ?? []) {
+    if (ref === 'video') {
+      if (!context.video) return false
+      continue
+    }
+    if (
+      !context.refs.some(
+        (item) => item.role === ref || item.media === ref
+      )
+    ) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function applyConditionalFields(
+  body: unknown,
+  rules: HttpTemplateConditionalField[] | undefined,
+  context: TemplateContext
+): unknown {
+  if (!rules || rules.length === 0) return body
+
+  let next = body
+  for (const rule of rules) {
+    if (!matchesCondition(rule.when, context)) continue
+
+    if (next === undefined) next = {}
+    if (!next || typeof next !== 'object' || Array.isArray(next)) {
+      if (rule.set || (rule.remove && rule.remove.length > 0)) {
+        throw new Error('conditional 需要对象类型的请求体')
+      }
+      continue
+    }
+
+    const target = next as Record<string, unknown>
+    for (const key of rule.remove ?? []) delete target[key]
+
+    if (rule.set) {
+      const resolved = resolveTemplateValue(rule.set, context)
+      if (resolved && typeof resolved === 'object' && !Array.isArray(resolved)) {
+        Object.assign(target, resolved)
+      }
+    }
+  }
+
+  return next
 }
 
 function omitEmpty(value: unknown): unknown {
@@ -263,6 +404,66 @@ async function downloadOutput(
 
   const mime = response.headers.get('content-type')?.split(';')[0] ?? 'video/mp4'
   return [{ data: Buffer.from(await response.arrayBuffer()), mime }]
+}
+
+function textOutputs(value: unknown): ProviderOutput[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => textOutputs(item))
+  }
+  if (typeof value === 'string') {
+    return [{ data: Buffer.alloc(0), mime: 'video/mp4', text: value }]
+  }
+  return []
+}
+
+async function downloadOutputs(
+  value: unknown,
+  ctx: AdapterContext
+): Promise<ProviderOutput[]> {
+  if (Array.isArray(value)) {
+    const outputs: ProviderOutput[] = []
+    for (const item of value) {
+      outputs.push(...(await downloadOutputs(item, ctx)))
+    }
+    return outputs
+  }
+
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    const candidate =
+      record.url ?? record.video_url ?? record.b64_json ?? record.base64
+    if (typeof candidate === 'string') {
+      return downloadOutputs(candidate, ctx)
+    }
+  }
+
+  return downloadOutput(value, ctx)
+}
+
+function resultValues(
+  polled: unknown,
+  poll: HttpTemplatePoll
+): unknown[] {
+  if (poll.resultPaths && poll.resultPaths.length > 0) {
+    return poll.resultPaths.map((path) => getPath(polled, path))
+  }
+  return [getPath(polled, poll.resultPath)]
+}
+
+function pollError(
+  polled: unknown,
+  poll: HttpTemplatePoll,
+  status: string
+): string {
+  const message = poll.errorMessagePath
+    ? getPath(polled, poll.errorMessagePath)
+    : undefined
+  const code = poll.errorPath ? getPath(polled, poll.errorPath) : undefined
+  const fallback = getPath(polled, 'error.message')
+  const value = message ?? code ?? fallback
+  return value === undefined || value === null || value === ''
+    ? `任务失败：${status}`
+    : String(value)
 }
 
 function parseDataUrl(
@@ -353,6 +554,7 @@ export async function generateVideoHttpTemplate(
     model,
     params,
     refs,
+    provider,
     ...(video ? { video } : {}),
     ...(videoOptions ? { videoOptions } : {}),
     ...(mask ? { mask } : {}),
@@ -374,7 +576,8 @@ export async function generateVideoHttpTemplate(
     template.submit.bodyByMode?.[mode] ?? template.submit.body
   let body = bodyTemplate === undefined
     ? undefined
-    : replaceValue(bodyTemplate, context)
+    : resolveTemplateValue(bodyTemplate, context)
+  body = applyConditionalFields(body, template.submit.conditional, context)
   if (template.submit.omitEmpty) body = omitEmpty(body)
 
   const multipart = template.submit.contentType === 'multipart'
@@ -428,14 +631,14 @@ export async function generateVideoHttpTemplate(
   const submitted = (await submit.json()) as unknown
 
   if (template.sync) {
-    const result = getPath(submitted, template.poll.resultPath)
-    if (result === undefined) {
+    const values = resultValues(submitted, template.poll).filter(
+      (value) => value !== undefined
+    )
+    if (values.length === 0) {
       throw new Error('接口没有返回结果地址')
     }
-    if (template.poll.download === false && typeof result === 'string') {
-      return [{ data: Buffer.alloc(0), mime: 'video/mp4', text: result }]
-    }
-    return downloadOutput(result, ctx)
+    if (template.poll.download === false) return textOutputs(values)
+    return downloadOutputs(values, ctx)
   }
 
   const taskId = getPath(submitted, template.poll.taskIdPath)
@@ -463,7 +666,7 @@ export async function generateVideoHttpTemplate(
     let polled: unknown
 
     try {
-      const pollPath = String(replaceValue(template.poll.path, context))
+      const pollPath = String(resolveTemplateValue(template.poll.path, context))
       const pollHeaders = mergeHeaders(
         {
           ...headers,
@@ -495,21 +698,27 @@ export async function generateVideoHttpTemplate(
     const status = template.poll.statusPath
       ? String(getPath(polled, template.poll.statusPath) ?? '')
       : ''
+    const mapped = status ? template.poll.statusMap?.[status] : undefined
 
-    if (status && failValues.includes(status)) {
-      throw new Error(String(getPath(polled, 'error.message') ?? `任务失败：${status}`))
+    if (
+      mapped === 'fail' ||
+      (!template.poll.statusMap && status && failValues.includes(status))
+    ) {
+      throw new Error(pollError(polled, template.poll, status))
     }
 
-    const result = getPath(polled, template.poll.resultPath)
-    const done = template.poll.statusPath
-      ? successValues.includes(status)
-      : result !== undefined
+    const values = resultValues(polled, template.poll).filter(
+      (value) => value !== undefined
+    )
+    const done = template.poll.statusMap
+      ? mapped === 'success'
+      : template.poll.statusPath
+        ? successValues.includes(status)
+        : values.length > 0
 
-    if (done && result !== undefined) {
-      if (template.poll.download === false && typeof result === 'string') {
-        return [{ data: Buffer.alloc(0), mime: 'video/mp4', text: result }]
-      }
-      return downloadOutput(result, ctx)
+    if (done && values.length > 0) {
+      if (template.poll.download === false) return textOutputs(values)
+      return downloadOutputs(values, ctx)
     }
 
     const percent = Math.min(10 + Math.round((attempt / 60) * 70), 80)

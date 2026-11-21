@@ -8,7 +8,7 @@
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
 | 01 | [画布](./01-canvas.md) | 70 | 23063 |
-| 02 | [生成与模型](./02-generation.md) | 59 | 12844 |
+| 02 | [生成与模型](./02-generation.md) | 59 | 13076 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9426 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20196 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5792 |
@@ -184,6 +184,7 @@
 - `src/main/providers/__tests__/agnes.test.ts`
 - `src/main/providers/__tests__/golden-bodies.test.ts`
 - `src/main/providers/__tests__/headers.test.ts`
+- `src/main/providers/__tests__/http-template-dsl.test.ts`
 - `src/main/providers/__tests__/http-template.test.ts`
 - `src/main/providers/__tests__/media.test.ts`
 - `src/main/providers/__tests__/minimax.test.ts`

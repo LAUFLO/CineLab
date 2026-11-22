@@ -23,7 +23,7 @@
 | `CanvasNodeKind`（画布节点） | 以上 + `studio`、`film`、`video-op`、`stage` |
 | 节点组件 | `CineNodeView`、`StudioNodeView`、`StageNodeView`、`FilmNodeView`、`VideoOpNodeView`、`GroupNodeView` |
 
-`NODE_META` 定义每类节点的默认尺寸与快捷模板：文本 348×348、图片 400×400、视频 400×225、音频 200×127、剪辑室 480×340、成片 480×320、视频操作 420×200、导演台 420×280、拉片 400×250。图片/视频实际卡片尺寸由 `mediaFrame` 和素材画幅决定。
+`NODE_META` 定义每类节点的默认尺寸与快捷模板：文本 348×348、图片 400×225、视频 400×225、音频 200×127、剪辑室 480×340、成片 480×320、视频操作 420×200、导演台 420×280、拉片 400×250。图片/视频实际卡片尺寸由 `mediaFrame` 和素材画幅决定。
 
 ## 数据模型
 
@@ -31,7 +31,7 @@
 
 关键字段：`kind`、`title`、`status`（idle/queued/running/done/error）、`text`、`prompt`、`outputs: OutputRef[]`、`selectedOutputId`、`progress`、`error`、`templates`、`assetOnly`、`mediaFrame`。`assetOnly` 表示素材/派生结果节点，隐藏 PromptBar，只保留 NodeToolbar；`mediaFrame` 为 `standard`（400 内容框）或 `compact`（240 内容框）。
 
-图片/视频节点统一用 `mediaFrameNodeSize`：单节点 400×400 内容框，分组/批量 240×240 内容框，标题栏额外 28px；21:9 对应 400×171 / 240×103。旧项目在 `loadCanvas` 中按分组、拉片/剪辑室来源和旧宽度推断档位并归一化。
+图片/视频节点统一用 `mediaFrameNodeSize`：单节点 400×225 内容框，分组/批量 240×135 内容框，标题栏额外 28px；21:9 对应 400×171 / 240×103。旧项目在 `loadCanvas` 中按分组、拉片/剪辑室来源和旧宽度推断档位并归一化。
 
 `OutputRef` 是一次生成结果：`id`、`path`、`scope`、`kind`、`model`、`width/height/duration/fps`、`parentOutputId`、`layer`、`textRecognition`。
 
@@ -145,7 +145,7 @@ CineBot
 | `src/renderer/src/canvas/AddNodeMenu.tsx` | 260 |
 | `src/renderer/src/canvas/AlignmentGuides.tsx` | 29 |
 | `src/renderer/src/canvas/BottomBar.tsx` | 139 |
-| `src/renderer/src/canvas/Canvas.tsx` | 723 |
+| `src/renderer/src/canvas/Canvas.tsx` | 722 |
 | `src/renderer/src/canvas/CanvasContextMenu.tsx` | 136 |
 | `src/renderer/src/canvas/EdgeContextMenu.tsx` | 40 |
 | `src/renderer/src/canvas/GroupToolbar.tsx` | 245 |
@@ -160,11 +160,11 @@ CineBot
 | `src/renderer/src/canvas/context-actions.ts` | 236 |
 | `src/renderer/src/canvas/delete-actions.ts` | 91 |
 | `src/renderer/src/canvas/edges/FlowEdge.tsx` | 72 |
-| `src/renderer/src/canvas/media-size.ts` | 55 |
+| `src/renderer/src/canvas/media-size.ts` | 54 |
 | `src/renderer/src/canvas/nodes/AiOperationDialog.tsx` | 289 |
 | `src/renderer/src/canvas/nodes/AudioActionBar.tsx` | 225 |
 | `src/renderer/src/canvas/nodes/AudioPlayer.tsx` | 379 |
-| `src/renderer/src/canvas/nodes/CineNodeView.tsx` | 792 |
+| `src/renderer/src/canvas/nodes/CineNodeView.tsx` | 791 |
 | `src/renderer/src/canvas/nodes/CropDialog.tsx` | 162 |
 | `src/renderer/src/canvas/nodes/DepthCaptureDialog.tsx` | 136 |
 | `src/renderer/src/canvas/nodes/FilmNodeView.tsx` | 58 |
@@ -201,15 +201,15 @@ CineBot
 | `src/renderer/src/canvas/promptbar/UploadMenu.tsx` | 45 |
 | `src/renderer/src/stores/canvas-model.ts` | 345 |
 | `src/renderer/src/stores/canvas.ts` | 211 |
-| `src/renderer/src/stores/canvas/slices/assets.ts` | 589 |
-| `src/renderer/src/stores/canvas/slices/graph.ts` | 666 |
+| `src/renderer/src/stores/canvas/slices/assets.ts` | 587 |
+| `src/renderer/src/stores/canvas/slices/graph.ts` | 665 |
 | `src/renderer/src/stores/canvas/slices/groups.ts` | 776 |
 | `src/renderer/src/stores/canvas/slices/history.ts` | 488 |
 | `src/renderer/src/stores/canvas/slices/viewport.ts` | 21 |
 | `src/renderer/src/stores/edge-references.ts` | 94 |
 | `src/renderer/src/stores/toolbar.ts` | 70 |
 | `src/shared/canvas-commands.ts` | 303 |
-| `src/shared/canvas-schema.ts` | 376 |
+| `src/shared/canvas-schema.ts` | 371 |
 | `src/shared/canvas-summary.ts` | 54 |
 | `src/shared/components.ts` | 59 |
 | `src/shared/node-operation-specs.ts` | 464 |

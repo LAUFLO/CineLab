@@ -42,18 +42,18 @@ describe('fitNodeToMedia', () => {
     state.syncGroupBounds.mockReset()
   })
 
-  it('fits media into the standard 400 box while preserving aspect ratio', () => {
+  it('fits media into the standard 16:9 box while preserving aspect ratio', () => {
     expect(
       fitNodeToMedia('node-1', { width: 300, height: 600 })
-    ).toBe(428)
-    expect(state.resizeNode).toHaveBeenCalledWith('node-1', 428, 200)
+    ).toBe(253)
+    expect(state.resizeNode).toHaveBeenCalledWith('node-1', 253, 113)
   })
 
   it('fits extremely tall media without stretching', () => {
     expect(
       fitNodeToMedia('node-1', { width: 100, height: 1000 })
-    ).toBe(428)
-    expect(state.resizeNode).toHaveBeenCalledWith('node-1', 428, 40)
+    ).toBe(253)
+    expect(state.resizeNode).toHaveBeenCalledWith('node-1', 253, 23)
   })
 
   it('uses the compact 240 box for grouped media', () => {

@@ -75,8 +75,7 @@ detachStudioOutput: (studioNodeId) => {
     const size = mediaFrameNodeSize(
       output.width,
       output.height,
-      mediaFramePixels('standard'),
-      'video'
+      mediaFramePixels('standard')
     )
     const node: CineNode = {
       id,
@@ -137,8 +136,7 @@ addAssetNodes: (
         return mediaFrameNodeSize(
           asset.width,
           asset.height,
-          columnWidth,
-          kind
+          columnWidth
         )
       }
       const ratio =
@@ -441,7 +439,7 @@ addShotNodes: (study, origin, sourceNodeId) => {
       ? mediaFramePixels(mediaFrame)
       : Math.max(1, Math.round(layout?.cellWidth ?? meta.width))
     const placeholder = isMedia
-      ? mediaFrameNodeSize(undefined, undefined, columnWidth, kind)
+      ? mediaFrameNodeSize(undefined, undefined, columnWidth)
       : {
           width: columnWidth,
           height:

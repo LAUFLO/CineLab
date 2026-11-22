@@ -145,6 +145,34 @@ describe('canvas store', () => {
           templates: []
         },
         style: { width: 360, height: 150 }
+      },
+      {
+        id: 'image-square',
+        type: 'cine',
+        position: { x: 0, y: 900 },
+        data: {
+          kind: 'image',
+          title: '1:1',
+          status: 'done',
+          outputs: [output(1024, 1024)],
+          selectedOutputId: 'out-1024-1024',
+          templates: []
+        },
+        style: { width: 360, height: 388 }
+      },
+      {
+        id: 'image-recovered',
+        type: 'cine',
+        position: { x: 0, y: 1100 },
+        data: {
+          kind: 'image',
+          title: '旧 compact 尺寸',
+          status: 'done',
+          outputs: [output(1024, 1024)],
+          selectedOutputId: 'out-1024-1024',
+          templates: []
+        },
+        style: { width: 135, height: 163 }
       }
     ] as unknown as CanvasNode[]
 
@@ -169,6 +197,14 @@ describe('canvas store', () => {
     expect(byId.get('image-ultrawide')?.style).toMatchObject({
       width: 400,
       height: 199
+    })
+    expect(byId.get('image-square')?.style).toMatchObject({
+      width: 225,
+      height: 253
+    })
+    expect(byId.get('image-recovered')?.style).toMatchObject({
+      width: 225,
+      height: 253
     })
   })
 

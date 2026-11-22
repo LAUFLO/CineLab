@@ -275,7 +275,7 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
   image: {
     label: '图片',
     width: 400,
-    height: 400,
+    height: 225,
     templates: ['图生图', '图片高清', '局部重绘']
   },
   video: {
@@ -336,40 +336,35 @@ export function mediaFramePixels(frame: MediaFramePreset | undefined): number {
 }
 
 /**
- * 把媒体放进正方形内容框，保持原始画幅。
- * 横向画幅宽度等于 frame，纵向画幅高度等于 frame。
+ * 把媒体放进 16:9 内容框，保持原始画幅。
+ * 以高度为基准，宽度随画幅变化；超宽画幅受框宽限制。
  */
 export function mediaFrameContentSize(
   sourceWidth: number | undefined,
   sourceHeight: number | undefined,
-  frame: number,
-  fallback: 'image' | 'video' = 'image'
+  frame: number
 ): { width: number; height: number } {
   let width = sourceWidth ?? 0
   let height = sourceHeight ?? 0
   if (!(width > 0) || !(height > 0)) {
-    width = fallback === 'video' ? 16 : 1
-    height = fallback === 'video' ? 9 : 1
+    width = 16
+    height = 9
   }
 
-  const ratio = width / height
-  return ratio >= 1
-    ? { width: frame, height: Math.max(1, Math.round(frame / ratio)) }
-    : { width: Math.max(1, Math.round(frame * ratio)), height: frame }
+  const frameHeight = Math.max(1, Math.round((frame * 9) / 16))
+  const scale = Math.min(frame / width, frameHeight / height)
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale))
+  }
 }
 
 /** 媒体节点卡片尺寸（内容框 + 标题栏）。 */
 export function mediaFrameNodeSize(
   sourceWidth: number | undefined,
   sourceHeight: number | undefined,
-  frame: number,
-  fallback: 'image' | 'video' = 'image'
+  frame: number
 ): { width: number; height: number } {
-  const content = mediaFrameContentSize(
-    sourceWidth,
-    sourceHeight,
-    frame,
-    fallback
-  )
+  const content = mediaFrameContentSize(sourceWidth, sourceHeight, frame)
   return { width: content.width, height: content.height + TITLE_HEIGHT }
 }

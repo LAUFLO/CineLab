@@ -383,8 +383,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
             const size = mediaFrameNodeSize(
               asset.width,
               asset.height,
-              mediaFramePixels('standard'),
-              'image'
+              mediaFramePixels('standard')
             )
             store.resizeNode(id, size.height, size.width)
           }

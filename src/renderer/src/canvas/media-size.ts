@@ -38,8 +38,7 @@ export function fitNodeToMedia(
   const next = mediaFrameNodeSize(
     size.width,
     size.height,
-    mediaFramePixels(frame),
-    node.data.kind as 'image' | 'video'
+    mediaFramePixels(frame)
   )
 
   if (

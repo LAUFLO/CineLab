@@ -191,8 +191,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
       const size = mediaFrameNodeSize(
         output.width,
         output.height,
-        mediaFramePixels(frame),
-        data.kind
+        mediaFramePixels(frame)
       )
       resizeNode(id, size.height, size.width)
       if (currentNode?.parentId) {

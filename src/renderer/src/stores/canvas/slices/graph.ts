@@ -191,12 +191,13 @@ loadCanvas: (nodes, edges, viewport) => {
 
       if (node.data.kind !== 'image' && node.data.kind !== 'video') return node
 
-      const width = Number(node.style?.width ?? 0)
+      const width = Math.round(Number(node.style?.width ?? 0))
       const output =
         node.data.outputs?.find(
           (item) => item.id === node.data.selectedOutputId && item.width
         ) ??
         node.data.outputs?.find((item) => item.width && item.height)
+      const legacyCompactWidths = new Set([200, 220, 240, 260, 320])
       const compact =
         node.data.mediaFrame === 'compact' ||
         (!node.data.mediaFrame &&
@@ -204,13 +205,12 @@ loadCanvas: (nodes, edges, viewport) => {
             Boolean(node.data.studyRef) ||
             output?.model?.startsWith('逐帧拉片') === true ||
             output?.model?.startsWith('剪辑室素材') === true ||
-            (width > 0 && width <= 260)))
+            legacyCompactWidths.has(width)))
       const frame: MediaFramePreset = compact ? 'compact' : 'standard'
       const size = mediaFrameNodeSize(
         output?.width,
         output?.height,
-        mediaFramePixels(frame),
-        node.data.kind
+        mediaFramePixels(frame)
       )
 
       if (node.parentId) groupIds.add(node.parentId)
@@ -553,8 +553,7 @@ applyOutput: (nodeId, asset, op) => {
       ? mediaFrameNodeSize(
           asset.width,
           asset.height,
-          mediaFramePixels(frame),
-          kind
+          mediaFramePixels(frame)
         )
       : null
     const baseWidth = node.measured?.width ?? NODE_META[kind].width

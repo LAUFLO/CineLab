@@ -28,8 +28,12 @@ describe('node metadata', () => {
       height: 199
     })
     expect(mediaFrameNodeSize(1080, 1920, MEDIA_FRAME_STANDARD)).toEqual({
+      width: 127,
+      height: 253
+    })
+    expect(mediaFrameNodeSize(1024, 1024, MEDIA_FRAME_STANDARD)).toEqual({
       width: 225,
-      height: 428
+      height: 253
     })
     expect(mediaFrameNodeSize(21, 9, MEDIA_FRAME_COMPACT)).toEqual({
       width: 240,

@@ -112,8 +112,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             const size = mediaFrameNodeSize(
               sized.width,
               sized.height,
-              mediaFramePixels(frame),
-              node.data.kind
+              mediaFramePixels(frame)
             )
             useCanvasStore
               .getState()

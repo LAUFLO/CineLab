@@ -39,6 +39,8 @@
   --color-group-rose: var(--group-rose);
   --color-group-violet: var(--group-violet);
   --color-group-slate: var(--group-slate);
+  --color-group-pink: var(--group-pink);
+  --color-group-brown: var(--group-brown);
 
   --font-sans:
     'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system,

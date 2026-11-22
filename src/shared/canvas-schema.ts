@@ -185,11 +185,15 @@ export type GroupColor =
   | 'rose'
   | 'violet'
   | 'slate'
+  | 'pink'
+  | 'brown'
 
 export const GROUP_COLORS: GroupColor[] = [
   'blue',
   'cyan',
-  'green',
+  'teal',
+  'pink',
+  'brown',
   'amber',
   'orange',
   'rose',
@@ -207,7 +211,9 @@ export const GROUP_LABELS: Record<GroupColor, string> = {
   orange: '橙',
   rose: '红',
   violet: '紫',
-  slate: '灰'
+  slate: '灰',
+  pink: '粉',
+  brown: '棕'
 }
 
 export type GroupMode = 'normal' | 'storyboard'

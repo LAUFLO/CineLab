@@ -65,7 +65,7 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 - 左侧 `+` 只作为 target 接收连线，右侧 `+` 才发起下游生成（AGENTS.md 硬性约定）。
 - 删除连线后，`clearEdgeReferences` 清理下游节点的 `sourceNodeId/sourcePath/sourceScope/sourceName`，且只在该上游没有任何剩余连线时清理。
 - 分组使用 `childrenOf`、`absolutePosition`、`remapNodeReferences`、`remapEdges` 处理子节点坐标与引用。
-- 分组颜色菜单为 4×2 圆形色点，当前色带选中环，不使用横向滚动条；可见色板为蓝、青、绿、黄、橙、红、紫、灰，旧的蓝绿/黄绿仍兼容显示。
+- 分组颜色菜单为 5×2 圆形色点，当前色带选中环，不使用横向滚动条；色板为蓝、青、蓝绿、粉、棕、黄、橙、红、紫、灰。旧项目的绿/黄绿仍按原色显示。
 - PromptBar 的 AutoLink 与 `@` 文本匹配按标题最长优先且不重叠，避免派生文本节点标题包含上游素材标题时误加参考图。
 
 ## 节点操作
@@ -142,7 +142,7 @@ CineBot
 | `src/renderer/src/canvas/Canvas.tsx` | 714 |
 | `src/renderer/src/canvas/CanvasContextMenu.tsx` | 135 |
 | `src/renderer/src/canvas/EdgeContextMenu.tsx` | 40 |
-| `src/renderer/src/canvas/GroupToolbar.tsx` | 240 |
+| `src/renderer/src/canvas/GroupToolbar.tsx` | 245 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
 | `src/renderer/src/canvas/NodeContextMenu.tsx` | 497 |
 | `src/renderer/src/canvas/PromptBar.tsx` | 2224 |
@@ -203,7 +203,7 @@ CineBot
 | `src/renderer/src/stores/edge-references.ts` | 94 |
 | `src/renderer/src/stores/toolbar.ts` | 70 |
 | `src/shared/canvas-commands.ts` | 303 |
-| `src/shared/canvas-schema.ts` | 320 |
+| `src/shared/canvas-schema.ts` | 326 |
 | `src/shared/canvas-summary.ts` | 54 |
 | `src/shared/components.ts` | 59 |
 | `src/shared/node-operation-specs.ts` | 441 |

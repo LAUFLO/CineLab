@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   GROUP_COLORS,
   GROUP_LABELS,
@@ -21,7 +21,9 @@ const GROUP_BG: Record<GroupColor, string> = {
   orange: 'bg-group-orange',
   rose: 'bg-group-rose',
   violet: 'bg-group-violet',
-  slate: 'bg-group-slate'
+  slate: 'bg-group-slate',
+  pink: 'bg-group-pink',
+  brown: 'bg-group-brown'
 }
 
 export function GroupToolbar() {
@@ -54,6 +56,11 @@ export function GroupToolbar() {
   const [menu, setMenu] = useState<MenuKind | null>(null)
   const groupId = group?.id
 
+  // 切换分组时关闭菜单，避免菜单内容作用到新分组；浮窗位置由 Popover 跟随锚点。
+  useEffect(() => {
+    setMenu(null)
+  }, [groupId])
+
   useLayoutEffect(() => {
     if (!groupId) {
       setPosition(null)
@@ -80,10 +87,6 @@ export function GroupToolbar() {
   }, [groupId, nodes, viewport])
 
   if (!group || !position) return null
-
-  const colorOptions = GROUP_COLORS.includes(group.data.color)
-    ? GROUP_COLORS
-    : [group.data.color, ...GROUP_COLORS]
 
   const remove = (): void => {
     requestConfirm({
@@ -136,6 +139,7 @@ export function GroupToolbar() {
             anchorRef={arrangeRef}
             align="center"
             width={120}
+            follow
             className="!p-1.5"
           >
             {(
@@ -185,10 +189,11 @@ export function GroupToolbar() {
             onClose={() => setMenu(null)}
             anchorRef={colorRef}
             align="center"
-            width={168}
-            className="!overflow-visible !p-2 grid grid-cols-4 gap-2"
+            width={160}
+            follow
+            className="!overflow-visible !p-2 grid grid-cols-5 justify-items-center gap-1.5"
           >
-            {colorOptions.map((color) => (
+            {GROUP_COLORS.map((color) => (
               <Button
                 key={color}
                 type="button"
@@ -196,9 +201,9 @@ export function GroupToolbar() {
                 size="none"
                 title={GROUP_LABELS[color]}
                 aria-label={GROUP_LABELS[color]}
-                className={`h-7 w-7 !rounded-full border-2 p-0 hover:!bg-transparent ${
+                className={`h-[22px] w-[22px] !rounded-full border-2 p-0 hover:!bg-transparent ${
                   group.data.color === color
-                    ? '!border-fg shadow-[0_0_0_2px_var(--surface-raised),0_0_0_3px_var(--text-1)]'
+                    ? '!border-fg shadow-[0_0_0_1px_var(--surface-raised),0_0_0_2px_var(--text-1)]'
                     : 'border-transparent hover:!border-border-strong'
                 } ${GROUP_BG[color]}`}
                 onClick={() => {

@@ -70,6 +70,7 @@ export function NodeContextMenu() {
       x={menu.screen.x}
       y={menu.screen.y}
       width={224}
+      placement="auto"
       className="!p-1.5 max-h-[520px] overflow-y-auto [animation:menu-in_120ms_ease-out]"
       onContextMenu={(event) => event.preventDefault()}
     >

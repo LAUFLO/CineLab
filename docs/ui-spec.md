@@ -869,6 +869,7 @@ CineBot 是全局浮层，不占用画布布局。
 - `Button`、`Input`、`Textarea`、`NativeSelect` 提供 `unstyled` 变体：只保留原生元素语义与事件，className 完全由调用方控制，用于迁移期保持既有视觉。
 - `Dialog` 提供 `bare` 模式：调用方保留自己的 overlay/panel 类和内部结构，`Dialog` 只负责 portal、焦点圈定、Escape 与遮罩点击。
 - `Popover` 提供 `follow` 模式：锚点随画布平移、缩放或分组拖动时持续更新浮层位置，避免浮层停在旧位置。
+- 画布与节点右键菜单使用 `Menu` 的 `auto` 定位：下方空间不足时向上翻转，超过可用高度时限制高度并滚动。
 - P2 已完成全量迁移：`src/renderer/src` 下除 `components/ui` 外，不再有原生 `<button>`、`<input>`、`<textarea>`、`<select>` 标签。
 - 节点类弹窗（裁剪、截取、字幕框选、遮罩、深度捕捉、模型参数/能力、AI 操作、光位/机位、文本编辑）统一由 `Dialog` 的 `bare` 模式承载。
 - 浮层菜单、节点工具栏、参数面板、时间线等仍保留各自的定位逻辑，但内部交互元素已切换到公共组件。

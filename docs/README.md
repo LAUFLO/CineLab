@@ -29,6 +29,7 @@
 |---|---|
 | [agent-architecture-plan.md](agent-architecture-plan.md) | AgentRuntime 设计参考 |
 | [agent-runtime-v3-plan.md](agent-runtime-v3-plan.md) | CineBot 运行时 v3：pi-coding-agent 整包重构方案，已评审 |
+| [skills-import-plan.md](skills-import-plan.md) | 技能页全部显示、卡片启用开关、文件夹/ZIP 导入与 SKILL.md 校验，已实施 |
 | [agent-runtime-v3-spike.md](agent-runtime-v3-spike.md) | M0 spike 报告：动态 import、最小闭环、包体与安装包结论 |
 | [agent-full-scope.md](agent-full-scope.md) | Agent 完整范围总表 |
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 |

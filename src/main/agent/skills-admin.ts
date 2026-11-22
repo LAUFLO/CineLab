@@ -52,7 +52,7 @@ const BINARY_EXTENSIONS = new Set([
   'ttf'
 ])
 
-function isBinaryPath(path: string): boolean {
+export function isBinaryPath(path: string): boolean {
   const ext = path.split('.').pop()?.toLowerCase() ?? ''
   return BINARY_EXTENSIONS.has(ext)
 }

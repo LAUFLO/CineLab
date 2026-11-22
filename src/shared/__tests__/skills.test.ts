@@ -1,23 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
-  isDefaultHiddenBuiltinSkill,
+  inspectSkillMarkdown,
   normalizeSkillPath,
   parseSkillMarkdown
 } from '../skills'
-
-describe('default hidden builtin skills', () => {
-  it('hides canvas-basics only when it is builtin', () => {
-    expect(
-      isDefaultHiddenBuiltinSkill({ scope: 'builtin', name: 'canvas-basics' })
-    ).toBe(true)
-    expect(
-      isDefaultHiddenBuiltinSkill({ scope: 'global', name: 'canvas-basics' })
-    ).toBe(false)
-    expect(
-      isDefaultHiddenBuiltinSkill({ scope: 'builtin', name: 'other-skill' })
-    ).toBe(false)
-  })
-})
 
 describe('skill frontmatter', () => {
   it('parses a valid SKILL.md', () => {
@@ -60,6 +46,62 @@ description: '带引号的描述'
 ---`)
     expect(result?.frontmatter.name).toBe('quoted-skill')
     expect(result?.frontmatter.description).toBe('带引号的描述')
+  })
+})
+
+describe('skill import validation', () => {
+  it('accepts a complete standard skill document', () => {
+    const result = inspectSkillMarkdown(`---
+name: imported-skill
+description: 可导入的技能
+version: 1.2.0
+---
+
+# 正文
+
+步骤`)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.frontmatter.name).toBe('imported-skill')
+      expect(result.frontmatter.version).toBe('1.2.0')
+      expect(result.body).toContain('步骤')
+    }
+  })
+
+  it('reports specific frontmatter errors', () => {
+    expect(inspectSkillMarkdown('# no frontmatter')).toMatchObject({
+      ok: false
+    })
+    expect(
+      inspectSkillMarkdown(`---
+name: My Skill
+description: test
+---
+
+正文`)
+    ).toMatchObject({ ok: false })
+    expect(
+      inspectSkillMarkdown(`---
+name: valid
+---
+
+正文`)
+    ).toMatchObject({ ok: false })
+    expect(
+      inspectSkillMarkdown(`---
+name: valid
+description: test
+---`)
+    ).toMatchObject({ ok: false })
+    expect(
+      inspectSkillMarkdown(`---
+name: valid
+description: |
+  多行描述
+---
+
+正文`)
+    ).toMatchObject({ ok: false })
   })
 })
 

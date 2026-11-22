@@ -12,9 +12,9 @@
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20212 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5802 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 57 | 19056 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11677 |
-| 10 | [UI 组件与面板](./10-ui.md) | 46 | 10085 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 58 | 19636 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11766 |
+| 10 | [UI 组件与面板](./10-ui.md) | 47 | 10244 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -33,7 +33,7 @@
 | `TimelineApi` | `load`、`save`、`duplicate`、`exportVtt`、`export`、`cancelExport`、`onExportProgress`、`onTimelineChanged`、`transcribe`、`cancelTranscribe`、`onTranscribeProgress`、`analyze`、`importSubtitles` |
 | `FilmStudyApi` | `extract`、`auto`、`cancel`、`load`、`save`、`exportMarkdown`、`exportAnalysisPackage`、`exportBundle`、`importAnalysis`、`extractSubtitles`、`importSubtitles`、`analyze`、`rerunShot`、`splitScenes`、`contactSheet`、`onProgress` |
 | `AgentApi` | `chat`、`cancel`、`toolResult`、`confirm`、`sessionLoad`、`sessionList`、`sessionCreate`、`sessionRename`、`sessionDelete`、`sessionCompact`、`modelInfo`、`textModels`、`models`、`proposalCreate`、`proposalActive`、`proposalSubmit`、`proposalCancel`、`onEvent`、`onToolCall` |
-| `SkillsApi` | `list`、`files`、`readFile`、`create`、`save`、`remove`、`uploadFiles`、`removeFile`、`clone`、`setOverride`、`openDirectory`、`openFile` |
+| `SkillsApi` | `list`、`files`、`readFile`、`create`、`save`、`remove`、`uploadFiles`、`removeFile`、`clone`、`setOverride`、`pickImport`、`installImport`、`discardImport`、`openDirectory`、`openFile` |
 | `StageApi` | `create`、`load`、`save`、`delete`、`duplicate`、`capture`、`exportPreview`、`cancelExport`、`onExportProgress` |
 | `SceneApi` | `analyze`、`loadObjectPresets`、`saveObjectPresets`、`importObjectPresets`、`exportObjectPresets`、`uploadImage` |
 | `LocalAdapterApi` | `list`、`reload`、`openDir`、`onChanged` |
@@ -154,6 +154,7 @@
 - `src/main/agent/__tests__/proposals.test.ts`
 - `src/main/agent/__tests__/session.test.ts`
 - `src/main/agent/__tests__/skills-admin.test.ts`
+- `src/main/agent/__tests__/skills-import.test.ts`
 - `src/main/agent/__tests__/tools.test.ts`
 - `src/main/agent/pi/__tests__/events.test.ts`
 - `src/main/agent/pi/__tests__/model-runtime.test.ts`

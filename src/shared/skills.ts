@@ -59,6 +59,32 @@ export interface SkillCloneInput {
   targetScope: 'global' | 'project'
 }
 
+export type SkillImportKind = 'folder' | 'zip'
+export type SkillImportScope = 'global' | 'project'
+
+export interface SkillImportPreview {
+  token: string
+  kind: SkillImportKind
+  sourceLabel: string
+  name: string
+  description: string
+  version?: string
+  disableModelInvocation?: boolean
+  files: SkillFileEntry[]
+  totalBytes: number
+  existingScopes: SkillScope[]
+}
+
+export interface SkillImportInstallInput {
+  token: string
+  scope: SkillImportScope
+  overwrite?: boolean
+}
+
+export type SkillMarkdownInspection =
+  | { ok: true; frontmatter: SkillFrontmatter; body: string }
+  | { ok: false; error: string }
+
 export interface SkillReadResult {
   name: string
   scope: SkillScope
@@ -68,18 +94,6 @@ export interface SkillReadResult {
   nextOffset?: number
 }
 
-/** 设置页默认隐藏的内置技能；仍会提供给 CineBot */
-export const DEFAULT_HIDDEN_BUILTIN_SKILLS = ['canvas-basics'] as const
-
-export function isDefaultHiddenBuiltinSkill(
-  entry: Pick<SkillAdminEntry, 'scope' | 'name'>
-): boolean {
-  return (
-    entry.scope === 'builtin' &&
-    (DEFAULT_HIDDEN_BUILTIN_SKILLS as readonly string[]).includes(entry.name)
-  )
-}
-
 export const SKILL_NAME_PATTERN = /^[a-z][a-zA-Z0-9-]{0,63}$/
 export const MAX_SKILL_DESCRIPTION_LENGTH = 500
 export const MAX_SKILL_BODY_BYTES = 256 * 1024
@@ -87,6 +101,9 @@ export const MAX_SKILL_REFERENCE_BYTES = 2 * 1024 * 1024
 export const MAX_SKILL_PATH_LENGTH = 200
 export const MAX_SKILL_UPLOAD_FILES = 20
 export const MAX_SKILL_UPLOAD_BYTES = 20 * 1024 * 1024
+export const MAX_SKILL_IMPORT_FILES = 200
+export const MAX_SKILL_IMPORT_FILE_BYTES = 20 * 1024 * 1024
+export const MAX_SKILL_IMPORT_TOTAL_BYTES = 50 * 1024 * 1024
 
 function stripQuotes(value: string): string {
   const trimmed = value.trim()
@@ -99,23 +116,23 @@ function stripQuotes(value: string): string {
   return trimmed
 }
 
-/**
- * 解析 SKILL.md 的 frontmatter。只支持简单 key: value，
- * 不引入 YAML 依赖；未知字段忽略。
- */
-export function parseSkillMarkdown(
+function splitSkillSource(
   source: string
-): { frontmatter: SkillFrontmatter; body: string } | null {
+): { rawFrontmatter: string; body: string } | null {
   const text = source.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n')
   if (!text.startsWith('---\n')) return null
 
   const end = text.indexOf('\n---', 3)
   if (end < 0) return null
 
-  const rawFrontmatter = text.slice(4, end)
-  const body = text.slice(end + 4).replace(/^\n/, '').trim()
-  const values: Record<string, string> = {}
+  return {
+    rawFrontmatter: text.slice(4, end),
+    body: text.slice(end + 4).replace(/^\n/, '').trim()
+  }
+}
 
+function readFrontmatterValues(rawFrontmatter: string): Record<string, string> {
+  const values: Record<string, string> = {}
   for (const line of rawFrontmatter.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith('#')) continue
@@ -125,20 +142,38 @@ export function parseSkillMarkdown(
     const value = stripQuotes(trimmed.slice(separator + 1))
     if (key && value) values[key] = value
   }
+  return values
+}
 
+function readDisableModelInvocation(
+  values: Record<string, string>
+): boolean | undefined {
+  const disableValue = values.disableModelInvocation?.toLowerCase()
+  return disableValue === 'true'
+    ? true
+    : disableValue === 'false'
+      ? false
+      : undefined
+}
+
+/**
+ * 解析 SKILL.md 的 frontmatter。只支持简单 key: value，
+ * 不引入 YAML 依赖；未知字段忽略。
+ */
+export function parseSkillMarkdown(
+  source: string
+): { frontmatter: SkillFrontmatter; body: string } | null {
+  const split = splitSkillSource(source)
+  if (!split) return null
+
+  const values = readFrontmatterValues(split.rawFrontmatter)
   const name = values.name?.trim()
   const description = values.description?.trim()
   if (!name || !description) return null
   if (!SKILL_NAME_PATTERN.test(name)) return null
   if (description.length > MAX_SKILL_DESCRIPTION_LENGTH) return null
 
-  const disableValue = values.disableModelInvocation?.toLowerCase()
-  const disableModelInvocation =
-    disableValue === 'true'
-      ? true
-      : disableValue === 'false'
-        ? false
-        : undefined
+  const disableModelInvocation = readDisableModelInvocation(values)
 
   return {
     frontmatter: {
@@ -149,7 +184,65 @@ export function parseSkillMarkdown(
         ? { disableModelInvocation }
         : {})
     },
-    body
+    body: split.body
+  }
+}
+
+/**
+ * 导入时使用的 SKILL.md 校验：在 parseSkillMarkdown 基础上给出具体错误。
+ */
+export function inspectSkillMarkdown(source: string): SkillMarkdownInspection {
+  const split = splitSkillSource(source)
+  if (!split) {
+    return {
+      ok: false,
+      error: 'SKILL.md 必须以 --- 开头的 frontmatter，并以 --- 结束'
+    }
+  }
+
+  const values = readFrontmatterValues(split.rawFrontmatter)
+  const name = values.name?.trim()
+  if (!name) return { ok: false, error: 'SKILL.md frontmatter 缺少 name' }
+  if (!SKILL_NAME_PATTERN.test(name)) {
+    return {
+      ok: false,
+      error: 'name 必须以小写字母开头，只包含字母、数字和连字符'
+    }
+  }
+
+  const description = values.description?.trim()
+  if (!description) {
+    return { ok: false, error: 'SKILL.md frontmatter 缺少 description' }
+  }
+  if (/^[|>][-+]?$/.test(description)) {
+    return {
+      ok: false,
+      error: 'description 暂不支持多行 YAML，请写成单行'
+    }
+  }
+  if (description.length > MAX_SKILL_DESCRIPTION_LENGTH) {
+    return {
+      ok: false,
+      error: `description 最多 ${MAX_SKILL_DESCRIPTION_LENGTH} 字`
+    }
+  }
+
+  if (!split.body) {
+    return { ok: false, error: 'SKILL.md 正文不能为空' }
+  }
+
+  const disableModelInvocation = readDisableModelInvocation(values)
+  return {
+    ok: true,
+    frontmatter: {
+      name,
+      description,
+      ...(values.version ? { version: values.version } : {}),
+      ...(disableModelInvocation !== undefined
+        ? { disableModelInvocation }
+        : {})
+    },
+    body: split.body
   }
 }
 

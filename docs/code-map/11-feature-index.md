@@ -100,8 +100,9 @@
 | Agent 工具 | 画布/生成/导演台/时间线/拉片/能力/技能 | `src/main/agent/tools/` | 已实现 |
 | 生成提案 | `AgentProposal`、`.cinelab/agent/proposals` | `src/main/agent/proposals.ts` | 已实现 |
 | 会话/压缩 | `.cinelab/agent/sessions/*.jsonl` | `src/main/agent/session.ts`、`compact.ts` | 已实现 |
-| 技能 | 内置/全局/项目三级 | `src/main/agent/skills.ts` | 已实现 |
-| 技能卡片 | 默认隐藏 canvas-basics、卡片网格、Markdown 预览 | `SkillsSection.tsx` | 已实现 |
+| 技能 | 内置/全局/项目三级、启用状态过滤 | `src/main/agent/skills.ts`、`skills-config.ts` | 已实现 |
+| 技能卡片 | 全部显示、卡片启用开关、Markdown 预览 | `SkillsSection.tsx` | 已实现 |
+| 技能导入 | 文件夹/ZIP、SKILL.md 校验、同名覆盖、原子安装 | `src/main/agent/skills-import.ts`、`SkillImportDialog.tsx` | 已实现 |
 | 快捷键自定义 | 27 动作、录制、冲突检测、恢复默认 | `src/shared/shortcuts.ts`、`ShortcutsSettingsSection.tsx` | 已实现 |
 | 设置页分区 | 8 分区、旧 library/components/objectPresets 别名 | `SettingsPanel.tsx` | 已实现 |
 | 项目存储 | `.cinelab` 目录、原子写入 | `src/main/project/manager.ts` | 已实现 |

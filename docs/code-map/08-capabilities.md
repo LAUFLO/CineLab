@@ -40,6 +40,7 @@
 | 04 | 单镜预演导出与截图回画布 | `src/main/stage/export.ts`、`StageWindow.tsx` |
 | 05 | 切镜/转场、首中尾帧、逐镜理解、取证与复核、分场、角色/风格、镜头三节点、分镜表、复刻建图 | `src/main/film-study/`、`stores/film-study.ts` |
 | 06 | CineBot 工具、生成提案、会话、技能 | `src/main/agent/` |
+| 06 | 技能文件夹/ZIP 导入、SKILL.md 校验、卡片启用开关 | `src/main/agent/skills-import.ts`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
 | 06 | 本地可信适配器 MCP server（HTTP + stdio）、认证与工具 | `src/main/mcp/`、`docs/mcp.md` |
 | 06 | MCP 项目/画布/节点/模型只读工具 | `src/main/mcp/app-tools.ts`、`src/shared/canvas-summary.ts` |
 | 06 | MCP 画布写工具与生成提交（应用内确认） | `src/main/mcp/write-tools.ts`、`src/renderer/src/mcp/commandBridge.ts` |
@@ -50,7 +51,7 @@
 | 07 | 模型配置弹窗保存直接写入 models.json；Agent pending 自动应用 | `SettingsPanel.tsx`、`src/main/settings/models-watch.ts` |
 | 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
-| 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能卡片与 Markdown 预览 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx` |
+| 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能全部显示、导入与卡片启用开关 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
 
 ## 部分实现（别当已完成）
 

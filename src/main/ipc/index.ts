@@ -1,4 +1,12 @@
-import { app, BrowserWindow, ipcMain, nativeTheme, shell } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  nativeImage,
+  nativeTheme,
+  Notification,
+  shell
+} from 'electron'
 import type { ThemeMode } from '../../shared/ipc-contract'
 import { registerProjectIpc } from './project'
 import { registerSettingsIpc } from './settings'
@@ -18,7 +26,7 @@ import { registerUpdateIpc } from './update'
 import { registerLocalAdapterIpc } from './local-adapters'
 import { registerMcpCommandIpc } from '../mcp/write-tools'
 import { log, logDirectory } from '../logger'
-import { allowWindowClose } from '../window'
+import { allowWindowClose, brandIconPath } from '../window'
 
 function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
   return BrowserWindow.fromWebContents(sender)
@@ -77,6 +85,30 @@ export function registerIpc(): void {
       else log.info(text)
     }
   )
+
+  ipcMain.on('app:notify', (event, title: string, body: string) => {
+    if (typeof title !== 'string' || typeof body !== 'string') return
+
+    const senderWindow = windowFromEvent(event.sender)
+    const notification = new Notification({
+      title: title.slice(0, 120),
+      body: body.slice(0, 500),
+      icon: nativeImage.createFromPath(brandIconPath('notification'))
+    })
+
+    notification.on('click', () => {
+      const win =
+        senderWindow && !senderWindow.isDestroyed()
+          ? senderWindow
+          : BrowserWindow.getAllWindows()[0]
+      if (!win) return
+      if (win.isMinimized()) win.restore()
+      win.show()
+      win.focus()
+    })
+
+    notification.show()
+  })
 
   ipcMain.on('window:minimize', (event) => {
     windowFromEvent(event.sender)?.minimize()

@@ -61,6 +61,8 @@ const api: CineApi = {
     openLogs: () => ipcRenderer.invoke('app:open-logs'),
     log: (level: 'info' | 'warn' | 'error', message: string) =>
       ipcRenderer.invoke('app:log', level, message),
+    notify: (title: string, body: string) =>
+      ipcRenderer.send('app:notify', title, body),
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),
     close: () => ipcRenderer.send('window:close')

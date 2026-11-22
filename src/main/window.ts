@@ -27,6 +27,18 @@ function logWindowError(message: string): void {
 
 const closeAllowed = new WeakSet<BrowserWindow>()
 
+/**
+ * 打包后图标由 extraResources 放到 resources/ 下；开发环境直接读项目 resources/。
+ * Windows 窗口图标用 ico 以获得多尺寸清晰度，通知等跨平台场景用 png。
+ */
+export function brandIconPath(kind: 'window' | 'notification' = 'window'): string {
+  const file =
+    kind === 'window' && process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+  return app.isPackaged
+    ? join(process.resourcesPath, file)
+    : join(app.getAppPath(), 'resources', file)
+}
+
 export function allowWindowClose(win: BrowserWindow): void {
   closeAllowed.add(win)
   win.close()
@@ -56,9 +68,7 @@ export function createMainWindow(): BrowserWindow {
       ? { titleBarStyle: 'hiddenInset' as const }
       : {}),
     backgroundColor: '#0a0a0a',
-    ...(app.isPackaged
-      ? {}
-      : { icon: join(app.getAppPath(), 'resources/icon.png') }),
+    icon: brandIconPath(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,

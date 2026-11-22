@@ -183,7 +183,7 @@ Prompt Bar / 节点操作
 | `src/main/providers/sora.ts` | 232 |
 | `src/main/providers/volcengine.ts` | 187 |
 | `src/renderer/src/stores/generation-history.ts` | 151 |
-| `src/renderer/src/stores/generation.ts` | 224 |
+| `src/renderer/src/stores/generation.ts` | 213 |
 | `src/renderer/src/stores/vision-tasks.ts` | 95 |
 | `src/shared/filters.ts` | 112 |
 | `src/shared/generation.ts` | 141 |

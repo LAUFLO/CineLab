@@ -44,6 +44,7 @@
 | 06 | MCP 导演台对象/机位/镜头/自动分镜/预演导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/stageBridge.ts` |
 | 06 | MCP 拉片读取/修改/自动拉片/复刻/导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/filmBridge.ts` |
 | 07 | IPC、preload、设置、素材库、安全、更新 | `src/main/ipc/`、`src/preload/` |
+| 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
 | 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能卡片与 Markdown 预览 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx` |
 

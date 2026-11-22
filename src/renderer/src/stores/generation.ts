@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import appIcon from '../assets/app-icon.png'
 import { NODE_META, TITLE_HEIGHT, type CineNodeData, type OutputRef } from '@shared/canvas-schema'
 import type { GenerateRequest } from '@shared/generation'
 import { useCanvasStore } from './canvas'
@@ -9,17 +8,7 @@ import { useUIStore } from './ui'
 
 function notifyGenerationDone(title: string): void {
   try {
-    if (typeof Notification === 'undefined') return
-    if (Notification.permission !== 'granted') return
-
-    const notification = new Notification('生成完成', {
-      body: `${title} 已完成`,
-      icon: appIcon
-    })
-    notification.onclick = () => {
-      window.focus()
-      notification.close()
-    }
+    window.api.app.notify('生成完成', `${title} 已完成`)
   } catch {
     // 系统通知失败不影响生成流程
   }

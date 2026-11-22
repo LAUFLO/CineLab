@@ -17,6 +17,8 @@ interface AudioPlayerProps {
   path?: string | null
   scope?: 'project' | 'global'
   busy?: boolean
+  busyProgress?: number | null
+  busyLabel?: string
   onCancel?: () => void
   /** 截取模式：在波形上拖拽选择区间 */
   selecting?: boolean
@@ -103,6 +105,8 @@ export function AudioPlayer({
   path,
   scope,
   busy,
+  busyProgress,
+  busyLabel,
   onCancel,
   selecting = false,
   selection,
@@ -315,7 +319,13 @@ export function AudioPlayer({
       {busy ? (
         <div className="pointer-events-none absolute inset-x-2.5 top-1.5 bottom-[42px] flex items-center justify-center">
           <div className="pointer-events-auto flex items-center gap-3 rounded-card border border-border-strong bg-surface-raised px-3.5 py-2 text-xs text-fg">
-            <span>生成中…</span>
+            <span>
+              {busyLabel
+                ? busyLabel
+                : busyProgress !== null && busyProgress !== undefined
+                  ? `分离中 ${busyProgress}%`
+                  : '生成中…'}
+            </span>
             <Button
               type="button"
               variant="ghost"

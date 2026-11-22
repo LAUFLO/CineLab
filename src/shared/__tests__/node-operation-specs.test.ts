@@ -97,6 +97,24 @@ describe('node operation agent specs', () => {
     }
   })
 
+  it('requires a menu item for split av', () => {
+    expect(
+      validateNodeOperationParams('split-av', undefined, {})
+    ).toContain('itemId')
+    expect(
+      validateNodeOperationParams('split-av', 'av', {})
+    ).toBeNull()
+    expect(
+      validateNodeOperationParams('split-av', 'vocal', {})
+    ).toBeNull()
+    expect(
+      validateNodeOperationParams('split-av', 'background', {})
+    ).toBeNull()
+    expect(
+      validateNodeOperationParams('split-av', 'unknown', {})
+    ).toContain('不支持')
+  })
+
   it('marks model operations as generation proposable', () => {
     expect(
       NODE_OPERATION_AGENT_SPECS['grid-generate'].generationProposable

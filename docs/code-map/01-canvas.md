@@ -72,6 +72,8 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 
 `character-sheet`、`clip-trim`、`color-grade`、`element-edit`、`element-replace`、`film-study`、`frame-study`、`grid-generate`、`grid-split`、`layer-split`、`motion-capture`、`multi-angle`、`object-remove`、`shot-retake`、`split-av`、`time-shift`、`video-crop`。
 
+`split-av` 按节点类型返回不同菜单：视频节点为 `分离音视频 / 人声提取 / 背景音提取`，音频节点为 `音频分离 / 人声提取 / 背景音提取`；Agent 需要传 `itemId`。人声/背景音由 `stems.ts` 异步执行，普通分离仍走 ffmpeg。
+
 每个操作带 `NodeOperationAgentSpec`：
 
 - `executable`：Agent 能否无人值守执行；
@@ -140,7 +142,7 @@ CineBot
 | `src/renderer/src/canvas/EdgeContextMenu.tsx` | 40 |
 | `src/renderer/src/canvas/GroupToolbar.tsx` | 235 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
-| `src/renderer/src/canvas/NodeContextMenu.tsx` | 481 |
+| `src/renderer/src/canvas/NodeContextMenu.tsx` | 497 |
 | `src/renderer/src/canvas/PromptBar.tsx` | 2183 |
 | `src/renderer/src/canvas/StatusBar.tsx` | 100 |
 | `src/renderer/src/canvas/StoryboardToolbar.tsx` | 359 |
@@ -153,8 +155,8 @@ CineBot
 | `src/renderer/src/canvas/media-size.ts` | 45 |
 | `src/renderer/src/canvas/nodes/AiOperationDialog.tsx` | 289 |
 | `src/renderer/src/canvas/nodes/AudioActionBar.tsx` | 225 |
-| `src/renderer/src/canvas/nodes/AudioPlayer.tsx` | 369 |
-| `src/renderer/src/canvas/nodes/CineNodeView.tsx` | 737 |
+| `src/renderer/src/canvas/nodes/AudioPlayer.tsx` | 379 |
+| `src/renderer/src/canvas/nodes/CineNodeView.tsx` | 779 |
 | `src/renderer/src/canvas/nodes/CropDialog.tsx` | 154 |
 | `src/renderer/src/canvas/nodes/DepthCaptureDialog.tsx` | 136 |
 | `src/renderer/src/canvas/nodes/FilmNodeView.tsx` | 58 |
@@ -178,8 +180,8 @@ CineBot
 | `src/renderer/src/canvas/nodes/VideoPlayer.tsx` | 328 |
 | `src/renderer/src/canvas/nodes/VideoPreview.tsx` | 184 |
 | `src/renderer/src/canvas/nodes/film-study-runner.ts` | 62 |
-| `src/renderer/src/canvas/nodes/node-operation-runner.ts` | 1355 |
-| `src/renderer/src/canvas/nodes/node-operations.ts` | 587 |
+| `src/renderer/src/canvas/nodes/node-operation-runner.ts` | 1492 |
+| `src/renderer/src/canvas/nodes/node-operations.ts` | 612 |
 | `src/renderer/src/canvas/nodes/playbackBudget.ts` | 97 |
 | `src/renderer/src/canvas/nodes/study-sheet.ts` | 300 |
 | `src/renderer/src/canvas/nodes/text-markdown.ts` | 101 |
@@ -192,7 +194,7 @@ CineBot
 | `src/renderer/src/stores/canvas-model.ts` | 343 |
 | `src/renderer/src/stores/canvas.ts` | 211 |
 | `src/renderer/src/stores/canvas/slices/assets.ts` | 521 |
-| `src/renderer/src/stores/canvas/slices/graph.ts` | 598 |
+| `src/renderer/src/stores/canvas/slices/graph.ts` | 614 |
 | `src/renderer/src/stores/canvas/slices/groups.ts` | 776 |
 | `src/renderer/src/stores/canvas/slices/history.ts` | 488 |
 | `src/renderer/src/stores/canvas/slices/viewport.ts` | 21 |
@@ -201,8 +203,8 @@ CineBot
 | `src/shared/canvas-commands.ts` | 303 |
 | `src/shared/canvas-schema.ts` | 322 |
 | `src/shared/canvas-summary.ts` | 54 |
-| `src/shared/components.ts` | 56 |
-| `src/shared/node-operation-specs.ts` | 363 |
+| `src/shared/components.ts` | 59 |
+| `src/shared/node-operation-specs.ts` | 367 |
 | `src/shared/operation-schema.ts` | 64 |
 <!-- AUTO:files:end -->
 

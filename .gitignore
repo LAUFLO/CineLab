@@ -13,6 +13,8 @@ Thumbs.db
 data/
 .vite/
 *.tsbuildinfo
+__pycache__/
+*.pyc
 *.cinelab/
 models.json
 .opencode/

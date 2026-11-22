@@ -47,6 +47,10 @@ import { useSettingsStore } from './stores/settings'
 import { useUIStore } from './stores/ui'
 import { useUpdateStore } from './stores/update'
 import { subscribeDepthTasks } from './stores/depth-tasks'
+import {
+  cancelAllTrackedStemTasks,
+  subscribeStemTasks
+} from './stores/stem-tasks'
 import { subscribeVisionTasks } from './stores/vision-tasks'
 import { useTheme } from './theme/useTheme'
 import { useStudioStore } from './stores/studio'
@@ -94,7 +98,10 @@ export default function App() {
     return window.api.app.onCloseRequested(() => {
       const project = useProjectStore.getState()
       const dirty = project.dirty || project.saving
-      const close = (): void => window.api.app.confirmClose()
+      const close = (): void => {
+        cancelAllTrackedStemTasks()
+        window.api.app.confirmClose()
+      }
 
       if (!dirty) {
         close()
@@ -149,6 +156,8 @@ export default function App() {
   useEffect(() => subscribeDepthTasks(), [])
 
   useEffect(() => subscribeVisionTasks(), [])
+
+  useEffect(() => subscribeStemTasks(), [])
 
   useEffect(() => {
     const unsubscribeEvent = window.api.agent.onEvent((event) => {

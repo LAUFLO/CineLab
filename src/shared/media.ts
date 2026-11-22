@@ -42,6 +42,10 @@ export interface ExtractFrameResult {
   time: number
 }
 
+export type StemMode = 'vocal' | 'background'
+
+export type SplitAvMode = 'av' | StemMode
+
 export interface SplitAvRequest {
   path: string
 }
@@ -49,6 +53,42 @@ export interface SplitAvRequest {
 export interface SplitAvResult {
   video: GeneratedAsset
   audio: GeneratedAsset | null
+}
+
+export interface StemTaskRequest {
+  path: string
+  mode: StemMode
+  /** 源节点类型；音频节点即使内嵌封面也不生成无声视频 */
+  sourceKind?: 'video' | 'audio'
+  /** 仅用于完成通知和占位节点标题 */
+  title?: string
+}
+
+export interface StemTaskResult {
+  video: GeneratedAsset | null
+  audio: GeneratedAsset
+}
+
+export type StemTaskStatus =
+  | 'queued'
+  | 'running'
+  | 'done'
+  | 'error'
+  | 'cancelled'
+
+export interface StemTaskEvent {
+  taskId: string
+  status: StemTaskStatus
+  percent?: number
+  message?: string
+  queuePosition?: number
+  result?: StemTaskResult
+  error?: string
+}
+
+export interface StemTaskStartResult {
+  taskId: string
+  queuePosition: number
 }
 
 export interface CropVideoRequest {

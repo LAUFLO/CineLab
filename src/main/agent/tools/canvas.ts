@@ -10,7 +10,7 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     id: 'canvas.get',
     name: 'canvas_get',
     description:
-      '读取当前画布的节点摘要、所有节点 ID/标题/类型/坐标和当前选中节点。修改节点或选择生成目标前先调用它确认节点 ID。',
+      '读取当前画布的节点摘要、所有节点 ID/标题/类型/状态/进度/坐标和当前选中节点。修改节点或选择生成目标前先调用它确认节点 ID。',
     profiles: ['canvas'],
     readOnly: true,
     scope: 'canvas',
@@ -268,7 +268,7 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     id: 'canvas.nodeOperation',
     name: 'canvas_node_operation',
     description:
-      '在一个选中节点上执行工具栏操作，例如宫格切分、裁剪、抽帧、片段截取、分离音视频、去字幕、图层分离、抠图、主体消除、扩图、白模预演等。operationId 和 itemId 必须来自 canvas_node_operations；需要模型的操作请改用 generation_propose。',
+      '在一个选中节点上执行工具栏操作，例如宫格切分、裁剪、抽帧、片段截取、分离音视频（含人声提取/背景音提取）、去字幕、图层分离、抠图、主体消除、扩图、白模预演等。operationId 和 itemId 必须来自 canvas_node_operations；需要模型的操作请改用 generation_propose。',
     profiles: ['canvas'],
     readOnly: false,
     scope: 'canvas',

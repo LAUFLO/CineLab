@@ -152,7 +152,8 @@
 
 - `src/shared/node-operation-specs.ts` 声明每个操作是否 Agent 可执行、需要的 itemId、参数和确认规则。
 - `src/renderer/src/canvas/nodes/node-operation-runner.ts` 是 UI 和 Agent 共用的执行器；UI 传入 dialog host，Agent 不传。
-- Agent 可直接执行 17 个操作：宫格切分、裁剪、深度动作捕捉、片段截取、分离音视频、抽帧、逐帧拉片、画面裁切、去字幕、图层分离、视频抠像、主体消除、扩图、抠图、片段重拍、元素替换、智能续写。
+- Agent 可直接执行 17 个操作：宫格切分、裁剪、深度动作捕捉、片段截取、分离音视频（含人声提取 / 背景音提取）、抽帧、逐帧拉片、画面裁切、去字幕、图层分离、视频抠像、主体消除、扩图、抠图、片段重拍、元素替换、智能续写。
+- `split-av` 必须传 `itemId`：视频节点可用 `av` / `vocal` / `background`，音频节点只暴露 `vocal` / `background`；人声/背景音返回 `taskId`，完成后由界面自动写入。
 - `canvas_node_operations` 额外返回 `outputTarget`：`new-node` 表示执行后新建节点并连线，`version` 表示写回当前节点版本栈；规则见 `node-output-target-plan.md`。
 - 需要模型或蒙版交互的 11 个操作显式标记 `agentExecutable: false`，提示词仍会通过 `canvas_node_operations` 返回。
 - 其中 8 个模型类操作标记 `generationProposable: true`，Agent 用 `generation_propose` 传 `operationId` / `itemId` 自动复用提示词；3 个蒙版操作仍需界面涂抹。
@@ -176,14 +177,14 @@
 | `capability_catalog` | `capability.catalog` | 是 | 返回当前空间、可用工具、选中节点操作、时间线摘要、导演台镜头、拉片摘要 |
 | `capability_search` | `capability.search` | 是 | 按关键词搜索已注册工具，返回名称、说明、作用域、只读性和确认级别 |
 
-`canvas_get` 的 `selectedNodes` 现在额外返回 `availableOperations`。
+`canvas_get` 的 `selectedNodes` 现在额外返回 `availableOperations`、`status` 和 `progress`；长任务可以用它查看节点进度。
 
 ## 9. 已知限制
 
 - 场景撤销依赖导演台处于打开状态；Agent 写场景会自动打开导演台，手动关闭后再次撤销会作用到当前场景。
 - 拉片导出和场景导出的本地文件不会随画布撤销删除。
 - 模型类节点操作通过 `generation_propose` 登记提案，用户确认后才提交；蒙版类操作仍需界面涂抹。
-- 深度动作捕捉、图层分离、视频抠像等长时间任务在启动后异步完成；回合撤销会移除占位节点，但不会取消已启动的本地任务。
+- 深度动作捕捉、图层分离、视频抠像等长时间任务在启动后异步完成；回合撤销会移除占位节点，但不会取消已启动的本地任务。人声/背景音分离在占位节点、组或源视频被删除/撤销时会取消任务。
 - 同一轮多个空间的修改分别进入画布、时间线、场景和拉片快照；跨空间撤销是逐域回退，不是单一原子事务。
 
 ## 10. 变更记录

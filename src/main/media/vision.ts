@@ -13,6 +13,7 @@ import { componentDirectory, isComponentInstalled } from '../components/service'
 import { log } from '../logger'
 import { ffmpegBinary, probeMedia } from './ffmpeg'
 import { resolveMediaPath } from './paths'
+import { killProcessTree, pythonBinary } from './process'
 
 const MAX_VIDEO_SECONDS = 10
 const MAX_VIDEO_EDGE = 480
@@ -22,13 +23,6 @@ export interface VisionOptions {
   signal?: AbortSignal
 }
 
-function pythonBinary(): string {
-  const root = componentDirectory('depth-runtime')
-  return process.platform === 'win32'
-    ? join(root, 'python', 'python.exe')
-    : join(root, 'python', 'bin', 'python3')
-}
-
 async function ensureReady(): Promise<void> {
   const [runtime, vision] = await Promise.all([
     isComponentInstalled('depth-runtime'),
@@ -36,10 +30,10 @@ async function ensureReady(): Promise<void> {
   ])
 
   if (!runtime) {
-    throw new Error('视觉功能需要深度动作捕捉运行时，请先在设置 → 组件中安装')
+    throw new Error('视觉功能需要本地 AI 运行时，请先在设置 → 模型与运行时 → 组件中安装')
   }
   if (!vision) {
-    throw new Error('视觉模型未安装，请先在设置 → 组件中下载「视觉模型（InSPyReNet + LaMa）」')
+    throw new Error('视觉模型未安装，请先在 设置 → 模型与运行时 → 组件 中下载「视觉模型（InSPyReNet + LaMa）」')
   }
 }
 
@@ -115,7 +109,7 @@ function runWorker(
     }
 
     const onAbort = (): void => {
-      if (child.pid) killTree(child.pid)
+      if (child.pid) killProcessTree(child.pid)
       finish(new Error('已取消'))
     }
 
@@ -174,21 +168,6 @@ function runWorker(
       )
     })
   })
-}
-
-function killTree(pid: number): void {
-  if (process.platform === 'win32') {
-    spawn('taskkill', ['/PID', String(pid), '/T', '/F'], {
-      windowsHide: true,
-      stdio: 'ignore'
-    })
-    return
-  }
-  try {
-    process.kill(pid, 'SIGKILL')
-  } catch {
-    // 进程可能已经退出
-  }
 }
 
 function baseArgs(task: string, models: string): string[] {

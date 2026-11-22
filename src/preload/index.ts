@@ -42,6 +42,8 @@ import type {
   GridSplitRequest,
   RemoveSubtitlesRequest,
   SplitAvRequest,
+  StemTaskEvent,
+  StemTaskRequest,
   StitchRequest,
   TrimVideoRequest,
   VisionTaskEvent,
@@ -285,6 +287,21 @@ const api: CineApi = {
     listSounds: () => ipcRenderer.invoke('media:list-sounds'),
     importSound: (id: string) => ipcRenderer.invoke('media:import-sound', id),
     splitAv: (input: SplitAvRequest) => ipcRenderer.invoke('media:split-av', input),
+    startStemTask: (input: StemTaskRequest) =>
+      ipcRenderer.invoke('media:stem-start', input),
+    cancelStemTask: (taskId: string) =>
+      ipcRenderer.invoke('media:stem-cancel', taskId),
+    onStemTaskEvent: (callback: (event: StemTaskEvent) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: StemTaskEvent
+      ): void => callback(payload)
+
+      ipcRenderer.on('stem-task:event', listener)
+      return () => {
+        ipcRenderer.removeListener('stem-task:event', listener)
+      }
+    },
     cropVideo: (input: CropVideoRequest) => ipcRenderer.invoke('media:crop-video', input),
     cropImage: (input: CropImageRequest) =>
       ipcRenderer.invoke('media:crop-image', input),

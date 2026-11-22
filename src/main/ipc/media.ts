@@ -12,6 +12,7 @@ import type {
   GridSplitRequest,
   RemoveSubtitlesRequest,
   SplitAvRequest,
+  StemTaskRequest,
   StitchRequest,
   TrimVideoRequest,
   VisionTaskRequest
@@ -28,6 +29,7 @@ import { stitchGrid } from '../media/stitch'
 import { cropImage, cropImageRect } from '../media/image'
 import { resolveInside, resolveMediaPath } from '../media/paths'
 import { cropVideo, removeSubtitles, splitAv, trimVideo } from '../media/video'
+import { cancelStemTask, startStemTask } from '../media/stem-tasks'
 import { detectSubtitleRect } from '../media/subtitle-detect'
 import { mediaThumbnail } from '../media/thumbnail'
 import { ensureProxy } from '../media/proxy'
@@ -104,6 +106,16 @@ export function registerMediaIpc(): void {
 
   ipcMain.handle('media:split-av', async (_event, input: SplitAvRequest) => {
     return splitAv(requireProjectRoot(), input)
+  })
+
+  ipcMain.handle(
+    'media:stem-start',
+    async (_event, input: StemTaskRequest) =>
+      startStemTask(requireProjectRoot(), input)
+  )
+
+  ipcMain.handle('media:stem-cancel', (_event, taskId: string) => {
+    cancelStemTask(taskId)
   })
 
   ipcMain.handle('media:crop-video', async (_event, input: CropVideoRequest) => {

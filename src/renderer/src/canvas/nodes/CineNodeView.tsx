@@ -22,6 +22,10 @@ import {
 } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useGenerationHistoryStore } from '../../stores/generation-history'
+import {
+  cancelStemTaskFromNode,
+  retryStemTask
+} from '../../stores/stem-tasks'
 import { useUIStore } from '../../stores/ui'
 import { useLibraryStore } from '../../stores/library'
 import { useStudioStore } from '../../stores/studio'
@@ -147,6 +151,26 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     ? assetUrl(current.path, current.scope)
     : data.outputUrl
   const isBusy = data.status === 'queued' || data.status === 'running'
+  const stemMode =
+    data.stemMode === 'vocal' || data.stemMode === 'background'
+      ? data.stemMode
+      : null
+  const stemProgress =
+    typeof data.progress === 'number' ? Math.round(data.progress) : null
+  const busyLabel =
+    data.status === 'queued'
+      ? `排队中${
+          typeof data.stemQueuePosition === 'number'
+            ? ` · 第 ${data.stemQueuePosition} 位`
+            : '…'
+        }`
+      : stemMode
+        ? `分离中${stemProgress !== null ? ` ${stemProgress}%` : '…'}`
+        : null
+  const cancelBusy = (): void => {
+    if (cancelStemTaskFromNode(id)) return
+    void cancelGeneration(id)
+  }
   const canPanorama = Boolean(
     current &&
     current.kind === 'image' &&
@@ -484,7 +508,9 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                     path={current?.path}
                     scope={current?.scope}
                     busy={isBusy}
-                    onCancel={() => void cancelGeneration(id)}
+                    busyProgress={stemMode ? stemProgress : null}
+                    busyLabel={busyLabel ?? undefined}
+                    onCancel={cancelBusy}
                     selecting={audioMode === 'trim'}
                     selection={audioMode === 'trim' ? audioSelection : null}
                     onSelect={(start, end) => setAudioSelection({ start, end })}
@@ -556,7 +582,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                 {isBusy && data.kind !== 'audio' ? (
                   <div className="absolute inset-0 z-[2] flex flex-col items-center justify-center bg-surface-raised">
                     <div className="rounded-card border border-border bg-canvas px-3.5 py-2 text-xs text-fg">
-                      {data.status === 'queued' ? '排队中…' : '生成中…'}
+                      {busyLabel ?? '生成中…'}
                     </div>
                     <Button
                       type="button"
@@ -565,7 +591,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                       className="nodrag nopan absolute bottom-3.5 left-1/2 -translate-x-1/2 !text-[11px] !font-normal !text-fg-subtle hover:!bg-transparent hover:!text-fg"
                       onClick={(event) => {
                         event.stopPropagation()
-                        void cancelGeneration(id)
+                        cancelBusy()
                       }}
                     >
                       取消任务
@@ -581,6 +607,33 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                     <span className="line-clamp-2 min-w-0 flex-1">
                       {data.error ?? '生成失败'}
                     </span>
+                    {stemMode ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="none"
+                        className="nodrag nopan !h-6 shrink-0 !rounded-md !border !border-[color-mix(in_srgb,var(--danger)_45%,transparent)] !bg-transparent !px-2 !text-[11px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          useSettingsStore.getState().openPanel('components')
+                        }}
+                      >
+                        检查组件
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="none"
+                        className="nodrag nopan !h-6 shrink-0 !rounded-md !border !border-[color-mix(in_srgb,var(--danger)_45%,transparent)] !bg-transparent !px-2 !text-[11px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          useSettingsStore.getState().openPanel('models')
+                        }}
+                      >
+                        检查模型配置
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="ghost"
@@ -588,22 +641,11 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                       className="nodrag nopan !h-6 shrink-0 !rounded-md !border !border-[color-mix(in_srgb,var(--danger)_45%,transparent)] !bg-transparent !px-2 !text-[11px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger"
                       onClick={(event) => {
                         event.stopPropagation()
-                        useSettingsStore.getState().openPanel('models')
+                        if (stemMode) void retryStemTask(id)
+                        else retryGeneration()
                       }}
                     >
-                      检查模型配置
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="none"
-                      className="nodrag nopan !h-6 shrink-0 !rounded-md !border !border-[color-mix(in_srgb,var(--danger)_45%,transparent)] !bg-transparent !px-2 !text-[11px] !font-normal !text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        retryGeneration()
-                      }}
-                    >
-                      重新生成
+                      {stemMode ? '重试分离' : '重新生成'}
                     </Button>
                   </div>
                 ) : null}

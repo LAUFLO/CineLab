@@ -135,7 +135,11 @@ export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> 
       }
     ]
   },
-  'split-av': { executable: true, params: [] },
+  'split-av': {
+    executable: true,
+    itemRequired: true,
+    itemOptions: ['av', 'vocal', 'background']
+  },
   'frame-study': {
     executable: true,
     itemRequired: true,

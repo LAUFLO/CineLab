@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ComponentKind, ComponentStatus } from '@shared/components'
+import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { Button } from '../components/ui'
 
@@ -7,6 +8,7 @@ const KIND_ORDER: ComponentKind[] = [
   'depth-runtime',
   'depth-model',
   'vision-models',
+  'stem-model',
   'whisper-runtime',
   'whisper-model'
 ]
@@ -16,11 +18,11 @@ const COMPONENT_META: Record<
   { name: string; description: string; uninstallHint: string }
 > = {
   'depth-runtime': {
-    name: '深度动作捕捉运行时',
+    name: '本地 AI 运行时',
     description:
-      '包含 Python 运行时、PyTorch 与 Video Depth Anything 推理代码。安装后「深度动作捕捉」才能在本地把视频转换成灰度深度参考视频。',
+      '包含 Python 运行时与 PyTorch。深度动作捕捉、视觉增强、人声/背景音分离共用这一套运行时，请勿重复下载。',
     uninstallHint:
-      '卸载后，「深度动作捕捉」将无法使用。已生成的深度视频节点不受影响，可随时重新下载。'
+      '卸载后，深度动作捕捉、视觉增强和人声/背景音分离都将无法使用。已生成的素材节点不受影响，可随时重新下载。'
   },
   'depth-model': {
     name: 'Video Depth Anything Small 模型',
@@ -46,9 +48,16 @@ const COMPONENT_META: Record<
   'vision-models': {
     name: '视觉模型（InSPyReNet + LaMa）',
     description:
-      'InSPyReNet 抠像与 LaMa 修复模型，约 570MB。复用深度运行时的 Python/PyTorch 环境，请先安装「深度动作捕捉运行时」。安装后可解锁抠图、图层分离、视频抠像、智能去字幕、主体消除和本地扩图。',
+      'InSPyReNet 抠像与 LaMa 修复模型，约 570MB。复用「本地 AI 运行时」的 Python/PyTorch 环境，请先安装运行时。安装后可解锁抠图、图层分离、视频抠像、智能去字幕、主体消除和本地扩图。',
     uninstallHint:
       '卸载后，抠图、图层分离、视频抠像、智能修复和本地扩图将无法使用。已生成的素材节点不受影响，可随时重新下载。'
+  },
+  'stem-model': {
+    name: 'HTDemucs 人声分离模型',
+    description:
+      'Demucs v4 HTDemucs 权重，约 84MB。用于人声提取和背景音提取，复用「本地 AI 运行时」的 Python/PyTorch 环境，请先安装运行时。',
+    uninstallHint:
+      '卸载后，人声提取和背景音提取将无法使用。已生成的音频节点不受影响，可随时重新下载。'
   }
 }
 
@@ -88,6 +97,9 @@ function stateLabel(item: ComponentStatus): string {
 
 export function ComponentsSection() {
   const requestConfirm = useUIStore((state) => state.requestConfirm)
+  const focusStem = useSettingsStore(
+    (state) => state.panelSection === 'components'
+  )
   const [items, setItems] = useState<ComponentStatus[]>([])
   const [pending, setPending] = useState<ComponentKind | null>(null)
 
@@ -164,8 +176,17 @@ export function ComponentsSection() {
       confirmLabel: '卸载',
       danger: true,
       onConfirm: async () => {
-        await window.api.components.remove(item.kind)
-        await refresh()
+        try {
+          await window.api.components.remove(item.kind)
+          await refresh()
+        } catch (error) {
+          useUIStore
+            .getState()
+            .showToast(
+              error instanceof Error ? error.message : String(error),
+              'error'
+            )
+        }
       }
     })
   }
@@ -177,12 +198,26 @@ export function ComponentsSection() {
         组件按需下载，不使用对应功能时不会占用磁盘。后续其他本地能力也会以组件形式接入。
       </p>
 
+      {focusStem ? (
+        <div className="mb-2.5 rounded-card border border-border-strong bg-surface-hover px-3 py-2 text-xs leading-[1.6] text-fg">
+          人声/背景音分离需要先安装「本地 AI 运行时」和「HTDemucs 人声分离模型」。
+          两个组件都已高亮，安装后回到画布重试即可。
+        </div>
+      ) : null}
+
       {items.map((item) => {
         const meta = COMPONENT_META[item.kind]
+        const highlighted =
+          focusStem &&
+          (item.kind === 'depth-runtime' || item.kind === 'stem-model')
         return (
           <div
             key={item.kind}
-            className="mt-2.5 flex items-center justify-between gap-4 rounded-card border border-border px-4 py-3.5"
+            className={`mt-2.5 flex items-center justify-between gap-4 rounded-card border px-4 py-3.5 ${
+              highlighted
+                ? 'border-border-strong bg-surface-hover'
+                : 'border-border'
+            }`}
           >
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-semibold text-fg">

@@ -52,3 +52,5 @@ extraResources:
     to: skills
   - from: resources/model-config-skill
     to: model-config-skill
+  - from: resources/stem-worker
+    to: stem-worker

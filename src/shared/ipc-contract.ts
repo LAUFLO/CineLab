@@ -97,6 +97,9 @@ import type {
   AudioTrimResult,
   SplitAvRequest,
   SplitAvResult,
+  StemTaskEvent,
+  StemTaskRequest,
+  StemTaskStartResult,
   StitchRequest,
   StitchResult,
   TrimVideoRequest,
@@ -257,6 +260,9 @@ export interface MediaApi {
   stitch(input: StitchRequest): Promise<StitchResult>
   extractFrame(input: ExtractFrameRequest): Promise<ExtractFrameResult>
   splitAv(input: SplitAvRequest): Promise<SplitAvResult>
+  startStemTask(input: StemTaskRequest): Promise<StemTaskStartResult>
+  cancelStemTask(taskId: string): Promise<void>
+  onStemTaskEvent(callback: (event: StemTaskEvent) => void): () => void
   cropVideo(input: CropVideoRequest): Promise<CropVideoResult>
   probe(path: string): Promise<MediaProbe>
   exists(path: string, scope?: 'project' | 'global'): Promise<boolean>

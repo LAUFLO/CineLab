@@ -8,6 +8,7 @@ import type {
 import type { ProjectTemplateId } from '@shared/project-templates'
 import { useCanvasStore, type CineEdge, type CineNode } from './canvas'
 import { usePreferencesStore } from './preferences'
+import { confirmCancelStemTasks } from './stem-tasks'
 
 type Phase = 'loading' | 'ready' | 'welcome' | 'error'
 
@@ -104,6 +105,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   startNew: async (templateId) => {
     try {
+      if (!(await confirmCancelStemTasks())) return
       const snapshot = await window.api.project.pickCreate(templateId)
       if (snapshot) get().applySnapshot(snapshot)
     } catch (error) {
@@ -113,6 +115,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   openExisting: async () => {
     try {
+      if (!(await confirmCancelStemTasks())) return
       const snapshot = await window.api.project.pickOpen()
       if (snapshot) get().applySnapshot(snapshot)
     } catch (error) {
@@ -122,6 +125,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   openPath: async (path) => {
     try {
+      if (!(await confirmCancelStemTasks())) return
       const snapshot = await window.api.project.open(path)
       get().applySnapshot(snapshot)
     } catch (error) {
@@ -190,6 +194,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!path) return
 
     try {
+      if (!(await confirmCancelStemTasks())) return
       await get().saveNow()
       const snapshot = await window.api.project.createCanvas(path, name)
       get().applySnapshot(snapshot)
@@ -203,6 +208,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!path || canvasId === current) return
 
     try {
+      if (!(await confirmCancelStemTasks())) return
       await get().saveNow()
       const snapshot = await window.api.project.switchCanvas(path, canvasId)
       get().applySnapshot(snapshot)

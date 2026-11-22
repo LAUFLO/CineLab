@@ -56,7 +56,7 @@ interface NodeToolbarProps {
   }
 }
 
-const SECTION_ORDER: OperationSection[] = ['generate', 'edit', 'video']
+const SECTION_ORDER: OperationSection[] = ['generate', 'edit', 'video', 'audio']
 const MAX_PRIMARY = 7
 const TOOLBAR_BTN =
   '!h-7 gap-[3px] !rounded-md !px-[5px] !text-xs !font-normal'
@@ -306,7 +306,7 @@ export function NodeToolbar({
   const ensureVision = async (): Promise<boolean> => {
     if (await visionReady()) return true
     showToast(
-      '需要先安装「深度动作捕捉运行时」和「视觉模型（RVM + LaMa）」',
+      '需要先安装「本地 AI 运行时」和「视觉模型（RVM + LaMa）」',
       'error'
     )
     useSettingsStore.getState().openPanel('components')

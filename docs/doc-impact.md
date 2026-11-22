@@ -19,7 +19,8 @@
 | `src/main/agent/runtime.ts`、`src/main/agent/` | `docs/agent-architecture-plan.md`、`docs/agent-capabilities.md` |
 | `src/renderer/src/styles/tokens.css`、`src/renderer/src/components/` | `docs/ui-spec.md` |
 | `src/renderer/src/canvas/`、`src/renderer/src/studio/` | `docs/ui-spec.md` |
-| `src/main/components/` | `docs/runtime-components-plan.md`（历史参考） |
+| `src/main/components/` | `docs/code-map/07-storage-ipc.md`、`docs/code-map/08-capabilities.md` |
+| `src/main/media/stems.ts`、`src/main/media/stem-tasks.ts`、`resources/stem-worker/` | `docs/ui-spec.md`、`docs/code-map/02-generation.md`、`docs/code-map/08-capabilities.md`、`docs/agent-capabilities.md`、`docs/stem-separation-plan.md` |
 | `.github/workflows/`、发布脚本 | `docs/branch-policy.md`、`CONTRIBUTING.md` |
 | `package.json` 脚本或依赖 | `README.md`、`CONTRIBUTING.md` |
 

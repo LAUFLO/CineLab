@@ -47,6 +47,7 @@ const MODULES = [
       'src/renderer/src/stores/generation.ts',
       'src/renderer/src/stores/generation-history.ts',
       'src/renderer/src/stores/vision-tasks.ts',
+      'src/renderer/src/stores/stem-tasks.ts',
       'src/shared/provider-schema.ts',
       'src/shared/provider-presets.ts',
       'src/shared/generation.ts',

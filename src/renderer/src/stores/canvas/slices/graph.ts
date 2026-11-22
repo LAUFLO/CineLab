@@ -133,6 +133,22 @@ loadCanvas: (nodes, edges, viewport) => {
         }
       }
       if (node.type !== 'cine') return node
+      if (
+        (node.data.stemTaskId || node.data.stemMode) &&
+        (node.data.status === 'running' || node.data.status === 'queued')
+      ) {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            status: 'error' as const,
+            error: '任务已中断，请重试',
+            progress: undefined,
+            stemTaskId: undefined,
+            stemQueuePosition: undefined
+          }
+        }
+      }
       if (node.data.kind === 'study') {
         const height = Number(node.style?.height ?? 0)
         if (height === 368 || height === 308) {

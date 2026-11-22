@@ -148,4 +148,31 @@ describe('canvas store', () => {
       height: 200
     })
   })
+
+  it('marks interrupted stem tasks after reload', () => {
+    const id = useCanvasStore.getState().addNode('audio', { x: 0, y: 0 })
+    useCanvasStore.getState().patchNodeData(id, {
+      status: 'running',
+      stemTaskId: 'task-1',
+      stemMode: 'vocal',
+      stemSourceNodeId: 'source-1',
+      stemPendingIds: [id]
+    })
+
+    useCanvasStore
+      .getState()
+      .loadCanvas(useCanvasStore.getState().nodes, [], {
+        x: 0,
+        y: 0,
+        zoom: 1
+      })
+
+    const node = useCanvasStore
+      .getState()
+      .nodes.find((entry) => entry.id === id)
+    expect(node?.data.status).toBe('error')
+    expect(node?.data.error).toBe('任务已中断，请重试')
+    expect(node?.data.stemTaskId).toBeUndefined()
+    expect(node?.data.stemMode).toBe('vocal')
+  })
 })

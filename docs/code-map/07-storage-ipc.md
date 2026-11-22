@@ -76,7 +76,7 @@ IPC 模块（`main/ipc/`）：`app`、`project`、`settings`、`generate`、`lib
 ## 更新与组件
 
 - `main/update/service.ts` + `fallback.ts`：应用内更新与回退；
-- `main/components/`：组件清单、下载、安装、ZIP 解压、服务（深度/视觉/转录等运行时）。
+- `main/components/`：组件清单、下载、安装、ZIP 解压、服务（本地 AI 运行时、视觉、转录、人声分离模型等组件）。
 
 ## 数据流
 
@@ -126,23 +126,23 @@ Renderer
 | 文件 | 行数 |
 |---|---|
 | `src/main/components/downloader.ts` | 114 |
-| `src/main/components/installer.ts` | 81 |
-| `src/main/components/manifest.ts` | 189 |
+| `src/main/components/installer.ts` | 82 |
+| `src/main/components/manifest.ts` | 210 |
 | `src/main/components/service.ts` | 219 |
 | `src/main/components/zip-extract.ts` | 158 |
 | `src/main/export/project-export.ts` | 135 |
 | `src/main/export/zip.ts` | 159 |
-| `src/main/index.ts` | 202 |
+| `src/main/index.ts` | 206 |
 | `src/main/ipc/agent.ts` | 464 |
 | `src/main/ipc/clipboard.ts` | 39 |
-| `src/main/ipc/components.ts` | 35 |
+| `src/main/ipc/components.ts` | 43 |
 | `src/main/ipc/export.ts` | 310 |
 | `src/main/ipc/film-study.ts` | 244 |
 | `src/main/ipc/generate.ts` | 73 |
 | `src/main/ipc/index.ts` | 128 |
 | `src/main/ipc/library.ts` | 192 |
 | `src/main/ipc/local-adapters.ts` | 22 |
-| `src/main/ipc/media.ts` | 218 |
+| `src/main/ipc/media.ts` | 230 |
 | `src/main/ipc/project.ts` | 158 |
 | `src/main/ipc/scene.ts` | 54 |
 | `src/main/ipc/settings.ts` | 155 |
@@ -175,15 +175,15 @@ Renderer
 | `src/main/update/service.ts` | 263 |
 | `src/main/window.ts` | 153 |
 | `src/preload/index.d.ts` | 10 |
-| `src/preload/index.ts` | 568 |
+| `src/preload/index.ts` | 585 |
 | `src/renderer/src/stores/depth-tasks.ts` | 70 |
 | `src/renderer/src/stores/library.ts` | 362 |
 | `src/renderer/src/stores/preferences.ts` | 286 |
-| `src/renderer/src/stores/project.ts` | 257 |
+| `src/renderer/src/stores/project.ts` | 263 |
 | `src/renderer/src/stores/settings.ts` | 65 |
 | `src/renderer/src/stores/update.ts` | 41 |
 | `src/shared/asset-schema.ts` | 16 |
-| `src/shared/ipc-contract.ts` | 625 |
+| `src/shared/ipc-contract.ts` | 631 |
 | `src/shared/library-schema.ts` | 98 |
 | `src/shared/models-file.ts` | 66 |
 | `src/shared/preferences.ts` | 351 |

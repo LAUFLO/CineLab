@@ -1,9 +1,9 @@
 # CineLab 文档索引
 
-日期：2026-11-18
+日期：2026-11-22
 状态：现行
 适用版本：v0.2.1
-最后核对：2026-11-19
+最后核对：2026-11-22
 
 > 远程仓库只保留稳定契约、参考文档和一份精简的归档。过程记录、截图和批次 evidence 放本地 `.opencode/`，不入库。
 
@@ -34,6 +34,7 @@
 | [clip-studio-backlog.md](clip-studio-backlog.md) | 剪辑室后续项 |
 | [doc-impact.md](doc-impact.md) | 代码路径 → 文档影响映射 |
 | [studio-node-live-preview-plan.md](studio-node-live-preview-plan.md) | 剪辑室节点实时预览，待实施 |
+| [stem-separation-plan.md](stem-separation-plan.md) | 人声/背景音分离：三项菜单、无声视频 + 音频输出、本地 Demucs 组件、分段流式与任务进度，已实施，真实素材听感待验收 |
 | [previs-adaptation-plan.md](previs-adaptation-plan.md) | Previs 语义镜头、程序化世界与场景图白膜，M1–M5 已完成 |
 | [film-study-rebuild-plan.md](film-study-rebuild-plan.md) | 逐帧拉片重构：拉片为画布服务、删除拉片室、image 首尾帧 + 文本节点、复刻建图与手动生成 |
 | [stage-previs-upgrade-plan.md](stage-previs-upgrade-plan.md) | 导演台整片/每镜预演、重叠优先级、交付物、光照预设与人物动作改造，已实施 |

@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 72 | 23512 |
-| 02 | [生成与模型](./02-generation.md) | 59 | 13474 |
+| 01 | [画布](./01-canvas.md) | 72 | 23765 |
+| 02 | [生成与模型](./02-generation.md) | 64 | 14445 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20201 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5794 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 57 | 19036 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11602 |
-| 10 | [UI 组件与面板](./10-ui.md) | 46 | 10026 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 57 | 19056 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11677 |
+| 10 | [UI 组件与面板](./10-ui.md) | 46 | 10085 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -28,7 +28,7 @@
 | `LibraryApi` | `root`、`chooseRoot`、`resetRoot`、`revealRoot`、`tree`、`listAssets`、`listAllAssets`、`createFolder`、`renameFolder`、`deleteFolder`、`importAssets`、`addAsset`、`renameAsset`、`moveAsset`、`deleteAsset`、`setAssetTags`、`reveal`、`listCharacters`、`saveAssets`、`listTemplates`、`saveTemplate`、`deleteTemplate`、`thumbCacheInfo`、`clearThumbCache` |
 | `ClipboardApi` | `read` |
 | `ExportApi` | `project`、`canvasPng`、`asset`、`deleteFile`、`assets`、`concatVideos`、`pickFile` |
-| `MediaApi` | `splitGrid`、`stitch`、`extractFrame`、`splitAv`、`cropVideo`、`probe`、`exists`、`existsMany`、`thumbnail`、`proxy`、`audioPeaks`、`listSounds`、`importSound`、`cropImage`、`cropImageRect`、`trimVideo`、`trimAudio`、`audioSpeed`、`removeSubtitles`、`detectSubtitleRect`、`captureDepth`、`startDepthCapture`、`cancelDepthCapture`、`onDepthCaptureEvent`、`startVisionTask`、`cancelVisionTask`、`onVisionTaskEvent` |
+| `MediaApi` | `splitGrid`、`stitch`、`extractFrame`、`splitAv`、`startStemTask`、`cancelStemTask`、`onStemTaskEvent`、`cropVideo`、`probe`、`exists`、`existsMany`、`thumbnail`、`proxy`、`audioPeaks`、`listSounds`、`importSound`、`cropImage`、`cropImageRect`、`trimVideo`、`trimAudio`、`audioSpeed`、`removeSubtitles`、`detectSubtitleRect`、`captureDepth`、`startDepthCapture`、`cancelDepthCapture`、`onDepthCaptureEvent`、`startVisionTask`、`cancelVisionTask`、`onVisionTaskEvent` |
 | `ComponentsApi` | `status`、`install`、`pause`、`remove`、`onEvent` |
 | `TimelineApi` | `load`、`save`、`duplicate`、`exportVtt`、`export`、`cancelExport`、`onExportProgress`、`onTimelineChanged`、`transcribe`、`cancelTranscribe`、`onTranscribeProgress`、`analyze`、`importSubtitles` |
 | `FilmStudyApi` | `extract`、`auto`、`cancel`、`load`、`save`、`exportMarkdown`、`exportAnalysisPackage`、`exportBundle`、`importAnalysis`、`extractSubtitles`、`importSubtitles`、`analyze`、`rerunShot`、`splitScenes`、`contactSheet`、`onProgress` |
@@ -160,6 +160,7 @@
 - `src/main/agent/pi/__tests__/session-lock.test.ts`
 - `src/main/agent/pi/__tests__/session.test.ts`
 - `src/main/agent/pi/__tests__/tools.test.ts`
+- `src/main/components/__tests__/manifest.test.ts`
 - `src/main/components/__tests__/zip-extract.test.ts`
 - `src/main/engine/__tests__/generation-error.test.ts`
 - `src/main/export/__tests__/project-export.test.ts`
@@ -181,6 +182,7 @@
 - `src/main/media/__tests__/concat.test.ts`
 - `src/main/media/__tests__/paths.test.ts`
 - `src/main/media/__tests__/range.test.ts`
+- `src/main/media/__tests__/stem-tasks.test.ts`
 - `src/main/project/__tests__/manager.test.ts`
 - `src/main/providers/__tests__/agnes.test.ts`
 - `src/main/providers/__tests__/golden-bodies.test.ts`
@@ -201,6 +203,7 @@
 - `src/renderer/src/agent/__tests__/timelineBridge.test.ts`
 - `src/renderer/src/canvas/__tests__/media-size.test.ts`
 - `src/renderer/src/canvas/__tests__/promptbar-model.test.ts`
+- `src/renderer/src/canvas/nodes/__tests__/node-operations.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/study-sheet.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/text-markdown.test.ts`
 - `src/renderer/src/components/ui/native-controls.test.ts`

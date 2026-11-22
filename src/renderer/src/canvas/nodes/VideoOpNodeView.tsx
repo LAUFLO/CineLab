@@ -368,7 +368,10 @@ export function VideoOpNodeView({
       x: absolute.x + width + 80,
       y: absolute.y
     })
-    patchNodeData(resultId, { title: `${label} · 结果` })
+    patchNodeData(resultId, {
+      title: `${label} · 结果`,
+      assetOnly: true
+    })
     onConnect({ source: id, target: resultId })
 
     patchVideoOpNode(id, {

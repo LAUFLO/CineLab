@@ -29,7 +29,7 @@
 
 ### 媒体节点 `CineNodeData`
 
-关键字段：`kind`、`title`、`status`（idle/queued/running/done/error）、`text`、`prompt`、`outputs: OutputRef[]`、`selectedOutputId`、`progress`、`error`、`templates`、`assetOnly`。
+关键字段：`kind`、`title`、`status`（idle/queued/running/done/error）、`text`、`prompt`、`outputs: OutputRef[]`、`selectedOutputId`、`progress`、`error`、`templates`、`assetOnly`。`assetOnly` 表示素材/派生结果节点，隐藏 PromptBar，只保留 NodeToolbar。
 
 `OutputRef` 是一次生成结果：`id`、`path`、`scope`、`kind`、`model`、`width/height/duration/fps`、`parentOutputId`、`layer`、`textRecognition`。
 
@@ -143,7 +143,7 @@ CineBot
 | `src/renderer/src/canvas/GroupToolbar.tsx` | 235 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
 | `src/renderer/src/canvas/NodeContextMenu.tsx` | 497 |
-| `src/renderer/src/canvas/PromptBar.tsx` | 2183 |
+| `src/renderer/src/canvas/PromptBar.tsx` | 2185 |
 | `src/renderer/src/canvas/StatusBar.tsx` | 100 |
 | `src/renderer/src/canvas/StoryboardToolbar.tsx` | 359 |
 | `src/renderer/src/canvas/TopBar.tsx` | 500 |
@@ -176,7 +176,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/TextEditorDialog.tsx` | 176 |
 | `src/renderer/src/canvas/nodes/ToolbarSettings.tsx` | 139 |
 | `src/renderer/src/canvas/nodes/TrimDialog.tsx` | 119 |
-| `src/renderer/src/canvas/nodes/VideoOpNodeView.tsx` | 865 |
+| `src/renderer/src/canvas/nodes/VideoOpNodeView.tsx` | 868 |
 | `src/renderer/src/canvas/nodes/VideoPlayer.tsx` | 328 |
 | `src/renderer/src/canvas/nodes/VideoPreview.tsx` | 184 |
 | `src/renderer/src/canvas/nodes/film-study-runner.ts` | 62 |
@@ -191,10 +191,10 @@ CineBot
 | `src/renderer/src/canvas/promptbar/ModelMenu.tsx` | 95 |
 | `src/renderer/src/canvas/promptbar/ParamPanel.tsx` | 232 |
 | `src/renderer/src/canvas/promptbar/UploadMenu.tsx` | 45 |
-| `src/renderer/src/stores/canvas-model.ts` | 343 |
+| `src/renderer/src/stores/canvas-model.ts` | 345 |
 | `src/renderer/src/stores/canvas.ts` | 211 |
-| `src/renderer/src/stores/canvas/slices/assets.ts` | 521 |
-| `src/renderer/src/stores/canvas/slices/graph.ts` | 614 |
+| `src/renderer/src/stores/canvas/slices/assets.ts` | 524 |
+| `src/renderer/src/stores/canvas/slices/graph.ts` | 618 |
 | `src/renderer/src/stores/canvas/slices/groups.ts` | 776 |
 | `src/renderer/src/stores/canvas/slices/history.ts` | 488 |
 | `src/renderer/src/stores/canvas/slices/viewport.ts` | 21 |
@@ -204,7 +204,7 @@ CineBot
 | `src/shared/canvas-schema.ts` | 322 |
 | `src/shared/canvas-summary.ts` | 54 |
 | `src/shared/components.ts` | 59 |
-| `src/shared/node-operation-specs.ts` | 367 |
+| `src/shared/node-operation-specs.ts` | 441 |
 | `src/shared/operation-schema.ts` | 64 |
 <!-- AUTO:files:end -->
 
@@ -281,6 +281,6 @@ CineBot
 | `src/shared/canvas-schema.ts` | `NodeKind`、`CanvasNodeKind`、`FilmStatus`、`NodeStatus`、`OutputRef`、`CineNodeData`、`StudioNodeData`、`FilmNodeData`、`StageNodeData`、`VideoOpNodeData`、`GroupColor`、`GROUP_COLORS`、`GROUP_LABELS`、`GroupMode`、`GroupRatio`、`GROUP_RATIOS`、`GROUP_RATIO_LABEL`、`GROUP_RATIO_VALUE`、`STORYBOARD_MAX_NODES`、`STORYBOARD_CELL_WIDTH`、`STORYBOARD_GAP`、`GRID_SPLIT_CELL_WIDTH`、`GroupNodeData`、`GROUP_HEADER_HEIGHT` …（共 30 个） |
 | `src/shared/canvas-summary.ts` | `CanvasNodeSummary`、`CanvasEdgeSummary`、`summarizeCanvasNode`、`summarizeCanvasEdge` |
 | `src/shared/components.ts` | `ComponentKind`、`ComponentState`、`ComponentManifest`、`ComponentStatus`、`ComponentEvent`、`ComponentInstallResult` |
-| `src/shared/node-operation-specs.ts` | `NodeOperationAgentSpec`、`NodeOperationParamType`、`NodeOperationParamSpec`、`NodeOperationKindSpec`、`NodeOperationOutputTarget`、`nodeOperationOutputTarget`、`NODE_OPERATION_AGENT_SPECS`、`nodeOperationAgentSpec`、`isAgentOperationParamSpec`、`validateNodeOperationParams` |
+| `src/shared/node-operation-specs.ts` | `NodeOperationAgentSpec`、`NodeOperationParamType`、`NodeOperationParamSpec`、`NodeOperationKindSpec`、`NodeOperationOutputTarget`、`isResultOutputOp`、`isResultOutput`、`nodeOperationOutputTarget`、`NODE_OPERATION_AGENT_SPECS`、`nodeOperationAgentSpec`、`isAgentOperationParamSpec`、`validateNodeOperationParams` |
 | `src/shared/operation-schema.ts` | `VideoOperationId`、`VideoOperationDef`、`VIDEO_OPERATIONS`、`OperationBindings`、`isVideoOperation` |
 <!-- AUTO:exports:end -->

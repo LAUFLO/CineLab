@@ -19,6 +19,7 @@ import {
   type ParamDef
 } from '@shared/provider-schema'
 import { effectiveCapabilities } from '@shared/capabilities'
+import { isResultOutput } from '@shared/node-operation-specs'
 import { referenceInputErrors } from '@shared/reference-inputs'
 import { applyParamConstraints } from '@shared/param-constraints'
 import {
@@ -212,6 +213,7 @@ export function PromptBar() {
     single?.type === 'cine' &&
     single.data.kind !== 'study' &&
     (single.data.assetOnly === true ||
+      single.data.outputs?.some((output) => isResultOutput(output)) === true ||
       (!single.data.prompt &&
         (single.data.outputs?.length ?? 0) === 1 &&
         ['本地上传', '资产库'].includes(

@@ -152,6 +152,8 @@ export interface AddAssetLayout {
   groupTitle?: string
   groupColor?: GroupColor
   scope?: 'project' | 'global'
+  /** 结果/素材节点：隐藏下方 PromptBar，只保留上方工具栏 */
+  assetOnly?: boolean
   /** 有分组时只连一条线到分组，而不是逐个连子节点 */
   connectGroup?: boolean
   /** 分组创建后的回调，用于记录分组 id */

@@ -211,7 +211,8 @@ function createStudyOutputs(
         scope: 'project',
         connectGroup: true,
         onGroupCreated: (groupId) => created.push(groupId)
-      }
+      },
+      true
     )
     ids.forEach((id, index) => {
       const segment = study.segments[index]
@@ -249,7 +250,8 @@ function createStudyOutputs(
         scope: 'project',
         connectGroup: true,
         onGroupCreated: (groupId) => created.push(groupId)
-      }
+      },
+      true
     )
     ids.forEach((id, index) => {
       canvas.patchNodeData(id, {
@@ -274,7 +276,9 @@ function createStudyOutputs(
       { x: origin.x, y: origin.y + 1080 },
       [asset],
       'BGM',
-      nodeId
+      nodeId,
+      undefined,
+      true
     )
     ids.forEach((id) =>
       canvas.patchNodeData(id, {
@@ -760,7 +764,8 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
           cellWidth: 200,
           scope: 'project',
           connectGroup: true
-        }
+        },
+        true
       )
       ids.forEach((id, index) => {
         const item = items[index]
@@ -800,7 +805,8 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
           cellWidth: 220,
           scope: 'project',
           connectGroup: true
-        }
+        },
+        true
       )
       ids.forEach((id, index) => {
         const item = items[index]
@@ -825,6 +831,7 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
         title: '风格档案',
         text: buildStyleMarkdown(study.style),
         status: 'done',
+        assetOnly: true,
         studyRef: { studyId: study.id, kind: 'style' }
       })
       canvas.resizeNode(id, 360)
@@ -871,7 +878,8 @@ export const useFilmStudyStore = create<FilmStudyState>((set, get) => ({
         cellWidth: 260,
         scope: 'project',
         connectGroup: true
-      }
+      },
+      true
     )
     ids.forEach((id, index) => {
       canvas.patchNodeData(id, {

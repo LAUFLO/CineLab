@@ -175,4 +175,49 @@ describe('canvas store', () => {
     expect(node?.data.stemTaskId).toBeUndefined()
     expect(node?.data.stemMode).toBe('vocal')
   })
+
+  it('marks operation result nodes as asset-only and preserves it after output', () => {
+    const id = useCanvasStore
+      .getState()
+      .addPendingNodes('image', { x: 0, y: 0 }, 1, '裁剪结果')[0]
+    expect(
+      useCanvasStore.getState().nodes.find((node) => node.id === id)?.data
+        .assetOnly
+    ).toBe(true)
+
+    useCanvasStore.getState().applyOutput(
+      id,
+      {
+        id: 'asset-1',
+        path: 'assets/img/a.png',
+        kind: 'image',
+        createdAt: '2026-11-22T00:00:00.000Z',
+        model: '本地裁剪'
+      },
+      'crop'
+    )
+    expect(
+      useCanvasStore.getState().nodes.find((node) => node.id === id)?.data
+        .assetOnly
+    ).toBe(true)
+  })
+
+  it('keeps creative nodes prompt-enabled after same-node edits', () => {
+    const id = useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
+    useCanvasStore.getState().applyOutput(
+      id,
+      {
+        id: 'asset-2',
+        path: 'assets/img/b.png',
+        kind: 'image',
+        createdAt: '2026-11-22T00:00:00.000Z',
+        model: 'test-model'
+      },
+      'relight'
+    )
+    expect(
+      useCanvasStore.getState().nodes.find((node) => node.id === id)?.data
+        .assetOnly
+    ).toBeUndefined()
+  })
 })

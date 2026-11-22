@@ -2,6 +2,7 @@ import { addEdge, applyEdgeChanges, applyNodeChanges } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type OutputRef } from '@shared/canvas-schema'
 import { VIDEO_OPERATIONS } from '@shared/operation-schema'
 import { applyCanvasBatch } from '@shared/canvas-commands'
+import { isResultOutputOp } from '@shared/node-operation-specs'
 import { clearEdgeReferences } from '../../edge-references'
 import { externalWrite, commandTurns, isGroupNode, isStudioNode, isStageNode, isFilmNode, isVideoOpNode, nodeSize, nextId, absolutePosition, type CineNode, type StudioNode, type StageNode, type FilmNode, type VideoOpNode, type CanvasNode } from '../../canvas-model'
 
@@ -540,7 +541,10 @@ applyOutput: (nodeId, asset, op) => {
             status: 'done',
             progress: 100,
             error: undefined,
-            assetOnly: undefined,
+            assetOnly:
+              entry.data.assetOnly === true || isResultOutputOp(op)
+                ? true
+                : undefined,
             outputs,
             selectedOutputId: output.id
           },

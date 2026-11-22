@@ -39,6 +39,7 @@
 | 生成队列 | 并发 2（1–4）、取消、事件 | `src/main/engine/queue.ts` | 已实现 |
 | 参考输入 | 图/视频/音频、角色/遮罩 | `src/shared/reference-inputs.ts` | 已实现 |
 | 宫格/拼接/抽帧/裁剪/转码 | 媒体处理 | `src/main/media/` | 已实现 |
+| 结果节点隐藏 PromptBar | 操作/AI/拉片/导演台/剪辑室结果只保留工具栏 | `PromptBar.tsx`、`node-operation-specs.ts`、`stores/canvas/slices/assets.ts` | 已实现 |
 | 人声/背景音分离 | Demucs htdemucs、无声视频 + 音频、FIFO 任务 | `src/main/media/stems.ts`、`resources/stem-worker/worker.py` | 已实现 |
 | 素材入库 | `ingestAsset` | `src/main/assets/ingest.ts` | 已实现 |
 | 错误文案 | 配额/鉴权/超时 | `src/main/engine/generation-error.ts` | 已实现 |

@@ -16,6 +16,7 @@
 | 01 | 无限画布、节点、连线、分组、节点工具栏 | `src/shared/canvas-commands.ts`、`canvas-commands.test.ts` |
 | 01 | 项目画布打开/保存/多画布 | `src/main/project/`、`src/shared/project-schema.ts` |
 | 01 | 文本节点引用槽位与 @ 提及，文本内容拼入提示词 | `PromptBar.tsx`、`promptbar-model.tsx`、`MentionMenu.tsx` |
+| 01 | 结果/素材节点隐藏 PromptBar，保留 NodeToolbar；旧项目按输出 op/model 兜底 | `PromptBar.tsx`、`node-operation-specs.ts`、`stores/canvas/slices/assets.ts` |
 | 02 | 多供应商模型配置、生成任务、参数预设 | `src/main/providers/`、`src/main/engine/` |
 | 02 | 参考图/视频/音频输入、素材导入 | `src/shared/reference-inputs.ts`、`src/main/assets/` |
 | 02 | 首尾帧统一载荷与校验、MiniMax H3 role | `src/main/providers/media.ts`、`src/main/providers/minimax.ts`、`src/shared/reference-inputs.ts`；Agnes 首帧已真实复测 |

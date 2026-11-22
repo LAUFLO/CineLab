@@ -556,8 +556,10 @@ export function NodeToolbar({
     const targetOp =
       sphereDialog === 'camera'
         ? ops.find((entry) => entry.id === 'multi-angle')
-        : undefined
-    const targetNodeId = targetOp ? createOutputNode(targetOp, label) : nodeId
+        : ops.find((entry) => entry.id === 'relight')
+    const targetNodeId = targetOp
+      ? createOutputNode(targetOp, label)
+      : nodeId
     setSphereDialog(null)
     if (!targetNodeId) return
     showToast(`已提交「${label}」生成`)
@@ -573,7 +575,8 @@ export function NodeToolbar({
           role: 'reference',
           ...(current.scope ? { scope: current.scope } : {})
         }
-      ]
+      ],
+      ...(targetOp ? { op: targetOp.id } : {})
     })
   }
 

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
+import type { FilmStudy } from '@shared/film-study'
 import { useCanvasStore } from '../canvas'
 
 const reset = (): void => {
@@ -29,6 +30,45 @@ describe('canvas store', () => {
     useCanvasStore.getState().removeNode(source)
     expect(useCanvasStore.getState().nodes).toHaveLength(1)
     expect(useCanvasStore.getState().edges).toHaveLength(0)
+  })
+
+  it('marks film-study shot outputs as asset only', () => {
+    const study: FilmStudy = {
+      schemaVersion: 1,
+      id: 'study-1',
+      sourceNodeId: 'source-1',
+      sourcePath: 'source.mp4',
+      sourceName: '测试拉片',
+      duration: 10,
+      fps: 24,
+      frameInterval: 1,
+      frames: [],
+      segments: [],
+      shots: [
+        {
+          index: 1,
+          startTime: 0,
+          endTime: 2,
+          duration: 2,
+          firstFrame: 'first.png',
+          lastFrame: 'last.png'
+        }
+      ],
+      scenes: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    const ids = useCanvasStore
+      .getState()
+      .addShotNodes(study, { x: 0, y: 0 })
+    const nodes = useCanvasStore
+      .getState()
+      .nodes.filter((node) => ids.includes(node.id))
+    const cineNodes = nodes.filter((node) => node.type === 'cine')
+
+    expect(cineNodes).toHaveLength(3)
+    expect(cineNodes.every((node) => node.data.assetOnly === true)).toBe(true)
   })
 
   it('groups and ungroups selected nodes', () => {

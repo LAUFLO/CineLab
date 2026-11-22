@@ -72,13 +72,18 @@ const NEW_NODE_OPERATION_IDS = new Set([
   'shot-retake',
   'element-replace',
   'extend',
-  'relight'
+  'relight',
+  'color-grade',
+  'portrait',
+  'inpaint',
+  'erase',
+  'element-edit'
 ])
 
 /**
  * 会产生“结果节点”的输出 op。结果节点只保留上方工具栏，不显示 PromptBar。
- * 注意：color-grade / portrait / inpaint / erase / element-edit 写回当前创作节点的版本栈；
- * relight 现在新建结果节点，但旧项目已写回原节点的结果仍保留 PromptBar。
+ * 注意：color-grade / relight / portrait / inpaint / erase / element-edit
+ * 现在都新建结果节点；旧项目已写回原节点的历史结果仍保留 PromptBar。
  */
 const RESULT_OUTPUT_OPS = new Set([
   'grid-split',

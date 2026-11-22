@@ -324,6 +324,7 @@ addShotNodes: (study, origin, sourceNodeId) => {
               kind: 'image',
               title: `镜 ${String(shot.index).padStart(2, '0')} ${frame.label}`,
               status: 'done',
+              assetOnly: true,
               outputs: [output],
               selectedOutputId: output.id,
               templates: NODE_META.image.templates,
@@ -353,6 +354,7 @@ addShotNodes: (study, origin, sourceNodeId) => {
             kind: 'text',
             title: `镜 ${String(shot.index).padStart(2, '0')} 详情`,
             status: 'done',
+            assetOnly: true,
             text: buildShotMarkdown(shot, group.scene, study.cast ?? []),
             templates: NODE_META.text.templates,
             studyRef: {

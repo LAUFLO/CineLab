@@ -84,7 +84,7 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 - `itemRequired/itemOptions`：必须从菜单选一项；
 - `params`：number/string/boolean/rect 参数。
 
-`crop`、`grid-generate`、`character-sheet`、`relight` 等会新建节点并连线的操作，与写回版本栈的光影校正/人像/重绘等操作分开（`nodeOperationOutputTarget`）。
+`crop`、`grid-generate`、`character-sheet`、`relight`、`color-grade`、`portrait`、`inpaint`、`erase`、`element-edit` 等会新建结果节点并连线；只有 PromptBar 直接生成写回版本栈（`nodeOperationOutputTarget`）。
 
 ## 数据流
 
@@ -151,7 +151,7 @@ CineBot
 | `src/renderer/src/canvas/TopBar.tsx` | 500 |
 | `src/renderer/src/canvas/UpstreamWatcher.tsx` | 33 |
 | `src/renderer/src/canvas/alignment.ts` | 113 |
-| `src/renderer/src/canvas/context-actions.ts` | 229 |
+| `src/renderer/src/canvas/context-actions.ts` | 234 |
 | `src/renderer/src/canvas/delete-actions.ts` | 91 |
 | `src/renderer/src/canvas/edges/FlowEdge.tsx` | 72 |
 | `src/renderer/src/canvas/media-size.ts` | 45 |
@@ -167,7 +167,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/GroupNodeView.tsx` | 131 |
 | `src/renderer/src/canvas/nodes/MaskEditorDialog.tsx` | 377 |
 | `src/renderer/src/canvas/nodes/ModelConfigDialog.tsx` | 1628 |
-| `src/renderer/src/canvas/nodes/NodeToolbar.tsx` | 1193 |
+| `src/renderer/src/canvas/nodes/NodeToolbar.tsx` | 1196 |
 | `src/renderer/src/canvas/nodes/PanoramaViewer.tsx` | 200 |
 | `src/renderer/src/canvas/nodes/RemakeMappingDialog.tsx` | 155 |
 | `src/renderer/src/canvas/nodes/SphereDialog.tsx` | 393 |
@@ -195,7 +195,7 @@ CineBot
 | `src/renderer/src/canvas/promptbar/UploadMenu.tsx` | 45 |
 | `src/renderer/src/stores/canvas-model.ts` | 345 |
 | `src/renderer/src/stores/canvas.ts` | 211 |
-| `src/renderer/src/stores/canvas/slices/assets.ts` | 524 |
+| `src/renderer/src/stores/canvas/slices/assets.ts` | 526 |
 | `src/renderer/src/stores/canvas/slices/graph.ts` | 618 |
 | `src/renderer/src/stores/canvas/slices/groups.ts` | 776 |
 | `src/renderer/src/stores/canvas/slices/history.ts` | 488 |
@@ -206,7 +206,7 @@ CineBot
 | `src/shared/canvas-schema.ts` | 326 |
 | `src/shared/canvas-summary.ts` | 54 |
 | `src/shared/components.ts` | 59 |
-| `src/shared/node-operation-specs.ts` | 442 |
+| `src/shared/node-operation-specs.ts` | 447 |
 | `src/shared/operation-schema.ts` | 64 |
 <!-- AUTO:files:end -->
 

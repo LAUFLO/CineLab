@@ -180,7 +180,11 @@ export async function pasteAt(position?: XYPosition): Promise<number> {
     if (content.kind === 'text') {
       const target = position ?? viewportCenter()
       const id = store.addNode('text', target)
-      store.patchNodeData(id, { status: 'done', text: content.text })
+      store.patchNodeData(id, {
+        status: 'done',
+        text: content.text,
+        assetOnly: true
+      })
       toast('已粘贴文本')
       return 1
     }
@@ -195,6 +199,7 @@ export async function pasteAt(position?: XYPosition): Promise<number> {
 
     store.patchNodeData(id, {
       status: 'done',
+      assetOnly: true,
       outputs: [
         {
           id: asset.id,

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { ParamDef } from '@shared/provider-schema'
-import { paramGroupName, paramLabel } from '../promptbar-model'
+import {
+  matchTitleSpans,
+  paramGroupName,
+  paramLabel
+} from '../promptbar-model'
 
 function param(overrides: Partial<ParamDef>): ParamDef {
   return {
@@ -10,6 +14,42 @@ function param(overrides: Partial<ParamDef>): ParamDef {
     ...overrides
   }
 }
+
+describe('matchTitleSpans', () => {
+  const short = '视频节点 5 · 当前帧'
+  const long = '视频节点 5 · 当前帧 · 提示词'
+
+  it('prefers the longest title and ignores titles nested inside it', () => {
+    const text = `根据反推出来的提示词生成图片 @${long}`
+    const spans = matchTitleSpans(text, [short, long])
+    expect(spans.map((span) => span.name)).toEqual([long])
+  })
+
+  it('keeps a nested title when it also appears standalone', () => {
+    const text = `@${long} 再参考 ${short}`
+    const spans = matchTitleSpans(text, [short, long])
+    expect(spans.map((span) => span.name)).toEqual([long, short])
+  })
+
+  it('treats @ text mentions as occupied spans', () => {
+    const text = `@${long}`
+    const explicit = matchTitleSpans(text, [long], { prefix: '@' })
+    const auto = matchTitleSpans(text, [short], {
+      occupied: explicit
+    })
+    expect(explicit.map((span) => span.name)).toEqual([long])
+    expect(auto).toEqual([])
+  })
+
+  it('matches normal titles and ignores empty or unknown names', () => {
+    expect(matchTitleSpans('参考 图片节点 4', ['图片节点 4'])).toMatchObject([
+      { name: '图片节点 4', start: 3, end: 9 }
+    ])
+    expect(matchTitleSpans('普通提示词', [])).toEqual([])
+    expect(matchTitleSpans('普通提示词', [''])).toEqual([])
+    expect(matchTitleSpans('普通提示词', ['参考图'])).toEqual([])
+  })
+})
 
 describe('paramGroupName', () => {
   it('always gives ratio its own title', () => {

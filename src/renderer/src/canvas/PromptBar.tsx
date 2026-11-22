@@ -80,6 +80,7 @@ import {
   isVideoPath,
   MENTION_GROUPS,
   escapeRegExp,
+  matchTitleSpans,
   renderMentionText
 } from './promptbar-model'
 
@@ -831,16 +832,48 @@ export function PromptBar() {
   })()
   const refs = refsResult.list
 
+  const promptValue = promptText.trim()
+  const textTitles = (() => {
+    const titles: string[] = []
+    for (const entry of nodes) {
+      if (entry.type !== 'cine' || entry.data.kind !== 'text') continue
+      if (!entry.data.text?.trim()) continue
+      titles.push(entry.data.title)
+    }
+    return titles
+  })()
+  const explicitTextSpans = promptValue
+    ? matchTitleSpans(promptValue, textTitles, { prefix: '@' })
+    : []
+
   const autoRefs = (() => {
     if (!autoLink) return []
-    const text = promptText.trim()
+    const text = promptValue
     if (!text) return []
 
     const result: PickedRef[] = []
 
+    const titleSpans = matchTitleSpans(
+      text,
+      [
+        ...nodes
+          .filter((entry) => entry.id !== node.id && !isGroupNode(entry))
+          .map((entry) => entry.data.title),
+        ...materials
+          .filter(
+            (material) =>
+              material.kind === 'image' || material.kind === 'video'
+          )
+          .map((material) => material.name),
+        ...characters.map((card) => card.name)
+      ],
+      { occupied: explicitTextSpans }
+    )
+    const matchedTitles = new Set(titleSpans.map((span) => span.name))
+
     for (const item of nodes) {
       if (item.id === node.id || isGroupNode(item)) continue
-      if (!text.includes(item.data.title)) continue
+      if (!matchedTitles.has(item.data.title)) continue
       const output = selectedNodeOutput(item)
       if (output?.kind === 'image') {
         result.push({
@@ -862,7 +895,7 @@ export function PromptBar() {
     for (const material of materials) {
       if (material.kind !== 'image' && material.kind !== 'video') continue
       if (material.kind === 'video' && kind !== 'video') continue
-      if (!text.includes(material.name)) continue
+      if (!matchedTitles.has(material.name)) continue
       result.push({
         path: material.path,
         role: 'reference',
@@ -872,7 +905,7 @@ export function PromptBar() {
     }
 
     for (const card of characters) {
-      if (!text.includes(card.name)) continue
+      if (!matchedTitles.has(card.name)) continue
       for (const path of card.referencePaths) {
         result.push({ path, role: 'reference', scope: 'global', kind: 'image' })
       }
@@ -1013,20 +1046,26 @@ export function PromptBar() {
 
     const text = promptText.trim()
     if (text) {
-      // @ 引用的文本节点不依赖“自动连线”开关。
+      // @ 引用的文本节点不依赖“自动连线”开关；按最长标题匹配，避免命中更长标题的一部分。
+      const explicitTitles = new Set(explicitTextSpans.map((span) => span.name))
       for (const item of nodes) {
         if (item.id === node.id || isGroupNode(item)) continue
         if (item.data.kind !== 'text') continue
-        if (!text.includes(`@${item.data.title}`)) continue
+        if (!explicitTitles.has(item.data.title)) continue
         collect(item)
       }
-    }
 
-    if (autoLink && text) {
-      for (const item of nodes) {
-        if (item.id === node.id || isGroupNode(item)) continue
-        if (!text.includes(item.data.title)) continue
-        collect(item)
+      if (autoLink) {
+        const autoSpans = matchTitleSpans(text, textTitles, {
+          occupied: explicitTextSpans
+        })
+        const autoTitles = new Set(autoSpans.map((span) => span.name))
+        for (const item of nodes) {
+          if (item.id === node.id || isGroupNode(item)) continue
+          if (item.data.kind !== 'text') continue
+          if (!autoTitles.has(item.data.title)) continue
+          collect(item)
+        }
       }
     }
 

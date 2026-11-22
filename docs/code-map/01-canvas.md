@@ -65,6 +65,7 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 - 左侧 `+` 只作为 target 接收连线，右侧 `+` 才发起下游生成（AGENTS.md 硬性约定）。
 - 删除连线后，`clearEdgeReferences` 清理下游节点的 `sourceNodeId/sourcePath/sourceScope/sourceName`，且只在该上游没有任何剩余连线时清理。
 - 分组使用 `childrenOf`、`absolutePosition`、`remapNodeReferences`、`remapEdges` 处理子节点坐标与引用。
+- PromptBar 的 AutoLink 与 `@` 文本匹配按标题最长优先且不重叠，避免派生文本节点标题包含上游素材标题时误加参考图。
 
 ## 节点操作
 
@@ -143,7 +144,7 @@ CineBot
 | `src/renderer/src/canvas/GroupToolbar.tsx` | 235 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
 | `src/renderer/src/canvas/NodeContextMenu.tsx` | 497 |
-| `src/renderer/src/canvas/PromptBar.tsx` | 2185 |
+| `src/renderer/src/canvas/PromptBar.tsx` | 2224 |
 | `src/renderer/src/canvas/StatusBar.tsx` | 100 |
 | `src/renderer/src/canvas/StoryboardToolbar.tsx` | 359 |
 | `src/renderer/src/canvas/TopBar.tsx` | 500 |
@@ -186,7 +187,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/study-sheet.ts` | 300 |
 | `src/renderer/src/canvas/nodes/text-markdown.ts` | 101 |
 | `src/renderer/src/canvas/nodes/useBoxEditor.ts` | 131 |
-| `src/renderer/src/canvas/promptbar-model.tsx` | 150 |
+| `src/renderer/src/canvas/promptbar-model.tsx` | 201 |
 | `src/renderer/src/canvas/promptbar/MentionMenu.tsx` | 165 |
 | `src/renderer/src/canvas/promptbar/ModelMenu.tsx` | 95 |
 | `src/renderer/src/canvas/promptbar/ParamPanel.tsx` | 232 |
@@ -263,7 +264,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/study-sheet.ts` | `studyClock`、`segmentDuration`、`segmentMetaLine`、`buildStudySheetMarkdown`、`buildStudyTableMarkdown`、`buildShotMarkdown`、`buildRemakePrompt`、`buildStyleMarkdown`、`ShotGroup`、`groupShotsByScene`、`segmentCopyText` |
 | `src/renderer/src/canvas/nodes/text-markdown.ts` | `MARKDOWN_CLASS`、`renderMarkdown` |
 | `src/renderer/src/canvas/nodes/useBoxEditor.ts` | `Box`、`DragMode`、`useBoxEditor` |
-| `src/renderer/src/canvas/promptbar-model.tsx` | `WIDTH`、`HEIGHT`、`PLACEHOLDER`、`ModelOption`、`defaultParams`、`paramGroupName`、`paramLabel`、`ratioOf`、`MentionGroupName`、`RefKind`、`MentionKind`、`PickedRef`、`MentionItem`、`VIDEO_PATH`、`MAX_TEXT_CONTEXT`、`TextContext`、`buildPromptWithContext`、`isVideoPath`、`MENTION_GROUPS`、`escapeRegExp`、`renderMentionText` |
+| `src/renderer/src/canvas/promptbar-model.tsx` | `WIDTH`、`HEIGHT`、`PLACEHOLDER`、`ModelOption`、`defaultParams`、`paramGroupName`、`paramLabel`、`ratioOf`、`MentionGroupName`、`RefKind`、`MentionKind`、`PickedRef`、`MentionItem`、`VIDEO_PATH`、`MAX_TEXT_CONTEXT`、`TextContext`、`Span`、`TitleSpan`、`matchTitleSpans`、`buildPromptWithContext`、`isVideoPath`、`MENTION_GROUPS`、`escapeRegExp`、`renderMentionText` |
 | `src/renderer/src/canvas/promptbar/MentionMenu.tsx` | `MentionMenu` |
 | `src/renderer/src/canvas/promptbar/ModelMenu.tsx` | `ModelMenu` |
 | `src/renderer/src/canvas/promptbar/ParamPanel.tsx` | `ParamPanel` |

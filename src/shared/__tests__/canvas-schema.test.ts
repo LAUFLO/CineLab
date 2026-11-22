@@ -1,14 +1,40 @@
 import { describe, expect, it } from 'vitest'
-import { GROUP_COLORS, NODE_META, TITLE_HEIGHT } from '../canvas-schema'
+import {
+  GROUP_COLORS,
+  MEDIA_FRAME_COMPACT,
+  MEDIA_FRAME_STANDARD,
+  NODE_META,
+  TITLE_HEIGHT,
+  mediaFrameNodeSize
+} from '../canvas-schema'
 import { groupColorSchema } from '../project-schema'
 
 describe('node metadata', () => {
   it('keeps the agreed default node sizes', () => {
-    expect(NODE_META.image.width).toBe(360)
-    expect(NODE_META.video.width).toBe(480)
+    expect(NODE_META.image.width).toBe(400)
+    expect(NODE_META.video.width).toBe(400)
     expect(NODE_META.text.width).toBe(348)
     expect(NODE_META.audio.width).toBe(200)
     expect(NODE_META.audio.height).toBe(127)
+  })
+
+  it('fits media into standard and compact frames, including 21:9', () => {
+    expect(mediaFrameNodeSize(1920, 1080, MEDIA_FRAME_STANDARD)).toEqual({
+      width: 400,
+      height: 253
+    })
+    expect(mediaFrameNodeSize(21, 9, MEDIA_FRAME_STANDARD)).toEqual({
+      width: 400,
+      height: 199
+    })
+    expect(mediaFrameNodeSize(1080, 1920, MEDIA_FRAME_STANDARD)).toEqual({
+      width: 225,
+      height: 428
+    })
+    expect(mediaFrameNodeSize(21, 9, MEDIA_FRAME_COMPACT)).toEqual({
+      width: 240,
+      height: 131
+    })
   })
 
   it('keeps the title height used by layout calculations', () => {

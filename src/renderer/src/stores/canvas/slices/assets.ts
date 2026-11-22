@@ -1,4 +1,15 @@
-import { GROUP_COLORS, GROUP_GAP, GROUP_HEADER_HEIGHT, GROUP_PADDING, NODE_META, TITLE_HEIGHT, type OutputRef } from '@shared/canvas-schema'
+import {
+  GROUP_COLORS,
+  GROUP_GAP,
+  GROUP_HEADER_HEIGHT,
+  GROUP_PADDING,
+  NODE_META,
+  TITLE_HEIGHT,
+  mediaFrameNodeSize,
+  mediaFramePixels,
+  type MediaFramePreset,
+  type OutputRef
+} from '@shared/canvas-schema'
 import type { FilmStudy } from '@shared/film-study'
 import { buildShotMarkdown, groupShotsByScene } from '../../../canvas/nodes/study-sheet'
 import { isGroupNode, isStudioNode, isFilmNode, selectedNodeOutput, nextId, findFreeOrigin, absolutePosition, type CineNode, type GroupNode, type CineEdge } from '../../canvas-model'
@@ -60,8 +71,13 @@ detachStudioOutput: (studioNodeId) => {
 
     state.pushHistory()
 
-    const meta = NODE_META.video
     const id = nextId('video')
+    const size = mediaFrameNodeSize(
+      output.width,
+      output.height,
+      mediaFramePixels('standard'),
+      'video'
+    )
     const node: CineNode = {
       id,
       type: 'cine',
@@ -71,17 +87,14 @@ detachStudioOutput: (studioNodeId) => {
         kind: 'video',
         title: `${studio.data.title} · 成片`,
         status: 'done',
+        mediaFrame: 'standard',
         outputs: studio.data.outputs ?? [],
         selectedOutputId: output.id,
         templates: NODE_META.video.templates
       },
       style: {
-        width: meta.width,
-        height:
-          output.width && output.height
-            ? Math.round((meta.width * output.height) / output.width) +
-              TITLE_HEIGHT
-            : meta.height + TITLE_HEIGHT
+        width: size.width,
+        height: size.height
       }
     }
 
@@ -110,21 +123,41 @@ addAssetNodes: (
     const meta = NODE_META[kind]
     const gap = GROUP_GAP
     const columns = Math.max(1, Math.round(layout?.columns ?? 3))
-    const width = Math.max(1, Math.round(layout?.cellWidth ?? meta.width))
-    const heights = assets.map((asset) => {
+    const isMedia = kind === 'image' || kind === 'video'
+    const mediaFrame: MediaFramePreset = layout?.cellWidth
+      ? 'compact'
+      : 'standard'
+    const columnWidth = isMedia
+      ? mediaFramePixels(mediaFrame)
+      : kind === 'audio'
+        ? NODE_META.audio.width
+        : Math.max(1, Math.round(layout?.cellWidth ?? meta.width))
+    const sizes = assets.map((asset) => {
+      if (isMedia) {
+        return mediaFrameNodeSize(
+          asset.width,
+          asset.height,
+          columnWidth,
+          kind
+        )
+      }
       const ratio =
         asset.width && asset.height
           ? asset.height / asset.width
           : meta.height / meta.width
-      return Math.round(width * ratio) + TITLE_HEIGHT
+      return {
+        width: columnWidth,
+        height: Math.round(columnWidth * ratio) + TITLE_HEIGHT
+      }
     })
+    const heights = sizes.map((size) => size.height)
     const rowHeights: number[] = []
     heights.forEach((height, index) => {
       const row = Math.floor(index / columns)
       rowHeights[row] = Math.max(rowHeights[row] ?? 0, height)
     })
     const rows = rowHeights.length
-    const contentWidth = columns * width + (columns - 1) * gap
+    const contentWidth = columns * columnWidth + (columns - 1) * gap
     const contentHeight =
       rowHeights.reduce((sum, height) => sum + height, 0) +
       Math.max(0, rows - 1) * gap
@@ -158,16 +191,23 @@ addAssetNodes: (
 
       const column = index % columns
       const row = Math.floor(index / columns)
+      const size = sizes[index]
       const rowOffset =
         rowHeights.slice(0, row).reduce((sum, height) => sum + height, 0) +
         row * gap
       const position = grouped
         ? {
-            x: GROUP_PADDING + column * (width + gap),
+            x:
+              GROUP_PADDING +
+              column * (columnWidth + gap) +
+              Math.round((columnWidth - size.width) / 2),
             y: GROUP_HEADER_HEIGHT + rowOffset
           }
         : {
-            x: start.x + column * (width + gap),
+            x:
+              start.x +
+              column * (columnWidth + gap) +
+              Math.round((columnWidth - size.width) / 2),
             y: start.y + rowOffset
           }
 
@@ -182,12 +222,13 @@ addAssetNodes: (
           kind,
           title: `${titlePrefix} ${index + 1}`,
           status: 'done',
+          ...(isMedia ? { mediaFrame } : {}),
           ...(assetOnly ? { assetOnly: true } : {}),
           outputs: [output],
           selectedOutputId: output.id,
           templates: meta.templates
         },
-        style: { width, height: heights[index] }
+        style: { width: size.width, height: size.height }
       }
     })
 
@@ -324,6 +365,7 @@ addShotNodes: (study, origin, sourceNodeId) => {
               kind: 'image',
               title: `镜 ${String(shot.index).padStart(2, '0')} ${frame.label}`,
               status: 'done',
+              mediaFrame: 'compact',
               assetOnly: true,
               outputs: [output],
               selectedOutputId: output.id,
@@ -391,11 +433,25 @@ addShotNodes: (study, origin, sourceNodeId) => {
     const meta = NODE_META[kind]
     const gap = GROUP_GAP
     const columns = Math.max(1, Math.round(layout?.columns ?? 1))
-    const width = Math.max(1, Math.round(layout?.cellWidth ?? meta.width))
-    const height =
-      Math.round(width * (meta.height / meta.width)) + TITLE_HEIGHT
+    const isMedia = kind === 'image' || kind === 'video'
+    const mediaFrame: MediaFramePreset = layout?.cellWidth
+      ? 'compact'
+      : 'standard'
+    const columnWidth = isMedia
+      ? mediaFramePixels(mediaFrame)
+      : Math.max(1, Math.round(layout?.cellWidth ?? meta.width))
+    const placeholder = isMedia
+      ? mediaFrameNodeSize(undefined, undefined, columnWidth, kind)
+      : {
+          width: columnWidth,
+          height:
+            Math.round(columnWidth * (meta.height / meta.width)) +
+            TITLE_HEIGHT
+        }
+    const width = placeholder.width
+    const height = placeholder.height
     const rows = Math.ceil(total / columns)
-    const contentWidth = columns * width + (columns - 1) * gap
+    const contentWidth = columns * columnWidth + (columns - 1) * gap
     const contentHeight = rows * height + Math.max(0, rows - 1) * gap
     const grouped = Boolean(layout?.groupTitle)
     const outerWidth = grouped ? contentWidth + GROUP_PADDING * 2 : contentWidth
@@ -421,11 +477,17 @@ addShotNodes: (study, origin, sourceNodeId) => {
       const row = Math.floor(index / columns)
       const position = grouped
         ? {
-            x: GROUP_PADDING + column * (width + gap),
+            x:
+              GROUP_PADDING +
+              column * (columnWidth + gap) +
+              Math.round((columnWidth - width) / 2),
             y: GROUP_HEADER_HEIGHT + row * (height + gap)
           }
         : {
-            x: start.x + column * (width + gap),
+            x:
+              start.x +
+              column * (columnWidth + gap) +
+              Math.round((columnWidth - width) / 2),
             y: start.y + row * (height + gap)
           }
 
@@ -440,6 +502,7 @@ addShotNodes: (study, origin, sourceNodeId) => {
           kind,
           title: total > 1 ? `${titlePrefix} ${index + 1}` : titlePrefix,
           status: 'running',
+          ...(isMedia ? { mediaFrame } : {}),
           templates: meta.templates,
           // addPendingNodes 是操作/生成结果的占位 API：默认隐藏 PromptBar，
           // 只保留上方工具栏；需要创作入口时用 addNode 或显式 assetOnly:false。

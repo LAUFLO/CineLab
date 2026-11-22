@@ -10,6 +10,8 @@ import {
 import {
   NODE_META,
   TITLE_HEIGHT,
+  mediaFrameNodeSize,
+  mediaFramePixels,
   type NodeKind,
   type OutputRef
 } from '@shared/canvas-schema'
@@ -180,11 +182,22 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
   const selectOutput = (output: OutputRef): void => {
     patchNodeData(id, { selectedOutputId: output.id })
-    if (output.width && output.height) {
-      resizeNode(
-        id,
-        Math.round((nodeWidth * output.height) / output.width) + TITLE_HEIGHT
+    if (
+      (data.kind === 'image' || data.kind === 'video') &&
+      output.width &&
+      output.height
+    ) {
+      const frame = data.mediaFrame ?? 'standard'
+      const size = mediaFrameNodeSize(
+        output.width,
+        output.height,
+        mediaFramePixels(frame),
+        data.kind
       )
+      resizeNode(id, size.height, size.width)
+      if (currentNode?.parentId) {
+        useCanvasStore.getState().syncGroupBounds(currentNode.parentId)
+      }
     }
   }
 

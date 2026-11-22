@@ -150,7 +150,7 @@ export interface CanvasStore {
   /** 工具直接写 store 前调用：一轮只压一条历史，批次内的 pushHistory 不再重复压栈 */
   beginToolTurn: (turnId?: string) => void
   endToolTurn: () => void
-  resizeNode: (nodeId: string, height: number) => void
+  resizeNode: (nodeId: string, height: number, width?: number) => void
   removeNode: (id: string) => void
   clearSelection: () => void
   arrangeNodes: () => void

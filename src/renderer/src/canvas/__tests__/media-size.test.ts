@@ -11,8 +11,8 @@ vi.mock('../../stores/canvas', () => ({
     getState: () => state
   },
   nodeSize: (node: { style?: { width?: number; height?: number } }) => ({
-    width: Number(node.style?.width ?? 360),
-    height: Number(node.style?.height ?? 376)
+    width: Number(node.style?.width ?? 400),
+    height: Number(node.style?.height ?? 428)
   })
 }))
 
@@ -23,8 +23,14 @@ function node(overrides: Record<string, unknown> = {}): Record<string, unknown> 
     id: 'node-1',
     type: 'cine',
     position: { x: 0, y: 0 },
-    data: { kind: 'image', title: '素材', status: 'done', templates: [] },
-    style: { width: 360, height: 376 },
+    data: {
+      kind: 'image',
+      title: '素材',
+      status: 'done',
+      templates: [],
+      mediaFrame: 'standard'
+    },
+    style: { width: 400, height: 428 },
     ...overrides
   }
 }
@@ -36,17 +42,36 @@ describe('fitNodeToMedia', () => {
     state.syncGroupBounds.mockReset()
   })
 
-  it('fits height by the media aspect ratio while keeping width', () => {
+  it('fits media into the standard 400 box while preserving aspect ratio', () => {
     expect(
       fitNodeToMedia('node-1', { width: 300, height: 600 })
-    ).toBe(748)
-    expect(state.resizeNode).toHaveBeenCalledWith('node-1', 748)
+    ).toBe(428)
+    expect(state.resizeNode).toHaveBeenCalledWith('node-1', 428, 200)
   })
 
-  it('clamps extremely tall media', () => {
+  it('fits extremely tall media without stretching', () => {
     expect(
       fitNodeToMedia('node-1', { width: 100, height: 1000 })
-    ).toBe(960)
+    ).toBe(428)
+    expect(state.resizeNode).toHaveBeenCalledWith('node-1', 428, 40)
+  })
+
+  it('uses the compact 240 box for grouped media', () => {
+    state.nodes = [
+      node({
+        data: {
+          kind: 'image',
+          title: '素材',
+          status: 'done',
+          templates: [],
+          mediaFrame: 'compact'
+        }
+      })
+    ]
+    expect(
+      fitNodeToMedia('node-1', { width: 1600, height: 900 })
+    ).toBe(163)
+    expect(state.resizeNode).toHaveBeenCalledWith('node-1', 163, 240)
   })
 
   it('syncs the parent group after resizing', () => {

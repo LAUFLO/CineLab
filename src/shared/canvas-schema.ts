@@ -45,6 +45,8 @@ export interface CineNodeData extends Record<string, unknown> {
   selectedOutputId?: string
   progress?: number
   error?: string
+  /** 媒体节点尺寸档位：standard=400，compact=240 */
+  mediaFrame?: MediaFramePreset
   /** Prompt Bar 中最近一次输入的提示词，按节点保留 */
   prompt?: string
   /** Prompt Bar 中用户选择的生成模式，按节点保留 */
@@ -272,14 +274,14 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
   },
   image: {
     label: '图片',
-    width: 360,
-    height: 348,
+    width: 400,
+    height: 400,
     templates: ['图生图', '图片高清', '局部重绘']
   },
   video: {
     label: '视频',
-    width: 480,
-    height: 270,
+    width: 400,
+    height: 225,
     templates: ['首尾帧生成视频', '音效生成视频', '5 秒视频']
   },
   audio: {
@@ -323,3 +325,51 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
 export const NODE_KINDS: NodeKind[] = ['text', 'image', 'video', 'audio']
 
 export const TITLE_HEIGHT = 28
+
+export const MEDIA_FRAME_STANDARD = 400
+export const MEDIA_FRAME_COMPACT = 240
+
+export type MediaFramePreset = 'standard' | 'compact'
+
+export function mediaFramePixels(frame: MediaFramePreset | undefined): number {
+  return frame === 'compact' ? MEDIA_FRAME_COMPACT : MEDIA_FRAME_STANDARD
+}
+
+/**
+ * 把媒体放进正方形内容框，保持原始画幅。
+ * 横向画幅宽度等于 frame，纵向画幅高度等于 frame。
+ */
+export function mediaFrameContentSize(
+  sourceWidth: number | undefined,
+  sourceHeight: number | undefined,
+  frame: number,
+  fallback: 'image' | 'video' = 'image'
+): { width: number; height: number } {
+  let width = sourceWidth ?? 0
+  let height = sourceHeight ?? 0
+  if (!(width > 0) || !(height > 0)) {
+    width = fallback === 'video' ? 16 : 1
+    height = fallback === 'video' ? 9 : 1
+  }
+
+  const ratio = width / height
+  return ratio >= 1
+    ? { width: frame, height: Math.max(1, Math.round(frame / ratio)) }
+    : { width: Math.max(1, Math.round(frame * ratio)), height: frame }
+}
+
+/** 媒体节点卡片尺寸（内容框 + 标题栏）。 */
+export function mediaFrameNodeSize(
+  sourceWidth: number | undefined,
+  sourceHeight: number | undefined,
+  frame: number,
+  fallback: 'image' | 'video' = 'image'
+): { width: number; height: number } {
+  const content = mediaFrameContentSize(
+    sourceWidth,
+    sourceHeight,
+    frame,
+    fallback
+  )
+  return { width: content.width, height: content.height + TITLE_HEIGHT }
+}

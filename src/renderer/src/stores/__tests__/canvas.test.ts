@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { FilmStudy } from '@shared/film-study'
-import { useCanvasStore } from '../canvas'
+import { useCanvasStore, type CanvasNode } from '../canvas'
 
 const reset = (): void => {
   useCanvasStore.setState({
@@ -69,6 +69,148 @@ describe('canvas store', () => {
 
     expect(cineNodes).toHaveLength(3)
     expect(cineNodes.every((node) => node.data.assetOnly === true)).toBe(true)
+  })
+
+  it('normalizes legacy media nodes into standard and compact frames', () => {
+    const output = (width: number, height: number) => ({
+      id: `out-${width}-${height}`,
+      path: 'asset.png',
+      kind: 'image' as const,
+      createdAt: new Date().toISOString(),
+      model: '测试',
+      width,
+      height
+    })
+    const nodes = [
+      {
+        id: 'group-1',
+        type: 'group',
+        position: { x: 0, y: 0 },
+        data: { title: '分组', color: 'blue' },
+        style: { width: 600, height: 400 }
+      },
+      {
+        id: 'image-1',
+        type: 'cine',
+        position: { x: 0, y: 0 },
+        data: {
+          kind: 'image',
+          title: '标准图片',
+          status: 'done',
+          outputs: [output(1280, 720)],
+          selectedOutputId: 'out-1280-720',
+          templates: []
+        },
+        style: { width: 360, height: 231 }
+      },
+      {
+        id: 'video-1',
+        type: 'cine',
+        position: { x: 0, y: 300 },
+        data: {
+          kind: 'video',
+          title: '标准视频',
+          status: 'done',
+          outputs: [output(1280, 720)],
+          selectedOutputId: 'out-1280-720',
+          templates: []
+        },
+        style: { width: 480, height: 298 }
+      },
+      {
+        id: 'image-child',
+        type: 'cine',
+        parentId: 'group-1',
+        position: { x: 20, y: 50 },
+        data: {
+          kind: 'image',
+          title: '组内图片',
+          status: 'done',
+          outputs: [output(1280, 720)],
+          selectedOutputId: 'out-1280-720',
+          templates: []
+        },
+        style: { width: 360, height: 231 }
+      },
+      {
+        id: 'image-ultrawide',
+        type: 'cine',
+        position: { x: 0, y: 700 },
+        data: {
+          kind: 'image',
+          title: '21:9',
+          status: 'done',
+          outputs: [output(21, 9)],
+          selectedOutputId: 'out-21-9',
+          templates: []
+        },
+        style: { width: 360, height: 150 }
+      }
+    ] as unknown as CanvasNode[]
+
+    useCanvasStore.getState().loadCanvas(nodes, [], { x: 0, y: 0, zoom: 1 })
+
+    const byId = new Map(
+      useCanvasStore.getState().nodes.map((node) => [node.id, node])
+    )
+    expect(byId.get('image-1')?.style).toMatchObject({
+      width: 400,
+      height: 253
+    })
+    expect(byId.get('video-1')?.style).toMatchObject({
+      width: 400,
+      height: 253
+    })
+    expect(byId.get('image-child')?.style).toMatchObject({
+      width: 240,
+      height: 163
+    })
+    expect(byId.get('image-child')?.data.mediaFrame).toBe('compact')
+    expect(byId.get('image-ultrawide')?.style).toMatchObject({
+      width: 400,
+      height: 199
+    })
+  })
+
+  it('uses standard and compact media frames for inserted assets', () => {
+    const asset = {
+      id: 'asset-1',
+      path: 'asset.png',
+      kind: 'image' as const,
+      createdAt: new Date().toISOString(),
+      model: '测试',
+      width: 1600,
+      height: 900
+    }
+
+    const standardId = useCanvasStore
+      .getState()
+      .addAssetNodes('image', { x: 0, y: 0 }, [asset], '标准')[0]
+    const compactId = useCanvasStore
+      .getState()
+      .addAssetNodes(
+        'image',
+        { x: 0, y: 0 },
+        [asset],
+        '紧凑',
+        undefined,
+        { columns: 1, cellWidth: 240 },
+        true
+      )[0]
+
+    const byId = new Map(
+      useCanvasStore.getState().nodes.map((node) => [node.id, node])
+    )
+    expect(byId.get(standardId)?.style).toMatchObject({
+      width: 400,
+      height: 253
+    })
+    expect(byId.get(standardId)?.data.mediaFrame).toBe('standard')
+    expect(byId.get(compactId)?.style).toMatchObject({
+      width: 240,
+      height: 163
+    })
+    expect(byId.get(compactId)?.data.mediaFrame).toBe('compact')
   })
 
   it('groups and ungroups selected nodes', () => {

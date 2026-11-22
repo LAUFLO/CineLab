@@ -19,7 +19,13 @@ import {
   type FinalConnectionState
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { NODE_META, TITLE_HEIGHT, type NodeKind } from '@shared/canvas-schema'
+import {
+  NODE_META,
+  TITLE_HEIGHT,
+  mediaFrameNodeSize,
+  mediaFramePixels,
+  type NodeKind
+} from '@shared/canvas-schema'
 import { Icon } from '../components/Icon'
 import { isGroupNode, useCanvasStore, type CanvasNode } from '../stores/canvas'
 import { activeStageNodeId } from '../stage/stage-active'
@@ -374,10 +380,13 @@ function CanvasInner({ theme }: { theme: Theme }) {
             selectedOutputId: asset.id
           })
           if (asset.width && asset.height) {
-            const nextHeight = Math.round(
-              (width * asset.height) / asset.width
+            const size = mediaFrameNodeSize(
+              asset.width,
+              asset.height,
+              mediaFramePixels('standard'),
+              'image'
             )
-            store.resizeNode(id, nextHeight + TITLE_HEIGHT)
+            store.resizeNode(id, size.height, size.width)
           }
           if (stageNodeId) {
             store.onConnect({ source: id, target: stageNodeId })

@@ -1,5 +1,12 @@
 import { addEdge, applyEdgeChanges, applyNodeChanges } from '@xyflow/react'
-import { NODE_META, TITLE_HEIGHT, type OutputRef } from '@shared/canvas-schema'
+import {
+  NODE_META,
+  TITLE_HEIGHT,
+  mediaFrameNodeSize,
+  mediaFramePixels,
+  type MediaFramePreset,
+  type OutputRef
+} from '@shared/canvas-schema'
 import { VIDEO_OPERATIONS } from '@shared/operation-schema'
 import { applyCanvasBatch } from '@shared/canvas-commands'
 import { isResultOutputOp } from '@shared/node-operation-specs'
@@ -185,27 +192,39 @@ loadCanvas: (nodes, edges, viewport) => {
       if (node.data.kind !== 'image' && node.data.kind !== 'video') return node
 
       const width = Number(node.style?.width ?? 0)
-      if (width !== 614) return node
-
-      const meta = NODE_META[node.data.kind]
-      const output = node.data.outputs?.find(
-        (item) => item.width && item.height
+      const output =
+        node.data.outputs?.find(
+          (item) => item.id === node.data.selectedOutputId && item.width
+        ) ??
+        node.data.outputs?.find((item) => item.width && item.height)
+      const compact =
+        node.data.mediaFrame === 'compact' ||
+        (!node.data.mediaFrame &&
+          (Boolean(node.parentId) ||
+            Boolean(node.data.studyRef) ||
+            output?.model?.startsWith('逐帧拉片') === true ||
+            output?.model?.startsWith('剪辑室素材') === true ||
+            (width > 0 && width <= 260)))
+      const frame: MediaFramePreset = compact ? 'compact' : 'standard'
+      const size = mediaFrameNodeSize(
+        output?.width,
+        output?.height,
+        mediaFramePixels(frame),
+        node.data.kind
       )
-      const oldHeight = Number(
-        node.style?.height ?? meta.height + TITLE_HEIGHT
-      )
-      const height = output?.width && output?.height
-        ? Math.round((meta.width * output.height) / output.width) + TITLE_HEIGHT
-        : Math.round(oldHeight * (meta.width / width))
 
       if (node.parentId) groupIds.add(node.parentId)
 
       return {
         ...node,
+        data: {
+          ...node.data,
+          mediaFrame: frame
+        },
         style: {
           ...node.style,
-          width: meta.width,
-          height
+          width: size.width,
+          height: size.height
         }
       }
     })
@@ -336,6 +355,9 @@ addNode: (kind, position) => {
         kind,
         title: `${meta.label}节点 ${sameKind + 1}`,
         status: 'idle',
+        ...(kind === 'image' || kind === 'video'
+          ? { mediaFrame: 'standard' as const }
+          : {}),
         templates: meta.templates
       },
       style: { width: meta.width, height: meta.height + TITLE_HEIGHT }
@@ -525,6 +547,16 @@ applyOutput: (nodeId, asset, op) => {
 
     const outputs = [output, ...(node.data.outputs ?? [])].slice(0, 20)
     const kind = node.data.kind
+    const isMedia = kind === 'image' || kind === 'video'
+    const frame = node.data.mediaFrame ?? 'standard'
+    const mediaSize = isMedia
+      ? mediaFrameNodeSize(
+          asset.width,
+          asset.height,
+          mediaFramePixels(frame),
+          kind
+        )
+      : null
     const baseWidth = node.measured?.width ?? NODE_META[kind].width
     const nextHeight =
       asset.width && asset.height
@@ -541,6 +573,7 @@ applyOutput: (nodeId, asset, op) => {
             status: 'done',
             progress: 100,
             error: undefined,
+            ...(isMedia ? { mediaFrame: frame } : {}),
             assetOnly:
               entry.data.assetOnly === true || isResultOutputOp(op)
                 ? true
@@ -548,10 +581,18 @@ applyOutput: (nodeId, asset, op) => {
             outputs,
             selectedOutputId: output.id
           },
-          style: { ...entry.style, height: nextHeight }
+          style: mediaSize
+            ? {
+                ...entry.style,
+                width: mediaSize.width,
+                height: mediaSize.height
+              }
+            : { ...entry.style, height: nextHeight }
         }
       })
     })
+
+    if (node.parentId) get().syncGroupBounds(node.parentId)
   },
 patchNodeData: (nodeId, patch) => {
     set({
@@ -595,11 +636,18 @@ beginToolTurn: (turnId) => {
 endToolTurn: () => {
     externalWrite.depth = Math.max(0, externalWrite.depth - 1)
   },
-resizeNode: (nodeId, height) => {
+resizeNode: (nodeId, height, width) => {
     set({
       nodes: get().nodes.map((node) =>
         node.id === nodeId
-          ? { ...node, style: { ...node.style, height } }
+          ? {
+              ...node,
+              style: {
+                ...node.style,
+                ...(width ? { width } : {}),
+                height
+              }
+            }
           : node
       )
     })

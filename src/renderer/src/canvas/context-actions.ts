@@ -215,8 +215,10 @@ export async function pasteAt(position?: XYPosition): Promise<number> {
     })
 
     if (asset.width && asset.height) {
-      const nextHeight = Math.round((width * asset.height) / asset.width)
-      store.resizeNode(id, nextHeight + TITLE_HEIGHT)
+      fitNodeToMedia(id, {
+        width: asset.width,
+        height: asset.height
+      })
     }
 
     const stageNodeId = activeStageNodeId()

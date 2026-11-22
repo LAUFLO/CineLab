@@ -110,12 +110,12 @@ CineLab 的模型层完全开放：供应商、模型、Base URL、API Key、请
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
 
-当前版本 **v0.4.3**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **v0.4.4**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 | 平台 | 推荐文件 | 系统要求 |
 |---|---|---|
-| Windows | `CineLab-0.4.3-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.4.3-arm64.dmg` | macOS 12+，Apple Silicon |
+| Windows | `CineLab-0.4.4-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.4.4-arm64.dmg` | macOS 12+，Apple Silicon |
 
 ### Windows
 

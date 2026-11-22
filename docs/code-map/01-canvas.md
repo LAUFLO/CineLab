@@ -84,7 +84,7 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 - `itemRequired/itemOptions`：必须从菜单选一项；
 - `params`：number/string/boolean/rect 参数。
 
-`crop`、`grid-generate`、`character-sheet` 等会新建节点并连线的操作，与写回版本栈的操作分开（`nodeOperationOutputTarget`）。
+`crop`、`grid-generate`、`character-sheet`、`relight` 等会新建节点并连线的操作，与写回版本栈的光影校正/人像/重绘等操作分开（`nodeOperationOutputTarget`）。
 
 ## 数据流
 
@@ -206,7 +206,7 @@ CineBot
 | `src/shared/canvas-schema.ts` | 326 |
 | `src/shared/canvas-summary.ts` | 54 |
 | `src/shared/components.ts` | 59 |
-| `src/shared/node-operation-specs.ts` | 441 |
+| `src/shared/node-operation-specs.ts` | 442 |
 | `src/shared/operation-schema.ts` | 64 |
 <!-- AUTO:files:end -->
 

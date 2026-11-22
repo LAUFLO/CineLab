@@ -3,6 +3,7 @@ import {
   NODE_OPERATION_AGENT_SPECS,
   isResultOutput,
   isResultOutputOp,
+  nodeOperationOutputTarget,
   validateNodeOperationParams
 } from '../node-operation-specs'
 
@@ -128,6 +129,12 @@ describe('node operation agent specs', () => {
     expect(isResultOutputOp(undefined)).toBe(false)
     expect(isResultOutput({ model: '本地分离（人声）' })).toBe(true)
     expect(isResultOutput({ model: 'Agnes 2.5 Flash 图像' })).toBe(false)
+  })
+
+  it('creates a result node for relight while keeping same-node edits', () => {
+    expect(nodeOperationOutputTarget('relight')).toBe('new-node')
+    expect(nodeOperationOutputTarget('color-grade')).toBe('version')
+    expect(nodeOperationOutputTarget('portrait')).toBe('version')
   })
 
   it('marks model operations as generation proposable', () => {

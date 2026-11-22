@@ -175,14 +175,14 @@ export function AudioPlayer({
     }
   }, [src, playbackId])
 
-  // 卸载时停止播放并释放出声名额
+  // 卸载时停止播放并释放出声名额。
+  // 同样不要在清理阶段同步清空 src：StrictMode 开发环境会模拟一次
+  // mount → cleanup → mount，可能把新实例的音频源删掉。
   useEffect(() => {
     const audio = audioRef.current
     return () => {
       if (!audio) return
       audio.pause()
-      audio.removeAttribute('src')
-      audio.load()
       releaseAudioPlayback(playbackId)
     }
   }, [playbackId])

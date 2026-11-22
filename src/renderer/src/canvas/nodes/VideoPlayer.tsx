@@ -137,14 +137,14 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       }
     }, [src, onTimeChange, onDurationChange, onPlay, onPause, onEnded])
 
-    // 卸载时释放解码器，避免画布上累积 video 元素
+    // 卸载时暂停播放。不要在清理阶段同步 removeAttribute('src')：
+    // React StrictMode 在开发环境会执行一次 mount → cleanup → mount，
+    // 同步清空会把刚刚挂载的新实例 src 也删掉，导致视频黑屏、时长为 0。
+    // 真正卸载时 React 会移除 <video> 元素，解码器随之释放。
     useEffect(() => {
       const video = videoRef.current
       return () => {
-        if (!video) return
-        video.pause()
-        video.removeAttribute('src')
-        video.load()
+        video?.pause()
       }
     }, [])
 

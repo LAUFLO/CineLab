@@ -81,6 +81,10 @@ export function GroupToolbar() {
 
   if (!group || !position) return null
 
+  const colorOptions = GROUP_COLORS.includes(group.data.color)
+    ? GROUP_COLORS
+    : [group.data.color, ...GROUP_COLORS]
+
   const remove = (): void => {
     requestConfirm({
       title: '删除组及组内节点',
@@ -171,7 +175,7 @@ export function GroupToolbar() {
           onClick={() => setMenu(menu === 'color' ? null : 'color')}
         >
           <span
-            className={`h-2.5 w-2.5 rounded-pill ${GROUP_BG[group.data.color]}`}
+            className={`h-2.5 w-2.5 rounded-full ${GROUP_BG[group.data.color]}`}
           />
           <span>颜色</span>
         </Button>
@@ -181,19 +185,20 @@ export function GroupToolbar() {
             onClose={() => setMenu(null)}
             anchorRef={colorRef}
             align="center"
-            width={150}
-            className="!p-2 grid grid-cols-[repeat(5,22px)] gap-1.5"
+            width={168}
+            className="!overflow-visible !p-2 grid grid-cols-4 gap-2"
           >
-            {GROUP_COLORS.map((color) => (
+            {colorOptions.map((color) => (
               <Button
                 key={color}
                 type="button"
                 variant="ghost"
                 size="none"
                 title={GROUP_LABELS[color]}
-                className={`h-[22px] w-[22px] !rounded-md border p-0 hover:!bg-transparent ${
+                aria-label={GROUP_LABELS[color]}
+                className={`h-7 w-7 !rounded-full border-2 p-0 hover:!bg-transparent ${
                   group.data.color === color
-                    ? '!border-fg shadow-[0_0_0_1px_var(--text-1)]'
+                    ? '!border-fg shadow-[0_0_0_2px_var(--surface-raised),0_0_0_3px_var(--text-1)]'
                     : 'border-transparent hover:!border-border-strong'
                 } ${GROUP_BG[color]}`}
                 onClick={() => {

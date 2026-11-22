@@ -166,7 +166,9 @@ export function SkillImportDialog({
           >
             <option value="global">全局技能 · 本机所有项目可用</option>
             <option value="project" disabled={!projectPath}>
-              项目技能{projectPath ? '' : '（未打开项目）'}
+              {projectPath
+                ? '项目技能 · 仅当前项目可用'
+                : '项目技能（未打开项目）'}
             </option>
           </NativeSelect>
         </label>

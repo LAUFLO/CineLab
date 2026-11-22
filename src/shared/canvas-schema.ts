@@ -189,9 +189,7 @@ export type GroupColor =
 export const GROUP_COLORS: GroupColor[] = [
   'blue',
   'cyan',
-  'teal',
   'green',
-  'lime',
   'amber',
   'orange',
   'rose',
@@ -205,9 +203,9 @@ export const GROUP_LABELS: Record<GroupColor, string> = {
   teal: '蓝绿',
   green: '绿',
   lime: '黄绿',
-  amber: '琥珀',
+  amber: '黄',
   orange: '橙',
-  rose: '玫红',
+  rose: '红',
   violet: '紫',
   slate: '灰'
 }

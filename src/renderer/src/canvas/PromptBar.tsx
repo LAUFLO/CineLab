@@ -111,6 +111,8 @@ const SLOT_EMPTY_CLASS =
   'flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-border bg-surface-hover text-[10px] text-fg-subtle'
 const SLOT_EMPTY_ACTION_CLASS =
   '!flex h-10 w-10 overflow-hidden !rounded-md border border-dashed border-border bg-surface-hover p-0 text-[10px] !font-normal !text-fg-subtle enabled:hover:border-link enabled:hover:!text-link disabled:cursor-not-allowed disabled:!pointer-events-auto disabled:hover:!text-fg-subtle disabled:!opacity-60'
+const SLOT_REMOVE_CLASS =
+  'absolute right-0.5 top-0.5 z-[3] !flex h-3 w-3 items-center justify-center !rounded-full border border-border bg-surface p-0 !font-normal text-fg-muted hover:!border-danger hover:!bg-danger hover:!text-media-text'
 
 const MIRROR_CLASS =
   'pointer-events-none absolute inset-0 h-full w-full overflow-hidden whitespace-pre-wrap break-words bg-transparent px-1.5 py-2 text-sm leading-5 text-fg [word-break:break-word]'
@@ -404,22 +406,39 @@ export function PromptBar() {
         setPicking(false)
         return
       }
+
+      // 文本节点按文本上下文引用，不依赖 outputs，和直接连线逻辑一致
+      if (source.type === 'cine' && source.data.kind === 'text') {
+        if (!source.data.text?.trim()) {
+          setPickHint('该节点还没有文本内容')
+          return
+        }
+        onConnect({ source: sourceId, target: node.id })
+        return
+      }
+
       const output = selectedNodeOutput(source)
 
       if (!output) {
         setPickHint('该节点还没有输出')
         return
       }
-      if (output.kind !== 'image' && output.kind !== 'video') {
-        setPickHint('只能引用图片或视频输出')
-        return
-      }
-      if (output.kind === 'video' && kind !== 'video') {
-        setPickHint('只有视频节点可以引用视频输出')
+      if (output.kind === 'audio') {
+        if (kind !== 'video') {
+          setPickHint('只有视频节点可以引用音频输出')
+          return
+        }
+      } else if (output.kind === 'video') {
+        if (kind !== 'video') {
+          setPickHint('只有视频节点可以引用视频输出')
+          return
+        }
+      } else if (output.kind !== 'image') {
+        setPickHint('该节点输出不支持参考')
         return
       }
 
-      const refKind: RefKind = output.kind === 'video' ? 'video' : 'image'
+      const refKind: RefKind = output.kind
       onConnect({ source: sourceId, target: node.id })
       setPickedRefs((prev) =>
         prev.some(
@@ -1047,6 +1066,15 @@ export function PromptBar() {
         refOrder: refOrder.filter((item) => item !== key)
       })
     }
+  }
+
+  const removeTextSlot = (sourceId: string): void => {
+    if (!node) return
+    const store = useCanvasStore.getState()
+    const removing = store.edges
+      .filter((edge) => edge.target === node.id && edge.source === sourceId)
+      .map((edge) => edge.id)
+    if (removing.length > 0) store.removeEdges(removing)
   }
 
   const textContexts = (() => {
@@ -1785,7 +1813,7 @@ export function PromptBar() {
                 key={`text:${slot.nodeId}`}
                 data-slot-kind="text"
               >
-                <span className="pointer-events-none absolute left-0.5 top-0.5 z-[1] max-w-[calc(100%-4px)] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg">
+                <span className="pointer-events-none absolute left-0.5 top-0.5 z-[1] max-w-[calc(100%-16px)] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg">
                   {slot.title}
                 </span>
                 <Button
@@ -1809,6 +1837,20 @@ export function PromptBar() {
                     <Icon name="text" size={16} />
                   </span>
                 </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className={SLOT_REMOVE_CLASS}
+                  title="删除参考"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    removeTextSlot(slot.nodeId)
+                  }}
+                >
+                  <Icon name="close" size={8} />
+                </Button>
               </div>
             ))}
             {modeSlots.map((slot) => (
@@ -1821,8 +1863,8 @@ export function PromptBar() {
               >
                 <span
                   className={`pointer-events-none absolute left-0.5 top-0.5 z-[1] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg ${
-                    slot.ref
-                      ? 'max-w-[calc(100%-18px)]'
+                    slot.ref || slot.role === 'mask'
+                      ? 'max-w-[calc(100%-16px)]'
                       : 'max-w-[calc(100%-4px)]'
                   }`}
                 >
@@ -1852,11 +1894,11 @@ export function PromptBar() {
                           type="button"
                           variant="ghost"
                           size="none"
-                          className="absolute right-0.5 top-0.5 h-4 w-4 !rounded-full border border-border bg-surface p-0 text-[11px] leading-none !font-normal text-fg-muted hover:bg-surface-hover hover:text-fg"
+                          className={SLOT_REMOVE_CLASS}
                           title="清除蒙版"
                           onClick={() => setMaskDraft(null)}
                         >
-                          ×
+                          <Icon name="close" size={8} />
                         </Button>
                       </>
                     ) : (
@@ -1946,7 +1988,7 @@ export function PromptBar() {
                       type="button"
                       variant="ghost"
                       size="none"
-                      className="absolute right-0.5 top-0.5 z-[3] !flex h-4 w-4 items-center justify-center !rounded-full border border-border bg-surface p-0 text-[11px] leading-none !font-normal text-fg-muted hover:!border-danger hover:!bg-danger hover:!text-media-text"
+                      className={SLOT_REMOVE_CLASS}
                       title="删除参考"
                       onClick={(event) => {
                         event.preventDefault()
@@ -1954,7 +1996,7 @@ export function PromptBar() {
                         if (slot.ref) removeSlotRef(slot.ref)
                       }}
                     >
-                      ×
+                      <Icon name="close" size={8} />
                     </Button>
                   </>
                 ) : (

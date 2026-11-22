@@ -69,7 +69,7 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 - 分组使用 `childrenOf`、`absolutePosition`、`remapNodeReferences`、`remapEdges` 处理子节点坐标与引用。
 - 分组颜色菜单为 5×2 圆形色点，当前色带选中环，不使用横向滚动条；色板为蓝、青、蓝绿、粉、棕、黄、橙、红、紫、灰。旧项目的绿/黄绿仍按原色显示。
 - PromptBar 的 AutoLink 与 `@` 文本匹配按标题最长优先且不重叠，避免派生文本节点标题包含上游素材标题时误加参考图。
-- 画布参考拾取支持连续多选：点击有效节点后保持拾取模式并追加参考；返回节点/取消/Esc 结束。返回节点会重新选中并立即居中聚焦当前 PromptBar 节点。
+- 画布参考拾取支持连续多选：点击有效节点后保持拾取模式并追加参考；支持图片、视频、文本和音频节点，文本走文本上下文，音频仅视频节点可引用；返回节点/取消/Esc 结束。返回节点会重新选中并立即居中聚焦当前 PromptBar 节点。
 - PromptBar 位置跟随节点，不吸附视口边缘；节点移出视窗时提示词框同步移出。
 
 ## 节点操作
@@ -153,7 +153,7 @@ CineBot
 | `src/renderer/src/canvas/GroupToolbar.tsx` | 245 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
 | `src/renderer/src/canvas/NodeContextMenu.tsx` | 668 |
-| `src/renderer/src/canvas/PromptBar.tsx` | 2337 |
+| `src/renderer/src/canvas/PromptBar.tsx` | 2379 |
 | `src/renderer/src/canvas/StatusBar.tsx` | 100 |
 | `src/renderer/src/canvas/StoryboardToolbar.tsx` | 359 |
 | `src/renderer/src/canvas/TopBar.tsx` | 500 |

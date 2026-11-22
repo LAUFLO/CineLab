@@ -30,7 +30,6 @@
   --warning: #fbbf24;
   --danger: #ef4444;
   --glow: rgba(72, 103, 247, 0.55);
-  --edge-flow: rgba(255, 255, 255, 0.92);
   --watermark: rgba(255, 255, 255, 0.035);
   --edge-default: rgba(255, 255, 255, 0.18);
   --overlay: rgba(0, 0, 0, 0.58);
@@ -84,7 +83,6 @@
   --warning: #d97706;
   --danger: #dc2626;
   --glow: rgba(72, 103, 247, 0.35);
-  --edge-flow: rgba(255, 255, 255, 0.92);
   --watermark: rgba(0, 0, 0, 0.028);
   --edge-default: rgba(0, 0, 0, 0.15);
   --overlay: rgba(0, 0, 0, 0.32);

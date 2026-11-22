@@ -58,27 +58,32 @@ export function FlowEdge({
         onClick={onClick}
         onDoubleClick={onDoubleClick}
         style={{
-          stroke: highlighted ? 'var(--accent)' : 'var(--edge-default)',
-          strokeWidth: highlighted ? 2 : 1.5,
-          filter:
-            highlighted && glowEnabled
-              ? 'drop-shadow(0 0 4px var(--glow))'
-              : undefined,
+          stroke: 'var(--edge-default)',
+          strokeWidth: 1.5,
           transition: 'stroke 150ms ease, stroke-width 150ms ease',
           cursor: 'pointer'
         }}
       />
-      {highlighted && glowEnabled ? (
+      {highlighted ? (
         <path
           d={path}
-          className="react-flow__edge-flow-band [animation:edge-flow_1.2s_linear_infinite]"
+          className={
+            glowEnabled
+              ? 'react-flow__edge-flow-band [animation:edge-flow_3s_linear_infinite]'
+              : 'react-flow__edge-flow-band'
+          }
           fill="none"
-          stroke="var(--edge-flow)"
+          stroke="var(--accent)"
           strokeWidth={2}
           strokeLinecap="round"
-          strokeDasharray="10 15"
-          pathLength={100}
-          style={{ pointerEvents: 'none' }}
+          strokeDasharray={glowEnabled ? '12 38' : undefined}
+          pathLength={glowEnabled ? 100 : undefined}
+          style={{
+            pointerEvents: 'none',
+            filter: glowEnabled
+              ? 'drop-shadow(0 0 5px var(--glow))'
+              : undefined
+          }}
         />
       ) : null}
     </>

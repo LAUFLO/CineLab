@@ -497,10 +497,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
         <div
           data-node-card
-          className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms] ${
+          className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card bg-surface-raised shadow-node transition-colors duration-[120ms] ${
             selected
-              ? 'border-border-selected'
-              : 'border-border group-hover:border-border-strong'
+              ? 'border-2 border-border-selected'
+              : 'border border-border group-hover:border-border-strong'
           }`}
         >
           <div

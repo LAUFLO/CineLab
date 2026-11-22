@@ -62,7 +62,6 @@ import { MaskEditorDialog } from './nodes/MaskEditorDialog'
 
 import {
   WIDTH,
-  HEIGHT,
   PLACEHOLDER,
   ModelOption,
   defaultParams,
@@ -407,7 +406,6 @@ export function PromptBar() {
       }
       const output = selectedNodeOutput(source)
 
-      setPicking(false)
       if (!output) {
         setPickHint('该节点还没有输出')
         return
@@ -431,6 +429,7 @@ export function PromptBar() {
         )
           ? prev
           : [
+              ...prev,
               {
                 path: output.path,
                 role: 'reference',
@@ -603,20 +602,8 @@ export function PromptBar() {
       node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
     const zoom = viewport.zoom
 
-    const left = Math.max(
-      16,
-      Math.min(
-        position.x + (width * zoom) / 2 - WIDTH / 2,
-        window.innerWidth - WIDTH - 16
-      )
-    )
-    const top = Math.max(
-      16,
-      Math.min(
-        position.y + height * zoom + 16,
-        window.innerHeight - HEIGHT - 16
-      )
-    )
+    const left = position.x + (width * zoom) / 2 - WIDTH / 2
+    const top = position.y + height * zoom + 16
 
     return { left, top }
   }, [node, nodes, flowToScreenPosition, viewport.x, viewport.y, viewport.zoom])
@@ -1641,6 +1628,11 @@ export function PromptBar() {
         <div className="canvas-pick-bar fixed left-1/2 top-3 z-[120] flex h-10 -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-card bg-accent px-2 pl-3.5 text-[13px] text-accent-text shadow-float [-webkit-app-region:no-drag]">
           <Icon name="frame" size={14} />
           <span>从画布选择节点作为参考</span>
+          <span className="text-[11px] opacity-[0.72]">
+            {mergedRefs.length > 0
+              ? `已选 ${mergedRefs.length} 个 · 可继续选择`
+              : '可连续选择多个'}
+          </span>
           <span className="text-[11px] opacity-[0.72]">Esc 退出</span>
           <Button
             type="button"

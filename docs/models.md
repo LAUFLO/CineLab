@@ -396,7 +396,7 @@
 
 保存模型时，官方内置模型会校验协议族契约（首帧/尾帧字段、角色名、支持模式）；契约不一致会阻止保存。用户自定义模型只记录警告，不阻塞保存。契约定义在 `src/shared/model-contracts.ts`，覆盖 8 个官方适配器。
 
-「高级」里可以下载配置 Skill。Skill 是一个单文件 Markdown，交给任意 AI Agent 后，Agent 会读官方文档并生成或修正配置。Agent 应写入用户数据目录下的 `models.pending.json`，CineLab 检测到后会显示「发现新的模型配置」，预览后应用；应用前会备份 `models.json` 为 `models.json.bak`。
+「高级」里可以下载配置 Skill。Skill 是一个单文件 Markdown，交给任意 AI Agent 后，Agent 会读官方文档并生成或修正配置。Agent 应写入用户数据目录下的 `models.pending.json`；该文件必须是完整配置（包含现有全部供应商和模型），因为应用时会用 pending 整体替换 `models.json`，不是增量合并。CineLab 检测到 pending 后会显示「发现新的模型配置」，预览后应用；应用前会备份 `models.json` 为 `models.json.bak`。
 
 - 设置面板直接读写 `models.json`：新增、编辑、删除供应商都会立即写入该文件
 - Key/Secret 单独用 safeStorage 加密后保存在 `settings.json`

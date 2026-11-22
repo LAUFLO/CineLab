@@ -10,6 +10,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // 97 个测试文件并行启动时，pi 的网络/会话测试会接近默认 5 秒阈值；
+    // CI 的覆盖率运行更慢，统一放宽到 20 秒，避免偶发超时。
+    testTimeout: 20000,
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'json-summary'],

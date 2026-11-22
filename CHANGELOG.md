@@ -3,6 +3,19 @@
 本项目的版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循语义化版本。
 
+## [0.4.3] - 2026-11-22
+
+### 修复
+
+- 修复打包版窗口与任务栏图标未显式设置、Windows 缓存后显示 Electron 默认图标的问题。
+- 生成完成通知改为主进程 Notification，Windows toast 稳定显示 CineLab 图标，点击可恢复并聚焦窗口。
+- 更新模型配置 Skill 至 2.1.0：补齐 `models.pending.json` 审核流程、`http-template` 新 DSL、官方契约校验和本地适配器边界。
+- 新增 `check:model-skill` 与 `map:skill`：模型配置改动后自动更新 Skill 的枚举与指纹，未同步时 `check:docs` 会失败。
+
+### 变更
+
+- 打包资源新增 `icon.ico` / `icon.png`，窗口图标不再依赖系统缓存。
+
 ## [0.4.2] - 2026-11-21
 
 ### 新增

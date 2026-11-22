@@ -599,6 +599,7 @@ export interface CineApi {
     confirmClose(): void
     openLogs(): Promise<void>
     log(level: 'info' | 'warn' | 'error', message: string): Promise<void>
+    notify(title: string, body: string): void
     minimize(): void
     maximize(): void
     close(): void

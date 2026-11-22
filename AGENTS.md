@@ -16,6 +16,7 @@
 6. 大功能（跨模块、涉及技术选型或外部依赖）在方案讨论确定后，必须先落 `docs/<feature>-plan.md`，再进入实现；方案变更先改文档再改代码。
 7. 跨机器上下文以 `docs/code-map/` 为准；`.opencode/handover` 只作为本机补充，不作为跨机器真相源。
 8. 功能增删改后：运行 `corepack pnpm map:code` 更新自动区，更新对应模块、`08-capabilities.md` 与 `11-feature-index.md`，再运行 `corepack pnpm check:docs`；新增文件未归属模块时 `check:code-map` 会失败。
+9. 模型配置改动后：同步更新 `resources/model-config-skill/SKILL.md`，运行 `corepack pnpm map:skill` 刷新自动枚举与指纹，再运行 `corepack pnpm check:docs`；`check:model-skill` 会拦截未同步的改动。
 
 ## 状态与工件路径约定
 

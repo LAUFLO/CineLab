@@ -695,6 +695,29 @@ export async function applyPendingModels(): Promise<{
   return { applied: true, providers: parsed.providers.length }
 }
 
+/**
+ * Agent 写完 pending 后直接应用。
+ * 只拦截解析失败、字段错误和空配置；正常配置不再要求用户二次确认。
+ */
+export async function autoApplyPendingModels(): Promise<{
+  applied: boolean
+  message?: string
+  providers?: number
+}> {
+  const pending = await loadPendingModels()
+  if (!pending.exists) return { applied: false }
+  if (pending.errors.length > 0) {
+    return { applied: false, message: pending.errors[0] }
+  }
+  if (pending.providers.length === 0) {
+    return {
+      applied: false,
+      message: '待应用配置没有供应商，已保留在 models.pending.json'
+    }
+  }
+  return applyPendingModels()
+}
+
 export async function discardPendingModels(): Promise<void> {
   await fs.unlink(pendingModelsFilePath()).catch(() => undefined)
 }

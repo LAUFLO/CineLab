@@ -1619,7 +1619,7 @@ export function ModelConfigDialog({
           取消
         </Button>
         <Button type="button" variant="primary" onClick={submit}>
-          保存配置
+          保存并写入
         </Button>
       </footer>
     </Dialog>

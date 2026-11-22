@@ -23,7 +23,7 @@
 | `CanvasNodeKind`（画布节点） | 以上 + `studio`、`film`、`video-op`、`stage` |
 | 节点组件 | `CineNodeView`、`StudioNodeView`、`StageNodeView`、`FilmNodeView`、`VideoOpNodeView`、`GroupNodeView` |
 
-`NODE_META` 定义每类节点的默认尺寸与快捷模板：文本 348×348、图片 360×348、视频 480×270、音频 348×220、剪辑室 480×340、成片 480×320、视频操作 420×200、导演台 420×280、拉片 400×250。
+`NODE_META` 定义每类节点的默认尺寸与快捷模板：文本 348×348、图片 360×348、视频 480×270、音频 200×127、剪辑室 480×340、成片 480×320、视频操作 420×200、导演台 420×280、拉片 400×250。
 
 ## 数据模型
 
@@ -141,7 +141,7 @@ CineBot
 | `src/renderer/src/canvas/GroupToolbar.tsx` | 235 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
 | `src/renderer/src/canvas/NodeContextMenu.tsx` | 481 |
-| `src/renderer/src/canvas/PromptBar.tsx` | 2118 |
+| `src/renderer/src/canvas/PromptBar.tsx` | 2183 |
 | `src/renderer/src/canvas/StatusBar.tsx` | 100 |
 | `src/renderer/src/canvas/StoryboardToolbar.tsx` | 359 |
 | `src/renderer/src/canvas/TopBar.tsx` | 500 |
@@ -184,15 +184,15 @@ CineBot
 | `src/renderer/src/canvas/nodes/study-sheet.ts` | 300 |
 | `src/renderer/src/canvas/nodes/text-markdown.ts` | 101 |
 | `src/renderer/src/canvas/nodes/useBoxEditor.ts` | 131 |
-| `src/renderer/src/canvas/promptbar-model.tsx` | 140 |
-| `src/renderer/src/canvas/promptbar/MentionMenu.tsx` | 153 |
+| `src/renderer/src/canvas/promptbar-model.tsx` | 150 |
+| `src/renderer/src/canvas/promptbar/MentionMenu.tsx` | 165 |
 | `src/renderer/src/canvas/promptbar/ModelMenu.tsx` | 95 |
 | `src/renderer/src/canvas/promptbar/ParamPanel.tsx` | 232 |
 | `src/renderer/src/canvas/promptbar/UploadMenu.tsx` | 45 |
 | `src/renderer/src/stores/canvas-model.ts` | 343 |
 | `src/renderer/src/stores/canvas.ts` | 211 |
 | `src/renderer/src/stores/canvas/slices/assets.ts` | 521 |
-| `src/renderer/src/stores/canvas/slices/graph.ts` | 579 |
+| `src/renderer/src/stores/canvas/slices/graph.ts` | 598 |
 | `src/renderer/src/stores/canvas/slices/groups.ts` | 776 |
 | `src/renderer/src/stores/canvas/slices/history.ts` | 488 |
 | `src/renderer/src/stores/canvas/slices/viewport.ts` | 21 |
@@ -261,7 +261,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/study-sheet.ts` | `studyClock`、`segmentDuration`、`segmentMetaLine`、`buildStudySheetMarkdown`、`buildStudyTableMarkdown`、`buildShotMarkdown`、`buildRemakePrompt`、`buildStyleMarkdown`、`ShotGroup`、`groupShotsByScene`、`segmentCopyText` |
 | `src/renderer/src/canvas/nodes/text-markdown.ts` | `MARKDOWN_CLASS`、`renderMarkdown` |
 | `src/renderer/src/canvas/nodes/useBoxEditor.ts` | `Box`、`DragMode`、`useBoxEditor` |
-| `src/renderer/src/canvas/promptbar-model.tsx` | `WIDTH`、`HEIGHT`、`PLACEHOLDER`、`ModelOption`、`defaultParams`、`paramLabel`、`ratioOf`、`MentionGroupName`、`RefKind`、`PickedRef`、`MentionItem`、`VIDEO_PATH`、`MAX_TEXT_CONTEXT`、`TextContext`、`buildPromptWithContext`、`isVideoPath`、`MENTION_GROUPS`、`escapeRegExp`、`renderMentionText` |
+| `src/renderer/src/canvas/promptbar-model.tsx` | `WIDTH`、`HEIGHT`、`PLACEHOLDER`、`ModelOption`、`defaultParams`、`paramGroupName`、`paramLabel`、`ratioOf`、`MentionGroupName`、`RefKind`、`MentionKind`、`PickedRef`、`MentionItem`、`VIDEO_PATH`、`MAX_TEXT_CONTEXT`、`TextContext`、`buildPromptWithContext`、`isVideoPath`、`MENTION_GROUPS`、`escapeRegExp`、`renderMentionText` |
 | `src/renderer/src/canvas/promptbar/MentionMenu.tsx` | `MentionMenu` |
 | `src/renderer/src/canvas/promptbar/ModelMenu.tsx` | `ModelMenu` |
 | `src/renderer/src/canvas/promptbar/ParamPanel.tsx` | `ParamPanel` |

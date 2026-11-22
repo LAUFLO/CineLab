@@ -114,4 +114,38 @@ describe('canvas store', () => {
     expect(useCanvasStore.getState().pasteNodes({ x: 40, y: 40 })).toBe(1)
     expect(useCanvasStore.getState().nodes).toHaveLength(2)
   })
+
+  it('migrates only old default audio sizes', () => {
+    const oldId = useCanvasStore.getState().addNode('audio', { x: 0, y: 0 })
+    const customId = useCanvasStore.getState().addNode('audio', { x: 300, y: 0 })
+    const nodes = useCanvasStore.getState().nodes.map((node) => {
+      if (node.id === oldId) {
+        return {
+          ...node,
+          style: { ...node.style, width: 348, height: 248 }
+        }
+      }
+      if (node.id === customId) {
+        return {
+          ...node,
+          style: { ...node.style, width: 300, height: 200 }
+        }
+      }
+      return node
+    })
+
+    useCanvasStore
+      .getState()
+      .loadCanvas(nodes, [], { x: 0, y: 0, zoom: 1 })
+
+    const result = useCanvasStore.getState().nodes
+    expect(result.find((node) => node.id === oldId)?.style).toMatchObject({
+      width: 200,
+      height: 155
+    })
+    expect(result.find((node) => node.id === customId)?.style).toMatchObject({
+      width: 300,
+      height: 200
+    })
+  })
 })

@@ -15,6 +15,7 @@
 |---|---|---|
 | 01 | 无限画布、节点、连线、分组、节点工具栏 | `src/shared/canvas-commands.ts`、`canvas-commands.test.ts` |
 | 01 | 项目画布打开/保存/多画布 | `src/main/project/`、`src/shared/project-schema.ts` |
+| 01 | 文本节点引用槽位与 @ 提及，文本内容拼入提示词 | `PromptBar.tsx`、`promptbar-model.tsx`、`MentionMenu.tsx` |
 | 02 | 多供应商模型配置、生成任务、参数预设 | `src/main/providers/`、`src/main/engine/` |
 | 02 | 参考图/视频/音频输入、素材导入 | `src/shared/reference-inputs.ts`、`src/main/assets/` |
 | 02 | 首尾帧统一载荷与校验、MiniMax H3 role | `src/main/providers/media.ts`、`src/main/providers/minimax.ts`、`src/shared/reference-inputs.ts`；Agnes 首帧已真实复测 |
@@ -44,6 +45,7 @@
 | 06 | MCP 导演台对象/机位/镜头/自动分镜/预演导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/stageBridge.ts` |
 | 06 | MCP 拉片读取/修改/自动拉片/复刻/导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/filmBridge.ts` |
 | 07 | IPC、preload、设置、素材库、安全、更新 | `src/main/ipc/`、`src/preload/` |
+| 07 | 模型配置弹窗保存直接写入 models.json；Agent pending 自动应用 | `SettingsPanel.tsx`、`src/main/settings/models-watch.ts` |
 | 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
 | 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能卡片与 Markdown 预览 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx` |

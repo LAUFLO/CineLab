@@ -146,6 +146,25 @@ loadCanvas: (nodes, edges, viewport) => {
         }
         return node
       }
+      if (node.data.kind === 'audio') {
+        const width = Number(node.style?.width ?? 0)
+        const height = Number(node.style?.height ?? 0)
+        // 旧默认尺寸是 348×220（部分版本含标题为 348×248）；只迁移旧默认，
+        // 用户手动调整过的尺寸保持不变。
+        if (width === 348 && (height === 220 || height === 248)) {
+          if (node.parentId) groupIds.add(node.parentId)
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              width: NODE_META.audio.width,
+              height: NODE_META.audio.height + TITLE_HEIGHT
+            }
+          }
+        }
+        return node
+      }
+
       if (node.data.kind !== 'image' && node.data.kind !== 'video') return node
 
       const width = Number(node.style?.width ?? 0)

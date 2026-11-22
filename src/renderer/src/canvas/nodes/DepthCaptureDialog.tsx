@@ -103,7 +103,7 @@ export function DepthCaptureDialog({
 
       {!checking && !installed ? (
         <div className="mt-3 text-[11px] leading-[1.6] text-fg-subtle">
-          深度组件未安装。请先在设置中下载「深度运行时」和「VDA Small 模型」。
+          深度组件未安装。请先在设置中下载「本地 AI 运行时」和「VDA Small 模型」。
         </div>
       ) : null}
 

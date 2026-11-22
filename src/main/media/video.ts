@@ -1,5 +1,3 @@
-import { app } from 'electron'
-import { randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { GeneratedAsset } from '@shared/generation'
@@ -13,25 +11,12 @@ import type {
 import { ingestAsset } from '../assets/ingest'
 import { probeMedia, runFfmpeg } from './ffmpeg'
 import { resolveMediaPath } from './paths'
+import { withTempDir } from './temp'
 
 const ALLOWED_RATIOS = new Set(['1:1', '16:9', '9:16', '4:3', '3:4'])
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(value)))
-}
-
-async function withTempDir<T>(
-  prefix: string,
-  run: (dir: string) => Promise<T>
-): Promise<T> {
-  const dir = join(app.getPath('temp'), `${prefix}-${randomUUID()}`)
-  await fs.mkdir(dir, { recursive: true })
-
-  try {
-    return await run(dir)
-  } finally {
-    await fs.rm(dir, { recursive: true, force: true }).catch(() => undefined)
-  }
 }
 
 export async function trimVideo(
@@ -77,18 +62,12 @@ export async function trimVideo(
   })
 }
 
-export async function splitAv(
+export async function extractSilentVideo(
   projectRoot: string,
-  input: SplitAvRequest
-): Promise<SplitAvResult> {
-  const absolute = await resolveMediaPath(projectRoot, input.path)
-  const probe = await probeMedia(absolute)
-
-  if (!probe.hasAudio) throw new Error('当前视频无音轨，无法分离音视频')
-
-  return withTempDir('cinelab-split', async (dir) => {
+  absolute: string
+): Promise<GeneratedAsset> {
+  return withTempDir('cinelab-silent', async (dir) => {
     const videoPath = join(dir, 'video.mp4')
-    const audioPath = join(dir, 'audio.m4a')
 
     await runFfmpeg([
       '-y',
@@ -101,6 +80,33 @@ export async function splitAv(
       '+faststart',
       videoPath
     ])
+
+    return ingestAsset({
+      projectPath: projectRoot,
+      data: await fs.readFile(videoPath),
+      kind: 'video',
+      mime: 'video/mp4',
+      model: '本地分离（无声视频）'
+    })
+  })
+}
+
+export async function splitAv(
+  projectRoot: string,
+  input: SplitAvRequest
+): Promise<SplitAvResult> {
+  const absolute = await resolveMediaPath(projectRoot, input.path)
+  const probe = await probeMedia(absolute)
+
+  if (!probe.hasAudio) throw new Error('当前视频无音轨，无法分离音视频')
+  if (!probe.width || !probe.height) {
+    throw new Error('当前素材没有视频流，无法分离音视频')
+  }
+
+  return withTempDir('cinelab-split', async (dir) => {
+    const audioPath = join(dir, 'audio.m4a')
+
+    const video = await extractSilentVideo(projectRoot, absolute)
 
     await runFfmpeg([
       '-y',
@@ -115,13 +121,7 @@ export async function splitAv(
     ])
 
     return {
-      video: await ingestAsset({
-        projectPath: projectRoot,
-        data: await fs.readFile(videoPath),
-        kind: 'video',
-        mime: 'video/mp4',
-        model: '本地分离（无声视频）'
-      }),
+      video,
       audio: await ingestAsset({
         projectPath: projectRoot,
         data: await fs.readFile(audioPath),

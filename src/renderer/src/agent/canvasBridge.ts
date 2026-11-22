@@ -38,6 +38,8 @@ function selectedNodeSummary(): Array<{
   id: string
   title: string
   kind: string
+  status?: string
+  progress?: number
   availableOperations?: string[]
 }> {
   const { nodes } = useCanvasStore.getState()
@@ -45,13 +47,22 @@ function selectedNodeSummary(): Array<{
     .filter((node) => node.selected)
     .map((node) => {
       const summary = listNodeOperations(node.id)
+      const data = node.data as {
+        title?: unknown
+        status?: unknown
+        progress?: unknown
+      }
       return {
         id: node.id,
-        title: String((node.data as { title?: unknown }).title ?? ''),
+        title: String(data.title ?? ''),
         kind:
           node.type === 'cine'
             ? String((node.data as { kind?: unknown }).kind ?? 'unknown')
             : node.type,
+        ...(typeof data.status === 'string' ? { status: data.status } : {}),
+        ...(typeof data.progress === 'number'
+          ? { progress: data.progress }
+          : {}),
         ...(summary
           ? {
               availableOperations: summary.operations
@@ -482,6 +493,11 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
         selectedNodes: selectedNodeSummary(),
         nodes: state.nodes.slice(0, 200).map((node) => {
           const output = selectedNodeOutput(node)
+          const data = node.data as {
+            title?: unknown
+            status?: unknown
+            progress?: unknown
+          }
           return {
             id: node.id,
             title: nodeTitleOf(node),
@@ -492,6 +508,10 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
             selected: node.selected === true,
             x: Math.round(node.position.x),
             y: Math.round(node.position.y),
+            ...(typeof data.status === 'string' ? { status: data.status } : {}),
+            ...(typeof data.progress === 'number'
+              ? { progress: data.progress }
+              : {}),
             ...(output ? { outputKind: output.kind } : {})
           }
         }),

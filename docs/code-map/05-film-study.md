@@ -142,7 +142,7 @@ StudyNodeCard → FilmStudyApi.auto
 | `src/main/film-study/shot-detect.ts` | 529 |
 | `src/main/film-study/shots.ts` | 297 |
 | `src/main/film-study/style.ts` | 190 |
-| `src/renderer/src/stores/film-study.ts` | 965 |
+| `src/renderer/src/stores/film-study.ts` | 973 |
 | `src/shared/film-study-v2.ts` | 429 |
 | `src/shared/film-study.ts` | 219 |
 <!-- AUTO:files:end -->

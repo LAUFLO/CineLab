@@ -41,6 +41,13 @@ function isUnitlessNumber(value: unknown): boolean {
   )
 }
 
+export function paramGroupName(param: ParamDef): string {
+  if (param.key === 'ratio' || param.key === 'aspect_ratio') return '比例'
+  if (param.key === 'size') return param.group?.trim() || '尺寸'
+  if (param.key === 'resolution') return param.group?.trim() || '清晰度'
+  return param.group?.trim() || param.label?.trim() || '其它'
+}
+
 export function paramLabel(param: ParamDef, value: unknown): string {
   if (param.type === 'boolean') {
     return value ? '开' : '关'
@@ -70,6 +77,7 @@ export function ratioOf(label: string): string | null {
 export type MentionGroupName = '已引用' | '画布' | '资产库' | '角色'
 
 export type RefKind = 'image' | 'video' | 'audio'
+export type MentionKind = RefKind | 'text'
 
 export interface PickedRef extends ReferenceInput {
   kind: RefKind
@@ -83,7 +91,8 @@ export interface MentionItem {
   scope?: ReferenceInput['scope']
   refs?: ReferenceInput[]
   thumb?: string
-  kind?: RefKind
+  kind?: MentionKind
+  nodeId?: string
 }
 
 export const VIDEO_PATH = /\.(mp4|webm|mov|mkv)$/i
@@ -93,6 +102,7 @@ export const MAX_TEXT_CONTEXT = 4000
 export interface TextContext {
   title: string
   text: string
+  nodeId?: string
 }
 
 export function buildPromptWithContext(

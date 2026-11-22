@@ -30,10 +30,20 @@ export function ConfirmDialog() {
     }
   }
 
+  const handleCancel = async (): Promise<void> => {
+    setBusy(true)
+    try {
+      await confirm.onCancel?.()
+    } finally {
+      setBusy(false)
+      closeConfirm()
+    }
+  }
+
   return (
     <Dialog
       open
-      onClose={closeConfirm}
+      onClose={() => void handleCancel()}
       bare
       ariaLabel={confirm.title}
       overlayClassName="fixed inset-0 z-[300] flex items-center justify-center bg-overlay p-6"
@@ -44,7 +54,11 @@ export function ConfirmDialog() {
         {confirm.message}
       </p>
       <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={closeConfirm} disabled={busy}>
+        <Button
+          variant="secondary"
+          onClick={() => void handleCancel()}
+          disabled={busy}
+        >
           取消
         </Button>
         {confirm.onSecondary ? (

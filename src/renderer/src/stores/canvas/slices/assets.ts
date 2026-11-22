@@ -438,7 +438,10 @@ addShotNodes: (study, origin, sourceNodeId) => {
           kind,
           title: total > 1 ? `${titlePrefix} ${index + 1}` : titlePrefix,
           status: 'running',
-          templates: meta.templates
+          templates: meta.templates,
+          // addPendingNodes 是操作/生成结果的占位 API：默认隐藏 PromptBar，
+          // 只保留上方工具栏；需要创作入口时用 addNode 或显式 assetOnly:false。
+          ...(layout?.assetOnly === false ? {} : { assetOnly: true })
         },
         style: { width, height }
       }

@@ -280,8 +280,8 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
   },
   audio: {
     label: '音频',
-    width: 348,
-    height: 220,
+    width: 200,
+    height: 127,
     templates: ['文字转语音', '音乐生成']
   },
   studio: {

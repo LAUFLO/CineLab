@@ -17,6 +17,8 @@ interface AudioPlayerProps {
   path?: string | null
   scope?: 'project' | 'global'
   busy?: boolean
+  busyProgress?: number | null
+  busyLabel?: string
   onCancel?: () => void
   /** 截取模式：在波形上拖拽选择区间 */
   selecting?: boolean
@@ -103,6 +105,8 @@ export function AudioPlayer({
   path,
   scope,
   busy,
+  busyProgress,
+  busyLabel,
   onCancel,
   selecting = false,
   selection,
@@ -171,14 +175,14 @@ export function AudioPlayer({
     }
   }, [src, playbackId])
 
-  // 卸载时停止播放并释放出声名额
+  // 卸载时停止播放并释放出声名额。
+  // 同样不要在清理阶段同步清空 src：StrictMode 开发环境会模拟一次
+  // mount → cleanup → mount，可能把新实例的音频源删掉。
   useEffect(() => {
     const audio = audioRef.current
     return () => {
       if (!audio) return
       audio.pause()
-      audio.removeAttribute('src')
-      audio.load()
       releaseAudioPlayback(playbackId)
     }
   }, [playbackId])
@@ -315,7 +319,13 @@ export function AudioPlayer({
       {busy ? (
         <div className="pointer-events-none absolute inset-x-2.5 top-1.5 bottom-[42px] flex items-center justify-center">
           <div className="pointer-events-auto flex items-center gap-3 rounded-card border border-border-strong bg-surface-raised px-3.5 py-2 text-xs text-fg">
-            <span>生成中…</span>
+            <span>
+              {busyLabel
+                ? busyLabel
+                : busyProgress !== null && busyProgress !== undefined
+                  ? `分离中 ${busyProgress}%`
+                  : '生成中…'}
+            </span>
             <Button
               type="button"
               variant="ghost"

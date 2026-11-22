@@ -1,13 +1,13 @@
 ---
 name: cinelab-model-config
-description: 帮用户在 CineLab 中配置模型供应商和模型能力。当用户说「配置 CineLab 模型」「接入 Seedream / Seedance / 可灵 / Vidu / MiniMax / Veo / 万相」「models.json 怎么写」「这个模型支持什么」「补充模型能力」时使用。根据官方文档或模型名称，生成 CineLab 的 models.pending.json，标注来源与置信度，并交给用户在设置页预览应用。
+description: 帮用户在 CineLab 中配置模型供应商和模型能力。当用户说「配置 CineLab 模型」「接入 Seedream / Seedance / 可灵 / Vidu / MiniMax / Veo / 万相」「models.json 怎么写」「这个模型支持什么」「补充模型能力」时使用。根据官方文档或模型名称，生成 CineLab 的 models.pending.json，标注来源与置信度；CineLab 会自动校验并应用。
 version: 2.1.0
-model-config-fingerprint: sha256:05d155809c64ecf0caaed9fe226ad0350018b0f2cda55a30b927e5b42cee8fae
+model-config-fingerprint: sha256:3f8d6f311b21c90f2255c3885140019a2bc905d3479c6056fb7d3a145006630a
 ---
 
 # CineLab 模型配置
 
-你的任务是把一个模型接入 CineLab。CineLab 是一个本地 AI 创作工具，正式配置保存在用户数据目录的 `models.json`。**不要直接改 `models.json`**；你生成一份完整的 `models.pending.json`，由用户在设置页预览后应用。
+你的任务是把一个模型接入 CineLab。CineLab 是一个本地 AI 创作工具，正式配置保存在用户数据目录的 `models.json`。**不要直接改 `models.json`**；你生成一份完整的 `models.pending.json`，CineLab 会自动校验并应用。
 
 ## 何时使用
 
@@ -33,12 +33,25 @@ model-config-fingerprint: sha256:05d155809c64ecf0caaed9fe226ad0350018b0f2cda55a3
 1. 读 `models.json`。文件不存在时，从 `{ "version": 1, "providers": [] }` 开始。
 2. 在内存里保留它的**完整结构**，只合并或修改目标供应商和模型；不要删除其他供应商或模型。
 3. 把完整结果写入 `models.pending.json`，结构与 `models.json` 相同。
-4. 告诉用户：打开「设置 → 模型服务」，CineLab 会提示「发现新的模型配置」，预览后点「应用」。
+4. CineLab 会自动校验并应用；只有校验失败时，才需要到「设置 → 模型与运行时 → 模型供应商配置」处理保留的 pending 配置。
 5. 应用由 CineLab 完成：先备份 `models.json` 为 `models.json.bak`，再用 pending **整体替换** `models.json`，最后删除 pending。
 
 > `models.pending.json` 是整体替换，不是增量补丁。只写新增供应商会导致应用后丢失现有配置。必须包含现有全部 providers。
 
-不要读取、写入或询问 API Key。Key 由用户在 CineLab 设置页填写，加密保存在 `settings.json`。
+不要读取、写入或询问 API Key。`models.json` 不保存 Key/Secret，Key 由用户在 CineLab 设置页填写，加密保存在 `settings.json`。
+
+## 填写 API Key
+
+模型配置应用后，按以下路径填写 Key：
+
+1. 右上角「设置」
+2. 「模型与运行时」
+3. 在「模型供应商配置」找到对应供应商
+4. 点供应商右侧的「编辑供应商」（滑杆图标）
+5. 填写「API Key」；可灵需要时再填 Secret Key
+6. 点页面底部「保存」
+
+不要在 `models.json` 里找 Key，也不要写 `apiKey` 明文字段。供应商卡片没有出现时，先在「模型供应商配置 → 高级 → 打开文件」核对 `models.json` 是否已生成。
 
 直接编辑 `models.json` 只用于设置页或用户手工维护；Agent 生成配置一律走 pending。
 
@@ -52,7 +65,7 @@ model-config-fingerprint: sha256:05d155809c64ecf0caaed9fe226ad0350018b0f2cda55a3
 3. **生成完整配置**：同时写 v1 兼容字段（`capability`、`inputs`、`operations`、`params`）和 v2 能力字段（`modes`、`features`、`protocol`、`source`）。
 4. **契约校验**：官方模型要对照 `src/shared/model-contracts.ts` 的协议族契约；不确定就查代码，不要猜字段。
 5. **写入 pending**：先读现有 `models.json`，把完整结果写入 `models.pending.json`。
-6. **汇报**：改了哪些模型、来源 URL、查询日期、置信度、待确认项，以及如何在设置页应用。
+6. **汇报**：改了哪些模型、来源 URL、查询日期、置信度和待确认项；CineLab 会自动应用。
 
 ## 自动枚举（由代码生成）
 
@@ -574,7 +587,7 @@ model-config-fingerprint: sha256:05d155809c64ecf0caaed9fe226ad0350018b0f2cda55a3
 - [ ] 没有写入 API Key、Secret、Cookie。
 - [ ] 没有删除用户已有的其他供应商或模型。
 - [ ] `source` 记录了 URL、日期和置信度。
-- [ ] 已告知用户在设置页预览并应用。
+- [ ] 已告知用户 CineLab 会自动校验并应用，以及填写 API Key 的正确路径。
 
 ## 汇报格式
 
@@ -584,7 +597,8 @@ model-config-fingerprint: sha256:05d155809c64ecf0caaed9fe226ad0350018b0f2cda55a3
 已生成待应用配置：<models.pending.json 路径>
 变更：火山方舟 → Seedance 2.5（新增首尾帧、参考生视频）
 来源：<官方文档 URL>（2026-11-14，置信度 high）
-应用方式：设置 → 模型服务 → 「发现新的模型配置」→ 预览 → 应用
+应用方式：CineLab 自动校验并应用；校验失败时到 设置 → 模型与运行时 → 模型供应商配置 查看
+填写 Key：设置 → 模型与运行时 → 模型供应商配置 → 编辑供应商 → API Key → 保存
 需要确认：参考视频上限按 2.5 写成 10，如果实际是 2.0 请告诉我
 ```
 
@@ -592,7 +606,7 @@ model-config-fingerprint: sha256:05d155809c64ecf0caaed9fe226ad0350018b0f2cda55a3
 
 - 不处理 API Key、账号密码、Cookie。
 - 不删除现有供应商或模型，除非用户明确要求。
-- 不直接覆盖 `models.json`；只写 `models.pending.json`，由用户确认应用。
+- 不直接覆盖 `models.json`；只写 `models.pending.json`，由 CineLab 自动校验并应用。
 - 应用前备份由 CineLab 完成；不要自己删除 `models.json.bak`。
 - 不确定的字段不要编；标注置信度并交给用户确认。
 - 不把第三方代理文档当成官方文档；来源里写清楚是哪个 URL。

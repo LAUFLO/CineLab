@@ -54,7 +54,7 @@ function fallback(
 export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
   'depth-runtime': {
     kind: 'depth-runtime',
-    label: '深度运行时',
+    label: '本地 AI 运行时',
     directory: 'depth-runtime',
     manifestUrl: `${runtimeBaseUrl}/${depthManifestName}`,
     fallback: fallback('depth-runtime', [
@@ -130,6 +130,27 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
       sha256: 'c00b66f631cb0231eaf286777170662658b7346123ccf16a09f5747e57a1a7f0',
       files: 11
     })
+  },
+  'stem-model': {
+    kind: 'stem-model',
+    label: 'HTDemucs 人声分离模型',
+    directory: 'stem-model',
+    // 模型不随应用重新分发；worker 代码随应用发布，这里只下载权重。
+    fallback: fallback(
+      'stem-model',
+      [
+        'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th',
+        'https://huggingface.co/anchor-flux/demucs-htdemucs/resolve/main/htdemucs.th',
+        'https://hf-mirror.com/anchor-flux/demucs-htdemucs/resolve/main/htdemucs.th'
+      ],
+      {
+        size: 84_141_911,
+        expandedSize: 84_141_911,
+        sha256:
+          '8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4',
+        files: 1
+      }
+    )
   }
 }
 

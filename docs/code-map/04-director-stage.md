@@ -161,9 +161,9 @@ StageWindow → scene.analyze
 | `src/renderer/src/stage/StageInspector.tsx` | 413 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 730 |
 | `src/renderer/src/stage/StageViewport.tsx` | 702 |
-| `src/renderer/src/stage/StageWindow.tsx` | 964 |
+| `src/renderer/src/stage/StageWindow.tsx` | 966 |
 | `src/renderer/src/stage/WorldSettingsDialog.tsx` | 528 |
-| `src/renderer/src/stage/preview-runner.ts` | 193 |
+| `src/renderer/src/stage/preview-runner.ts` | 202 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |
 | `src/renderer/src/stage/stage-from-scene.ts` | 95 |

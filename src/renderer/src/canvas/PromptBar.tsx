@@ -19,6 +19,7 @@ import {
   type ParamDef
 } from '@shared/provider-schema'
 import { effectiveCapabilities } from '@shared/capabilities'
+import { isResultOutput } from '@shared/node-operation-specs'
 import { referenceInputErrors } from '@shared/reference-inputs'
 import { applyParamConstraints } from '@shared/param-constraints'
 import {
@@ -75,6 +76,7 @@ import {
   MAX_TEXT_CONTEXT,
   TextContext,
   buildPromptWithContext,
+  paramGroupName,
   isVideoPath,
   MENTION_GROUPS,
   escapeRegExp,
@@ -211,6 +213,7 @@ export function PromptBar() {
     single?.type === 'cine' &&
     single.data.kind !== 'study' &&
     (single.data.assetOnly === true ||
+      single.data.outputs?.some((output) => isResultOutput(output)) === true ||
       (!single.data.prompt &&
         (single.data.outputs?.length ?? 0) === 1 &&
         ['本地上传', '资产库'].includes(
@@ -566,7 +569,7 @@ export function PromptBar() {
     if (!active) return []
     const groups = new Map<string, ParamDef[]>()
     for (const param of visibleParams) {
-      const name = param.group?.trim() || '其它'
+      const name = paramGroupName(param)
       const list = groups.get(name) ?? []
       list.push(param)
       groups.set(name, list)
@@ -992,7 +995,7 @@ export function PromptBar() {
       const text = entry.data.text?.trim()
       if (!text) return
       seen.add(entry.id)
-      result.push({ title: entry.data.title, text })
+      result.push({ title: entry.data.title, text, nodeId: entry.id })
     }
 
     const incoming = edges.filter((edge) => edge.target === node.id)
@@ -1008,19 +1011,32 @@ export function PromptBar() {
       }
     }
 
-    if (autoLink) {
-      const text = promptText.trim()
-      if (text) {
-        for (const item of nodes) {
-          if (item.id === node.id || isGroupNode(item)) continue
-          if (!text.includes(item.data.title)) continue
-          collect(item)
-        }
+    const text = promptText.trim()
+    if (text) {
+      // @ 引用的文本节点不依赖“自动连线”开关。
+      for (const item of nodes) {
+        if (item.id === node.id || isGroupNode(item)) continue
+        if (item.data.kind !== 'text') continue
+        if (!text.includes(`@${item.data.title}`)) continue
+        collect(item)
+      }
+    }
+
+    if (autoLink && text) {
+      for (const item of nodes) {
+        if (item.id === node.id || isGroupNode(item)) continue
+        if (!text.includes(item.data.title)) continue
+        collect(item)
       }
     }
 
     return result
   })()
+
+  const textSlots = textContexts.filter(
+    (context): context is TextContext & { nodeId: string } =>
+      Boolean(context.nodeId)
+  )
 
   const requiredInputs = (() => {
     const inputs: MediaInput[] = ['text']
@@ -1283,6 +1299,21 @@ export function PromptBar() {
 
     for (const entry of nodes) {
       if (entry.id === node.id || isGroupNode(entry)) continue
+      if (entry.data.kind !== 'text') continue
+      if (!entry.data.text?.trim()) continue
+      push({
+        key: `text:${entry.id}`,
+        name: entry.data.title,
+        group: textContexts.some((context) => context.nodeId === entry.id)
+          ? '已引用'
+          : '画布',
+        kind: 'text',
+        nodeId: entry.id
+      })
+    }
+
+    for (const entry of nodes) {
+      if (entry.id === node.id || isGroupNode(entry)) continue
       const output = selectedNodeOutput(entry)
       if (!output || (output.kind !== 'image' && output.kind !== 'video'))
         continue
@@ -1355,8 +1386,8 @@ export function PromptBar() {
   })).filter((group) => group.items.length > 0)
   const flatMentions = mentionGroups.flatMap((group) => group.items)
   const mentionNames = [
-    ...new Set(
-      mergedRefs
+    ...new Set([
+      ...mergedRefs
         .map(
           (ref) =>
             mentionItems.find(
@@ -1365,8 +1396,9 @@ export function PromptBar() {
                 item.refs?.some((entry) => entry.path === ref.path)
             )?.name
         )
-        .filter((name): name is string => Boolean(name))
-    )
+        .filter((name): name is string => Boolean(name)),
+      ...textContexts.map((context) => context.title)
+    ])
   ].sort((a, b) => b.length - a.length)
 
   const addRefs = (nextRefs: PickedRef[]): void => {
@@ -1398,19 +1430,22 @@ export function PromptBar() {
     setMentionStart(null)
     setMentionIndex(0)
 
-    const refsToAdd: PickedRef[] = item.refs
-      ? item.refs.map((ref) => ({ ...ref, kind: item.kind ?? 'image' }))
-      : item.path
-        ? [
-            {
-              path: item.path,
-              role: 'reference' as const,
-              scope: item.scope,
-              kind: item.kind ?? 'image'
-            }
-          ]
-        : []
-    if (refsToAdd.length > 0) addRefs(refsToAdd)
+    if (item.kind !== 'text') {
+      const mediaKind: RefKind = item.kind ?? 'image'
+      const refsToAdd: PickedRef[] = item.refs
+        ? item.refs.map((ref) => ({ ...ref, kind: mediaKind }))
+        : item.path
+          ? [
+              {
+                path: item.path,
+                role: 'reference' as const,
+                scope: item.scope,
+                kind: mediaKind
+              }
+            ]
+          : []
+      if (refsToAdd.length > 0) addRefs(refsToAdd)
+    }
 
     requestAnimationFrame(() => {
       const position = start + insert.length
@@ -1614,11 +1649,43 @@ export function PromptBar() {
           </IconButton>
         </div>
 
-        {modeSlots.length > 0 ? (
+        {textSlots.length > 0 || modeSlots.length > 0 ? (
           <div
             data-testid="promptbar-slots"
             className="flex gap-2 overflow-x-auto overflow-y-hidden px-2.5 pt-2"
           >
+            {textSlots.map((slot) => (
+              <div
+                className="relative h-10 w-10 shrink-0"
+                key={`text:${slot.nodeId}`}
+                data-slot-kind="text"
+              >
+                <span className="pointer-events-none absolute left-0.5 top-0.5 z-[1] max-w-[calc(100%-4px)] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg">
+                  {slot.title}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className={SLOT_THUMB_CLASS}
+                  title={`${slot.title}（双击在画布上定位）`}
+                  onDoubleClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    void fitView({
+                      nodes: [{ id: slot.nodeId }],
+                      padding: 0.6,
+                      duration: 300,
+                      maxZoom: 2
+                    })
+                  }}
+                >
+                  <span className="flex h-full w-full items-center justify-center text-fg-muted">
+                    <Icon name="text" size={16} />
+                  </span>
+                </Button>
+              </div>
+            ))}
             {modeSlots.map((slot) => (
               <div
                 className="relative h-10 w-10 shrink-0"

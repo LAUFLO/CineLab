@@ -2,6 +2,7 @@ import { addEdge, applyEdgeChanges, applyNodeChanges } from '@xyflow/react'
 import { NODE_META, TITLE_HEIGHT, type OutputRef } from '@shared/canvas-schema'
 import { VIDEO_OPERATIONS } from '@shared/operation-schema'
 import { applyCanvasBatch } from '@shared/canvas-commands'
+import { isResultOutputOp } from '@shared/node-operation-specs'
 import { clearEdgeReferences } from '../../edge-references'
 import { externalWrite, commandTurns, isGroupNode, isStudioNode, isStageNode, isFilmNode, isVideoOpNode, nodeSize, nextId, absolutePosition, type CineNode, type StudioNode, type StageNode, type FilmNode, type VideoOpNode, type CanvasNode } from '../../canvas-model'
 
@@ -133,6 +134,22 @@ loadCanvas: (nodes, edges, viewport) => {
         }
       }
       if (node.type !== 'cine') return node
+      if (
+        (node.data.stemTaskId || node.data.stemMode) &&
+        (node.data.status === 'running' || node.data.status === 'queued')
+      ) {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            status: 'error' as const,
+            error: '任务已中断，请重试',
+            progress: undefined,
+            stemTaskId: undefined,
+            stemQueuePosition: undefined
+          }
+        }
+      }
       if (node.data.kind === 'study') {
         const height = Number(node.style?.height ?? 0)
         if (height === 368 || height === 308) {
@@ -146,6 +163,25 @@ loadCanvas: (nodes, edges, viewport) => {
         }
         return node
       }
+      if (node.data.kind === 'audio') {
+        const width = Number(node.style?.width ?? 0)
+        const height = Number(node.style?.height ?? 0)
+        // 旧默认尺寸是 348×220（部分版本含标题为 348×248）；只迁移旧默认，
+        // 用户手动调整过的尺寸保持不变。
+        if (width === 348 && (height === 220 || height === 248)) {
+          if (node.parentId) groupIds.add(node.parentId)
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              width: NODE_META.audio.width,
+              height: NODE_META.audio.height + TITLE_HEIGHT
+            }
+          }
+        }
+        return node
+      }
+
       if (node.data.kind !== 'image' && node.data.kind !== 'video') return node
 
       const width = Number(node.style?.width ?? 0)
@@ -505,7 +541,10 @@ applyOutput: (nodeId, asset, op) => {
             status: 'done',
             progress: 100,
             error: undefined,
-            assetOnly: undefined,
+            assetOnly:
+              entry.data.assetOnly === true || isResultOutputOp(op)
+                ? true
+                : undefined,
             outputs,
             selectedOutputId: output.id
           },

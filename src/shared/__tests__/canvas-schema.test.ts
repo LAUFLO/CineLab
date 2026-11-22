@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { NODE_META, TITLE_HEIGHT } from '../canvas-schema'
 
 describe('node metadata', () => {
-  it('keeps the agreed default node widths', () => {
+  it('keeps the agreed default node sizes', () => {
     expect(NODE_META.image.width).toBe(360)
     expect(NODE_META.video.width).toBe(480)
     expect(NODE_META.text.width).toBe(348)
-    expect(NODE_META.audio.width).toBe(348)
+    expect(NODE_META.audio.width).toBe(200)
+    expect(NODE_META.audio.height).toBe(127)
   })
 
   it('keeps the title height used by layout calculations', () => {

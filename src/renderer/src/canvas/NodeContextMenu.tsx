@@ -235,6 +235,14 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
         {
           label: '分离音视频',
           run: () => operation('split-av')
+        },
+        {
+          label: '人声提取',
+          run: () => operation('split-av', 'vocal')
+        },
+        {
+          label: '背景音提取',
+          run: () => operation('split-av', 'background')
         }
       ]
     })
@@ -274,6 +282,14 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
     sections.push({
       title: '音频',
       actions: [
+        {
+          label: '人声提取',
+          run: () => operation('split-av', 'vocal')
+        },
+        {
+          label: '背景音提取',
+          run: () => operation('split-av', 'background')
+        },
         {
           label: '加入资产库（音频）',
           run: () => void saveNodeToLibrary(node, '音频')

@@ -86,7 +86,9 @@ export async function exportStagePreviewToCanvas(input: {
       { x: baseX, y: baseY },
       [result.asset],
       '整片预演',
-      stageNode.id
+      stageNode.id,
+      undefined,
+      true
     )
     for (const id of wholeVideo) {
       canvas.patchNodeData(id, { title: '整片预演' })
@@ -99,7 +101,9 @@ export async function exportStagePreviewToCanvas(input: {
         { x: baseX + 560, y: baseY },
         [result.overview.asset],
         '场景鸟瞰',
-        stageNode.id
+        stageNode.id,
+        undefined,
+        true
       )
       for (const id of overviewNodes) {
         canvas.patchNodeData(id, { title: '场景鸟瞰' })
@@ -125,7 +129,9 @@ export async function exportStagePreviewToCanvas(input: {
           }
         ],
         document.label,
-        stageNode.id
+        stageNode.id,
+        undefined,
+        true
       )
       for (const id of ids) {
         canvas.patchNodeData(id, {
@@ -153,7 +159,9 @@ export async function exportStagePreviewToCanvas(input: {
         { x: baseX, y },
         [clip.asset],
         shotLabel(clip.index),
-        stageNode.id
+        stageNode.id,
+        undefined,
+        true
       )
       for (const id of videoNodes) {
         canvas.patchNodeData(id, { title: shotLabel(clip.index) })
@@ -168,7 +176,8 @@ export async function exportStagePreviewToCanvas(input: {
           frames.map((frame) => frame.asset) as GeneratedAsset[],
           `${shotLabel(clip.index)} · 分镜`,
           stageNode.id,
-          { columns: 3, cellWidth: 240 }
+          { columns: 3, cellWidth: 240 },
+          true
         )
         frameNodes.forEach((id, index) => {
           const label = frames[index]?.label

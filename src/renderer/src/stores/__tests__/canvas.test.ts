@@ -114,4 +114,110 @@ describe('canvas store', () => {
     expect(useCanvasStore.getState().pasteNodes({ x: 40, y: 40 })).toBe(1)
     expect(useCanvasStore.getState().nodes).toHaveLength(2)
   })
+
+  it('migrates only old default audio sizes', () => {
+    const oldId = useCanvasStore.getState().addNode('audio', { x: 0, y: 0 })
+    const customId = useCanvasStore.getState().addNode('audio', { x: 300, y: 0 })
+    const nodes = useCanvasStore.getState().nodes.map((node) => {
+      if (node.id === oldId) {
+        return {
+          ...node,
+          style: { ...node.style, width: 348, height: 248 }
+        }
+      }
+      if (node.id === customId) {
+        return {
+          ...node,
+          style: { ...node.style, width: 300, height: 200 }
+        }
+      }
+      return node
+    })
+
+    useCanvasStore
+      .getState()
+      .loadCanvas(nodes, [], { x: 0, y: 0, zoom: 1 })
+
+    const result = useCanvasStore.getState().nodes
+    expect(result.find((node) => node.id === oldId)?.style).toMatchObject({
+      width: 200,
+      height: 155
+    })
+    expect(result.find((node) => node.id === customId)?.style).toMatchObject({
+      width: 300,
+      height: 200
+    })
+  })
+
+  it('marks interrupted stem tasks after reload', () => {
+    const id = useCanvasStore.getState().addNode('audio', { x: 0, y: 0 })
+    useCanvasStore.getState().patchNodeData(id, {
+      status: 'running',
+      stemTaskId: 'task-1',
+      stemMode: 'vocal',
+      stemSourceNodeId: 'source-1',
+      stemPendingIds: [id]
+    })
+
+    useCanvasStore
+      .getState()
+      .loadCanvas(useCanvasStore.getState().nodes, [], {
+        x: 0,
+        y: 0,
+        zoom: 1
+      })
+
+    const node = useCanvasStore
+      .getState()
+      .nodes.find((entry) => entry.id === id)
+    expect(node?.data.status).toBe('error')
+    expect(node?.data.error).toBe('任务已中断，请重试')
+    expect(node?.data.stemTaskId).toBeUndefined()
+    expect(node?.data.stemMode).toBe('vocal')
+  })
+
+  it('marks operation result nodes as asset-only and preserves it after output', () => {
+    const id = useCanvasStore
+      .getState()
+      .addPendingNodes('image', { x: 0, y: 0 }, 1, '裁剪结果')[0]
+    expect(
+      useCanvasStore.getState().nodes.find((node) => node.id === id)?.data
+        .assetOnly
+    ).toBe(true)
+
+    useCanvasStore.getState().applyOutput(
+      id,
+      {
+        id: 'asset-1',
+        path: 'assets/img/a.png',
+        kind: 'image',
+        createdAt: '2026-11-22T00:00:00.000Z',
+        model: '本地裁剪'
+      },
+      'crop'
+    )
+    expect(
+      useCanvasStore.getState().nodes.find((node) => node.id === id)?.data
+        .assetOnly
+    ).toBe(true)
+  })
+
+  it('keeps creative nodes prompt-enabled after same-node edits', () => {
+    const id = useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
+    useCanvasStore.getState().applyOutput(
+      id,
+      {
+        id: 'asset-2',
+        path: 'assets/img/b.png',
+        kind: 'image',
+        createdAt: '2026-11-22T00:00:00.000Z',
+        model: 'test-model'
+      },
+      'relight'
+    )
+    expect(
+      useCanvasStore.getState().nodes.find((node) => node.id === id)?.data
+        .assetOnly
+    ).toBeUndefined()
+  })
 })

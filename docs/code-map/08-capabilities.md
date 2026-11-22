@@ -15,6 +15,8 @@
 |---|---|---|
 | 01 | 无限画布、节点、连线、分组、节点工具栏 | `src/shared/canvas-commands.ts`、`canvas-commands.test.ts` |
 | 01 | 项目画布打开/保存/多画布 | `src/main/project/`、`src/shared/project-schema.ts` |
+| 01 | 文本节点引用槽位与 @ 提及，文本内容拼入提示词 | `PromptBar.tsx`、`promptbar-model.tsx`、`MentionMenu.tsx` |
+| 01 | 结果/素材节点隐藏 PromptBar，保留 NodeToolbar；旧项目按输出 op/model 兜底 | `PromptBar.tsx`、`node-operation-specs.ts`、`stores/canvas/slices/assets.ts` |
 | 02 | 多供应商模型配置、生成任务、参数预设 | `src/main/providers/`、`src/main/engine/` |
 | 02 | 参考图/视频/音频输入、素材导入 | `src/shared/reference-inputs.ts`、`src/main/assets/` |
 | 02 | 首尾帧统一载荷与校验、MiniMax H3 role | `src/main/providers/media.ts`、`src/main/providers/minimax.ts`、`src/shared/reference-inputs.ts`；Agnes 首帧已真实复测 |
@@ -23,6 +25,7 @@
 | 02 | L4 sidecar（OpenAI / http-template）健康检查、版本与日志 | `src/main/local-adapters/registry.ts`、`docs/local-adapters.md` |
 | 02 | http-template 条件字段、$map、状态/错误映射、多结果、HMAC 签名、显式 multipart、同步结果 | `src/main/providers/http-template.ts`、`http-template-dsl.test.ts` |
 | 02 | 本地视觉增强：抠像、图层分离、视频抠像、智能去字幕、主体消除、扩图；Windows/macOS 共用模型包 | `src/main/media/vision.ts`、`resources/vision-worker/worker.py` |
+| 02 | 本地人声/背景音分离：Demucs htdemucs、视频/音频源、无声视频 + 音频输出、FIFO 任务与取消；真实素材听感待验收 | `src/main/media/stems.ts`、`src/main/media/stem-tasks.ts`、`resources/stem-worker/worker.py` |
 | 03 | 时间线、剪辑、转场、关键帧、字幕、音频 | `src/main/timeline/`、`src/shared/timeline-*` |
 | 04 | StageDoc、机位、镜头、关键帧、Hermite 插值 | `src/shared/stage-schema.ts`、`stage-timeline.ts` |
 | 04 | 语义镜头求解（单/双/群、过肩、不越轴） | `src/shared/stage-shot-intent.ts` |
@@ -44,6 +47,7 @@
 | 06 | MCP 导演台对象/机位/镜头/自动分镜/预演导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/stageBridge.ts` |
 | 06 | MCP 拉片读取/修改/自动拉片/复刻/导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/filmBridge.ts` |
 | 07 | IPC、preload、设置、素材库、安全、更新 | `src/main/ipc/`、`src/preload/` |
+| 07 | 模型配置弹窗保存直接写入 models.json；Agent pending 自动应用 | `SettingsPanel.tsx`、`src/main/settings/models-watch.ts` |
 | 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
 | 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能卡片与 Markdown 预览 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx` |

@@ -42,6 +42,7 @@ export interface ConfirmState {
   confirmLabel?: string
   danger?: boolean
   onConfirm: () => void | Promise<void>
+  onCancel?: () => void | Promise<void>
   secondaryLabel?: string
   secondaryDanger?: boolean
   onSecondary?: () => void | Promise<void>

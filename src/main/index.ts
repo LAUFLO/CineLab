@@ -16,6 +16,8 @@ import {
 } from './local-adapters/registry'
 import { startMcpServer, stopMcpServer } from './mcp/server'
 import { log, setupLogging } from './logger'
+import { cancelAllStemTasks } from './media/stem-tasks'
+import { disposeStemCache } from './media/stems'
 import { appendFileSync } from 'node:fs'
 
 // 隔离测试实例：避免窗口被遮挡时 Chromium 暂停 requestAnimationFrame，
@@ -194,6 +196,8 @@ if (!hasLock) {
   })
 
   app.on('before-quit', () => {
+    cancelAllStemTasks()
+    void disposeStemCache()
     stopLocalAdapterRegistry()
     void stopMcpServer()
     log.info('app quitting')

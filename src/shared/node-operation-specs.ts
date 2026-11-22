@@ -74,6 +74,80 @@ const NEW_NODE_OPERATION_IDS = new Set([
   'extend'
 ])
 
+/**
+ * 会产生“结果节点”的输出 op。结果节点只保留上方工具栏，不显示 PromptBar。
+ * 注意：color-grade / relight / portrait / inpaint / erase / element-edit
+ * 写回当前创作节点的版本栈，不能算结果节点。
+ */
+const RESULT_OUTPUT_OPS = new Set([
+  'grid-split',
+  'crop',
+  'crop-free',
+  'video-crop',
+  'trim',
+  'stitch',
+  'storyboard-stitch',
+  'motion-capture',
+  '深度动作捕捉',
+  'layer-split',
+  'matting',
+  'object-remove',
+  'outpaint',
+  'cutout',
+  'reverse-prompt',
+  'grid-generate',
+  'character-sheet',
+  'time-shift',
+  'multi-angle',
+  'panorama',
+  'shot-retake',
+  'element-replace',
+  'extend'
+])
+
+const RESULT_OUTPUT_PREFIXES = [
+  'split-av-',
+  'frame-',
+  'subtitle-',
+  'audio-trim',
+  'audio-speed'
+]
+
+const RESULT_MODEL_PREFIXES = [
+  '本地分离',
+  '本地截取',
+  '本地画面裁切',
+  '本地框选去字幕',
+  '本地抽帧',
+  '本地宫格切分',
+  '分镜拼接',
+  '逐帧拉片',
+  'InSPyReNet',
+  'LaMa',
+  '深度动作捕捉',
+  '导演台',
+  '整片预演',
+  '剪辑室素材'
+]
+
+export function isResultOutputOp(op: string | undefined): boolean {
+  if (!op) return false
+  if (RESULT_OUTPUT_OPS.has(op)) return true
+  return RESULT_OUTPUT_PREFIXES.some((prefix) => op.startsWith(prefix))
+}
+
+/** 旧项目没有 assetOnly 时，用输出 op / model 兜底判断结果节点。 */
+export function isResultOutput(
+  output: { op?: string; model?: string } | undefined
+): boolean {
+  if (!output) return false
+  if (isResultOutputOp(output.op)) return true
+  const model = output.model?.trim()
+  return Boolean(
+    model && RESULT_MODEL_PREFIXES.some((prefix) => model.startsWith(prefix))
+  )
+}
+
 export function nodeOperationOutputTarget(
   operationId: string | undefined
 ): NodeOperationOutputTarget {
@@ -135,7 +209,11 @@ export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> 
       }
     ]
   },
-  'split-av': { executable: true, params: [] },
+  'split-av': {
+    executable: true,
+    itemRequired: true,
+    itemOptions: ['av', 'vocal', 'background']
+  },
   'frame-study': {
     executable: true,
     itemRequired: true,

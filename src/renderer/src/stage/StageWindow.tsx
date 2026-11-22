@@ -419,7 +419,9 @@ export function StageWindow() {
         },
         [asset],
         '导演台截图',
-        stageNode.id
+        stageNode.id,
+        undefined,
+        true
       )
       useUIStore
         .getState()

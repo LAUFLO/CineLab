@@ -220,6 +220,7 @@ function ModelsSection() {
     return window.api.settings.onModelsChanged(() => {
       void load()
       void window.api.settings.modelsConfig().then(setConfig)
+      void window.api.settings.pendingModels().then(setPending)
     })
   }, [load])
 
@@ -857,18 +858,36 @@ function ModelsSection() {
           model={configModel}
           onCancel={() => setConfigModel(null)}
           onSave={(value: ModelConfigValue) => {
-            if (!configModel) return
-            setDraft((current) =>
-              current
-                ? {
-                    ...current,
-                    models: current.models.map((item) =>
-                      item.id === configModel.id ? { ...item, ...value } : item
-                    )
-                  }
-                : current
-            )
+            if (!configModel || !draft) return
+            const nextDraft: ProviderInput = {
+              ...draft,
+              models: draft.models.map((item) =>
+                item.id === configModel.id ? { ...item, ...value } : item
+              )
+            }
+            setDraft(nextDraft)
             setConfigModel(null)
+            setMessage(null)
+
+            if (!nextDraft.name.trim() || !nextDraft.baseUrl.trim()) {
+              setMessage({
+                ok: false,
+                text: '模型已应用到草稿；填写供应商名称和 Base URL 后再保存'
+              })
+              return
+            }
+
+            // 模型弹窗的“保存配置”直接落盘，避免用户误以为只改草稿。
+            void (async () => {
+              try {
+                const saved = await save(nextDraft)
+                setDraft(toDraft(saved))
+                setConfig(await window.api.settings.modelsConfig())
+                showToast('模型配置已写入 models.json')
+              } catch (error) {
+                setMessage({ ok: false, text: String(error) })
+              }
+            })()
           }}
         />
       </div>
@@ -1205,6 +1224,14 @@ function ModelsSection() {
         </Button>
       </div>
 
+      <div className="mt-5">
+        <ComponentsSection />
+      </div>
+
+      <div className="mt-5">
+        <GeneralSettingsSection part="modelsRuntime" />
+      </div>
+
       <Dialog
         open={pendingOpen}
         onClose={() => setPendingOpen(false)}
@@ -1278,7 +1305,7 @@ function ModelsSection() {
             ChatGPT）。
           </li>
           <li>附上下面的提示词，让 Agent 读文档并生成配置。</li>
-          <li>回到 CineLab，模型配置会自动重新加载。</li>
+          <li>回到 CineLab，模型配置会自动校验并应用。</li>
         </ol>
         <pre className="m-0 max-h-[180px] overflow-auto whitespace-pre-wrap break-words rounded-card bg-surface-hover px-3 py-2.5 font-[inherit] text-[11px] leading-[1.7] text-fg-muted">
           {skillPrompt}
@@ -1641,15 +1668,7 @@ export function SettingsPanel() {
                 <ObjectPresetsSection />
               </>
             ) : null}
-            {active === 'models' ? (
-              <>
-                <ModelsSection />
-                <ComponentsSection />
-                <div className="mt-5">
-                  <GeneralSettingsSection part="modelsRuntime" />
-                </div>
-              </>
-            ) : null}
+            {active === 'models' ? <ModelsSection /> : null}
             {active === 'skills' ? <SkillsSection /> : null}
             {active === 'storage' ? (
               <>

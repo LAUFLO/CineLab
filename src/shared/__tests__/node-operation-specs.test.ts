@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   NODE_OPERATION_AGENT_SPECS,
+  isResultOutput,
+  isResultOutputOp,
   validateNodeOperationParams
 } from '../node-operation-specs'
 
@@ -95,6 +97,37 @@ describe('node operation agent specs', () => {
     for (const spec of blocked) {
       expect(spec.reason).toBeTruthy()
     }
+  })
+
+  it('requires a menu item for split av', () => {
+    expect(
+      validateNodeOperationParams('split-av', undefined, {})
+    ).toContain('itemId')
+    expect(
+      validateNodeOperationParams('split-av', 'av', {})
+    ).toBeNull()
+    expect(
+      validateNodeOperationParams('split-av', 'vocal', {})
+    ).toBeNull()
+    expect(
+      validateNodeOperationParams('split-av', 'background', {})
+    ).toBeNull()
+    expect(
+      validateNodeOperationParams('split-av', 'unknown', {})
+    ).toContain('不支持')
+  })
+
+  it('identifies operation result nodes without hiding creative versions', () => {
+    expect(isResultOutputOp('split-av-video')).toBe(true)
+    expect(isResultOutputOp('frame-first')).toBe(true)
+    expect(isResultOutputOp('subtitle-box')).toBe(true)
+    expect(isResultOutputOp('audio-trim')).toBe(true)
+    expect(isResultOutputOp('grid-generate')).toBe(true)
+    expect(isResultOutputOp('relight')).toBe(false)
+    expect(isResultOutputOp('portrait')).toBe(false)
+    expect(isResultOutputOp(undefined)).toBe(false)
+    expect(isResultOutput({ model: '本地分离（人声）' })).toBe(true)
+    expect(isResultOutput({ model: 'Agnes 2.5 Flash 图像' })).toBe(false)
   })
 
   it('marks model operations as generation proposable', () => {

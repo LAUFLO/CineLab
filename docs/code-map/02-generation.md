@@ -72,6 +72,8 @@
 - `frames.ts` 抽帧；`video.ts`/`video-ops.ts` 视频操作；
 - `depth.ts`/`depth-tasks.ts` 深度捕获；
 - `vision.ts`/`vision-tasks.ts` 视觉任务；模型资产是纯 Python 源码加权重，Windows/macOS 共用同一份包，不放平台二进制；字幕烧录字体按平台选择（Windows `Microsoft YaHei`，macOS `PingFang SC`）；
+- `stems.ts`/`stem-tasks.ts` 人声/背景音分离：Demucs 复用本地 AI 运行时，代码随应用发布，模型按需下载；任务 FIFO、进度、取消，支持整段与分段流式推理；
+- `process.ts`/`temp.ts` 本地 Python 进程与临时目录公共封装；
 - `thumbnail.ts`/`proxy.ts` 缩略图与代理；
 - `audio.ts`/`audio-peaks.ts`/`sound-library.ts` 音频；
 - `paths.ts` 媒体路径解析；`ffmpeg.ts` 进程封装。
@@ -105,6 +107,7 @@ Prompt Bar / 节点操作
 | 本地适配器 registry / utilityProcess | 已实现（S2a/S2b） | `main/local-adapters/`、`shared/local-adapter.ts`、设置页本地适配器区块 |
 | L4 sidecar（OpenAI / http-template） | 已实现（S4） | `main/local-adapters/registry.ts`、`docs/local-adapters.md` |
 | 媒体处理 | 已实现 | `main/media/`、`concat.test.ts` |
+| 人声/背景音分离 | 已实现；真实素材听感待验收 | `main/media/stems.ts`、`stem-tasks.ts`、`resources/stem-worker/worker.py` |
 | 错误文案 | 已实现 | `generation-error.test.ts` |
 
 ## 已知限制
@@ -159,16 +162,20 @@ Prompt Bar / 节点操作
 | `src/main/media/grid.ts` | 62 |
 | `src/main/media/image.ts` | 86 |
 | `src/main/media/paths.ts` | 44 |
+| `src/main/media/process.ts` | 28 |
 | `src/main/media/proxy.ts` | 73 |
 | `src/main/media/range.ts` | 32 |
 | `src/main/media/sound-library.ts` | 49 |
+| `src/main/media/stem-tasks.ts` | 209 |
+| `src/main/media/stems.ts` | 399 |
 | `src/main/media/stitch.ts` | 85 |
 | `src/main/media/subtitle-detect.ts` | 204 |
+| `src/main/media/temp.ts` | 19 |
 | `src/main/media/thumbnail.ts` | 145 |
 | `src/main/media/video-ops.ts` | 134 |
 | `src/main/media/video.ts` | 245 |
 | `src/main/media/vision-tasks.ts` | 102 |
-| `src/main/media/vision.ts` | 457 |
+| `src/main/media/vision.ts` | 436 |
 | `src/main/providers/agnes.ts` | 205 |
 | `src/main/providers/headers.ts` | 30 |
 | `src/main/providers/http-template.ts` | 827 |
@@ -184,12 +191,13 @@ Prompt Bar / 节点操作
 | `src/main/providers/volcengine.ts` | 187 |
 | `src/renderer/src/stores/generation-history.ts` | 151 |
 | `src/renderer/src/stores/generation.ts` | 213 |
+| `src/renderer/src/stores/stem-tasks.ts` | 297 |
 | `src/renderer/src/stores/vision-tasks.ts` | 95 |
 | `src/shared/filters.ts` | 112 |
 | `src/shared/generation.ts` | 141 |
 | `src/shared/http-template.ts` | 110 |
 | `src/shared/local-adapter.ts` | 14 |
-| `src/shared/media.ts` | 233 |
+| `src/shared/media.ts` | 273 |
 | `src/shared/model-contracts.ts` | 395 |
 | `src/shared/model-modes.ts` | 278 |
 | `src/shared/param-constraints.ts` | 107 |
@@ -222,14 +230,18 @@ Prompt Bar / 节点操作
 | `src/main/media/grid.ts` | `splitGrid` |
 | `src/main/media/image.ts` | `cropImage`、`cropImageRect` |
 | `src/main/media/paths.ts` | `resolveInside`、`resolveMediaPath` |
+| `src/main/media/process.ts` | `pythonBinary`、`killProcessTree` |
 | `src/main/media/proxy.ts` | `ensureProxy` |
 | `src/main/media/range.ts` | `ByteRange`、`parseByteRange` |
 | `src/main/media/sound-library.ts` | `listSounds`、`importSound` |
+| `src/main/media/stem-tasks.ts` | `startStemTask`、`cancelStemTask`、`cancelAllStemTasks`、`hasActiveStemTasks`、`listStemTasks` |
+| `src/main/media/stems.ts` | `StemOptions`、`disposeStemCache`、`separateStems` |
 | `src/main/media/stitch.ts` | `stitchGrid` |
 | `src/main/media/subtitle-detect.ts` | `SubtitleRect`、`detectSubtitleRect` |
+| `src/main/media/temp.ts` | `withTempDir` |
 | `src/main/media/thumbnail.ts` | `mediaThumbnail` |
 | `src/main/media/video-ops.ts` | `applyVideoSegmentResult` |
-| `src/main/media/video.ts` | `trimVideo`、`splitAv`、`cropVideo`、`removeSubtitles` |
+| `src/main/media/video.ts` | `trimVideo`、`extractSilentVideo`、`splitAv`、`cropVideo`、`removeSubtitles` |
 | `src/main/media/vision-tasks.ts` | `startVisionTask`、`cancelVisionTask`、`cancelAllVisionTasks`、`listVisionTasks` |
 | `src/main/media/vision.ts` | `VisionOptions`、`runVisionTask` |
 | `src/main/providers/agnes.ts` | `buildAgnesBody`、`generateVideoAgnes` |
@@ -247,12 +259,13 @@ Prompt Bar / 节点操作
 | `src/main/providers/volcengine.ts` | `ImageRef`、`ArkVideoInput`、`generateVideoArk` |
 | `src/renderer/src/stores/generation-history.ts` | `GenerationHistoryStatus`、`GenerationHistoryEntry`、`useGenerationHistoryStore` |
 | `src/renderer/src/stores/generation.ts` | `useGenerationStore` |
+| `src/renderer/src/stores/stem-tasks.ts` | `trackStemTask`、`subscribeStemTasks`、`hasTrackedStemTasks`、`cancelStemTaskFromNode`、`cancelAllTrackedStemTasks`、`confirmCancelStemTasks`、`retryStemTask` |
 | `src/renderer/src/stores/vision-tasks.ts` | `trackVisionTask`、`subscribeVisionTasks` |
 | `src/shared/filters.ts` | `DEFAULT_FILTER`、`FilterPreset`、`FILTER_PRESETS`、`canvasFilterString`、`hasActiveFilter` |
 | `src/shared/generation.ts` | `OutputKind`、`ReferenceMedia`、`ReferenceRole`、`VideoRange`、`VideoOperationOptions`、`ReferenceInput`、`LayerBounds`、`LayerBox`、`AssetLayer`、`TextRecognitionStyle`、`TextRecognitionRun`、`TextRecognitionLine`、`TextRecognition`、`GeneratedAsset`、`GenerateRequest`、`GenerationEvent`、`GenerateHandle` |
 | `src/shared/http-template.ts` | `HttpTemplateMode`、`HttpTemplateSignType`、`HttpTemplateSign`、`HttpTemplateAuth`、`HttpTemplateMultipartFile`、`HttpTemplateMultipart`、`HttpTemplateSubmit`、`HttpTemplateCondition`、`HttpTemplateConditionalField`、`HttpTemplatePoll`、`HttpTemplate`、`LEGACY_KEYFRAME_VARIABLE_WARNING`、`hasLegacyKeyframeVariables` |
 | `src/shared/local-adapter.ts` | `LocalAdapterStatusKind`、`LocalAdapterStatus` |
-| `src/shared/media.ts` | `AudioPeaksRequest`、`GridSplitRequest`、`GridSplitResult`、`StitchRequest`、`StitchResult`、`FrameMode`、`ExtractFrameRequest`、`ExtractFrameResult`、`SplitAvRequest`、`SplitAvResult`、`CropVideoRequest`、`CropVideoResult`、`AudioTrimRequest`、`AudioTrimResult`、`AudioSpeedRequest`、`AudioSpeedResult`、`MediaProbe`、`SubtitleRect`、`CropImageRequest`、`CropImageResult`、`CropImageRectRequest`、`RemoveSubtitlesRequest`、`RemoveSubtitlesResult`、`TrimVideoRequest` …（共 37 个） |
+| `src/shared/media.ts` | `AudioPeaksRequest`、`GridSplitRequest`、`GridSplitResult`、`StitchRequest`、`StitchResult`、`FrameMode`、`ExtractFrameRequest`、`ExtractFrameResult`、`StemMode`、`SplitAvMode`、`SplitAvRequest`、`SplitAvResult`、`StemTaskRequest`、`StemTaskResult`、`StemTaskStatus`、`StemTaskEvent`、`StemTaskStartResult`、`CropVideoRequest`、`CropVideoResult`、`AudioTrimRequest`、`AudioTrimResult`、`AudioSpeedRequest`、`AudioSpeedResult`、`MediaProbe` …（共 44 个） |
 | `src/shared/model-contracts.ts` | `ContractTransport`、`ModelContractFields`、`ModelContractTransports`、`ModelContractRoles`、`ModelContractLimits`、`ModelContractSource`、`ModelContract`、`ContractGap`、`AGNES_VIDEO_CONTRACT`、`KLING_VIDEO_CONTRACT`、`MINIMAX_VIDEO_CONTRACT`、`MINIMAX_LEGACY_CONTRACT`、`VOLCENGINE_VIDEO_CONTRACT`、`SORA_VIDEO_CONTRACT`、`OPENAI_COMPAT_CONTRACT`、`HTTP_TEMPLATE_CONTRACT`、`OFFICIAL_CONTRACTS`、`contractForAdapter`、`isOfficialModel`、`contractGapsForAdapter` |
 | `src/shared/model-modes.ts` | `ModelModeId`、`MediaKind`、`SlotRole`、`InputSlot`、`OperationSupport`、`ModelModeConfig`、`ModelModeDefinition`、`MODEL_MODE_DEFINITIONS`、`MODEL_MODE_LABEL`、`OPERATION_SUPPORT_LABEL`、`isModelModeId`、`getModelModeDefinition`、`normalizeModeConfig`、`normalizeModelModes`、`modeMediaKinds`、`modeSupportsOperation`、`modeOperationIds`、`highestOperationSupport` |
 | `src/shared/param-constraints.ts` | `ParamEvalContext`、`EvaluatedParam`、`evaluateParam`、`applyParamConstraints` |

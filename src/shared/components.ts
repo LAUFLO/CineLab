@@ -1,9 +1,12 @@
+// 组件内部 kind 是持久化契约；depth-runtime 的实际职责已扩展为通用本地 AI 运行时，
+// 为兼容已安装用户保留原名称，只在设置页显示为新名称。
 export type ComponentKind =
   | 'depth-runtime'
   | 'depth-model'
   | 'vision-models'
   | 'whisper-runtime'
   | 'whisper-model'
+  | 'stem-model'
 
 export type ComponentState =
   | 'not-installed'

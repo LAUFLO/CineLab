@@ -118,7 +118,15 @@ export function MentionMenu({
                         )
                       ) : (
                         <Icon
-                          name={item.kind === 'video' ? 'video' : 'image'}
+                          name={
+                            item.kind === 'video'
+                              ? 'video'
+                              : item.kind === 'audio'
+                                ? 'audio'
+                                : item.kind === 'text'
+                                  ? 'text'
+                                  : 'image'
+                          }
                           size={12}
                         />
                       )}
@@ -132,9 +140,13 @@ export function MentionMenu({
                     <span className="shrink-0 text-[10px] text-fg-subtle">
                       {item.group === '角色'
                         ? '角色卡'
-                        : item.kind === 'video'
-                          ? '视频'
-                          : '图片'}
+                        : item.kind === 'text'
+                          ? '文本'
+                          : item.kind === 'video'
+                            ? '视频'
+                            : item.kind === 'audio'
+                              ? '音频'
+                              : '图片'}
                     </span>
                   }
                 >

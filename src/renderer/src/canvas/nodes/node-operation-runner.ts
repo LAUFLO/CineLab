@@ -9,7 +9,7 @@ import {
   validateNodeOperationParams,
   type NodeOperationParamSpec
 } from '@shared/node-operation-specs'
-import type { SubtitleRect } from '@shared/media'
+import type { SplitAvMode, StemMode, SubtitleRect } from '@shared/media'
 import {
   absolutePosition,
   isGroupNode,
@@ -19,6 +19,7 @@ import {
   type CanvasNode
 } from '../../stores/canvas'
 import { trackDepthTask } from '../../stores/depth-tasks'
+import { trackStemTask } from '../../stores/stem-tasks'
 import { trackVisionTask } from '../../stores/vision-tasks'
 import {
   buildOperationPrompt,
@@ -297,14 +298,48 @@ function needsVision(host?: NodeOperationUiHost): NodeOperationResult {
     host.effect({
       type: 'settings',
       panel: 'components',
-      message: '需要先安装「深度动作捕捉运行时」和「视觉模型（RVM + LaMa）」'
+      message: '需要先安装「本地 AI 运行时」和「视觉模型（InSPyReNet + LaMa）」'
     })
     return { ok: false, needsUi: true, error: '需要安装视觉组件' }
   }
   return {
     ok: false,
-    error: '需要先安装「深度动作捕捉运行时」和「视觉模型（RVM + LaMa）」'
+    error: '需要先安装「本地 AI 运行时」和「视觉模型（InSPyReNet + LaMa）」'
   }
+}
+
+async function stemReady(
+  host?: NodeOperationUiHost
+): Promise<NodeOperationResult | null> {
+  let runtime = false
+  let model = false
+  try {
+    const status = await window.api.components.status()
+    runtime =
+      status.find((item) => item.kind === 'depth-runtime')?.state ===
+      'installed'
+    model =
+      status.find((item) => item.kind === 'stem-model')?.state === 'installed'
+  } catch {
+    // 状态读取失败时交给主进程兜底报错
+    return null
+  }
+
+  if (runtime && model) return null
+
+  const message = !runtime
+    ? '人声分离需要「本地 AI 运行时」和「HTDemucs 人声分离模型」，请先在 设置 → 模型与运行时 → 组件 中安装'
+    : '人声分离需要「HTDemucs 人声分离模型」（约 84MB），请先在 设置 → 模型与运行时 → 组件 中安装'
+
+  if (host) {
+    host.effect({ type: 'settings', panel: 'components', message })
+    return { ok: false, needsUi: true, error: message }
+  }
+  return { ok: false, error: message }
+}
+
+function stemModeLabel(mode: StemMode): string {
+  return mode === 'vocal' ? '人声提取' : '背景音提取'
 }
 
 function openAiDialog(
@@ -608,75 +643,177 @@ async function executeFrame(
 async function executeSplitAv(
   request: NodeOperationRequest,
   node: CanvasNode,
+  item: OperationMenuItem | undefined,
   host?: NodeOperationUiHost
 ): Promise<NodeOperationResult> {
   const output = selectedNodeOutput(node)
   if (!output) return { ok: false, error: '节点还没有可用输出' }
 
-  host?.setRunning?.(true)
-  consumeToast(host, '正在分离音视频…')
+  const mode = (item?.id as SplitAvMode | undefined) ?? 'av'
+  if (mode !== 'av' && mode !== 'vocal' && mode !== 'background') {
+    return { ok: false, error: `不支持的分离模式：${mode}` }
+  }
+  if (node.data.kind === 'audio' && mode === 'av') {
+    return { ok: false, error: '音频节点不支持分离音视频，请选择人声提取或背景音提取' }
+  }
+
+  if (mode !== 'av') {
+    const notReady = await stemReady(host)
+    if (notReady) return notReady
+  }
 
   const state = useCanvasStore.getState()
   const origin = originFor(node)
-  const pendingVideoId = state.addPendingNodes(
-    'video',
-    origin,
-    1,
-    `${node.data.title} · 无声`,
-    node.id
-  )[0]
-  const pendingAudioId = state.addPendingNodes(
-    'audio',
-    { x: origin.x, y: origin.y + 420 },
-    1,
-    `${node.data.title} · 音轨`,
-    node.id
-  )[0]
+  const sourceTitle = String(node.data.title ?? '素材')
+  const hasVideo = node.data.kind === 'video'
+  const groupCount = state.nodes.filter(isGroupNode).length
 
-  const groupCount = useCanvasStore
-    .getState()
-    .nodes.filter(isGroupNode).length
-  const groupId = state.createGroupFromNodes(
-    [pendingVideoId, pendingAudioId],
-    {
-      columns: 1,
-      title: `音视频组 ${groupCount + 1}`,
-      color: 'cyan'
-    }
-  )
+  if (mode === 'av') {
+    const pendingVideoId = state.addPendingNodes(
+      'video',
+      origin,
+      1,
+      `${sourceTitle} · 无声`,
+      node.id
+    )[0]
+    const pendingAudioId = state.addPendingNodes(
+      'audio',
+      { x: origin.x, y: origin.y + 420 },
+      1,
+      `${sourceTitle} · 音轨`,
+      node.id
+    )[0]
+    const groupId = state.createGroupFromNodes(
+      [pendingVideoId, pendingAudioId],
+      {
+        columns: 1,
+        title: `音视频组 ${groupCount + 1}`,
+        color: 'cyan'
+      }
+    )
 
-  try {
-    const result = await window.api.media.splitAv({ path: output.path })
-    useCanvasStore
-      .getState()
-      .applyOutput(pendingVideoId, result.video, 'split-av-video')
-    if (result.audio) {
+    host?.setRunning?.(true)
+    consumeToast(host, '正在分离音视频…')
+
+    try {
+      const result = await window.api.media.splitAv({ path: output.path })
       useCanvasStore
         .getState()
-        .applyOutput(pendingAudioId, result.audio, 'split-av-audio')
-    } else {
-      markFailed(pendingAudioId, '当前视频无音轨')
+        .applyOutput(pendingVideoId, result.video, 'split-av-video')
+      if (result.audio) {
+        useCanvasStore
+          .getState()
+          .applyOutput(pendingAudioId, result.audio, 'split-av-audio')
+      } else {
+        markFailed(pendingAudioId, '当前视频无音轨')
+      }
+      consumeToast(
+        host,
+        result.audio ? '已生成无声视频和音轨节点' : '已生成无声视频节点'
+      )
+      return {
+        ok: true,
+        result: {
+          videoNodeId: pendingVideoId,
+          audioNodeId: result.audio ? pendingAudioId : null,
+          groupId
+        }
+      }
+    } catch (error) {
+      markFailed(pendingVideoId, error)
+      markFailed(pendingAudioId, error)
+      const message = errorMessage(error, '分离音视频失败')
+      host?.toast(message, 'error')
+      return { ok: false, error: message }
+    } finally {
+      host?.setRunning?.(false)
     }
-    consumeToast(
-      host,
-      result.audio ? '已生成无声视频和音轨节点' : '已生成无声视频节点'
-    )
+  }
+
+  const pendingVideoId = hasVideo
+    ? state.addPendingNodes(
+        'video',
+        origin,
+        1,
+        `${sourceTitle} · 无声`,
+        node.id
+      )[0]
+    : undefined
+  const pendingAudioId = state.addPendingNodes(
+    'audio',
+    hasVideo ? { x: origin.x, y: origin.y + 420 } : origin,
+    1,
+    `${sourceTitle} · ${mode === 'vocal' ? '人声' : '背景音'}`,
+    node.id
+  )[0]
+  const pendingIds = [pendingVideoId, pendingAudioId].filter(
+    (id): id is string => Boolean(id)
+  )
+
+  const groupId =
+    hasVideo && pendingVideoId
+      ? state.createGroupFromNodes([pendingVideoId, pendingAudioId], {
+          columns: 1,
+          title: `${stemModeLabel(mode)}组 ${groupCount + 1}`,
+          color: 'cyan'
+        })
+      : null
+
+  // 先写入模式/源节点/占位 ID，再做异步启动；这样工程自动保存或切换时
+  // 即使 taskId 还没回来，也能识别出这是未完成的分离占位节点。
+  for (const id of pendingIds) {
+    useCanvasStore.getState().patchNodeData(id, {
+      stemMode: mode,
+      stemSourceNodeId: node.id,
+      stemPendingIds: pendingIds
+    })
+  }
+
+  try {
+    const { taskId, queuePosition } =
+      await window.api.media.startStemTask({
+        path: output.path,
+        mode,
+        sourceKind: node.data.kind === 'video' ? 'video' : 'audio',
+        title: sourceTitle
+      })
+
+    trackStemTask(taskId, {
+      ...(pendingVideoId ? { pendingVideoId } : {}),
+      pendingAudioId,
+      sourceNodeId: node.id,
+      mode,
+      title: stemModeLabel(mode)
+    })
+
+    for (const id of pendingIds) {
+      useCanvasStore.getState().patchNodeData(id, {
+        status: queuePosition > 1 ? 'queued' : 'running',
+        progress: 0,
+        error: undefined,
+        stemTaskId: taskId,
+        stemQueuePosition: queuePosition,
+        stemMode: mode,
+        stemSourceNodeId: node.id,
+        stemPendingIds: pendingIds
+      })
+    }
+
+    consumeToast(host, `已开始${stemModeLabel(mode)}`)
     return {
       ok: true,
       result: {
-        videoNodeId: pendingVideoId,
-        audioNodeId: result.audio ? pendingAudioId : null,
+        taskId,
+        pendingVideoId: pendingVideoId ?? null,
+        pendingAudioId,
         groupId
       }
     }
   } catch (error) {
-    markFailed(pendingVideoId, error)
-    markFailed(pendingAudioId, error)
-    const message = errorMessage(error, '分离音视频失败')
+    for (const id of pendingIds) markFailed(id, error)
+    const message = errorMessage(error, `${stemModeLabel(mode)}失败`)
     host?.toast(message, 'error')
     return { ok: false, error: message }
-  } finally {
-    host?.setRunning?.(false)
   }
 }
 
@@ -825,7 +962,7 @@ async function executeMotionCapture(
         type: 'settings',
         panel: 'components',
         message:
-          '「深度动作捕捉」需要「深度动作捕捉运行时」和「Video Depth Anything Small 模型」'
+          '「深度动作捕捉」需要「本地 AI 运行时」和「Video Depth Anything Small 模型」'
       })
       return { ok: false, needsUi: true, error: '需要安装深度组件' }
     }
@@ -842,13 +979,13 @@ async function executeMotionCapture(
       host.effect({
         type: 'settings',
         panel: 'components',
-        message: '需要先安装「深度动作捕捉运行时」和「Video Depth Anything Small 模型」'
+        message: '需要先安装「本地 AI 运行时」和「Video Depth Anything Small 模型」'
       })
       return { ok: false, error: '需要安装深度组件' }
     }
     return {
       ok: false,
-      error: '需要先安装「深度动作捕捉运行时」和「Video Depth Anything Small 模型」'
+      error: '需要先安装「本地 AI 运行时」和「Video Depth Anything Small 模型」'
     }
   }
 
@@ -1284,7 +1421,7 @@ export async function executeNodeOperation(
     } else if (op.id === 'frame-study') {
       result = await executeFrame(request, node, item, params, host)
     } else if (op.id === 'split-av') {
-      result = await executeSplitAv(request, node, host)
+      result = await executeSplitAv(request, node, item, host)
     } else if (op.id === 'clip-trim') {
       result = await executeTrim(request, node, params, host)
     } else if (op.id === 'film-study') {

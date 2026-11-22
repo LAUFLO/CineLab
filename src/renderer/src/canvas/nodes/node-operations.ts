@@ -31,7 +31,7 @@ export interface OperationRequires {
   panel?: 'models' | 'components'
 }
 
-export type OperationSection = 'generate' | 'edit' | 'video'
+export type OperationSection = 'generate' | 'edit' | 'video' | 'audio'
 
 /** 生成结果写回当前节点版本栈，还是新建节点并连线 */
 export type NodeOutputTarget = NodeOperationOutputTarget
@@ -53,6 +53,10 @@ export interface NodeOperation {
   mask?: boolean
   menu?: OperationMenuItem[]
   section?: OperationSection
+  /** 按节点类型覆盖显示标签/菜单/分区；用于同一个操作在视频和音频节点上的不同语义。 */
+  labelByKind?: Partial<Record<NodeKind, string>>
+  menuByKind?: Partial<Record<NodeKind, OperationMenuItem[]>>
+  sectionByKind?: Partial<Record<NodeKind, OperationSection>>
   hint?: string
   prompt?: string
   promptByItem?: Record<string, string>
@@ -63,7 +67,8 @@ export interface NodeOperation {
 export const OPERATION_SECTIONS: Record<OperationSection, string> = {
   generate: '生成',
   edit: '编辑',
-  video: '视频'
+  video: '视频',
+  audio: '音频'
 }
 
 const PROMPT_GRID_MULTI =
@@ -195,6 +200,12 @@ const SUBTITLE_MENU: OperationMenuItem[] = [
   { id: 'box', label: '框选去字幕' }
 ]
 
+const SPLIT_AV_MENU: OperationMenuItem[] = [
+  { id: 'av', label: '分离音视频' },
+  { id: 'vocal', label: '人声提取' },
+  { id: 'background', label: '背景音提取' }
+]
+
 export const NODE_OPERATIONS: NodeOperation[] = [
   // ---------- P0：图片 ----------
   {
@@ -240,13 +251,21 @@ export const NODE_OPERATIONS: NodeOperation[] = [
   {
     id: 'split-av',
     label: '分离音视频',
+    labelByKind: { audio: '音频分离' },
     icon: 'audio',
-    kinds: ['video'],
+    kinds: ['video', 'audio'],
     defaultPrimary: true,
     implemented: true,
     section: 'video',
+    sectionByKind: { audio: 'audio' },
+    menu: SPLIT_AV_MENU,
+    menuByKind: {
+      audio: SPLIT_AV_MENU.filter((item) => item.id !== 'av')
+    },
     disabledReason: (ctx) =>
-      ctx.hasAudio === false ? '当前视频无音轨，无法分离音视频' : null
+      ctx.kind === 'video' && ctx.hasAudio === false
+        ? '当前视频无音轨，无法分离音视频'
+        : null
   },
   {
     id: 'frame-study',
@@ -560,10 +579,16 @@ export function buildOperationPrompt(
 }
 
 export function operationsForKind(kind: NodeKind): NodeOperation[] {
-  return NODE_OPERATIONS.filter((op) => op.kinds.includes(kind)).map((op) => ({
-    ...op,
-    outputTarget: nodeOperationOutputTarget(op.id)
-  }))
+  return NODE_OPERATIONS.filter((op) => op.kinds.includes(kind)).map((op) => {
+    const menu = op.menuByKind?.[kind] ?? op.menu
+    return {
+      ...op,
+      label: op.labelByKind?.[kind] ?? op.label,
+      ...(menu ? { menu } : { menu: undefined }),
+      section: op.sectionByKind?.[kind] ?? op.section,
+      outputTarget: nodeOperationOutputTarget(op.id)
+    }
+  })
 }
 
 export function defaultPrimaryForKind(kind: NodeKind): string[] {

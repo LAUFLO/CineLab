@@ -5,7 +5,8 @@ import { extractZipSafely } from './zip-extract'
 
 export const MODEL_FILES: Partial<Record<ComponentKind, string>> = {
   'depth-model': 'video_depth_anything_vits.pth',
-  'whisper-model': 'ggml-base.bin'
+  'whisper-model': 'ggml-base.bin',
+  'stem-model': 'htdemucs.th'
 }
 
 export async function installComponentFiles(

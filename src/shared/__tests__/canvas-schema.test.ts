@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { NODE_META, TITLE_HEIGHT } from '../canvas-schema'
+import { GROUP_COLORS, NODE_META, TITLE_HEIGHT } from '../canvas-schema'
+import { groupColorSchema } from '../project-schema'
 
 describe('node metadata', () => {
   it('keeps the agreed default node sizes', () => {
@@ -18,5 +19,17 @@ describe('node metadata', () => {
     for (const kind of ['text', 'image', 'video', 'audio'] as const) {
       expect(NODE_META[kind].templates.length).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('group color schema', () => {
+  it('accepts every visible and legacy group color', () => {
+    for (const color of GROUP_COLORS) {
+      expect(groupColorSchema.safeParse(color).success).toBe(true)
+    }
+    for (const legacy of ['green', 'lime'] as const) {
+      expect(groupColorSchema.safeParse(legacy).success).toBe(true)
+    }
+    expect(groupColorSchema.safeParse('other').success).toBe(false)
   })
 })

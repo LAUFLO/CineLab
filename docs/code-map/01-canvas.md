@@ -88,6 +88,8 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 
 `cutout` 和 `layer-split` 支持 `auto` / `box` 两个子项：`box` 通过 `CropDialog` 框选 `rect`，传给视觉任务只在该区域计算显著性；不传 `rect` 时保持全图自动识别。
 
+节点右键菜单中的带菜单操作复用工具栏的 `menu` 清单，在菜单内展开子项，不再用隐藏默认项直接执行；画布/连线右键菜单保持各自的直接操作。
+
 ## 数据流
 
 ```
@@ -146,7 +148,7 @@ CineBot
 | `src/renderer/src/canvas/EdgeContextMenu.tsx` | 40 |
 | `src/renderer/src/canvas/GroupToolbar.tsx` | 245 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
-| `src/renderer/src/canvas/NodeContextMenu.tsx` | 498 |
+| `src/renderer/src/canvas/NodeContextMenu.tsx` | 562 |
 | `src/renderer/src/canvas/PromptBar.tsx` | 2224 |
 | `src/renderer/src/canvas/StatusBar.tsx` | 100 |
 | `src/renderer/src/canvas/StoryboardToolbar.tsx` | 359 |

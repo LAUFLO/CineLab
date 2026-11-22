@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   isGroupNode,
   isStudioNode,
@@ -15,7 +16,9 @@ import {
   pasteAt
 } from './context-actions'
 import { requestDeleteSelection } from './delete-actions'
+import { operationsForKind } from './nodes/node-operations'
 import { Button, Menu } from '../components/ui'
+import { Icon } from '../components/Icon'
 import { useShortcutLabel } from '../shortcuts/useShortcut'
 
 interface MenuAction {
@@ -23,12 +26,73 @@ interface MenuAction {
   hint?: string
   disabled?: boolean
   danger?: boolean
-  run: () => void
+  run?: () => void
+  submenu?: MenuAction[]
 }
 
 interface MenuSection {
   title?: string
   actions: MenuAction[]
+}
+
+const ACTION_CLASS =
+  '!flex h-8 w-full items-center !justify-between gap-3 rounded-md px-3 text-[12.5px] !font-normal disabled:!text-fg-subtle disabled:!opacity-100'
+
+function ContextMenuAction({
+  action,
+  onClose
+}: {
+  action: MenuAction
+  onClose: () => void
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="none"
+        aria-expanded={action.submenu ? open : undefined}
+        className={`${ACTION_CLASS} ${
+          action.danger
+            ? '!text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
+            : '!text-fg'
+        }`}
+        disabled={action.disabled}
+        onClick={() => {
+          if (action.submenu) {
+            setOpen((current) => !current)
+            return
+          }
+          onClose()
+          action.run?.()
+        }}
+      >
+        <span>{action.label}</span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          {action.hint ? (
+            <span className="text-xs text-fg-subtle">{action.hint}</span>
+          ) : null}
+          {action.submenu ? (
+            <Icon name={open ? 'chevron-down' : 'chevron-right'} size={12} />
+          ) : null}
+        </span>
+      </Button>
+
+      {action.submenu && open ? (
+        <div className="ml-2 border-l border-divider pl-1">
+          {action.submenu.map((item, index) => (
+            <ContextMenuAction
+              key={`${item.label}-${index}`}
+              action={item}
+              onClose={onClose}
+            />
+          ))}
+        </div>
+      ) : null}
+    </>
+  )
 }
 
 export function NodeContextMenu() {
@@ -82,28 +146,12 @@ export function NodeContextMenu() {
               {section.title}
             </div>
           ) : null}
-          {section.actions.map((action) => (
-            <Button
-              key={action.label}
-              type="button"
-              variant="ghost"
-              size="none"
-              className={`!flex h-8 w-full items-center !justify-between gap-3 rounded-md px-3 text-[12.5px] !font-normal disabled:!text-fg-subtle disabled:!opacity-100 ${
-                action.danger
-                  ? '!text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
-                  : '!text-fg'
-              }`}
-              disabled={action.disabled}
-              onClick={() => {
-                close()
-                action.run()
-              }}
-            >
-              <span>{action.label}</span>
-              {action.hint ? (
-                <span className="text-xs text-fg-subtle">{action.hint}</span>
-              ) : null}
-            </Button>
+          {section.actions.map((action, actionIndex) => (
+            <ContextMenuAction
+              key={`${action.label}-${actionIndex}`}
+              action={action}
+              onClose={close}
+            />
           ))}
         </div>
       ))}
@@ -250,6 +298,22 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
   }
 
   if (cine?.data.kind === 'image') {
+    const withOperationMenu = (opId: string, label: string): MenuAction => {
+      const op = operationsForKind('image').find((entry) => entry.id === opId)
+      if (!op?.menu?.length) {
+        return { label, run: () => operation(opId) }
+      }
+      return {
+        label,
+        submenu: op.menu.map((item) => ({
+          label: item.label,
+          ...(item.hint ? { hint: item.hint } : {}),
+          ...(item.disabled ? { disabled: true } : {}),
+          run: () => operation(opId, item.id)
+        }))
+      }
+    }
+
     sections.push({
       title: '图像',
       actions: [
@@ -269,12 +333,12 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
               }
             ]
           : []),
-        { label: '九宫格', run: () => operation('grid-generate', 'multi') },
+        withOperationMenu('grid-generate', '九宫格'),
         { label: '角色四视图', run: () => operation('character-sheet') },
-        { label: '抠图', run: () => operation('cutout') },
-        { label: '扩图', run: () => operation('outpaint') },
-        { label: '打光', run: () => operation('relight') },
-        { label: '多角度', run: () => operation('multi-angle') }
+        withOperationMenu('cutout', '抠图'),
+        withOperationMenu('outpaint', '扩图'),
+        withOperationMenu('relight', '打光'),
+        withOperationMenu('multi-angle', '多角度')
       ]
     })
   }

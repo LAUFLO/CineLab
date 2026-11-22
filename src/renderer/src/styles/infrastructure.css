@@ -290,7 +290,7 @@ body[data-exporting] .react-flow__minimap {
     stroke-dashoffset: 0;
   }
   to {
-    stroke-dashoffset: -50;
+    stroke-dashoffset: -40;
   }
 }
 

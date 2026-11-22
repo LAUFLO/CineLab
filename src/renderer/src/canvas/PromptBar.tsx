@@ -360,7 +360,12 @@ export function PromptBar() {
     const onClick = (event: MouseEvent): void => {
       if (!suppressClickRef.current) return
       const target = event.target as HTMLElement
-      if (target.closest('.promptbar')) return
+      if (
+        target.closest('.promptbar') ||
+        target.closest('.canvas-pick-bar')
+      ) {
+        return
+      }
       suppressClickRef.current = false
       event.preventDefault()
       event.stopPropagation()
@@ -1188,10 +1193,31 @@ export function PromptBar() {
   }
 
   const modeSlots: ModeSlotView[] = (() => {
-    const empty: ModeSlotView[] = []
-    if (!slotMode) return empty
+    if (!slotMode) {
+      // 未配置模型时没有固定槽位，仍把已连接的素材按通用参考槽展示
+      const imageCount = mergedRefs.filter((ref) => ref.kind === 'image').length
+      let imageIndex = 0
+      return mergedRefs
+        .filter((ref) => ref.role !== 'mask')
+        .map((ref) => {
+          const index = ref.kind === 'image' ? ++imageIndex : 0
+          return {
+            id: `unassigned-${ref.scope ?? 'project'}:${ref.path}`,
+            label:
+              ref.kind === 'video'
+                ? '参考视频'
+                : ref.kind === 'audio'
+                  ? '参考音频'
+                  : imageCount > 1
+                    ? `图${index}`
+                    : '参考图',
+            ref,
+            role: 'reference' as ReferenceRole
+          }
+        })
+    }
     const definition = getModelModeDefinition(slotMode)
-    if (!definition) return empty
+    if (!definition) return []
     const slots = definition.slots
     const images = mergedRefs.filter(
       (ref) => ref.kind === 'image' && ref.role !== 'mask'
@@ -1604,7 +1630,7 @@ export function PromptBar() {
     void fitView({
       nodes: [{ id: node.id }],
       padding: 0.8,
-      duration: 300,
+      duration: 0,
       maxZoom: 1.5
     })
   }

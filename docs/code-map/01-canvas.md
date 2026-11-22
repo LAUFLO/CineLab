@@ -1,9 +1,9 @@
 # 01 画布
 
-日期：2026-11-19
+日期：2026-11-22
 状态：现行
-适用版本：v0.3.0
-最后核对：2026-11-19
+适用版本：v0.4.4
+最后核对：2026-11-22
 
 ## 这个模块负责什么
 
@@ -90,7 +90,7 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 
 `cutout` 和 `layer-split` 支持 `auto` / `box` 两个子项：`box` 通过 `CropDialog` 框选 `rect`，传给视觉任务只在该区域计算显著性；不传 `rect` 时保持全图自动识别。
 
-节点右键菜单中的带菜单操作复用工具栏的 `menu` 清单，在菜单内展开子项，不再用隐藏默认项直接执行；画布/连线右键菜单保持各自的直接操作。
+节点右键菜单中的带菜单操作复用工具栏的 `menu` 清单，在父项右侧弹出二级浮窗（`data-context-submenu`），不再用隐藏默认项直接执行；`Menu` 通过 `keepOpenSelector` 把 portal 子菜单视为内部点击。画布/连线右键菜单保持各自的直接操作。
 
 ## 数据流
 
@@ -150,8 +150,8 @@ CineBot
 | `src/renderer/src/canvas/EdgeContextMenu.tsx` | 40 |
 | `src/renderer/src/canvas/GroupToolbar.tsx` | 245 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
-| `src/renderer/src/canvas/NodeContextMenu.tsx` | 562 |
-| `src/renderer/src/canvas/PromptBar.tsx` | 2224 |
+| `src/renderer/src/canvas/NodeContextMenu.tsx` | 668 |
+| `src/renderer/src/canvas/PromptBar.tsx` | 2259 |
 | `src/renderer/src/canvas/StatusBar.tsx` | 100 |
 | `src/renderer/src/canvas/StoryboardToolbar.tsx` | 359 |
 | `src/renderer/src/canvas/TopBar.tsx` | 500 |
@@ -159,7 +159,7 @@ CineBot
 | `src/renderer/src/canvas/alignment.ts` | 113 |
 | `src/renderer/src/canvas/context-actions.ts` | 236 |
 | `src/renderer/src/canvas/delete-actions.ts` | 91 |
-| `src/renderer/src/canvas/edges/FlowEdge.tsx` | 72 |
+| `src/renderer/src/canvas/edges/FlowEdge.tsx` | 87 |
 | `src/renderer/src/canvas/media-size.ts` | 54 |
 | `src/renderer/src/canvas/nodes/AiOperationDialog.tsx` | 289 |
 | `src/renderer/src/canvas/nodes/AudioActionBar.tsx` | 225 |

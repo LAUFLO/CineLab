@@ -283,6 +283,17 @@ body[data-exporting] .react-flow__minimap {
   transform: translateY(-50%);
 }
 
+/* ===== 连线 ===== */
+
+@keyframes edge-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
 /* ===== Prompt Bar ===== */
 
 @keyframes promptbar-in {
@@ -301,7 +312,7 @@ body[data-picking] .react-flow__node {
 }
 
 body[data-picking] .react-flow__node:hover [data-node-card] {
-  outline: 2px solid var(--pick-bar);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 

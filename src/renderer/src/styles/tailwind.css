@@ -17,6 +17,7 @@
 
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-text: var(--accent-text);
   --color-pick-bar: var(--pick-bar);
   --color-switch-on: var(--switch-on);
   --color-switch-knob: var(--switch-knob);

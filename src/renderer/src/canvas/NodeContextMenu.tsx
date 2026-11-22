@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   isGroupNode,
   isStudioNode,
@@ -38,6 +39,16 @@ interface MenuSection {
 const ACTION_CLASS =
   '!flex h-8 w-full items-center !justify-between gap-3 rounded-md px-3 text-[12.5px] !font-normal disabled:!text-fg-subtle disabled:!opacity-100'
 
+const SUBMENU_WIDTH = 196
+const SUBMENU_GAP = 6
+const SUBMENU_ITEM_HEIGHT = 34
+
+interface SubmenuAnchor {
+  left: number
+  top: number
+  maxHeight: number
+}
+
 function ContextMenuAction({
   action,
   onClose
@@ -46,13 +57,89 @@ function ContextMenuAction({
   onClose: () => void
 }) {
   const [open, setOpen] = useState(false)
+  const [anchor, setAnchor] = useState<SubmenuAnchor | null>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const closeTimer = useRef<number | null>(null)
+
+  const cancelClose = (): void => {
+    if (closeTimer.current === null) return
+    window.clearTimeout(closeTimer.current)
+    closeTimer.current = null
+  }
+
+  const scheduleClose = (): void => {
+    cancelClose()
+    closeTimer.current = window.setTimeout(() => {
+      closeTimer.current = null
+      setOpen(false)
+    }, 140)
+  }
+
+  const openSubmenu = (): void => {
+    const trigger = triggerRef.current
+    if (!trigger || !action.submenu) return
+
+    cancelClose()
+    const rect = trigger.getBoundingClientRect()
+    const container = trigger.closest<HTMLElement>('[role="menu"]')
+    const containerRect = container?.getBoundingClientRect()
+    const anchorRight = containerRect ? containerRect.right : rect.right
+    const anchorLeft = containerRect ? containerRect.left : rect.left
+    const estimatedHeight = Math.min(
+      360,
+      action.submenu.length * SUBMENU_ITEM_HEIGHT + 8
+    )
+    const spaceRight = window.innerWidth - anchorRight - 8
+    const left =
+      spaceRight >= SUBMENU_WIDTH + SUBMENU_GAP
+        ? anchorRight + SUBMENU_GAP
+        : Math.max(
+            8,
+            Math.min(
+              anchorLeft - SUBMENU_WIDTH - SUBMENU_GAP,
+              window.innerWidth - SUBMENU_WIDTH - 8
+            )
+          )
+    const top = Math.max(
+      8,
+      Math.min(rect.top - 6, window.innerHeight - estimatedHeight - 8)
+    )
+
+    setAnchor({
+      left,
+      top,
+      maxHeight: Math.max(120, window.innerHeight - top - 8)
+    })
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current !== null) {
+        window.clearTimeout(closeTimer.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    const close = (): void => setOpen(false)
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
+  }, [open])
 
   return (
     <>
       <Button
+        ref={triggerRef}
         type="button"
         variant="ghost"
         size="none"
+        aria-haspopup={action.submenu ? 'menu' : undefined}
         aria-expanded={action.submenu ? open : undefined}
         className={`${ACTION_CLASS} ${
           action.danger
@@ -60,9 +147,13 @@ function ContextMenuAction({
             : '!text-fg'
         }`}
         disabled={action.disabled}
+        onMouseEnter={() => {
+          if (action.submenu) openSubmenu()
+        }}
+        onMouseLeave={action.submenu ? scheduleClose : undefined}
         onClick={() => {
           if (action.submenu) {
-            setOpen((current) => !current)
+            if (!open) openSubmenu()
             return
           }
           onClose()
@@ -74,23 +165,37 @@ function ContextMenuAction({
           {action.hint ? (
             <span className="text-xs text-fg-subtle">{action.hint}</span>
           ) : null}
-          {action.submenu ? (
-            <Icon name={open ? 'chevron-down' : 'chevron-right'} size={12} />
-          ) : null}
+          {action.submenu ? <Icon name="chevron-right" size={12} /> : null}
         </span>
       </Button>
 
-      {action.submenu && open ? (
-        <div className="ml-2 border-l border-divider pl-1">
-          {action.submenu.map((item, index) => (
-            <ContextMenuAction
-              key={`${item.label}-${index}`}
-              action={item}
-              onClose={onClose}
-            />
-          ))}
-        </div>
-      ) : null}
+      {action.submenu && open && anchor
+        ? createPortal(
+            <div
+              role="menu"
+              data-context-submenu
+              className="fixed z-[1001] overflow-y-auto rounded-card border border-border bg-surface-raised p-1 shadow-float [animation:menu-in_120ms_ease-out]"
+              style={{
+                left: anchor.left,
+                top: anchor.top,
+                width: SUBMENU_WIDTH,
+                maxHeight: anchor.maxHeight
+              }}
+              onMouseEnter={cancelClose}
+              onMouseLeave={scheduleClose}
+              onContextMenu={(event) => event.preventDefault()}
+            >
+              {action.submenu.map((item, index) => (
+                <ContextMenuAction
+                  key={`${item.label}-${index}`}
+                  action={item}
+                  onClose={onClose}
+                />
+              ))}
+            </div>,
+            document.body
+          )
+        : null}
     </>
   )
 }
@@ -135,6 +240,7 @@ export function NodeContextMenu() {
       y={menu.screen.y}
       width={224}
       placement="auto"
+      keepOpenSelector="[data-context-submenu]"
       className="!p-1.5 max-h-[520px] overflow-y-auto [animation:menu-in_120ms_ease-out]"
       onContextMenu={(event) => event.preventDefault()}
     >

@@ -95,7 +95,7 @@ interface ModeSlotView {
 const TOOL_CLASS =
   'inline-flex h-6 items-center gap-[5px] whitespace-nowrap !rounded-md px-[7px] text-xs !font-normal transition-colors'
 const TOOL_ACTIVE_CLASS =
-  'bg-fg !text-fg-inverse hover:!bg-fg hover:!text-fg-inverse'
+  'bg-accent !text-accent-text hover:!bg-accent-hover hover:!text-accent-text'
 
 const CHIP_CLASS =
   'inline-flex h-[26px] items-center gap-1 whitespace-nowrap !rounded-md px-2 text-xs !font-normal'
@@ -121,9 +121,11 @@ const INPUT_CLASS =
 const SEND_CLASS = '!rounded-full'
 const SEND_IDLE_CLASS = 'bg-surface-hover !text-fg-subtle'
 const SEND_READY_CLASS =
-  'bg-fg !text-fg-inverse hover:!bg-fg hover:!text-fg-inverse'
+  'bg-accent !text-accent-text hover:!bg-accent-hover hover:!text-accent-text'
 const SEND_STOP_CLASS =
   'bg-danger !text-media-text hover:!bg-danger hover:!text-media-text'
+const PICK_ACTION_CLASS =
+  '!h-[26px] gap-1 !rounded-md !border-current !px-2.5 !py-0 text-xs !font-normal !text-inherit opacity-[0.85] hover:!border-current hover:!text-inherit hover:opacity-100'
 
 export function PromptBar() {
   const nodes = useCanvasStore((state) => state.nodes)
@@ -1587,10 +1589,30 @@ export function PromptBar() {
     })
   }
 
+  const focusActiveNode = (): void => {
+    if (!node) return
+    setPicking(false)
+    setPickHint(null)
+    const canvas = useCanvasStore.getState()
+    canvas.onNodesChange(
+      canvas.nodes.map((entry) => ({
+        id: entry.id,
+        type: 'select' as const,
+        selected: entry.id === node.id
+      }))
+    )
+    void fitView({
+      nodes: [{ id: node.id }],
+      padding: 0.8,
+      duration: 300,
+      maxZoom: 1.5
+    })
+  }
+
   return (
     <>
       {picking ? (
-        <div className="canvas-pick-bar fixed left-1/2 top-3 z-[120] flex h-10 -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-card bg-pick-bar px-2 pl-3.5 text-[13px] text-fg-inverse shadow-float [-webkit-app-region:no-drag]">
+        <div className="canvas-pick-bar fixed left-1/2 top-3 z-[120] flex h-10 -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-card bg-accent px-2 pl-3.5 text-[13px] text-accent-text shadow-float [-webkit-app-region:no-drag]">
           <Icon name="frame" size={14} />
           <span>从画布选择节点作为参考</span>
           <span className="text-[11px] opacity-[0.72]">Esc 退出</span>
@@ -1598,7 +1620,20 @@ export function PromptBar() {
             type="button"
             variant="secondary"
             size="none"
-            className="!h-[26px] !rounded-md !border-current !px-2.5 !py-0 text-xs !font-normal !text-inherit opacity-[0.85] hover:!border-current hover:!text-inherit hover:opacity-100"
+            className={PICK_ACTION_CLASS}
+            onClick={(event) => {
+              event.stopPropagation()
+              focusActiveNode()
+            }}
+          >
+            <Icon name="target" size={13} />
+            返回节点
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="none"
+            className={PICK_ACTION_CLASS}
             onClick={(event) => {
               event.stopPropagation()
               setPicking(false)

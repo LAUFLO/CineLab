@@ -131,7 +131,7 @@ export function PromptBar() {
   const edges = useCanvasStore((state) => state.edges)
   const onConnect = useCanvasStore((state) => state.onConnect)
   const onEdgesChange = useCanvasStore((state) => state.onEdgesChange)
-  const { flowToScreenPosition, fitView } = useReactFlow()
+  const { flowToScreenPosition, fitView, setCenter } = useReactFlow()
   const viewport = useViewport()
 
   const providers = useSettingsStore((state) => state.providers)
@@ -1614,26 +1614,22 @@ export function PromptBar() {
         selected: entry.id === node.id
       }))
     )
-    void fitView({
-      nodes: [{ id: node.id }],
-      padding: 0.8,
-      duration: 0,
-      maxZoom: 1.5
+    const absolute = absolutePosition(node, nodes)
+    const width = node.measured?.width ?? NODE_META[node.data.kind].width
+    const height =
+      node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
+    void setCenter(absolute.x + width / 2, absolute.y + height / 2, {
+      zoom: 1.5,
+      duration: 0
     })
   }
 
   return (
     <>
       {picking ? (
-        <div className="canvas-pick-bar fixed left-1/2 top-3 z-[120] flex h-10 -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-card bg-accent px-2 pl-3.5 text-[13px] text-accent-text shadow-float [-webkit-app-region:no-drag]">
+        <div className="canvas-pick-bar fixed left-1/2 top-16 z-[120] flex h-10 -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-card bg-accent px-2 pl-3.5 text-[13px] text-accent-text shadow-float [-webkit-app-region:no-drag]">
           <Icon name="frame" size={14} />
           <span>从画布选择节点作为参考</span>
-          <span className="text-[11px] opacity-[0.72]">
-            {mergedRefs.length > 0
-              ? `已选 ${mergedRefs.length} 个 · 可继续选择`
-              : '可连续选择多个'}
-          </span>
-          <span className="text-[11px] opacity-[0.72]">Esc 退出</span>
           <Button
             type="button"
             variant="secondary"

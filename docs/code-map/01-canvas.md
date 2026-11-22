@@ -86,6 +86,8 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 
 `crop`、`grid-generate`、`character-sheet`、`relight`、`color-grade`、`portrait`、`inpaint`、`erase`、`element-edit` 等会新建结果节点并连线；只有 PromptBar 直接生成写回版本栈（`nodeOperationOutputTarget`）。
 
+`cutout` 和 `layer-split` 支持 `auto` / `box` 两个子项：`box` 通过 `CropDialog` 框选 `rect`，传给视觉任务只在该区域计算显著性；不传 `rect` 时保持全图自动识别。
+
 ## 数据流
 
 ```
@@ -159,7 +161,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/AudioActionBar.tsx` | 225 |
 | `src/renderer/src/canvas/nodes/AudioPlayer.tsx` | 379 |
 | `src/renderer/src/canvas/nodes/CineNodeView.tsx` | 779 |
-| `src/renderer/src/canvas/nodes/CropDialog.tsx` | 154 |
+| `src/renderer/src/canvas/nodes/CropDialog.tsx` | 162 |
 | `src/renderer/src/canvas/nodes/DepthCaptureDialog.tsx` | 136 |
 | `src/renderer/src/canvas/nodes/FilmNodeView.tsx` | 58 |
 | `src/renderer/src/canvas/nodes/FilmStudyInsights.tsx` | 273 |
@@ -167,7 +169,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/GroupNodeView.tsx` | 131 |
 | `src/renderer/src/canvas/nodes/MaskEditorDialog.tsx` | 377 |
 | `src/renderer/src/canvas/nodes/ModelConfigDialog.tsx` | 1628 |
-| `src/renderer/src/canvas/nodes/NodeToolbar.tsx` | 1196 |
+| `src/renderer/src/canvas/nodes/NodeToolbar.tsx` | 1274 |
 | `src/renderer/src/canvas/nodes/PanoramaViewer.tsx` | 200 |
 | `src/renderer/src/canvas/nodes/RemakeMappingDialog.tsx` | 155 |
 | `src/renderer/src/canvas/nodes/SphereDialog.tsx` | 393 |
@@ -182,8 +184,8 @@ CineBot
 | `src/renderer/src/canvas/nodes/VideoPlayer.tsx` | 328 |
 | `src/renderer/src/canvas/nodes/VideoPreview.tsx` | 184 |
 | `src/renderer/src/canvas/nodes/film-study-runner.ts` | 62 |
-| `src/renderer/src/canvas/nodes/node-operation-runner.ts` | 1492 |
-| `src/renderer/src/canvas/nodes/node-operations.ts` | 612 |
+| `src/renderer/src/canvas/nodes/node-operation-runner.ts` | 1559 |
+| `src/renderer/src/canvas/nodes/node-operations.ts` | 624 |
 | `src/renderer/src/canvas/nodes/playbackBudget.ts` | 97 |
 | `src/renderer/src/canvas/nodes/study-sheet.ts` | 300 |
 | `src/renderer/src/canvas/nodes/text-markdown.ts` | 101 |
@@ -206,7 +208,7 @@ CineBot
 | `src/shared/canvas-schema.ts` | 326 |
 | `src/shared/canvas-summary.ts` | 54 |
 | `src/shared/components.ts` | 59 |
-| `src/shared/node-operation-specs.ts` | 447 |
+| `src/shared/node-operation-specs.ts` | 464 |
 | `src/shared/operation-schema.ts` | 64 |
 <!-- AUTO:files:end -->
 

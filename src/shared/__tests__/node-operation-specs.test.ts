@@ -118,6 +118,22 @@ describe('node operation agent specs', () => {
     ).toContain('不支持')
   })
 
+  it('requires a rect for boxed cutout and layer split', () => {
+    for (const operationId of ['cutout', 'layer-split']) {
+      expect(
+        validateNodeOperationParams(operationId, 'box', {})
+      ).toContain('params.rect')
+      expect(
+        validateNodeOperationParams(operationId, 'box', {
+          rect: { x: 0, y: 0, width: 100, height: 100 }
+        })
+      ).toBeNull()
+      expect(
+        validateNodeOperationParams(operationId, 'auto', {})
+      ).toBeNull()
+    }
+  })
+
   it('identifies operation result nodes without hiding creative versions', () => {
     expect(isResultOutputOp('split-av-video')).toBe(true)
     expect(isResultOutputOp('frame-first')).toBe(true)

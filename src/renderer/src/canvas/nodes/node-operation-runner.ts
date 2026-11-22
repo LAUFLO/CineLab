@@ -59,6 +59,14 @@ export type NodeOperationUiEffect =
       width?: number
       height?: number
     }
+  | {
+      type: 'box-dialog'
+      purpose: 'cutout' | 'layer-split'
+      path: string
+      scope?: 'project' | 'global'
+      width?: number
+      height?: number
+    }
   | { type: 'depth-dialog'; duration: number }
   | { type: 'sphere-dialog'; kind: 'light' | 'camera' }
   | {
@@ -1150,33 +1158,58 @@ async function executeSubtitle(
 async function executeLayerSplit(
   request: NodeOperationRequest,
   node: CanvasNode,
+  item: OperationMenuItem | undefined,
+  operationParams: Record<string, unknown>,
   host?: NodeOperationUiHost
 ): Promise<NodeOperationResult> {
   const output = selectedNodeOutput(node)
   if (!output) return { ok: false, error: '节点还没有可用输出' }
   if (!(await visionReady())) return needsVision(host)
 
+  const boxRect =
+    item?.id === 'box' ? rectParam(operationParams) : null
+  if (item?.id === 'box' && !boxRect) {
+    if (!host) {
+      return {
+        ok: false,
+        needsUi: true,
+        error: '框选分层需要 params.rect 或框选界面'
+      }
+    }
+    host.effect({
+      type: 'box-dialog',
+      purpose: 'layer-split',
+      path: output.path,
+      ...(output.scope ? { scope: output.scope } : {}),
+      ...(output.width ? { width: output.width } : {}),
+      ...(output.height ? { height: output.height } : {})
+    })
+    return { ok: true, result: { dialog: 'layer-split-box' } }
+  }
+
   const pendingIds = useCanvasStore.getState().addPendingNodes(
     'image',
     originFor(node),
     2,
-    `${node.data.title} · 图层`,
+    `${node.data.title} · ${item?.id === 'box' ? '框选分层' : '图层分离'}`,
     node.id
   )
+  const label = item?.id === 'box' ? '框选分层' : '图层分离'
   try {
     const { taskId } = await window.api.media.startVisionTask({
       kind: 'layer-split',
       path: output.path,
-      ...(output.scope ? { scope: output.scope } : {})
+      ...(output.scope ? { scope: output.scope } : {}),
+      ...(boxRect ? { rect: boxRect } : {})
     })
     trackVisionTask(taskId, {
       mode: 'pending',
       nodeId: node.id,
       pendingIds,
       op: 'layer-split',
-      title: '图层分离'
+      title: label
     })
-    consumeToast(host, '已开始图层分离，完成后自动写入节点')
+    consumeToast(host, `已开始${label}，完成后自动写入节点`)
     return { ok: true, result: { taskId, createdNodeIds: pendingIds } }
   } catch (error) {
     pendingIds.forEach((id) => markFailed(id, error))
@@ -1292,6 +1325,7 @@ async function executeOutpaintOrCutout(
   node: CanvasNode,
   op: NodeOperation,
   item: OperationMenuItem | undefined,
+  operationParams: Record<string, unknown>,
   host?: NodeOperationUiHost
 ): Promise<NodeOperationResult> {
   const output = selectedNodeOutput(node)
@@ -1299,6 +1333,29 @@ async function executeOutpaintOrCutout(
 
   if (!(await visionReady())) {
     return openAiDialog(host, op, item)
+  }
+
+  const boxRect =
+    op.id === 'cutout' && item?.id === 'box'
+      ? rectParam(operationParams)
+      : null
+  if (op.id === 'cutout' && item?.id === 'box' && !boxRect) {
+    if (!host) {
+      return {
+        ok: false,
+        needsUi: true,
+        error: '框选抠图需要 params.rect 或框选界面'
+      }
+    }
+    host.effect({
+      type: 'box-dialog',
+      purpose: 'cutout',
+      path: output.path,
+      ...(output.scope ? { scope: output.scope } : {}),
+      ...(output.width ? { width: output.width } : {}),
+      ...(output.height ? { height: output.height } : {})
+    })
+    return { ok: true, result: { dialog: 'cutout-box' } }
   }
 
   const params =
@@ -1318,14 +1375,17 @@ async function executeOutpaintOrCutout(
       : {
           kind: 'matte-image' as const,
           path: output.path,
-          ...(output.scope ? { scope: output.scope } : {})
+          ...(output.scope ? { scope: output.scope } : {}),
+          ...(boxRect ? { rect: boxRect } : {})
         }
 
+  const label =
+    op.id === 'cutout' && item?.id === 'box' ? '框选抠图' : op.label
   const pendingId = useCanvasStore.getState().addPendingNodes(
     'image',
     originFor(node),
     1,
-    `${node.data.title} · ${op.label}`,
+    `${node.data.title} · ${label}`,
     node.id
   )[0]
 
@@ -1336,9 +1396,9 @@ async function executeOutpaintOrCutout(
       nodeId: node.id,
       pendingIds: [pendingId],
       op: op.id,
-      title: op.label
+      title: label
     })
-    consumeToast(host, `已开始${op.label}`)
+    consumeToast(host, `已开始${label}`)
     return { ok: true, result: { taskId, createdNodeId: pendingId } }
   } catch (error) {
     markFailed(pendingId, error)
@@ -1431,13 +1491,20 @@ export async function executeNodeOperation(
     } else if (op.id === 'subtitle') {
       result = await executeSubtitle(request, node, item, params, host)
     } else if (op.id === 'layer-split') {
-      result = await executeLayerSplit(request, node, host)
+      result = await executeLayerSplit(request, node, item, params, host)
     } else if (op.id === 'matting') {
       result = await executeMatting(request, node, host)
     } else if (op.id === 'object-remove') {
       result = await executeObjectRemove(request, node, params, host)
     } else if (op.id === 'outpaint' || op.id === 'cutout') {
-      result = await executeOutpaintOrCutout(request, node, op, item, host)
+      result = await executeOutpaintOrCutout(
+        request,
+        node,
+        op,
+        item,
+        params,
+        host
+      )
     } else if (isVideoOperation(op.id)) {
       const id = useCanvasStore
         .getState()

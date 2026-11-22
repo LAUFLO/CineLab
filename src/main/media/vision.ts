@@ -209,6 +209,7 @@ export async function runVisionTask(
       await runWorker(
         [
           ...baseArgs('matte-image', models),
+          ...(request.rect ? rectArgs(request.rect) : []),
           '--input',
           input,
           '--output',
@@ -232,6 +233,7 @@ export async function runVisionTask(
       await runWorker(
         [
           ...baseArgs('layer-split', models),
+          ...(request.rect ? rectArgs(request.rect) : []),
           '--input',
           input,
           '--output',

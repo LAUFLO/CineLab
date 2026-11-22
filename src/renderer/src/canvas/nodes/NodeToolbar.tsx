@@ -117,6 +117,7 @@ export function NodeToolbar({
     prompt: string
   } | null>(null)
   const [cropDialog, setCropDialog] = useState<{
+    purpose: 'crop' | 'cutout' | 'layer-split'
     src: string
     width: number
     height: number
@@ -399,6 +400,42 @@ export function NodeToolbar({
     }
   }
 
+  const executeBoxOperation = async (
+    purpose: 'cutout' | 'layer-split',
+    rect: { x: number; y: number; width: number; height: number }
+  ): Promise<void> => {
+    setCropDialog(null)
+    const source = sourceNode()
+    if (!source || !(await ensureVision())) return
+
+    const label = purpose === 'cutout' ? '框选抠图' : '框选分层'
+    const pendingIds = useCanvasStore
+      .getState()
+      .addPendingNodes(
+        'image',
+        source.origin,
+        purpose === 'cutout' ? 1 : 2,
+        `${source.title} · ${label}`,
+        nodeId
+      )
+
+    showToast(`已开始${label}，完成后自动写入节点`)
+    await startVisionTask(
+      {
+        kind: purpose === 'cutout' ? 'matte-image' : 'layer-split',
+        path: current.path,
+        rect
+      },
+      {
+        mode: 'pending',
+        nodeId,
+        pendingIds,
+        op: purpose === 'cutout' ? 'cutout' : 'layer-split',
+        title: label
+      }
+    )
+  }
+
   const executeSubtitleBox = async (rect: {
     x: number
     y: number
@@ -621,7 +658,17 @@ export function NodeToolbar({
   const applyUiEffect = (effect: NodeOperationUiEffect): void => {
     if (effect.type === 'crop-dialog') {
       setCropDialog({
+        purpose: 'crop',
         src: `cinelab-asset://local/${effect.path}`,
+        width: effect.width ?? 1,
+        height: effect.height ?? 1
+      })
+      return
+    }
+    if (effect.type === 'box-dialog') {
+      setCropDialog({
+        purpose: effect.purpose,
+        src: assetUrl(effect.path, effect.scope),
         width: effect.width ?? 1,
         height: effect.height ?? 1
       })
@@ -756,6 +803,8 @@ export function NodeToolbar({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeCommand, nodeId])
+
+  const cropPurpose = cropDialog?.purpose ?? 'crop'
 
   return (
     <>
@@ -1168,8 +1217,37 @@ export function NodeToolbar({
         imageWidth={cropDialog?.width ?? 1}
         imageHeight={cropDialog?.height ?? 1}
         busy={running}
+        title={
+          cropPurpose === 'cutout'
+            ? '框选抠图'
+            : cropPurpose === 'layer-split'
+              ? '框选分层'
+              : undefined
+        }
+        subtitle={
+          cropPurpose === 'cutout'
+            ? '拖拽选框，框住要保留的物体'
+            : cropPurpose === 'layer-split'
+              ? '拖拽选框，框住要分离的物体'
+              : undefined
+        }
+        confirmLabel={
+          cropPurpose === 'cutout'
+            ? '开始抠图'
+            : cropPurpose === 'layer-split'
+              ? '开始分层'
+              : undefined
+        }
+        busyLabel={cropPurpose === 'crop' ? undefined : '处理中…'}
+        sizeLabel={cropPurpose === 'crop' ? undefined : '选区尺寸'}
         onClose={() => setCropDialog(null)}
-        onConfirm={(rect) => void executeCropRect(rect)}
+        onConfirm={(rect) => {
+          if (cropPurpose === 'crop') {
+            void executeCropRect(rect)
+            return
+          }
+          void executeBoxOperation(cropPurpose, rect)
+        }}
       />
 
       <SubtitleDialog

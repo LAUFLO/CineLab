@@ -24,7 +24,7 @@
 | 02 | 本地可信适配器 registry、esbuild 构建、utilityProcess 热重载、设置页管理 | `src/main/local-adapters/`、`src/shared/local-adapter.ts`、`SettingsPanel` |
 | 02 | L4 sidecar（OpenAI / http-template）健康检查、版本与日志 | `src/main/local-adapters/registry.ts`、`docs/local-adapters.md` |
 | 02 | http-template 条件字段、$map、状态/错误映射、多结果、HMAC 签名、显式 multipart、同步结果 | `src/main/providers/http-template.ts`、`http-template-dsl.test.ts` |
-| 02 | 本地视觉增强：抠像、图层分离、视频抠像、智能去字幕、主体消除、扩图；Windows/macOS 共用模型包 | `src/main/media/vision.ts`、`resources/vision-worker/worker.py` |
+| 02 | 本地视觉增强：抠像、图层分离、视频抠像、智能去字幕、主体消除、扩图；抠图/图层分离支持自动与框选 | `src/main/media/vision.ts`、`resources/vision-worker/worker.py` |
 | 02 | 本地人声/背景音分离：Demucs htdemucs、视频/音频源、无声视频 + 音频输出、FIFO 任务与取消；真实素材听感待验收 | `src/main/media/stems.ts`、`src/main/media/stem-tasks.ts`、`resources/stem-worker/worker.py` |
 | 03 | 时间线、剪辑、转场、关键帧、字幕、音频 | `src/main/timeline/`、`src/shared/timeline-*` |
 | 04 | StageDoc、机位、镜头、关键帧、Hermite 插值 | `src/shared/stage-schema.ts`、`stage-timeline.ts` |

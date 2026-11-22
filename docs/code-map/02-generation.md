@@ -175,7 +175,7 @@ Prompt Bar / 节点操作
 | `src/main/media/video-ops.ts` | 134 |
 | `src/main/media/video.ts` | 245 |
 | `src/main/media/vision-tasks.ts` | 102 |
-| `src/main/media/vision.ts` | 436 |
+| `src/main/media/vision.ts` | 438 |
 | `src/main/providers/agnes.ts` | 205 |
 | `src/main/providers/headers.ts` | 30 |
 | `src/main/providers/http-template.ts` | 827 |

@@ -8,6 +8,11 @@ interface CropDialogProps {
   imageWidth: number
   imageHeight: number
   busy: boolean
+  title?: string
+  subtitle?: string
+  confirmLabel?: string
+  busyLabel?: string
+  sizeLabel?: string
   onClose: () => void
   onConfirm: (rect: {
     x: number
@@ -26,6 +31,11 @@ export function CropDialog({
   imageWidth,
   imageHeight,
   busy,
+  title = '自由裁剪',
+  subtitle = '拖拽选框或四角调整裁剪区域',
+  confirmLabel = '应用裁剪',
+  busyLabel = '裁剪中…',
+  sizeLabel = '裁剪尺寸',
   onClose,
   onConfirm
 }: CropDialogProps) {
@@ -65,16 +75,14 @@ export function CropDialog({
       open={open}
       onClose={busy ? () => {} : onClose}
       bare
-      ariaLabel="自由裁剪"
+      ariaLabel={title}
       overlayClassName="fixed inset-0 z-[240] flex items-center justify-center bg-overlay px-6 py-12"
       panelClassName={`max-w-[calc(100vw-48px)] ${DIALOG_PANEL}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[15px] font-semibold">自由裁剪</div>
-          <div className="mt-1 text-xs text-fg-subtle">
-            拖拽选框或四角调整裁剪区域
-          </div>
+          <div className="text-[15px] font-semibold">{title}</div>
+          <div className="mt-1 text-xs text-fg-subtle">{subtitle}</div>
         </div>
         <IconButton
           label="关闭"
@@ -127,7 +135,7 @@ export function CropDialog({
       </div>
 
       <div className="mt-2.5 text-xs text-fg-muted">
-        裁剪尺寸 {rect.width} × {rect.height} px
+        {sizeLabel} {rect.width} × {rect.height} px
       </div>
 
       <div className="mt-3.5 flex justify-end gap-2 border-t border-divider pt-3.5">
@@ -145,7 +153,7 @@ export function CropDialog({
           disabled={busy || rect.width < 2 || rect.height < 2}
           onClick={() => onConfirm(rect)}
         >
-          {busy ? '裁剪中…' : '应用裁剪'}
+          {busy ? busyLabel : confirmLabel}
         </Button>
       </div>
     </Dialog>

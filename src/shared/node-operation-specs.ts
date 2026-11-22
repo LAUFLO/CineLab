@@ -268,7 +268,12 @@ export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> 
       }
     ]
   },
-  'layer-split': { executable: true, requiresConfirm: true },
+  'layer-split': {
+    executable: true,
+    requiresConfirm: true,
+    itemOptions: ['auto', 'box'],
+    params: [RECT_PARAM]
+  },
   'shot-retake': { executable: true },
   'element-replace': { executable: true },
   'object-remove': {
@@ -284,7 +289,12 @@ export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> 
     itemRequired: true,
     itemOptions: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9']
   },
-  cutout: { executable: true, requiresConfirm: true },
+  cutout: {
+    executable: true,
+    requiresConfirm: true,
+    itemOptions: ['auto', 'box'],
+    params: [RECT_PARAM]
+  },
 
   // 需要模型或蒙版交互，面向 Agent 统一走 generation_propose
   'grid-generate': {
@@ -433,6 +443,13 @@ export function validateNodeOperationParams(
   }
   if (operationId === 'subtitle' && itemId === 'box' && !params.rect) {
     return '框选去字幕需要 params.rect'
+  }
+  if (
+    (operationId === 'cutout' || operationId === 'layer-split') &&
+    itemId === 'box' &&
+    !params.rect
+  ) {
+    return '框选主体需要 params.rect'
   }
   if (operationId === 'clip-trim') {
     const start = params.start

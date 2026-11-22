@@ -1012,6 +1012,43 @@ export function PromptBar() {
     useCanvasStore.getState().patchNodeData(node.id, { refOrder: next })
   }
 
+  const removeSlotRef = (ref: PickedRef): void => {
+    if (!node) return
+    const key = `${ref.scope ?? 'project'}:${ref.path}`
+    setPickedRefs((prev) =>
+      prev.filter((item) => `${item.scope ?? 'project'}:${item.path}` !== key)
+    )
+    setRefPreview(null)
+
+    const store = useCanvasStore.getState()
+    const removing: string[] = []
+    for (const edge of store.edges) {
+      if (edge.target !== node.id) continue
+      const source = store.nodes.find((item) => item.id === edge.source)
+      if (!source) continue
+      const entries = isGroupNode(source)
+        ? store.nodes.filter((item) => item.parentId === source.id)
+        : [source]
+      const matched = entries.some((entry) => {
+        if (isGroupNode(entry)) return false
+        return nodeOutputs(entry).some(
+          (output) =>
+            output.path === ref.path &&
+            (output.scope ?? 'project') === (ref.scope ?? 'project')
+        )
+      })
+      if (matched) removing.push(edge.id)
+    }
+    if (removing.length > 0) store.removeEdges(removing)
+
+    const refOrder = node.data.refOrder ?? []
+    if (refOrder.includes(key)) {
+      store.patchNodeData(node.id, {
+        refOrder: refOrder.filter((item) => item !== key)
+      })
+    }
+  }
+
   const textContexts = (() => {
     const result: TextContext[] = []
     const seen = new Set<string>()
@@ -1782,7 +1819,13 @@ export function PromptBar() {
                   slot.ref?.kind ?? (slot.role === 'mask' ? 'mask' : 'empty')
                 }
               >
-                <span className="pointer-events-none absolute left-0.5 top-0.5 z-[1] max-w-[calc(100%-4px)] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg">
+                <span
+                  className={`pointer-events-none absolute left-0.5 top-0.5 z-[1] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg ${
+                    slot.ref
+                      ? 'max-w-[calc(100%-18px)]'
+                      : 'max-w-[calc(100%-4px)]'
+                  }`}
+                >
                   {slot.label}
                 </span>
                 {slot.role === 'mask' ? (
@@ -1835,69 +1878,85 @@ export function PromptBar() {
                     )}
                   </div>
                 ) : slot.ref ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="none"
-                    className={SLOT_THUMB_CLASS}
-                    title="拖动交换位置，双击在画布上定位"
-                    draggable
-                    onDragStart={() => {
-                      if (!slot.ref) return
-                      setDraggedSlot(
-                        `${slot.ref.scope ?? 'project'}:${slot.ref.path}`
-                      )
-                    }}
-                    onDragEnd={() => setDraggedSlot(null)}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault()
-                      if (!slot.ref) return
-                      const toKey = `${slot.ref.scope ?? 'project'}:${slot.ref.path}`
-                      if (draggedSlot) swapRefs(draggedSlot, toKey)
-                      setDraggedSlot(null)
-                    }}
-                    onPointerEnter={(event) => {
-                      if (!slot.ref) return
-                      const rect = event.currentTarget.getBoundingClientRect()
-                      setRefPreview({
-                        path: slot.ref.path,
-                        kind: slot.ref.kind,
-                        scope: slot.ref.scope,
-                        x: rect.left + rect.width / 2,
-                        y: rect.top - 8
-                      })
-                    }}
-                    onPointerLeave={() => setRefPreview(null)}
-                    onDoubleClick={(event) => {
-                      event.preventDefault()
-                      event.stopPropagation()
-                      if (slot.ref) handleRefDoubleClick(slot.ref)
-                    }}
-                  >
-                    {slot.ref.kind === 'video' ? (
-                      <video
-                        className={SLOT_MEDIA_CLASS}
-                        src={`${assetUrl(slot.ref.path, slot.ref.scope)}#t=0.1`}
-                        muted
-                        playsInline
-                        preload="metadata"
-                      />
-                    ) : slot.ref.kind === 'audio' ? (
-                      <span
-                        className="flex h-full w-full items-center justify-center text-fg-muted"
-                        title={slot.ref.path.split(/[\\/]/).pop()}
-                      >
-                        <Icon name="audio" size={16} />
-                      </span>
-                    ) : (
-                      <img
-                        className={SLOT_MEDIA_CLASS}
-                        src={assetUrl(slot.ref.path, slot.ref.scope)}
-                        alt=""
-                      />
-                    )}
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="none"
+                      className={SLOT_THUMB_CLASS}
+                      title="拖动交换位置，双击在画布上定位"
+                      draggable
+                      onDragStart={() => {
+                        if (!slot.ref) return
+                        setDraggedSlot(
+                          `${slot.ref.scope ?? 'project'}:${slot.ref.path}`
+                        )
+                      }}
+                      onDragEnd={() => setDraggedSlot(null)}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={(event) => {
+                        event.preventDefault()
+                        if (!slot.ref) return
+                        const toKey = `${slot.ref.scope ?? 'project'}:${slot.ref.path}`
+                        if (draggedSlot) swapRefs(draggedSlot, toKey)
+                        setDraggedSlot(null)
+                      }}
+                      onPointerEnter={(event) => {
+                        if (!slot.ref) return
+                        const rect = event.currentTarget.getBoundingClientRect()
+                        setRefPreview({
+                          path: slot.ref.path,
+                          kind: slot.ref.kind,
+                          scope: slot.ref.scope,
+                          x: rect.left + rect.width / 2,
+                          y: rect.top - 8
+                        })
+                      }}
+                      onPointerLeave={() => setRefPreview(null)}
+                      onDoubleClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        if (slot.ref) handleRefDoubleClick(slot.ref)
+                      }}
+                    >
+                      {slot.ref.kind === 'video' ? (
+                        <video
+                          className={SLOT_MEDIA_CLASS}
+                          src={`${assetUrl(slot.ref.path, slot.ref.scope)}#t=0.1`}
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : slot.ref.kind === 'audio' ? (
+                        <span
+                          className="flex h-full w-full items-center justify-center text-fg-muted"
+                          title={slot.ref.path.split(/[\\/]/).pop()}
+                        >
+                          <Icon name="audio" size={16} />
+                        </span>
+                      ) : (
+                        <img
+                          className={SLOT_MEDIA_CLASS}
+                          src={assetUrl(slot.ref.path, slot.ref.scope)}
+                          alt=""
+                        />
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="none"
+                      className="absolute right-0.5 top-0.5 z-[3] !flex h-4 w-4 items-center justify-center !rounded-full border border-border bg-surface p-0 text-[11px] leading-none !font-normal text-fg-muted hover:!border-danger hover:!bg-danger hover:!text-media-text"
+                      title="删除参考"
+                      onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        if (slot.ref) removeSlotRef(slot.ref)
+                      }}
+                    >
+                      ×
+                    </Button>
+                  </>
                 ) : (
                   <div className={SLOT_EMPTY_CLASS}>空</div>
                 )}
@@ -2230,6 +2289,7 @@ export function PromptBar() {
             >
               {refPreview.kind === 'video' ? (
                 <video
+                  className="block max-h-[160px] w-auto max-w-[240px] rounded-md object-contain"
                   src={`${assetUrl(refPreview.path, refPreview.scope)}#t=0.1`}
                   muted
                   playsInline
@@ -2245,7 +2305,11 @@ export function PromptBar() {
                   </span>
                 </div>
               ) : (
-                <img src={assetUrl(refPreview.path, refPreview.scope)} alt="" />
+                <img
+                  className="block max-h-[160px] w-auto max-w-[240px] rounded-md object-contain"
+                  src={assetUrl(refPreview.path, refPreview.scope)}
+                  alt=""
+                />
               )}
             </div>,
             document.body

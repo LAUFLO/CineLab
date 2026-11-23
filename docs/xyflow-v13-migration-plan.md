@@ -1,7 +1,7 @@
 # React Flow 13 迁移评估与改动方案
 
 日期：2026-11-23
-状态：待实施
+状态：已实施
 关联：[code-map/01-canvas.md](code-map/01-canvas.md)、[code-map/10-ui.md](code-map/10-ui.md)、[code-map/08-capabilities.md](code-map/08-capabilities.md)
 
 > 本文基于 v0.4.5（`@xyflow/react` 12.12.1）代码评估，行号仅供参考，实施时以最新代码为准。

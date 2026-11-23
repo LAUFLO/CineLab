@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { NodeChangeset } from '@xyflow/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { FilmStudy } from '@shared/film-study'
 import { useCanvasStore, type CanvasNode } from '../canvas'
@@ -304,6 +305,57 @@ describe('canvas store', () => {
 
     useCanvasStore.getState().undo()
     expect(useCanvasStore.getState().nodes[0]?.data.title).not.toBe('changed')
+  })
+
+  it('accepts node changes as an array', () => {
+    const id = useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
+    useCanvasStore.getState().onNodesChange([
+      { id, type: 'position', position: { x: 40, y: 60 }, dragging: false }
+    ])
+    expect(useCanvasStore.getState().nodes[0]?.position).toEqual({
+      x: 40,
+      y: 60
+    })
+  })
+
+  it('accepts a NodeChangeset instance', () => {
+    const id = useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
+    useCanvasStore
+      .getState()
+      .onNodesChange(
+        new NodeChangeset<CanvasNode>([
+          { id, type: 'position', position: { x: 24, y: 36 }, dragging: false }
+        ])
+      )
+    expect(useCanvasStore.getState().nodes[0]?.position).toEqual({
+      x: 24,
+      y: 36
+    })
+  })
+
+  it('keeps group nodes unselected while box selecting', () => {
+    const a = useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
+    const b = useCanvasStore.getState().addNode('image', { x: 320, y: 0 })
+    const groupId = useCanvasStore.getState().createGroupFromNodes([a, b])
+    if (!groupId) throw new Error('group not created')
+
+    useCanvasStore.getState().setBoxSelecting(true)
+    useCanvasStore.getState().onNodesChange([
+      { id: groupId, type: 'select', selected: true },
+      { id: a, type: 'select', selected: true }
+    ])
+
+    const nodes = useCanvasStore.getState().nodes
+    expect(nodes.find((node) => node.id === groupId)?.selected).toBe(false)
+    expect(nodes.find((node) => node.id === a)?.selected).toBe(true)
+  })
+
+  it('pushes history when a remove change arrives', () => {
+    const id = useCanvasStore.getState().addNode('image', { x: 0, y: 0 })
+    const before = useCanvasStore.getState().past.length
+    useCanvasStore.getState().onNodesChange([{ id, type: 'remove' }])
+    expect(useCanvasStore.getState().nodes).toHaveLength(0)
+    expect(useCanvasStore.getState().past.length).toBe(before + 1)
   })
 
   it('undoes a node drag', () => {

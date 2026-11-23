@@ -169,6 +169,9 @@ function stageSummary(doc: DirectorStageDoc): Record<string, unknown> {
     stageId: doc.stageId,
     name: doc.name,
     activeCameraId: doc.activeCameraId ?? null,
+    objectCount: doc.objects.length,
+    cameraCount: doc.cameras.length,
+    shotCount: doc.shots.length,
     objects: doc.objects
       .slice(0, 120)
       .map((object) => objectSummary(object)),
@@ -713,6 +716,73 @@ export async function executeStageTool(
     return {
       ok: true,
       result: { hasWorld: Boolean(updated.world) },
+      change: stageChange()
+    }
+  }
+
+  if (call.name === 'stage_add_objects') {
+    await ensureStageOpen(nodeId)
+    const raw = call.args.objects
+    if (!Array.isArray(raw) || raw.length === 0) {
+      return { ok: false, error: 'objects 不能为空' }
+    }
+
+    const { doc } = await readDoc(nodeId)
+    const counts = new Map<string, number>()
+    for (const object of doc.objects) {
+      const key = object.name.replace(/\s+\d+$/, '')
+      counts.set(key, (counts.get(key) ?? 0) + 1)
+    }
+
+    const commands: StageCommand[] = []
+    const objectIds: string[] = []
+
+    for (const entry of raw) {
+      if (!entry || typeof entry !== 'object') continue
+      const item = entry as Record<string, unknown>
+      const type = String(item.type ?? '') as StageObjectType
+      if (!type) continue
+      const baseName =
+        typeof item.name === 'string' && item.name.trim()
+          ? item.name.trim()
+          : (OBJECT_LABEL[type] ?? type)
+      const next = (counts.get(baseName) ?? 0) + 1
+      counts.set(baseName, next)
+      const object: StageObject = {
+        id: generateId('object'),
+        type,
+        name: next > 1 ? `${baseName} ${next}` : baseName,
+        transform: {
+          position: readVec(item.position, [0, 0, 0]),
+          rotation: readVec(item.rotation, [0, 0, 0]),
+          scale: readVec(item.scale, [1, 1, 1])
+        },
+        ...(typeof item.pose === 'string' && item.pose.trim()
+          ? { pose: item.pose.trim() }
+          : {}),
+        ...(typeof item.color === 'string' && item.color.trim()
+          ? { color: item.color.trim() }
+          : {}),
+        ...(type === 'crowd' && typeof item.count === 'number'
+          ? { count: item.count }
+          : {})
+      }
+      objectIds.push(object.id)
+      commands.push({ type: 'addObject', object })
+    }
+
+    if (commands.length === 0) {
+      return { ok: false, error: '没有可添加的对象' }
+    }
+
+    const updated = await applyToStage(nodeId, commands, call.turnId)
+    return {
+      ok: true,
+      result: {
+        objectCount: objectIds.length,
+        objectIds,
+        totalObjects: updated.objects.length
+      },
       change: stageChange()
     }
   }

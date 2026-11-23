@@ -3,10 +3,10 @@
 日期：2026-11-13
 状态：现行
 适用版本：v0.1.0
-最后核对：2026-11-13
+最后核对：2026-11-23
 关联：`docs/agent-architecture-plan.md`
 
-当前注册 69 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库和技能。
+当前注册 70 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库和技能。
 本文件记录已开放给 CineBot 的能力、参数校验、确认规则和回合撤销方式。
 所有写操作都走命令层；UI 和 Agent 共用执行器。
 
@@ -22,7 +22,7 @@
 
 ### 导演台（22）
 
-`stage_get`、`stage_capabilities`、`stage_add_object`、`stage_transform_object`、`stage_add_camera`、`stage_transform_camera`、`stage_add_shot`、`stage_update_shot`、`stage_remove_shot`、`stage_set_camera_track`、`stage_set_background`、`stage_update_object`、`stage_export_preview`、`stage_set_active_camera`、`stage_remove_object`、`stage_set_shot_intent`、`stage_clear_shot_intent`、`stage_auto_coverage`、`stage_dialogue_coverage`、`stage_set_world`、`stage_randomize_world`、`stage_from_scene_image`
+`stage_get`、`stage_capabilities`、`stage_add_object`、`stage_add_objects`、`stage_transform_object`、`stage_add_camera`、`stage_transform_camera`、`stage_add_shot`、`stage_update_shot`、`stage_remove_shot`、`stage_set_camera_track`、`stage_set_background`、`stage_update_object`、`stage_export_preview`、`stage_set_active_camera`、`stage_remove_object`、`stage_set_shot_intent`、`stage_clear_shot_intent`、`stage_auto_coverage`、`stage_dialogue_coverage`、`stage_set_world`、`stage_randomize_world`、`stage_from_scene_image`
 
 ### 剪辑室（17）
 
@@ -72,6 +72,7 @@
 
 | 工具 | 能力 ID | 只读 | 确认 | 回合撤销 |
 |---|---|---|---|---|
+| `stage_add_objects` | `stage.addObjects` | 否 | 否 | 场景历史 |
 | `stage_transform_camera` | `stage.transformCamera` | 否 | 否 | 场景历史 |
 | `stage_add_shot` | `stage.addShot` | 否 | 否 | 场景历史 |
 | `stage_update_shot` | `stage.updateShot` | 否 | 否 | 场景历史 |

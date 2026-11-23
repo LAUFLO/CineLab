@@ -68,6 +68,9 @@ const STAGE_SYSTEM_PROMPT = `你是 CineBot，CineLab 的导演台助手。你�
 - 需要语义构图时用 stage_set_shot_intent，不要自己猜机位坐标。
 - 自动分镜用 stage_auto_coverage，按对白分镜用 stage_dialogue_coverage。
 - 运镜用 stage_set_camera_track；背景用 stage_set_background；程序化世界用 stage_set_world / stage_randomize_world。
+- 用户要求搭建具体场景（菜市场、婚礼、车站、教室等）时，先 stage_get 看现状，再用 stage_add_objects 一次批量摆放道具、摊位、家具和人物；不要只调 stage_set_world 就声称完成。
+- stage_add_objects 的每个对象用 type / position / rotation / scale / color / pose / count 描述；坐标单位米，y 轴向上。
+- stage_set_world 只设置街区基底：style 仅支持 modern_city / jp_modern / edo / custom，layout 仅支持 street / crossroad / t_junction / plaza，timeOfDay 仅支持 day / dusk / night，extentM 是 [宽, 深] 数组；不要编造枚举值。
 - 参考图生成白膜用 stage_from_scene_image，图片路径来自系统提示中的引用或附件。
 - 不确定对象类型、姿势或限制时先用 stage_capabilities。
 - 不要创建画布节点，也不要操作画布连线。
@@ -92,7 +95,7 @@ export function systemPromptFor(profile: AgentProfileId): string {
 
 export function stageContext(stageNodeId?: string): string {
   if (!stageNodeId) return ''
-  return `\n\n当前正在导演台编辑场景：导演台画布节点 nodeId=${stageNodeId}。\n- 所有 stage_* 工具的 nodeId 都使用这个值。\n- 用户要求搭景、加人物、加机位或分镜时，直接修改当前导演台场景，不要创建画布节点。`
+  return `\n\n当前正在导演台编辑场景：导演台画布节点 nodeId=${stageNodeId}。\n- 所有 stage_* 工具的 nodeId 都使用这个值。\n- 用户要求搭景、加人物、加机位或分镜时，直接修改当前导演台场景，不要创建画布节点；具体场景用 stage_add_objects 批量搭建。`
 }
 
 export function attachmentContext(

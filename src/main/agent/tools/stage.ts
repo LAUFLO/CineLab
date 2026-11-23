@@ -5,6 +5,7 @@ import { assertSelectedNode } from './scope'
 import type { AgentToolDefinition } from '@shared/agent-tools'
 import { STAGE_EASINGS, STAGE_LIMITS, STAGE_OBJECT_TYPES } from '@shared/stage-schema'
 
+
 const stageNodeIdParameter = {
   type: 'string',
   description:
@@ -519,11 +520,87 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
         nodeId: stageNodeIdParameter,
         world: {
           type: 'object',
-          description:
-            'PrevisWorldRef：{ generatorVersion, style, layout, density, seed, extentM, timeOfDay?, weather?, landmarks?, water?, overrides? }'
+          properties: {
+            generatorVersion: {
+              type: 'string',
+              enum: ['modern-v1', 'styled-v1'],
+              description: '缺省按 style 推导，一般不用传'
+            },
+            style: {
+              type: 'string',
+              enum: ['modern_city', 'jp_modern', 'edo', 'custom'],
+              description: '街区风格；没有 market 这类值，菜市场请用 stage_scene_preset'
+            },
+            layout: {
+              type: 'string',
+              enum: ['street', 'crossroad', 't_junction', 'plaza']
+            },
+            density: { type: 'string', enum: ['low', 'medium', 'high'] },
+            seed: { type: 'number', description: '随机种子' },
+            extentM: {
+              type: 'array',
+              items: { type: 'number' },
+              minItems: 2,
+              maxItems: 2,
+              description: '[宽, 深]，单位米，60–200'
+            },
+            timeOfDay: { type: 'string', enum: ['day', 'dusk', 'night'] },
+            weather: { type: 'string', enum: ['rain', 'snow'] },
+            stageAnchor: { type: 'object' },
+            landmarks: { type: 'array', items: { type: 'object' } },
+            water: { type: 'boolean' },
+            overrides: { type: 'array', items: { type: 'object' } }
+          },
+          required: ['style', 'layout', 'density', 'seed', 'extentM']
         }
       },
       required: ['nodeId', 'world'],
+      additionalProperties: false
+    },
+    replay: 'safe'
+  },
+  {
+    id: 'stage.addObjects',
+    name: 'stage_add_objects',
+    description:
+      '一次向导演台场景批量添加多个对象，按用户描述自由搭建具体场景。参数与 stage_add_object 一致，只是数组；用 box / sphere / plane 组合道具和建筑，用 human / crowd 摆放人物。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        objects: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 60,
+          description: '要添加的对象列表；先规划完整布局，再一次性提交。',
+          items: {
+            type: 'object',
+            properties: {
+              type: { type: 'string', enum: STAGE_OBJECT_TYPES },
+              name: { type: 'string' },
+              position: stageVec3Parameter,
+              rotation: stageVec3Parameter,
+              scale: stageVec3Parameter,
+              pose: { type: 'string', description: '人物姿态预设，可选' },
+              color: {
+                type: 'string',
+                description: '十六进制颜色，如 #60a5fa'
+              },
+              count: {
+                type: 'number',
+                description: '群众数量 1-100，仅 crowd 使用'
+              }
+            },
+            required: ['type'],
+            additionalProperties: false
+          }
+        }
+      },
+      required: ['nodeId', 'objects'],
       additionalProperties: false
     },
     replay: 'safe'
@@ -1092,6 +1169,42 @@ export function validateStageToolArgs(
       const world = call.args.world
       if (!world || typeof world !== 'object' || Array.isArray(world)) {
         throw new AgentToolError('invalid_params', 'world 必须是对象')
+      }
+    }
+
+    if (call.name === 'stage_add_objects') {
+      const objects = call.args.objects
+      if (!Array.isArray(objects) || objects.length === 0) {
+        throw new AgentToolError('invalid_params', 'objects 必须是非空数组')
+      }
+      if (objects.length > 60) {
+        throw new AgentToolError('invalid_params', 'objects 最多 60 个')
+      }
+      for (const entry of objects) {
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+          throw new AgentToolError('invalid_params', 'objects 的每一项必须是对象')
+        }
+        const item = entry as Record<string, unknown>
+        if (
+          typeof item.type !== 'string' ||
+          !(STAGE_OBJECT_TYPES as readonly string[]).includes(item.type)
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            '每个对象必须提供合法 type'
+          )
+        }
+        assertStageVec3(item.position, 'position')
+        assertStageVec3(item.rotation, 'rotation')
+        assertStageVec3(item.scale, 'scale')
+        if (
+          item.count !== undefined &&
+          (typeof item.count !== 'number' ||
+            item.count < 1 ||
+            item.count > 100)
+        ) {
+          throw new AgentToolError('invalid_params', 'count 必须是 1-100 的数字')
+        }
       }
     }
 

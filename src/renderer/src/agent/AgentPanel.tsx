@@ -8,6 +8,7 @@ import {
   selectedNodeOutput,
   useCanvasStore
 } from '../stores/canvas'
+import { useProjectStore } from '../stores/project'
 import { useSettingsStore } from '../stores/settings'
 import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
@@ -120,6 +121,32 @@ export function AgentPanel() {
     void loadModels()
     void loadModelInfo()
   }, [visible, loadSessions, loadModels, loadModelInfo])
+
+  useEffect(() => {
+    if (!visible) return
+    const sync = (): void => {
+      void useAgentStore.getState().syncContextSession()
+    }
+    sync()
+    const unsubscribers = [
+      useProjectStore.subscribe((state, previous) => {
+        if (state.canvasId !== previous.canvasId) sync()
+      }),
+      useStageStore.subscribe((state, previous) => {
+        if (state.open !== previous.open || state.nodeId !== previous.nodeId) {
+          sync()
+        }
+      }),
+      useStudioStore.subscribe((state, previous) => {
+        if (state.open !== previous.open || state.nodeId !== previous.nodeId) {
+          sync()
+        }
+      })
+    ]
+    return () => {
+      for (const unsubscribe of unsubscribers) unsubscribe()
+    }
+  }, [visible])
 
   useEffect(() => {
     if (!visible || !sessionId) return

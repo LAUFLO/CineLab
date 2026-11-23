@@ -12,7 +12,7 @@
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20219 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5803 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 58 | 19866 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 58 | 20012 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11769 |
 | 10 | [UI 组件与面板](./10-ui.md) | 48 | 10339 |
 

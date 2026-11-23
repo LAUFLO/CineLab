@@ -563,7 +563,7 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
     id: 'stage.addObjects',
     name: 'stage_add_objects',
     description:
-      '一次向导演台场景批量添加多个对象，按用户描述自由搭建具体场景。参数与 stage_add_object 一致，只是数组；用 box / sphere / plane 组合道具和建筑，用 human / crowd 摆放人物。',
+      '一次向导演台场景批量添加多个对象，按用户描述自由搭建具体场景。参数与 stage_add_object 一致，只是数组；用 box / sphere / plane 组合道具和建筑，用 human / crowd 摆放人物。单批建议 5-8 个对象，复杂场景分 2-3 批提交，避免单次输出超限。',
     profiles: ['canvas', 'stage'],
     readOnly: false,
     scope: 'stage',

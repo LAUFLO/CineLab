@@ -1,12 +1,11 @@
 import {
-  addEdge,
-  applyEdgeChanges,
-  applyNodeChanges,
   type Connection,
   type Edge,
   type EdgeChange,
+  type EdgeChangeset,
   type Node,
   type NodeChange,
+  type NodeChangeset,
   type Viewport,
   type XYPosition
 } from '@xyflow/react'
@@ -95,8 +94,8 @@ export interface CanvasStore {
   loadCanvas: (nodes: CanvasNode[], edges: CineEdge[], viewport: Viewport) => void
   setBoxSelecting: (value: boolean) => void
   setViewport: (viewport: Viewport) => void
-  onNodesChange: (changes: NodeChange<CanvasNode>[]) => void
-  onEdgesChange: (changes: EdgeChange<CineEdge>[]) => void
+  onNodesChange: (changes: NodeChangeset<CanvasNode> | NodeChange<CanvasNode>[]) => void
+  onEdgesChange: (changes: EdgeChangeset<CineEdge> | EdgeChange<CineEdge>[]) => void
   removeEdges: (edgeIds: string[], turnId?: string) => number
   onConnect: (connection: Connection | { source: string; target: string }) => void
   addNode: (kind: NodeKind, position: XYPosition) => string

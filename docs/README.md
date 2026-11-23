@@ -46,6 +46,7 @@
 | [macos-packaging-gaps-plan.md](macos-packaging-gaps-plan.md) | macOS 打包资源缺口、视觉组件复用、字幕字体与发版校验，待实施 |
 | [ui-polish-plan.md](ui-polish-plan.md) | 画布与设置页 UI 打磨：参数单位、连线光效、菜单裁切、素材节点、快捷键、技能卡片与设置重组 |
 | [xyflow-v13-migration-plan.md](xyflow-v13-migration-plan.md) | React Flow 13 迁移评估：破坏性变更影响矩阵、store changeset、useStore 拆分、fitView padding 与 CSS layer 改动方案，待实施 |
+| [prompt-preset-plan.md](prompt-preset-plan.md) | 预设提示词：悬浮窗、名称胶囊、任意位置插入与发送展开，已确认 |
 
 ## 3. 代码地图
 

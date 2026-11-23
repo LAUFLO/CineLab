@@ -52,7 +52,8 @@
 | 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
 | 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能全部显示、导入与卡片启用开关 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
-| 02 | 官方/自定义风格库：分类浏览、hover 预览片段、单选胶囊、生成拼接提示词 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`style-prompt.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`style-prompt.test.ts` |
+| 02 | 官方/自定义风格库：分类浏览、hover 预览片段、单选胶囊（内联提示词首行）、生成拼接提示词；资产库“风格”与风格库同源展示 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`style-prompt.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`style-prompt.test.ts` |
+| 02 | 预设提示词：悬浮窗 CRUD、名称胶囊任意位置插入、发送原位展开、风格置顶；资产库“使用”插入正文 | `src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`prompt-preset.test.ts` |
 
 ## 部分实现（别当已完成）
 

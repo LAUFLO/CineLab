@@ -179,12 +179,12 @@ export function StyleLibraryDialog({
                   setQuery(event.target.value)
                 }
                 placeholder="搜索风格或提示词"
-                className="h-8"
+                className="!h-7"
                 aria-label="搜索风格"
               />
             </div>
             <Button
-              size="xs"
+              size="sm"
               variant="secondary"
               className="shrink-0 whitespace-nowrap"
               onClick={startCreate}

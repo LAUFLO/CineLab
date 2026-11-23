@@ -14,16 +14,19 @@ interface TemplateDialogProps {
   initial: TemplateInput | null
   onCancel: () => void
   onSave: (input: TemplateInput) => void
+  overlayClassName?: string
 }
 
 export function TemplateDialog({
   initial,
   onCancel,
-  onSave
+  onSave,
+  overlayClassName
 }: TemplateDialogProps) {
   const [name, setName] = useState(initial?.name ?? '')
   const [kind, setKind] = useState<NodeKind>(initial?.kind ?? 'image')
   const [prompt, setPrompt] = useState(initial?.prompt ?? '')
+  const isEdit = Boolean(initial?.id)
 
   const submit = (): void => {
     if (!name.trim() || !prompt.trim()) return
@@ -40,12 +43,15 @@ export function TemplateDialog({
       open
       onClose={onCancel}
       bare
-      ariaLabel={initial ? '编辑提示词模板' : '新建提示词模板'}
-      overlayClassName="fixed inset-0 z-[260] flex items-center justify-center bg-overlay"
+      ariaLabel={isEdit ? '编辑提示词模板' : '新建提示词模板'}
+      overlayClassName={
+        overlayClassName ??
+        'fixed inset-0 z-[260] flex items-center justify-center bg-overlay'
+      }
       panelClassName={`w-[560px] ${DIALOG_PANEL}`}
     >
       <div className="mb-[14px] text-sm text-fg">
-        {initial ? '编辑提示词模板' : '新建提示词模板'}
+        {isEdit ? '编辑提示词模板' : '新建提示词模板'}
       </div>
 
       <label className="mb-[14px] flex flex-col gap-1.5">
@@ -78,7 +84,7 @@ export function TemplateDialog({
           rows={6}
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
-          placeholder="模板会直接填入 prompt bar"
+          placeholder="例如：雪夜电影感，冷蓝月光，湿地面反射"
         />
       </label>
 

@@ -62,7 +62,8 @@ const MODULES = [
       'src/shared/model-contracts.ts',
       'src/shared/local-adapter.ts',
       'src/shared/style-schema.ts',
-      'src/shared/style-prompt.ts'
+      'src/shared/style-prompt.ts',
+      'src/shared/prompt-preset.ts'
     ]
   },
   {

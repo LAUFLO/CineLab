@@ -110,6 +110,7 @@ Prompt Bar / 节点操作
 | 人声/背景音分离 | 已实现；真实素材听感待验收 | `main/media/stems.ts`、`stem-tasks.ts`、`resources/stem-worker/worker.py` |
 | 错误文案 | 已实现 | `generation-error.test.ts` |
 | 官方/自定义风格库 | 已实现 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`src/shared/style-prompt.ts`、`src/renderer/src/canvas/StyleLibraryDialog.tsx`、`PromptBar.tsx` |
+| 预设提示词 | 已实现 | `src/shared/prompt-preset.ts`、`src/renderer/src/canvas/PresetPromptDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`；名称胶囊原位展开，风格置顶 |
 
 ## 已知限制
 
@@ -204,6 +205,7 @@ Prompt Bar / 节点操作
 | `src/shared/model-modes.ts` | 278 |
 | `src/shared/param-constraints.ts` | 107 |
 | `src/shared/param-presets.ts` | 304 |
+| `src/shared/prompt-preset.ts` | 74 |
 | `src/shared/protocol-templates.ts` | 1341 |
 | `src/shared/provider-presets.ts` | 313 |
 | `src/shared/provider-schema.ts` | 1314 |
@@ -274,6 +276,7 @@ Prompt Bar / 节点操作
 | `src/shared/model-modes.ts` | `ModelModeId`、`MediaKind`、`SlotRole`、`InputSlot`、`OperationSupport`、`ModelModeConfig`、`ModelModeDefinition`、`MODEL_MODE_DEFINITIONS`、`MODEL_MODE_LABEL`、`OPERATION_SUPPORT_LABEL`、`isModelModeId`、`getModelModeDefinition`、`normalizeModeConfig`、`normalizeModelModes`、`modeMediaKinds`、`modeSupportsOperation`、`modeOperationIds`、`highestOperationSupport` |
 | `src/shared/param-constraints.ts` | `ParamEvalContext`、`EvaluatedParam`、`evaluateParam`、`applyParamConstraints` |
 | `src/shared/param-presets.ts` | `ParamTemplate`、`PARAM_TEMPLATES`、`paramTemplatesFor` |
+| `src/shared/prompt-preset.ts` | `PresetToken`、`findPresetTokens`、`expandPresetTokens` |
 | `src/shared/protocol-templates.ts` | `ProtocolTemplate`、`ModelRule`、`PROTOCOL_TEMPLATES`、`MODEL_RULES`、`findProtocolTemplate`、`matchModelRule`、`mergeModeConfigs`、`mergeParamDefs`、`applyProtocolTemplate` |
 | `src/shared/provider-presets.ts` | `ProviderPreset`、`HOT_PROVIDER_IDS`、`PROVIDER_PRESETS`、`findProviderPresetById`、`findProviderPresetByBaseUrl`、`recommendedModelsForPreset` |
 | `src/shared/provider-schema.ts` | `Capability`、`MediaInput`、`MEDIA_INPUTS`、`MEDIA_INPUT_LABEL`、`ProviderType`、`ParamOption`、`ParamCondition`、`ParamForce`、`ParamDeny`、`ParamDef`、`ModelFeature`、`ConfigSource`、`ModelDef`、`ModelInferenceInput`、`inferModelInputs`、`inferModelModes`、`modelModeConfigs`、`modelModeIds`、`modelSupportsMode`、`modelModeMediaKinds`、`modelOperationSupport`、`ModeContext`、`modelModeCompatibility`、`inferActiveMode` …（共 37 个） |

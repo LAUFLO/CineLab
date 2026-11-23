@@ -46,14 +46,15 @@ export function boundsOfNodes(nodes: CanvasNode[]): NodeBounds {
 export function computeAlignment(
   draggedNodes: CanvasNode[],
   otherNodes: CanvasNode[],
-  zoom: number
+  zoom: number,
+  snapStep = 0
 ): AlignmentResult {
   if (draggedNodes.length === 0 || otherNodes.length === 0) {
     return { dx: 0, dy: 0, vertical: null, horizontal: null }
   }
 
   const dragBounds = boundsOfNodes(draggedNodes)
-  const threshold = 6 / zoom
+  const threshold = Math.max(6, snapStep / 2 + 1) / zoom
 
   const dragVertical = [
     dragBounds.left,

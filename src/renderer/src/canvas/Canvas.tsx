@@ -495,7 +495,12 @@ function CanvasInner({ theme }: { theme: Theme }) {
         return
       }
 
-      const result = computeAlignment(draggedNodes, others, getZoom())
+      const result = computeAlignment(
+        draggedNodes,
+        others,
+        getZoom(),
+        snapToGrid ? 16 : 0
+      )
       const nextGuides: AlignmentGuide[] = []
 
       if (result.vertical) {
@@ -514,7 +519,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
 
       setGuides(nextGuides)
     },
-    [alignmentContext, flowToScreenPosition, getZoom]
+    [alignmentContext, flowToScreenPosition, getZoom, snapToGrid]
   )
 
   const handleNodeDragStop = useCallback(
@@ -544,7 +549,12 @@ function CanvasInner({ theme }: { theme: Theme }) {
       const others = context.others
       if (others.length === 0) return
 
-      const { dx, dy } = computeAlignment(draggedNodes, others, getZoom())
+      const { dx, dy } = computeAlignment(
+        draggedNodes,
+        others,
+        getZoom(),
+        snapToGrid ? 16 : 0
+      )
       if (dx === 0 && dy === 0) return
 
       setNodes(
@@ -563,7 +573,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
         })
       )
     },
-    [alignmentContext, getNodes, setNodes, getZoom]
+    [alignmentContext, getNodes, setNodes, getZoom, snapToGrid]
   )
 
   const handleNodeDoubleClick = useCallback(

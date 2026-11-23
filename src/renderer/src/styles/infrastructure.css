@@ -187,7 +187,7 @@ body[data-exporting] .react-flow__minimap {
   height: 20px;
   border: none;
   background: transparent;
-  color: var(--accent);
+  color: var(--border-selected);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -205,9 +205,10 @@ body[data-exporting] .react-flow__minimap {
   width: 20px;
   height: 20px;
   border-radius: 999px;
-  border: 1.5px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border: 2px solid var(--border-selected);
   background: var(--surface);
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 25%, transparent);
+  box-shadow: 0 1px 4px
+    color-mix(in srgb, var(--border-selected) 25%, transparent);
   transform: translateY(-50%);
 }
 
@@ -218,7 +219,7 @@ body[data-exporting] .react-flow__minimap {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-selected) 65%, transparent);
   transform: translateY(-50%);
   pointer-events: none;
 }
@@ -235,7 +236,7 @@ body[data-exporting] .react-flow__minimap {
 }
 
 .react-flow__handle[data-handle]:hover::before {
-  border-color: color-mix(in srgb, var(--accent) 80%, transparent);
+  border-color: var(--accent-hover);
 }
 
 .react-flow__handle[data-handle='left'] {

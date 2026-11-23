@@ -1100,7 +1100,7 @@ export function AgentPanel() {
               {running ? (
                 <Button
                   type="button"
-                  className="size-[30px] shrink-0 !rounded-md !border !border-border-strong !bg-surface-hover p-0 !text-fg disabled:!opacity-[0.35]"
+                  className="size-[30px] shrink-0 !rounded-full !border-0 !bg-danger p-0 !text-accent-text hover:!bg-danger/90 disabled:!opacity-[0.35]"
                   onClick={() => void cancel()}
                   title="停止"
                   variant="primary"

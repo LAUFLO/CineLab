@@ -50,22 +50,42 @@ export function FlowEdge({
   })
 
   return (
-    <BaseEdge
-      id={id}
-      path={path}
-      markerEnd={markerEnd}
-      onClick={onClick}
-      onDoubleClick={onDoubleClick}
-      style={{
-        stroke: highlighted ? 'var(--link)' : 'var(--edge-default)',
-        strokeWidth: highlighted ? 2 : 1.5,
-        filter:
-          highlighted && glowEnabled
-            ? 'drop-shadow(0 0 4px var(--glow))'
-            : undefined,
-        transition: 'stroke 150ms ease, stroke-width 150ms ease',
-        cursor: 'pointer'
-      }}
-    />
+    <>
+      <BaseEdge
+        id={id}
+        path={path}
+        markerEnd={markerEnd}
+        onClick={onClick}
+        onDoubleClick={onDoubleClick}
+        style={{
+          stroke: highlighted ? 'var(--text-1)' : 'var(--edge-default)',
+          strokeWidth: 1.5,
+          transition: 'stroke 150ms ease, stroke-width 150ms ease',
+          cursor: 'pointer'
+        }}
+      />
+      {highlighted ? (
+        <path
+          d={path}
+          className={
+            glowEnabled
+              ? 'react-flow__edge-flow-band [animation:edge-flow_1.2s_linear_infinite]'
+              : 'react-flow__edge-flow-band'
+          }
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeDasharray={glowEnabled ? '12 28' : undefined}
+          pathLength={glowEnabled ? 100 : undefined}
+          style={{
+            pointerEvents: 'none',
+            filter: glowEnabled
+              ? 'drop-shadow(0 0 5px var(--glow))'
+              : undefined
+          }}
+        />
+      ) : null}
+    </>
   )
 }

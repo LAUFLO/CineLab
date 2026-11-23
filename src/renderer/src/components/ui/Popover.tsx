@@ -19,6 +19,8 @@ export interface PopoverProps {
   width?: number
   /** start: 左对齐触发按钮；end: 右对齐。 */
   align?: 'start' | 'end' | 'center'
+  /** 触发按钮随画布移动时持续跟随，用于分组工具栏等会平移的锚点。 */
+  follow?: boolean
   className?: string
   ariaLabel?: string
 }
@@ -43,6 +45,7 @@ export function Popover({
   children,
   width = 224,
   align = 'start',
+  follow = false,
   className,
   ariaLabel
 }: PopoverProps) {
@@ -72,13 +75,21 @@ export function Popover({
         ? rect.bottom + GAP
         : Math.max(MARGIN, rect.top - panelHeight - GAP)
 
-    setPosition({
-      left: Math.max(
-        MARGIN,
-        Math.min(rawLeft, window.innerWidth - nextWidth - MARGIN)
-      ),
-      top: Math.max(MARGIN, Math.min(top, window.innerHeight - MARGIN)),
-      width: nextWidth
+    setPosition((current) => {
+      const next = {
+        left: Math.max(
+          MARGIN,
+          Math.min(rawLeft, window.innerWidth - nextWidth - MARGIN)
+        ),
+        top: Math.max(MARGIN, Math.min(top, window.innerHeight - MARGIN)),
+        width: nextWidth
+      }
+      return current &&
+        Math.abs(current.left - next.left) < 0.5 &&
+        Math.abs(current.top - next.top) < 0.5 &&
+        current.width === next.width
+        ? current
+        : next
     })
   }, [align, anchorRef, width])
 
@@ -88,6 +99,17 @@ export function Popover({
     const frame = requestAnimationFrame(updatePosition)
     return () => cancelAnimationFrame(frame)
   }, [open, updatePosition])
+
+  useEffect(() => {
+    if (!open || !follow) return
+    let frame = 0
+    const tick = (): void => {
+      updatePosition()
+      frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [open, follow, updatePosition])
 
   useEffect(() => {
     if (!open) return

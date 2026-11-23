@@ -1,6 +1,14 @@
-import { dialog, ipcMain, shell } from 'electron'
+import {
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  shell,
+  type OpenDialogOptions
+} from 'electron'
 import type {
   SkillCloneInput,
+  SkillImportInstallInput,
+  SkillImportKind,
   SkillOverrideInput,
   SkillScope,
   SkillUploadFolder,
@@ -21,6 +29,12 @@ import {
   skillDirectoryFor,
   skillFileFor
 } from '../agent/skills-admin'
+import {
+  cleanupStaleSkillImports,
+  discardSkillImport,
+  installSkillImport,
+  previewSkillImport
+} from '../agent/skills-import'
 import { getCurrentProjectRoot } from '../project/manager'
 
 const SCOPES: SkillScope[] = ['builtin', 'global', 'project']
@@ -50,7 +64,16 @@ function readFolder(value: unknown): SkillUploadFolder {
   return value
 }
 
+function readImportKind(value: unknown): SkillImportKind {
+  if (value !== 'folder' && value !== 'zip') {
+    throw new Error('导入来源无效')
+  }
+  return value
+}
+
 export function registerSkillsIpc(): void {
+  void cleanupStaleSkillImports().catch(() => undefined)
+
   ipcMain.handle('skills:list', () => listSkillAdmin(currentRoot()))
 
   ipcMain.handle('skills:files', (_event, scope: unknown, name: unknown) => {
@@ -119,6 +142,61 @@ export function registerSkillsIpc(): void {
       })
     }
   )
+
+  ipcMain.handle(
+    'skills:pick-import',
+    async (event, kind: unknown) => {
+      const importKind = readImportKind(kind)
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const options: OpenDialogOptions =
+        importKind === 'folder'
+          ? {
+              title: '选择技能文件夹',
+              properties: ['openDirectory']
+            }
+          : {
+              title: '选择技能 ZIP 压缩包',
+              properties: ['openFile'],
+              filters: [{ name: 'ZIP 压缩包', extensions: ['zip'] }]
+            }
+      const picked = win
+        ? await dialog.showOpenDialog(win, options)
+        : await dialog.showOpenDialog(options)
+      if (picked.canceled || picked.filePaths.length === 0) return null
+      return previewSkillImport({
+        kind: importKind,
+        sourcePath: picked.filePaths[0],
+        projectRoot: currentRoot()
+      })
+    }
+  )
+
+  ipcMain.handle('skills:install-import', (_event, input: unknown) => {
+    if (!input || typeof input !== 'object') throw new Error('导入参数无效')
+    const data = input as SkillImportInstallInput
+    if (typeof data.token !== 'string' || !data.token.trim()) {
+      throw new Error('缺少导入会话')
+    }
+    if (data.scope !== 'global' && data.scope !== 'project') {
+      throw new Error('目标作用域无效')
+    }
+    if (data.overwrite !== undefined && typeof data.overwrite !== 'boolean') {
+      throw new Error('覆盖参数无效')
+    }
+    return installSkillImport({
+      projectRoot: currentRoot(),
+      data: {
+        token: data.token.trim(),
+        scope: data.scope,
+        ...(data.overwrite !== undefined ? { overwrite: data.overwrite } : {})
+      }
+    })
+  })
+
+  ipcMain.handle('skills:discard-import', (_event, token: unknown) => {
+    if (typeof token !== 'string' || !token.trim()) return
+    return discardSkillImport(token.trim())
+  })
 
   ipcMain.handle('skills:clone', (_event, input: unknown) => {
     if (!input || typeof input !== 'object') throw new Error('覆盖参数无效')

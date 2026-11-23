@@ -53,7 +53,9 @@ const FILM_STATUS_TONE: Record<string, string> = {
 }
 
 const CARD_CLASS =
-  'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms]'
+  'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card bg-surface-raised shadow-node transition-colors duration-[120ms]'
+const CARD_BORDER_CLASS = 'border border-border group-hover:border-border-strong'
+const CARD_SELECTED_BORDER_CLASS = 'border-2 border-border-selected'
 
 const BTN_CLASS =
   '!h-7 gap-[5px] !rounded-md !border !border-border !bg-surface !px-2.5 !text-[11.5px] !font-normal !text-fg whitespace-nowrap hover:!bg-surface-hover hover:!text-fg'
@@ -477,9 +479,7 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
         <div
           data-node-card
           className={`${CARD_CLASS} ${
-            selected
-              ? 'border-border-selected'
-              : 'border-border group-hover:border-border-strong'
+            selected ? CARD_SELECTED_BORDER_CLASS : CARD_BORDER_CLASS
           }`}
           onDoubleClick={() => open()}
         >

@@ -29,6 +29,7 @@ export function CanvasContextMenu() {
       x={menu.screen.x}
       y={menu.screen.y}
       width={224}
+      placement="auto"
       className="!p-1.5 [animation:menu-in_120ms_ease-out]"
       onContextMenu={(event) => event.preventDefault()}
     >

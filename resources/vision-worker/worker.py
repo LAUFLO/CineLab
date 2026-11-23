@@ -135,6 +135,56 @@ def saliency_alpha(vision: Vision, image_bgr: np.ndarray) -> np.ndarray:
     return np.clip(pred[0, 0].numpy(), 0.0, 1.0)
 
 
+def rect_region(args: argparse.Namespace, width: int, height: int) -> tuple[int, int, int, int]:
+    """把可选的框选区域限制在图像范围内；没有框选时返回整图。"""
+    rect_width = int(round(getattr(args, "rect_width", 0) or 0))
+    rect_height = int(round(getattr(args, "rect_height", 0) or 0))
+    if rect_width <= 0 or rect_height <= 0:
+        return 0, 0, width, height
+
+    x = max(0, min(int(round(getattr(args, "x", 0) or 0)), width - 2))
+    y = max(0, min(int(round(getattr(args, "y", 0) or 0)), height - 2))
+    rect_width = max(2, min(rect_width, width - x))
+    rect_height = max(2, min(rect_height, height - y))
+    return x, y, rect_width, rect_height
+
+
+def saliency_alpha_in_rect(
+    vision: Vision,
+    image_bgr: np.ndarray,
+    rect: tuple[int, int, int, int],
+) -> np.ndarray:
+    """只在框选区域内计算显著性，框外 alpha 为 0。"""
+    h, w = image_bgr.shape[:2]
+    x, y, rect_width, rect_height = rect
+    if rect_width >= w and rect_height >= h:
+        processed, _ = resize_max(image_bgr, MAX_IMAGE_EDGE)
+        return np.clip(
+            cv2.resize(
+                saliency_alpha(vision, processed),
+                (w, h),
+                interpolation=cv2.INTER_LINEAR,
+            ),
+            0,
+            1,
+        )
+
+    crop = image_bgr[y : y + rect_height, x : x + rect_width]
+    processed, _ = resize_max(crop, MAX_IMAGE_EDGE)
+    alpha_crop = np.clip(
+        cv2.resize(
+            saliency_alpha(vision, processed),
+            (rect_width, rect_height),
+            interpolation=cv2.INTER_LINEAR,
+        ),
+        0,
+        1,
+    )
+    alpha_full = np.zeros((h, w), dtype=np.float32)
+    alpha_full[y : y + rect_height, x : x + rect_width] = alpha_crop
+    return alpha_full
+
+
 def lama_inpaint(vision: Vision, image_bgr: np.ndarray, mask_u8: np.ndarray) -> np.ndarray:
     h, w = image_bgr.shape[:2]
     scale = min(1.0, MAX_IMAGE_EDGE / max(h, w))
@@ -178,10 +228,9 @@ def lama_inpaint(vision: Vision, image_bgr: np.ndarray, mask_u8: np.ndarray) -> 
 def task_matte_image(vision: Vision, args: argparse.Namespace) -> dict:
     image = read_image(args.input)
     h, w = image.shape[:2]
-    processed, scale = resize_max(image, MAX_IMAGE_EDGE)
-    alpha = saliency_alpha(vision, processed)
-    alpha_full = cv2.resize(alpha, (w, h), interpolation=cv2.INTER_LINEAR)
-    alpha_full = np.clip(alpha_full, 0, 1)
+    alpha_full = saliency_alpha_in_rect(
+        vision, image, rect_region(args, w, h)
+    )
 
     foreground = image.astype(np.float32) * alpha_full[:, :, None]
     rgba = np.dstack([foreground, alpha_full * 255]).astype(np.uint8)
@@ -193,9 +242,9 @@ def task_matte_image(vision: Vision, args: argparse.Namespace) -> dict:
 def task_layer_split(vision: Vision, args: argparse.Namespace) -> dict:
     image = read_image(args.input)
     h, w = image.shape[:2]
-    processed, _ = resize_max(image, MAX_IMAGE_EDGE)
-    alpha = saliency_alpha(vision, processed)
-    alpha_full = np.clip(cv2.resize(alpha, (w, h), interpolation=cv2.INTER_LINEAR), 0, 1)
+    alpha_full = saliency_alpha_in_rect(
+        vision, image, rect_region(args, w, h)
+    )
 
     foreground = image.astype(np.float32) * alpha_full[:, :, None]
     rgba = np.dstack([foreground, alpha_full * 255]).astype(np.uint8)

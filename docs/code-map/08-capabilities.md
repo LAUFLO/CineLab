@@ -24,7 +24,7 @@
 | 02 | 本地可信适配器 registry、esbuild 构建、utilityProcess 热重载、设置页管理 | `src/main/local-adapters/`、`src/shared/local-adapter.ts`、`SettingsPanel` |
 | 02 | L4 sidecar（OpenAI / http-template）健康检查、版本与日志 | `src/main/local-adapters/registry.ts`、`docs/local-adapters.md` |
 | 02 | http-template 条件字段、$map、状态/错误映射、多结果、HMAC 签名、显式 multipart、同步结果 | `src/main/providers/http-template.ts`、`http-template-dsl.test.ts` |
-| 02 | 本地视觉增强：抠像、图层分离、视频抠像、智能去字幕、主体消除、扩图；Windows/macOS 共用模型包 | `src/main/media/vision.ts`、`resources/vision-worker/worker.py` |
+| 02 | 本地视觉增强：抠像、图层分离、视频抠像、智能去字幕、主体消除、扩图；抠图/图层分离支持自动与框选 | `src/main/media/vision.ts`、`resources/vision-worker/worker.py` |
 | 02 | 本地人声/背景音分离：Demucs htdemucs、视频/音频源、无声视频 + 音频输出、FIFO 任务与取消；真实素材听感待验收 | `src/main/media/stems.ts`、`src/main/media/stem-tasks.ts`、`resources/stem-worker/worker.py` |
 | 03 | 时间线、剪辑、转场、关键帧、字幕、音频 | `src/main/timeline/`、`src/shared/timeline-*` |
 | 04 | StageDoc、机位、镜头、关键帧、Hermite 插值 | `src/shared/stage-schema.ts`、`stage-timeline.ts` |
@@ -40,6 +40,7 @@
 | 04 | 单镜预演导出与截图回画布 | `src/main/stage/export.ts`、`StageWindow.tsx` |
 | 05 | 切镜/转场、首中尾帧、逐镜理解、取证与复核、分场、角色/风格、镜头三节点、分镜表、复刻建图 | `src/main/film-study/`、`stores/film-study.ts` |
 | 06 | CineBot 工具、生成提案、会话、技能 | `src/main/agent/` |
+| 06 | 技能文件夹/ZIP 导入、SKILL.md 校验、卡片启用开关 | `src/main/agent/skills-import.ts`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
 | 06 | 本地可信适配器 MCP server（HTTP + stdio）、认证与工具 | `src/main/mcp/`、`docs/mcp.md` |
 | 06 | MCP 项目/画布/节点/模型只读工具 | `src/main/mcp/app-tools.ts`、`src/shared/canvas-summary.ts` |
 | 06 | MCP 画布写工具与生成提交（应用内确认） | `src/main/mcp/write-tools.ts`、`src/renderer/src/mcp/commandBridge.ts` |
@@ -50,7 +51,7 @@
 | 07 | 模型配置弹窗保存直接写入 models.json；Agent pending 自动应用 | `SettingsPanel.tsx`、`src/main/settings/models-watch.ts` |
 | 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
-| 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能卡片与 Markdown 预览 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx` |
+| 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能全部显示、导入与卡片启用开关 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
 
 ## 部分实现（别当已完成）
 

@@ -3,6 +3,7 @@ import {
   NODE_OPERATION_AGENT_SPECS,
   isResultOutput,
   isResultOutputOp,
+  nodeOperationOutputTarget,
   validateNodeOperationParams
 } from '../node-operation-specs'
 
@@ -117,6 +118,22 @@ describe('node operation agent specs', () => {
     ).toContain('不支持')
   })
 
+  it('requires a rect for boxed cutout and layer split', () => {
+    for (const operationId of ['cutout', 'layer-split']) {
+      expect(
+        validateNodeOperationParams(operationId, 'box', {})
+      ).toContain('params.rect')
+      expect(
+        validateNodeOperationParams(operationId, 'box', {
+          rect: { x: 0, y: 0, width: 100, height: 100 }
+        })
+      ).toBeNull()
+      expect(
+        validateNodeOperationParams(operationId, 'auto', {})
+      ).toBeNull()
+    }
+  })
+
   it('identifies operation result nodes without hiding creative versions', () => {
     expect(isResultOutputOp('split-av-video')).toBe(true)
     expect(isResultOutputOp('frame-first')).toBe(true)
@@ -124,10 +141,27 @@ describe('node operation agent specs', () => {
     expect(isResultOutputOp('audio-trim')).toBe(true)
     expect(isResultOutputOp('grid-generate')).toBe(true)
     expect(isResultOutputOp('relight')).toBe(false)
+    expect(isResultOutputOp('color-grade')).toBe(false)
     expect(isResultOutputOp('portrait')).toBe(false)
+    expect(isResultOutputOp('inpaint')).toBe(false)
+    expect(isResultOutputOp('erase')).toBe(false)
+    expect(isResultOutputOp('element-edit')).toBe(false)
     expect(isResultOutputOp(undefined)).toBe(false)
     expect(isResultOutput({ model: '本地分离（人声）' })).toBe(true)
     expect(isResultOutput({ model: 'Agnes 2.5 Flash 图像' })).toBe(false)
+  })
+
+  it('creates a result node for model edits while keeping old versions', () => {
+    for (const op of [
+      'relight',
+      'color-grade',
+      'portrait',
+      'inpaint',
+      'erase',
+      'element-edit'
+    ]) {
+      expect(nodeOperationOutputTarget(op)).toBe('new-node')
+    }
   })
 
   it('marks model operations as generation proposable', () => {

@@ -105,6 +105,57 @@ export interface TextContext {
   nodeId?: string
 }
 
+export interface Span {
+  start: number
+  end: number
+}
+
+export interface TitleSpan extends Span {
+  name: string
+}
+
+/**
+ * 在文本中按标题长度从长到短做不重叠匹配。
+ * 避免 `@视频节点 5 · 当前帧 · 提示词` 同时命中更短的 `视频节点 5 · 当前帧`。
+ */
+export function matchTitleSpans(
+  text: string,
+  names: string[],
+  options: { prefix?: string; occupied?: Span[] } = {}
+): TitleSpan[] {
+  const prefix = options.prefix ?? ''
+  const occupied: Span[] = [...(options.occupied ?? [])]
+  const result: TitleSpan[] = []
+  const seen = new Set<string>()
+  const sorted = [...new Set(names.filter(Boolean))].sort(
+    (a, b) => b.length - a.length
+  )
+
+  for (const name of sorted) {
+    const needle = `${prefix}${name}`
+    let from = 0
+    while (from <= text.length - needle.length) {
+      const start = text.indexOf(needle, from)
+      if (start < 0) break
+      const end = start + needle.length
+      const overlaps = occupied.some(
+        (span) => start < span.end && end > span.start
+      )
+      if (!overlaps) {
+        occupied.push({ start, end })
+        if (!seen.has(name)) {
+          seen.add(name)
+          result.push({ name, start, end })
+        }
+        break
+      }
+      from = start + 1
+    }
+  }
+
+  return result
+}
+
 export function buildPromptWithContext(
   prompt: string,
   contexts: TextContext[]

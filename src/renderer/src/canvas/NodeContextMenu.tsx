@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   isGroupNode,
   isStudioNode,
@@ -15,7 +17,9 @@ import {
   pasteAt
 } from './context-actions'
 import { requestDeleteSelection } from './delete-actions'
+import { operationsForKind } from './nodes/node-operations'
 import { Button, Menu } from '../components/ui'
+import { Icon } from '../components/Icon'
 import { useShortcutLabel } from '../shortcuts/useShortcut'
 
 interface MenuAction {
@@ -23,12 +27,177 @@ interface MenuAction {
   hint?: string
   disabled?: boolean
   danger?: boolean
-  run: () => void
+  run?: () => void
+  submenu?: MenuAction[]
 }
 
 interface MenuSection {
   title?: string
   actions: MenuAction[]
+}
+
+const ACTION_CLASS =
+  '!flex h-8 w-full items-center !justify-between gap-3 rounded-md px-3 text-[12.5px] !font-normal disabled:!text-fg-subtle disabled:!opacity-100'
+
+const SUBMENU_WIDTH = 196
+const SUBMENU_GAP = 6
+const SUBMENU_ITEM_HEIGHT = 34
+
+interface SubmenuAnchor {
+  left: number
+  top: number
+  maxHeight: number
+}
+
+function ContextMenuAction({
+  action,
+  onClose
+}: {
+  action: MenuAction
+  onClose: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [anchor, setAnchor] = useState<SubmenuAnchor | null>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const closeTimer = useRef<number | null>(null)
+
+  const cancelClose = (): void => {
+    if (closeTimer.current === null) return
+    window.clearTimeout(closeTimer.current)
+    closeTimer.current = null
+  }
+
+  const scheduleClose = (): void => {
+    cancelClose()
+    closeTimer.current = window.setTimeout(() => {
+      closeTimer.current = null
+      setOpen(false)
+    }, 140)
+  }
+
+  const openSubmenu = (): void => {
+    const trigger = triggerRef.current
+    if (!trigger || !action.submenu) return
+
+    cancelClose()
+    const rect = trigger.getBoundingClientRect()
+    const container = trigger.closest<HTMLElement>('[role="menu"]')
+    const containerRect = container?.getBoundingClientRect()
+    const anchorRight = containerRect ? containerRect.right : rect.right
+    const anchorLeft = containerRect ? containerRect.left : rect.left
+    const estimatedHeight = Math.min(
+      360,
+      action.submenu.length * SUBMENU_ITEM_HEIGHT + 8
+    )
+    const spaceRight = window.innerWidth - anchorRight - 8
+    const left =
+      spaceRight >= SUBMENU_WIDTH + SUBMENU_GAP
+        ? anchorRight + SUBMENU_GAP
+        : Math.max(
+            8,
+            Math.min(
+              anchorLeft - SUBMENU_WIDTH - SUBMENU_GAP,
+              window.innerWidth - SUBMENU_WIDTH - 8
+            )
+          )
+    const top = Math.max(
+      8,
+      Math.min(rect.top - 6, window.innerHeight - estimatedHeight - 8)
+    )
+
+    setAnchor({
+      left,
+      top,
+      maxHeight: Math.max(120, window.innerHeight - top - 8)
+    })
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current !== null) {
+        window.clearTimeout(closeTimer.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    const close = (): void => setOpen(false)
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
+  }, [open])
+
+  return (
+    <>
+      <Button
+        ref={triggerRef}
+        type="button"
+        variant="ghost"
+        size="none"
+        aria-haspopup={action.submenu ? 'menu' : undefined}
+        aria-expanded={action.submenu ? open : undefined}
+        className={`${ACTION_CLASS} ${
+          action.danger
+            ? '!text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
+            : '!text-fg'
+        }`}
+        disabled={action.disabled}
+        onMouseEnter={() => {
+          if (action.submenu) openSubmenu()
+        }}
+        onMouseLeave={action.submenu ? scheduleClose : undefined}
+        onClick={() => {
+          if (action.submenu) {
+            if (!open) openSubmenu()
+            return
+          }
+          onClose()
+          action.run?.()
+        }}
+      >
+        <span>{action.label}</span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          {action.hint ? (
+            <span className="text-xs text-fg-subtle">{action.hint}</span>
+          ) : null}
+          {action.submenu ? <Icon name="chevron-right" size={12} /> : null}
+        </span>
+      </Button>
+
+      {action.submenu && open && anchor
+        ? createPortal(
+            <div
+              role="menu"
+              data-context-submenu
+              className="fixed z-[1001] overflow-y-auto rounded-card border border-border bg-surface-raised p-1 shadow-float [animation:menu-in_120ms_ease-out]"
+              style={{
+                left: anchor.left,
+                top: anchor.top,
+                width: SUBMENU_WIDTH,
+                maxHeight: anchor.maxHeight
+              }}
+              onMouseEnter={cancelClose}
+              onMouseLeave={scheduleClose}
+              onContextMenu={(event) => event.preventDefault()}
+            >
+              {action.submenu.map((item, index) => (
+                <ContextMenuAction
+                  key={`${item.label}-${index}`}
+                  action={item}
+                  onClose={onClose}
+                />
+              ))}
+            </div>,
+            document.body
+          )
+        : null}
+    </>
+  )
 }
 
 export function NodeContextMenu() {
@@ -70,6 +239,8 @@ export function NodeContextMenu() {
       x={menu.screen.x}
       y={menu.screen.y}
       width={224}
+      placement="auto"
+      keepOpenSelector="[data-context-submenu]"
       className="!p-1.5 max-h-[520px] overflow-y-auto [animation:menu-in_120ms_ease-out]"
       onContextMenu={(event) => event.preventDefault()}
     >
@@ -81,28 +252,12 @@ export function NodeContextMenu() {
               {section.title}
             </div>
           ) : null}
-          {section.actions.map((action) => (
-            <Button
-              key={action.label}
-              type="button"
-              variant="ghost"
-              size="none"
-              className={`!flex h-8 w-full items-center !justify-between gap-3 rounded-md px-3 text-[12.5px] !font-normal disabled:!text-fg-subtle disabled:!opacity-100 ${
-                action.danger
-                  ? '!text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] hover:!text-danger'
-                  : '!text-fg'
-              }`}
-              disabled={action.disabled}
-              onClick={() => {
-                close()
-                action.run()
-              }}
-            >
-              <span>{action.label}</span>
-              {action.hint ? (
-                <span className="text-xs text-fg-subtle">{action.hint}</span>
-              ) : null}
-            </Button>
+          {section.actions.map((action, actionIndex) => (
+            <ContextMenuAction
+              key={`${action.label}-${actionIndex}`}
+              action={action}
+              onClose={close}
+            />
           ))}
         </div>
       ))}
@@ -249,6 +404,22 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
   }
 
   if (cine?.data.kind === 'image') {
+    const withOperationMenu = (opId: string, label: string): MenuAction => {
+      const op = operationsForKind('image').find((entry) => entry.id === opId)
+      if (!op?.menu?.length) {
+        return { label, run: () => operation(opId) }
+      }
+      return {
+        label,
+        submenu: op.menu.map((item) => ({
+          label: item.label,
+          ...(item.hint ? { hint: item.hint } : {}),
+          ...(item.disabled ? { disabled: true } : {}),
+          run: () => operation(opId, item.id)
+        }))
+      }
+    }
+
     sections.push({
       title: '图像',
       actions: [
@@ -268,12 +439,12 @@ function buildSections(node: CanvasNode, ctx: MenuContext): MenuSection[] {
               }
             ]
           : []),
-        { label: '九宫格', run: () => operation('grid-generate', 'multi') },
+        withOperationMenu('grid-generate', '九宫格'),
         { label: '角色四视图', run: () => operation('character-sheet') },
-        { label: '抠图', run: () => operation('cutout') },
-        { label: '扩图', run: () => operation('outpaint') },
-        { label: '打光', run: () => operation('relight') },
-        { label: '多角度', run: () => operation('multi-angle') }
+        withOperationMenu('cutout', '抠图'),
+        withOperationMenu('outpaint', '扩图'),
+        withOperationMenu('relight', '打光'),
+        withOperationMenu('multi-angle', '多角度')
       ]
     })
   }

@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  isDefaultHiddenBuiltinSkill,
-  type SkillAdminEntry,
-  type SkillFileContent,
-  type SkillFileEntry,
-  type SkillScope
+import type {
+  SkillAdminEntry,
+  SkillFileContent,
+  SkillFileEntry,
+  SkillScope
 } from '@shared/skills'
 import { Icon } from '../components/Icon'
 import { useProjectStore } from '../stores/project'
@@ -12,12 +11,12 @@ import { useUIStore } from '../stores/ui'
 import {
   Button,
   Dialog,
-  NativeSelect,
   Input,
   Switch,
   Textarea
 } from '../components/ui'
 import { MARKDOWN_CLASS, renderMarkdown } from '../canvas/nodes/text-markdown'
+import { SkillImportDialog } from './skills/SkillImportDialog'
 
 const SCOPE_LABEL: Record<SkillScope, string> = {
   builtin: '内置',
@@ -43,24 +42,6 @@ function fileIcon(path: string): 'image' | 'video' | 'audio' | 'text' {
   if (['mp4', 'webm', 'mov'].includes(ext)) return 'video'
   if (['mp3', 'wav', 'm4a'].includes(ext)) return 'audio'
   return 'text'
-}
-
-interface SkillDraft {
-  scope: 'global' | 'project'
-  name: string
-  description: string
-  version: string
-  body: string
-}
-
-function emptyDraft(): SkillDraft {
-  return {
-    scope: 'global',
-    name: '',
-    description: '',
-    version: '',
-    body: '# 新技能\n\n## 使用场景\n\n'
-  }
 }
 
 interface SkillPreviewDialogProps {
@@ -187,21 +168,12 @@ export function SkillsSection() {
   const [uploading, setUploading] = useState(false)
   const [cloning, setCloning] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [creating, setCreating] = useState(false)
-  const [draft, setDraft] = useState<SkillDraft>(emptyDraft)
+  const [togglingKey, setTogglingKey] = useState<string | null>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [view, setView] = useState<'grid' | 'detail'>('grid')
-  const [showBuiltin, setShowBuiltin] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [previewEntry, setPreviewEntry] = useState<SkillAdminEntry | null>(
     null
-  )
-
-  const visibleSkills = useMemo(
-    () =>
-      showBuiltin
-        ? skills
-        : skills.filter((entry) => !isDefaultHiddenBuiltinSkill(entry)),
-    [skills, showBuiltin]
   )
 
   const selected = useMemo(
@@ -212,9 +184,9 @@ export function SkillsSection() {
     () =>
       SCOPES.map((scope) => ({
         scope,
-        entries: visibleSkills.filter((entry) => entry.scope === scope)
+        entries: skills.filter((entry) => entry.scope === scope)
       })).filter((group) => group.entries.length > 0),
-    [visibleSkills]
+    [skills]
   )
 
   const refresh = async (
@@ -224,9 +196,6 @@ export function SkillsSection() {
       const list = await window.api.skills.list()
       setSkills(list)
       setError(null)
-      const visible = showBuiltin
-        ? list
-        : list.filter((entry) => !isDefaultHiddenBuiltinSkill(entry))
       const target = select
         ? list.find(
             (entry) =>
@@ -237,9 +206,9 @@ export function SkillsSection() {
         setSelectedKey(entryKey(target))
       } else if (
         !selectedKey ||
-        !visible.some((entry) => entryKey(entry) === selectedKey)
+        !list.some((entry) => entryKey(entry) === selectedKey)
       ) {
-        const first = visible[0]
+        const first = list[0]
         setSelectedKey(first ? entryKey(first) : null)
       }
     } catch (refreshError) {
@@ -316,30 +285,10 @@ export function SkillsSection() {
     }
   }
 
-  const create = async (): Promise<void> => {
-    if (draft.scope === 'project' && !projectPath) {
-      setError('请先打开项目，再创建项目技能')
-      return
-    }
-    setSaving(true)
-    setError(null)
-    try {
-      const created = await window.api.skills.create({
-        scope: draft.scope,
-        name: draft.name.trim(),
-        description: draft.description.trim(),
-        ...(draft.version.trim() ? { version: draft.version.trim() } : {}),
-        body: draft.body
-      })
-      setCreating(false)
-      setDraft(emptyDraft())
-      await refresh({ scope: created.scope, name: created.name })
-      setView('detail')
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : '创建失败')
-    } finally {
-      setSaving(false)
-    }
+  const handleImported = async (entry: SkillAdminEntry): Promise<void> => {
+    await refresh({ scope: entry.scope, name: entry.name })
+    setPreviewEntry(entry)
+    setView('grid')
   }
 
   const remove = async (): Promise<void> => {
@@ -368,6 +317,7 @@ export function SkillsSection() {
     patch: { enabled?: boolean; disableModelInvocation?: boolean }
   ): Promise<void> => {
     setError(null)
+    setTogglingKey(entryKey(entry))
     try {
       const updated = await window.api.skills.setOverride({
         scope: entry.scope,
@@ -379,6 +329,8 @@ export function SkillsSection() {
       setError(
         toggleError instanceof Error ? toggleError.message : '更新状态失败'
       )
+    } finally {
+      setTogglingKey(null)
     }
   }
 
@@ -489,7 +441,7 @@ export function SkillsSection() {
         <div>
           <div className="text-[15px] font-semibold">技能</div>
           <div className="mt-1 max-w-[560px] text-[11px] leading-[1.6] text-fg-subtle">
-            内置技能随应用提供；全局技能在本机所有项目可用；项目技能只属于当前项目。
+            内置技能随应用提供；全局技能在本机所有项目可用；项目技能只属于当前项目。关闭卡片上的开关后，CineBot 不会引用该技能。
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -504,30 +456,19 @@ export function SkillsSection() {
               <Icon name="chevron-left" size={13} />
               返回卡片
             </Button>
-          ) : (
-            <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-fg-muted">
-              <Switch
-                checked={showBuiltin}
-                onChange={setShowBuiltin}
-                size="sm"
-                label="显示内置技能"
-              />
-              <span>显示内置技能</span>
-            </label>
-          )}
+          ) : null}
           <Button
             type="button"
             variant="primary"
             size="xs"
             className="inline-flex shrink-0 items-center gap-[5px]"
             onClick={() => {
-              setCreating(true)
-              setDraft(emptyDraft())
+              setImportOpen(true)
               setError(null)
             }}
           >
-            <Icon name="plus" size={13} />
-            新建技能
+            <Icon name="download" size={13} />
+            导入技能
           </Button>
         </div>
       </div>
@@ -538,164 +479,73 @@ export function SkillsSection() {
         </div>
       ) : null}
 
-      {creating ? (
-        <div className="flex flex-col gap-2 rounded-card border border-border-strong bg-surface p-2.5">
-          <div className="text-xs font-semibold">新建技能</div>
-          <div className="grid grid-cols-[1fr_1.2fr_0.7fr] gap-2 max-[900px]:grid-cols-2">
-            <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
-              <span>作用域</span>
-              <NativeSelect
-                className="!h-auto w-full !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] text-fg focus:border-border-strong"
-                value={draft.scope}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    scope: event.target.value as 'global' | 'project'
-                  }))
-                }
-              >
-                <option value="global">全局技能</option>
-                <option value="project" disabled={!projectPath}>
-                  项目技能{projectPath ? '' : '（未打开项目）'}
-                </option>
-              </NativeSelect>
-            </label>
-            <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
-              <span>名称</span>
-              <Input
-                className="!h-auto w-full !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] text-fg focus:border-border-strong"
-                value={draft.name}
-                placeholder="例如 shot-lighting"
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    name: event.target.value
-                  }))
-                }
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
-              <span>版本</span>
-              <Input
-                className="!h-auto w-full !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] text-fg focus:border-border-strong"
-                value={draft.version}
-                placeholder="可选，例如 1.0"
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    version: event.target.value
-                  }))
-                }
-              />
-            </label>
-          </div>
-          <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
-            <span>描述</span>
-            <Input
-              className="!h-auto w-full !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] text-fg focus:border-border-strong"
-              value={draft.description}
-              placeholder="一句话说明这个技能做什么"
-              maxLength={500}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  description: event.target.value
-                }))
-              }
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 [&>span]:mb-1 [&>span]:block [&>span]:text-[11px] [&>span]:text-fg-subtle">
-            <span>SKILL.md 正文</span>
-            <Textarea
-              className="min-h-[120px] w-full resize-none !rounded-md border-border bg-surface !px-2 !py-1.5 !text-[11px] font-mono leading-[1.55] text-fg focus:border-border-strong"
-              value={draft.body}
-              rows={10}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  body: event.target.value
-                }))
-              }
-            />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="xs"
-              onClick={() => setCreating(false)}
-              disabled={saving}
-            >
-              取消
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="xs"
-              onClick={() => void create()}
-              disabled={
-                saving || !draft.name.trim() || !draft.description.trim()
-              }
-            >
-              {saving ? '创建中…' : '创建技能'}
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
       {view === 'grid' ? (
         <div className="min-h-[460px] flex-1 overflow-y-auto rounded-card border border-border bg-surface p-3">
           {loading ? (
             <div className="p-3.5 text-[11px] leading-[1.6] text-fg-subtle">
               正在读取技能…
             </div>
-          ) : visibleSkills.length === 0 ? (
+          ) : skills.length === 0 ? (
             <div className="flex min-h-[420px] flex-col items-center justify-center gap-2 text-center">
               <Icon name="sparkles" size={26} className="text-fg-subtle" />
-              <div className="text-xs text-fg-muted">还没有自定义技能</div>
+              <div className="text-xs text-fg-muted">还没有技能</div>
               <div className="max-w-[360px] text-[11px] leading-[1.6] text-fg-subtle">
-                内置的画布操作技能已隐藏；新建技能后会以卡片显示。
+                点击右上角「导入技能」，选择包含 SKILL.md 的文件夹或 ZIP 压缩包。
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2.5">
-              {visibleSkills.map((entry) => (
-                <Button
-                  key={entryKey(entry)}
-                  type="button"
-                  variant="secondary"
-                  size="none"
-                  className="flex h-[142px] flex-col !items-start !justify-start gap-1.5 !rounded-card border-border bg-surface-raised p-3 text-left hover:border-border-strong hover:bg-surface-hover"
-                  onClick={() => setPreviewEntry(entry)}
-                >
-                  <div className="flex w-full min-w-0 items-center gap-1.5">
-                    <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[12px] font-semibold text-fg">
-                      {entry.name}
-                    </span>
-                    <span className="shrink-0 whitespace-nowrap rounded-full bg-surface-hover px-1.5 py-px text-[9px] leading-[14px] text-fg-muted">
-                      {SCOPE_LABEL[entry.scope]}
-                    </span>
+              {skills.map((entry) => {
+                const key = entryKey(entry)
+                return (
+                  <div key={key} className="relative">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="none"
+                      className={`flex h-[150px] w-full flex-col !items-start !justify-start gap-1.5 !rounded-card border-border bg-surface-raised p-3 pb-9 text-left hover:border-border-strong hover:bg-surface-hover ${
+                        entry.enabled ? '' : 'opacity-65'
+                      }`}
+                      onClick={() => setPreviewEntry(entry)}
+                    >
+                      <div className="flex w-full min-w-0 items-center gap-1.5">
+                        <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[12px] font-semibold text-fg">
+                          {entry.name}
+                        </span>
+                        <span className="shrink-0 whitespace-nowrap rounded-full bg-surface-hover px-1.5 py-px text-[9px] leading-[14px] text-fg-muted">
+                          {SCOPE_LABEL[entry.scope]}
+                        </span>
+                      </div>
+                      <div className="line-clamp-2 text-[11px] leading-[1.5] text-fg-muted">
+                        {entry.description || '暂无描述'}
+                      </div>
+                      <div className="mt-auto flex w-full flex-wrap items-center gap-1.5 pr-[68px] text-[10px] text-fg-subtle">
+                        {entry.version ? <span>v{entry.version}</span> : null}
+                        {!entry.enabled ? (
+                          <span className="text-warning">已禁用</span>
+                        ) : null}
+                        {entry.shadowedBy ? (
+                          <span>
+                            被{SCOPE_LABEL[entry.shadowedBy]}覆盖
+                          </span>
+                        ) : null}
+                      </div>
+                    </Button>
+                    <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5">
+                      <span className="text-[10px] text-fg-subtle">启用</span>
+                      <Switch
+                        checked={entry.enabled}
+                        onChange={(next) =>
+                          void toggle(entry, { enabled: next })
+                        }
+                        disabled={togglingKey === key}
+                        size="sm"
+                        label={`启用技能 ${entry.name}`}
+                      />
+                    </div>
                   </div>
-                  <div className="line-clamp-2 text-[11px] leading-[1.5] text-fg-muted">
-                    {entry.description || '暂无描述'}
-                  </div>
-                  <div className="mt-auto flex w-full flex-wrap items-center gap-1.5 text-[10px] text-fg-subtle">
-                    {entry.version ? <span>v{entry.version}</span> : null}
-                    {!entry.enabled ? (
-                      <span className="text-warning">已禁用</span>
-                    ) : null}
-                    {entry.shadowedBy ? (
-                      <span>
-                        被{SCOPE_LABEL[entry.shadowedBy]}覆盖
-                      </span>
-                    ) : null}
-                    <span className="ml-auto inline-flex items-center gap-0.5 text-fg-muted">
-                      查看
-                      <Icon name="chevron-right" size={11} />
-                    </span>
-                  </div>
-                </Button>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -777,7 +627,7 @@ export function SkillsSection() {
         <section className="flex min-h-0 min-w-0 flex-col gap-2.5 overflow-y-auto rounded-card border border-border bg-surface p-3">
           {!selected ? (
             <div className="p-3.5 text-[11px] leading-[1.6] text-fg-subtle">
-              选择一个技能查看详情，或新建技能。
+              选择一个技能查看详情，或导入新技能。
             </div>
           ) : (
             <>
@@ -889,7 +739,7 @@ export function SkillsSection() {
                       })
                     }
                   />
-                  <span>启用</span>
+                  <span>启用（CineBot 可引用）</span>
                 </label>
                 <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-fg-muted">
                   <Input
@@ -1081,6 +931,13 @@ export function SkillsSection() {
           setView('detail')
           setPreviewEntry(null)
         }}
+      />
+
+      <SkillImportDialog
+        open={importOpen}
+        projectPath={projectPath}
+        onClose={() => setImportOpen(false)}
+        onImported={(entry) => void handleImported(entry)}
       />
     </div>
   )

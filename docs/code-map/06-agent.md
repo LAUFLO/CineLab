@@ -89,7 +89,9 @@ CineBot 会话、工具注册与执行、生成提案、技能、能力审计。
 
 - 来源：内置 `resources/skills`、全局 `userData/skills`、项目 `.cinelab/skills`；
 - `skills.ts` 负责列表、读取、路径校验、大小限制；
-- `skills-admin.ts` / `skills-config.ts` 负责安装、覆盖、导入导出；
+- `skills-admin.ts` / `skills-config.ts` 负责安装、覆盖、启用状态；
+- `skills-import.ts` 负责文件夹/ZIP 导入：SKILL.md 校验、文件白名单、冲突检测、原子替换；
+- 设置页默认显示全部技能，卡片开关控制 `enabled`；禁用后 `listSkills`、`skill_read` 和 Agent 面板都不再返回；
 - 技能可被 Agent 以 `skill` 工具调用，正文与引用文件分开读取。
 
 ## 能力审计
@@ -131,7 +133,7 @@ AgentPanel
 | 工具注册、过滤、确认 | 已实现 | `tools/index.ts`、`tools.test.ts` |
 | 会话读写、标题、压缩 | 已实现 | `session.ts`、`compact.ts`、`session.test.ts` |
 | 生成提案 | 已实现 | `proposals.ts`、`proposals.test.ts` |
-| 技能 | 已实现 | `skills.ts`、`skills-admin.ts`、`skills.test.ts` |
+| 技能 | 已实现 | `skills.ts`、`skills-admin.ts`、`skills-import.ts`、`skills.test.ts`、`skills-import.test.ts` |
 | 能力审计 | 已实现 | `capabilities/registry.ts`、`capability-audit.test.ts` |
 | 四个 bridge | 已实现 | `src/renderer/src/agent/*Bridge.ts` |
 | v3 运行时（pi） | 部分实现 | `src/main/agent/pi/*`；M1–M3 已接入；M4 四空间回归通过（canvas/stage 真模型，timeline/film 桥接），正式 asar 待复测 |
@@ -184,6 +186,7 @@ AgentPanel
 | `src/main/agent/session.ts` | 407 |
 | `src/main/agent/skills-admin.ts` | 592 |
 | `src/main/agent/skills-config.ts` | 110 |
+| `src/main/agent/skills-import.ts` | 487 |
 | `src/main/agent/skills.ts` | 216 |
 | `src/main/agent/tools/canvas.ts` | 545 |
 | `src/main/agent/tools/capability.ts` | 129 |
@@ -202,7 +205,7 @@ AgentPanel
 | `src/main/mcp/tools.ts` | 75 |
 | `src/main/mcp/write-tools.ts` | 1050 |
 | `src/renderer/src/agent/AgentPanel.tsx` | 1250 |
-| `src/renderer/src/agent/agentStore.ts` | 1100 |
+| `src/renderer/src/agent/agentStore.ts` | 1108 |
 | `src/renderer/src/agent/canvasBridge.ts` | 1145 |
 | `src/renderer/src/agent/filmBridge.ts` | 747 |
 | `src/renderer/src/agent/panel/ContextRing.tsx` | 55 |
@@ -219,7 +222,7 @@ AgentPanel
 | `src/shared/agent.ts` | 264 |
 | `src/shared/capabilities.ts` | 321 |
 | `src/shared/mcp-command.ts` | 14 |
-| `src/shared/skills.ts` | 180 |
+| `src/shared/skills.ts` | 273 |
 <!-- AUTO:files:end -->
 
 <!-- AUTO:exports:start -->
@@ -244,8 +247,9 @@ AgentPanel
 | `src/main/agent/proposals.ts` | `setProposalChangeListener`、`proposalDirectory`、`createProposal`、`activeProposal`、`expireSessionProposals`、`submitProposal`、`cancelProposal`、`deleteSessionProposals`、`updateProposalFromRun` |
 | `src/main/agent/runtime.ts` | `AgentTurnCallbacks`、`startTurn`、`resolveToolResult`、`resolveConfirmation`、`cancelTurn`、`getActiveTurnInfo` |
 | `src/main/agent/session.ts` | `sessionDirectory`、`sessionFile`、`createSessionId`、`ensureSession`、`appendSessionEntry`、`appendMessage`、`appendTurn`、`loadSession`、`listSessions`、`createSession`、`deleteSession`、`renameSession`、`ensureSessionTitle`、`appendSessionSummary`、`requireProjectRoot` |
-| `src/main/agent/skills-admin.ts` | `skillScopeDirectory`、`listSkillAdmin`、`createSkill`、`saveSkill`、`deleteSkill`、`readSkillFile`、`listSkillFiles`、`importSkillFiles`、`removeSkillFile`、`cloneSkill`、`setSkillOverride`、`skillDirectoryFor`、`skillFileFor`、`ensureScopeDirectory`、`projectSkillDirectory` |
+| `src/main/agent/skills-admin.ts` | `isBinaryPath`、`skillScopeDirectory`、`listSkillAdmin`、`createSkill`、`saveSkill`、`deleteSkill`、`readSkillFile`、`listSkillFiles`、`importSkillFiles`、`removeSkillFile`、`cloneSkill`、`setSkillOverride`、`skillDirectoryFor`、`skillFileFor`、`ensureScopeDirectory`、`projectSkillDirectory` |
 | `src/main/agent/skills-config.ts` | `SkillOverride`、`SkillOverrides`、`skillOverrideKey`、`loadSkillOverrides`、`saveSkillOverride`、`removeSkillOverride` |
+| `src/main/agent/skills-import.ts` | `previewSkillImport`、`installSkillImport`、`discardSkillImport`、`cleanupAllSkillImports`、`cleanupStaleSkillImports` |
 | `src/main/agent/skills.ts` | `SkillLocation`、`isWithin`、`builtinSkillsDirectory`、`globalSkillsDirectory`、`projectSkillsDirectory`、`skillLocations`、`readSkillManifest`、`listSkills`、`readSkill`、`skillCatalogPrompt` |
 | `src/main/agent/tools/canvas.ts` | `CANVAS_TOOLS`、`validateCanvasToolArgs` |
 | `src/main/agent/tools/capability.ts` | `CAPABILITY_TOOLS`、`validateCapabilityToolArgs` |
@@ -280,5 +284,5 @@ AgentPanel
 | `src/shared/agent.ts` | `AgentProfileId`、`AgentPermissionMode`、`AgentScope`、`AgentAttachment`、`AgentReference`、`AgentChatRequest`、`AgentModelInfo`、`AgentGenerationModels`、`AgentSessionInfo`、`AgentUsage`、`AgentProposalStatus`、`AgentProposal`、`AgentProposalDraft`、`AgentToolCall`、`AgentToolResult`、`AgentTurnChange`、`AgentTurnStatus`、`AgentTurn`、`AgentEvent`、`AgentSessionMessage`、`AgentSessionSnapshot`、`AgentToolCallRequest`、`AgentToolResultInput`、`AgentConfirmInput` …（共 26 个） |
 | `src/shared/capabilities.ts` | `ModelInputFeature`、`ModelOutputFeature`、`AdapterCapability`、`CapabilityGapKind`、`CapabilityGap`、`EffectiveCapabilities`、`ADAPTER_CAPABILITIES`、`resolveAdapter`、`contractFor`、`normalizeFeatureSets`、`effectiveCapabilities` |
 | `src/shared/mcp-command.ts` | `McpWriteCommand`、`McpWriteResult` |
-| `src/shared/skills.ts` | `SkillScope`、`SkillFrontmatter`、`SkillSummary`、`SkillAdminEntry`、`SkillFileEntry`、`SkillFileContent`、`SkillWriteInput`、`SkillOverrideInput`、`SkillUploadFolder`、`SkillUploadResult`、`SkillCloneInput`、`SkillReadResult`、`DEFAULT_HIDDEN_BUILTIN_SKILLS`、`isDefaultHiddenBuiltinSkill`、`SKILL_NAME_PATTERN`、`MAX_SKILL_DESCRIPTION_LENGTH`、`MAX_SKILL_BODY_BYTES`、`MAX_SKILL_REFERENCE_BYTES`、`MAX_SKILL_PATH_LENGTH`、`MAX_SKILL_UPLOAD_FILES`、`MAX_SKILL_UPLOAD_BYTES`、`parseSkillMarkdown`、`normalizeSkillPath` |
+| `src/shared/skills.ts` | `SkillScope`、`SkillFrontmatter`、`SkillSummary`、`SkillAdminEntry`、`SkillFileEntry`、`SkillFileContent`、`SkillWriteInput`、`SkillOverrideInput`、`SkillUploadFolder`、`SkillUploadResult`、`SkillCloneInput`、`SkillImportKind`、`SkillImportScope`、`SkillImportPreview`、`SkillImportInstallInput`、`SkillMarkdownInspection`、`SkillReadResult`、`SKILL_NAME_PATTERN`、`MAX_SKILL_DESCRIPTION_LENGTH`、`MAX_SKILL_BODY_BYTES`、`MAX_SKILL_REFERENCE_BYTES`、`MAX_SKILL_PATH_LENGTH`、`MAX_SKILL_UPLOAD_FILES`、`MAX_SKILL_UPLOAD_BYTES` …（共 30 个） |
 <!-- AUTO:exports:end -->

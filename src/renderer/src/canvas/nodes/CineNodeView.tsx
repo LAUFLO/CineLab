@@ -10,6 +10,8 @@ import {
 import {
   NODE_META,
   TITLE_HEIGHT,
+  mediaFrameNodeSize,
+  mediaFramePixels,
   type NodeKind,
   type OutputRef
 } from '@shared/canvas-schema'
@@ -180,11 +182,21 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
   const selectOutput = (output: OutputRef): void => {
     patchNodeData(id, { selectedOutputId: output.id })
-    if (output.width && output.height) {
-      resizeNode(
-        id,
-        Math.round((nodeWidth * output.height) / output.width) + TITLE_HEIGHT
+    if (
+      (data.kind === 'image' || data.kind === 'video') &&
+      output.width &&
+      output.height
+    ) {
+      const frame = data.mediaFrame ?? 'standard'
+      const size = mediaFrameNodeSize(
+        output.width,
+        output.height,
+        mediaFramePixels(frame)
       )
+      resizeNode(id, size.height, size.width)
+      if (currentNode?.parentId) {
+        useCanvasStore.getState().syncGroupBounds(currentNode.parentId)
+      }
     }
   }
 
@@ -485,10 +497,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
 
         <div
           data-node-card
-          className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms] ${
+          className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card bg-surface-raised shadow-node transition-colors duration-[120ms] ${
             selected
-              ? 'border-border-selected'
-              : 'border-border group-hover:border-border-strong'
+              ? 'border-2 border-border-selected'
+              : 'border border-border group-hover:border-border-strong'
           }`}
         >
           <div

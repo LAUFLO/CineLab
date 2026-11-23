@@ -20,3 +20,17 @@ describe('split-av operation menus', () => {
     expect(op?.menu?.map((item) => item.id)).toEqual(['vocal', 'background'])
   })
 })
+
+describe('image region operations', () => {
+  it('offers auto and box modes for cutout and layer split', () => {
+    const imageOps = operationsForKind('image')
+    expect(
+      imageOps.find((item) => item.id === 'cutout')?.menu?.map((item) => item.id)
+    ).toEqual(['auto', 'box'])
+    expect(
+      imageOps
+        .find((item) => item.id === 'layer-split')
+        ?.menu?.map((item) => item.id)
+    ).toEqual(['auto', 'box'])
+  })
+})

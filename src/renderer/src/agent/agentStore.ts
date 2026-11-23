@@ -20,6 +20,10 @@ import {
 } from '@shared/canvas-schema'
 import { nodeOperationOutputTarget } from '@shared/node-operation-specs'
 import {
+  fitNodeToMedia,
+  probeMediaSize
+} from '../canvas/media-size'
+import {
   absolutePosition,
   isStudioNode,
   useCanvasStore
@@ -381,6 +385,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           outputs: [output],
           selectedOutputId: asset.path
         })
+        const applied = fitNodeToMedia(
+          nodeId,
+          await probeMediaSize(asset.path)
+        )
         created.push({
           nodeId,
           name: asset.name,
@@ -388,7 +396,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           scope: 'global',
           kind
         })
-        offsetY += meta.height + TITLE_HEIGHT + 24
+        offsetY += (applied ?? meta.height + TITLE_HEIGHT) + 24
       }
 
       const createdIds = new Set(created.map((item) => item.nodeId))

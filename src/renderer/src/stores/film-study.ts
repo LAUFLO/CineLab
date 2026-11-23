@@ -173,7 +173,8 @@ function createStudyOutputs(
     canvas.patchNodeData(sheetId, {
       title: `${sourceName} · 分镜表`,
       text: buildStudyTableMarkdown(study),
-      status: 'done'
+      status: 'done',
+      assetOnly: true
     })
     canvas.resizeNode(sheetId, 520)
     canvas.onConnect({ source: nodeId, target: sheetId })

@@ -1,5 +1,10 @@
 import { create } from 'zustand'
-import { NODE_META, TITLE_HEIGHT, type CineNodeData, type OutputRef } from '@shared/canvas-schema'
+import {
+  mediaFrameNodeSize,
+  mediaFramePixels,
+  type CineNodeData,
+  type OutputRef
+} from '@shared/canvas-schema'
 import type { GenerateRequest } from '@shared/generation'
 import { useCanvasStore } from './canvas'
 import { useGenerationHistoryStore } from './generation-history'
@@ -97,11 +102,26 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           const sized = event.assets.find(
             (asset) => asset.width && asset.height && asset.width > 0
           )
-          if (sized?.width && sized.height) {
-            const kind = node?.data.kind ?? 'image'
-            const baseWidth = node?.measured?.width ?? NODE_META[kind].width
-            const nextHeight = Math.round((baseWidth * sized.height) / sized.width)
-            useCanvasStore.getState().resizeNode(event.nodeId, nextHeight + TITLE_HEIGHT)
+          if (
+            sized?.width &&
+            sized.height &&
+            node &&
+            (node.data.kind === 'image' || node.data.kind === 'video')
+          ) {
+            const frame = node.data.mediaFrame ?? 'standard'
+            const size = mediaFrameNodeSize(
+              sized.width,
+              sized.height,
+              mediaFramePixels(frame)
+            )
+            useCanvasStore
+              .getState()
+              .resizeNode(event.nodeId, size.height, size.width)
+            if (node.parentId) {
+              useCanvasStore
+                .getState()
+                .syncGroupBounds(node.parentId)
+            }
           }
 
           const running = { ...get().running }

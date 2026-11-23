@@ -175,7 +175,7 @@ Prompt Bar / 节点操作
 | `src/main/media/video-ops.ts` | 134 |
 | `src/main/media/video.ts` | 245 |
 | `src/main/media/vision-tasks.ts` | 102 |
-| `src/main/media/vision.ts` | 436 |
+| `src/main/media/vision.ts` | 438 |
 | `src/main/providers/agnes.ts` | 205 |
 | `src/main/providers/headers.ts` | 30 |
 | `src/main/providers/http-template.ts` | 827 |
@@ -190,7 +190,7 @@ Prompt Bar / 节点操作
 | `src/main/providers/sora.ts` | 232 |
 | `src/main/providers/volcengine.ts` | 187 |
 | `src/renderer/src/stores/generation-history.ts` | 151 |
-| `src/renderer/src/stores/generation.ts` | 213 |
+| `src/renderer/src/stores/generation.ts` | 233 |
 | `src/renderer/src/stores/stem-tasks.ts` | 297 |
 | `src/renderer/src/stores/vision-tasks.ts` | 95 |
 | `src/shared/filters.ts` | 112 |

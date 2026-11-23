@@ -238,7 +238,7 @@ export interface VisionTaskRequest {
   mask?: string
   /** outpaint-image 使用 */
   ratio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4' | '21:9'
-  /** repair-video 使用，坐标基于原视频像素 */
+  /** repair-video / matte-image / layer-split 使用，坐标基于原图像素 */
   rect?: VisionRect
 }
 

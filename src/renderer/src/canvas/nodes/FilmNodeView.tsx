@@ -3,7 +3,9 @@ import { Icon } from '../../components/Icon'
 import type { FilmNode } from '../../stores/canvas'
 
 const CARD_CLASS =
-  'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border bg-surface-raised shadow-node transition-colors duration-[120ms]'
+  'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card bg-surface-raised shadow-node transition-colors duration-[120ms]'
+const CARD_BORDER_CLASS = 'border border-border group-hover:border-border-strong'
+const CARD_SELECTED_BORDER_CLASS = 'border-2 border-border-selected'
 
 const TITLE_CLASS =
   'flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-data-[selected]:text-fg'
@@ -28,9 +30,7 @@ export function FilmNodeView({ selected }: NodeProps<FilmNode>) {
       <div
         data-node-card
         className={`${CARD_CLASS} ${
-          selected
-            ? 'border-border-selected'
-            : 'border-border group-hover:border-border-strong'
+          selected ? CARD_SELECTED_BORDER_CLASS : CARD_BORDER_CLASS
         }`}
       >
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-xs text-fg-subtle">

@@ -62,6 +62,9 @@ import type {
   SkillCloneInput,
   SkillFileContent,
   SkillFileEntry,
+  SkillImportInstallInput,
+  SkillImportKind,
+  SkillImportPreview,
   SkillOverrideInput,
   SkillScope,
   SkillUploadFolder,
@@ -553,6 +556,9 @@ export interface SkillsApi {
   ): Promise<SkillFileEntry[]>
   clone(input: SkillCloneInput): Promise<SkillAdminEntry>
   setOverride(input: SkillOverrideInput): Promise<SkillAdminEntry>
+  pickImport(kind: SkillImportKind): Promise<SkillImportPreview | null>
+  installImport(input: SkillImportInstallInput): Promise<SkillAdminEntry>
+  discardImport(token: string): Promise<void>
   openDirectory(scope: SkillScope, name?: string): Promise<void>
   openFile(scope: SkillScope, name: string, path: string): Promise<void>
 }

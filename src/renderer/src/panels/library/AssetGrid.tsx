@@ -76,9 +76,9 @@ export function AssetGrid({
         >
           {selectionMode ? (
             <span
-              className={`absolute left-2 top-2 z-[2] flex h-5 w-5 items-center justify-center rounded-full border text-xs text-fg-inverse ${
+              className={`absolute left-2 top-2 z-[2] flex h-5 w-5 items-center justify-center rounded-full border text-xs text-accent-text ${
                 selectedPaths.has(asset.path)
-                  ? 'border-pick-bar bg-pick-bar'
+                  ? 'border-accent bg-accent'
                   : 'border-border-strong bg-surface'
               }`}
             >

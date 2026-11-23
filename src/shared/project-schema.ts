@@ -81,7 +81,9 @@ export const groupColorSchema = z.enum([
   'orange',
   'rose',
   'violet',
-  'slate'
+  'slate',
+  'pink',
+  'brown'
 ])
 
 export const cineNodeSchema = z.object({
@@ -108,6 +110,7 @@ export const cineNodeSchema = z.object({
         'layer'
       ])
       .optional(),
+    mediaFrame: z.enum(['standard', 'compact']).optional(),
     refOrder: z.array(z.string().max(600)).max(64).optional(),
     studyId: z.string().max(120).optional(),
     sourceNodeId: z.string().max(120).optional(),

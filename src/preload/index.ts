@@ -550,6 +550,11 @@ const api: CineApi = {
     clone: (input) => ipcRenderer.invoke('skills:clone', input),
     setOverride: (input) =>
       ipcRenderer.invoke('skills:set-override', input),
+    pickImport: (kind) => ipcRenderer.invoke('skills:pick-import', kind),
+    installImport: (input) =>
+      ipcRenderer.invoke('skills:install-import', input),
+    discardImport: (token) =>
+      ipcRenderer.invoke('skills:discard-import', token),
     openDirectory: (scope, name) =>
       ipcRenderer.invoke('skills:open-directory', scope, name),
     openFile: (scope, name, path) =>

@@ -45,6 +45,8 @@ export interface CineNodeData extends Record<string, unknown> {
   selectedOutputId?: string
   progress?: number
   error?: string
+  /** 媒体节点尺寸档位：standard=400，compact=240 */
+  mediaFrame?: MediaFramePreset
   /** Prompt Bar 中最近一次输入的提示词，按节点保留 */
   prompt?: string
   /** Prompt Bar 中用户选择的生成模式，按节点保留 */
@@ -185,13 +187,15 @@ export type GroupColor =
   | 'rose'
   | 'violet'
   | 'slate'
+  | 'pink'
+  | 'brown'
 
 export const GROUP_COLORS: GroupColor[] = [
   'blue',
   'cyan',
   'teal',
-  'green',
-  'lime',
+  'pink',
+  'brown',
   'amber',
   'orange',
   'rose',
@@ -205,11 +209,13 @@ export const GROUP_LABELS: Record<GroupColor, string> = {
   teal: '蓝绿',
   green: '绿',
   lime: '黄绿',
-  amber: '琥珀',
+  amber: '黄',
   orange: '橙',
-  rose: '玫红',
+  rose: '红',
   violet: '紫',
-  slate: '灰'
+  slate: '灰',
+  pink: '粉',
+  brown: '棕'
 }
 
 export type GroupMode = 'normal' | 'storyboard'
@@ -268,14 +274,14 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
   },
   image: {
     label: '图片',
-    width: 360,
-    height: 348,
+    width: 400,
+    height: 225,
     templates: ['图生图', '图片高清', '局部重绘']
   },
   video: {
     label: '视频',
-    width: 480,
-    height: 270,
+    width: 400,
+    height: 225,
     templates: ['首尾帧生成视频', '音效生成视频', '5 秒视频']
   },
   audio: {
@@ -319,3 +325,46 @@ export const NODE_META: Record<CanvasNodeKind, NodeMeta> = {
 export const NODE_KINDS: NodeKind[] = ['text', 'image', 'video', 'audio']
 
 export const TITLE_HEIGHT = 28
+
+export const MEDIA_FRAME_STANDARD = 400
+export const MEDIA_FRAME_COMPACT = 240
+
+export type MediaFramePreset = 'standard' | 'compact'
+
+export function mediaFramePixels(frame: MediaFramePreset | undefined): number {
+  return frame === 'compact' ? MEDIA_FRAME_COMPACT : MEDIA_FRAME_STANDARD
+}
+
+/**
+ * 把媒体放进 16:9 内容框，保持原始画幅。
+ * 以高度为基准，宽度随画幅变化；超宽画幅受框宽限制。
+ */
+export function mediaFrameContentSize(
+  sourceWidth: number | undefined,
+  sourceHeight: number | undefined,
+  frame: number
+): { width: number; height: number } {
+  let width = sourceWidth ?? 0
+  let height = sourceHeight ?? 0
+  if (!(width > 0) || !(height > 0)) {
+    width = 16
+    height = 9
+  }
+
+  const frameHeight = Math.max(1, Math.round((frame * 9) / 16))
+  const scale = Math.min(frame / width, frameHeight / height)
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale))
+  }
+}
+
+/** 媒体节点卡片尺寸（内容框 + 标题栏）。 */
+export function mediaFrameNodeSize(
+  sourceWidth: number | undefined,
+  sourceHeight: number | undefined,
+  frame: number
+): { width: number; height: number } {
+  const content = mediaFrameContentSize(sourceWidth, sourceHeight, frame)
+  return { width: content.width, height: content.height + TITLE_HEIGHT }
+}

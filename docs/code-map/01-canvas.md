@@ -1,9 +1,9 @@
 # 01 画布
 
-日期：2026-11-19
+日期：2026-11-22
 状态：现行
-适用版本：v0.3.0
-最后核对：2026-11-19
+适用版本：v0.4.4
+最后核对：2026-11-22
 
 ## 这个模块负责什么
 
@@ -23,13 +23,15 @@
 | `CanvasNodeKind`（画布节点） | 以上 + `studio`、`film`、`video-op`、`stage` |
 | 节点组件 | `CineNodeView`、`StudioNodeView`、`StageNodeView`、`FilmNodeView`、`VideoOpNodeView`、`GroupNodeView` |
 
-`NODE_META` 定义每类节点的默认尺寸与快捷模板：文本 348×348、图片 360×348、视频 480×270、音频 200×127、剪辑室 480×340、成片 480×320、视频操作 420×200、导演台 420×280、拉片 400×250。
+`NODE_META` 定义每类节点的默认尺寸与快捷模板：文本 348×348、图片 400×225、视频 400×225、音频 200×127、剪辑室 480×340、成片 480×320、视频操作 420×200、导演台 420×280、拉片 400×250。图片/视频实际卡片尺寸由 `mediaFrame` 和素材画幅决定。
 
 ## 数据模型
 
 ### 媒体节点 `CineNodeData`
 
-关键字段：`kind`、`title`、`status`（idle/queued/running/done/error）、`text`、`prompt`、`outputs: OutputRef[]`、`selectedOutputId`、`progress`、`error`、`templates`、`assetOnly`。`assetOnly` 表示素材/派生结果节点，隐藏 PromptBar，只保留 NodeToolbar。
+关键字段：`kind`、`title`、`status`（idle/queued/running/done/error）、`text`、`prompt`、`outputs: OutputRef[]`、`selectedOutputId`、`progress`、`error`、`templates`、`assetOnly`、`mediaFrame`。`assetOnly` 表示素材/派生结果节点，隐藏 PromptBar，只保留 NodeToolbar；`mediaFrame` 为 `standard`（400 内容框）或 `compact`（240 内容框）。
+
+图片/视频节点统一用 `mediaFrameNodeSize`：单节点 400×225 内容框，分组/批量 240×135 内容框，标题栏额外 28px；21:9 对应 400×171 / 240×103。旧项目在 `loadCanvas` 中按分组、拉片/剪辑室来源和旧宽度推断档位并归一化。
 
 `OutputRef` 是一次生成结果：`id`、`path`、`scope`、`kind`、`model`、`width/height/duration/fps`、`parentOutputId`、`layer`、`textRecognition`。
 
@@ -65,6 +67,10 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 - 左侧 `+` 只作为 target 接收连线，右侧 `+` 才发起下游生成（AGENTS.md 硬性约定）。
 - 删除连线后，`clearEdgeReferences` 清理下游节点的 `sourceNodeId/sourcePath/sourceScope/sourceName`，且只在该上游没有任何剩余连线时清理。
 - 分组使用 `childrenOf`、`absolutePosition`、`remapNodeReferences`、`remapEdges` 处理子节点坐标与引用。
+- 分组颜色菜单为 5×2 圆形色点，当前色带选中环，不使用横向滚动条；色板为蓝、青、蓝绿、粉、棕、黄、橙、红、紫、灰。旧项目的绿/黄绿仍按原色显示。
+- PromptBar 的 AutoLink 与 `@` 文本匹配按标题最长优先且不重叠，避免派生文本节点标题包含上游素材标题时误加参考图。
+- 画布参考拾取支持连续多选：点击有效节点后保持拾取模式并追加参考；支持图片、视频、文本和音频节点，文本走文本上下文，音频仅视频节点可引用；返回节点/取消/Esc 结束。返回节点会重新选中并立即居中聚焦当前 PromptBar 节点。
+- PromptBar 位置跟随节点，不吸附视口边缘；节点移出视窗时提示词框同步移出。
 
 ## 节点操作
 
@@ -82,7 +88,11 @@ Store 切片：`viewport`、`graph`、`assets`、`groups`、`history`；`HISTORY
 - `itemRequired/itemOptions`：必须从菜单选一项；
 - `params`：number/string/boolean/rect 参数。
 
-`crop`、`grid-generate`、`character-sheet` 等会新建节点并连线的操作，与写回版本栈的操作分开（`nodeOperationOutputTarget`）。
+`crop`、`grid-generate`、`character-sheet`、`relight`、`color-grade`、`portrait`、`inpaint`、`erase`、`element-edit` 等会新建结果节点并连线；只有 PromptBar 直接生成写回版本栈（`nodeOperationOutputTarget`）。
+
+`cutout` 和 `layer-split` 支持 `auto` / `box` 两个子项：`box` 通过 `CropDialog` 框选 `rect`，传给视觉任务只在该区域计算显著性；不传 `rect` 时保持全图自动识别。
+
+节点右键菜单中的带菜单操作复用工具栏的 `menu` 清单，在父项右侧弹出二级浮窗（`data-context-submenu`），不再用隐藏默认项直接执行；`Menu` 通过 `keepOpenSelector` 把 portal 子菜单视为内部点击。画布/连线右键菜单保持各自的直接操作。
 
 ## 数据流
 
@@ -137,27 +147,27 @@ CineBot
 | `src/renderer/src/canvas/AddNodeMenu.tsx` | 260 |
 | `src/renderer/src/canvas/AlignmentGuides.tsx` | 29 |
 | `src/renderer/src/canvas/BottomBar.tsx` | 139 |
-| `src/renderer/src/canvas/Canvas.tsx` | 714 |
-| `src/renderer/src/canvas/CanvasContextMenu.tsx` | 135 |
+| `src/renderer/src/canvas/Canvas.tsx` | 722 |
+| `src/renderer/src/canvas/CanvasContextMenu.tsx` | 136 |
 | `src/renderer/src/canvas/EdgeContextMenu.tsx` | 40 |
-| `src/renderer/src/canvas/GroupToolbar.tsx` | 235 |
+| `src/renderer/src/canvas/GroupToolbar.tsx` | 245 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
-| `src/renderer/src/canvas/NodeContextMenu.tsx` | 497 |
-| `src/renderer/src/canvas/PromptBar.tsx` | 2185 |
+| `src/renderer/src/canvas/NodeContextMenu.tsx` | 668 |
+| `src/renderer/src/canvas/PromptBar.tsx` | 2379 |
 | `src/renderer/src/canvas/StatusBar.tsx` | 100 |
 | `src/renderer/src/canvas/StoryboardToolbar.tsx` | 359 |
 | `src/renderer/src/canvas/TopBar.tsx` | 500 |
 | `src/renderer/src/canvas/UpstreamWatcher.tsx` | 33 |
 | `src/renderer/src/canvas/alignment.ts` | 113 |
-| `src/renderer/src/canvas/context-actions.ts` | 229 |
+| `src/renderer/src/canvas/context-actions.ts` | 236 |
 | `src/renderer/src/canvas/delete-actions.ts` | 91 |
-| `src/renderer/src/canvas/edges/FlowEdge.tsx` | 72 |
-| `src/renderer/src/canvas/media-size.ts` | 45 |
+| `src/renderer/src/canvas/edges/FlowEdge.tsx` | 92 |
+| `src/renderer/src/canvas/media-size.ts` | 54 |
 | `src/renderer/src/canvas/nodes/AiOperationDialog.tsx` | 289 |
 | `src/renderer/src/canvas/nodes/AudioActionBar.tsx` | 225 |
 | `src/renderer/src/canvas/nodes/AudioPlayer.tsx` | 379 |
-| `src/renderer/src/canvas/nodes/CineNodeView.tsx` | 779 |
-| `src/renderer/src/canvas/nodes/CropDialog.tsx` | 154 |
+| `src/renderer/src/canvas/nodes/CineNodeView.tsx` | 791 |
+| `src/renderer/src/canvas/nodes/CropDialog.tsx` | 162 |
 | `src/renderer/src/canvas/nodes/DepthCaptureDialog.tsx` | 136 |
 | `src/renderer/src/canvas/nodes/FilmNodeView.tsx` | 58 |
 | `src/renderer/src/canvas/nodes/FilmStudyInsights.tsx` | 273 |
@@ -165,7 +175,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/GroupNodeView.tsx` | 131 |
 | `src/renderer/src/canvas/nodes/MaskEditorDialog.tsx` | 377 |
 | `src/renderer/src/canvas/nodes/ModelConfigDialog.tsx` | 1628 |
-| `src/renderer/src/canvas/nodes/NodeToolbar.tsx` | 1193 |
+| `src/renderer/src/canvas/nodes/NodeToolbar.tsx` | 1274 |
 | `src/renderer/src/canvas/nodes/PanoramaViewer.tsx` | 200 |
 | `src/renderer/src/canvas/nodes/RemakeMappingDialog.tsx` | 155 |
 | `src/renderer/src/canvas/nodes/SphereDialog.tsx` | 393 |
@@ -180,31 +190,31 @@ CineBot
 | `src/renderer/src/canvas/nodes/VideoPlayer.tsx` | 328 |
 | `src/renderer/src/canvas/nodes/VideoPreview.tsx` | 184 |
 | `src/renderer/src/canvas/nodes/film-study-runner.ts` | 62 |
-| `src/renderer/src/canvas/nodes/node-operation-runner.ts` | 1492 |
-| `src/renderer/src/canvas/nodes/node-operations.ts` | 612 |
+| `src/renderer/src/canvas/nodes/node-operation-runner.ts` | 1559 |
+| `src/renderer/src/canvas/nodes/node-operations.ts` | 624 |
 | `src/renderer/src/canvas/nodes/playbackBudget.ts` | 97 |
 | `src/renderer/src/canvas/nodes/study-sheet.ts` | 300 |
 | `src/renderer/src/canvas/nodes/text-markdown.ts` | 101 |
 | `src/renderer/src/canvas/nodes/useBoxEditor.ts` | 131 |
-| `src/renderer/src/canvas/promptbar-model.tsx` | 150 |
+| `src/renderer/src/canvas/promptbar-model.tsx` | 201 |
 | `src/renderer/src/canvas/promptbar/MentionMenu.tsx` | 165 |
 | `src/renderer/src/canvas/promptbar/ModelMenu.tsx` | 95 |
 | `src/renderer/src/canvas/promptbar/ParamPanel.tsx` | 232 |
 | `src/renderer/src/canvas/promptbar/UploadMenu.tsx` | 45 |
 | `src/renderer/src/stores/canvas-model.ts` | 345 |
 | `src/renderer/src/stores/canvas.ts` | 211 |
-| `src/renderer/src/stores/canvas/slices/assets.ts` | 524 |
-| `src/renderer/src/stores/canvas/slices/graph.ts` | 618 |
+| `src/renderer/src/stores/canvas/slices/assets.ts` | 587 |
+| `src/renderer/src/stores/canvas/slices/graph.ts` | 665 |
 | `src/renderer/src/stores/canvas/slices/groups.ts` | 776 |
 | `src/renderer/src/stores/canvas/slices/history.ts` | 488 |
 | `src/renderer/src/stores/canvas/slices/viewport.ts` | 21 |
 | `src/renderer/src/stores/edge-references.ts` | 94 |
 | `src/renderer/src/stores/toolbar.ts` | 70 |
 | `src/shared/canvas-commands.ts` | 303 |
-| `src/shared/canvas-schema.ts` | 322 |
+| `src/shared/canvas-schema.ts` | 371 |
 | `src/shared/canvas-summary.ts` | 54 |
 | `src/shared/components.ts` | 59 |
-| `src/shared/node-operation-specs.ts` | 441 |
+| `src/shared/node-operation-specs.ts` | 464 |
 | `src/shared/operation-schema.ts` | 64 |
 <!-- AUTO:files:end -->
 
@@ -263,7 +273,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/study-sheet.ts` | `studyClock`、`segmentDuration`、`segmentMetaLine`、`buildStudySheetMarkdown`、`buildStudyTableMarkdown`、`buildShotMarkdown`、`buildRemakePrompt`、`buildStyleMarkdown`、`ShotGroup`、`groupShotsByScene`、`segmentCopyText` |
 | `src/renderer/src/canvas/nodes/text-markdown.ts` | `MARKDOWN_CLASS`、`renderMarkdown` |
 | `src/renderer/src/canvas/nodes/useBoxEditor.ts` | `Box`、`DragMode`、`useBoxEditor` |
-| `src/renderer/src/canvas/promptbar-model.tsx` | `WIDTH`、`HEIGHT`、`PLACEHOLDER`、`ModelOption`、`defaultParams`、`paramGroupName`、`paramLabel`、`ratioOf`、`MentionGroupName`、`RefKind`、`MentionKind`、`PickedRef`、`MentionItem`、`VIDEO_PATH`、`MAX_TEXT_CONTEXT`、`TextContext`、`buildPromptWithContext`、`isVideoPath`、`MENTION_GROUPS`、`escapeRegExp`、`renderMentionText` |
+| `src/renderer/src/canvas/promptbar-model.tsx` | `WIDTH`、`HEIGHT`、`PLACEHOLDER`、`ModelOption`、`defaultParams`、`paramGroupName`、`paramLabel`、`ratioOf`、`MentionGroupName`、`RefKind`、`MentionKind`、`PickedRef`、`MentionItem`、`VIDEO_PATH`、`MAX_TEXT_CONTEXT`、`TextContext`、`Span`、`TitleSpan`、`matchTitleSpans`、`buildPromptWithContext`、`isVideoPath`、`MENTION_GROUPS`、`escapeRegExp`、`renderMentionText` |
 | `src/renderer/src/canvas/promptbar/MentionMenu.tsx` | `MentionMenu` |
 | `src/renderer/src/canvas/promptbar/ModelMenu.tsx` | `ModelMenu` |
 | `src/renderer/src/canvas/promptbar/ParamPanel.tsx` | `ParamPanel` |
@@ -278,7 +288,7 @@ CineBot
 | `src/renderer/src/stores/edge-references.ts` | `clearEdgeReferences` |
 | `src/renderer/src/stores/toolbar.ts` | `PinnedMap`、`useToolbarStore`、`TOOLBAR_MAX_PRIMARY` |
 | `src/shared/canvas-commands.ts` | `CanvasCommandNode`、`CanvasCommandEdge`、`CanvasCommand`、`CanvasCommandChange`、`CanvasCommandState`、`CanvasCommandResult`、`emptyCanvasChange`、`applyCanvasCommand`、`applyCanvasBatch` |
-| `src/shared/canvas-schema.ts` | `NodeKind`、`CanvasNodeKind`、`FilmStatus`、`NodeStatus`、`OutputRef`、`CineNodeData`、`StudioNodeData`、`FilmNodeData`、`StageNodeData`、`VideoOpNodeData`、`GroupColor`、`GROUP_COLORS`、`GROUP_LABELS`、`GroupMode`、`GroupRatio`、`GROUP_RATIOS`、`GROUP_RATIO_LABEL`、`GROUP_RATIO_VALUE`、`STORYBOARD_MAX_NODES`、`STORYBOARD_CELL_WIDTH`、`STORYBOARD_GAP`、`GRID_SPLIT_CELL_WIDTH`、`GroupNodeData`、`GROUP_HEADER_HEIGHT` …（共 30 个） |
+| `src/shared/canvas-schema.ts` | `NodeKind`、`CanvasNodeKind`、`FilmStatus`、`NodeStatus`、`OutputRef`、`CineNodeData`、`StudioNodeData`、`FilmNodeData`、`StageNodeData`、`VideoOpNodeData`、`GroupColor`、`GROUP_COLORS`、`GROUP_LABELS`、`GroupMode`、`GroupRatio`、`GROUP_RATIOS`、`GROUP_RATIO_LABEL`、`GROUP_RATIO_VALUE`、`STORYBOARD_MAX_NODES`、`STORYBOARD_CELL_WIDTH`、`STORYBOARD_GAP`、`GRID_SPLIT_CELL_WIDTH`、`GroupNodeData`、`GROUP_HEADER_HEIGHT` …（共 36 个） |
 | `src/shared/canvas-summary.ts` | `CanvasNodeSummary`、`CanvasEdgeSummary`、`summarizeCanvasNode`、`summarizeCanvasEdge` |
 | `src/shared/components.ts` | `ComponentKind`、`ComponentState`、`ComponentManifest`、`ComponentStatus`、`ComponentEvent`、`ComponentInstallResult` |
 | `src/shared/node-operation-specs.ts` | `NodeOperationAgentSpec`、`NodeOperationParamType`、`NodeOperationParamSpec`、`NodeOperationKindSpec`、`NodeOperationOutputTarget`、`isResultOutputOp`、`isResultOutput`、`nodeOperationOutputTarget`、`NODE_OPERATION_AGENT_SPECS`、`nodeOperationAgentSpec`、`isAgentOperationParamSpec`、`validateNodeOperationParams` |

@@ -102,7 +102,7 @@ export function ToolbarSettings() {
                   size="none"
                   className={`relative h-3 w-[22px] shrink-0 !rounded-pill p-0 ${
                     isPinned
-                      ? '!bg-pick-bar hover:!bg-pick-bar'
+                      ? '!bg-switch-on hover:!bg-switch-on'
                       : '!bg-border-strong hover:!bg-border-strong'
                   }`}
                   aria-pressed={isPinned}

@@ -187,6 +187,16 @@ const FRAME_MENU: OperationMenuItem[] = [
   { id: 'current', label: '当前帧', hint: '播放头位置' }
 ]
 
+const CUTOUT_MENU: OperationMenuItem[] = [
+  { id: 'auto', label: '自动抠图', hint: '识别主体' },
+  { id: 'box', label: '框选抠图', hint: '指定物体' }
+]
+
+const LAYER_SPLIT_MENU: OperationMenuItem[] = [
+  { id: 'auto', label: '自动分层', hint: '识别前景' },
+  { id: 'box', label: '框选分层', hint: '指定物体' }
+]
+
 
 const VIDEO_CROP_MENU: OperationMenuItem[] = [
   { id: '16:9', label: '16:9' },
@@ -442,7 +452,8 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     defaultPrimary: true,
     implemented: true,
     section: 'edit',
-    prompt: PROMPT_CUTOUT
+    prompt: PROMPT_CUTOUT,
+    menu: CUTOUT_MENU
   },
   {
     id: 'inpaint',
@@ -484,6 +495,7 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     kinds: ['image'],
     implemented: true,
     section: 'edit',
+    menu: LAYER_SPLIT_MENU,
     requires: {
       type: 'vision-component',
       label: '需要安装视觉组件（批次 2）',

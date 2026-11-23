@@ -6,7 +6,9 @@ import { useStageStore } from '../../stage/stageStore'
 import { Input, Button } from '../../components/ui'
 
 const CARD_CLASS =
-  'relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-card border bg-surface-raised p-4 text-center shadow-node transition-colors duration-[120ms]'
+  'relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-card bg-surface-raised p-4 text-center shadow-node transition-colors duration-[120ms]'
+const CARD_BORDER_CLASS = 'border border-border group-hover:border-border-strong'
+const CARD_SELECTED_BORDER_CLASS = 'border-2 border-border-selected'
 
 const TITLE_CLASS =
   'flex h-7 shrink-0 items-center gap-[5px] overflow-hidden pl-1 text-xs whitespace-nowrap text-fg-muted group-data-[selected]:text-fg'
@@ -63,9 +65,7 @@ export function StageNodeView({ id, data, selected }: NodeProps<StageNode>) {
       <div
         data-node-card
         className={`${CARD_CLASS} ${
-          selected
-            ? 'border-border-selected'
-            : 'border-border group-hover:border-border-strong'
+          selected ? CARD_SELECTED_BORDER_CLASS : CARD_BORDER_CLASS
         }`}
         onDoubleClick={(event) => {
           event.stopPropagation()

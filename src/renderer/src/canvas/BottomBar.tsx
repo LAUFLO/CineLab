@@ -31,7 +31,7 @@ export function BottomBar() {
         type="button"
         variant="ghost"
         size="none"
-        className="h-7 w-7 rounded-md !bg-pick-bar !text-fg-inverse hover:!bg-[color-mix(in_srgb,var(--pick-bar)_86%,var(--text-1))] hover:!text-fg-inverse"
+        className="h-7 w-7 rounded-md !bg-accent !text-accent-text hover:!bg-accent-hover hover:!text-accent-text"
         title="添加节点或资源"
         onClick={add}
       >

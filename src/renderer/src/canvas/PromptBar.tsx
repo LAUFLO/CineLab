@@ -62,7 +62,6 @@ import { MaskEditorDialog } from './nodes/MaskEditorDialog'
 
 import {
   WIDTH,
-  HEIGHT,
   PLACEHOLDER,
   ModelOption,
   defaultParams,
@@ -80,6 +79,7 @@ import {
   isVideoPath,
   MENTION_GROUPS,
   escapeRegExp,
+  matchTitleSpans,
   renderMentionText
 } from './promptbar-model'
 
@@ -94,7 +94,7 @@ interface ModeSlotView {
 const TOOL_CLASS =
   'inline-flex h-6 items-center gap-[5px] whitespace-nowrap !rounded-md px-[7px] text-xs !font-normal transition-colors'
 const TOOL_ACTIVE_CLASS =
-  'bg-fg !text-fg-inverse hover:!bg-fg hover:!text-fg-inverse'
+  'bg-accent !text-accent-text hover:!bg-accent-hover hover:!text-accent-text'
 
 const CHIP_CLASS =
   'inline-flex h-[26px] items-center gap-1 whitespace-nowrap !rounded-md px-2 text-xs !font-normal'
@@ -111,6 +111,8 @@ const SLOT_EMPTY_CLASS =
   'flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-border bg-surface-hover text-[10px] text-fg-subtle'
 const SLOT_EMPTY_ACTION_CLASS =
   '!flex h-10 w-10 overflow-hidden !rounded-md border border-dashed border-border bg-surface-hover p-0 text-[10px] !font-normal !text-fg-subtle enabled:hover:border-link enabled:hover:!text-link disabled:cursor-not-allowed disabled:!pointer-events-auto disabled:hover:!text-fg-subtle disabled:!opacity-60'
+const SLOT_REMOVE_CLASS =
+  'absolute right-0.5 top-0.5 z-[3] !flex h-3 w-3 items-center justify-center !rounded-full border border-border bg-surface p-0 !font-normal text-fg-muted hover:!border-danger hover:!bg-danger hover:!text-media-text'
 
 const MIRROR_CLASS =
   'pointer-events-none absolute inset-0 h-full w-full overflow-hidden whitespace-pre-wrap break-words bg-transparent px-1.5 py-2 text-sm leading-5 text-fg [word-break:break-word]'
@@ -120,16 +122,18 @@ const INPUT_CLASS =
 const SEND_CLASS = '!rounded-full'
 const SEND_IDLE_CLASS = 'bg-surface-hover !text-fg-subtle'
 const SEND_READY_CLASS =
-  'bg-fg !text-fg-inverse hover:!bg-fg hover:!text-fg-inverse'
+  'bg-accent !text-accent-text hover:!bg-accent-hover hover:!text-accent-text'
 const SEND_STOP_CLASS =
   'bg-danger !text-media-text hover:!bg-danger hover:!text-media-text'
+const PICK_ACTION_CLASS =
+  '!h-[26px] gap-1 !rounded-md !border-current !px-2.5 !py-0 text-xs !font-normal !text-inherit opacity-[0.85] hover:!border-current hover:!text-inherit hover:opacity-100'
 
 export function PromptBar() {
   const nodes = useCanvasStore((state) => state.nodes)
   const edges = useCanvasStore((state) => state.edges)
   const onConnect = useCanvasStore((state) => state.onConnect)
   const onEdgesChange = useCanvasStore((state) => state.onEdgesChange)
-  const { flowToScreenPosition, fitView } = useReactFlow()
+  const { flowToScreenPosition, fitView, setCenter } = useReactFlow()
   const viewport = useViewport()
 
   const providers = useSettingsStore((state) => state.providers)
@@ -357,7 +361,12 @@ export function PromptBar() {
     const onClick = (event: MouseEvent): void => {
       if (!suppressClickRef.current) return
       const target = event.target as HTMLElement
-      if (target.closest('.promptbar')) return
+      if (
+        target.closest('.promptbar') ||
+        target.closest('.canvas-pick-bar')
+      ) {
+        return
+      }
       suppressClickRef.current = false
       event.preventDefault()
       event.stopPropagation()
@@ -397,23 +406,39 @@ export function PromptBar() {
         setPicking(false)
         return
       }
+
+      // 文本节点按文本上下文引用，不依赖 outputs，和直接连线逻辑一致
+      if (source.type === 'cine' && source.data.kind === 'text') {
+        if (!source.data.text?.trim()) {
+          setPickHint('该节点还没有文本内容')
+          return
+        }
+        onConnect({ source: sourceId, target: node.id })
+        return
+      }
+
       const output = selectedNodeOutput(source)
 
-      setPicking(false)
       if (!output) {
         setPickHint('该节点还没有输出')
         return
       }
-      if (output.kind !== 'image' && output.kind !== 'video') {
-        setPickHint('只能引用图片或视频输出')
-        return
-      }
-      if (output.kind === 'video' && kind !== 'video') {
-        setPickHint('只有视频节点可以引用视频输出')
+      if (output.kind === 'audio') {
+        if (kind !== 'video') {
+          setPickHint('只有视频节点可以引用音频输出')
+          return
+        }
+      } else if (output.kind === 'video') {
+        if (kind !== 'video') {
+          setPickHint('只有视频节点可以引用视频输出')
+          return
+        }
+      } else if (output.kind !== 'image') {
+        setPickHint('该节点输出不支持参考')
         return
       }
 
-      const refKind: RefKind = output.kind === 'video' ? 'video' : 'image'
+      const refKind: RefKind = output.kind
       onConnect({ source: sourceId, target: node.id })
       setPickedRefs((prev) =>
         prev.some(
@@ -423,6 +448,7 @@ export function PromptBar() {
         )
           ? prev
           : [
+              ...prev,
               {
                 path: output.path,
                 role: 'reference',
@@ -595,20 +621,8 @@ export function PromptBar() {
       node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
     const zoom = viewport.zoom
 
-    const left = Math.max(
-      16,
-      Math.min(
-        position.x + (width * zoom) / 2 - WIDTH / 2,
-        window.innerWidth - WIDTH - 16
-      )
-    )
-    const top = Math.max(
-      16,
-      Math.min(
-        position.y + height * zoom + 16,
-        window.innerHeight - HEIGHT - 16
-      )
-    )
+    const left = position.x + (width * zoom) / 2 - WIDTH / 2
+    const top = position.y + height * zoom + 16
 
     return { left, top }
   }, [node, nodes, flowToScreenPosition, viewport.x, viewport.y, viewport.zoom])
@@ -831,16 +845,48 @@ export function PromptBar() {
   })()
   const refs = refsResult.list
 
+  const promptValue = promptText.trim()
+  const textTitles = (() => {
+    const titles: string[] = []
+    for (const entry of nodes) {
+      if (entry.type !== 'cine' || entry.data.kind !== 'text') continue
+      if (!entry.data.text?.trim()) continue
+      titles.push(entry.data.title)
+    }
+    return titles
+  })()
+  const explicitTextSpans = promptValue
+    ? matchTitleSpans(promptValue, textTitles, { prefix: '@' })
+    : []
+
   const autoRefs = (() => {
     if (!autoLink) return []
-    const text = promptText.trim()
+    const text = promptValue
     if (!text) return []
 
     const result: PickedRef[] = []
 
+    const titleSpans = matchTitleSpans(
+      text,
+      [
+        ...nodes
+          .filter((entry) => entry.id !== node.id && !isGroupNode(entry))
+          .map((entry) => entry.data.title),
+        ...materials
+          .filter(
+            (material) =>
+              material.kind === 'image' || material.kind === 'video'
+          )
+          .map((material) => material.name),
+        ...characters.map((card) => card.name)
+      ],
+      { occupied: explicitTextSpans }
+    )
+    const matchedTitles = new Set(titleSpans.map((span) => span.name))
+
     for (const item of nodes) {
       if (item.id === node.id || isGroupNode(item)) continue
-      if (!text.includes(item.data.title)) continue
+      if (!matchedTitles.has(item.data.title)) continue
       const output = selectedNodeOutput(item)
       if (output?.kind === 'image') {
         result.push({
@@ -862,7 +908,7 @@ export function PromptBar() {
     for (const material of materials) {
       if (material.kind !== 'image' && material.kind !== 'video') continue
       if (material.kind === 'video' && kind !== 'video') continue
-      if (!text.includes(material.name)) continue
+      if (!matchedTitles.has(material.name)) continue
       result.push({
         path: material.path,
         role: 'reference',
@@ -872,7 +918,7 @@ export function PromptBar() {
     }
 
     for (const card of characters) {
-      if (!text.includes(card.name)) continue
+      if (!matchedTitles.has(card.name)) continue
       for (const path of card.referencePaths) {
         result.push({ path, role: 'reference', scope: 'global', kind: 'image' })
       }
@@ -985,6 +1031,52 @@ export function PromptBar() {
     useCanvasStore.getState().patchNodeData(node.id, { refOrder: next })
   }
 
+  const removeSlotRef = (ref: PickedRef): void => {
+    if (!node) return
+    const key = `${ref.scope ?? 'project'}:${ref.path}`
+    setPickedRefs((prev) =>
+      prev.filter((item) => `${item.scope ?? 'project'}:${item.path}` !== key)
+    )
+    setRefPreview(null)
+
+    const store = useCanvasStore.getState()
+    const removing: string[] = []
+    for (const edge of store.edges) {
+      if (edge.target !== node.id) continue
+      const source = store.nodes.find((item) => item.id === edge.source)
+      if (!source) continue
+      const entries = isGroupNode(source)
+        ? store.nodes.filter((item) => item.parentId === source.id)
+        : [source]
+      const matched = entries.some((entry) => {
+        if (isGroupNode(entry)) return false
+        return nodeOutputs(entry).some(
+          (output) =>
+            output.path === ref.path &&
+            (output.scope ?? 'project') === (ref.scope ?? 'project')
+        )
+      })
+      if (matched) removing.push(edge.id)
+    }
+    if (removing.length > 0) store.removeEdges(removing)
+
+    const refOrder = node.data.refOrder ?? []
+    if (refOrder.includes(key)) {
+      store.patchNodeData(node.id, {
+        refOrder: refOrder.filter((item) => item !== key)
+      })
+    }
+  }
+
+  const removeTextSlot = (sourceId: string): void => {
+    if (!node) return
+    const store = useCanvasStore.getState()
+    const removing = store.edges
+      .filter((edge) => edge.target === node.id && edge.source === sourceId)
+      .map((edge) => edge.id)
+    if (removing.length > 0) store.removeEdges(removing)
+  }
+
   const textContexts = (() => {
     const result: TextContext[] = []
     const seen = new Set<string>()
@@ -1013,20 +1105,26 @@ export function PromptBar() {
 
     const text = promptText.trim()
     if (text) {
-      // @ 引用的文本节点不依赖“自动连线”开关。
+      // @ 引用的文本节点不依赖“自动连线”开关；按最长标题匹配，避免命中更长标题的一部分。
+      const explicitTitles = new Set(explicitTextSpans.map((span) => span.name))
       for (const item of nodes) {
         if (item.id === node.id || isGroupNode(item)) continue
         if (item.data.kind !== 'text') continue
-        if (!text.includes(`@${item.data.title}`)) continue
+        if (!explicitTitles.has(item.data.title)) continue
         collect(item)
       }
-    }
 
-    if (autoLink && text) {
-      for (const item of nodes) {
-        if (item.id === node.id || isGroupNode(item)) continue
-        if (!text.includes(item.data.title)) continue
-        collect(item)
+      if (autoLink) {
+        const autoSpans = matchTitleSpans(text, textTitles, {
+          occupied: explicitTextSpans
+        })
+        const autoTitles = new Set(autoSpans.map((span) => span.name))
+        for (const item of nodes) {
+          if (item.id === node.id || isGroupNode(item)) continue
+          if (item.data.kind !== 'text') continue
+          if (!autoTitles.has(item.data.title)) continue
+          collect(item)
+        }
       }
     }
 
@@ -1147,10 +1245,31 @@ export function PromptBar() {
   }
 
   const modeSlots: ModeSlotView[] = (() => {
-    const empty: ModeSlotView[] = []
-    if (!slotMode) return empty
+    if (!slotMode) {
+      // 未配置模型时没有固定槽位，仍把已连接的素材按通用参考槽展示
+      const imageCount = mergedRefs.filter((ref) => ref.kind === 'image').length
+      let imageIndex = 0
+      return mergedRefs
+        .filter((ref) => ref.role !== 'mask')
+        .map((ref) => {
+          const index = ref.kind === 'image' ? ++imageIndex : 0
+          return {
+            id: `unassigned-${ref.scope ?? 'project'}:${ref.path}`,
+            label:
+              ref.kind === 'video'
+                ? '参考视频'
+                : ref.kind === 'audio'
+                  ? '参考音频'
+                  : imageCount > 1
+                    ? `图${index}`
+                    : '参考图',
+            ref,
+            role: 'reference' as ReferenceRole
+          }
+        })
+    }
     const definition = getModelModeDefinition(slotMode)
-    if (!definition) return empty
+    if (!definition) return []
     const slots = definition.slots
     const images = mergedRefs.filter(
       (ref) => ref.kind === 'image' && ref.role !== 'mask'
@@ -1548,18 +1667,52 @@ export function PromptBar() {
     })
   }
 
+  const focusActiveNode = (): void => {
+    if (!node) return
+    setPicking(false)
+    setPickHint(null)
+    const canvas = useCanvasStore.getState()
+    canvas.onNodesChange(
+      canvas.nodes.map((entry) => ({
+        id: entry.id,
+        type: 'select' as const,
+        selected: entry.id === node.id
+      }))
+    )
+    const absolute = absolutePosition(node, nodes)
+    const width = node.measured?.width ?? NODE_META[node.data.kind].width
+    const height =
+      node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
+    void setCenter(absolute.x + width / 2, absolute.y + height / 2, {
+      zoom: 1.5,
+      duration: 0
+    })
+  }
+
   return (
     <>
       {picking ? (
-        <div className="canvas-pick-bar fixed left-1/2 top-3 z-[120] flex h-10 -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-card bg-pick-bar px-2 pl-3.5 text-[13px] text-fg-inverse shadow-float [-webkit-app-region:no-drag]">
+        <div className="canvas-pick-bar fixed left-1/2 top-16 z-[120] flex h-10 -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-card bg-accent px-2 pl-3.5 text-[13px] text-accent-text shadow-float [-webkit-app-region:no-drag]">
           <Icon name="frame" size={14} />
           <span>从画布选择节点作为参考</span>
-          <span className="text-[11px] opacity-[0.72]">Esc 退出</span>
           <Button
             type="button"
             variant="secondary"
             size="none"
-            className="!h-[26px] !rounded-md !border-current !px-2.5 !py-0 text-xs !font-normal !text-inherit opacity-[0.85] hover:!border-current hover:!text-inherit hover:opacity-100"
+            className={PICK_ACTION_CLASS}
+            onClick={(event) => {
+              event.stopPropagation()
+              focusActiveNode()
+            }}
+          >
+            <Icon name="target" size={13} />
+            返回节点
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="none"
+            className={PICK_ACTION_CLASS}
             onClick={(event) => {
               event.stopPropagation()
               setPicking(false)
@@ -1660,7 +1813,7 @@ export function PromptBar() {
                 key={`text:${slot.nodeId}`}
                 data-slot-kind="text"
               >
-                <span className="pointer-events-none absolute left-0.5 top-0.5 z-[1] max-w-[calc(100%-4px)] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg">
+                <span className="pointer-events-none absolute left-0.5 top-0.5 z-[1] max-w-[calc(100%-16px)] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg">
                   {slot.title}
                 </span>
                 <Button
@@ -1684,6 +1837,20 @@ export function PromptBar() {
                     <Icon name="text" size={16} />
                   </span>
                 </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className={SLOT_REMOVE_CLASS}
+                  title="删除参考"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    removeTextSlot(slot.nodeId)
+                  }}
+                >
+                  <Icon name="close" size={8} />
+                </Button>
               </div>
             ))}
             {modeSlots.map((slot) => (
@@ -1694,7 +1861,13 @@ export function PromptBar() {
                   slot.ref?.kind ?? (slot.role === 'mask' ? 'mask' : 'empty')
                 }
               >
-                <span className="pointer-events-none absolute left-0.5 top-0.5 z-[1] max-w-[calc(100%-4px)] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg">
+                <span
+                  className={`pointer-events-none absolute left-0.5 top-0.5 z-[1] truncate rounded-[2px] bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] px-[3px] text-[8px] leading-3 text-fg ${
+                    slot.ref || slot.role === 'mask'
+                      ? 'max-w-[calc(100%-16px)]'
+                      : 'max-w-[calc(100%-4px)]'
+                  }`}
+                >
                   {slot.label}
                 </span>
                 {slot.role === 'mask' ? (
@@ -1721,11 +1894,11 @@ export function PromptBar() {
                           type="button"
                           variant="ghost"
                           size="none"
-                          className="absolute right-0.5 top-0.5 h-4 w-4 !rounded-full border border-border bg-surface p-0 text-[11px] leading-none !font-normal text-fg-muted hover:bg-surface-hover hover:text-fg"
+                          className={SLOT_REMOVE_CLASS}
                           title="清除蒙版"
                           onClick={() => setMaskDraft(null)}
                         >
-                          ×
+                          <Icon name="close" size={8} />
                         </Button>
                       </>
                     ) : (
@@ -1747,69 +1920,85 @@ export function PromptBar() {
                     )}
                   </div>
                 ) : slot.ref ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="none"
-                    className={SLOT_THUMB_CLASS}
-                    title="拖动交换位置，双击在画布上定位"
-                    draggable
-                    onDragStart={() => {
-                      if (!slot.ref) return
-                      setDraggedSlot(
-                        `${slot.ref.scope ?? 'project'}:${slot.ref.path}`
-                      )
-                    }}
-                    onDragEnd={() => setDraggedSlot(null)}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault()
-                      if (!slot.ref) return
-                      const toKey = `${slot.ref.scope ?? 'project'}:${slot.ref.path}`
-                      if (draggedSlot) swapRefs(draggedSlot, toKey)
-                      setDraggedSlot(null)
-                    }}
-                    onPointerEnter={(event) => {
-                      if (!slot.ref) return
-                      const rect = event.currentTarget.getBoundingClientRect()
-                      setRefPreview({
-                        path: slot.ref.path,
-                        kind: slot.ref.kind,
-                        scope: slot.ref.scope,
-                        x: rect.left + rect.width / 2,
-                        y: rect.top - 8
-                      })
-                    }}
-                    onPointerLeave={() => setRefPreview(null)}
-                    onDoubleClick={(event) => {
-                      event.preventDefault()
-                      event.stopPropagation()
-                      if (slot.ref) handleRefDoubleClick(slot.ref)
-                    }}
-                  >
-                    {slot.ref.kind === 'video' ? (
-                      <video
-                        className={SLOT_MEDIA_CLASS}
-                        src={`${assetUrl(slot.ref.path, slot.ref.scope)}#t=0.1`}
-                        muted
-                        playsInline
-                        preload="metadata"
-                      />
-                    ) : slot.ref.kind === 'audio' ? (
-                      <span
-                        className="flex h-full w-full items-center justify-center text-fg-muted"
-                        title={slot.ref.path.split(/[\\/]/).pop()}
-                      >
-                        <Icon name="audio" size={16} />
-                      </span>
-                    ) : (
-                      <img
-                        className={SLOT_MEDIA_CLASS}
-                        src={assetUrl(slot.ref.path, slot.ref.scope)}
-                        alt=""
-                      />
-                    )}
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="none"
+                      className={SLOT_THUMB_CLASS}
+                      title="拖动交换位置，双击在画布上定位"
+                      draggable
+                      onDragStart={() => {
+                        if (!slot.ref) return
+                        setDraggedSlot(
+                          `${slot.ref.scope ?? 'project'}:${slot.ref.path}`
+                        )
+                      }}
+                      onDragEnd={() => setDraggedSlot(null)}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={(event) => {
+                        event.preventDefault()
+                        if (!slot.ref) return
+                        const toKey = `${slot.ref.scope ?? 'project'}:${slot.ref.path}`
+                        if (draggedSlot) swapRefs(draggedSlot, toKey)
+                        setDraggedSlot(null)
+                      }}
+                      onPointerEnter={(event) => {
+                        if (!slot.ref) return
+                        const rect = event.currentTarget.getBoundingClientRect()
+                        setRefPreview({
+                          path: slot.ref.path,
+                          kind: slot.ref.kind,
+                          scope: slot.ref.scope,
+                          x: rect.left + rect.width / 2,
+                          y: rect.top - 8
+                        })
+                      }}
+                      onPointerLeave={() => setRefPreview(null)}
+                      onDoubleClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        if (slot.ref) handleRefDoubleClick(slot.ref)
+                      }}
+                    >
+                      {slot.ref.kind === 'video' ? (
+                        <video
+                          className={SLOT_MEDIA_CLASS}
+                          src={`${assetUrl(slot.ref.path, slot.ref.scope)}#t=0.1`}
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : slot.ref.kind === 'audio' ? (
+                        <span
+                          className="flex h-full w-full items-center justify-center text-fg-muted"
+                          title={slot.ref.path.split(/[\\/]/).pop()}
+                        >
+                          <Icon name="audio" size={16} />
+                        </span>
+                      ) : (
+                        <img
+                          className={SLOT_MEDIA_CLASS}
+                          src={assetUrl(slot.ref.path, slot.ref.scope)}
+                          alt=""
+                        />
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="none"
+                      className={SLOT_REMOVE_CLASS}
+                      title="删除参考"
+                      onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        if (slot.ref) removeSlotRef(slot.ref)
+                      }}
+                    >
+                      <Icon name="close" size={8} />
+                    </Button>
+                  </>
                 ) : (
                   <div className={SLOT_EMPTY_CLASS}>空</div>
                 )}
@@ -2142,6 +2331,7 @@ export function PromptBar() {
             >
               {refPreview.kind === 'video' ? (
                 <video
+                  className="block max-h-[160px] w-auto max-w-[240px] rounded-md object-contain"
                   src={`${assetUrl(refPreview.path, refPreview.scope)}#t=0.1`}
                   muted
                   playsInline
@@ -2157,7 +2347,11 @@ export function PromptBar() {
                   </span>
                 </div>
               ) : (
-                <img src={assetUrl(refPreview.path, refPreview.scope)} alt="" />
+                <img
+                  className="block max-h-[160px] w-auto max-w-[240px] rounded-md object-contain"
+                  src={assetUrl(refPreview.path, refPreview.scope)}
+                  alt=""
+                />
               )}
             </div>,
             document.body

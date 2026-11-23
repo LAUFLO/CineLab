@@ -22,6 +22,8 @@ export interface MenuProps {
   placement?: 'cursor' | 'auto' | 'above'
   /** 菜单内容最大高度；不传时按锚点可用空间计算 */
   maxHeight?: number
+  /** portal 渲染的二级子菜单选择器；命中时视作菜单内部，不触发关闭 */
+  keepOpenSelector?: string
 }
 
 export function Menu({
@@ -34,7 +36,8 @@ export function Menu({
   className,
   onContextMenu,
   placement = 'cursor',
-  maxHeight
+  maxHeight,
+  keepOpenSelector
 }: MenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const [layout, setLayout] = useState<{
@@ -46,7 +49,15 @@ export function Menu({
     if (!open) return
 
     const onPointerDown = (event: PointerEvent): void => {
-      if (menuRef.current?.contains(event.target as Node)) return
+      const target = event.target
+      if (menuRef.current?.contains(target as Node)) return
+      if (
+        keepOpenSelector &&
+        target instanceof Element &&
+        target.closest(keepOpenSelector)
+      ) {
+        return
+      }
       onClose()
     }
 
@@ -82,7 +93,7 @@ export function Menu({
       document.removeEventListener('pointerdown', onPointerDown, true)
       document.removeEventListener('keydown', onKeyDown, true)
     }
-  }, [open, onClose])
+  }, [open, onClose, keepOpenSelector])
 
   useLayoutEffect(() => {
     if (!open) {

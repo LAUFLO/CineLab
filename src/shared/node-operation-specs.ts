@@ -71,13 +71,19 @@ const NEW_NODE_OPERATION_IDS = new Set([
   'subtitle',
   'shot-retake',
   'element-replace',
-  'extend'
+  'extend',
+  'relight',
+  'color-grade',
+  'portrait',
+  'inpaint',
+  'erase',
+  'element-edit'
 ])
 
 /**
  * 会产生“结果节点”的输出 op。结果节点只保留上方工具栏，不显示 PromptBar。
  * 注意：color-grade / relight / portrait / inpaint / erase / element-edit
- * 写回当前创作节点的版本栈，不能算结果节点。
+ * 现在都新建结果节点；旧项目已写回原节点的历史结果仍保留 PromptBar。
  */
 const RESULT_OUTPUT_OPS = new Set([
   'grid-split',
@@ -262,7 +268,12 @@ export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> 
       }
     ]
   },
-  'layer-split': { executable: true, requiresConfirm: true },
+  'layer-split': {
+    executable: true,
+    requiresConfirm: true,
+    itemOptions: ['auto', 'box'],
+    params: [RECT_PARAM]
+  },
   'shot-retake': { executable: true },
   'element-replace': { executable: true },
   'object-remove': {
@@ -278,7 +289,12 @@ export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> 
     itemRequired: true,
     itemOptions: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9']
   },
-  cutout: { executable: true, requiresConfirm: true },
+  cutout: {
+    executable: true,
+    requiresConfirm: true,
+    itemOptions: ['auto', 'box'],
+    params: [RECT_PARAM]
+  },
 
   // 需要模型或蒙版交互，面向 Agent 统一走 generation_propose
   'grid-generate': {
@@ -427,6 +443,13 @@ export function validateNodeOperationParams(
   }
   if (operationId === 'subtitle' && itemId === 'box' && !params.rect) {
     return '框选去字幕需要 params.rect'
+  }
+  if (
+    (operationId === 'cutout' || operationId === 'layer-split') &&
+    itemId === 'box' &&
+    !params.rect
+  ) {
+    return '框选主体需要 params.rect'
   }
   if (operationId === 'clip-trim') {
     const start = params.start

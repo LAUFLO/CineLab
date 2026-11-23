@@ -43,7 +43,7 @@ export function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex shrink-0 items-center rounded-md transition-colors',
+        'relative inline-flex shrink-0 items-center rounded-[4px] transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
         metrics.root,
         checked ? 'bg-switch-on' : 'bg-border-strong',
@@ -53,7 +53,7 @@ export function Switch({
     >
       <span
         className={cn(
-          'block rounded-[3px] bg-switch-knob transition-transform',
+          'block rounded-[2px] bg-switch-knob transition-transform',
           metrics.knob,
           checked ? metrics.on : metrics.off
         )}

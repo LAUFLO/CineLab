@@ -404,6 +404,52 @@ describe('agent tool permissions', () => {
     ).not.toThrow()
   })
 
+  it('validates batch stage objects', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_objects', { nodeId: 'node-a', objects: [] }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_objects', {
+          nodeId: 'node-a',
+          objects: [{ type: 'unknown', position: [0, 0, 0] }]
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_objects', {
+          nodeId: 'node-a',
+          objects: [{ type: 'box', position: [1, 2] }]
+        }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
+
+    expect(() =>
+      assertToolAllowed(
+        call('stage_add_objects', {
+          nodeId: 'node-a',
+          objects: [
+            { type: 'box', position: [-4, 0.45, -6], scale: [2, 0.9, 0.8] },
+            { type: 'human', position: [0, 0, 0], pose: 'stand' }
+          ]
+        }),
+        scope,
+        'current'
+      )
+    ).not.toThrow()
+  })
+
   it('requires at least one transform field', () => {
     expect(() =>
       assertToolAllowed(

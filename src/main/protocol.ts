@@ -1,9 +1,10 @@
-import { protocol } from 'electron'
+import { app, protocol } from 'electron'
 import { createReadStream, promises as fs } from 'node:fs'
 import { extname, isAbsolute, relative, resolve } from 'node:path'
 import { Readable } from 'node:stream'
 import { getCurrentProjectRoot } from './project/manager'
 import { getLibraryRoot } from './library/config'
+import { officialStylesRoot } from './library/styles'
 import { parseByteRange } from './media/range'
 
 export const ASSET_SCHEME = 'cinelab-asset'
@@ -48,12 +49,16 @@ export function registerAssetProtocol(): void {
     const url = new URL(request.url)
     const host = url.hostname || 'local'
 
-    if (host !== 'local' && host !== 'global') {
+    if (host !== 'local' && host !== 'global' && host !== 'style') {
       return new Response('Not found', { status: 404 })
     }
 
     const root =
-      host === 'global' ? await getLibraryRoot() : getCurrentProjectRoot()
+      host === 'style'
+        ? officialStylesRoot()
+        : host === 'global'
+          ? await getLibraryRoot()
+          : getCurrentProjectRoot()
 
     if (!root) {
       return new Response('No project', { status: 404 })

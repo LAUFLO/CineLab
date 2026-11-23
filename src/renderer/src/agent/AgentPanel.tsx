@@ -8,6 +8,7 @@ import {
   selectedNodeOutput,
   useCanvasStore
 } from '../stores/canvas'
+import { useProjectStore } from '../stores/project'
 import { useSettingsStore } from '../stores/settings'
 import { useStudioStore } from '../stores/studio'
 import { useUIStore } from '../stores/ui'
@@ -120,6 +121,32 @@ export function AgentPanel() {
     void loadModels()
     void loadModelInfo()
   }, [visible, loadSessions, loadModels, loadModelInfo])
+
+  useEffect(() => {
+    if (!visible) return
+    const sync = (): void => {
+      void useAgentStore.getState().syncContextSession()
+    }
+    sync()
+    const unsubscribers = [
+      useProjectStore.subscribe((state, previous) => {
+        if (state.canvasId !== previous.canvasId) sync()
+      }),
+      useStageStore.subscribe((state, previous) => {
+        if (state.open !== previous.open || state.nodeId !== previous.nodeId) {
+          sync()
+        }
+      }),
+      useStudioStore.subscribe((state, previous) => {
+        if (state.open !== previous.open || state.nodeId !== previous.nodeId) {
+          sync()
+        }
+      })
+    ]
+    return () => {
+      for (const unsubscribe of unsubscribers) unsubscribe()
+    }
+  }, [visible])
 
   useEffect(() => {
     if (!visible || !sessionId) return
@@ -1073,7 +1100,7 @@ export function AgentPanel() {
               {running ? (
                 <Button
                   type="button"
-                  className="size-[30px] shrink-0 !rounded-md !border !border-border-strong !bg-surface-hover p-0 !text-fg disabled:!opacity-[0.35]"
+                  className="size-[30px] shrink-0 !rounded-full !border-0 !bg-danger p-0 !text-accent-text hover:!bg-danger/90 disabled:!opacity-[0.35]"
                   onClick={() => void cancel()}
                   title="停止"
                   variant="primary"

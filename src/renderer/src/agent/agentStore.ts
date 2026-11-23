@@ -87,6 +87,7 @@ interface AgentState {
   visible: boolean
   sessionId: string
   sessionTitle: string
+  contextKey: string
   sessions: AgentSessionInfo[]
   messages: AgentMessage[]
   turns: AgentTurn[]
@@ -123,6 +124,7 @@ interface AgentState {
   removeReference: (reference: AgentReference) => void
   compactContext: () => Promise<void>
   loadSessions: () => Promise<void>
+  syncContextSession: () => Promise<void>
   loadSession: (sessionId?: string) => Promise<void>
   newSession: () => Promise<void>
   selectSession: (sessionId: string) => Promise<void>
@@ -269,6 +271,66 @@ function writeStored(key: string, value: string | null): void {
   }
 }
 
+const SESSION_MAP_KEY = 'cinelab.agent.sessionMap'
+
+interface AgentContext {
+  scope: 'canvas' | 'stage' | 'studio'
+  canvasId: string
+  nodeId?: string
+}
+
+function readSessionMap(): Record<string, string> {
+  const raw = readStored(SESSION_MAP_KEY)
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw) as Record<string, string>
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeSessionMap(map: Record<string, string>): void {
+  writeStored(SESSION_MAP_KEY, JSON.stringify(map))
+}
+
+function currentAgentContext(): AgentContext | null {
+  const project = useProjectStore.getState()
+  if (!project.canvasId) return null
+  const stage = useStageStore.getState()
+  if (stage.open && stage.nodeId) {
+    return { scope: 'stage', canvasId: project.canvasId, nodeId: stage.nodeId }
+  }
+  const studio = useStudioStore.getState()
+  if (studio.open && studio.nodeId) {
+    return {
+      scope: 'studio',
+      canvasId: project.canvasId,
+      nodeId: studio.nodeId
+    }
+  }
+  return { scope: 'canvas', canvasId: project.canvasId }
+}
+
+function contextKeyOf(context: AgentContext): string {
+  return `${context.canvasId}::${context.scope}::${context.nodeId ?? ''}`
+}
+
+function contextTitleOf(context: AgentContext): string {
+  const node = context.nodeId
+    ? useCanvasStore
+        .getState()
+        .nodes.find((item) => item.id === context.nodeId)
+    : undefined
+  const title =
+    node && 'title' in node.data
+      ? String((node.data as { title?: string }).title ?? '')
+      : ''
+  if (context.scope === 'stage') return `导演台 · ${title || context.nodeId}`
+  if (context.scope === 'studio') return `剪辑室 · ${title || context.nodeId}`
+  return '画布对话'
+}
+
 function modelKeyOf(model: AgentModelInfo): string {
   return `${model.providerId}/${model.modelId}`
 }
@@ -304,6 +366,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   visible: false,
   sessionId: '',
   sessionTitle: '新对话',
+  contextKey: '',
   sessions: [],
   messages: [],
   turns: [],
@@ -477,20 +540,44 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   loadSessions: async () => {
     try {
-      let sessions = await window.api.agent.sessionList()
-      const stored = readStored('cinelab.agent.sessionId')
-      let target =
-        sessions.find((session) => session.sessionId === stored) ??
-        sessions[0]
-      if (!target) {
-        target = await window.api.agent.sessionCreate('新对话')
-        sessions = [target, ...sessions]
-      }
+      const sessions = await window.api.agent.sessionList()
       set({ sessions })
-      await get().loadSession(target.sessionId)
+      await get().syncContextSession()
     } catch (error) {
       set({ error: error instanceof Error ? error.message : '读取会话失败' })
     }
+  },
+
+  syncContextSession: async () => {
+    if (get().running) return
+    const context = currentAgentContext()
+    if (!context) return
+    const key = contextKeyOf(context)
+    if (key === get().contextKey) return
+
+    const map = readSessionMap()
+    const sessions = await window.api.agent.sessionList()
+    let sessionId = map[key]
+    if (!sessionId) {
+      const stored = readStored('cinelab.agent.sessionId')
+      const bound = new Set(Object.values(map))
+      const reusable =
+        stored !== null &&
+        sessions.some((session) => session.sessionId === stored) &&
+        !bound.has(stored)
+      if (reusable && stored) {
+        sessionId = stored
+      } else {
+        const info = await window.api.agent.sessionCreate(
+          contextTitleOf(context)
+        )
+        sessionId = info.sessionId
+        sessions.unshift(info)
+      }
+      writeSessionMap({ ...map, [key]: sessionId })
+    }
+    set({ sessions, contextKey: key })
+    await get().loadSession(sessionId)
   },
 
   loadSession: async (sessionId) => {
@@ -535,11 +622,22 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   newSession: async () => {
     if (get().running) return
     try {
-      const info = await window.api.agent.sessionCreate('新对话')
+      const context = currentAgentContext()
+      const info = await window.api.agent.sessionCreate(
+        context ? contextTitleOf(context) : '新对话'
+      )
+      if (context) {
+        const map = readSessionMap()
+        writeSessionMap({ ...map, [contextKeyOf(context)]: info.sessionId })
+      }
       set((state) => ({
-        sessions: [info, ...state.sessions.filter(
-          (session) => session.sessionId !== info.sessionId
-        )],
+        sessions: [
+          info,
+          ...state.sessions.filter(
+            (session) => session.sessionId !== info.sessionId
+          )
+        ],
+        contextKey: context ? contextKeyOf(context) : state.contextKey,
         error: null
       }))
       await get().loadSession(info.sessionId)
@@ -744,8 +842,12 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   },
 
   send: async (text) => {
+    if (get().running || !text.trim()) return
+    const context = currentAgentContext()
+    if (context && get().contextKey !== contextKeyOf(context)) {
+      await get().syncContextSession()
+    }
     const state = get()
-    if (state.running || !text.trim()) return
     if (!state.sessionId) {
       set({ error: 'CineBot 会话还没有准备好，请稍后重试' })
       return
@@ -874,9 +976,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       case 'text_delta':
         set((state) => ({
           messages: appendText(state.messages, event.turnId, event.text),
-          activity: state.activity.thinking
-            ? { ...state.activity, thinking: '' }
-            : state.activity
+          activity:
+            state.activity.thinking || state.activity.retry
+              ? { ...state.activity, thinking: '', retry: null }
+              : state.activity
         }))
         break
       case 'thinking_delta':
@@ -968,8 +1071,21 @@ export const useAgentStore = create<AgentState>((set, get) => ({
                 : event.result.error ?? '工具执行失败'
             }
           }
+          const errorText = event.result.ok
+            ? ''
+            : (event.result.error ?? '')
+          const truncated =
+            /output token limit|arguments may be truncated/i.test(errorText)
           return {
             messages: next,
+            ...(truncated
+              ? {
+                  activity: {
+                    ...state.activity,
+                    retry: '输出超限，正在重试…'
+                  }
+                }
+              : {}),
             ...(state.pendingConfirm?.call.callId === event.result.callId
               ? { pendingConfirm: null }
               : {})

@@ -192,7 +192,7 @@ StageWindow → scene.analyze
 | `src/shared/stage-auto-coverage.ts` | 205 |
 | `src/shared/stage-commands.ts` | 989 |
 | `src/shared/stage-dialogue.ts` | 142 |
-| `src/shared/stage-lighting.ts` | 268 |
+| `src/shared/stage-lighting.ts` | 275 |
 | `src/shared/stage-motions.ts` | 444 |
 | `src/shared/stage-preview.ts` | 52 |
 | `src/shared/stage-program.ts` | 105 |

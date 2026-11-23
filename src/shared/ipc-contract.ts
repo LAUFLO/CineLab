@@ -43,6 +43,7 @@ import type {
   TemplateInput,
   ThumbCacheInfo
 } from './library-schema'
+import type { StyleCard, StyleSaveInput } from './style-schema'
 import type { ModelsConfigStatus, ModelsFileProvider } from './models-file'
 import type {
   AgentChatRequest,
@@ -210,6 +211,10 @@ export interface LibraryApi {
   reveal(path: string): Promise<void>
 
   listCharacters(): Promise<CharacterCard[]>
+  listStyles(): Promise<StyleCard[]>
+  saveStyle(input: StyleSaveInput): Promise<StyleCard>
+  deleteStyle(id: string): Promise<void>
+  pickStyleCover(): Promise<{ path: string; dataUrl: string } | null>
   saveAssets(inputs: SaveAssetInput[], folder?: string): Promise<LibraryAsset[]>
 
   listTemplates(): Promise<PromptTemplate[]>

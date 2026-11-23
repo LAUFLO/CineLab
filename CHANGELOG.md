@@ -3,6 +3,14 @@
 本项目的版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循语义化版本。
 
+## [0.4.6] - 2026-11-23
+
+### 变更
+
+- 画布升级到 React Flow 13：store 拆分为 nodes / edges / viewport / selection 等细粒度 store，选中节点或连线时自动提升边的层级，大画布重渲染更少；交互与视觉保持一致。
+- 发布依赖升级：`dompurify` 3.4.18（安全修复）、`marked` 18.2.1、`typebox` 1.4.7。
+- 开发依赖升级：Electron 45.4.1、Vitest 5.1.1、`@vitest/coverage-v8` 5.1.1、`@playwright/test` 1.65.1、jsdom 31.0.1。
+
 ## [0.4.5] - 2026-11-23
 
 ### 新增

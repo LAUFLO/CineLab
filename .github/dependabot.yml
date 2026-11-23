@@ -33,10 +33,6 @@ updates:
       - dependency-name: '@types/node'
         update-types:
           - version-update:semver-major
-      # v13 迁移期间暂时忽略 React Flow 主版本升级，迁移完成后移除
-      - dependency-name: '@xyflow/react'
-        update-types:
-          - version-update:semver-major
     labels:
       - dependencies
 

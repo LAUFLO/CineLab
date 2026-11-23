@@ -109,6 +109,7 @@ Prompt Bar / 节点操作
 | 媒体处理 | 已实现 | `main/media/`、`concat.test.ts` |
 | 人声/背景音分离 | 已实现；真实素材听感待验收 | `main/media/stems.ts`、`stem-tasks.ts`、`resources/stem-worker/worker.py` |
 | 错误文案 | 已实现 | `generation-error.test.ts` |
+| 官方/自定义风格库 | 已实现 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`src/shared/style-prompt.ts`、`src/renderer/src/canvas/StyleLibraryDialog.tsx`、`PromptBar.tsx` |
 
 ## 已知限制
 
@@ -136,6 +137,7 @@ Prompt Bar / 节点操作
 | 媒体处理 | `src/main/media/` |
 | 素材入库 | `src/main/assets/ingest.ts` |
 | 前端状态 | `src/renderer/src/stores/generation.ts`、`generation-history.ts` |
+| 风格库/风格片段 | `src/main/library/styles.ts`、`src/shared/style-prompt.ts` |
 
 ## 文件与导出（自动生成）
 
@@ -206,6 +208,8 @@ Prompt Bar / 节点操作
 | `src/shared/provider-presets.ts` | 313 |
 | `src/shared/provider-schema.ts` | 1314 |
 | `src/shared/reference-inputs.ts` | 146 |
+| `src/shared/style-prompt.ts` | 20 |
+| `src/shared/style-schema.ts` | 74 |
 <!-- AUTO:files:end -->
 
 <!-- AUTO:exports:start -->
@@ -274,4 +278,6 @@ Prompt Bar / 节点操作
 | `src/shared/provider-presets.ts` | `ProviderPreset`、`HOT_PROVIDER_IDS`、`PROVIDER_PRESETS`、`findProviderPresetById`、`findProviderPresetByBaseUrl`、`recommendedModelsForPreset` |
 | `src/shared/provider-schema.ts` | `Capability`、`MediaInput`、`MEDIA_INPUTS`、`MEDIA_INPUT_LABEL`、`ProviderType`、`ParamOption`、`ParamCondition`、`ParamForce`、`ParamDeny`、`ParamDef`、`ModelFeature`、`ConfigSource`、`ModelDef`、`ModelInferenceInput`、`inferModelInputs`、`inferModelModes`、`modelModeConfigs`、`modelModeIds`、`modelSupportsMode`、`modelModeMediaKinds`、`modelOperationSupport`、`ModeContext`、`modelModeCompatibility`、`inferActiveMode` …（共 37 个） |
 | `src/shared/reference-inputs.ts` | `ReferenceInputContext`、`referenceInputErrors`、`referenceInputError` |
+| `src/shared/style-prompt.ts` | `buildStyledPrompt` |
+| `src/shared/style-schema.ts` | `STYLE_CATEGORIES`、`StyleCategory`、`StyleSource`、`StyleCard`、`StyleSaveInput`、`styleNameKey`、`validateStyleName`、`validateStylePrompt`、`styleFolderName` |
 <!-- AUTO:exports:end -->

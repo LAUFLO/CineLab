@@ -43,6 +43,7 @@
 | 人声/背景音分离 | Demucs htdemucs、无声视频 + 音频、FIFO 任务 | `src/main/media/stems.ts`、`resources/stem-worker/worker.py` | 已实现 |
 | 素材入库 | `ingestAsset` | `src/main/assets/ingest.ts` | 已实现 |
 | 错误文案 | 配额/鉴权/超时 | `src/main/engine/generation-error.ts` | 已实现 |
+| 风格库、风格胶囊 | 官方只读 + 自定义、分类浏览、hover 预览、单选胶囊 | `src/main/library/styles.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`src/shared/style-prompt.ts` | 已实现 |
 
 ## 剪辑室
 

@@ -59,6 +59,9 @@ import { ModelMenu } from './promptbar/ModelMenu'
 import { ParamPanel } from './promptbar/ParamPanel'
 import { UploadMenu } from './promptbar/UploadMenu'
 import { MaskEditorDialog } from './nodes/MaskEditorDialog'
+import { StyleLibraryDialog } from './StyleLibraryDialog'
+import { buildStyledPrompt } from '@shared/style-prompt'
+import type { StyleCard } from '@shared/style-schema'
 
 import {
   WIDTH,
@@ -187,6 +190,8 @@ export function PromptBar() {
   const [watermark, setWatermark] = useState(watermarkPreference)
   const [expanded, setExpanded] = useState(false)
   const [uploadMenuOpen, setUploadMenuOpen] = useState(false)
+  const [styleOpen, setStyleOpen] = useState(false)
+  const [selectedStyle, setSelectedStyle] = useState<StyleCard | null>(null)
   const [mentionOpen, setMentionOpen] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
   const [mentionStart, setMentionStart] = useState<number | null>(null)
@@ -1651,7 +1656,10 @@ export function PromptBar() {
     void runGeneration({
       nodeId: node.id,
       modelKey: active.key,
-      prompt: buildPromptWithContext(promptText.trim(), textContexts),
+      prompt: buildStyledPrompt(
+        buildPromptWithContext(promptText.trim(), textContexts),
+        selectedStyle
+      ),
       params: { ...values, watermark },
       ...(mediaRefs.length > 0 ? { refs: mediaRefs } : {}),
       ...(activeMask ? { mask: activeMask } : {}),
@@ -1782,6 +1790,18 @@ export function PromptBar() {
             <Icon name="frame" size={13} />
             画布参考
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="none"
+            className={`${TOOL_CLASS} ${
+              selectedStyle ? TOOL_ACTIVE_CLASS : ''
+            }`}
+            onClick={() => setStyleOpen(true)}
+          >
+            <Icon name="sparkles" size={13} />
+            风格库
+          </Button>
           <div className="flex-1" />
           {autoRefs.length > 0 ? (
             <span
@@ -1801,6 +1821,23 @@ export function PromptBar() {
             <Icon name="expand" size={13} />
           </IconButton>
         </div>
+
+        {selectedStyle ? (
+          <div className="flex shrink-0 items-center gap-1.5 px-2.5 pt-2">
+            <span className="inline-flex h-6 max-w-[220px] items-center gap-1.5 rounded-full border border-accent/50 bg-accent/10 px-2 text-[11px] text-fg">
+              <Icon name="sparkles" size={10} />
+              <span className="truncate">{selectedStyle.name}</span>
+              <IconButton
+                label="移除风格"
+                size="xs"
+                className="h-4 w-4"
+                onClick={() => setSelectedStyle(null)}
+              >
+                <Icon name="close" size={9} />
+              </IconButton>
+            </span>
+          </div>
+        ) : null}
 
         {textSlots.length > 0 || modeSlots.length > 0 ? (
           <div
@@ -2357,6 +2394,12 @@ export function PromptBar() {
             document.body
           )
         : null}
+
+      <StyleLibraryDialog
+        open={styleOpen}
+        onClose={() => setStyleOpen(false)}
+        onSelect={setSelectedStyle}
+      />
 
       <MaskEditorDialog
         open={Boolean(maskEditor)}

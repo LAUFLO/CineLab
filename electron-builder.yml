@@ -44,3 +44,5 @@ extraResources:
     to: model-config-skill
   - from: resources/stem-worker
     to: stem-worker
+  - from: docs/style-library
+    to: styles

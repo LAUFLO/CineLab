@@ -1,0 +1,272 @@
+[
+  {
+    "id": "35mm-film",
+    "name": "胶片感",
+    "category": "电影感",
+    "cover": "covers/35mm-film.webp",
+    "prompt": "35mm 胶片摄影，ISO 800 粗颗粒与轻微噪点，柔焦，低对比，暖琥珀色调，高光带柔和光晕，阴影通透，画面有轻微划痕。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "widescreen-cinema",
+    "name": "宽银幕",
+    "category": "电影感",
+    "cover": "covers/widescreen-cinema.webp",
+    "prompt": "宽银幕电影，2.39:1 变形宽银幕质感，横向拉丝高光与椭圆焦外，青橙对比色调，浅景深，影院投影感。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "black-white-film",
+    "name": "黑白电影",
+    "category": "电影感",
+    "cover": "covers/black-white-film.webp",
+    "prompt": "黑白电影，高对比硬阴影，粗颗粒，黑白灰层次分明，亮部轻微溢出，经典黑色电影布光。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "documentary-handheld",
+    "name": "纪实跟拍",
+    "category": "电影感",
+    "cover": "covers/documentary-handheld.webp",
+    "prompt": "纪实摄影，自然光，真实皮肤纹理，轻微手持晃动，现场感，色彩克制，暗部保留环境细节。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "commercial-ad",
+    "name": "广告大片",
+    "category": "电影感",
+    "cover": "covers/commercial-ad.webp",
+    "prompt": "商业广告摄影，干净无缝背景，棚拍硬光与柔光结合，产品表面高光流动，色彩准确饱和，浅景深。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "japanese-anime",
+    "name": "日系动画",
+    "category": "动画与手绘",
+    "cover": "covers/japanese-anime.webp",
+    "prompt": "日式动画，清晰描线配赛璐璐平涂，色块边界明确，天空与云层柔和渐变，有限动画的节奏感。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "90s-retro-anime",
+    "name": "90 年代动画",
+    "category": "动画与手绘",
+    "cover": "covers/90s-retro-anime.webp",
+    "prompt": "90s 复古动画，胶片赛璐璐质感，手绘背景带颗粒，低饱和偏暖，线条轻微抖动，电视动画帧率感。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "3d-animation",
+    "name": "3D 动画",
+    "category": "动画与手绘",
+    "cover": "covers/3d-animation.webp",
+    "prompt": "3D 动画，圆润造型与柔和次表面散射，棚拍式布光，材质干净细腻，色彩明快，边缘轻微景深。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "claymation",
+    "name": "粘土定格",
+    "category": "动画与手绘",
+    "cover": "covers/claymation.webp",
+    "prompt": "粘土定格动画，手捏粘土质感，表面有指纹与工具痕迹，微缩布景，暖色低饱和，12fps 定格抖动，柔和棚拍光。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "watercolor-handdrawn",
+    "name": "水彩手绘",
+    "category": "动画与手绘",
+    "cover": "covers/watercolor-handdrawn.webp",
+    "prompt": "手绘水彩，明显纸纹，湿画法颜料晕染，边缘自然渗开，低饱和莫兰迪色，大量留白。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "vhs",
+    "name": "VHS 录像",
+    "category": "复古媒介",
+    "cover": "covers/vhs.webp",
+    "prompt": "VHS 录像带，四比三画幅，跟踪线缓慢滚动，色彩溢出与过饱和，暗部噪点，白平衡轻微漂移，家用摄像机质感。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "hong-kong-90s",
+    "name": "港风复古",
+    "category": "复古媒介",
+    "cover": "covers/hong-kong-90s.webp",
+    "prompt": "90s 港风，霓虹招牌的洋红与青绿，湿地面强反射，胶片颗粒明显，市井光线杂乱，旧港片粗粝感。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "y2k",
+    "name": "千禧 Y2K",
+    "category": "复古媒介",
+    "cover": "covers/y2k.webp",
+    "prompt": "Y2K 千禧年风格，金属与铬面反光，粉紫渐变，数码眩光与镜头光斑，高饱和冷调，MTV 快速剪辑感。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "pixel-game",
+    "name": "像素游戏",
+    "category": "复古媒介",
+    "cover": "covers/pixel-game.webp",
+    "prompt": "Pixel art, 8-bit/16-bit sprite art, blocky square pixels, limited 16-color palette, hard edges, no anti-aliasing, no smooth gradients, parallax layers, retro game cutscene.",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "super-8",
+    "name": "超 8 胶片",
+    "category": "复古媒介",
+    "cover": "covers/super-8.webp",
+    "prompt": "超 8 家庭录像，暖黄色调，画面边缘划痕与灰尘，曝光轻微闪烁，四比三构图，手持抖动。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "cyberpunk",
+    "name": "赛博朋克",
+    "category": "科幻与未来",
+    "cover": "covers/cyberpunk.webp",
+    "prompt": "赛博朋克，霓虹雨夜，湿地面强反射，青蓝与品红主色，全息广告闪烁，体积雾，高对比。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "wasteland",
+    "name": "废土世界",
+    "category": "科幻与未来",
+    "cover": "covers/wasteland.webp",
+    "prompt": "废土末日，沙尘与热浪，锈蚀金属和剥落涂层，暖灰与土黄配色，天空泛白，干燥粗粝。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "space-opera",
+    "name": "太空歌剧",
+    "category": "科幻与未来",
+    "cover": "covers/space-opera.webp",
+    "prompt": "太空歌剧，巨型环形空间站，星云与冷蓝光，深空黑，小型飞船作比例参照，宏大尺度。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "steampunk",
+    "name": "蒸汽朋克",
+    "category": "科幻与未来",
+    "cover": "covers/steampunk.webp",
+    "prompt": "蒸汽朋克，黄铜与暗铜金属，齿轮与蒸汽，暖棕与琥珀色，工业油污质感，蒸汽持续喷涌。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "holographic-future",
+    "name": "全息科技",
+    "category": "科幻与未来",
+    "cover": "covers/holographic-future.webp",
+    "prompt": "全息未来，透明屏幕与悬浮界面，冷蓝与白色冷光，极简科技表面，轻微彩虹折射，界面平滑滑动。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "epic-fantasy",
+    "name": "史诗奇幻",
+    "category": "奇幻与超现实",
+    "cover": "covers/epic-fantasy.webp",
+    "prompt": "史诗奇幻，宏大尺度与云雾山谷，魔法光粒缓慢漂浮，金色与深蓝对比，空气透视明显。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "dark-fantasy",
+    "name": "暗黑奇幻",
+    "category": "奇幻与超现实",
+    "cover": "covers/dark-fantasy.webp",
+    "prompt": "暗黑奇幻，哥特建筑与浓雾，烛光与冷月光并存，低饱和灰绿与暗红，阴影深重，雾气缓慢蔓延。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "surreal-dream",
+    "name": "超现实梦境",
+    "category": "奇幻与超现实",
+    "cover": "covers/surreal-dream.webp",
+    "prompt": "超现实梦境，不可能的空间关系，漂浮物静止或缓慢移动，柔焦与梦境光晕，色彩偏离现实，物理规律轻微失真。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "miniature-world",
+    "name": "微缩模型",
+    "category": "奇幻与超现实",
+    "cover": "covers/miniature-world.webp",
+    "prompt": "微缩世界，移轴摄影的浅景深，微缩模型与手工布景质感，顶部柔光，色彩干净，定格动画里的微缩场景。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "magical-realism",
+    "name": "日常魔法",
+    "category": "奇幻与超现实",
+    "cover": "covers/magical-realism.webp",
+    "prompt": "魔法现实主义，日常场景中浮现微弱魔法光，自然光与柔焦，低饱和暖调，安静克制，魔法元素轻微呼吸。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "ink-wash",
+    "name": "水墨写意",
+    "category": "国风与东方",
+    "cover": "covers/ink-wash.webp",
+    "prompt": "当代水墨，宣纸纹理与墨色晕染，飞白与枯笔，大面积留白，少量朱红点染，墨迹缓慢扩散。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "xianxia",
+    "name": "仙侠古风",
+    "category": "国风与东方",
+    "cover": "covers/xianxia.webp",
+    "prompt": "国风仙侠，轻薄织物与飘带在气流中缓慢飘动，云雾仙山，柔光与冷青色调，电影级空气透视。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "gongbi",
+    "name": "工笔重彩",
+    "category": "国风与东方",
+    "cover": "covers/gongbi.webp",
+    "prompt": "工笔重彩，细线勾勒稳定，矿物色平涂，装饰性纹样，绢本质感，色彩浓丽但不艳。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "dunhuang",
+    "name": "敦煌壁画",
+    "category": "国风与东方",
+    "cover": "covers/dunhuang.webp",
+    "prompt": "敦煌壁画，土红、石青、石绿配色，斑驳墙面质感，飘带与装饰纹样，暖色矿物颜料，壁画式平面稳定感。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "ukiyo-e",
+    "name": "浮世绘",
+    "category": "国风与东方",
+    "cover": "covers/ukiyo-e.webp",
+    "prompt": "浮世绘，木刻线条清晰，平涂色块，靛蓝与米色主调，波浪与云纹装饰，线条稳定，印刷颗粒。",
+    "version": 1,
+    "source": "official"
+  }
+]

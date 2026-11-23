@@ -68,6 +68,7 @@ export function Dialog({
         : null
 
     const panel = panelRef.current
+    if (!panel) return
     const initialFocus =
       panel?.querySelector<HTMLElement>('[autofocus]') ??
       panel?.querySelector<HTMLElement>(
@@ -101,8 +102,41 @@ export function Dialog({
     }
 
     document.addEventListener('keydown', onKeyDown, true)
+
+    // 原生 title 提示会被高 z-index 的弹窗遮住，弹窗内统一移除；
+    // 可访问性由 aria-label 保留，后续可替换为自定义 tooltip。
+    const titled = Array.from(
+      panel.querySelectorAll<HTMLElement>('[title]')
+    )
+    const savedTitles = titled.map(
+      (element) => [element, element.getAttribute('title')] as const
+    )
+    titled.forEach((element) => element.removeAttribute('title'))
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (!(node instanceof HTMLElement)) continue
+          const elements = [node, ...node.querySelectorAll<HTMLElement>('[title]')]
+          for (const element of elements) {
+            const title = element.getAttribute('title')
+            if (title === null) continue
+            savedTitles.push([element, title])
+            element.removeAttribute('title')
+          }
+        }
+      }
+    })
+    observer.observe(panel, { childList: true, subtree: true })
+
     return () => {
       document.removeEventListener('keydown', onKeyDown, true)
+      observer.disconnect()
+      for (const [element, title] of savedTitles) {
+        if (title !== null && element.isConnected) {
+          element.setAttribute('title', title)
+        }
+      }
       previousFocus.current?.focus?.()
     }
   }, [open])

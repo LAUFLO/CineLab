@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 72 | 24702 |
-| 02 | [生成与模型](./02-generation.md) | 64 | 14467 |
+| 01 | [画布](./01-canvas.md) | 73 | 25208 |
+| 02 | [生成与模型](./02-generation.md) | 66 | 14561 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20219 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5803 |
 | 06 | [CineBot 与 Agent](./06-agent.md) | 58 | 20009 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 66 | 11769 |
-| 10 | [UI 组件与面板](./10-ui.md) | 48 | 10339 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 67 | 12211 |
+| 10 | [UI 组件与面板](./10-ui.md) | 49 | 10390 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -25,7 +25,7 @@
 | `ProjectApi` | `bootstrap`、`create`、`open`、`saveCanvas`、`recent`、`readCover`、`setCoverFromLocal`、`setCoverFromAsset`、`removeCover`、`pickCreate`、`pickOpen`、`reveal`、`rename`、`createCanvas`、`switchCanvas`、`renameCanvas`、`deleteCanvas`、`delete` |
 | `SettingsApi` | `listProviders`、`saveProvider`、`deleteProvider`、`testConnection`、`fetchModels`、`modelsConfig`、`pendingModels`、`applyPendingModels`、`discardPendingModels`、`onModelsPending`、`openModelsFile`、`downloadModelSkill`、`copyText`、`getOperationBindings`、`saveOperationBindings`、`getPreferences`、`savePreferences`、`resetPreferences`、`exportPreferences`、`importPreferences`、`chooseProjectDir`、`openDataDir`、`onModelsChanged` |
 | `GenerateApi` | `run`、`cancel`、`cancelAll`、`onEvent` |
-| `LibraryApi` | `root`、`chooseRoot`、`resetRoot`、`revealRoot`、`tree`、`listAssets`、`listAllAssets`、`createFolder`、`renameFolder`、`deleteFolder`、`importAssets`、`addAsset`、`renameAsset`、`moveAsset`、`deleteAsset`、`setAssetTags`、`reveal`、`listCharacters`、`saveAssets`、`listTemplates`、`saveTemplate`、`deleteTemplate`、`thumbCacheInfo`、`clearThumbCache` |
+| `LibraryApi` | `root`、`chooseRoot`、`resetRoot`、`revealRoot`、`tree`、`listAssets`、`listAllAssets`、`createFolder`、`renameFolder`、`deleteFolder`、`importAssets`、`addAsset`、`renameAsset`、`moveAsset`、`deleteAsset`、`setAssetTags`、`reveal`、`listCharacters`、`listStyles`、`saveStyle`、`deleteStyle`、`pickStyleCover`、`saveAssets`、`listTemplates`、`saveTemplate`、`deleteTemplate`、`thumbCacheInfo`、`clearThumbCache` |
 | `ClipboardApi` | `read` |
 | `ExportApi` | `project`、`canvasPng`、`asset`、`deleteFile`、`assets`、`concatVideos`、`pickFile` |
 | `MediaApi` | `splitGrid`、`stitch`、`extractFrame`、`splitAv`、`startStemTask`、`cancelStemTask`、`onStemTaskEvent`、`cropVideo`、`probe`、`exists`、`existsMany`、`thumbnail`、`proxy`、`audioPeaks`、`listSounds`、`importSound`、`cropImage`、`cropImageRect`、`trimVideo`、`trimAudio`、`audioSpeed`、`removeSubtitles`、`detectSubtitleRect`、`captureDepth`、`startDepthCapture`、`cancelDepthCapture`、`onDepthCaptureEvent`、`startVisionTask`、`cancelVisionTask`、`onVisionTaskEvent` |
@@ -238,6 +238,8 @@
 - `src/shared/__tests__/stage-program.test.ts`
 - `src/shared/__tests__/stage-shot-intent.test.ts`
 - `src/shared/__tests__/stage-timeline.test.ts`
+- `src/shared/__tests__/style-prompt.test.ts`
+- `src/shared/__tests__/style-schema.test.ts`
 - `src/shared/__tests__/subtitles.test.ts`
 - `src/shared/__tests__/timeline-canvas.test.ts`
 - `src/shared/__tests__/timeline-commands.test.ts`

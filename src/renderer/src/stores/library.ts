@@ -7,6 +7,7 @@ import type {
   PromptTemplate,
   TemplateInput
 } from '@shared/library-schema'
+import type { StyleCard, StyleSaveInput } from '@shared/style-schema'
 import { PROMPT_FOLDER } from '@shared/library-schema'
 
 export interface PendingAdd {
@@ -25,6 +26,7 @@ interface LibraryState {
   assets: LibraryAsset[]
   allAssets: LibraryAsset[]
   characters: CharacterCard[]
+  styles: StyleCard[]
   templates: PromptTemplate[]
   loading: boolean
   error: string | null
@@ -36,6 +38,10 @@ interface LibraryState {
   setFolder: (folder: string) => Promise<void>
   refresh: () => Promise<void>
   loadCharacters: () => Promise<void>
+  loadStyles: () => Promise<void>
+  saveStyle: (input: StyleSaveInput) => Promise<boolean>
+  deleteStyle: (id: string) => Promise<void>
+  pickStyleCover: () => Promise<{ path: string; dataUrl: string } | null>
   loadTemplates: () => Promise<void>
   createFolder: (parent: string, name: string) => Promise<LibraryFolderNode | null>
   renameFolder: (path: string, name: string) => Promise<void>
@@ -79,6 +85,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
     set({ characters })
   }
 
+  const loadStyles = async (): Promise<void> => {
+    const styles = await window.api.library.listStyles()
+    set({ styles })
+  }
+
   const loadTemplates = async (): Promise<void> => {
     const templates = await window.api.library.listTemplates()
     set({ templates })
@@ -94,6 +105,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
     assets: [],
     allAssets: [],
     characters: [],
+    styles: [],
     templates: [],
     loading: false,
     error: null,
@@ -134,15 +146,23 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
     refresh: async () => {
       set({ loading: true })
       try {
-        const [rootInfo, tree, assets, allAssets, characters, templates] =
-          await Promise.all([
-            window.api.library.root(),
-            window.api.library.tree(),
-            window.api.library.listAssets(get().folder),
-            window.api.library.listAllAssets(),
-            window.api.library.listCharacters(),
-            window.api.library.listTemplates()
-          ])
+        const [
+          rootInfo,
+          tree,
+          assets,
+          allAssets,
+          characters,
+          styles,
+          templates
+        ] = await Promise.all([
+          window.api.library.root(),
+          window.api.library.tree(),
+          window.api.library.listAssets(get().folder),
+          window.api.library.listAllAssets(),
+          window.api.library.listCharacters(),
+          window.api.library.listStyles(),
+          window.api.library.listTemplates()
+        ])
 
         set({
           root: rootInfo.root,
@@ -151,6 +171,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
           assets,
           allAssets,
           characters,
+          styles,
           templates,
           loading: false,
           error: null
@@ -161,7 +182,39 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
     },
 
     loadCharacters,
+    loadStyles,
     loadTemplates,
+
+    saveStyle: async (input) => {
+      try {
+        await window.api.library.saveStyle(input)
+        await get().loadStyles()
+        set({ error: null })
+        return true
+      } catch (error) {
+        set({ error: messageOf(error) })
+        return false
+      }
+    },
+
+    deleteStyle: async (id) => {
+      try {
+        await window.api.library.deleteStyle(id)
+        await get().loadStyles()
+        set({ error: null })
+      } catch (error) {
+        set({ error: messageOf(error) })
+      }
+    },
+
+    pickStyleCover: async () => {
+      try {
+        return await window.api.library.pickStyleCover()
+      } catch (error) {
+        set({ error: messageOf(error) })
+        return null
+      }
+    },
 
     createFolder: async (parent, name) => {
       try {

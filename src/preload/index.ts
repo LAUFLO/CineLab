@@ -30,6 +30,7 @@ import type {
   SaveAssetInput,
   TemplateInput
 } from '../shared/library-schema'
+import type { StyleSaveInput } from '../shared/style-schema'
 import type {
   AudioPeaksRequest,
   AudioSpeedRequest,
@@ -227,7 +228,13 @@ const api: CineApi = {
     deleteTemplate: (id: string) =>
       ipcRenderer.invoke('library:delete-template', id),
     thumbCacheInfo: () => ipcRenderer.invoke('library:thumb-cache-info'),
-    clearThumbCache: () => ipcRenderer.invoke('library:clear-thumb-cache')
+    clearThumbCache: () => ipcRenderer.invoke('library:clear-thumb-cache'),
+    listStyles: () => ipcRenderer.invoke('library:list-styles'),
+    saveStyle: (input: StyleSaveInput) =>
+      ipcRenderer.invoke('library:save-style', input),
+    deleteStyle: (id: string) =>
+      ipcRenderer.invoke('library:delete-style', id),
+    pickStyleCover: () => ipcRenderer.invoke('library:pick-style-cover')
   },
   components: {
     status: () => ipcRenderer.invoke('components:status'),

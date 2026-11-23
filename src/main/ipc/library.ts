@@ -1,9 +1,12 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { promises as fs } from 'node:fs'
+import { extname } from 'node:path'
 import type {
   AddToLibraryInput,
   SaveAssetInput,
   TemplateInput
 } from '@shared/library-schema'
+import type { StyleSaveInput } from '@shared/style-schema'
 import {
   defaultLibraryRoot,
   getLibraryRoot,
@@ -32,6 +35,7 @@ import {
 } from '../library/templates'
 import { setAssetTags } from '../library/tags'
 import { clearThumbCache, getThumbCacheInfo } from '../library/thumbs'
+import { deleteStyle, listStyles, saveStyle } from '../library/styles'
 
 const ASSET_FILTERS = [
   {
@@ -176,6 +180,46 @@ export function registerLibraryIpc(): void {
   ipcMain.handle('library:reveal', (_event, path: string) => revealPath(path))
 
   ipcMain.handle('library:list-characters', () => listCharacters())
+  ipcMain.handle('library:list-styles', () => listStyles())
+  ipcMain.handle('library:save-style', (_event, input: StyleSaveInput) =>
+    saveStyle(input)
+  )
+  ipcMain.handle('library:delete-style', (_event, id: string) =>
+    deleteStyle(id)
+  )
+  ipcMain.handle('library:pick-style-cover', async (event) => {
+    const win = windowFromEvent(event)
+    const options: Electron.OpenDialogOptions = {
+      title: '选择风格封面',
+      properties: ['openFile'],
+      filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'] }]
+    }
+
+    const result = win
+      ? await dialog.showOpenDialog(win, options)
+      : await dialog.showOpenDialog(options)
+
+    if (result.canceled || result.filePaths.length === 0) return null
+
+    const filePath = result.filePaths[0]
+    const data = await fs.readFile(filePath)
+    const extension = extname(filePath).toLowerCase()
+    const mime =
+      extension === '.png'
+        ? 'image/png'
+        : extension === '.webp'
+          ? 'image/webp'
+          : extension === '.gif'
+            ? 'image/gif'
+            : extension === '.bmp'
+              ? 'image/bmp'
+              : 'image/jpeg'
+
+    return {
+      path: filePath,
+      dataUrl: `data:${mime};base64,${data.toString('base64')}`
+    }
+  })
   ipcMain.handle('library:list-templates', () => listTemplates())
 
   ipcMain.handle('library:save-template', (_event, input: TemplateInput) =>

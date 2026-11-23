@@ -60,7 +60,9 @@ const MODULES = [
       'src/shared/protocol-templates.ts',
       'src/shared/http-template.ts',
       'src/shared/model-contracts.ts',
-      'src/shared/local-adapter.ts'
+      'src/shared/local-adapter.ts',
+      'src/shared/style-schema.ts',
+      'src/shared/style-prompt.ts'
     ]
   },
   {

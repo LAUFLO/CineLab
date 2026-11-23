@@ -52,6 +52,7 @@
 | 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
 | 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能全部显示、导入与卡片启用开关 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
+| 02 | 官方/自定义风格库：分类浏览、hover 预览片段、单选胶囊、生成拼接提示词 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`style-prompt.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`style-prompt.test.ts` |
 
 ## 部分实现（别当已完成）
 
@@ -60,6 +61,7 @@
 | 04 | `gltf` 对象类型 | 未接 GLTFLoader，`assetPath` 未读取，wireframe 人形占位 | `src/renderer/src/stage/stage-scene.ts` |
 | 04 | 场景图 → 白膜 | VLM 解析与程序化世界已接；深度校准未接，`depth` 默认为空 | `src/main/scene/analyze.ts`、`src/shared/scene-calibrate.ts` |
 | 04 | 舞台对象资产 | 只有 human/box/sphere/plane/gltf/crowd；无家具/建筑/自然资产库 | `src/shared/scene-object-presets.ts` |
+
 | 06 | Agent 运行时 v3（pi） | M1–M3 已接入动态 import、v2 会话、63 工具审计、确认、撤销、自动续跑、前端新事件；M4 四空间回归通过（canvas/stage 真模型，timeline/film 桥接），正式 asar 待复测 | `src/main/agent/pi/` |
 
 ## 仅文档 / 计划中

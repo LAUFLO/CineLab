@@ -220,6 +220,7 @@ pct = (1 - 1 / (1 + p)) / 2 × 100%
 |---|---|---|
 | `Canvas.tsx` 的 fitView token 效果 | `padding: 0.2` | `padding: '8%'` |
 | `Canvas.tsx` 的 arrange 效果 | `padding: 0.2` | `padding: '8%'` |
+| `Canvas.tsx` 的节点双击聚焦 | `padding: 0.6` | `padding: '19%'` |
 | `CineNodeView.tsx` 的节点聚焦 | `padding: 0.6` | `padding: '19%'` |
 | `PromptBar.tsx` 的参考返回聚焦 | `padding: 0.8` | `padding: '22%'` |
 | `PromptBar.tsx` 的槽位聚焦 | `padding: 0.6` | `padding: '19%'` |

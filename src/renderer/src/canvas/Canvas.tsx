@@ -230,13 +230,13 @@ function CanvasInner({ theme }: { theme: Theme }) {
 
   useEffect(() => {
     if (fitViewToken === 0) return
-    void fitView({ padding: 0.2, duration: 300 })
+    void fitView({ padding: '8%', duration: 300 })
   }, [fitViewToken, fitView])
 
   useEffect(() => {
     if (arrangeToken === 0) return
     arrangeNodes()
-    window.setTimeout(() => void fitView({ padding: 0.2, duration: 300 }), 50)
+    window.setTimeout(() => void fitView({ padding: '8%', duration: 300 }), 50)
   }, [arrangeToken, arrangeNodes, fitView])
 
   useEffect(() => {
@@ -571,7 +571,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
       if (isGroupNode(targetNode)) return
       void fitView({
         nodes: [targetNode],
-        padding: 0.6,
+        padding: '19%',
         duration: 300,
         maxZoom: 2
       })

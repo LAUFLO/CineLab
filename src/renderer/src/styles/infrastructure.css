@@ -342,11 +342,11 @@ body[data-node-menu-open] .react-flow {
   z-index: 60 !important;
 }
 
-.react-flow[data-hand-tool] .react-flow__pane {
+.react-flow[data-hand-tool] .react-flow__pane::before {
   cursor: grab;
 }
 
-.react-flow[data-hand-tool] .react-flow__pane:active {
+.react-flow[data-hand-tool] .react-flow__pane:active::before {
   cursor: grabbing;
 }
 

@@ -769,7 +769,7 @@ export function PromptBar() {
     if (!target) return
 
     setRefPreview(null)
-    void fitView({ nodes: [target], padding: 0.8, duration: 300, maxZoom: 1.5 })
+    void fitView({ nodes: [target], padding: '22%', duration: 300, maxZoom: 1.5 })
   }
 
   const refsResult = (() => {
@@ -1827,7 +1827,7 @@ export function PromptBar() {
                     event.stopPropagation()
                     void fitView({
                       nodes: [{ id: slot.nodeId }],
-                      padding: 0.6,
+                      padding: '19%',
                       duration: 300,
                       maxZoom: 2
                     })

@@ -341,7 +341,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
           event.stopPropagation()
           void fitView({
             nodes: currentNode ? [currentNode] : [{ id }],
-            padding: 0.6,
+            padding: '19%',
             duration: 300,
             maxZoom: 2
           })

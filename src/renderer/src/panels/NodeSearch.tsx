@@ -59,7 +59,7 @@ export function NodeSearch() {
   const pick = (index: number): void => {
     const node = results[index]
     if (!node) return
-    void fitView({ nodes: [node], padding: 0.8, duration: 300, maxZoom: 1.5 })
+    void fitView({ nodes: [node], padding: '22%', duration: 300, maxZoom: 1.5 })
     close()
   }
 

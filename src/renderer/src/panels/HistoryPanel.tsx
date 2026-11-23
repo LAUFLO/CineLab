@@ -105,7 +105,7 @@ export function HistoryPanel() {
   const locate = (item: HistoryItem): void => {
     const node = nodes.find((entry) => entry.id === item.nodeId)
     if (!node) return
-    void fitView({ nodes: [node], padding: 0.8, duration: 300, maxZoom: 1.5 })
+    void fitView({ nodes: [node], padding: '22%', duration: 300, maxZoom: 1.5 })
     close()
   }
 

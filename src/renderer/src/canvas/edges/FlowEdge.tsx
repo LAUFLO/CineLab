@@ -1,8 +1,8 @@
-import { useCallback } from 'react'
 import {
   BaseEdge,
   getBezierPath,
-  useStore,
+  useEdgesStore,
+  useNode,
   type EdgeProps
 } from '@xyflow/react'
 
@@ -26,18 +26,10 @@ export function FlowEdge({
   onClick,
   onDoubleClick
 }: FlowEdgeProps) {
-  const nodeHighlighted = useStore(
-    useCallback(
-      (state) =>
-        Boolean(
-          state.nodeLookup.get(source)?.selected ||
-          state.nodeLookup.get(target)?.selected
-        ),
-      [source, target]
-    )
-  )
-  const glowEnabled = useStore((state) => state.edges.length <= 300)
-  const highlighted = selected || nodeHighlighted
+  const sourceSelected = useNode(source)?.selected ?? false
+  const targetSelected = useNode(target)?.selected ?? false
+  const glowEnabled = useEdgesStore((state) => state.edges.length <= 300)
+  const highlighted = selected || sourceSelected || targetSelected
 
   const [path] = getBezierPath({
     sourceX,

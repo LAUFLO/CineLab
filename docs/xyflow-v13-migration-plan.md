@@ -1,7 +1,7 @@
 # React Flow 13 迁移评估与改动方案
 
 日期：2026-11-23
-状态：待实施
+状态：已实施
 关联：[code-map/01-canvas.md](code-map/01-canvas.md)、[code-map/10-ui.md](code-map/10-ui.md)、[code-map/08-capabilities.md](code-map/08-capabilities.md)
 
 > 本文基于 v0.4.5（`@xyflow/react` 12.12.1）代码评估，行号仅供参考，实施时以最新代码为准。
@@ -38,7 +38,7 @@ Dependabot PR #115 将 `@xyflow/react` 从 12.12.1 升级到 13.0.2。这次是�
 | v13 变更 | 是否受影响 | 落点 |
 |---|---|---|
 | `applyNodeChanges` / `applyEdgeChanges` 移除，改用 `changeset.applyTo()` | 必改 | `stores/canvas/slices/graph.ts` 的 `onNodesChange` / `onEdgesChange` |
-| `addEdge` 移除 | 必改 | 同文件 `onConnect` |
+| `addEdge` 保留 | 不受影响 | `graph.ts` 的 `onConnect` 无需改动 |
 | `useStore` 移除，拆为 `useNodesStore` / `useEdgesStore` 等 | 必改 | `canvas/edges/FlowEdge.tsx` |
 | `onNodesChange` / `onEdgesChange` 参数由数组改为 `NodeChangeset` / `EdgeChangeset` | 必改 | `stores/canvas.ts` 类型、`graph.ts`、`PromptBar.tsx` 手动调用、`stores/__tests__/canvas.test.ts` |
 | 变更类型改名（`NodePositionChange` → `PositionChange` 等） | 不受影响 | 项目只使用 `'position'` / `'select'` / `'remove'` 字符串字面量 |
@@ -160,22 +160,7 @@ onEdgesChange: (input) => {
 }
 ```
 
-`onConnect` 中的 `addEdge` 替换为数组追加。现有代码在调用前已用 `exists` 做了 `source` / `target` 去重，`addEdge` 实际只负责追加：
-
-```ts
-set({
-  edges: [
-    ...get().edges,
-    {
-      id: nextId('edge'),
-      source: connection.source,
-      target: connection.target,
-      type: 'flow',
-      data: { role: 'auto' }
-    }
-  ]
-})
-```
+`onConnect` 中的 `addEdge` 在 v13 中仍然导出，无需改动。已用运行时导入确认：`addEdge` 为 function，只有 `applyNodeChanges` / `applyEdgeChanges` 为 `undefined`。
 
 #### `src/renderer/src/stores/canvas-model.ts`
 
@@ -235,6 +220,7 @@ pct = (1 - 1 / (1 + p)) / 2 × 100%
 |---|---|---|
 | `Canvas.tsx` 的 fitView token 效果 | `padding: 0.2` | `padding: '8%'` |
 | `Canvas.tsx` 的 arrange 效果 | `padding: 0.2` | `padding: '8%'` |
+| `Canvas.tsx` 的节点双击聚焦 | `padding: 0.6` | `padding: '19%'` |
 | `CineNodeView.tsx` 的节点聚焦 | `padding: 0.6` | `padding: '19%'` |
 | `PromptBar.tsx` 的参考返回聚焦 | `padding: 0.8` | `padding: '22%'` |
 | `PromptBar.tsx` 的槽位聚焦 | `padding: 0.6` | `padding: '19%'` |
@@ -328,7 +314,6 @@ v13 的样式位于 `@layer xyflow`，必须排在 Tailwind 的 `base` 之后、
 | CSS layer 顺序错误导致基础样式被 Tailwind preflight 覆盖 | 中 | 按 4.5 声明层顺序，回归节点、控制点、MiniMap |
 | `fitView` 留白变化 | 低 | 百分比可调，视觉验收 |
 | 框选过滤组节点的 changeset 逻辑写错 | 中 | 单测覆盖 + 手动框选 |
-| `addEdge` 替换遗漏去重 | 低 | 现有 `exists` 已去重，可补单测 |
 
 回滚方式：`git revert` 整个分支，或将 `package.json` 改回 `^12.12.1` 后重新安装。v13 无数据格式变更，项目文件不需要迁移。
 

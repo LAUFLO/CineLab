@@ -1,4 +1,10 @@
-import { addEdge, applyEdgeChanges, applyNodeChanges } from '@xyflow/react'
+import {
+  addEdge,
+  EdgeChangeset,
+  NodeChangeset,
+  type EdgeChange,
+  type NodeChange
+} from '@xyflow/react'
 import {
   NODE_META,
   TITLE_HEIGHT,
@@ -11,12 +17,22 @@ import { VIDEO_OPERATIONS } from '@shared/operation-schema'
 import { applyCanvasBatch } from '@shared/canvas-commands'
 import { isResultOutputOp } from '@shared/node-operation-specs'
 import { clearEdgeReferences } from '../../edge-references'
-import { externalWrite, commandTurns, isGroupNode, isStudioNode, isStageNode, isFilmNode, isVideoOpNode, nodeSize, nextId, absolutePosition, type CineNode, type StudioNode, type StageNode, type FilmNode, type VideoOpNode, type CanvasNode } from '../../canvas-model'
+import { externalWrite, commandTurns, isGroupNode, isStudioNode, isStageNode, isFilmNode, isVideoOpNode, nodeSize, nextId, absolutePosition, type CineNode, type StudioNode, type StageNode, type FilmNode, type VideoOpNode, type CanvasNode, type CineEdge } from '../../canvas-model'
 
 import type { StateCreator } from 'zustand'
 import type { CanvasStore } from '../../canvas'
 
 type GraphSlice = Pick<CanvasStore, 'loadCanvas' | 'onNodesChange' | 'onEdgesChange' | 'removeEdges' | 'onConnect' | 'addNode' | 'addStudioNode' | 'addStageNode' | 'addVideoOpNode' | 'patchStudioNode' | 'patchStageNode' | 'patchVideoOpNode' | 'applyOutput' | 'patchNodeData' | 'applyCommands' | 'endCommandTurn' | 'beginToolTurn' | 'endToolTurn' | 'resizeNode' | 'removeNode' | 'clearSelection'>
+
+const isNodeChangeset = (
+  input: NodeChangeset<CanvasNode> | NodeChange<CanvasNode>[]
+): input is NodeChangeset<CanvasNode> =>
+  typeof (input as NodeChangeset<CanvasNode>).applyTo === 'function'
+
+const isEdgeChangeset = (
+  input: EdgeChangeset<CineEdge> | EdgeChange<CineEdge>[]
+): input is EdgeChangeset<CineEdge> =>
+  typeof (input as EdgeChangeset<CineEdge>).applyTo === 'function'
 
 export const createGraphSlice: StateCreator<
   CanvasStore,
@@ -243,54 +259,54 @@ loadCanvas: (nodes, edges, viewport) => {
       get().syncGroupBounds(groupId)
     }
   },
-onNodesChange: (changes) => {
-    if (changes.some((change) => change.type === 'remove')) {
+onNodesChange: (input) => {
+    const changes = isNodeChangeset(input) ? input : new NodeChangeset(input)
+
+    if (changes.getByType('remove').length > 0) {
       get().pushHistory()
     }
 
     const boxSelecting = get().boxSelecting
     const effective = boxSelecting
-      ? changes.map((change) => {
-          if (
+      ? new NodeChangeset(
+          changes.toArray().map((change) =>
             change.type === 'select' &&
             change.selected &&
             get().nodes.some(
               (node) => node.id === change.id && isGroupNode(node)
             )
-          ) {
-            return { ...change, selected: false }
-          }
-          return change
-        })
+              ? { ...change, selected: false }
+              : change
+          )
+        )
       : changes
 
-    const nodes = applyNodeChanges(effective, get().nodes)
-    const removed = changes
-      .filter((change) => change.type === 'remove')
-      .map((change) => change.id)
+    const nodes = effective.applyTo(get().nodes)
+    const removed = changes.getByType('remove').map((change) => change.id)
 
     let edges = get().edges
     if (removed.length > 0) {
       edges = edges.filter(
-        (edge) => !removed.includes(edge.source) && !removed.includes(edge.target)
+        (edge) =>
+          !removed.includes(edge.source) && !removed.includes(edge.target)
       )
     }
 
     set({ nodes, edges })
   },
-onEdgesChange: (changes) => {
+onEdgesChange: (input) => {
+    const changes = isEdgeChangeset(input) ? input : new EdgeChangeset(input)
+
     const removedIds = new Set(
-      changes
-        .filter((change) => change.type === 'remove')
-        .map((change) => change.id)
+      changes.getByType('remove').map((change) => change.id)
     )
     if (removedIds.size === 0) {
-      set({ edges: applyEdgeChanges(changes, get().edges) })
+      set({ edges: changes.applyTo(get().edges) })
       return
     }
 
     const removedEdges = get().edges.filter((edge) => removedIds.has(edge.id))
-    const edges = applyEdgeChanges(changes, get().edges)
+    const edges = changes.applyTo(get().edges)
     set({
       edges,
       nodes: clearEdgeReferences(get().nodes, edges, removedEdges)

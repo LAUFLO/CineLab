@@ -145,7 +145,7 @@ CineBot
 | 文件 | 行数 |
 |---|---|
 | `src/renderer/src/canvas/AddNodeMenu.tsx` | 260 |
-| `src/renderer/src/canvas/AlignmentGuides.tsx` | 29 |
+| `src/renderer/src/canvas/AlignmentGuides.tsx` | 30 |
 | `src/renderer/src/canvas/BottomBar.tsx` | 139 |
 | `src/renderer/src/canvas/Canvas.tsx` | 722 |
 | `src/renderer/src/canvas/CanvasContextMenu.tsx` | 136 |

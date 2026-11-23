@@ -34,7 +34,7 @@ const CUSTOM_INPUT =
   '!col-span-full !h-[34px] !rounded-md !border-border-strong !bg-surface !px-[9px] !text-xs focus:!border-border-selected'
 const RATIO_BOX = 'w-5 max-h-5 rounded-[3px] border-[1.5px] border-current'
 const RANGE = 'flex items-center gap-3'
-const RANGE_INPUT = '!h-auto flex-1 !border-0 !bg-transparent !p-0 accent-fg'
+const RANGE_INPUT = '!h-auto flex-1 !border-0 !bg-transparent !p-0 accent-[var(--accent)]'
 const RANGE_VALUE = 'min-w-[38px] text-right text-xs text-fg tabular-nums'
 const INPUT_ROW = 'flex items-center gap-2.5 text-xs text-fg-muted'
 const ROW_INPUT =

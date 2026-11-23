@@ -1548,7 +1548,7 @@ function AboutSection() {
         {status?.state === 'downloading' ? (
           <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-hover">
             <div
-              className="h-full bg-pick-bar transition-[width] duration-[160ms]"
+              className="h-full bg-accent transition-[width] duration-[160ms]"
               style={{ width: `${status.percent ?? 0}%` }}
             />
           </div>

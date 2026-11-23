@@ -5,6 +5,7 @@ import { StatusBar } from './canvas/StatusBar'
 import { TopBar } from './canvas/TopBar'
 import { AppTooltip } from './components/AppTooltip'
 import { BrandWordmark } from './components/Brand'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { Toast } from './components/Toast'
 import { WindowControls } from './components/WindowControls'
 import { ConfirmDialog } from './panels/ConfirmDialog'
@@ -258,7 +259,7 @@ export default function App() {
 
   return (
     <>
-      {content}
+      <ErrorBoundary>{content}</ErrorBoundary>
       {phase === 'ready' ? null : (
         <div className="fixed inset-x-0 top-0 z-[15] h-10 [-webkit-app-region:drag]" />
       )}
@@ -269,9 +270,11 @@ export default function App() {
         </Suspense>
       ) : null}
       {stageOpen ? (
-        <Suspense fallback={null}>
-          <StageWindow />
-        </Suspense>
+        <ErrorBoundary label="导演台加载失败">
+          <Suspense fallback={null}>
+            <StageWindow />
+          </Suspense>
+        </ErrorBoundary>
       ) : null}
       {sheetOpen ? (
         <Suspense fallback={null}>

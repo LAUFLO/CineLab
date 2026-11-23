@@ -19,7 +19,10 @@ import type {
   StageTransform,
   StageVec3
 } from '@shared/stage-schema'
-import type { PrevisWorldRef } from '@shared/previs/world-gen'
+import {
+  normalizePrevisWorldRef,
+  type PrevisWorldRef
+} from '@shared/previs/world-gen'
 import { solveStageShotIntent } from '@shared/stage-shot-intent'
 import { buildAutoCoverage } from '@shared/stage-auto-coverage'
 import {
@@ -689,12 +692,22 @@ export async function executeStageTool(
   if (call.name === 'stage_set_world') {
     await ensureStageOpen(nodeId)
     const world = call.args.world
-    if (!world || typeof world !== 'object') {
+    if (!world || typeof world !== 'object' || Array.isArray(world)) {
       return { ok: false, error: 'world 参数无效' }
+    }
+    let normalized: PrevisWorldRef
+    try {
+      normalized = normalizePrevisWorldRef(world)
+    } catch (error) {
+      return {
+        ok: false,
+        error:
+          error instanceof Error ? error.message : 'world 参数不符合场景格式'
+      }
     }
     const updated = await applyToStage(
       nodeId,
-      [{ type: 'setWorld', world: world as PrevisWorldRef }],
+      [{ type: 'setWorld', world: normalized }],
       call.turnId
     )
     return {

@@ -141,15 +141,22 @@ function weatherAdjusted(
   return base
 }
 
+const STAGE_TIMES: readonly StageTimeOfDay[] = ['day', 'dusk', 'night']
+
+function resolveTimeOfDay(value: unknown): StageTimeOfDay {
+  return STAGE_TIMES.includes(value as StageTimeOfDay)
+    ? (value as StageTimeOfDay)
+    : 'day'
+}
+
 export function resolveStageLighting(
-  doc: Pick<DirectorStageDoc, 'world' | 'lighting'>
+  doc: Pick<DirectorStageDoc, 'world' | 'lighting'> | null | undefined
 ): StageLighting {
-  const time = doc.world?.timeOfDay ?? 'day'
-  const base = weatherAdjusted(
-    cloneLighting(TIME_LOOK[time]),
-    doc.world?.weather
-  )
-  return mergeLighting(base, doc.lighting)
+  const world =
+    doc?.world && typeof doc.world === 'object' ? doc.world : undefined
+  const time = resolveTimeOfDay(world?.timeOfDay)
+  const base = weatherAdjusted(cloneLighting(TIME_LOOK[time]), world?.weather)
+  return mergeLighting(base, doc?.lighting)
 }
 
 export const STAGE_LIGHTING_PRESETS: StageLightingPreset[] = [

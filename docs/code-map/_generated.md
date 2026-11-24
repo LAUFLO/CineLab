@@ -12,7 +12,7 @@
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20219 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5803 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 63 | 20515 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 63 | 20645 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12368 |
 | 10 | [UI 组件与面板](./10-ui.md) | 51 | 11007 |
 
@@ -110,6 +110,7 @@
 | `stage_add_objects` | `stage.addObjects` |  |  |
 | `stage_randomize_world` | `stage.randomizeWorld` |  |  |
 | `stage_from_scene_image` | `stage.fromSceneImage` |  |  |
+| `stage_capture` | `stage.capture` | 是 |  |
 | `timeline_get` | `timeline.get` |  | 是 |
 | `timeline_set_video` | `timeline.setVideo` |  |  |
 | `timeline_select_clips` | `timeline.selectClips` |  | 是 |
@@ -127,6 +128,7 @@
 | `timeline_remove_silence` | `timeline.removeSilence` |  |  |
 | `timeline_set_transition` | `timeline.setTransition` |  |  |
 | `timeline_export` | `timeline.export` | 是 |  |
+| `timeline_export_subtitles` | `timeline.exportSubtitles` | 是 |  |
 
 ## 节点组件
 

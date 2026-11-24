@@ -489,7 +489,25 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       category: '剪辑室',
     },
     requiresConfirm: true
-  }
+  },
+  {
+    id: 'timeline.exportSubtitles',
+    name: 'timeline_export_subtitles',
+    description:
+      '把当前时间线的字幕轨导出为 WebVTT 文件，返回文件路径。',
+    profiles: ['clip'],
+    readOnly: false,
+    scope: 'timeline',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true,
+    mcp: { title: '导出字幕', category: '剪辑室' }
+  },
 ]
 
 /** 真正修改时间线文档的工具；只读、选择和导出不计入回合撤销 */

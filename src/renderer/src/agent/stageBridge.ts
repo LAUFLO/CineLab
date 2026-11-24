@@ -20,7 +20,7 @@ import {
 import { solveStageShotIntent } from '@shared/stage-shot-intent'
 import { buildAutoCoverage } from '@shared/stage-auto-coverage'
 import { buildDialogueCoverage, parseDialogue } from '@shared/stage-dialogue'
-import { isStageNode, useCanvasStore } from '../stores/canvas'
+import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
 import { syncStageNodeSummary, useStageStore } from '../stage/stageStore'
 import { exportStagePreviewToCanvas } from '../stage/preview-runner'
 import { generateStageFromScene } from '../stage/stage-from-scene'
@@ -189,6 +189,85 @@ export async function executeStageTool(
     string,
     (call: AgentToolCallRequest) => Promise<StageToolResult>
   > = {
+    stage_capture: async (call) => {
+
+      const nodeId = String(call.args.nodeId ?? '')
+
+      const { doc } = await readDoc(nodeId)
+
+      await ensureStageOpen(nodeId)
+
+      const dataUrl = useStageStore.getState().capture()
+
+      if (!dataUrl) {
+
+        return { ok: false, error: '当前视口还没有准备好' }
+
+      }
+
+
+      const asset = await window.api.stage.capture({
+
+        stageId: doc.stageId,
+
+        dataUrl
+
+      })
+
+      const canvas = useCanvasStore.getState()
+
+      const stageNode = canvas.nodes.find((node) => node.id === nodeId)
+
+      if (!stageNode || !isStageNode(stageNode)) {
+
+        return { ok: false, error: '找不到这个导演台节点' }
+
+      }
+
+
+      const size = nodeSize(stageNode)
+
+      const ids = canvas.addAssetNodes(
+
+        'image',
+
+        {
+
+          x: stageNode.position.x + size.width + 80,
+
+          y: stageNode.position.y
+
+        },
+
+        [asset],
+
+        '导演台截图',
+
+        nodeId,
+
+        undefined,
+
+        true
+
+      )
+
+      const change = stageChange()
+
+      change.createdNodeIds.push(...ids)
+
+      return {
+
+        ok: true,
+
+        result: { assetPath: asset.path, nodeIds: ids },
+
+        change
+
+      }
+
+    },
+
+
     stage_get: async (call) => {
       const { doc } = await readDoc(nodeId)
       return { ok: true, result: stageSummary(doc) }

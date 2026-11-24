@@ -104,7 +104,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 6. 工具
 
-共 91 个工具，按类别如下。写工具执行前都会弹出原生确认框。
+共 93 个工具，按类别如下。写工具执行前都会弹出原生确认框。
 
 ### 6.1 适配器（3）
 
@@ -145,7 +145,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `generation_catalog` | 列出模型 | 是 |  |
 | `generation_start` | 提交生成 | 否 |  |
 
-### 6.5 剪辑室（18）
+### 6.5 剪辑室（19）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
@@ -166,9 +166,10 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `timeline_remove_silence` | 删除静音 | 否 |  |
 | `timeline_set_transition` | 设置转场 | 否 |  |
 | `timeline_export` | 导出时间线 | 否 |  |
+| `timeline_export_subtitles` | 导出字幕 VTT | 否 |  |
 | `timeline_open` | 打开剪辑室（传 `nodeId` 打开已有，省略则创建） | 否 |  |
 
-### 6.6 导演台（24）
+### 6.6 导演台（25）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
@@ -185,6 +186,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `stage_set_background` | 设置背景 | 否 |  |
 | `stage_update_object` | 修改对象 | 否 |  |
 | `stage_export_preview` | 导出预演 | 否 |  |
+| `stage_capture` | 截图到画布 | 否 |  |
 | `stage_set_active_camera` | 切换活动机位 | 否 |  |
 | `stage_remove_object` | 删除对象 | 否 | 是 |
 | `stage_set_shot_intent` | 设置镜头意图 | 否 |  |

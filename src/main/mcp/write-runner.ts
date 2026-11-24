@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { BrowserWindow, dialog, ipcMain } from 'electron'
+import { BrowserWindow, ipcMain } from 'electron'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import type { McpWriteCommand, McpWriteResult } from '@shared/mcp-command'
 import { getPreferences } from '../settings/preferences'
@@ -73,34 +73,11 @@ export function sendCommand(
   })
 }
 
-async function confirm(
-  summary: string,
-  args: Record<string, unknown>,
-  destructive: boolean
-): Promise<boolean> {
-  const win = appWindow()
-  const options: Electron.MessageBoxOptions = {
-    type: destructive ? 'warning' : 'question',
-    buttons: ['执行', '取消'],
-    defaultId: 1,
-    cancelId: 1,
-    noLink: true,
-    title: '外部 Agent 请求修改项目',
-    message: summary,
-    detail: JSON.stringify(args, null, 2).slice(0, 1200)
-  }
-
-  const response = win
-    ? await dialog.showMessageBox(win, options)
-    : await dialog.showMessageBox(options)
-  return response.response === 0
-}
-
 export async function runWrite(
   tool: string,
-  summary: string,
+  _summary: string,
   args: Record<string, unknown>,
-  destructive = false,
+  _destructive = false,
   timeoutMs = 30_000
 ): Promise<CallToolResult> {
   const preferences = await getPreferences()
@@ -108,10 +85,6 @@ export async function runWrite(
     return errorResult(
       'MCP 当前为只读模式，请在设置中关闭只读后再执行写操作'
     )
-  }
-
-  if (!(await confirm(summary, args, destructive))) {
-    return result({ cancelled: true })
   }
 
   const commandResult = await sendCommand(tool, args, timeoutMs)

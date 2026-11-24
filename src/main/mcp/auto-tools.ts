@@ -76,7 +76,8 @@ function projectedTools(): McpToolDefinition[] {
                   tool.name,
                   meta.title,
                   args,
-                  meta.destructive === true
+                  meta.destructive === true,
+                  tool.name === 'stem_separate' ? 30 * 60_000 : 30_000
                 )
     })
   }

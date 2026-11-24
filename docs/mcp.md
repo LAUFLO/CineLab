@@ -104,7 +104,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 6. 工具
 
-共 89 个工具，按类别如下。写工具执行前都会弹出原生确认框。
+共 91 个工具，按类别如下。写工具执行前都会弹出原生确认框。
 
 ### 6.1 适配器（3）
 
@@ -213,11 +213,13 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `film_study_update_segment` | 修改段落 | 否 |  |
 | `film_study_extract_subtitles` | 提取字幕 | 否 |  |
 
-### 6.8 资产（1）
+### 6.8 资产（3）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
 | `library_search` | 搜索资产库 | 是 |  |
+| `asset_ingest` | 素材入库 | 否 |  |
+| `stem_separate` | 人声/背景音分离 | 否 |  |
 
 ### 6.9 能力（2）
 

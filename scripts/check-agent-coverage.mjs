@@ -30,7 +30,8 @@ function extractTools() {
     'film',
     'capability',
     'skills',
-    'library'
+    'library',
+    'media'
   ]
   const tools = []
 

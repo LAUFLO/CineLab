@@ -36,6 +36,11 @@ import {
   listStyles,
   saveStyle
 } from '../library/styles'
+import { promises as fs } from 'node:fs'
+import { extname } from 'node:path'
+import { ingestAsset } from '../assets/ingest'
+import { separateStems } from '../media/stems'
+import { resolveMediaPath } from '../media/paths'
 
 export interface MainToolResult {
   ok: boolean
@@ -266,6 +271,54 @@ export async function executeMainTool(
         total: styles.length
       }
     }
+  }
+
+  if (call.name === 'asset_ingest') {
+    const relative = String(call.args.path ?? '').trim()
+    const absolute = await resolveMediaPath(scope.projectPath, relative)
+    const data = await fs.readFile(absolute)
+    const ext = extname(absolute).toLowerCase()
+    const kind =
+      call.args.kind === 'image' ||
+      call.args.kind === 'video' ||
+      call.args.kind === 'audio'
+        ? call.args.kind
+        : ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'].includes(ext)
+          ? 'image'
+          : ['.mp4', '.mov', '.webm', '.mkv', '.avi'].includes(ext)
+            ? 'video'
+            : 'audio'
+    const mime =
+      typeof call.args.mime === 'string'
+        ? call.args.mime
+        : kind === 'image'
+          ? `image/${ext === '.jpg' ? 'jpeg' : ext.slice(1)}`
+          : kind === 'video'
+            ? `video/${ext === '.mov' ? 'quicktime' : ext.slice(1)}`
+            : `audio/${ext.slice(1)}`
+    const asset = await ingestAsset({
+      projectPath: scope.projectPath,
+      data,
+      kind,
+      mime,
+      model: 'agent-import'
+    })
+    return { ok: true, result: asset }
+  }
+
+  if (call.name === 'stem_separate') {
+    const path = String(call.args.path ?? '').trim()
+    const mode = call.args.mode === 'background' ? 'background' : 'vocal'
+    const sourceKind =
+      call.args.sourceKind === 'video' || call.args.sourceKind === 'audio'
+        ? call.args.sourceKind
+        : undefined
+    const result = await separateStems(scope.projectPath, {
+      path,
+      mode,
+      ...(sourceKind ? { sourceKind } : {})
+    })
+    return { ok: true, result }
   }
 
   if (call.name === 'preset_create') {

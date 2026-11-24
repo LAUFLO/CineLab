@@ -31,7 +31,8 @@ function extractTools() {
     'capability',
     'skills',
     'library',
-    'media'
+    'media',
+    'skill-admin'
   ]
   const tools = []
 

@@ -148,7 +148,7 @@ export function PresetPromptDialog({
                   : '没有匹配的预设提示词'}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {ordered.map((template) => (
                   <div
                     key={template.id}
@@ -160,51 +160,58 @@ export function PresetPromptDialog({
                       event.preventDefault()
                       onInsert(template)
                     }}
-                    className="group relative flex cursor-pointer flex-col gap-1 rounded-card border border-border bg-surface-raised p-2.5 pr-[96px] text-left transition-colors hover:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                    className="group flex cursor-pointer flex-col gap-1.5 rounded-card border border-border bg-surface-raised p-2.5 text-left transition-colors hover:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                   >
-                    <div className="truncate text-[13px] font-medium text-fg">
-                      {template.name}
+                    <div className="flex items-center gap-1">
+                      <div
+                        className="min-w-0 flex-1 truncate text-[13px] font-medium text-fg"
+                        title={template.name}
+                      >
+                        {template.name}
+                      </div>
+                      <div className="flex shrink-0 gap-0.5 opacity-60 transition-opacity group-hover:opacity-100">
+                        <IconButton
+                          label="预览预设"
+                          unstyled
+                          className="flex h-6 w-6 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-hover hover:text-fg"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setPreviewing(template)
+                          }}
+                        >
+                          <Icon name="eye" size={13} />
+                        </IconButton>
+                        <IconButton
+                          label="编辑预设"
+                          unstyled
+                          className="flex h-6 w-6 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-hover hover:text-fg"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setEditing({
+                              id: template.id,
+                              name: template.name,
+                              kind: template.kind,
+                              prompt: template.prompt
+                            })
+                          }}
+                        >
+                          <Icon name="edit" size={13} />
+                        </IconButton>
+                        <IconButton
+                          label="删除预设"
+                          unstyled
+                          className="flex h-6 w-6 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-hover hover:text-fg"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleDelete(template)
+                          }}
+                        >
+                          <Icon name="trash" size={13} />
+                        </IconButton>
+                      </div>
                     </div>
-                    <div className="line-clamp-2 min-h-[33px] text-[11px] leading-[1.5] text-fg-muted">
+                    <div className="line-clamp-3 min-h-[50px] text-[11px] leading-[1.5] text-fg-muted">
                       {template.prompt || '空预设'}
-                    </div>
-
-                    <div className="absolute right-1.5 top-1.5 flex gap-0.5 opacity-60 transition-opacity group-hover:opacity-100">
-                      <IconButton
-                        label="预览预设"
-                        size="sm"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          setPreviewing(template)
-                        }}
-                      >
-                        <Icon name="eye" size={13} />
-                      </IconButton>
-                      <IconButton
-                        label="编辑预设"
-                        size="sm"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          setEditing({
-                            id: template.id,
-                            name: template.name,
-                            kind: template.kind,
-                            prompt: template.prompt
-                          })
-                        }}
-                      >
-                        <Icon name="edit" size={13} />
-                      </IconButton>
-                      <IconButton
-                        label="删除预设"
-                        size="sm"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          handleDelete(template)
-                        }}
-                      >
-                        <Icon name="trash" size={13} />
-                      </IconButton>
                     </div>
                   </div>
                 ))}

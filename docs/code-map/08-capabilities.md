@@ -52,8 +52,9 @@
 | 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
 | 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能全部显示、导入与卡片启用开关 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
-| 02 | 官方/自定义风格库：按输入框居中的 620×480 浮窗、分类浏览、单击即应用并关闭、单选胶囊（内联提示词首行、× 角标）、生成拼接提示词；资产库“风格”与风格库同源展示 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`style-prompt.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`style-prompt.test.ts` |
-| 02 | 预设提示词：按输入框居中的 620×480 浮窗、CRUD、两列卡片与全文预览、名称胶囊任意位置插入、发送原位展开、风格置顶；胶囊宽度对齐占位、绿色无图标、连续插入不重叠；资产库“使用”插入正文 | `src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx`、`prompt-preset.test.ts` |
+| 02 | 官方/自定义风格库：按输入框居中的 620×480 浮窗、一行 8 列小封面、分类浏览、单击即应用并关闭、单选胶囊（内联提示词首行、× 角标）；资产库“风格”与风格库同源展示 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`style-prompt.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`style-prompt.test.ts` |
+| 02 | 预设提示词：按输入框居中的 620×480 浮窗、CRUD、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、发送原位展开、风格置顶；胶囊宽度对齐占位、绿色无图标、连续插入不重叠；资产库“使用”插入正文 | `src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx`、`prompt-preset.test.ts` |
+| 02 | 资产库提示词卡片：按钮行统一 28px、卡片等高、新建入口位于面包屑右侧 | `TemplateGrid.tsx`、`LibraryWindow.tsx` |
 
 ## 部分实现（别当已完成）
 

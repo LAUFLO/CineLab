@@ -235,7 +235,7 @@ export function StyleLibraryDialog({
                   {styles.length === 0 ? '风格库加载中…' : '没有匹配的风格'}
                 </div>
               ) : (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-8 gap-1.5">
                   {filtered.map((style) => (
                     <div key={style.id} className="group relative">
                       <Button
@@ -252,41 +252,41 @@ export function StyleLibraryDialog({
                             loading="lazy"
                           />
                           {style.source === 'user' ? (
-                            <span className="absolute left-1 top-1 rounded-full bg-surface/85 px-1.5 py-0.5 text-[9px] text-fg-muted">
+                            <span className="absolute left-0.5 top-0.5 rounded-full bg-surface/85 px-1 py-px text-[8px] text-fg-muted">
                               自定义
                             </span>
                           ) : null}
                         </div>
-                        <div className="flex justify-center px-1 py-1">
-                          <span className="truncate text-center text-[11px] text-fg">
+                        <div className="px-0.5 pt-1">
+                          <span className="block truncate text-center text-[10px] text-fg">
                             {style.name}
                           </span>
                         </div>
                       </Button>
 
                       {style.source === 'user' ? (
-                        <div className="absolute right-1 top-1 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                        <div className="absolute right-0.5 top-0.5 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                           <IconButton
                             label="编辑风格"
-                            size="sm"
-                            className="bg-surface/90"
+                            unstyled
+                            className="flex h-5 w-5 items-center justify-center rounded bg-surface/90 text-fg-muted hover:bg-surface-hover hover:text-fg"
                             onClick={(event: MouseEvent<HTMLButtonElement>) => {
                               event.stopPropagation()
                               startEdit(style)
                             }}
                           >
-                            <Icon name="edit" size={13} />
+                            <Icon name="edit" size={11} />
                           </IconButton>
                           <IconButton
                             label="删除风格"
-                            size="sm"
-                            className="bg-surface/90"
+                            unstyled
+                            className="flex h-5 w-5 items-center justify-center rounded bg-surface/90 text-fg-muted hover:bg-surface-hover hover:text-fg"
                             onClick={(event: MouseEvent<HTMLButtonElement>) => {
                               event.stopPropagation()
                               remove(style)
                             }}
                           >
-                            <Icon name="trash" size={13} />
+                            <Icon name="trash" size={11} />
                           </IconButton>
                         </div>
                       ) : null}

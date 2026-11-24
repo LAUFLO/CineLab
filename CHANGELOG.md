@@ -3,6 +3,33 @@
 本项目的版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循语义化版本。
 
+## [0.5.0] - 2026-11-24
+
+### 新增
+
+- MCP 工具从 CineBot 的 `AGENT_TOOLS` 投影，工具名统一，共 99 个；设置页显示中文标题、悬浮代码名，并支持搜索和只读 / 写 / 危险筛选。
+- MCP 写操作改为直接执行，不再弹应用内确认；只读模式作为安全阀。
+- MCP 独立 scope：写工具不再要求节点在画布选中范围内。
+- 新增项目工具：`project_create`、`project_open`、`project_export`。
+- 新增提示词模板与风格库工具：`preset_*`、`style_*`，支持列出、搜索、读取和 CRUD。
+- 新增素材与音频工具：`asset_ingest`、`stem_separate`。
+- 新增字幕导出 `timeline_export_subtitles`、导演台截图 `stage_capture`。
+- 新增技能管理：`skill_toggle`、`skill_create`、`skill_import`。
+- 新增 `check:agent-coverage`：校验工具声明、handler、MCP 元数据和长任务超时。
+- 新增 `toCommands` 命令映射、`commandHandlers` 统一入口和 `handler-allowlist.json`。
+
+### 变更
+
+- MCP 工具名统一为 CineBot 名，旧名移除；`node_update` 拆成标题 / 文本，`node_list` 并入 `canvas_get`。
+- PromptBar 浮窗按输入框居中，节点太靠上时自动移到视口中心偏下；预设胶囊改绿色、去掉三横图标，风格胶囊统一角标。
+- 预设卡片改为 3 列，风格库改为一行 8 列；资产库提示词卡片按钮统一尺寸。
+- MCP 设置页工具清单改为中文标题、悬浮代码名，增加搜索和筛选。
+
+### 修复
+
+- 修复删除类 MCP 工具缺少 `destructive` 标记、工具清单全部显示蓝色的问题。
+- 修复 MCP 工具数量与分类显示不一致。
+
 ## [0.4.6] - 2026-11-23
 
 ### 变更

@@ -310,7 +310,11 @@ function buildGenerated() {
       const pattern = /id: '([^']+)',\s*\n\s*name: '([^']+)'/g
       let match
       while ((match = pattern.exec(text))) {
-        const block = text.slice(match.index, match.index + 900)
+        const endBrace = text.indexOf('\n  },', match.index)
+        const endArray = text.indexOf('\n  }\n]', match.index)
+        const ends = [endBrace, endArray].filter((index) => index >= 0)
+        const end = ends.length ? Math.min(...ends) : text.length
+        const block = text.slice(match.index, end)
         toolRows.push(
           `| \`${match[2]}\` | \`${match[1]}\` | ${block.includes('requiresConfirm: true') ? '是' : ''} | ${block.includes('readOnly: true') ? '是' : ''} |`
         )

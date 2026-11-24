@@ -52,7 +52,7 @@
 | `canvas_connect` | `canvas.connect` |  |  |
 | `canvas_delete_node` | `canvas.deleteNode` | 是 |  |
 | `canvas_group` | `canvas.group` |  |  |
-| `canvas_ungroup` | `canvas.ungroup` |  | 是 |
+| `canvas_ungroup` | `canvas.ungroup` |  |  |
 | `canvas_node_operations` | `canvas.nodeOperations` |  | 是 |
 | `canvas_node_operation` | `canvas.nodeOperation` |  |  |
 | `capability_catalog` | `capability.catalog` |  | 是 |
@@ -60,11 +60,11 @@
 | `film_study_get` | `film.studyGet` |  | 是 |
 | `film_study_get_shot` | `film.studyGetShot` |  | 是 |
 | `film_study_update_shot` | `film.studyUpdateShot` |  |  |
-| `film_study_remake` | `film.studyRemake` |  |  |
+| `film_study_remake` | `film.studyRemake` | 是 |  |
 | `film_study_split_scenes` | `film.studySplitScenes` | 是 |  |
 | `film_study_map_cast` | `film.studyMapCast` |  |  |
 | `film_study_build_timeline` | `film.studyBuildTimeline` | 是 |  |
-| `film_study_auto` | `film.studyAuto` |  |  |
+| `film_study_auto` | `film.studyAuto` | 是 |  |
 | `film_study_export` | `film.studyExport` |  |  |
 | `film_study_update_segment` | `film.studyUpdateSegment` |  |  |
 | `film_study_extract_subtitles` | `film.studyExtractSubtitles` | 是 |  |
@@ -80,7 +80,7 @@
 | `preset_create` | `library.presetCreate` | 是 |  |
 | `preset_update` | `library.presetUpdate` | 是 |  |
 | `preset_delete` | `library.presetDelete` | 是 |  |
-| `style_create` | `library.styleCreate` |  |  |
+| `style_create` | `library.styleCreate` | 是 |  |
 | `style_update` | `library.styleUpdate` | 是 |  |
 | `style_delete` | `library.styleDelete` | 是 |  |
 | `asset_ingest` | `media.assetIngest` | 是 |  |
@@ -89,8 +89,8 @@
 | `project_open` | `project.open` | 是 |  |
 | `project_export` | `project.export` | 是 |  |
 | `skill_toggle` | `skill.toggle` | 是 |  |
-| `skill_create` | `skill.create` |  |  |
-| `skill_import` | `skill.import` |  |  |
+| `skill_create` | `skill.create` | 是 |  |
+| `skill_import` | `skill.import` | 是 |  |
 | `skill_list` | `skill.list` |  | 是 |
 | `skill_read` | `skill.read` |  | 是 |
 | `stage_get` | `stage.get` |  | 是 |
@@ -102,10 +102,10 @@
 | `stage_add_shot` | `stage.addShot` |  |  |
 | `stage_update_shot` | `stage.updateShot` |  |  |
 | `stage_remove_shot` | `stage.removeShot` | 是 |  |
-| `stage_set_camera_track` | `stage.setCameraTrack` |  |  |
+| `stage_set_camera_track` | `stage.setCameraTrack` | 是 |  |
 | `stage_set_background` | `stage.setBackground` |  |  |
 | `stage_update_object` | `stage.updateObject` |  |  |
-| `stage_export_preview` | `stage.exportPreview` |  |  |
+| `stage_export_preview` | `stage.exportPreview` | 是 |  |
 | `stage_set_active_camera` | `stage.setActiveCamera` |  |  |
 | `stage_remove_object` | `stage.removeObject` | 是 |  |
 | `stage_set_shot_intent` | `stage.setShotIntent` |  |  |
@@ -131,7 +131,7 @@
 | `timeline_set_track` | `timeline.setTrack` |  |  |
 | `timeline_add_marker` | `timeline.addMarker` |  |  |
 | `timeline_auto_subtitles` | `timeline.autoSubtitles` |  |  |
-| `timeline_remove_silence` | `timeline.removeSilence` |  |  |
+| `timeline_remove_silence` | `timeline.removeSilence` | 是 |  |
 | `timeline_set_transition` | `timeline.setTransition` |  |  |
 | `timeline_export` | `timeline.export` | 是 |  |
 | `timeline_export_subtitles` | `timeline.exportSubtitles` | 是 |  |

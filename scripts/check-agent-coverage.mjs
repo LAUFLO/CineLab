@@ -72,7 +72,7 @@ function extractHandlers(file, objectName) {
   const end = findMatchingBrace(source, brace)
   if (end < 0) return []
   const body = source.slice(brace + 1, end)
-  return [...body.matchAll(/^\s+([a-z0-9_]+): async \(call\) =>/gm)].map(
+  return [...body.matchAll(/^\s+([a-z0-9_]+): async \((?:call)?\) =>/gm)].map(
     (match) => match[1]
   )
 }

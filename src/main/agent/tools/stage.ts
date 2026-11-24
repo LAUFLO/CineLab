@@ -746,7 +746,31 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       title: '从场景图生成白膜',
       category: '导演台',
     },
-  }
+  },
+  {
+    id: 'stage.capture',
+    name: 'stage_capture',
+    description:
+      '把当前导演台视口截图并添加到画布，返回素材路径和新节点 ID。',
+    profiles: ['canvas', 'stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: {
+          type: 'string',
+          description: '导演台画布节点 ID，必须来自 canvas_get'
+        }
+      },
+      required: ['nodeId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true,
+    mcp: { title: '截图到画布', category: '导演台' }
+  },
 ]
 
 function isStageVec3(value: unknown): boolean {

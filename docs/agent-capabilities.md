@@ -6,7 +6,7 @@
 最后核对：2026-11-23
 关联：`docs/agent-architecture-plan.md`
 
-当前注册 84 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库、提示词模板、风格、素材处理和技能。
+当前注册 86 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库、提示词模板、风格、素材处理和技能。
 本文件记录已开放给 CineBot 的能力、参数校验、确认规则和回合撤销方式。
 所有写操作都走命令层；UI 和 Agent 共用执行器。
 
@@ -24,13 +24,13 @@
 
 `preset_list`、`preset_search`、`preset_read`、`preset_create`、`preset_update`、`preset_delete`、`style_list`、`style_search`、`style_read`、`style_create`、`style_update`、`style_delete`
 
-### 导演台（22）
+### 导演台（24）
 
-`stage_get`、`stage_capabilities`、`stage_add_object`、`stage_add_objects`、`stage_transform_object`、`stage_add_camera`、`stage_transform_camera`、`stage_add_shot`、`stage_update_shot`、`stage_remove_shot`、`stage_set_camera_track`、`stage_set_background`、`stage_update_object`、`stage_export_preview`、`stage_set_active_camera`、`stage_remove_object`、`stage_set_shot_intent`、`stage_clear_shot_intent`、`stage_auto_coverage`、`stage_dialogue_coverage`、`stage_set_world`、`stage_randomize_world`、`stage_from_scene_image`
+`stage_get`、`stage_capabilities`、`stage_add_object`、`stage_add_objects`、`stage_transform_object`、`stage_add_camera`、`stage_transform_camera`、`stage_add_shot`、`stage_update_shot`、`stage_remove_shot`、`stage_set_camera_track`、`stage_set_background`、`stage_update_object`、`stage_export_preview`、`stage_set_active_camera`、`stage_remove_object`、`stage_set_shot_intent`、`stage_clear_shot_intent`、`stage_auto_coverage`、`stage_dialogue_coverage`、`stage_set_world`、`stage_randomize_world`、`stage_from_scene_image`、`stage_capture`
 
-### 剪辑室（17）
+### 剪辑室（18）
 
-`timeline_get`、`timeline_select_clips`、`timeline_set_video`、`timeline_move_clips`、`timeline_trim_clip`、`timeline_split_clips`、`timeline_split_by_shots`、`timeline_beat_markers`、`timeline_beat_split`、`timeline_remove_clips`、`timeline_update_clip`、`timeline_set_track`、`timeline_add_marker`、`timeline_auto_subtitles`、`timeline_remove_silence`、`timeline_set_transition`、`timeline_export`
+`timeline_get`、`timeline_select_clips`、`timeline_set_video`、`timeline_move_clips`、`timeline_trim_clip`、`timeline_split_clips`、`timeline_split_by_shots`、`timeline_beat_markers`、`timeline_beat_split`、`timeline_remove_clips`、`timeline_update_clip`、`timeline_set_track`、`timeline_add_marker`、`timeline_auto_subtitles`、`timeline_remove_silence`、`timeline_set_transition`、`timeline_export`、`timeline_export_subtitles`
 
 ### 拉片（11）
 

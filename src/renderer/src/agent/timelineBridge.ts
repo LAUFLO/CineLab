@@ -238,6 +238,15 @@ export async function executeTimelineTool(
       string,
       (call: AgentToolCallRequest) => Promise<TimelineToolResult>
     > = {
+      timeline_export_subtitles: async () => {
+
+        const path = await window.api.timeline.exportVtt(doc)
+
+        return { ok: true, result: { path } }
+
+      },
+
+
       timeline_get: async (call) => {
         return { ok: true, result: timelineSummary(doc) }
       },

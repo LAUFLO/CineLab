@@ -5,7 +5,7 @@ import type {
   McpToolInfo
 } from '@shared/ipc-contract'
 import { Icon } from '../components/Icon'
-import { Button, Switch } from '../components/ui'
+import { Button, Input, Switch } from '../components/ui'
 import { usePreferencesStore } from '../stores/preferences'
 import { useUIStore } from '../stores/ui'
 
@@ -48,6 +48,10 @@ export function McpSettingsSection(): React.JSX.Element {
   const [status, setStatus] = useState<McpServerStatus | null>(null)
   const [config, setConfig] = useState<McpConfigInfo | null>(null)
   const [tokenVisible, setTokenVisible] = useState(false)
+  const [toolQuery, setToolQuery] = useState('')
+  const [toolFilter, setToolFilter] = useState<
+    'all' | 'readonly' | 'write' | 'danger'
+  >('all')
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
@@ -122,14 +126,30 @@ export function McpSettingsSection(): React.JSX.Element {
   }, [config])
 
   const groups = useMemo(() => {
+    const keyword = toolQuery.trim().toLowerCase()
     const map = new Map<string, McpToolInfo[]>()
     for (const tool of status?.tools ?? []) {
+      if (toolFilter === 'readonly' && !tool.readOnly) continue
+      if (toolFilter === 'write' && tool.readOnly) continue
+      if (toolFilter === 'danger' && !tool.destructive) continue
+      if (
+        keyword &&
+        !tool.name.toLowerCase().includes(keyword) &&
+        !tool.title.toLowerCase().includes(keyword)
+      ) {
+        continue
+      }
       const list = map.get(tool.category) ?? []
       list.push(tool)
       map.set(tool.category, list)
     }
     return [...map.entries()]
-  }, [status])
+  }, [status, toolQuery, toolFilter])
+
+  const filteredCount = groups.reduce(
+    (total, [, tools]) => total + tools.length,
+    0
+  )
 
   return (
     <div className="flex flex-col gap-4">
@@ -304,9 +324,45 @@ export function McpSettingsSection(): React.JSX.Element {
         <div className="flex items-center justify-between gap-3">
           <div className="text-[12.5px] text-fg">工具</div>
           <span className="text-[11px] text-fg-subtle">
-            {status?.tools.length ?? 0} 个 · 只读{' '}
+            {filteredCount} / {status?.tools.length ?? 0} 个 · 只读{' '}
             {status?.tools.filter((tool) => tool.readOnly).length ?? 0}
           </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Input
+            value={toolQuery}
+            onChange={(event) => setToolQuery(event.target.value)}
+            placeholder="搜索工具名称或标题"
+            className="h-7 w-48 text-[11px]"
+          />
+          <Button
+            size="xs"
+            variant={toolFilter === 'all' ? 'secondary' : 'ghost'}
+            onClick={() => setToolFilter('all')}
+          >
+            全部
+          </Button>
+          <Button
+            size="xs"
+            variant={toolFilter === 'readonly' ? 'secondary' : 'ghost'}
+            onClick={() => setToolFilter('readonly')}
+          >
+            只读
+          </Button>
+          <Button
+            size="xs"
+            variant={toolFilter === 'write' ? 'secondary' : 'ghost'}
+            onClick={() => setToolFilter('write')}
+          >
+            写
+          </Button>
+          <Button
+            size="xs"
+            variant={toolFilter === 'danger' ? 'secondary' : 'ghost'}
+            onClick={() => setToolFilter('danger')}
+          >
+            危险
+          </Button>
         </div>
         {groups.length === 0 ? (
           <div className="py-3 text-center text-xs text-fg-subtle">
@@ -323,10 +379,10 @@ export function McpSettingsSection(): React.JSX.Element {
                   {tools.map((tool) => (
                     <span
                       key={tool.name}
-                      title={tool.title}
-                      className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[10px] ${toolTone(tool)}`}
+                      title={tool.name}
+                      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10.5px] ${toolTone(tool)}`}
                     >
-                      {tool.name}
+                      {tool.title}
                     </span>
                   ))}
                 </div>
@@ -336,7 +392,7 @@ export function McpSettingsSection(): React.JSX.Element {
         )}
         <div className="flex items-center gap-1.5 text-[11px] text-fg-subtle">
           <Icon name="help" size={12} />
-          蓝色为写工具（执行前需在应用内确认），红色为删除类危险操作
+          灰色为只读工具，蓝色为写工具（执行前需在应用内确认），红色为删除类危险操作
         </div>
       </div>
     </div>

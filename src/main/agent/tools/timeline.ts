@@ -284,6 +284,7 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
     mcp: {
       title: '删除片段',
       category: '剪辑室',
+      destructive: true,
     },
     requiresConfirm: true
   },
@@ -426,6 +427,7 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
     mcp: {
       title: '删除静音',
       category: '剪辑室',
+      destructive: true,
     },
     requiresConfirm: true
   },

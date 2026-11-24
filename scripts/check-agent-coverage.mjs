@@ -45,7 +45,8 @@ function extractTools() {
         main: /^    executor: 'main'/m.test(block),
         hasMcp: /^    mcp: \{/m.test(block),
         title: title?.[1],
-        expose: !/^      expose: false/m.test(block)
+        expose: !/^      expose: false/m.test(block),
+        destructive: /^      destructive: true/m.test(block)
       })
     }
   }
@@ -101,6 +102,9 @@ for (const tool of tools) {
   }
   if (tool.hasMcp && tool.expose && !tool.title) {
     errors.push(`缺少中文标题：${tool.name}`)
+  }
+  if (/(?:delete|remove)/.test(tool.name) && !tool.destructive) {
+    errors.push(`删除类工具缺少 destructive：${tool.name}`)
   }
 }
 

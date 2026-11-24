@@ -28,7 +28,11 @@ export const CAPABILITY_TOOLS: AgentToolDefinition[] = [
       },
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '能力目录',
+      category: '能力',
+    },
   },
   {
     id: 'capability.search',
@@ -52,6 +56,10 @@ export const CAPABILITY_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe',
+    mcp: {
+      title: '搜索能力',
+      category: '能力',
+    },
     executor: 'main'
   }
 ]

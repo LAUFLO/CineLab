@@ -27,6 +27,10 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe',
+    mcp: {
+      title: '列出模型',
+      category: '生成',
+    },
     executor: 'main'
   },
   {
@@ -58,6 +62,10 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe',
+    mcp: {
+      title: '搜索资产库',
+      category: '资产',
+    },
     executor: 'main'
   },
   {
@@ -147,7 +155,12 @@ export const GENERATION_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'modelKey'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '生成提案',
+      category: '生成',
+      expose: false,
+    },
   }
 ]
 

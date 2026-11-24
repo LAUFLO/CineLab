@@ -19,6 +19,10 @@ export const SKILL_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe',
+    mcp: {
+      title: '技能列表',
+      category: '技能',
+    },
     executor: 'main'
   },
   {
@@ -54,6 +58,10 @@ export const SKILL_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe',
+    mcp: {
+      title: '读取技能',
+      category: '技能',
+    },
     executor: 'main'
   }
 ]

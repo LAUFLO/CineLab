@@ -28,7 +28,11 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       },
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '读取拉片',
+      category: '拉片',
+    },
   },
   {
     id: 'film.studyGetShot',
@@ -58,7 +62,11 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       required: ['index'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '读取镜头',
+      category: '拉片',
+    },
   },
   {
     id: 'film.studyUpdateShot',
@@ -105,7 +113,11 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       required: ['index', 'patch'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '修改镜头',
+      category: '拉片',
+    },
   },
   {
     id: 'film.studyRemake',
@@ -142,6 +154,10 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '复刻镜头',
+      category: '拉片',
+    },
     requiresConfirm: true
   },
   {
@@ -172,6 +188,10 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe',
+    mcp: {
+      title: '自动分场',
+      category: '拉片',
+    },
     requiresConfirm: true
   },
   {
@@ -207,7 +227,11 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       },
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '选角选景',
+      category: '拉片',
+    },
   },
   {
     id: 'film.studyBuildTimeline',
@@ -238,6 +262,10 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '建时间线',
+      category: '拉片',
+    },
     requiresConfirm: true
   },
   {
@@ -280,6 +308,10 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '自动拉片',
+      category: '拉片',
+    },
     requiresConfirm: true
   },
   {
@@ -310,7 +342,11 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       },
       additionalProperties: false
     },
-    replay: 'unsafe'
+    replay: 'unsafe',
+    mcp: {
+      title: '导出拉片',
+      category: '拉片',
+    },
   },
   {
     id: 'film.studyUpdateSegment',
@@ -364,7 +400,11 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       required: ['segmentId', 'patch'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '修改段落',
+      category: '拉片',
+    },
   },
   {
     id: 'film.studyExtractSubtitles',
@@ -390,6 +430,10 @@ export const FILM_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '提取字幕',
+      category: '拉片',
+    },
     requiresConfirm: true
   }
 ]

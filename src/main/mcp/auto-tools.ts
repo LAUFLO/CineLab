@@ -10,10 +10,9 @@ import type { AgentScope } from '@shared/agent'
 import { executeMainTool } from '../agent/main-tools'
 import { AGENT_TOOLS } from '../agent/tools'
 import { getCurrentProjectRoot } from '../project/manager'
-import { MCP_EXPOSURE, type McpToolMeta } from './exposure'
 import { MCP_EXCLUSIVE_TOOLS } from './exclusive-tools'
 import { validateJsonSchema } from './schema-validate'
-import type { McpToolDefinition } from './tool-types'
+import type { McpToolDefinition, McpToolMeta } from './tool-types'
 import {
   errorResult,
   registerMcpCommandIpc,
@@ -52,7 +51,7 @@ function projectedTools(): McpToolDefinition[] {
   const tools: McpToolDefinition[] = []
 
   for (const tool of AGENT_TOOLS) {
-    const meta = MCP_EXPOSURE[tool.name]
+    const meta = tool.mcp
     if (!meta || meta.expose === false) continue
 
     const readOnly = tool.readOnly

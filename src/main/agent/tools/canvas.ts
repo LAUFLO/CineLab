@@ -26,7 +26,11 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       },
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '读取画布',
+      category: '画布',
+    },
   },
   {
     id: 'canvas.removeEdge',
@@ -56,6 +60,10 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '删除连线',
+      category: '画布',
+    },
     requiresConfirm: true
   },
   {
@@ -83,6 +91,10 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '修改节点正文',
+      category: '画布',
+    },
     requiresConfirm: true
   },
   {
@@ -109,7 +121,11 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'title'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '修改节点标题',
+      category: '画布',
+    },
   },
   {
     id: 'canvas.moveNode',
@@ -133,7 +149,11 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'x', 'y'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '移动节点',
+      category: '画布',
+    },
   },
   {
     id: 'canvas.addNode',
@@ -166,7 +186,11 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       required: ['kind'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '创建节点',
+      category: '画布',
+    },
   },
   {
     id: 'canvas.connect',
@@ -186,7 +210,11 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       required: ['sourceNodeId', 'targetNodeId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '连接节点',
+      category: '画布',
+    },
   },
   {
     id: 'canvas.deleteNode',
@@ -206,6 +234,10 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '删除节点',
+      category: '画布',
+    },
     requiresConfirm: true
   },
   {
@@ -231,7 +263,11 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       required: ['nodeIds'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '分组节点',
+      category: '画布',
+    },
   },
   {
     id: 'canvas.ungroup',
@@ -249,7 +285,11 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       required: ['groupId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '解散分组',
+      category: '画布',
+    },
   },
   {
     id: 'canvas.nodeOperations',
@@ -268,7 +308,11 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '列出节点操作',
+      category: '画布',
+    },
   },
   {
     id: 'canvas.nodeOperation',
@@ -300,7 +344,11 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'operationId'],
       additionalProperties: false
     },
-    replay: 'unsafe'
+    replay: 'unsafe',
+    mcp: {
+      title: '执行节点操作',
+      category: '画布',
+    },
   }
 ]
 

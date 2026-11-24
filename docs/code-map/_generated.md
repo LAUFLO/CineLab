@@ -12,7 +12,7 @@
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20219 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5803 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 64 | 20763 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 64 | 20825 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12368 |
 | 10 | [UI 组件与面板](./10-ui.md) | 51 | 11007 |
 
@@ -87,6 +87,7 @@
 | `stem_separate` | `media.stemSeparate` | 是 |  |
 | `skill_toggle` | `skill.toggle` | 是 |  |
 | `skill_create` | `skill.create` |  |  |
+| `skill_import` | `skill.import` |  |  |
 | `skill_list` | `skill.list` |  | 是 |
 | `skill_read` | `skill.read` |  | 是 |
 | `stage_get` | `stage.get` |  | 是 |

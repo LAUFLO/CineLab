@@ -100,7 +100,8 @@ describe('pi tool adapter', () => {
         'asset_ingest',
         'stem_separate',
         'skill_toggle',
-        'skill_create'
+        'skill_create',
+        'skill_import'
       ])
     )
   })

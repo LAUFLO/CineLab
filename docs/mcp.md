@@ -104,7 +104,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 6. 工具
 
-共 95 个工具，按类别如下。写工具执行前都会弹出原生确认框。
+共 96 个工具，按类别如下。写工具执行前都会弹出原生确认框。
 
 ### 6.1 适配器（3）
 
@@ -230,7 +230,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `capability_catalog` | 能力目录 | 是 |  |
 | `capability_search` | 搜索能力 | 是 |  |
 
-### 6.10 技能（4）
+### 6.10 技能（5）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
@@ -238,6 +238,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `skill_read` | 读取技能 | 是 |  |
 | `skill_toggle` | 启用/禁用技能 | 否 |  |
 | `skill_create` | 创建技能 | 否 |  |
+| `skill_import` | 导入技能文件夹或 ZIP | 否 |  |
 
 时间线工具要求剪辑室已打开，外部 Agent 可以先调用 `timeline_open({ nodeId })` 打开已有剪辑室；导演台工具需要 `nodeId`；拉片工具需要 `nodeId` 或 `studyId`。写工具复用 CineBot 的画布、时间线、导演台和拉片执行器，不直接改项目 JSON。
 

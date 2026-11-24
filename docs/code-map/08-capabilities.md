@@ -41,12 +41,11 @@
 | 05 | 切镜/转场、首中尾帧、逐镜理解、取证与复核、分场、角色/风格、镜头三节点、分镜表、复刻建图 | `src/main/film-study/`、`stores/film-study.ts` |
 | 06 | CineBot 工具、生成提案、会话、技能 | `src/main/agent/` |
 | 06 | 技能文件夹/ZIP 导入、SKILL.md 校验、卡片启用开关 | `src/main/agent/skills-import.ts`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
-| 06 | 本地可信适配器 MCP server（HTTP + stdio）、认证与工具 | `src/main/mcp/`、`docs/mcp.md` |
-| 06 | MCP 项目/画布/节点/模型只读工具 | `src/main/mcp/app-tools.ts`、`src/shared/canvas-summary.ts` |
-| 06 | MCP 画布写工具与生成提交（应用内确认） | `src/main/mcp/write-tools.ts`、`src/renderer/src/mcp/commandBridge.ts` |
-| 06 | MCP 时间线读取/写操作（片段、轨道、标记、转场、导出） | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/timelineBridge.ts` |
-| 06 | MCP 导演台对象/机位/镜头/自动分镜/预演导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/stageBridge.ts` |
-| 06 | MCP 拉片读取/修改/自动拉片/复刻/导出 | `src/main/mcp/write-tools.ts`、`src/renderer/src/agent/filmBridge.ts` |
+| 06 | 本地可信适配器 MCP server（HTTP + stdio）、认证与 77 个工具 | `src/main/mcp/`、`docs/mcp.md` |
+| 06 | MCP 工具从 `AGENT_TOOLS` 投影，工具名与 CineBot 统一 | `src/main/mcp/auto-tools.ts`、`src/main/mcp/exposure.ts` |
+| 06 | MCP 项目/适配器/工作台打开等 8 个专属工具 | `src/main/mcp/exclusive-tools.ts`、`src/main/mcp/write-runner.ts` |
+| 06 | MCP 写工具与生成提交（应用内确认、只读模式） | `src/main/mcp/write-runner.ts`、`src/renderer/src/mcp/commandBridge.ts` |
+| 06 | MCP 时间线/导演台/拉片工具复用 CineBot 执行器 | `src/main/mcp/auto-tools.ts`、`src/renderer/src/agent/timelineBridge.ts`、`stageBridge.ts`、`filmBridge.ts` |
 | 07 | IPC、preload、设置、素材库、安全、更新 | `src/main/ipc/`、`src/preload/` |
 | 07 | 模型配置弹窗保存直接写入 models.json；Agent pending 自动应用 | `SettingsPanel.tsx`、`src/main/settings/models-watch.ts` |
 | 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |

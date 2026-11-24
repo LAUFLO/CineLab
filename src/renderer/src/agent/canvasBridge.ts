@@ -485,13 +485,25 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
   }
 
   if (call.name === 'canvas_get') {
+    const kindFilter =
+      typeof call.args.kind === 'string' && call.args.kind.trim()
+        ? call.args.kind.trim()
+        : undefined
+    const nodes = kindFilter
+      ? state.nodes.filter((node) =>
+          node.type === 'cine'
+            ? node.data.kind === kindFilter
+            : node.type === kindFilter
+        )
+      : state.nodes
+
     return {
       ok: true,
       result: {
-        nodeCount: state.nodes.length,
+        nodeCount: nodes.length,
         edgeCount: state.edges.length,
         selectedNodes: selectedNodeSummary(),
-        nodes: state.nodes.slice(0, 200).map((node) => {
+        nodes: nodes.slice(0, 200).map((node) => {
           const output = selectedNodeOutput(node)
           const data = node.data as {
             title?: unknown
@@ -521,7 +533,8 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
           target: edge.target,
           ...(edge.data?.role ? { role: edge.data.role } : {})
         })),
-        ...(state.nodes.length > 200 ? { nodesTruncated: true } : {})
+        ...(nodes.length > 200 ? { nodesTruncated: true } : {}),
+        ...(kindFilter ? { kind: kindFilter } : {})
       }
     }
   }

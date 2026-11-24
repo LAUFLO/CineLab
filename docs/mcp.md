@@ -104,120 +104,152 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 6. 工具
 
-共 61 个工具，按类别如下。写工具执行前都会弹出原生确认框。
+共 77 个工具，按类别如下。写工具执行前都会弹出原生确认框。
 
-### 6.1 本地适配器（3）
+### 6.1 适配器（3）
 
-| 工具 | 作用 | 只读 |
-|---|---|---|
-| `local_adapter_list` | 列出本地适配器、版本、状态 | 是 |
-| `local_adapter_reload` | 重新构建并加载指定适配器 | 否 |
-| `local_adapter_logs` | 读取构建、加载和进程日志 | 是 |
+| 工具 | 作用 | 只读 | 危险 |
+|---|---|---|---|
+| `local_adapter_list` | 列出本地适配器 | 是 |  |
+| `local_adapter_reload` | 重载本地适配器 | 否 |  |
+| `local_adapter_logs` | 读取适配器日志 | 是 |  |
 
 ### 6.2 项目（2）
 
-| 工具 | 作用 | 只读 |
-|---|---|---|
-| `project_list` | 最近项目列表 | 是 |
-| `project_current` | 当前项目、画布列表与数量 | 是 |
+| 工具 | 作用 | 只读 | 危险 |
+|---|---|---|---|
+| `project_list` | 最近项目 | 是 |  |
+| `project_current` | 当前项目 | 是 |  |
 
 ### 6.3 画布（12）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
-| `canvas_get` | 读取当前画布摘要与视口 | 是 | |
-| `node_list` | 按 kind 列出节点 | 是 | |
-| `node_create` | 创建 text / image / video / audio 节点 | 否 | |
-| `node_update` | 修改节点标题或文本 | 否 | |
-| `node_move` | 移动节点 | 否 | |
-| `node_delete` | 删除节点及连线 | 否 | 是 |
-| `node_connect` | 连接上下游节点 | 否 | |
-| `node_disconnect` | 删除指定连线 | 否 | 是 |
-| `canvas_group` | 分组顶层节点 | 否 | |
-| `canvas_ungroup` | 解散分组 | 否 | |
-| `canvas_node_operations` | 读取节点可用操作 | 是 | |
-| `canvas_node_operation` | 执行节点操作（切分、裁剪、抽帧、抠图等） | 否 | |
+| `canvas_get` | 读取画布 | 是 |  |
+| `canvas_remove_edge` | 删除连线 | 否 | 是 |
+| `canvas_update_text` | 修改节点正文 | 否 |  |
+| `canvas_update_title` | 修改节点标题 | 否 |  |
+| `canvas_move_node` | 移动节点 | 否 |  |
+| `canvas_add_node` | 创建节点 | 否 |  |
+| `canvas_connect` | 连接节点 | 否 |  |
+| `canvas_delete_node` | 删除节点 | 否 | 是 |
+| `canvas_group` | 分组节点 | 否 |  |
+| `canvas_ungroup` | 解散分组 | 否 |  |
+| `canvas_node_operations` | 列出节点操作 | 是 |  |
+| `canvas_node_operation` | 执行节点操作 | 否 |  |
 
 ### 6.4 生成（2）
 
-| 工具 | 作用 | 只读 |
-|---|---|---|
-| `model_list` | 供应商与模型能力 | 是 |
-| `generation_start` | 对已有节点提交生成 | 否 |
+| 工具 | 作用 | 只读 | 危险 |
+|---|---|---|---|
+| `generation_catalog` | 列出模型 | 是 |  |
+| `generation_start` | 提交生成 | 否 |  |
 
-### 6.5 剪辑室（14）
+### 6.5 剪辑室（18）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
-| `timeline_open` | 创建剪辑室节点并打开 | 否 | |
-| `timeline_get` | 读取时间线摘要 | 是 | |
-| `timeline_set_video` | 设置画幅、分辨率、帧率、背景 | 否 | |
-| `timeline_move_clips` | 移动片段 | 否 | |
-| `timeline_trim_clip` | 裁剪片段 | 否 | |
-| `timeline_split_clips` | 在指定时间切分 | 否 | |
-| `timeline_split_by_shots` | 按镜头自动切分 | 否 | |
-| `timeline_auto_subtitles` | 自动生成字幕 | 否 | |
+| `timeline_get` | 读取时间线 | 是 |  |
+| `timeline_set_video` | 设置画幅参数 | 否 |  |
+| `timeline_select_clips` | 选择片段 | 是 |  |
+| `timeline_move_clips` | 移动片段 | 否 |  |
+| `timeline_trim_clip` | 裁剪片段 | 否 |  |
+| `timeline_split_clips` | 切分片段 | 否 |  |
+| `timeline_split_by_shots` | 按镜头切分 | 否 |  |
+| `timeline_beat_markers` | 添加节拍标记 | 否 |  |
+| `timeline_beat_split` | 按节拍切分 | 否 |  |
 | `timeline_remove_clips` | 删除片段 | 否 | 是 |
-| `timeline_update_clip` | 修改片段属性 | 否 | |
-| `timeline_set_track` | 设置轨道可见/静音/锁定 | 否 | |
-| `timeline_add_marker` | 添加标记 | 否 | |
-| `timeline_set_transition` | 设置入场转场 | 否 | |
-| `timeline_export` | 导出时间线为视频 | 否 | |
+| `timeline_update_clip` | 修改片段 | 否 |  |
+| `timeline_set_track` | 设置轨道 | 否 |  |
+| `timeline_add_marker` | 添加标记 | 否 |  |
+| `timeline_auto_subtitles` | 自动字幕 | 否 |  |
+| `timeline_remove_silence` | 删除静音 | 否 |  |
+| `timeline_set_transition` | 设置转场 | 否 |  |
+| `timeline_export` | 导出时间线 | 否 |  |
+| `timeline_open` | 打开剪辑室 | 否 |  |
 
-### 6.6 导演台（12）
+### 6.6 导演台（24）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
-| `stage_open` | 创建导演台节点并打开 | 否 | |
-| `stage_get` | 读取对象、机位、镜头和世界 | 是 | |
-| `stage_add_object` | 添加人物/立方体/球体/平面/模型/群众 | 否 | |
-| `stage_add_camera` | 添加机位 | 否 | |
-| `stage_transform_camera` | 调整机位位置、朝向、视场角 | 否 | |
-| `stage_add_shot` | 添加镜头 | 否 | |
-| `stage_update_shot` | 修改镜头 | 否 | |
-| `stage_set_camera_track` | 设置机位关键帧轨道 | 否 | |
-| `stage_auto_coverage` | 自动分镜 | 否 | |
-| `stage_remove_object` | 删除对象 | 否 | 是 |
+| `stage_get` | 读取导演台 | 是 |  |
+| `stage_capabilities` | 读取导演台能力 | 是 |  |
+| `stage_add_object` | 添加对象 | 否 |  |
+| `stage_transform_object` | 变换对象 | 否 |  |
+| `stage_add_camera` | 添加机位 | 否 |  |
+| `stage_transform_camera` | 调整机位 | 否 |  |
+| `stage_add_shot` | 添加镜头 | 否 |  |
+| `stage_update_shot` | 修改镜头 | 否 |  |
 | `stage_remove_shot` | 删除镜头 | 否 | 是 |
-| `stage_export_preview` | 导出整片/单镜预演 | 否 | |
+| `stage_set_camera_track` | 设置运镜 | 否 |  |
+| `stage_set_background` | 设置背景 | 否 |  |
+| `stage_update_object` | 修改对象 | 否 |  |
+| `stage_export_preview` | 导出预演 | 否 |  |
+| `stage_set_active_camera` | 切换活动机位 | 否 |  |
+| `stage_remove_object` | 删除对象 | 否 | 是 |
+| `stage_set_shot_intent` | 设置镜头意图 | 否 |  |
+| `stage_clear_shot_intent` | 清除镜头意图 | 否 |  |
+| `stage_auto_coverage` | 自动分镜 | 否 |  |
+| `stage_dialogue_coverage` | 按对白分镜 | 否 |  |
+| `stage_set_world` | 设置世界 | 否 |  |
+| `stage_add_objects` | 批量添加对象 | 否 |  |
+| `stage_randomize_world` | 随机化世界 | 否 |  |
+| `stage_from_scene_image` | 从场景图生成白膜 | 否 |  |
+| `stage_open` | 打开导演台 | 否 |  |
 
 ### 6.7 拉片（11）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
-| `film_study_get` | 读取拉片摘要 | 是 | |
-| `film_study_get_shot` | 读取单个镜头 | 是 | |
-| `film_study_auto` | 自动拉片 | 否 | |
-| `film_study_update_shot` | 修改镜头分析 | 否 | |
-| `film_study_split_scenes` | 自动分场 | 否 | |
-| `film_study_update_segment` | 修改拉片段落 | 否 | |
-| `film_study_extract_subtitles` | 提取字幕 | 否 | |
-| `film_study_remake` | 复刻镜头 | 否 | |
-| `film_study_build_timeline` | 用复刻视频建时间线 | 否 | |
-| `film_study_map_cast` | 设置选角选景映射 | 否 | |
-| `film_study_export` | 导出 Markdown / 分析 / 打包 | 否 | |
+| `film_study_get` | 读取拉片 | 是 |  |
+| `film_study_get_shot` | 读取镜头 | 是 |  |
+| `film_study_update_shot` | 修改镜头 | 否 |  |
+| `film_study_remake` | 复刻镜头 | 否 |  |
+| `film_study_split_scenes` | 自动分场 | 否 |  |
+| `film_study_map_cast` | 选角选景 | 否 |  |
+| `film_study_build_timeline` | 建时间线 | 否 |  |
+| `film_study_auto` | 自动拉片 | 否 |  |
+| `film_study_export` | 导出拉片 | 否 |  |
+| `film_study_update_segment` | 修改段落 | 否 |  |
+| `film_study_extract_subtitles` | 提取字幕 | 否 |  |
 
 ### 6.8 资产（1）
 
-| 工具 | 作用 | 只读 |
-|---|---|---|
-| `library_search` | 按名称或路径搜索全局资产库 | 是 |
+| 工具 | 作用 | 只读 | 危险 |
+|---|---|---|---|
+| `library_search` | 搜索资产库 | 是 |  |
 
 ### 6.9 能力（2）
 
-| 工具 | 作用 | 只读 |
-|---|---|---|
-| `capability_catalog` | 列出 CineBot 已开放能力 | 是 |
-| `capability_search` | 按关键词搜索能力 | 是 |
+| 工具 | 作用 | 只读 | 危险 |
+|---|---|---|---|
+| `capability_catalog` | 能力目录 | 是 |  |
+| `capability_search` | 搜索能力 | 是 |  |
 
 ### 6.10 技能（2）
 
-| 工具 | 作用 | 只读 |
-|---|---|---|
-| `skill_list` | 列出内置、全局和项目技能 | 是 |
-| `skill_read` | 读取 SKILL.md 或引用文件 | 是 |
+| 工具 | 作用 | 只读 | 危险 |
+|---|---|---|---|
+| `skill_list` | 技能列表 | 是 |  |
+| `skill_read` | 读取技能 | 是 |  |
 
 时间线工具要求剪辑室已打开；导演台工具需要 `nodeId`；拉片工具需要 `nodeId` 或 `studyId`。写工具复用 CineBot 的画布、时间线、导演台和拉片执行器，不直接改项目 JSON。
+
+### 6.11 旧名迁移
+
+之前版本使用过以下工具名，现已统一为 CineBot 名，不保留别名：
+
+| 旧名 | 新名 |
+|---|---|
+| `node_create` | `canvas_add_node` |
+| `node_update`（标题） | `canvas_update_title` |
+| `node_update`（正文） | `canvas_update_text` |
+| `node_move` | `canvas_move_node` |
+| `node_delete` | `canvas_delete_node` |
+| `node_connect` | `canvas_connect` |
+| `node_disconnect` | `canvas_remove_edge` |
+| `node_list` | `canvas_get`（传 `kind` 过滤） |
+| `model_list` | `generation_catalog` |
 
 ## 7. 写操作确认
 
@@ -239,8 +271,8 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 9. 当前范围
 
-- 已提供：适配器查询/重载/日志；项目列表与当前项目；画布摘要、节点增删改连线、分组、节点操作；生成提交；剪辑室时间线读取、画幅、片段/轨道/标记/转场、按镜头切分、自动字幕与导出；导演台对象、机位、镜头、运镜、自动分镜与预演导出；拉片读取、修改、自动拉片、分场、字幕、复刻、建时间线与导出；资产库搜索；能力目录与技能读取。
-- 后续：项目创建/打开/导出、撤销与重做、生成提案（`generation_propose`）、模型目录（`generation_catalog`）、时间线节拍与去静音、导演台对象变换与程序化世界。
+- 已提供：适配器查询/重载/日志；项目列表与当前项目；画布摘要、节点增删改连线、分组、节点操作；生成目录与生成提交；剪辑室时间线读取、画幅、片段/轨道/标记/转场、按镜头切分、节拍、去静音、自动字幕与导出；导演台对象/机位/镜头/运镜/背景/世界/自动分镜/预演导出；拉片读取、修改、自动拉片、分场、字幕、复刻、建时间线与导出；资产库搜索；能力目录、能力搜索与技能读取。
+- 后续：项目创建/打开/导出、撤销与重做、生成提案（`generation_propose`）。
 
 ## 10. 排查
 

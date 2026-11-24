@@ -1,37 +1,68 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { MCP_TOOL_CATALOG } from '../catalog'
+import { AGENT_TOOLS } from '../../agent/tools'
+import { buildMcpTools, MCP_TOOL_CATALOG } from '../auto-tools'
+import { MCP_EXPOSURE } from '../exposure'
 
-const REGISTRATION_FILES = ['tools.ts', 'app-tools.ts', 'write-tools.ts']
-
-function registeredToolNames(): string[] {
-  const dir = join(process.cwd(), 'src/main/mcp')
-  return REGISTRATION_FILES.flatMap((file) => {
-    const source = readFileSync(join(dir, file), 'utf8')
-    return [...source.matchAll(/registerTool\(\s*'([^']+)'/g)].map(
-      (match) => match[1]
-    )
-  })
-}
+const tools = buildMcpTools()
 
 describe('mcp tool catalog', () => {
-  it('matches the registered tools', () => {
-    expect(MCP_TOOL_CATALOG.map((tool) => tool.name).sort()).toEqual(
-      registeredToolNames().sort()
+  it('has exposure metadata for every exposed agent tool', () => {
+    const missing = AGENT_TOOLS.filter(
+      (tool) => MCP_EXPOSURE[tool.name]?.expose !== false
     )
+      .filter((tool) => !MCP_EXPOSURE[tool.name]?.title)
+      .map((tool) => tool.name)
+
+    expect(missing).toEqual([])
   })
 
-  it('has unique tool names', () => {
-    const names = MCP_TOOL_CATALOG.map((tool) => tool.name)
+  it('keeps tool names unique', () => {
+    const names = tools.map((tool) => tool.name)
     expect(new Set(names).size).toBe(names.length)
   })
 
-  it('marks confirm for every project write tool', () => {
-    const missing = MCP_TOOL_CATALOG.filter(
-      (tool) =>
-        !tool.readOnly && !tool.confirm && tool.name !== 'local_adapter_reload'
+  it('matches the catalog', () => {
+    expect(MCP_TOOL_CATALOG.map((tool) => tool.name).sort()).toEqual(
+      tools.map((tool) => tool.name).sort()
     )
+  })
+
+  it('has a chinese title for every tool', () => {
+    const invalid = tools
+      .filter((tool) => !/[\u4e00-\u9fa5]/.test(tool.title))
+      .map((tool) => tool.name)
+    expect(invalid).toEqual([])
+  })
+
+  it('marks confirm for every write tool except adapter reload', () => {
+    const missing = tools
+      .filter(
+        (tool) =>
+          !tool.readOnly &&
+          !tool.confirm &&
+          tool.name !== 'local_adapter_reload'
+      )
+      .map((tool) => tool.name)
     expect(missing).toEqual([])
+  })
+
+  it('uses object json schema for every tool', () => {
+    const invalid = tools
+      .filter(
+        (tool) =>
+          !tool.inputSchema ||
+          typeof tool.inputSchema !== 'object' ||
+          tool.inputSchema.type !== 'object'
+      )
+      .map((tool) => tool.name)
+    expect(invalid).toEqual([])
+  })
+
+  it('does not expose generation_propose', () => {
+    expect(tools.some((tool) => tool.name === 'generation_propose')).toBe(false)
+  })
+
+  it('exposes the expected number of tools', () => {
+    expect(tools).toHaveLength(77)
   })
 })

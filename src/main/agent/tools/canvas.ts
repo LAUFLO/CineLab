@@ -63,6 +63,7 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     mcp: {
       title: '删除连线',
       category: '画布',
+      destructive: true,
     },
     requiresConfirm: true
   },
@@ -237,6 +238,7 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     mcp: {
       title: '删除节点',
       category: '画布',
+      destructive: true,
     },
     requiresConfirm: true
   },

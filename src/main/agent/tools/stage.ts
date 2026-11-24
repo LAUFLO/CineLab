@@ -262,6 +262,7 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
     mcp: {
       title: '删除镜头',
       category: '导演台',
+      destructive: true,
     },
     requiresConfirm: true
   },
@@ -459,6 +460,7 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
     mcp: {
       title: '删除对象',
       category: '导演台',
+      destructive: true,
     },
     requiresConfirm: true
   },

@@ -137,6 +137,7 @@ const MODULES = [
       'src/shared/agent.ts',
       'src/shared/agent-proposal.ts',
       'src/shared/agent-tools.ts',
+      'src/shared/agent-commands.ts',
       'src/shared/capabilities.ts',
       'src/shared/skills.ts',
       'src/shared/mcp-command.ts'

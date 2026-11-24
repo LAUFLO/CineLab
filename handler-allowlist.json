@@ -1,0 +1,28 @@
+{
+  "asyncHandlers": [
+    {
+      "tool": "timeline_auto_subtitles",
+      "reason": "字幕识别与对齐是长任务，无法用同步命令表达"
+    },
+    {
+      "tool": "timeline_remove_silence",
+      "reason": "需要先分析音频静音区间，耗时随片段长度增长"
+    },
+    {
+      "tool": "timeline_export",
+      "reason": "视频渲染与编码是长任务，需要独立超时"
+    },
+    {
+      "tool": "stage_export_preview",
+      "reason": "白模预演渲染是长任务，需要独立超时"
+    },
+    {
+      "tool": "film_study_auto",
+      "reason": "逐帧拉片包含切镜、理解和复核，耗时较长"
+    },
+    {
+      "tool": "stem_separate",
+      "reason": "Demucs 人声/背景音分离是长任务，需要独立超时"
+    }
+  ]
+}

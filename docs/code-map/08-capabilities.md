@@ -52,6 +52,10 @@
 | 03 | 剪辑室字幕文件导出 Agent 工具 | `src/main/agent/tools/timeline.ts`、`src/renderer/src/agent/timelineBridge.ts` |
 | 04 | 导演台截图回画布 Agent 工具 | `src/main/agent/tools/stage.ts`、`src/renderer/src/agent/stageBridge.ts` |
 | 06 | 技能管理 Agent 工具：启用/禁用、创建、导入 SKILL.md | `src/main/agent/tools/skill-admin.ts`、`src/main/agent/main-tools.ts` |
+| 06 | 项目管理 Agent 工具：创建/打开/导出 | `src/main/agent/tools/project.ts`、`src/renderer/src/agent/projectBridge.ts` |
+| 06 | 同步 CRUD 命令映射 `toCommands` | `src/shared/agent-commands.ts`、`src/renderer/src/agent/canvasBridge.ts` |
+| 06 | 统一工具入口 `commandHandlers` | `src/renderer/src/agent/commandHandlers.ts` |
+| 06 | 长任务 handler 白名单校验 | `handler-allowlist.json`、`scripts/check-agent-coverage.mjs` |
 | 06 | MCP 设置页工具清单：中文标题、悬浮代码名、搜索与只读/写/危险筛选、危险项红色 | `src/renderer/src/panels/McpSettingsSection.tsx` |
 | 06 | Agent 能力覆盖率校验：工具声明、handler、MCP 元数据 | `scripts/check-agent-coverage.mjs`、`agent-coverage-exempt.json` |
 | 06 | MCP 时间线/导演台/拉片工具复用 CineBot 执行器 | `src/main/mcp/auto-tools.ts`、`src/renderer/src/agent/timelineBridge.ts`、`stageBridge.ts`、`filmBridge.ts` |

@@ -1,6 +1,6 @@
 import type { McpWriteCommand } from '@shared/mcp-command'
 import type { GenerateRequest } from '@shared/generation'
-import { executeAgentTool } from '../agent/canvasBridge'
+import { executeAgentTool } from '../agent/commandHandlers'
 import { createStudioAtViewportCenter } from '../studio/nodes'
 import { useCanvasStore } from '../stores/canvas'
 import { useGenerationStore } from '../stores/generation'

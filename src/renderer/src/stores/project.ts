@@ -30,6 +30,12 @@ interface ProjectState {
   startNew: (templateId?: ProjectTemplateId) => Promise<void>
   openExisting: () => Promise<void>
   openPath: (path: string) => Promise<void>
+  createByAgent: (input: {
+    name: string
+    parentDir?: string
+    template?: ProjectTemplateId
+  }) => Promise<ProjectSnapshot>
+  openByAgent: (path: string) => Promise<ProjectSnapshot>
   scheduleSave: () => void
   saveNow: () => Promise<void>
   revealInFolder: () => Promise<void>
@@ -123,14 +129,36 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
-  openPath: async (path) => {
-    try {
-      if (!(await confirmCancelStemTasks())) return
-      const snapshot = await window.api.project.open(path)
-      get().applySnapshot(snapshot)
-    } catch (error) {
-      set({ error: String(error) })
+  openPath: async (path) => {
+    try {
+      if (!(await confirmCancelStemTasks())) return
+      const snapshot = await window.api.project.open(path)
+      get().applySnapshot(snapshot)
+    } catch (error) {
+      set({ error: String(error) })
+    }
+  },
+
+  createByAgent: async (input) => {
+    if (!(await confirmCancelStemTasks())) {
+      throw new Error('已取消：当前有进行中的素材处理任务')
     }
+    const snapshot = await window.api.project.create(
+      input.name,
+      input.parentDir,
+      input.template
+    )
+    get().applySnapshot(snapshot)
+    return snapshot
+  },
+
+  openByAgent: async (path) => {
+    if (!(await confirmCancelStemTasks())) {
+      throw new Error('已取消：当前有进行中的素材处理任务')
+    }
+    const snapshot = await window.api.project.open(path)
+    get().applySnapshot(snapshot)
+    return snapshot
   },
 
   scheduleSave: () => {

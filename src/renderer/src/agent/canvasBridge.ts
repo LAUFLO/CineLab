@@ -1,7 +1,6 @@
 import type {
   AgentProposal,
   AgentToolCallRequest,
-  AgentToolResultInput,
   AgentTurnChange
 } from '@shared/agent'
 import {
@@ -11,6 +10,7 @@ import {
   type CanvasCommandNode
 } from '@shared/canvas-commands'
 import { NODE_META, TITLE_HEIGHT, type OutputRef } from '@shared/canvas-schema'
+import { agentToolCommands } from '@shared/agent-commands'
 import type { ReferenceInput } from '@shared/generation'
 import {
   absolutePosition,
@@ -33,9 +33,6 @@ import {
 import { useStageStore } from '../stage/stageStore'
 import { useStudioStore } from '../stores/studio'
 import { useTimelineStore } from '../stores/timeline'
-import { executeFilmTool } from './filmBridge'
-import { executeStageTool } from './stageBridge'
-import { executeTimelineTool } from './timelineBridge'
 
 function selectedNodeSummary(): Array<{
   id: string
@@ -428,25 +425,61 @@ function capabilityCatalog(args: {
   }
 }
 
-async function executeTool(call: AgentToolCallRequest): Promise<{
+export async function executeCanvasTool(call: AgentToolCallRequest): Promise<{
   ok: boolean
   result?: unknown
   error?: string
   change?: AgentTurnChange
 }> {
-  if (call.name.startsWith('stage_')) {
-    return executeStageTool(call)
-  }
-
-  if (call.name.startsWith('timeline_')) {
-    return executeTimelineTool(call)
-  }
-
-  if (call.name.startsWith('film_')) {
-    return executeFilmTool(call)
-  }
-
   const state = useCanvasStore.getState()
+
+  const directCommands = agentToolCommands(call.name, call.args)
+  if (directCommands) {
+    const nodeId = String(call.args.nodeId ?? '')
+    const node = state.nodes.find((item) => item.id === nodeId)
+    if (!node || node.type !== 'cine') {
+      return { ok: false, error: '找不到这个画布节点' }
+    }
+    if (call.name === 'canvas_update_text' && node.data.kind !== 'text') {
+      return { ok: false, error: '找不到这个文本节点' }
+    }
+
+    const previousTitle = nodeTitleOf(node)
+    const previousText = String(node.data.text ?? '')
+    const previousPosition = { ...node.position }
+    const change = state.applyCommands(directCommands, call.turnId)
+
+    if (
+      call.name === 'canvas_update_text' &&
+      change.updatedNodeIds.length > 0
+    ) {
+      state.patchNodeData(nodeId, { status: 'done' })
+    }
+
+    return {
+      ok: true,
+      result: {
+        nodeId,
+        ...(call.name === 'canvas_update_title'
+          ? { title: String(call.args.title ?? '').trim(), previousTitle }
+          : {}),
+        ...(call.name === 'canvas_update_text'
+          ? { text: String(call.args.text ?? ''), previousText }
+          : {}),
+        ...(call.name === 'canvas_move_node'
+          ? {
+              x: Number(call.args.x),
+              y: Number(call.args.y),
+              previousPosition
+            }
+          : {}),
+        ...(call.name === 'canvas_delete_node'
+          ? { deletedEdgeIds: change.deletedEdgeIds }
+          : {})
+      },
+      change
+    }
+  }
 
   const canvasHandlers: Record<
     string,
@@ -1146,37 +1179,3 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
   return { ok: false, error: `未实现的工具：${call.name}` }
 }
 
-/** 供 MCP 写命令等非 CineBot 入口复用画布工具执行器 */
-export async function executeAgentTool(call: AgentToolCallRequest): Promise<{
-  ok: boolean
-  result?: unknown
-  error?: string
-  change?: AgentTurnChange
-}> {
-  return executeTool(call)
-}
-
-export function initAgentCanvasBridge(): () => void {
-  return window.api.agent.onToolCall((call) => {
-    void executeTool(call)
-      .then((result) => {
-        const payload: AgentToolResultInput = {
-          turnId: call.turnId,
-          callId: call.callId,
-          ok: result.ok,
-          ...(result.result !== undefined ? { result: result.result } : {}),
-          ...(result.error ? { error: result.error } : {}),
-          ...(result.change ? { change: result.change } : {})
-        }
-        return window.api.agent.toolResult(payload)
-      })
-      .catch((error) => {
-        void window.api.agent.toolResult({
-          turnId: call.turnId,
-          callId: call.callId,
-          ok: false,
-          error: error instanceof Error ? error.message : '工具执行失败'
-        })
-      })
-  })
-}

@@ -21,6 +21,7 @@ interface PreferencesState {
   updateStorage: (patch: Partial<Preferences['storage']>) => Promise<void>
   updateUi: (patch: Partial<Preferences['ui']>) => Promise<void>
   updateNetwork: (patch: Partial<Preferences['network']>) => Promise<void>
+  updateMcp: (patch: Partial<Preferences['mcp']>) => Promise<void>
   setOperationPrompt: (key: string, prompt: string) => Promise<void>
   resetOperationPrompt: (key: string) => Promise<void>
   setShortcut: (actionId: string, binding: ShortcutBinding) => Promise<void>
@@ -163,6 +164,15 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => {
       await commit({
         ...current,
         network: { ...current.network, ...patch }
+      })
+    },
+
+    updateMcp: async (patch) => {
+      await loaded()
+      const current = get().preferences
+      await commit({
+        ...current,
+        mcp: { ...current.mcp, ...patch }
       })
     },
 

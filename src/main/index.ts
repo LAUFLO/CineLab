@@ -142,9 +142,11 @@ if (!hasLock) {
 
     startModelsWatcher()
     void startLocalAdapterRegistry()
-    void startMcpServer().catch((error) => {
-      log.warn('mcp server failed to start', error)
-    })
+    if (startupPreferences?.mcp.enabled !== false) {
+      void startMcpServer().catch((error) => {
+        log.warn('mcp server failed to start', error)
+      })
+    }
 
     registerAssetProtocol()
     diagLog('registerAssetProtocol done')

@@ -12,9 +12,9 @@
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20219 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5803 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 58 | 20009 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 67 | 12211 |
-| 10 | [UI 组件与面板](./10-ui.md) | 50 | 10602 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 59 | 20593 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12361 |
+| 10 | [UI 组件与面板](./10-ui.md) | 51 | 10904 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -37,7 +37,7 @@
 | `StageApi` | `create`、`load`、`save`、`delete`、`duplicate`、`capture`、`exportPreview`、`cancelExport`、`onExportProgress` |
 | `SceneApi` | `analyze`、`loadObjectPresets`、`saveObjectPresets`、`importObjectPresets`、`exportObjectPresets`、`uploadImage` |
 | `LocalAdapterApi` | `list`、`reload`、`openDir`、`onChanged` |
-| `McpApi` | `onCommand`、`sendResult` |
+| `McpApi` | `onCommand`、`sendResult`、`status`、`config`、`revealConfig`、`copy` |
 
 ## Agent 工具
 
@@ -181,6 +181,7 @@
 - `src/main/library/__tests__/tag-utils.test.ts`
 - `src/main/local-adapters/__tests__/build.test.ts`
 - `src/main/local-adapters/__tests__/manifest.test.ts`
+- `src/main/mcp/__tests__/catalog.test.ts`
 - `src/main/media/__tests__/concat.test.ts`
 - `src/main/media/__tests__/paths.test.ts`
 - `src/main/media/__tests__/range.test.ts`

@@ -8,6 +8,8 @@ import { log } from '../logger'
 import {
   createMcpToken,
   readMcpConfig,
+  mcpConfigPath,
+  type McpServerConfig,
   removeMcpConfigSync,
   writeMcpConfig
 } from './config'
@@ -184,6 +186,22 @@ export async function stopMcpServer(): Promise<void> {
   }
 }
 
-export function mcpStatus(): { running: boolean; url?: string } {
-  return httpServer ? { running: true, url } : { running: false }
+export interface McpServerStatus {
+  running: boolean
+  url?: string
+  configPath: string
+  serverVersion: string
+}
+
+export function mcpStatus(): McpServerStatus {
+  return {
+    running: Boolean(httpServer),
+    ...(httpServer ? { url } : {}),
+    configPath: mcpConfigPath(),
+    serverVersion: app.getVersion()
+  }
+}
+
+export async function mcpConfigSnapshot(): Promise<McpServerConfig | null> {
+  return readMcpConfig()
 }

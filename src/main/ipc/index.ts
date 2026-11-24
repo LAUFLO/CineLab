@@ -25,6 +25,7 @@ import { registerComponentsIpc } from './components'
 import { registerUpdateIpc } from './update'
 import { registerLocalAdapterIpc } from './local-adapters'
 import { registerMcpCommandIpc } from '../mcp/write-tools'
+import { registerMcpIpc } from './mcp'
 import { log, logDirectory } from '../logger'
 import { allowWindowClose, brandIconPath } from '../window'
 
@@ -50,6 +51,7 @@ export function registerIpc(): void {
   registerUpdateIpc()
   registerLocalAdapterIpc()
   registerMcpCommandIpc()
+  registerMcpIpc()
 
   ipcMain.handle('app:get-info', () => ({
     version: app.getVersion(),

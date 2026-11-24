@@ -6,6 +6,7 @@ import {
   localAdapterLogs,
   reloadLocalAdapter
 } from '../local-adapters/registry'
+import { getPreferences } from '../settings/preferences'
 
 function result(value: unknown): CallToolResult {
   return {
@@ -43,6 +44,13 @@ export function registerCineLabTools(server: McpServer): void {
       annotations: { readOnlyHint: false }
     },
     async ({ id }) => {
+      const preferences = await getPreferences()
+      if (preferences.mcp.readOnly) {
+        return {
+          content: [{ type: 'text', text: 'MCP 当前为只读模式' }],
+          isError: true
+        }
+      }
       await reloadLocalAdapter(id)
       return result({
         ok: true,

@@ -602,9 +602,79 @@ export interface LocalAdapterApi {
   onChanged(callback: (statuses: LocalAdapterStatus[]) => void): () => void
 }
 
+export interface McpConfigInfo {
+  version: number
+  url: string
+  token: string
+  serverVersion: string
+  stdio: {
+    command: string
+    args: string[]
+    env?: Record<string, string>
+  }
+  pid: number
+  startedAt: string
+}
+
+export interface McpToolInfo {
+  name: string
+  title: string
+  category: string
+  readOnly: boolean
+  destructive?: boolean
+  confirm: boolean
+}
+
+export interface McpServerStatus {
+  running: boolean
+  url?: string
+  configPath: string
+  serverVersion: string
+  enabled: boolean
+  readOnly: boolean
+  tools: McpToolInfo[]
+}
+
+export interface McpConfigInfo {
+  version: number
+  url: string
+  token: string
+  serverVersion: string
+  stdio: {
+    command: string
+    args: string[]
+    env?: Record<string, string>
+  }
+  pid: number
+  startedAt: string
+}
+
+export interface McpToolInfo {
+  name: string
+  title: string
+  category: string
+  readOnly: boolean
+  destructive?: boolean
+  confirm: boolean
+}
+
+export interface McpServerStatus {
+  running: boolean
+  url?: string
+  configPath: string
+  serverVersion: string
+  enabled: boolean
+  readOnly: boolean
+  tools: McpToolInfo[]
+}
+
 export interface McpApi {
   onCommand(callback: (command: McpWriteCommand) => void): () => void
   sendResult(result: McpWriteResult): void
+  status(): Promise<McpServerStatus>
+  config(): Promise<McpConfigInfo | null>
+  revealConfig(): Promise<void>
+  copy(text: string): Promise<void>
 }
 
 export interface CineApi {

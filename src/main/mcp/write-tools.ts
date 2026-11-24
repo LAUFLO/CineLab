@@ -8,6 +8,7 @@ import type {
   McpWriteResult
 } from '@shared/mcp-command'
 import { TIMELINE_TRANSITION_TYPES } from '@shared/timeline-schema'
+import { getPreferences } from '../settings/preferences'
 
 interface PendingCommand {
   resolve: (result: McpWriteResult) => void
@@ -108,6 +109,13 @@ async function runWrite(
   destructive = false,
   timeoutMs = 30_000
 ): Promise<CallToolResult> {
+  const preferences = await getPreferences()
+  if (preferences.mcp.readOnly) {
+    return errorResult(
+      'MCP 当前为只读模式，请在设置中关闭只读后再执行写操作'
+    )
+  }
+
   if (!(await confirm(summary, args, destructive))) {
     return result({ cancelled: true })
   }
@@ -1045,5 +1053,266 @@ export function registerCineLabWriteTools(server: McpServer): void {
         10 * 60_000
       )
     }
+  )
+
+  server.registerTool(
+    'canvas_group',
+    {
+      title: '分组节点',
+      description: '把两个或更多顶层节点分到同一个组里。执行前会弹出确认框。',
+      inputSchema: {
+        nodeIds: z.array(z.string().min(1)).min(2).max(20)
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeIds }) =>
+      runWrite(
+        'canvas_group',
+        '分组 ' + nodeIds.length + ' 个节点',
+        { nodeIds }
+      )
+  )
+
+  server.registerTool(
+    'canvas_ungroup',
+    {
+      title: '解散分组',
+      description: '解散一个分组，子节点恢复为顶层节点。执行前会弹出确认框。',
+      inputSchema: {
+        groupId: z.string().min(1)
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ groupId }) =>
+      runWrite('canvas_ungroup', '解散分组', { groupId })
+  )
+
+  server.registerTool(
+    'canvas_node_operations',
+    {
+      title: '列出节点操作',
+      description:
+        '读取一个节点当前可用的操作，包括操作 ID、菜单项、参数定义和是否需要确认。只读。',
+      inputSchema: {
+        nodeId: z.string().min(1)
+      },
+      annotations: { readOnlyHint: true }
+    },
+    async ({ nodeId }) => {
+      const commandResult = await sendCommand('canvas_node_operations', {
+        nodeId
+      })
+      if (!commandResult.ok) {
+        return errorResult(commandResult.error ?? '读取节点操作失败')
+      }
+      return result(commandResult.result)
+    }
+  )
+
+  server.registerTool(
+    'canvas_node_operation',
+    {
+      title: '执行节点操作',
+      description:
+        '在一个节点上执行工具栏操作，例如宫格切分、裁剪、抽帧、分离音视频、抠图、扩图。operationId 和 itemId 必须来自 canvas_node_operations。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        operationId: z.string().min(1),
+        itemId: z.string().optional(),
+        params: z.record(z.string(), z.unknown()).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, operationId, itemId, params }) =>
+      runWrite(
+        'canvas_node_operation',
+        '执行节点操作 ' + operationId,
+        {
+          nodeId,
+          operationId,
+          ...(itemId ? { itemId } : {}),
+          ...(params ? { params } : {})
+        },
+        false,
+        120_000
+      )
+  )
+
+  server.registerTool(
+    'timeline_set_video',
+    {
+      title: '设置时间线画幅',
+      description:
+        '设置时间线画幅、分辨率、帧率或背景。width 和 height 必须成对出现且为偶数。执行前会弹出确认框。',
+      inputSchema: {
+        width: z.number().int().min(16).max(7680).optional(),
+        height: z.number().int().min(16).max(4320).optional(),
+        fps: z.number().min(1).max(120).optional(),
+        background: z
+          .object({
+            type: z.enum(['none', 'color', 'image']),
+            color: z.string().optional(),
+            path: z.string().optional()
+          })
+          .optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ width, height, fps, background }) => {
+      if ((width === undefined) !== (height === undefined)) {
+        return errorResult('width 和 height 必须成对出现')
+      }
+      if (
+        width !== undefined &&
+        height !== undefined &&
+        (width % 2 !== 0 || height % 2 !== 0)
+      ) {
+        return errorResult('width 和 height 必须是偶数')
+      }
+      return runWrite('timeline_set_video', '设置时间线画幅', {
+        ...(width !== undefined ? { width } : {}),
+        ...(height !== undefined ? { height } : {}),
+        ...(fps !== undefined ? { fps } : {}),
+        ...(background ? { background } : {})
+      })
+    }
+  )
+
+  server.registerTool(
+    'timeline_split_by_shots',
+    {
+      title: '按镜头切分',
+      description:
+        '分析一个视频片段的镜头切点并按镜头自动切分。执行前会弹出确认框，可能耗时。',
+      inputSchema: {
+        clipId: z.string().min(1),
+        minShotMs: z.number().optional(),
+        edgePaddingMs: z.number().optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ clipId, minShotMs, edgePaddingMs }) =>
+      runWrite(
+        'timeline_split_by_shots',
+        '按镜头切分片段',
+        {
+          clipId,
+          ...(minShotMs !== undefined ? { minShotMs } : {}),
+          ...(edgePaddingMs !== undefined ? { edgePaddingMs } : {})
+        },
+        false,
+        300_000
+      )
+  )
+
+  server.registerTool(
+    'timeline_auto_subtitles',
+    {
+      title: '自动字幕',
+      description:
+        '对指定片段或整条时间线做语音转写并生成字幕。需要先安装字幕运行时和 Whisper 模型。执行前会弹出确认框，可能耗时。',
+      inputSchema: {
+        clipId: z.string().optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ clipId }) =>
+      runWrite(
+        'timeline_auto_subtitles',
+        '自动生成字幕',
+        { ...(clipId ? { clipId } : {}) },
+        false,
+        600_000
+      )
+  )
+
+  server.registerTool(
+    'stage_transform_camera',
+    {
+      title: '调整机位',
+      description:
+        '调整已有机位的位置、朝向、视场角、画幅或名称。cameraId 必须来自 stage_get。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        cameraId: z.string().min(1),
+        name: z.string().optional(),
+        position: z.array(z.number()).length(3).optional(),
+        target: z.array(z.number()).length(3).optional(),
+        fov: z.number().min(10).max(120).optional(),
+        aspect: z.enum(['16:9', '9:16', '1:1']).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, cameraId, name, position, target, fov, aspect }) =>
+      runWrite('stage_transform_camera', '调整导演台机位', {
+        nodeId,
+        cameraId,
+        ...(name !== undefined ? { name } : {}),
+        ...(position ? { position } : {}),
+        ...(target ? { target } : {}),
+        ...(fov !== undefined ? { fov } : {}),
+        ...(aspect ? { aspect } : {})
+      })
+  )
+
+  server.registerTool(
+    'stage_update_shot',
+    {
+      title: '修改镜头',
+      description:
+        '修改导演台镜头的名称、机位、时长或画幅。shotId 必须来自 stage_get。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        shotId: z.string().min(1),
+        name: z.string().optional(),
+        cameraId: z.string().optional(),
+        durationMs: z.number().optional(),
+        aspect: z.enum(['16:9', '9:16', '1:1']).optional()
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, shotId, name, cameraId, durationMs, aspect }) =>
+      runWrite('stage_update_shot', '修改导演台镜头', {
+        nodeId,
+        shotId,
+        ...(name !== undefined ? { name } : {}),
+        ...(cameraId !== undefined ? { cameraId } : {}),
+        ...(durationMs !== undefined ? { durationMs } : {}),
+        ...(aspect ? { aspect } : {})
+      })
+  )
+
+  server.registerTool(
+    'stage_set_camera_track',
+    {
+      title: '设置运镜',
+      description:
+        '整体替换一个镜头的机位关键帧轨道，用于运镜。时间单位毫秒。执行前会弹出确认框。',
+      inputSchema: {
+        nodeId: z.string().min(1),
+        shotId: z.string().min(1),
+        keyframes: z
+          .array(
+            z.object({
+              timeMs: z.number(),
+              position: z.array(z.number()).length(3),
+              target: z.array(z.number()).length(3),
+              fov: z.number().min(10).max(120),
+              easing: z
+                .enum(['linear', 'ease-in', 'ease-out', 'ease-in-out'])
+                .optional()
+            })
+          )
+          .min(1)
+          .max(60)
+      },
+      annotations: { readOnlyHint: false }
+    },
+    async ({ nodeId, shotId, keyframes }) =>
+      runWrite('stage_set_camera_track', '设置导演台运镜', {
+        nodeId,
+        shotId,
+        keyframes
+      })
   )
 }

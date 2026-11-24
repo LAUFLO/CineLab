@@ -42,7 +42,8 @@
 | [stage-previs-upgrade-plan.md](stage-previs-upgrade-plan.md) | 导演台整片/每镜预演、重叠优先级、交付物、光照预设与人物动作改造，已实施 |
 | [model-adapter-plan.md](model-adapter-plan.md) | 模型适配体系：契约、媒体载荷、本地适配器、Agent 接入与首尾帧修复 |
 | [local-adapters.md](local-adapters.md) | 本地可信适配器：目录、manifest、接口、构建与热重载 |
-| [mcp.md](mcp.md) | MCP server：HTTP、stdio 桥接、认证、工具与排查 |
+| [mcp.md](mcp.md) | MCP server：设置页配置、HTTP/stdio、61 个工具、只读模式与排查 |
+| [mcp-expansion-plan.md](mcp-expansion-plan.md) | MCP 开放能力与配置面板：设置页、只读模式、新增 15 个工具，已实施 |
 | [macos-packaging-gaps-plan.md](macos-packaging-gaps-plan.md) | macOS 打包资源缺口、视觉组件复用、字幕字体与发版校验，待实施 |
 | [ui-polish-plan.md](ui-polish-plan.md) | 画布与设置页 UI 打磨：参数单位、连线光效、菜单裁切、素材节点、快捷键、技能卡片与设置重组 |
 | [xyflow-v13-migration-plan.md](xyflow-v13-migration-plan.md) | React Flow 13 迁移评估：破坏性变更影响矩阵、store changeset、useStore 拆分、fitView padding 与 CSS layer 改动方案，待实施 |

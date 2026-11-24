@@ -32,6 +32,8 @@ export interface Preferences {
     scrollMode: CanvasScrollMode
     zoomOnDoubleClick: boolean
     gridStyle: CanvasGridStyle
+    /** 视频节点播放时默认静音；默认关闭，带声音播放 */
+    muteVideoPlayback: boolean
   }
   generation: {
     /** 各能力最近使用/指定的默认模型，格式 providerId/modelId */
@@ -109,7 +111,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
     reduceMotion: false,
     scrollMode: 'pan',
     zoomOnDoubleClick: false,
-    gridStyle: 'dots'
+    gridStyle: 'dots',
+    muteVideoPlayback: false
   },
   generation: {
     defaultModels: {
@@ -282,6 +285,10 @@ export function normalizePreferences(input: unknown): Preferences {
         canvas.gridStyle,
         ['dots', 'lines', 'none'] as const,
         DEFAULT_PREFERENCES.canvas.gridStyle
+      ),
+      muteVideoPlayback: readBoolean(
+        canvas.muteVideoPlayback,
+        DEFAULT_PREFERENCES.canvas.muteVideoPlayback
       )
     },
     generation: {

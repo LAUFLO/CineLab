@@ -104,7 +104,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 6. 工具
 
-共 99 个工具，按类别如下。写工具直接执行，只读模式下全部拒绝。
+共 97 个工具，按类别如下。写工具直接执行，只读模式下全部拒绝。
 
 ### 6.1 适配器（3）
 
@@ -172,7 +172,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `timeline_export_subtitles` | 导出字幕 VTT | 否 |  |
 | `timeline_open` | 打开剪辑室（传 `nodeId` 打开已有，省略则创建） | 否 |  |
 
-### 6.6 导演台（25）
+### 6.6 导演台（23）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
@@ -196,9 +196,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `stage_clear_shot_intent` | 清除镜头意图 | 否 |  |
 | `stage_auto_coverage` | 自动分镜 | 否 |  |
 | `stage_dialogue_coverage` | 按对白分镜 | 否 |  |
-| `stage_set_world` | 设置世界 | 否 |  |
 | `stage_add_objects` | 批量添加对象 | 否 |  |
-| `stage_randomize_world` | 随机化世界 | 否 |  |
 | `stage_from_scene_image` | 从场景图生成白膜 | 否 |  |
 | `stage_open` | 打开导演台（传 `nodeId` 打开已有，省略则创建） | 否 |  |
 

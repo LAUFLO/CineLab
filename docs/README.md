@@ -37,7 +37,7 @@
 | [studio-node-live-preview-plan.md](studio-node-live-preview-plan.md) | 剪辑室节点实时预览，待实施 |
 | [stem-separation-plan.md](stem-separation-plan.md) | 人声/背景音分离：三项菜单、无声视频 + 音频输出、本地 Demucs 组件、分段流式与任务进度，已实施，真实素材听感待验收 |
 | [result-node-promptbar-plan.md](result-node-promptbar-plan.md) | 结果/素材节点隐藏 PromptBar：操作结果、AI 新建结果、拉片/导演台/剪辑室产出与旧项目兜底 |
-| [previs-adaptation-plan.md](previs-adaptation-plan.md) | Previs 语义镜头、程序化世界与场景图白膜，M1–M5 已完成 |
+| [previs-adaptation-plan.md](previs-adaptation-plan.md) | Previs 语义镜头与场景图白膜历史方案；程序化世界已移除 |
 | [film-study-rebuild-plan.md](film-study-rebuild-plan.md) | 逐帧拉片重构：拉片为画布服务、删除拉片室、image 首尾帧 + 文本节点、复刻建图与手动生成 |
 | [stage-previs-upgrade-plan.md](stage-previs-upgrade-plan.md) | 导演台整片/每镜预演、重叠优先级、交付物、光照预设与人物动作改造，已实施 |
 | [model-adapter-plan.md](model-adapter-plan.md) | 模型适配体系：契约、媒体载荷、本地适配器、Agent 接入与首尾帧修复 |
@@ -62,7 +62,7 @@
 | [code-map/01-canvas.md](code-map/01-canvas.md) | 画布、节点、连线、项目画布 |
 | [code-map/02-generation.md](code-map/02-generation.md) | 供应商、模型、生成任务、参数、参考输入 |
 | [code-map/03-clip-studio.md](code-map/03-clip-studio.md) | 时间线、剪辑、字幕、音频 |
-| [code-map/04-director-stage.md](code-map/04-director-stage.md) | 导演台、StageDoc、语义镜头、程序化世界、白模导出 |
+| [code-map/04-director-stage.md](code-map/04-director-stage.md) | 导演台、StageDoc、语义镜头、白模导出 |
 | [code-map/05-film-study.md](code-map/05-film-study.md) | 拉片、自动分镜、分镜表 |
 | [code-map/06-agent.md](code-map/06-agent.md) | CineBot、工具、提案、会话、技能 |
 | [code-map/07-storage-ipc.md](code-map/07-storage-ipc.md) | 项目存储、IPC、preload、设置、安全 |

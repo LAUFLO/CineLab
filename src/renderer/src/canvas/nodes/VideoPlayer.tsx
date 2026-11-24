@@ -9,6 +9,7 @@ import {
 import { Icon } from '../../components/Icon'
 import { timeLabel } from './AudioPlayer'
 import { Button, Input } from '../../components/ui'
+import { usePreferencesStore } from '../../stores/preferences'
 
 interface VideoPlayerProps {
   src: string | null
@@ -48,10 +49,13 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   ) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
+    const muteVideoPlayback = usePreferencesStore(
+      (state) => state.preferences.canvas.muteVideoPlayback
+    )
     const [playing, setPlaying] = useState(false)
     const [currentTime, setCurrentTime] = useState(0)
     const [duration, setDuration] = useState(0)
-    const [muted, setMuted] = useState(true)
+    const [muted, setMuted] = useState(muteVideoPlayback)
     const [fullscreen, setFullscreen] = useState(false)
     const [frameRate, setFrameRate] = useState(fps && fps > 0 ? fps : 24)
 
@@ -80,6 +84,12 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       setCurrentTime(0)
       setDuration(0)
     }, [src])
+
+    // 设置页的默认静音偏好对所有 VideoPlayer 生效；播放器内手动切换只改当前实例。
+    useEffect(() => {
+      setMuted(muteVideoPlayback)
+      if (videoRef.current) videoRef.current.muted = muteVideoPlayback
+    }, [muteVideoPlayback])
 
     useEffect(() => {
       const video = videoRef.current

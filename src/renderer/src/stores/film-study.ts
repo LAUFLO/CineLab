@@ -174,7 +174,8 @@ function createStudyOutputs(
       title: `${sourceName} · 分镜表`,
       text: buildStudyTableMarkdown(study),
       status: 'done',
-      assetOnly: true
+      assetOnly: true,
+      studyRef: { studyId: study.id, kind: 'sheet' }
     })
     canvas.resizeNode(sheetId, 520)
     canvas.onConnect({ source: nodeId, target: sheetId })
@@ -290,6 +291,39 @@ function createStudyOutputs(
   }
 
   return created
+}
+
+/**
+ * 编辑镜头/分镜后刷新画布上的分镜表文本节点，避免弹窗读新数据、
+ * 文本节点仍是旧快照。兼容旧节点：优先 studyRef，其次 studyOutputNodeIds。
+ */
+export function refreshStudySheetNode(study: FilmStudy): void {
+  const canvas = useCanvasStore.getState()
+  const outputIds = new Set<string>()
+  for (const node of canvas.nodes) {
+    if (
+      node.type !== 'cine' ||
+      node.data.kind !== 'study' ||
+      node.data.studyId !== study.id
+    ) {
+      continue
+    }
+    for (const id of node.data.studyOutputNodeIds ?? []) outputIds.add(id)
+  }
+
+  for (const node of canvas.nodes) {
+    if (node.type !== 'cine' || node.data.kind !== 'text') continue
+    const byRef =
+      node.data.studyRef?.studyId === study.id &&
+      node.data.studyRef.kind === 'sheet'
+    const byOutput =
+      outputIds.has(node.id) && node.data.title.endsWith('· 分镜表')
+    if (!byRef && !byOutput) continue
+    canvas.patchNodeData(node.id, {
+      text: buildStudyTableMarkdown(study),
+      studyRef: { studyId: study.id, kind: 'sheet' }
+    })
+  }
 }
 
 function removeStudyOutputs(nodeId: string): void {

@@ -54,7 +54,8 @@ describe('normalizePreferences', () => {
         reduceMotion: true,
         scrollMode: 'zoom',
         zoomOnDoubleClick: true,
-        gridStyle: 'lines'
+        gridStyle: 'lines',
+        muteVideoPlayback: true
       },
       generation: {
         defaultModels: {
@@ -91,7 +92,8 @@ describe('normalizePreferences', () => {
       reduceMotion: true,
       scrollMode: 'zoom',
       zoomOnDoubleClick: true,
-      gridStyle: 'lines'
+      gridStyle: 'lines',
+      muteVideoPlayback: true
     })
     expect(preferences.generation.defaultModels.image).toBe('provider/image')
     expect(preferences.generation.concurrency).toBe(4)
@@ -118,7 +120,8 @@ describe('normalizePreferences', () => {
       canvas: {
         snapToGrid: 'yes',
         scrollMode: 'wheel',
-        gridStyle: 'grid'
+        gridStyle: 'grid',
+        muteVideoPlayback: 'yes'
       },
       generation: {
         defaultModels: { image: 42, video: '   ' },
@@ -145,6 +148,7 @@ describe('normalizePreferences', () => {
     expect(preferences.canvas.gridStyle).toBe(
       DEFAULT_PREFERENCES.canvas.gridStyle
     )
+    expect(preferences.canvas.muteVideoPlayback).toBe(false)
     expect(preferences.generation.defaultModels.image).toBeNull()
     expect(preferences.generation.defaultModels.video).toBeNull()
     expect(preferences.generation.concurrency).toBe(

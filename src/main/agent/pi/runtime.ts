@@ -37,6 +37,7 @@ import {
   createAgentTurn,
   looksLikePreamble,
   mergeChange,
+  syncScopeWithChange,
   textOfContent,
   usageOf
 } from './events'
@@ -323,6 +324,7 @@ function handlePiEvent(
       proposalId?: string
     }
     mergeChange(active.turn.change, details.change)
+    syncScopeWithChange(active.scope, details.change)
     if (details.proposalId) {
       active.turn.proposalIds.push(details.proposalId)
     }

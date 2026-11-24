@@ -19,6 +19,8 @@ export interface DialogProps {
   overlayClassName?: string
   panelClassName?: string
   ariaLabel?: string
+  /** 点击遮罩是否关闭；表单类弹窗可传 false 防止误关，默认 true。 */
+  closeOnOverlayClick?: boolean
 }
 
 const SIZES = {
@@ -50,7 +52,8 @@ export function Dialog({
   bare = false,
   overlayClassName,
   panelClassName,
-  ariaLabel
+  ariaLabel,
+  closeOnOverlayClick = true
 }: DialogProps) {
   const titleId = useId()
   const descriptionId = useId()
@@ -143,12 +146,16 @@ export function Dialog({
 
   if (!open) return null
 
+  const handleOverlayPointerDown = (): void => {
+    if (closeOnOverlayClick) onClose()
+  }
+
   if (bare) {
     return createPortal(
       <div
         className={overlayClassName}
         data-shortcut-block
-        onPointerDown={onClose}
+        onPointerDown={handleOverlayPointerDown}
       >
         <div
           ref={panelRef}
@@ -169,7 +176,7 @@ export function Dialog({
     <div
       className="fixed inset-0 z-[900] flex items-center justify-center bg-overlay p-4"
       data-shortcut-block
-      onPointerDown={onClose}
+      onPointerDown={handleOverlayPointerDown}
     >
       <div
         ref={panelRef}

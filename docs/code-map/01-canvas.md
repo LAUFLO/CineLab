@@ -29,7 +29,7 @@
 
 ### 媒体节点 `CineNodeData`
 
-关键字段：`kind`、`title`、`status`（idle/queued/running/done/error）、`text`、`prompt`、`outputs: OutputRef[]`、`selectedOutputId`、`progress`、`error`、`templates`、`assetOnly`、`mediaFrame`。`assetOnly` 表示素材/派生结果节点，隐藏 PromptBar，只保留 NodeToolbar；`mediaFrame` 为 `standard`（400 内容框）或 `compact`（240 内容框）。
+关键字段：`kind`、`title`、`status`（idle/queued/running/done/error）、`text`、`prompt`、`inputMode`、`style`、`outputs: OutputRef[]`、`selectedOutputId`、`progress`、`error`、`templates`、`assetOnly`、`mediaFrame`。`prompt`、`inputMode`、`style` 按节点保存；`style` 是 Prompt Bar 选择的风格快照，只影响生成提示词拼接，新建节点不继承。`assetOnly` 表示素材/派生结果节点，隐藏 PromptBar，只保留 NodeToolbar；`mediaFrame` 为 `standard`（400 内容框）或 `compact`（240 内容框）。
 
 图片/视频节点统一用 `mediaFrameNodeSize`：单节点 400×225 内容框，分组/批量 240×135 内容框，标题栏额外 28px；21:9 对应 400×171 / 240×103。旧项目在 `loadCanvas` 中按分组、拉片/剪辑室来源和旧宽度推断档位并归一化。
 
@@ -153,8 +153,8 @@ CineBot
 | `src/renderer/src/canvas/GroupToolbar.tsx` | 245 |
 | `src/renderer/src/canvas/MultiSelectBar.tsx` | 343 |
 | `src/renderer/src/canvas/NodeContextMenu.tsx` | 668 |
-| `src/renderer/src/canvas/PresetPromptDialog.tsx` | 265 |
-| `src/renderer/src/canvas/PromptBar.tsx` | 2637 |
+| `src/renderer/src/canvas/PresetPromptDialog.tsx` | 272 |
+| `src/renderer/src/canvas/PromptBar.tsx` | 2659 |
 | `src/renderer/src/canvas/StatusBar.tsx` | 100 |
 | `src/renderer/src/canvas/StoryboardToolbar.tsx` | 359 |
 | `src/renderer/src/canvas/StyleLibraryDialog.tsx` | 418 |
@@ -173,7 +173,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/DepthCaptureDialog.tsx` | 136 |
 | `src/renderer/src/canvas/nodes/FilmNodeView.tsx` | 58 |
 | `src/renderer/src/canvas/nodes/FilmStudyInsights.tsx` | 273 |
-| `src/renderer/src/canvas/nodes/FilmStudySheet.tsx` | 204 |
+| `src/renderer/src/canvas/nodes/FilmStudySheet.tsx` | 197 |
 | `src/renderer/src/canvas/nodes/GroupNodeView.tsx` | 131 |
 | `src/renderer/src/canvas/nodes/MaskEditorDialog.tsx` | 377 |
 | `src/renderer/src/canvas/nodes/ModelConfigDialog.tsx` | 1628 |
@@ -183,19 +183,19 @@ CineBot
 | `src/renderer/src/canvas/nodes/SphereDialog.tsx` | 393 |
 | `src/renderer/src/canvas/nodes/StageNodeView.tsx` | 122 |
 | `src/renderer/src/canvas/nodes/StudioNodeView.tsx` | 809 |
-| `src/renderer/src/canvas/nodes/StudyNodeCard.tsx` | 382 |
+| `src/renderer/src/canvas/nodes/StudyNodeCard.tsx` | 367 |
 | `src/renderer/src/canvas/nodes/SubtitleDialog.tsx` | 161 |
 | `src/renderer/src/canvas/nodes/TextEditorDialog.tsx` | 176 |
 | `src/renderer/src/canvas/nodes/ToolbarSettings.tsx` | 139 |
 | `src/renderer/src/canvas/nodes/TrimDialog.tsx` | 119 |
 | `src/renderer/src/canvas/nodes/VideoOpNodeView.tsx` | 868 |
-| `src/renderer/src/canvas/nodes/VideoPlayer.tsx` | 328 |
+| `src/renderer/src/canvas/nodes/VideoPlayer.tsx` | 338 |
 | `src/renderer/src/canvas/nodes/VideoPreview.tsx` | 184 |
 | `src/renderer/src/canvas/nodes/film-study-runner.ts` | 62 |
 | `src/renderer/src/canvas/nodes/node-operation-runner.ts` | 1559 |
 | `src/renderer/src/canvas/nodes/node-operations.ts` | 624 |
 | `src/renderer/src/canvas/nodes/playbackBudget.ts` | 97 |
-| `src/renderer/src/canvas/nodes/study-sheet.ts` | 300 |
+| `src/renderer/src/canvas/nodes/study-sheet.ts` | 351 |
 | `src/renderer/src/canvas/nodes/text-markdown.ts` | 101 |
 | `src/renderer/src/canvas/nodes/useBoxEditor.ts` | 131 |
 | `src/renderer/src/canvas/promptbar-model.tsx` | 270 |
@@ -213,7 +213,7 @@ CineBot
 | `src/renderer/src/stores/edge-references.ts` | 94 |
 | `src/renderer/src/stores/toolbar.ts` | 70 |
 | `src/shared/canvas-commands.ts` | 303 |
-| `src/shared/canvas-schema.ts` | 371 |
+| `src/shared/canvas-schema.ts` | 374 |
 | `src/shared/canvas-summary.ts` | 54 |
 | `src/shared/components.ts` | 59 |
 | `src/shared/node-operation-specs.ts` | 464 |
@@ -274,7 +274,7 @@ CineBot
 | `src/renderer/src/canvas/nodes/node-operation-runner.ts` | `NodeOperationUiEffect`、`NodeOperationUiHost`、`NodeOperationRequest`、`NodeOperationResult`、`NodeOperationSummary`、`NodeOperationsSummary`、`listNodeOperations`、`executeNodeOperation`、`operationNeedsConfirm` |
 | `src/renderer/src/canvas/nodes/node-operations.ts` | `OperationContext`、`OperationMenuItem`、`OperationRequirementType`、`OperationRequires`、`OperationSection`、`NodeOutputTarget`、`NodeOperation`、`OPERATION_SECTIONS`、`NODE_OPERATIONS`、`buildOperationPrompt`、`operationsForKind`、`defaultPrimaryForKind`、`runNodeOperation` |
 | `src/renderer/src/canvas/nodes/playbackBudget.ts` | `acquireVideoPlayback`、`releaseVideoPlayback`、`isVideoPlaybackActive`、`acquireAudioPlayback`、`releaseAudioPlayback`、`isAudioPlaybackActive`、`pauseAllPlayback` |
-| `src/renderer/src/canvas/nodes/study-sheet.ts` | `studyClock`、`segmentDuration`、`segmentMetaLine`、`buildStudySheetMarkdown`、`buildStudyTableMarkdown`、`buildShotMarkdown`、`buildRemakePrompt`、`buildStyleMarkdown`、`ShotGroup`、`groupShotsByScene`、`segmentCopyText` |
+| `src/renderer/src/canvas/nodes/study-sheet.ts` | `studyClock`、`segmentDuration`、`segmentMetaLine`、`buildStudySheetMarkdown`、`STUDY_TABLE_HEADERS`、`StudyTableRow`、`buildStudyTableRows`、`buildStudyTableMarkdown`、`buildShotMarkdown`、`buildRemakePrompt`、`buildStyleMarkdown`、`ShotGroup`、`groupShotsByScene`、`segmentCopyText` |
 | `src/renderer/src/canvas/nodes/text-markdown.ts` | `MARKDOWN_CLASS`、`renderMarkdown` |
 | `src/renderer/src/canvas/nodes/useBoxEditor.ts` | `Box`、`DragMode`、`useBoxEditor` |
 | `src/renderer/src/canvas/promptbar-model.tsx` | `WIDTH`、`HEIGHT`、`PLACEHOLDER`、`ModelOption`、`defaultParams`、`paramGroupName`、`paramLabel`、`ratioOf`、`MentionGroupName`、`RefKind`、`MentionKind`、`PickedRef`、`MentionItem`、`VIDEO_PATH`、`MAX_TEXT_CONTEXT`、`TextContext`、`Span`、`TitleSpan`、`matchTitleSpans`、`buildPromptWithContext`、`isVideoPath`、`MENTION_GROUPS`、`escapeRegExp`、`renderMentionText` …（共 25 个） |

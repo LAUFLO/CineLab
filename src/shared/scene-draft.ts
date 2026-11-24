@@ -32,7 +32,6 @@ export interface SceneDraftCamera {
 
 export interface SceneDraft {
   set: { kind: SceneSetKind; description: string }
-  world: Record<string, unknown> | null
   room: SceneDraftRoom | null
   objects: SceneDraftObject[]
   camera: SceneDraftCamera
@@ -73,7 +72,6 @@ export function parseSceneDraft(raw: unknown): SceneDraft {
   const description =
     typeof set.description === 'string' ? set.description.slice(0, 300) : ''
 
-  const world = isRecord(raw.world) ? raw.world : null
   const roomRaw = isRecord(raw.room) ? raw.room : null
   const room = roomRaw
     ? {
@@ -120,7 +118,6 @@ export function parseSceneDraft(raw: unknown): SceneDraft {
 
   return {
     set: { kind, description },
-    world,
     room,
     objects,
     camera

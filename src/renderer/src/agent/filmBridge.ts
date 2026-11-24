@@ -11,7 +11,10 @@ import {
 } from '../canvas/nodes/film-study-runner'
 import { createStudioFromNodes } from '../studio/nodes'
 import { useCanvasStore, type CanvasNode } from '../stores/canvas'
-import { useFilmStudyStore } from '../stores/film-study'
+import {
+  refreshStudySheetNode,
+  useFilmStudyStore
+} from '../stores/film-study'
 import { useStudioStore } from '../stores/studio'
 
 export interface FilmToolResult {
@@ -406,6 +409,7 @@ export async function executeFilmTool(
         if (useFilmStudyStore.getState().study?.id === saved.id) {
           useFilmStudyStore.getState().replaceStudy(saved)
         }
+        refreshStudySheetNode(saved)
         return {
           ok: true,
           result: {
@@ -619,6 +623,7 @@ export async function executeFilmTool(
         if (useFilmStudyStore.getState().study?.id === saved.id) {
           useFilmStudyStore.getState().replaceStudy(saved)
         }
+        refreshStudySheetNode(saved)
         const updated = saved.segments.find((item) => item.id === segmentId)
         return {
           ok: true,

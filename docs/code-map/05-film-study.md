@@ -68,9 +68,9 @@
 
 | 文件 | 作用 |
 |---|---|
-| `canvas/nodes/StudyNodeCard.tsx` | 拉片节点卡片：封面、摘要、四段进度、七个产物按钮 |
-| `canvas/nodes/FilmStudySheet.tsx` | 分镜表浮层 |
-| `canvas/nodes/study-sheet.ts` | 镜头 Markdown、分镜表、风格档案、复刻提示词 |
+| `canvas/nodes/StudyNodeCard.tsx` | 拉片节点卡片：摘要、四段进度、分析模型、七个产物按钮 |
+| `canvas/nodes/FilmStudySheet.tsx` | 分镜表浮层；与画布分镜表文本节点共用同一行模型 |
+| `canvas/nodes/study-sheet.ts` | 镜头 Markdown、分镜表（优先 shots，旧数据回退 segments）、风格档案、复刻提示词 |
 | `canvas/nodes/RemakeMappingDialog.tsx` | 选角/选景映射 |
 | `stores/film-study.ts` | 运行状态、拉片产物、单镜重跑、复刻建图、保存/撤销 |
 
@@ -97,7 +97,7 @@ StudyNodeCard → FilmStudyApi.auto
 | VLM 复核 | 已实现 | `production-review.ts`、`production-review.test.ts` |
 | 分场 | 已实现 | `scenes.ts`、`scenes.test.ts` |
 | 角色/风格/音频聚合 | 已实现（角色头像为中间帧占位） | `cast.ts`、`style.ts` |
-| 镜头三节点/分镜表 | 已实现 | `StudyNodeCard.tsx`、`study-sheet.ts` |
+| 镜头三节点/分镜表 | 已实现 | `StudyNodeCard.tsx`、`FilmStudySheet.tsx`、`study-sheet.ts`；弹窗与文本节点共用行模型，编辑镜头/分镜后自动刷新文本节点 |
 | 单镜重跑 | 已实现 | `service.ts`、`NodeContextMenu.tsx` |
 | 选角/选景与复刻建图 | 已实现 | `RemakeMappingDialog.tsx`、`stores/film-study.ts` |
 | 整片复刻 | 已实现（逐镜建图，不自动分组） | `remakeAll` |
@@ -142,7 +142,7 @@ StudyNodeCard → FilmStudyApi.auto
 | `src/main/film-study/shot-detect.ts` | 529 |
 | `src/main/film-study/shots.ts` | 297 |
 | `src/main/film-study/style.ts` | 190 |
-| `src/renderer/src/stores/film-study.ts` | 974 |
+| `src/renderer/src/stores/film-study.ts` | 1008 |
 | `src/shared/film-study-v2.ts` | 429 |
 | `src/shared/film-study.ts` | 219 |
 <!-- AUTO:files:end -->
@@ -160,7 +160,7 @@ StudyNodeCard → FilmStudyApi.auto
 | `src/main/film-study/shot-detect.ts` | `FrameStats`、`CutKind`、`DetectedCut`、`GradualTransition`、`analyzeVideoFrames`、`detectGradualTransitions`、`detectShotCuts`、`detectMotionPeaks`、`buildCandidateTimes` |
 | `src/main/film-study/shots.ts` | `buildShotPrompt`、`parseShotAnalysis`、`analyzeShots` |
 | `src/main/film-study/style.ts` | `buildStylePrompt`、`parseStyle`、`aggregateStyle` |
-| `src/renderer/src/stores/film-study.ts` | `useFilmStudyStore` |
+| `src/renderer/src/stores/film-study.ts` | `refreshStudySheetNode`、`useFilmStudyStore` |
 | `src/shared/film-study-v2.ts` | `FILM_STUDY_V2_SCHEMA`、`FilmStudyFrame`、`FilmStudyShot`、`FilmStudyScene`、`FilmStudyCast`、`FilmStudyStyle`、`FilmStudyAudio`、`FilmStudyMappingTarget`、`FilmStudyMapping`、`FilmStudyV2`、`FilmStudyV2Input`、`isFilmStudyV2`、`parseFilmStudyV2`、`emptyFilmStudyV2`、`sortScenes` |
 | `src/shared/film-study.ts` | `FilmStudyFrame`、`FilmStudySegment`、`FilmStudyMacroAnalysis`、`FilmStudyStoryLine`、`FilmStudyAudiencePoint`、`FilmStudySubtitle`、`FilmStudySummary`、`FilmStudy`、`FilmStudyOutputOptions`、`FilmStudyAutoRequest`、`FilmStudyAutoAsset`、`FilmStudyAutoResult`、`FilmStudyExtractRequest`、`FilmStudyExtractResult`、`FilmStudyExportResult`、`FilmStudyProgress` |
 <!-- AUTO:exports:end -->

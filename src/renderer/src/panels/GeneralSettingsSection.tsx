@@ -352,6 +352,18 @@ export function GeneralSettingsSection({
           />
         </SettingRow>
 
+        <SettingRow
+          title="视频节点播放静音"
+          hint="开启后视频节点播放默认静音；关闭后默认带声音播放"
+        >
+          <Switch
+            checked={preferences.canvas.muteVideoPlayback}
+            onChange={(next) =>
+              void updateCanvas({ muteVideoPlayback: next })
+            }
+          />
+        </SettingRow>
+
         <SettingRow title="减少动效" hint="关闭菜单、面板和提示的过渡动画">
           <Switch
             checked={preferences.canvas.reduceMotion}

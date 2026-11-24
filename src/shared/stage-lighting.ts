@@ -2,7 +2,7 @@ import type {
   DirectorStageDoc,
   StageLightingOverride
 } from './stage-schema'
-import type { PrevisWorldRef } from './previs/world-gen'
+
 
 export type StageTimeOfDay = 'day' | 'dusk' | 'night'
 
@@ -116,47 +116,10 @@ function mergeLighting(
   }
 }
 
-function weatherAdjusted(
-  base: StageLighting,
-  weather: PrevisWorldRef['weather']
-): StageLighting {
-  if (weather === 'rain') {
-    return {
-      ...base,
-      background: '#7f8b96',
-      ambient: { ...base.ambient, intensity: base.ambient.intensity * 1.1 },
-      sun: { ...base.sun, intensity: base.sun.intensity * 0.45 },
-      fog: { color: '#8f9aa3', near: 18, far: 90 }
-    }
-  }
-  if (weather === 'snow') {
-    return {
-      ...base,
-      background: '#dfe7ee',
-      ambient: { ...base.ambient, intensity: base.ambient.intensity * 1.2 },
-      sun: { ...base.sun, intensity: base.sun.intensity * 0.65 },
-      fog: { color: '#e9eef3', near: 24, far: 110 }
-    }
-  }
-  return base
-}
-
-const STAGE_TIMES: readonly StageTimeOfDay[] = ['day', 'dusk', 'night']
-
-function resolveTimeOfDay(value: unknown): StageTimeOfDay {
-  return STAGE_TIMES.includes(value as StageTimeOfDay)
-    ? (value as StageTimeOfDay)
-    : 'day'
-}
-
 export function resolveStageLighting(
-  doc: Pick<DirectorStageDoc, 'world' | 'lighting'> | null | undefined
+  doc: Pick<DirectorStageDoc, 'lighting'> | null | undefined
 ): StageLighting {
-  const world =
-    doc?.world && typeof doc.world === 'object' ? doc.world : undefined
-  const time = resolveTimeOfDay(world?.timeOfDay)
-  const base = weatherAdjusted(cloneLighting(TIME_LOOK[time]), world?.weather)
-  return mergeLighting(base, doc?.lighting)
+  return mergeLighting(cloneLighting(TIME_LOOK.day), doc?.lighting)
 }
 
 export const STAGE_LIGHTING_PRESETS: StageLightingPreset[] = [
@@ -253,22 +216,10 @@ export const STAGE_LIGHTING_PRESETS: StageLightingPreset[] = [
 ]
 
 export function applyLightingPreset(
-  doc: Pick<DirectorStageDoc, 'world' | 'lighting'>,
+  doc: Pick<DirectorStageDoc, 'lighting'>,
   presetId: string
-): Pick<DirectorStageDoc, 'lighting' | 'world'> {
+): Pick<DirectorStageDoc, 'lighting'> {
   const preset = STAGE_LIGHTING_PRESETS.find((item) => item.id === presetId)
-  if (!preset) return { lighting: doc.lighting, world: doc.world }
-
-  let world = doc.world
-  if (world && (preset.timeOfDay || preset.weather)) {
-    const next: PrevisWorldRef = {
-      ...world,
-      ...(preset.timeOfDay ? { timeOfDay: preset.timeOfDay } : {})
-    }
-    if (preset.weather) next.weather = preset.weather
-    else delete next.weather
-    world = next
-  }
-
-  return { lighting: preset.lighting, world }
+  if (!preset) return { lighting: doc.lighting }
+  return { lighting: preset.lighting }
 }

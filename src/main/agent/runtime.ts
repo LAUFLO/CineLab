@@ -35,7 +35,6 @@ import { executeMainTool } from './main-tools'
 import { expireSessionProposals } from './proposals'
 import { skillCatalogPrompt } from './skills'
 
-const MAX_STEPS = 8
 const TOOL_TIMEOUT_MS = 30_000
 const MAX_HISTORY_CHARS = 12_000
 const LONG_TOOL_TIMEOUTS: Record<string, number> = {
@@ -74,7 +73,7 @@ const CANVAS_SYSTEM_PROMPT = `你是 CineBot，CineLab 的画布助手。你可�
 - 导演台镜头用 stage_add_shot / stage_update_shot / stage_remove_shot；运镜用 stage_set_camera_track；背景用 stage_set_background。
 - 不确定工具名时，用 capability_search 按关键词搜索已注册工具。
 - 需要生成图片、视频、音频或文本时，先调用 generation_catalog 确认模型和参数，再调用 generation_propose 登记提案。
-- 目标生成节点用 canvas_add_node 创建；建议传 nearNodeId，把新节点放在参考素材右侧。
+- 目标生成节点用 canvas_add_node 创建；传 nearNodeId 可把新节点放在参考素材右侧，省略位置时自动放在当前视口内。
 - 引用画布素材用 generation_propose.refNodeIds；引用资产库素材先用 library_search 搜索，再用 generation_propose.libraryRefs。
 - 用户用 @ 引用的素材会附在系统提示中：画布节点用 refNodeIds，资产库路径用 libraryRefs。
 - 用户选择的生图/生视频/音频模型会附在系统提示中；生成时优先使用对应能力的已选模型。
@@ -462,9 +461,7 @@ async function runTurn(input: {
       })
     }
 
-    let steps = 0
-    while (steps < MAX_STEPS) {
-      steps += 1
+    while (true) {
       active.controller.signal.throwIfAborted()
 
       const beforeTextLength = turn.assistantText.length
@@ -629,10 +626,6 @@ async function runTurn(input: {
           )
         })
       }
-    }
-
-    if (steps >= MAX_STEPS) {
-      throw new Error('本轮工具调用次数过多，已停止')
     }
 
     if (active.controller.signal.aborted) {

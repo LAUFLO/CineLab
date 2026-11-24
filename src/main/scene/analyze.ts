@@ -3,10 +3,6 @@ import type { ModelDef } from '@shared/provider-schema'
 import type { SceneAnalyzeInput, SceneAnalyzeResult } from '@shared/scene-analyze'
 import { parseSceneDraft } from '@shared/scene-draft'
 import { calibrateScene } from '@shared/scene-calibrate'
-import {
-  normalizePrevisWorldRef,
-  type PrevisWorldRef
-} from '@shared/previs/world-gen'
 import { httpFetch } from '../providers/http'
 import { resolveMediaPath } from '../media/paths'
 import { listProviders, resolveProvider } from '../settings/store'
@@ -16,15 +12,6 @@ const SCENE_PROMPT = `你是 3D previs 场景解析器。看这张场景图，�
 输出结构：
 {
   "set": { "kind": "indoor" | "outdoor", "description": "一句英文场景描述" },
-  "world": {
-    "style": "modern_city" | "jp_modern" | "edo" | "custom",
-    "layout": "street" | "crossroad" | "t_junction" | "plaza",
-    "density": "low" | "medium" | "high",
-    "timeOfDay": "day" | "dusk" | "night",
-    "weather": "clear" | "rain" | "snow",
-    "landmarks": [{ "kind": "pagoda", "spot": "far_north" }],
-    "water": { "kind": "river" | "river_along" | "canal" | "waterfront" }
-  } | null,
   "room": { "type": "office", "widthM": 5, "depthM": 4, "heightM": 2.8 } | null,
   "objects": [
     {
@@ -47,9 +34,7 @@ const SCENE_PROMPT = `你是 3D previs 场景解析器。看这张场景图，�
 - relativeX 是画面横向位置，0 = 最左，1 = 最右；不要输出米制坐标。
 - depthLayer 只表示近/中/远，不要猜距离。
 - objects 最多 32 个，只列画面里看得见的主要物体。
-- 室内场景给 room，world 为 null；室外场景给 world，room 为 null。
-- 地标最多 6 个，spot 可选 far_north / far_south / far_east / far_west / north / south / east / west / approach。
-- weather 为 clear 时可以省略该字段。
+- 室内场景给 room，室外场景 room 为 null。
 - 只输出 JSON。`
 
 function pickModel(
@@ -159,32 +144,6 @@ export async function analyzeScene(
   if (!raw) throw new Error('模型没有返回场景解析内容')
 
   const draft = parseSceneDraft(JSON.parse(stripJson(raw)) as unknown)
-  const seed = input.seed ?? Math.floor(Math.random() * 1_000_000_000)
-  const worldInput = draft.world ?? {}
-  const style =
-    input.styleOverride ??
-    (typeof worldInput.style === 'string' ? worldInput.style : 'modern_city')
-
-  let world: PrevisWorldRef
-  try {
-    world = normalizePrevisWorldRef({
-      generatorVersion: 'styled-v1',
-      ...worldInput,
-      style,
-      seed,
-      extentM: [160, 160]
-    })
-  } catch {
-    world = normalizePrevisWorldRef({
-      generatorVersion: 'styled-v1',
-      style: 'modern_city',
-      layout: 'street',
-      density: 'medium',
-      seed,
-      extentM: [160, 160]
-    })
-  }
-
   const calibration = calibrateScene(
     draft,
     input.depth ?? { width: 1280, height: 720 }
@@ -192,7 +151,6 @@ export async function analyzeScene(
 
   return {
     draft,
-    world,
     calibration,
     confidence: calibration.confidence
   }

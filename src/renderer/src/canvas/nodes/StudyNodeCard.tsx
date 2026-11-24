@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import type { CineNodeData } from '@shared/canvas-schema'
 import { modelInputs, type ModelDef } from '@shared/provider-schema'
 import { Icon } from '../../components/Icon'
-import { assetUrl } from '../../lib/asset-url'
 import { useCanvasStore } from '../../stores/canvas'
 import { useFilmStudyStore } from '../../stores/film-study'
 import { useSettingsStore } from '../../stores/settings'
@@ -109,7 +108,6 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
         .join(' · ')
     : ''
 
-  const covers = summary?.coverPaths ?? []
   const currentStage = stageIndex(data.progress ?? 0)
 
   return (
@@ -132,20 +130,6 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
           {data.sourceName ?? data.sourcePath ?? '未连接视频'}
         </span>
       </div>
-
-      {covers.length > 0 ? (
-        <div className="grid shrink-0 grid-cols-3 gap-1 overflow-hidden rounded-md">
-          {covers.slice(0, 3).map((path) => (
-            <img
-              key={path}
-              src={assetUrl(path, 'project')}
-              alt=""
-              className="h-12 w-full bg-surface-hover object-cover"
-              draggable={false}
-            />
-          ))}
-        </div>
-      ) : null}
 
       {summary ? (
         <div className="space-y-0.5 text-[11px] leading-[1.45] text-fg-subtle">
@@ -203,6 +187,7 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
             value={modelKey}
             options={modelOptions}
             onChange={(value) => setModelKey(value)}
+            className="!ml-auto !h-[26px] !w-[170px] !min-w-0 !rounded-md !px-2 !text-[11px]"
           />
         </label>
       )}

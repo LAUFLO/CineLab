@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 74 | 25712 |
+| 01 | [画布](./01-canvas.md) | 74 | 25783 |
 | 02 | [生成与模型](./02-generation.md) | 67 | 14635 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
-| 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20219 |
-| 05 | [逐帧拉片](./05-film-study.md) | 13 | 5803 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 21068 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12396 |
-| 10 | [UI 组件与面板](./10-ui.md) | 51 | 11007 |
+| 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10055 |
+| 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 20966 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12403 |
+| 10 | [UI 组件与面板](./10-ui.md) | 51 | 11030 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -112,9 +112,7 @@
 | `stage_clear_shot_intent` | `stage.clearShotIntent` |  |  |
 | `stage_auto_coverage` | `stage.autoCoverage` |  |  |
 | `stage_dialogue_coverage` | `stage.dialogueCoverage` |  |  |
-| `stage_set_world` | `stage.setWorld` |  |  |
 | `stage_add_objects` | `stage.addObjects` |  |  |
-| `stage_randomize_world` | `stage.randomizeWorld` |  |  |
 | `stage_from_scene_image` | `stage.fromSceneImage` |  |  |
 | `stage_capture` | `stage.capture` | 是 |  |
 | `timeline_get` | `timeline.get` |  | 是 |
@@ -248,8 +246,6 @@
 - `src/shared/__tests__/model-modes.test.ts`
 - `src/shared/__tests__/node-operation-specs.test.ts`
 - `src/shared/__tests__/preferences.test.ts`
-- `src/shared/__tests__/previs-room.test.ts`
-- `src/shared/__tests__/previs-world.test.ts`
 - `src/shared/__tests__/prompt-preset.test.ts`
 - `src/shared/__tests__/protocol-templates.test.ts`
 - `src/shared/__tests__/reference-inputs.test.ts`

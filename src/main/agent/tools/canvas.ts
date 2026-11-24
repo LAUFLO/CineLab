@@ -160,7 +160,7 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     id: 'canvas.addNode',
     name: 'canvas_add_node',
     description:
-      '在当前画布创建文本、图片、视频或音频节点。创建后返回 nodeId，可在同一轮继续连接或修改。传 nearNodeId 时把新节点放在该节点右侧，适合在参考素材后面创建生成节点。',
+      '在当前画布创建文本、图片、视频或音频节点。创建后返回 nodeId，可在同一轮继续连接或修改。传 nearNodeId 时把新节点放在该节点右侧，适合在参考素材后面创建生成节点；不传位置时自动放在当前视口内。',
     profiles: ['canvas'],
     readOnly: false,
     scope: 'canvas',
@@ -177,8 +177,14 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
           type: 'string',
           description: '节点标题，1-200 个字符；省略时自动命名'
         },
-        x: { type: 'number', description: '画布 X 坐标；与 y 一起使用' },
-        y: { type: 'number', description: '画布 Y 坐标；与 x 一起使用' },
+        x: {
+          type: 'number',
+          description: '可选，画布 X 坐标；与 y 一起使用；省略时自动放置'
+        },
+        y: {
+          type: 'number',
+          description: '可选，画布 Y 坐标；与 x 一起使用；省略时自动放置'
+        },
         nearNodeId: {
           type: 'string',
           description: '可选，放在该节点右侧；提供后忽略 x/y'
@@ -483,9 +489,10 @@ export function validateCanvasToolArgs(
       if (typeof nearNodeId !== 'string' || !nearNodeId.trim()) {
         throw new AgentToolError('invalid_params', 'nearNodeId 必须是非空字符串')
       }
-    } else {
-      const x = call.args.x
-      const y = call.args.y
+    }
+    const x = call.args.x
+    const y = call.args.y
+    if (x !== undefined || y !== undefined) {
       if (
         typeof x !== 'number' ||
         !Number.isFinite(x) ||
@@ -494,7 +501,7 @@ export function validateCanvasToolArgs(
       ) {
         throw new AgentToolError(
           'invalid_params',
-          '需要 nearNodeId，或同时提供 x 和 y'
+          'x 和 y 必须同时提供且为有限数字；都不提供时自动放置'
         )
       }
     }

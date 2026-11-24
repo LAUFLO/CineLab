@@ -425,6 +425,44 @@ function capabilityCatalog(args: {
   }
 }
 
+function autoNodePosition(
+  size: { width: number; height: number },
+  nodes: CanvasNode[],
+  viewport: { x: number; y: number; zoom: number }
+): { x: number; y: number } {
+  const zoom = viewport.zoom || 1
+  const rect = document
+    .querySelector<HTMLElement>('.react-flow')
+    ?.getBoundingClientRect()
+  const screenWidth = rect?.width ?? window.innerWidth
+  const screenHeight = rect?.height ?? window.innerHeight
+  const desired = {
+    x:
+      ((rect?.left ?? 0) + screenWidth / 2 - viewport.x) / zoom -
+      size.width / 2,
+    y:
+      ((rect?.top ?? 0) + screenHeight / 2 - viewport.y) / zoom -
+      size.height / 2
+  }
+  const gap = 40
+  const overlaps = (position: { x: number; y: number }): boolean =>
+    nodes.some((node) => {
+      const base = absolutePosition(node, nodes)
+      const box = nodeSize(node)
+      return (
+        position.x < base.x + box.width + gap &&
+        position.x + size.width + gap > base.x &&
+        position.y < base.y + box.height + gap &&
+        position.y + size.height + gap > base.y
+      )
+    })
+  const next = { ...desired }
+  for (let attempt = 0; attempt < 20 && overlaps(next); attempt += 1) {
+    next.x += size.width + gap
+  }
+  return next
+}
+
 export async function executeCanvasTool(call: AgentToolCallRequest): Promise<{
   ok: boolean
   result?: unknown
@@ -694,10 +732,15 @@ export async function executeCanvasTool(call: AgentToolCallRequest): Promise<{
       } else {
         const x = Number(call.args.x)
         const y = Number(call.args.y)
-        if (!Number.isFinite(x) || !Number.isFinite(y)) {
-          return { ok: false, error: '节点位置必须是有限数字' }
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          position = { x, y }
+        } else {
+          position = autoNodePosition(
+            { width: meta.width, height: meta.height + TITLE_HEIGHT },
+            state.nodes,
+            state.viewport ?? { x: 0, y: 0, zoom: 1 }
+          )
         }
-        position = { x, y }
       }
       const { x, y } = position
 

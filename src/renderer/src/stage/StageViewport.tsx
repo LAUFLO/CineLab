@@ -12,10 +12,7 @@ import {
   createStageObject,
   disposeObject3D as disposeObject
 } from './stage-scene'
-import {
-  createStageWorldRender,
-  type StageWorldRender
-} from './stage-world-scene'
+import { createStageGround, type StageGround } from './stage-ground'
 import { useStageStore } from './stageStore'
 
 const DEFAULT_BACKGROUND = '#1a1a1a'
@@ -85,7 +82,7 @@ export function StageViewport() {
   const transformRef = useRef<TransformControls | null>(null)
   const transformHelperRef = useRef<THREE.Object3D | null>(null)
   const objectsGroupRef = useRef<THREE.Group | null>(null)
-  const worldRef = useRef<StageWorldRender | null>(null)
+  const groundRef = useRef<StageGround | null>(null)
   const cameraGroupRef = useRef<THREE.Group | null>(null)
   const selectionRef = useRef<THREE.BoxHelper | null>(null)
   const aspectRef = useRef(FALLBACK_ASPECT)
@@ -123,7 +120,7 @@ export function StageViewport() {
 
     const scene = new THREE.Scene()
     const lighting = resolveStageLighting(
-      useStageStore.getState().doc ?? { world: undefined, lighting: undefined }
+      useStageStore.getState().doc ?? { lighting: undefined }
     )
     scene.background = new THREE.Color(lighting.background)
     sceneRef.current = scene
@@ -229,19 +226,9 @@ export function StageViewport() {
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = lighting.exposure
 
-    const grid = new THREE.GridHelper(40, 40, 0x555555, 0x2a2a2a)
-    scene.add(grid)
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(40, 40),
-      new THREE.MeshStandardMaterial({
-        color: 0x18181b,
-        roughness: 1,
-        metalness: 0
-      })
-    )
-    floor.rotation.x = -Math.PI / 2
-    floor.position.y = -0.01
-    scene.add(floor)
+    const ground = createStageGround(lighting.background)
+    scene.add(ground.mesh)
+    groundRef.current = ground
 
     const objectsGroup = new THREE.Group()
     const cameraGroup = new THREE.Group()
@@ -369,10 +356,10 @@ export function StageViewport() {
       }
 
       const camera = activeCameraRef.current
-      if (camera && worldRef.current) {
-        worldRef.current.animate(performance.now() / 1000, camera.position)
+      if (camera) {
+        groundRef.current?.setCameraPosition(camera.position)
+        renderer.render(scene, camera)
       }
-      if (camera) renderer.render(scene, camera)
     })
 
     useStageStore.getState().registerCapture(() => {
@@ -425,19 +412,10 @@ export function StageViewport() {
       transform.dispose()
       scene.remove(transformHelper)
       controls.dispose()
-      worldRef.current?.dispose()
-      worldRef.current = null
+      groundRef.current?.dispose()
+      groundRef.current = null
       disposeObject(objectsGroup)
       disposeObject(cameraGroup)
-      grid.geometry.dispose()
-      const gridMaterial = grid.material
-      if (Array.isArray(gridMaterial)) {
-        gridMaterial.forEach((material) => material.dispose())
-      } else {
-        gridMaterial.dispose()
-      }
-      floor.geometry.dispose()
-      ;(floor.material as THREE.Material).dispose()
       renderer.dispose()
       renderer.domElement.remove()
       sceneRef.current = null
@@ -462,27 +440,17 @@ export function StageViewport() {
     if (!scene || !objectsGroup || !cameraGroup || !doc) return
 
     const lighting = resolveStageLighting(doc)
-    scene.background = new THREE.Color(
+    const background =
       doc.background.kind === 'color' && doc.background.value
         ? doc.background.value
         : lighting.background
-    )
+    scene.background = new THREE.Color(background)
+    groundRef.current?.setBackground(background)
 
     disposeObject(objectsGroup)
     objectsGroup.clear()
     disposeObject(cameraGroup)
     cameraGroup.clear()
-
-    if (worldRef.current) {
-      scene.remove(worldRef.current.group)
-      worldRef.current.dispose()
-      worldRef.current = null
-    }
-    if (doc.world) {
-      const world = createStageWorldRender(doc.world, lighting)
-      worldRef.current = world
-      scene.add(world.group)
-    }
 
     for (const object of doc.objects) {
       objectsGroup.add(createStageObject(object))

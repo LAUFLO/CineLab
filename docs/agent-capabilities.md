@@ -6,7 +6,7 @@
 最后核对：2026-11-23
 关联：`docs/agent-architecture-plan.md`
 
-当前注册 70 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库和技能。
+当前注册 76 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库、提示词模板、风格和技能。
 本文件记录已开放给 CineBot 的能力、参数校验、确认规则和回合撤销方式。
 所有写操作都走命令层；UI 和 Agent 共用执行器。
 
@@ -19,6 +19,10 @@
 ### 生成与资产（3）
 
 `generation_catalog`、`generation_propose`、`library_search`
+
+### 提示词与风格（6）
+
+`preset_list`、`preset_search`、`preset_read`、`style_list`、`style_search`、`style_read`
 
 ### 导演台（22）
 

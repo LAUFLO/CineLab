@@ -19,6 +19,8 @@ export type McpToolCategory =
   | '导演台'
   | '拉片'
   | '资产'
+  | '提示词'
+  | '风格'
   | '能力'
   | '技能'
 

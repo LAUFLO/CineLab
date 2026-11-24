@@ -157,7 +157,7 @@ export function McpSettingsSection(): React.JSX.Element {
         <div className="text-sm font-medium text-fg">MCP server</div>
         <p className="mt-1 text-xs leading-[1.6] text-fg-muted">
           外部 Agent 通过 MCP 连接 CineLab，可读取项目与画布、操作节点、时间线、导演台和拉片。
-          只监听本机，使用 Bearer token 鉴权。
+          只监听本机，使用 Bearer token 鉴权。写操作直接执行，不需要应用内确认；只读模式可禁止所有写操作。
         </p>
       </div>
 
@@ -392,7 +392,7 @@ export function McpSettingsSection(): React.JSX.Element {
         )}
         <div className="flex items-center gap-1.5 text-[11px] text-fg-subtle">
           <Icon name="help" size={12} />
-          灰色为只读工具，蓝色为写工具（执行前需在应用内确认），红色为删除类危险操作
+          灰色为只读工具，蓝色为写工具，红色为删除类危险操作；写操作直接执行，只读模式下全部拒绝
         </div>
       </div>
     </div>

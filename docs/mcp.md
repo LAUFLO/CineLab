@@ -104,7 +104,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 6. 工具
 
-共 83 个工具，按类别如下。写工具执行前都会弹出原生确认框。
+共 89 个工具，按类别如下。写工具执行前都会弹出原生确认框。
 
 ### 6.1 适配器（3）
 
@@ -235,21 +235,27 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 时间线工具要求剪辑室已打开，外部 Agent 可以先调用 `timeline_open({ nodeId })` 打开已有剪辑室；导演台工具需要 `nodeId`；拉片工具需要 `nodeId` 或 `studyId`。写工具复用 CineBot 的画布、时间线、导演台和拉片执行器，不直接改项目 JSON。
 
-### 6.11 提示词模板（3）
+### 6.11 提示词模板（6）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
 | `preset_list` | 列出提示词模板 | 是 |  |
 | `preset_search` | 搜索提示词模板 | 是 |  |
 | `preset_read` | 读取提示词模板 | 是 |  |
+| `preset_create` | 创建提示词模板 | 否 |  |
+| `preset_update` | 修改提示词模板 | 否 |  |
+| `preset_delete` | 删除提示词模板 | 否 | 是 |
 
-### 6.12 风格（3）
+### 6.12 风格（6）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
 | `style_list` | 列出风格 | 是 |  |
 | `style_search` | 搜索风格 | 是 |  |
 | `style_read` | 读取风格 | 是 |  |
+| `style_create` | 创建风格 | 否 |  |
+| `style_update` | 修改风格 | 否 |  |
+| `style_delete` | 删除风格 | 否 | 是 |
 
 ### 6.13 旧名迁移
 

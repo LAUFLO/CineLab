@@ -164,5 +164,203 @@ export const LIBRARY_TOOLS: AgentToolDefinition[] = [
     replay: 'safe',
     executor: 'main',
     mcp: { title: '读取风格', category: '风格' }
+  },
+  {
+    id: 'library.presetCreate',
+    name: 'preset_create',
+    description:
+      '创建一个提示词模板（预设）。名称会作为文件名，重复名称会覆盖同名模板。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'library',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', minLength: 1, maxLength: 80, description: '模板名称' },
+        kind: {
+          type: 'string',
+          enum: ['text', 'image', 'video', 'audio'],
+          description: '适用的节点类型'
+        },
+        prompt: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 8000,
+          description: '模板正文'
+        }
+      },
+      required: ['name', 'kind', 'prompt'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true,
+    executor: 'main',
+    mcp: { title: '创建提示词模板', category: '提示词' }
+  },
+  {
+    id: 'library.presetUpdate',
+    name: 'preset_update',
+    description:
+      '修改一个提示词模板。只传需要修改的字段，其余保持原值。id 来自 preset_list。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'library',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'string',
+          description: '模板 id，例如 提示词/雪夜电影感.prompt.json'
+        },
+        name: { type: 'string', minLength: 1, maxLength: 80 },
+        kind: {
+          type: 'string',
+          enum: ['text', 'image', 'video', 'audio']
+        },
+        prompt: { type: 'string', minLength: 1, maxLength: 8000 }
+      },
+      required: ['id'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true,
+    executor: 'main',
+    mcp: { title: '修改提示词模板', category: '提示词' }
+  },
+  {
+    id: 'library.presetDelete',
+    name: 'preset_delete',
+    description: '删除一个提示词模板。执行前需要用户确认。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'library',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'string',
+          description: '模板 id，例如 提示词/雪夜电影感.prompt.json'
+        }
+      },
+      required: ['id'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true,
+    executor: 'main',
+    mcp: {
+      title: '删除提示词模板',
+      category: '提示词',
+      destructive: true
+    }
+  },
+  {
+    id: 'library.styleCreate',
+    name: 'style_create',
+    description:
+      '创建一个自定义风格。名称和提示词片段会写入资产库「风格」目录。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'library',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', minLength: 1, maxLength: 80, description: '风格名称' },
+        category: {
+          type: 'string',
+          enum: [
+            '电影感',
+            '动画与手绘',
+            '复古媒介',
+            '科幻与未来',
+            '奇幻与超现实',
+            '国风与东方'
+          ],
+          description: '风格分类'
+        },
+        prompt: {
+          type: 'string',
+          minLength: 1,
+          maxLength: 8000,
+          description: '风格提示词片段，只描述画风，不包含具体主体'
+        }
+      },
+      required: ['name', 'category', 'prompt'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true,
+    executor: 'main',
+    mcp: { title: '创建风格', category: '风格' }
+  },
+  {
+    id: 'library.styleUpdate',
+    name: 'style_update',
+    description:
+      '修改一个自定义风格。只传需要修改的字段，其余保持原值。官方风格不能修改。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'library',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'string',
+          description: '风格 id，自定义风格形如 风格/<目录名>'
+        },
+        name: { type: 'string', minLength: 1, maxLength: 80 },
+        category: {
+          type: 'string',
+          enum: [
+            '电影感',
+            '动画与手绘',
+            '复古媒介',
+            '科幻与未来',
+            '奇幻与超现实',
+            '国风与东方'
+          ]
+        },
+        prompt: { type: 'string', minLength: 1, maxLength: 8000 }
+      },
+      required: ['id'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true,
+    executor: 'main',
+    mcp: { title: '修改风格', category: '风格' }
+  },
+  {
+    id: 'library.styleDelete',
+    name: 'style_delete',
+    description: '删除一个自定义风格。官方风格不能删除，执行前需要用户确认。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'library',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'string',
+          description: '风格 id，自定义风格形如 风格/<目录名>'
+        }
+      },
+      required: ['id'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true,
+    executor: 'main',
+    mcp: {
+      title: '删除风格',
+      category: '风格',
+      destructive: true
+    }
   }
 ]

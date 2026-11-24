@@ -26,8 +26,16 @@ import { listAllAssets } from '../library/store'
 import { listProviders } from '../settings/store'
 import { AGENT_CAPABILITIES } from './capabilities/registry'
 import { listSkills, readSkill } from './skills'
-import { listTemplates } from '../library/templates'
-import { listStyles } from '../library/styles'
+import {
+  deleteTemplate,
+  listTemplates,
+  saveTemplate
+} from '../library/templates'
+import {
+  deleteStyle,
+  listStyles,
+  saveStyle
+} from '../library/styles'
 
 export interface MainToolResult {
   ok: boolean
@@ -258,6 +266,85 @@ export async function executeMainTool(
         total: styles.length
       }
     }
+  }
+
+  if (call.name === 'preset_create') {
+    const template = await saveTemplate({
+      name: String(call.args.name ?? ''),
+      kind: String(call.args.kind ?? 'image') as
+        | 'text'
+        | 'image'
+        | 'video'
+        | 'audio',
+      prompt: String(call.args.prompt ?? '')
+    })
+    return { ok: true, result: template }
+  }
+
+  if (call.name === 'preset_update') {
+    const id = String(call.args.id ?? '').trim()
+    const existing = (await listTemplates()).find((item) => item.id === id)
+    if (!existing) return { ok: false, error: '找不到这个提示词模板' }
+    const template = await saveTemplate({
+      id,
+      name:
+        typeof call.args.name === 'string' && call.args.name.trim()
+          ? call.args.name
+          : existing.name,
+      kind:
+        typeof call.args.kind === 'string'
+          ? (call.args.kind as 'text' | 'image' | 'video' | 'audio')
+          : existing.kind,
+      prompt:
+        typeof call.args.prompt === 'string'
+          ? call.args.prompt
+          : existing.prompt
+    })
+    return { ok: true, result: template }
+  }
+
+  if (call.name === 'preset_delete') {
+    await deleteTemplate(String(call.args.id ?? ''))
+    return { ok: true, result: { id: call.args.id } }
+  }
+
+  if (call.name === 'style_create') {
+    const style = await saveStyle({
+      name: String(call.args.name ?? ''),
+      category: String(call.args.category ?? ''),
+      prompt: String(call.args.prompt ?? '')
+    })
+    return { ok: true, result: style }
+  }
+
+  if (call.name === 'style_update') {
+    const id = String(call.args.id ?? '').trim()
+    const existing = (await listStyles()).find((item) => item.id === id)
+    if (!existing) return { ok: false, error: '找不到这个风格' }
+    if (existing.source === 'official') {
+      return { ok: false, error: '官方风格不能修改' }
+    }
+    const style = await saveStyle({
+      id,
+      name:
+        typeof call.args.name === 'string' && call.args.name.trim()
+          ? call.args.name
+          : existing.name,
+      category:
+        typeof call.args.category === 'string'
+          ? call.args.category
+          : existing.category,
+      prompt:
+        typeof call.args.prompt === 'string'
+          ? call.args.prompt
+          : existing.prompt
+    })
+    return { ok: true, result: style }
+  }
+
+  if (call.name === 'style_delete') {
+    await deleteStyle(String(call.args.id ?? ''))
+    return { ok: true, result: { id: call.args.id } }
   }
 
   if (call.name === 'style_read') {

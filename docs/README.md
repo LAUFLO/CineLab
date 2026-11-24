@@ -1,9 +1,9 @@
 # CineLab 文档索引
 
-日期：2026-11-22
+日期：2026-11-24
 状态：现行
 适用版本：v0.2.1
-最后核对：2026-11-22
+最后核对：2026-11-24
 
 > 远程仓库只保留稳定契约、参考文档和一份精简的归档。过程记录、截图和批次 evidence 放本地 `.opencode/`，不入库。
 
@@ -47,6 +47,7 @@
 | [ui-polish-plan.md](ui-polish-plan.md) | 画布与设置页 UI 打磨：参数单位、连线光效、菜单裁切、素材节点、快捷键、技能卡片与设置重组 |
 | [xyflow-v13-migration-plan.md](xyflow-v13-migration-plan.md) | React Flow 13 迁移评估：破坏性变更影响矩阵、store changeset、useStore 拆分、fitView padding 与 CSS layer 改动方案，待实施 |
 | [prompt-preset-plan.md](prompt-preset-plan.md) | 预设提示词：悬浮窗、名称胶囊、任意位置插入与发送展开，已确认 |
+| [promptbar-popover-plan.md](promptbar-popover-plan.md) | PromptBar 浮窗与胶囊改造：确认框层级、居中浮窗、卡片网格与预览、绿色预设胶囊、节点自动就位，已实施 |
 
 ## 3. 代码地图
 

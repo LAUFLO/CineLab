@@ -222,6 +222,7 @@ export function PromptBar() {
   const paramRef = useRef<HTMLDivElement>(null)
   const advancedRef = useRef<HTMLButtonElement>(null)
   const mentionRef = useRef<HTMLDivElement>(null)
+  const barRef = useRef<HTMLDivElement>(null)
   const refClickTimer = useRef<number | null>(null)
   const promptRef = useRef('')
   const promptSaveTimer = useRef<number | null>(null)
@@ -783,6 +784,43 @@ export function PromptBar() {
       }
     }
     setPresetOpen(true)
+  }
+
+  // 浮窗需要约 520px 垂直空间；节点太靠上时，把它移到视口中心偏下。
+  const ensureDialogSpace = (): void => {
+    if (!node) return
+    const absolute = absolutePosition(node, nodes)
+    const position = flowToScreenPosition(absolute)
+    const width = node.measured?.width ?? NODE_META[node.data.kind].width
+    const height =
+      node.measured?.height ?? NODE_META[node.data.kind].height + TITLE_HEIGHT
+    const bottom = position.y + height * viewport.zoom + 16
+    if (bottom >= 520) return
+    const offsetY = (window.innerHeight * 0.08) / viewport.zoom
+    void setCenter(absolute.x + width / 2, absolute.y + height / 2 - offsetY, {
+      zoom: viewport.zoom,
+      duration: 180
+    })
+  }
+
+  const togglePresetDialog = (): void => {
+    if (presetOpen) {
+      closePresetDialog()
+      return
+    }
+    setStyleOpen(false)
+    ensureDialogSpace()
+    openPresetDialog()
+  }
+
+  const toggleStyleDialog = (): void => {
+    if (styleOpen) {
+      setStyleOpen(false)
+      return
+    }
+    setPresetOpen(false)
+    ensureDialogSpace()
+    setStyleOpen(true)
   }
 
   useEffect(() => {
@@ -1834,6 +1872,7 @@ export function PromptBar() {
       ) : null}
 
       <div
+        ref={barRef}
         data-slot="promptbar"
         className={`flex flex-col rounded-panel border border-border bg-surface shadow-float ${
           expanded
@@ -1899,7 +1938,7 @@ export function PromptBar() {
             className={`${TOOL_CLASS} ${
               selectedStyle ? TOOL_ACTIVE_CLASS : ''
             }`}
-            onClick={() => setStyleOpen(true)}
+            onClick={toggleStyleDialog}
           >
             <Icon name="sparkles" size={13} />
             风格库
@@ -1911,7 +1950,7 @@ export function PromptBar() {
             className={`${TOOL_CLASS} ${
               presetTokens.length > 0 ? TOOL_ACTIVE_CLASS : ''
             }`}
-            onClick={openPresetDialog}
+            onClick={togglePresetDialog}
           >
             <Icon name="text" size={13} />
             预设提示词
@@ -2270,17 +2309,17 @@ export function PromptBar() {
           {selectedStyle ? (
             <span
               ref={styleChipRef}
-              className="absolute left-1.5 top-2 z-[2] inline-flex h-5 max-w-[180px] items-center gap-1 rounded-full border border-accent/50 bg-accent/10 px-2 text-[11px] text-fg"
+              className="absolute left-1.5 top-2 z-[2] inline-flex h-[22px] max-w-[180px] items-center gap-1 rounded-full border border-accent/50 bg-accent/10 pl-2 pr-2.5 text-[11px] text-fg"
             >
               <Icon name="sparkles" size={10} />
               <span className="truncate">{selectedStyle.name}</span>
               <IconButton
                 label="移除风格"
-                size="xs"
-                className="h-4 w-4"
+                unstyled
+                className="absolute -right-1 -top-1 z-[1] flex h-3 w-3 items-center justify-center rounded-full border border-border bg-surface text-fg-muted hover:border-danger hover:text-danger"
                 onClick={() => setSelectedStyle(null)}
               >
-                <Icon name="close" size={9} />
+                <Icon name="close" size={7} />
               </IconButton>
             </span>
           ) : null}
@@ -2562,6 +2601,8 @@ export function PromptBar() {
 
       <StyleLibraryDialog
         open={styleOpen}
+        anchorRef={barRef}
+        avoidRef={mentionRef}
         onClose={() => setStyleOpen(false)}
         onSelect={setSelectedStyle}
       />
@@ -2569,6 +2610,8 @@ export function PromptBar() {
       <PresetPromptDialog
         open={presetOpen}
         kind={kind}
+        anchorRef={barRef}
+        avoidRef={mentionRef}
         onClose={closePresetDialog}
         onInsert={insertPresetToken}
       />

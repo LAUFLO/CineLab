@@ -27,6 +27,7 @@
   --switch-knob: #ffffff;
   --link: #8b8b90;
   --success: #4ade80;
+  --preset: #4ade80;
   --warning: #fbbf24;
   --danger: #ef4444;
   --glow: rgba(72, 103, 247, 0.55);
@@ -80,6 +81,7 @@
   --switch-knob: #ffffff;
   --link: #71717a;
   --success: #16a34a;
+  --preset: #16a34a;
   --warning: #d97706;
   --danger: #dc2626;
   --glow: rgba(72, 103, 247, 0.35);

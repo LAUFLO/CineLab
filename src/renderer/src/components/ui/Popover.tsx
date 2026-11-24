@@ -15,12 +15,24 @@ export interface PopoverProps {
   onClose: () => void
   /** 触发按钮的 ref；Popover 根据它的位置定位。 */
   anchorRef: RefObject<HTMLElement | null>
+  /** 向上展开时，浮窗底部不越过该元素顶部，用于避免遮挡输入框。 */
+  avoidRef?: RefObject<HTMLElement | null>
   children: ReactNode
   width?: number
   /** start: 左对齐触发按钮；end: 右对齐。 */
   align?: 'start' | 'end' | 'center'
   /** 触发按钮随画布移动时持续跟随，用于分组工具栏等会平移的锚点。 */
   follow?: boolean
+  /** auto: 按可用空间翻转；top/bottom: 强制方向。 */
+  placement?: 'auto' | 'top' | 'bottom'
+  /** 面板最大高度，默认 420。 */
+  maxHeight?: number
+  /** 期望高度；实际高度会按可用空间与 maxHeight 收缩，未指定时由内容决定。 */
+  height?: number
+  /** 与锚点的间距，默认 6。 */
+  gap?: number
+  /** 不套用默认内边距与滚动，由调用方控制。 */
+  bare?: boolean
   className?: string
   ariaLabel?: string
 }
@@ -29,6 +41,7 @@ interface PopoverPosition {
   left: number
   top: number
   width: number
+  height: number | null
 }
 
 const GAP = 6
@@ -42,10 +55,16 @@ export function Popover({
   open,
   onClose,
   anchorRef,
+  avoidRef,
   children,
   width = 224,
   align = 'start',
   follow = false,
+  placement: preferredPlacement = 'auto',
+  maxHeight = 420,
+  height,
+  gap = GAP,
+  bare = false,
   className,
   ariaLabel
 }: PopoverProps) {
@@ -66,14 +85,28 @@ export function Popover({
           ? rect.left + rect.width / 2 - nextWidth / 2
           : rect.left
     const placement =
-      rect.bottom + GAP + panelHeight > window.innerHeight &&
-      rect.top > panelHeight + GAP
-        ? 'top'
-        : 'bottom'
+      preferredPlacement !== 'auto'
+        ? preferredPlacement
+        : rect.bottom + gap + panelHeight > window.innerHeight &&
+            rect.top > panelHeight + gap
+          ? 'top'
+          : 'bottom'
+    const available =
+      placement === 'top'
+        ? Math.max(
+            120,
+            (avoidRef?.current?.getBoundingClientRect().top ?? rect.top) -
+              gap -
+              MARGIN
+          )
+        : Math.max(120, window.innerHeight - rect.bottom - gap - MARGIN)
+    const nextHeight =
+      height === undefined ? null : Math.min(height, maxHeight, available)
+    const effectiveHeight = nextHeight ?? panelHeight
     const top =
       placement === 'bottom'
-        ? rect.bottom + GAP
-        : Math.max(MARGIN, rect.top - panelHeight - GAP)
+        ? rect.bottom + gap
+        : Math.max(MARGIN, rect.top - effectiveHeight - gap)
 
     setPosition((current) => {
       const next = {
@@ -82,16 +115,18 @@ export function Popover({
           Math.min(rawLeft, window.innerWidth - nextWidth - MARGIN)
         ),
         top: Math.max(MARGIN, Math.min(top, window.innerHeight - MARGIN)),
-        width: nextWidth
+        width: nextWidth,
+        height: nextHeight
       }
       return current &&
         Math.abs(current.left - next.left) < 0.5 &&
         Math.abs(current.top - next.top) < 0.5 &&
-        current.width === next.width
+        current.width === next.width &&
+        current.height === next.height
         ? current
         : next
     })
-  }, [align, anchorRef, width])
+  }, [align, anchorRef, avoidRef, width, preferredPlacement, height, maxHeight, gap])
 
   useLayoutEffect(() => {
     if (!open) return
@@ -149,13 +184,16 @@ export function Popover({
       aria-label={ariaLabel}
       onPointerDown={(event) => event.stopPropagation()}
       className={cn(
-        'fixed z-[1000] max-h-[min(420px,calc(100vh-16px))] overflow-y-auto rounded-card border border-border bg-surface-raised p-1 shadow-menu',
+        'fixed z-[1000] rounded-card border border-border bg-surface-raised shadow-menu',
+        bare ? '' : 'overflow-y-auto p-1',
         className
       )}
       style={{
         left: position?.left ?? MARGIN,
         top: position?.top ?? MARGIN,
         width: position?.width ?? width,
+        height: position?.height ?? undefined,
+        maxHeight: `min(${maxHeight}px, calc(100vh - 16px))`,
         visibility: position ? 'visible' : 'hidden'
       }}
     >

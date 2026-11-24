@@ -26,7 +26,10 @@ import {
   operationsForKind,
   type NodeOperation
 } from '../canvas/nodes/node-operations'
-import { listNodeOperations, executeNodeOperation } from '../canvas/nodes/node-operation-runner'
+import {
+  listNodeOperations,
+  executeNodeOperation
+} from '../canvas/nodes/node-operation-runner'
 import { useStageStore } from '../stage/stageStore'
 import { useStudioStore } from '../stores/studio'
 import { useTimelineStore } from '../stores/timeline'
@@ -352,9 +355,7 @@ function capabilityCatalog(args: {
   nodeId?: string
 }): Record<string, unknown> {
   const space =
-    args.space === 'canvas' ||
-    args.space === 'clip' ||
-    args.space === 'stage'
+    args.space === 'canvas' || args.space === 'clip' || args.space === 'stage'
       ? args.space
       : currentSpace()
   const canvas = useCanvasStore.getState()
@@ -447,685 +448,700 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
 
   const state = useCanvasStore.getState()
 
-  if (call.name === 'canvas_node_operations') {
-    const nodeId = String(call.args.nodeId ?? '')
-    const summary = listNodeOperations(nodeId)
-    if (!summary) return { ok: false, error: '找不到这个画布节点' }
-    return { ok: true, result: summary }
-  }
+  const canvasHandlers: Record<
+    string,
+    (call: AgentToolCallRequest) => Promise<{
+      ok: boolean
+      result?: unknown
+      error?: string
+      change?: AgentTurnChange
+    }>
+  > = {
+    canvas_node_operations: async (call) => {
+      const nodeId = String(call.args.nodeId ?? '')
+      const summary = listNodeOperations(nodeId)
+      if (!summary) return { ok: false, error: '找不到这个画布节点' }
+      return { ok: true, result: summary }
+    },
 
-  if (call.name === 'canvas_node_operation') {
-    return executeNodeOperation({
-      nodeId: String(call.args.nodeId ?? ''),
-      operationId: String(call.args.operationId ?? ''),
-      ...(typeof call.args.itemId === 'string'
-        ? { itemId: call.args.itemId }
-        : {}),
-      ...(call.args.params &&
-      typeof call.args.params === 'object' &&
-      !Array.isArray(call.args.params)
-        ? { params: call.args.params as Record<string, unknown> }
-        : {}),
-      turnId: call.turnId
-    })
-  }
-
-  if (call.name === 'capability_catalog') {
-    return {
-      ok: true,
-      result: capabilityCatalog({
-        ...(typeof call.args.space === 'string'
-          ? { space: call.args.space }
+    canvas_node_operation: async (call) => {
+      return executeNodeOperation({
+        nodeId: String(call.args.nodeId ?? ''),
+        operationId: String(call.args.operationId ?? ''),
+        ...(typeof call.args.itemId === 'string'
+          ? { itemId: call.args.itemId }
           : {}),
-        ...(typeof call.args.nodeId === 'string'
-          ? { nodeId: call.args.nodeId }
-          : {})
+        ...(call.args.params &&
+        typeof call.args.params === 'object' &&
+        !Array.isArray(call.args.params)
+          ? { params: call.args.params as Record<string, unknown> }
+          : {}),
+        turnId: call.turnId
       })
-    }
-  }
+    },
 
-  if (call.name === 'canvas_get') {
-    const kindFilter =
-      typeof call.args.kind === 'string' && call.args.kind.trim()
-        ? call.args.kind.trim()
-        : undefined
-    const nodes = kindFilter
-      ? state.nodes.filter((node) =>
-          node.type === 'cine'
-            ? node.data.kind === kindFilter
-            : node.type === kindFilter
-        )
-      : state.nodes
-
-    return {
-      ok: true,
-      result: {
-        nodeCount: nodes.length,
-        edgeCount: state.edges.length,
-        selectedNodes: selectedNodeSummary(),
-        nodes: nodes.slice(0, 200).map((node) => {
-          const output = selectedNodeOutput(node)
-          const data = node.data as {
-            title?: unknown
-            status?: unknown
-            progress?: unknown
-          }
-          return {
-            id: node.id,
-            title: nodeTitleOf(node),
-            kind:
-              node.type === 'cine'
-                ? node.data.kind
-                : node.type,
-            selected: node.selected === true,
-            x: Math.round(node.position.x),
-            y: Math.round(node.position.y),
-            ...(typeof data.status === 'string' ? { status: data.status } : {}),
-            ...(typeof data.progress === 'number'
-              ? { progress: data.progress }
-              : {}),
-            ...(output ? { outputKind: output.kind } : {})
-          }
-        }),
-        edges: state.edges.slice(0, 200).map((edge) => ({
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          ...(edge.data?.role ? { role: edge.data.role } : {})
-        })),
-        ...(nodes.length > 200 ? { nodesTruncated: true } : {}),
-        ...(kindFilter ? { kind: kindFilter } : {})
-      }
-    }
-  }
-
-  if (call.name === 'canvas_update_title') {
-    const nodeId = String(call.args.nodeId ?? '')
-    const title = String(call.args.title ?? '').trim()
-    const node = state.nodes.find((item) => item.id === nodeId)
-
-    if (!node || node.type !== 'cine') {
-      return { ok: false, error: '找不到这个画布节点' }
-    }
-    if (!title) {
-      return { ok: false, error: '标题不能为空' }
-    }
-
-    const previousTitle = nodeTitleOf(node)
-    const change = state.applyCommands(
-      [{ type: 'updateTitle', nodeId, title }],
-      call.turnId
-    )
-
-    return {
-      ok: true,
-      result: {
-        nodeId,
-        title,
-        previousTitle
-      },
-      change
-    }
-  }
-
-  if (call.name === 'canvas_update_text') {
-    const nodeId = String(call.args.nodeId ?? '')
-    const text = typeof call.args.text === 'string' ? call.args.text : ''
-    const node = state.nodes.find((item) => item.id === nodeId)
-
-    if (!node || node.type !== 'cine' || node.data.kind !== 'text') {
-      return { ok: false, error: '找不到这个文本节点' }
-    }
-
-    const previous = String(node.data.text ?? '')
-    const change = state.applyCommands(
-      [{ type: 'updateText', nodeId, text }],
-      call.turnId
-    )
-    if (change.updatedNodeIds.length > 0) {
-      state.patchNodeData(nodeId, { status: 'done' })
-    }
-
-    return {
-      ok: true,
-      result: {
-        nodeId,
-        changed: change.updatedNodeIds.length > 0,
-        previousLength: previous.length,
-        length: text.length
-      },
-      change
-    }
-  }
-
-  if (call.name === 'canvas_move_node') {
-    const nodeId = String(call.args.nodeId ?? '')
-    const x = Number(call.args.x)
-    const y = Number(call.args.y)
-    const node = state.nodes.find((item) => item.id === nodeId)
-
-    if (!node || node.type !== 'cine') {
-      return { ok: false, error: '找不到这个画布节点' }
-    }
-    if (!Number.isFinite(x) || !Number.isFinite(y)) {
-      return { ok: false, error: '节点位置必须是有限数字' }
-    }
-
-    const previousPosition = { ...node.position }
-    const change = state.applyCommands(
-      [{ type: 'moveNode', nodeId, position: { x, y } }],
-      call.turnId
-    )
-
-    return {
-      ok: true,
-      result: {
-        nodeId,
-        x,
-        y,
-        previousPosition
-      },
-      change
-    }
-  }
-
-  if (call.name === 'canvas_add_node') {
-    const kind = String(call.args.kind ?? '')
-    if (!['text', 'image', 'video', 'audio'].includes(kind)) {
-      return { ok: false, error: '节点类型无效' }
-    }
-    const meta = NODE_META[kind as 'text' | 'image' | 'video' | 'audio']
-    const nearNodeId =
-      typeof call.args.nearNodeId === 'string' ? call.args.nearNodeId.trim() : ''
-    let position: { x: number; y: number }
-
-    if (nearNodeId) {
-      const near = state.nodes.find((node) => node.id === nearNodeId)
-      if (!near) {
-        return { ok: false, error: '找不到参考节点 nearNodeId' }
-      }
-      const base = absolutePosition(near, state.nodes)
-      const size = nodeSize(near)
-      position = { x: base.x + size.width + 80, y: base.y }
-    } else {
-      const x = Number(call.args.x)
-      const y = Number(call.args.y)
-      if (!Number.isFinite(x) || !Number.isFinite(y)) {
-        return { ok: false, error: '节点位置必须是有限数字' }
-      }
-      position = { x, y }
-    }
-    const { x, y } = position
-
-    const count = state.nodes.filter(
-      (node) =>
-        node.type === 'cine' &&
-        (node.data as { kind?: string }).kind === kind
-    ).length
-    const title =
-      String(call.args.title ?? '').trim() || `${meta.label}节点 ${count + 1}`
-    const nodeId = `node-${kind}-${crypto.randomUUID().slice(0, 8)}`
-    const node: CanvasCommandNode = {
-      id: nodeId,
-      type: 'cine',
-      position: { x, y },
-      selected: true,
-      data: {
-        kind: kind as 'text' | 'image' | 'video' | 'audio',
-        title,
-        status: 'idle',
-        templates: meta.templates,
-        ...(kind === 'text'
-          ? { text: String(call.args.text ?? '') }
-          : {})
-      },
-      style: { width: meta.width, height: meta.height + TITLE_HEIGHT }
-    }
-
-    const change = state.applyCommands(
-      [{ type: 'addNode', node }],
-      call.turnId
-    )
-    return {
-      ok: true,
-      result: { nodeId, kind, title, x, y },
-      change
-    }
-  }
-
-  if (call.name === 'canvas_connect') {
-    const sourceNodeId = String(call.args.sourceNodeId ?? '')
-    const targetNodeId = String(call.args.targetNodeId ?? '')
-    if (!sourceNodeId || !targetNodeId) {
-      return { ok: false, error: '必须提供上游和下游节点' }
-    }
-    if (sourceNodeId === targetNodeId) {
-      return { ok: false, error: '不能把节点连接到自身' }
-    }
-    if (
-      !state.nodes.some((node) => node.id === sourceNodeId) ||
-      !state.nodes.some((node) => node.id === targetNodeId)
-    ) {
-      return { ok: false, error: '找不到上游或下游节点' }
-    }
-
-    const edge: CanvasCommandEdge = {
-      id: `edge-${crypto.randomUUID().slice(0, 8)}`,
-      source: sourceNodeId,
-      target: targetNodeId,
-      type: 'flow',
-      data: { role: 'auto' }
-    }
-    const change = state.applyCommands(
-      [{ type: 'connect', edge }],
-      call.turnId
-    )
-    return {
-      ok: true,
-      result: { edgeId: edge.id, sourceNodeId, targetNodeId },
-      change
-    }
-  }
-
-  if (call.name === 'canvas_remove_edge') {
-    const edgeId =
-      typeof call.args.edgeId === 'string' ? call.args.edgeId.trim() : ''
-    const sourceNodeId =
-      typeof call.args.sourceNodeId === 'string'
-        ? call.args.sourceNodeId.trim()
-        : ''
-    const targetNodeId =
-      typeof call.args.targetNodeId === 'string'
-        ? call.args.targetNodeId.trim()
-        : ''
-    const selected = new Set(call.scope.selectedNodeIds)
-
-    let targets = state.edges.filter((edge) => {
-      if (edgeId) return edge.id === edgeId
-      return edge.source === sourceNodeId && edge.target === targetNodeId
-    })
-
-    if (edgeId && targets.length === 0) {
-      return { ok: false, error: '找不到这条连线' }
-    }
-    if (!edgeId && targets.length === 0) {
-      return { ok: false, error: '这两个节点之间没有连线' }
-    }
-
-    if (edgeId && !call.scope.allowAnyNode) {
-      targets = targets.filter(
-        (edge) => selected.has(edge.source) || selected.has(edge.target)
-      )
-      if (targets.length === 0) {
-        return { ok: false, error: '只能删除与选中节点相关的连线' }
-      }
-    }
-
-    const edgeIds = targets.map((edge) => edge.id)
-    const removed = state.removeEdges(edgeIds, call.turnId)
-    if (removed === 0) {
-      return { ok: false, error: '连线已经不存在' }
-    }
-
-    const change = emptyCanvasChange()
-    change.deletedEdgeIds.push(...edgeIds)
-    return {
-      ok: true,
-      result: {
-        removedEdgeIds: edgeIds,
-        count: removed
-      },
-      change
-    }
-  }
-
-  if (call.name === 'canvas_delete_node') {
-    const nodeId = String(call.args.nodeId ?? '')
-    if (!nodeId) {
-      return { ok: false, error: '缺少 nodeId' }
-    }
-    if (!state.nodes.some((node) => node.id === nodeId)) {
-      return { ok: false, error: '找不到这个画布节点' }
-    }
-    const change = state.applyCommands(
-      [{ type: 'removeNode', nodeId }],
-      call.turnId
-    )
-    return {
-      ok: true,
-      result: {
-        nodeId,
-        deletedEdgeIds: change.deletedEdgeIds
-      },
-      change
-    }
-  }
-
-  if (call.name === 'canvas_group') {
-    const nodeIds = Array.isArray(call.args.nodeIds)
-      ? call.args.nodeIds.filter(
-          (id): id is string => typeof id === 'string'
-        )
-      : []
-    if (nodeIds.length < 2) {
-      return { ok: false, error: '至少需要两个节点才能分组' }
-    }
-
-    const targets = state.nodes.filter((node) => nodeIds.includes(node.id))
-    if (targets.length !== nodeIds.length) {
-      return { ok: false, error: '部分节点不存在' }
-    }
-    if (targets.some((node) => node.type === 'group' || node.parentId)) {
-      return { ok: false, error: '只能把顶层非分组节点打组' }
-    }
-
-    useCanvasStore.setState({
-      nodes: state.nodes.map((node) => ({
-        ...node,
-        selected: nodeIds.includes(node.id)
-      }))
-    })
-    const groupId = useCanvasStore.getState().groupSelection(call.turnId)
-    if (!groupId) {
-      return { ok: false, error: '打组失败，至少需要两个顶层节点' }
-    }
-
-    const change = emptyCanvasChange()
-    change.createdNodeIds.push(groupId)
-    change.updatedNodeIds.push(...nodeIds)
-    return {
-      ok: true,
-      result: { groupId, nodeIds },
-      change
-    }
-  }
-
-  if (call.name === 'canvas_ungroup') {
-    const groupId = String(call.args.groupId ?? '')
-    const group = state.nodes.find((node) => node.id === groupId)
-    if (!group || !isGroupNode(group)) {
-      return { ok: false, error: '找不到这个分组' }
-    }
-
-    const releasedNodeIds = state.nodes
-      .filter((node) => node.parentId === groupId)
-      .map((node) => node.id)
-    useCanvasStore.getState().ungroup(groupId, call.turnId)
-
-    const change = emptyCanvasChange()
-    change.deletedNodeIds.push(groupId)
-    change.updatedNodeIds.push(...releasedNodeIds)
-    return {
-      ok: true,
-      result: { groupId, releasedNodeIds },
-      change
-    }
-  }
-
-  if (call.name === 'generation_propose') {
-    const nodeId = String(call.args.nodeId ?? '')
-    const modelKey = String(call.args.modelKey ?? '')
-    const customPrompt = String(call.args.prompt ?? '').trim()
-    const mask =
-      typeof call.args.mask === 'string' && call.args.mask
-        ? call.args.mask
-        : undefined
-    const operationId =
-      typeof call.args.operationId === 'string'
-        ? call.args.operationId.trim()
-        : ''
-    const itemId =
-      typeof call.args.itemId === 'string' ? call.args.itemId.trim() : ''
-    const target = state.nodes.find((node) => node.id === nodeId)
-
-    if (!target || target.type !== 'cine') {
-      return { ok: false, error: '找不到目标生成节点' }
-    }
-
-    let operation: NodeOperation | undefined
-    let operationPrompt = ''
-    if (operationId) {
-      operation = operationsForKind(target.data.kind).find(
-        (entry) => entry.id === operationId
-      )
-      if (!operation) {
-        return {
-          ok: false,
-          error: `当前节点不支持操作：${operationId}`
-        }
-      }
-      const item = itemId
-        ? operation.menu?.find((entry) => entry.id === itemId)
-        : undefined
-      if (itemId && !item) {
-        return {
-          ok: false,
-          error: `操作 ${operationId} 不支持 itemId=${itemId}`
-        }
-      }
-      operationPrompt = buildOperationPrompt(operation, item)
-      if (!operationPrompt) {
-        return {
-          ok: false,
-          error: `操作 ${operationId} 需要具体的 itemId 或提示词`
-        }
-      }
-    }
-
-    const prompt = customPrompt || operationPrompt
-    if (!prompt) {
-      return { ok: false, error: '提示词不能为空' }
-    }
-
-    const targetOutput =
-      target.data.kind === 'image'
-        ? 'image'
-        : target.data.kind === 'video'
-          ? 'video'
-          : target.data.kind === 'audio'
-            ? 'audio'
-            : undefined
-    const selectedModel = targetOutput
-      ? call.scope.generationModels?.[targetOutput]
-      : undefined
-    const effectiveModelKey = selectedModel ?? modelKey
-
-    const explicitRefs = Array.isArray(call.args.refNodeIds)
-      ? call.args.refNodeIds.filter(
-          (id): id is string => typeof id === 'string' && Boolean(id)
-        )
-      : []
-    const libraryRefs: LibraryRefInput[] = Array.isArray(call.args.libraryRefs)
-      ? call.args.libraryRefs
-          .filter(
-            (item): item is Record<string, unknown> =>
-              Boolean(item) && typeof item === 'object' && !Array.isArray(item)
-          )
-          .map((item): LibraryRefInput => {
-            const role = item.role
-            return {
-              path: String(item.path ?? ''),
-              kind: item.kind === 'video' ? 'video' : 'image',
-              ...(role === 'firstFrame' ||
-              role === 'lastFrame' ||
-              role === 'reference'
-                ? { role: role as ReferenceInput['role'] }
-                : {})
-            }
-          })
-          .filter((item) => item.path)
-      : []
-
-    const matchedLibraryNodeIds = libraryRefs
-      .map((ref) => findNodeWithOutput(ref.path, 'global'))
-      .filter((id): id is string => Boolean(id))
-    const refNodeIds = [
-      ...new Set([...explicitRefs, ...matchedLibraryNodeIds])
-    ]
-    const autoRefNodeIds =
-      explicitRefs.length === 0 && libraryRefs.length === 0
-        ? upstreamNodeIds(nodeId)
-        : refNodeIds
-
-    const libraryNodes: CanvasCommandNode[] = []
-    const libraryNodeIds: string[] = []
-    const matchedPaths = new Set(
-      libraryRefs
-        .map((ref) => (findNodeWithOutput(ref.path, 'global') ? ref.path : ''))
-        .filter(Boolean)
-    )
-    let offsetY = 0
-    for (const ref of libraryRefs) {
-      if (matchedPaths.has(ref.path)) continue
-      const node = libraryAssetNode(ref, target, state.nodes, offsetY)
-      libraryNodes.push(node)
-      libraryNodeIds.push(node.id)
-      offsetY += NODE_META[ref.kind].height + TITLE_HEIGHT + 24
-    }
-
-    const collected = buildReferences(
-      [...autoRefNodeIds, ...libraryNodeIds],
-      libraryRefs
-    )
-    if (operationId) {
-      const self = selectedNodeOutput(target)
-      if (
-        self?.kind === 'image' &&
-        collected.refs.length < 3 &&
-        !collected.refs.some(
-          (ref) =>
-            ref.path === self.path &&
-            (ref.scope ?? 'project') === (self.scope ?? 'project')
-        )
-      ) {
-        collected.refs.push({
-          path: self.path,
-          role: 'reference',
-          ...(self.scope ? { scope: self.scope } : {})
-        })
-      }
-    }
-    if (
-      (explicitRefs.length > 0 || libraryRefs.length > 0) &&
-      collected.refs.length === 0 &&
-      !collected.video
-    ) {
+    capability_catalog: async (call) => {
       return {
-        ok: false,
-        error: '参考素材不存在或没有可用的图片/视频输出'
-      }
-    }
-
-    const baseParams =
-      call.args.params &&
-      typeof call.args.params === 'object' &&
-      !Array.isArray(call.args.params)
-        ? { ...(call.args.params as Record<string, unknown>) }
-        : {}
-    const negativePrompt =
-      typeof call.args.negativePrompt === 'string'
-        ? call.args.negativePrompt.trim()
-        : ''
-    if (negativePrompt) {
-      baseParams.negative_prompt = negativePrompt
-    }
-
-    const count =
-      typeof call.args.count === 'number' ? call.args.count : undefined
-
-    try {
-      const proposal = await window.api.agent.proposalCreate({
-        turnId: call.turnId,
-        request: {
-          nodeId,
-          modelKey: effectiveModelKey,
-          prompt,
-          params: baseParams,
-          ...(operationId ? { op: operationId } : {}),
-          ...(mask ? { mask } : {}),
-          ...(collected.refs.length > 0 ? { refs: collected.refs } : {}),
-          ...(collected.video ? { video: collected.video } : {})
-        },
-        nodeTitle: nodeTitleOf(target),
-        ...(count !== undefined ? { count } : {})
-      })
-
-      const commands: CanvasCommand[] = libraryNodes.map((node) => ({
-        type: 'addNode',
-        node
-      }))
-      const existingSources = new Set(
-        state.edges
-          .filter((edge) => edge.target === nodeId)
-          .map((edge) => edge.source)
-      )
-      const knownNodeIds = new Set([
-        ...state.nodes.map((node) => node.id),
-        ...libraryNodeIds
-      ])
-      const connectedNodeIds: string[] = []
-
-      for (const sourceId of [...autoRefNodeIds, ...libraryNodeIds]) {
-        if (sourceId === nodeId) continue
-        if (!knownNodeIds.has(sourceId)) continue
-        if (existingSources.has(sourceId)) {
-          connectedNodeIds.push(sourceId)
-          continue
-        }
-        existingSources.add(sourceId)
-        connectedNodeIds.push(sourceId)
-        commands.push({
-          type: 'connect',
-          edge: {
-            id: `edge-${crypto.randomUUID().slice(0, 8)}`,
-            source: sourceId,
-            target: nodeId,
-            type: 'flow',
-            data: { role: 'auto' }
-          }
+        ok: true,
+        result: capabilityCatalog({
+          ...(typeof call.args.space === 'string'
+            ? { space: call.args.space }
+            : {}),
+          ...(typeof call.args.nodeId === 'string'
+            ? { nodeId: call.args.nodeId }
+            : {})
         })
       }
+    },
 
-      commands.push({ type: 'updatePrompt', nodeId, prompt })
-
-      const change = useCanvasStore
-        .getState()
-        .applyCommands(commands, call.turnId)
-
-      useCanvasStore.setState({
-        nodes: useCanvasStore.getState().nodes.map((node) => ({
-          ...node,
-          selected: node.id === nodeId
-        }))
-      })
+    canvas_get: async (call) => {
+      const kindFilter =
+        typeof call.args.kind === 'string' && call.args.kind.trim()
+          ? call.args.kind.trim()
+          : undefined
+      const nodes = kindFilter
+        ? state.nodes.filter((node) =>
+            node.type === 'cine'
+              ? node.data.kind === kindFilter
+              : node.type === kindFilter
+          )
+        : state.nodes
 
       return {
         ok: true,
         result: {
-          ...proposalSummary(proposal),
-          refs: collected.refs.map((ref) => ({
-            path: ref.path,
-            role: ref.role,
-            scope: ref.scope ?? 'project'
+          nodeCount: nodes.length,
+          edgeCount: state.edges.length,
+          selectedNodes: selectedNodeSummary(),
+          nodes: nodes.slice(0, 200).map((node) => {
+            const output = selectedNodeOutput(node)
+            const data = node.data as {
+              title?: unknown
+              status?: unknown
+              progress?: unknown
+            }
+            return {
+              id: node.id,
+              title: nodeTitleOf(node),
+              kind: node.type === 'cine' ? node.data.kind : node.type,
+              selected: node.selected === true,
+              x: Math.round(node.position.x),
+              y: Math.round(node.position.y),
+              ...(typeof data.status === 'string'
+                ? { status: data.status }
+                : {}),
+              ...(typeof data.progress === 'number'
+                ? { progress: data.progress }
+                : {}),
+              ...(output ? { outputKind: output.kind } : {})
+            }
+          }),
+          edges: state.edges.slice(0, 200).map((edge) => ({
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            ...(edge.data?.role ? { role: edge.data.role } : {})
           })),
-          videoRef: collected.video
-            ? {
-                path: collected.video.path,
-                scope: collected.video.scope ?? 'project'
-              }
-            : null,
-          createdNodeIds: change.createdNodeIds,
-          connectedNodeIds
+          ...(nodes.length > 200 ? { nodesTruncated: true } : {}),
+          ...(kindFilter ? { kind: kindFilter } : {})
+        }
+      }
+    },
+
+    canvas_update_title: async (call) => {
+      const nodeId = String(call.args.nodeId ?? '')
+      const title = String(call.args.title ?? '').trim()
+      const node = state.nodes.find((item) => item.id === nodeId)
+
+      if (!node || node.type !== 'cine') {
+        return { ok: false, error: '找不到这个画布节点' }
+      }
+      if (!title) {
+        return { ok: false, error: '标题不能为空' }
+      }
+
+      const previousTitle = nodeTitleOf(node)
+      const change = state.applyCommands(
+        [{ type: 'updateTitle', nodeId, title }],
+        call.turnId
+      )
+
+      return {
+        ok: true,
+        result: {
+          nodeId,
+          title,
+          previousTitle
         },
         change
       }
-    } catch (error) {
+    },
+
+    canvas_update_text: async (call) => {
+      const nodeId = String(call.args.nodeId ?? '')
+      const text = typeof call.args.text === 'string' ? call.args.text : ''
+      const node = state.nodes.find((item) => item.id === nodeId)
+
+      if (!node || node.type !== 'cine' || node.data.kind !== 'text') {
+        return { ok: false, error: '找不到这个文本节点' }
+      }
+
+      const previous = String(node.data.text ?? '')
+      const change = state.applyCommands(
+        [{ type: 'updateText', nodeId, text }],
+        call.turnId
+      )
+      if (change.updatedNodeIds.length > 0) {
+        state.patchNodeData(nodeId, { status: 'done' })
+      }
+
       return {
-        ok: false,
-        error: error instanceof Error ? error.message : '登记生成提案失败'
+        ok: true,
+        result: {
+          nodeId,
+          changed: change.updatedNodeIds.length > 0,
+          previousLength: previous.length,
+          length: text.length
+        },
+        change
+      }
+    },
+
+    canvas_move_node: async (call) => {
+      const nodeId = String(call.args.nodeId ?? '')
+      const x = Number(call.args.x)
+      const y = Number(call.args.y)
+      const node = state.nodes.find((item) => item.id === nodeId)
+
+      if (!node || node.type !== 'cine') {
+        return { ok: false, error: '找不到这个画布节点' }
+      }
+      if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        return { ok: false, error: '节点位置必须是有限数字' }
+      }
+
+      const previousPosition = { ...node.position }
+      const change = state.applyCommands(
+        [{ type: 'moveNode', nodeId, position: { x, y } }],
+        call.turnId
+      )
+
+      return {
+        ok: true,
+        result: {
+          nodeId,
+          x,
+          y,
+          previousPosition
+        },
+        change
+      }
+    },
+
+    canvas_add_node: async (call) => {
+      const kind = String(call.args.kind ?? '')
+      if (!['text', 'image', 'video', 'audio'].includes(kind)) {
+        return { ok: false, error: '节点类型无效' }
+      }
+      const meta = NODE_META[kind as 'text' | 'image' | 'video' | 'audio']
+      const nearNodeId =
+        typeof call.args.nearNodeId === 'string'
+          ? call.args.nearNodeId.trim()
+          : ''
+      let position: { x: number; y: number }
+
+      if (nearNodeId) {
+        const near = state.nodes.find((node) => node.id === nearNodeId)
+        if (!near) {
+          return { ok: false, error: '找不到参考节点 nearNodeId' }
+        }
+        const base = absolutePosition(near, state.nodes)
+        const size = nodeSize(near)
+        position = { x: base.x + size.width + 80, y: base.y }
+      } else {
+        const x = Number(call.args.x)
+        const y = Number(call.args.y)
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+          return { ok: false, error: '节点位置必须是有限数字' }
+        }
+        position = { x, y }
+      }
+      const { x, y } = position
+
+      const count = state.nodes.filter(
+        (node) =>
+          node.type === 'cine' && (node.data as { kind?: string }).kind === kind
+      ).length
+      const title =
+        String(call.args.title ?? '').trim() || `${meta.label}节点 ${count + 1}`
+      const nodeId = `node-${kind}-${crypto.randomUUID().slice(0, 8)}`
+      const node: CanvasCommandNode = {
+        id: nodeId,
+        type: 'cine',
+        position: { x, y },
+        selected: true,
+        data: {
+          kind: kind as 'text' | 'image' | 'video' | 'audio',
+          title,
+          status: 'idle',
+          templates: meta.templates,
+          ...(kind === 'text' ? { text: String(call.args.text ?? '') } : {})
+        },
+        style: { width: meta.width, height: meta.height + TITLE_HEIGHT }
+      }
+
+      const change = state.applyCommands(
+        [{ type: 'addNode', node }],
+        call.turnId
+      )
+      return {
+        ok: true,
+        result: { nodeId, kind, title, x, y },
+        change
+      }
+    },
+
+    canvas_connect: async (call) => {
+      const sourceNodeId = String(call.args.sourceNodeId ?? '')
+      const targetNodeId = String(call.args.targetNodeId ?? '')
+      if (!sourceNodeId || !targetNodeId) {
+        return { ok: false, error: '必须提供上游和下游节点' }
+      }
+      if (sourceNodeId === targetNodeId) {
+        return { ok: false, error: '不能把节点连接到自身' }
+      }
+      if (
+        !state.nodes.some((node) => node.id === sourceNodeId) ||
+        !state.nodes.some((node) => node.id === targetNodeId)
+      ) {
+        return { ok: false, error: '找不到上游或下游节点' }
+      }
+
+      const edge: CanvasCommandEdge = {
+        id: `edge-${crypto.randomUUID().slice(0, 8)}`,
+        source: sourceNodeId,
+        target: targetNodeId,
+        type: 'flow',
+        data: { role: 'auto' }
+      }
+      const change = state.applyCommands(
+        [{ type: 'connect', edge }],
+        call.turnId
+      )
+      return {
+        ok: true,
+        result: { edgeId: edge.id, sourceNodeId, targetNodeId },
+        change
+      }
+    },
+
+    canvas_remove_edge: async (call) => {
+      const edgeId =
+        typeof call.args.edgeId === 'string' ? call.args.edgeId.trim() : ''
+      const sourceNodeId =
+        typeof call.args.sourceNodeId === 'string'
+          ? call.args.sourceNodeId.trim()
+          : ''
+      const targetNodeId =
+        typeof call.args.targetNodeId === 'string'
+          ? call.args.targetNodeId.trim()
+          : ''
+      const selected = new Set(call.scope.selectedNodeIds)
+
+      let targets = state.edges.filter((edge) => {
+        if (edgeId) return edge.id === edgeId
+        return edge.source === sourceNodeId && edge.target === targetNodeId
+      })
+
+      if (edgeId && targets.length === 0) {
+        return { ok: false, error: '找不到这条连线' }
+      }
+      if (!edgeId && targets.length === 0) {
+        return { ok: false, error: '这两个节点之间没有连线' }
+      }
+
+      if (edgeId && !call.scope.allowAnyNode) {
+        targets = targets.filter(
+          (edge) => selected.has(edge.source) || selected.has(edge.target)
+        )
+        if (targets.length === 0) {
+          return { ok: false, error: '只能删除与选中节点相关的连线' }
+        }
+      }
+
+      const edgeIds = targets.map((edge) => edge.id)
+      const removed = state.removeEdges(edgeIds, call.turnId)
+      if (removed === 0) {
+        return { ok: false, error: '连线已经不存在' }
+      }
+
+      const change = emptyCanvasChange()
+      change.deletedEdgeIds.push(...edgeIds)
+      return {
+        ok: true,
+        result: {
+          removedEdgeIds: edgeIds,
+          count: removed
+        },
+        change
+      }
+    },
+
+    canvas_delete_node: async (call) => {
+      const nodeId = String(call.args.nodeId ?? '')
+      if (!nodeId) {
+        return { ok: false, error: '缺少 nodeId' }
+      }
+      if (!state.nodes.some((node) => node.id === nodeId)) {
+        return { ok: false, error: '找不到这个画布节点' }
+      }
+      const change = state.applyCommands(
+        [{ type: 'removeNode', nodeId }],
+        call.turnId
+      )
+      return {
+        ok: true,
+        result: {
+          nodeId,
+          deletedEdgeIds: change.deletedEdgeIds
+        },
+        change
+      }
+    },
+
+    canvas_group: async (call) => {
+      const nodeIds = Array.isArray(call.args.nodeIds)
+        ? call.args.nodeIds.filter((id): id is string => typeof id === 'string')
+        : []
+      if (nodeIds.length < 2) {
+        return { ok: false, error: '至少需要两个节点才能分组' }
+      }
+
+      const targets = state.nodes.filter((node) => nodeIds.includes(node.id))
+      if (targets.length !== nodeIds.length) {
+        return { ok: false, error: '部分节点不存在' }
+      }
+      if (targets.some((node) => node.type === 'group' || node.parentId)) {
+        return { ok: false, error: '只能把顶层非分组节点打组' }
+      }
+
+      useCanvasStore.setState({
+        nodes: state.nodes.map((node) => ({
+          ...node,
+          selected: nodeIds.includes(node.id)
+        }))
+      })
+      const groupId = useCanvasStore.getState().groupSelection(call.turnId)
+      if (!groupId) {
+        return { ok: false, error: '打组失败，至少需要两个顶层节点' }
+      }
+
+      const change = emptyCanvasChange()
+      change.createdNodeIds.push(groupId)
+      change.updatedNodeIds.push(...nodeIds)
+      return {
+        ok: true,
+        result: { groupId, nodeIds },
+        change
+      }
+    },
+
+    canvas_ungroup: async (call) => {
+      const groupId = String(call.args.groupId ?? '')
+      const group = state.nodes.find((node) => node.id === groupId)
+      if (!group || !isGroupNode(group)) {
+        return { ok: false, error: '找不到这个分组' }
+      }
+
+      const releasedNodeIds = state.nodes
+        .filter((node) => node.parentId === groupId)
+        .map((node) => node.id)
+      useCanvasStore.getState().ungroup(groupId, call.turnId)
+
+      const change = emptyCanvasChange()
+      change.deletedNodeIds.push(groupId)
+      change.updatedNodeIds.push(...releasedNodeIds)
+      return {
+        ok: true,
+        result: { groupId, releasedNodeIds },
+        change
+      }
+    },
+
+    generation_propose: async (call) => {
+      const nodeId = String(call.args.nodeId ?? '')
+      const modelKey = String(call.args.modelKey ?? '')
+      const customPrompt = String(call.args.prompt ?? '').trim()
+      const mask =
+        typeof call.args.mask === 'string' && call.args.mask
+          ? call.args.mask
+          : undefined
+      const operationId =
+        typeof call.args.operationId === 'string'
+          ? call.args.operationId.trim()
+          : ''
+      const itemId =
+        typeof call.args.itemId === 'string' ? call.args.itemId.trim() : ''
+      const target = state.nodes.find((node) => node.id === nodeId)
+
+      if (!target || target.type !== 'cine') {
+        return { ok: false, error: '找不到目标生成节点' }
+      }
+
+      let operation: NodeOperation | undefined
+      let operationPrompt = ''
+      if (operationId) {
+        operation = operationsForKind(target.data.kind).find(
+          (entry) => entry.id === operationId
+        )
+        if (!operation) {
+          return {
+            ok: false,
+            error: `当前节点不支持操作：${operationId}`
+          }
+        }
+        const item = itemId
+          ? operation.menu?.find((entry) => entry.id === itemId)
+          : undefined
+        if (itemId && !item) {
+          return {
+            ok: false,
+            error: `操作 ${operationId} 不支持 itemId=${itemId}`
+          }
+        }
+        operationPrompt = buildOperationPrompt(operation, item)
+        if (!operationPrompt) {
+          return {
+            ok: false,
+            error: `操作 ${operationId} 需要具体的 itemId 或提示词`
+          }
+        }
+      }
+
+      const prompt = customPrompt || operationPrompt
+      if (!prompt) {
+        return { ok: false, error: '提示词不能为空' }
+      }
+
+      const targetOutput =
+        target.data.kind === 'image'
+          ? 'image'
+          : target.data.kind === 'video'
+            ? 'video'
+            : target.data.kind === 'audio'
+              ? 'audio'
+              : undefined
+      const selectedModel = targetOutput
+        ? call.scope.generationModels?.[targetOutput]
+        : undefined
+      const effectiveModelKey = selectedModel ?? modelKey
+
+      const explicitRefs = Array.isArray(call.args.refNodeIds)
+        ? call.args.refNodeIds.filter(
+            (id): id is string => typeof id === 'string' && Boolean(id)
+          )
+        : []
+      const libraryRefs: LibraryRefInput[] = Array.isArray(
+        call.args.libraryRefs
+      )
+        ? call.args.libraryRefs
+            .filter(
+              (item): item is Record<string, unknown> =>
+                Boolean(item) &&
+                typeof item === 'object' &&
+                !Array.isArray(item)
+            )
+            .map((item): LibraryRefInput => {
+              const role = item.role
+              return {
+                path: String(item.path ?? ''),
+                kind: item.kind === 'video' ? 'video' : 'image',
+                ...(role === 'firstFrame' ||
+                role === 'lastFrame' ||
+                role === 'reference'
+                  ? { role: role as ReferenceInput['role'] }
+                  : {})
+              }
+            })
+            .filter((item) => item.path)
+        : []
+
+      const matchedLibraryNodeIds = libraryRefs
+        .map((ref) => findNodeWithOutput(ref.path, 'global'))
+        .filter((id): id is string => Boolean(id))
+      const refNodeIds = [
+        ...new Set([...explicitRefs, ...matchedLibraryNodeIds])
+      ]
+      const autoRefNodeIds =
+        explicitRefs.length === 0 && libraryRefs.length === 0
+          ? upstreamNodeIds(nodeId)
+          : refNodeIds
+
+      const libraryNodes: CanvasCommandNode[] = []
+      const libraryNodeIds: string[] = []
+      const matchedPaths = new Set(
+        libraryRefs
+          .map((ref) =>
+            findNodeWithOutput(ref.path, 'global') ? ref.path : ''
+          )
+          .filter(Boolean)
+      )
+      let offsetY = 0
+      for (const ref of libraryRefs) {
+        if (matchedPaths.has(ref.path)) continue
+        const node = libraryAssetNode(ref, target, state.nodes, offsetY)
+        libraryNodes.push(node)
+        libraryNodeIds.push(node.id)
+        offsetY += NODE_META[ref.kind].height + TITLE_HEIGHT + 24
+      }
+
+      const collected = buildReferences(
+        [...autoRefNodeIds, ...libraryNodeIds],
+        libraryRefs
+      )
+      if (operationId) {
+        const self = selectedNodeOutput(target)
+        if (
+          self?.kind === 'image' &&
+          collected.refs.length < 3 &&
+          !collected.refs.some(
+            (ref) =>
+              ref.path === self.path &&
+              (ref.scope ?? 'project') === (self.scope ?? 'project')
+          )
+        ) {
+          collected.refs.push({
+            path: self.path,
+            role: 'reference',
+            ...(self.scope ? { scope: self.scope } : {})
+          })
+        }
+      }
+      if (
+        (explicitRefs.length > 0 || libraryRefs.length > 0) &&
+        collected.refs.length === 0 &&
+        !collected.video
+      ) {
+        return {
+          ok: false,
+          error: '参考素材不存在或没有可用的图片/视频输出'
+        }
+      }
+
+      const baseParams =
+        call.args.params &&
+        typeof call.args.params === 'object' &&
+        !Array.isArray(call.args.params)
+          ? { ...(call.args.params as Record<string, unknown>) }
+          : {}
+      const negativePrompt =
+        typeof call.args.negativePrompt === 'string'
+          ? call.args.negativePrompt.trim()
+          : ''
+      if (negativePrompt) {
+        baseParams.negative_prompt = negativePrompt
+      }
+
+      const count =
+        typeof call.args.count === 'number' ? call.args.count : undefined
+
+      try {
+        const proposal = await window.api.agent.proposalCreate({
+          turnId: call.turnId,
+          request: {
+            nodeId,
+            modelKey: effectiveModelKey,
+            prompt,
+            params: baseParams,
+            ...(operationId ? { op: operationId } : {}),
+            ...(mask ? { mask } : {}),
+            ...(collected.refs.length > 0 ? { refs: collected.refs } : {}),
+            ...(collected.video ? { video: collected.video } : {})
+          },
+          nodeTitle: nodeTitleOf(target),
+          ...(count !== undefined ? { count } : {})
+        })
+
+        const commands: CanvasCommand[] = libraryNodes.map((node) => ({
+          type: 'addNode',
+          node
+        }))
+        const existingSources = new Set(
+          state.edges
+            .filter((edge) => edge.target === nodeId)
+            .map((edge) => edge.source)
+        )
+        const knownNodeIds = new Set([
+          ...state.nodes.map((node) => node.id),
+          ...libraryNodeIds
+        ])
+        const connectedNodeIds: string[] = []
+
+        for (const sourceId of [...autoRefNodeIds, ...libraryNodeIds]) {
+          if (sourceId === nodeId) continue
+          if (!knownNodeIds.has(sourceId)) continue
+          if (existingSources.has(sourceId)) {
+            connectedNodeIds.push(sourceId)
+            continue
+          }
+          existingSources.add(sourceId)
+          connectedNodeIds.push(sourceId)
+          commands.push({
+            type: 'connect',
+            edge: {
+              id: `edge-${crypto.randomUUID().slice(0, 8)}`,
+              source: sourceId,
+              target: nodeId,
+              type: 'flow',
+              data: { role: 'auto' }
+            }
+          })
+        }
+
+        commands.push({ type: 'updatePrompt', nodeId, prompt })
+
+        const change = useCanvasStore
+          .getState()
+          .applyCommands(commands, call.turnId)
+
+        useCanvasStore.setState({
+          nodes: useCanvasStore.getState().nodes.map((node) => ({
+            ...node,
+            selected: node.id === nodeId
+          }))
+        })
+
+        return {
+          ok: true,
+          result: {
+            ...proposalSummary(proposal),
+            refs: collected.refs.map((ref) => ({
+              path: ref.path,
+              role: ref.role,
+              scope: ref.scope ?? 'project'
+            })),
+            videoRef: collected.video
+              ? {
+                  path: collected.video.path,
+                  scope: collected.video.scope ?? 'project'
+                }
+              : null,
+            createdNodeIds: change.createdNodeIds,
+            connectedNodeIds
+          },
+          change
+        }
+      } catch (error) {
+        return {
+          ok: false,
+          error: error instanceof Error ? error.message : '登记生成提案失败'
+        }
       }
     }
   }
+
+  const canvasHandler = canvasHandlers[call.name]
+  if (canvasHandler) return canvasHandler(call)
 
   return { ok: false, error: `未实现的工具：${call.name}` }
 }

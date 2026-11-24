@@ -653,7 +653,8 @@ corepack pnpm check:agent-coverage
 - 2026-11-24：阶段 1/2 提交 1 已实施（`21df943`）：MCP 从 `AGENT_TOOLS` 投影 77 个工具，低层 `Server` 直出 JSON Schema，旧工具名移除。
 - 2026-11-24：阶段 1/2 提交 2 已实施：`allowAnyNode` 生效，`timeline_open({ nodeId })` / `stage_open({ nodeId })` 打开已有节点。
 - 2026-11-24：阶段 3 第一步已实施：70 个工具的 MCP 元数据并入 `AgentToolDefinition.mcp`，删除 `exposure.ts`，MCP 投影直接读工具定义。
-- 阶段 3 剩余：命令注册表、`toCommands` / `handlerId` 执行映射、bridge 分支搬家；阶段 4 待实施。
+- 2026-11-24：阶段 3 第二步已实施：画布 / 时间线 / 导演台 / 拉片 4 个 bridge 的 `if (call.name === ...)` 分支改为 handler 表；`rg "call\.name ===" src/renderer/src/agent` 已清零。独立 `commandHandlers.ts` 与 `toCommands` 尚未抽出。
+- 阶段 4 待实施。
 
 ### 13.1 阶段 1 / 2（同一分支，两个提交）
 

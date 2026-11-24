@@ -66,6 +66,6 @@ describe('mcp tool catalog', () => {
   })
 
   it('exposes the expected number of tools', () => {
-    expect(tools).toHaveLength(83)
+    expect(tools).toHaveLength(89)
   })
 })

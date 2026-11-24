@@ -90,7 +90,13 @@ describe('pi tool adapter', () => {
         'preset_read',
         'style_list',
         'style_search',
-        'style_read'
+        'style_read',
+        'preset_create',
+        'preset_update',
+        'preset_delete',
+        'style_create',
+        'style_update',
+        'style_delete'
       ])
     )
   })

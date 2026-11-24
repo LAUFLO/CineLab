@@ -12,7 +12,7 @@
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20219 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5803 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 62 | 20094 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 62 | 20379 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12368 |
 | 10 | [UI 组件与面板](./10-ui.md) | 51 | 11007 |
 
@@ -77,6 +77,12 @@
 | `style_list` | `library.styleList` |  | 是 |
 | `style_search` | `library.styleSearch` |  | 是 |
 | `style_read` | `library.styleRead` |  | 是 |
+| `preset_create` | `library.presetCreate` | 是 |  |
+| `preset_update` | `library.presetUpdate` | 是 |  |
+| `preset_delete` | `library.presetDelete` | 是 |  |
+| `style_create` | `library.styleCreate` |  |  |
+| `style_update` | `library.styleUpdate` | 是 |  |
+| `style_delete` | `library.styleDelete` | 是 |  |
 | `skill_list` | `skill.list` |  | 是 |
 | `skill_read` | `skill.read` |  | 是 |
 | `stage_get` | `stage.get` |  | 是 |

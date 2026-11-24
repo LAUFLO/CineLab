@@ -26,7 +26,7 @@ CineBot 会话、工具注册与执行、生成提案、技能、能力审计。
 
 ## MCP server
 
-外部 Agent 通过 `src/main/mcp/` 连接 CineLab：内置 Streamable HTTP server（`127.0.0.1` + Bearer token），以及 stdio 桥接进程。当前暴露 `local_adapter_*`、项目/画布/节点/模型只读工具、节点写工具、生成提交、剪辑室时间线操作、导演台对象/机位/镜头/自动分镜/预演导出，以及拉片读取/修改/自动拉片/复刻/导出。写操作执行前需要应用内确认；配置与安全说明见 `docs/mcp.md`。
+外部 Agent 通过 `src/main/mcp/` 连接 CineLab：内置 Streamable HTTP server（`127.0.0.1` + Bearer token），以及 stdio 桥接进程。MCP 不再手写工具注册：`auto-tools.ts` 遍历 `AGENT_TOOLS`，按 `exposure.ts` 的元数据投影出 69 个工具，再合并 8 个专属工具（项目、适配器、打开剪辑室/导演台、生成提交），共 77 个。工具名与 CineBot 一致；参数直接使用 `AgentToolDefinition.parameters` 的 JSON Schema，低层 `Server` 注册 `tools/list` 与 `tools/call`，`schema-validate.ts` 做轻量预校验。写操作执行前需要应用内确认；配置与安全说明见 `docs/mcp.md`。
 
 ## 工具分组
 
@@ -188,26 +188,29 @@ AgentPanel
 | `src/main/agent/skills-config.ts` | 110 |
 | `src/main/agent/skills-import.ts` | 487 |
 | `src/main/agent/skills.ts` | 216 |
-| `src/main/agent/tools/canvas.ts` | 545 |
+| `src/main/agent/tools/canvas.ts` | 551 |
 | `src/main/agent/tools/capability.ts` | 129 |
 | `src/main/agent/tools/errors.ts` | 11 |
 | `src/main/agent/tools/film.ts` | 651 |
 | `src/main/agent/tools/generation.ts` | 365 |
 | `src/main/agent/tools/index.ts` | 162 |
-| `src/main/agent/tools/scope.ts` | 9 |
+| `src/main/agent/tools/scope.ts` | 10 |
 | `src/main/agent/tools/skills.ts` | 90 |
 | `src/main/agent/tools/stage.ts` | 1235 |
 | `src/main/agent/tools/timeline.ts` | 930 |
-| `src/main/mcp/app-tools.ts` | 405 |
-| `src/main/mcp/catalog.ts` | 105 |
+| `src/main/mcp/auto-tools.ts` | 161 |
+| `src/main/mcp/catalog.ts` | 9 |
 | `src/main/mcp/config.ts` | 54 |
-| `src/main/mcp/server.ts` | 232 |
+| `src/main/mcp/exclusive-tools.ts` | 243 |
+| `src/main/mcp/exposure.ts` | 153 |
+| `src/main/mcp/schema-validate.ts` | 169 |
+| `src/main/mcp/server.ts` | 228 |
 | `src/main/mcp/stdio-bridge.ts` | 104 |
-| `src/main/mcp/tools.ts` | 83 |
-| `src/main/mcp/write-tools.ts` | 1319 |
+| `src/main/mcp/tool-types.ts` | 16 |
+| `src/main/mcp/write-runner.ts` | 135 |
 | `src/renderer/src/agent/AgentPanel.tsx` | 1277 |
 | `src/renderer/src/agent/agentStore.ts` | 1224 |
-| `src/renderer/src/agent/canvasBridge.ts` | 1145 |
+| `src/renderer/src/agent/canvasBridge.ts` | 1167 |
 | `src/renderer/src/agent/filmBridge.ts` | 747 |
 | `src/renderer/src/agent/panel/ContextRing.tsx` | 55 |
 | `src/renderer/src/agent/panel/MessageActions.tsx` | 31 |
@@ -217,10 +220,10 @@ AgentPanel
 | `src/renderer/src/agent/panel/utils.tsx` | 146 |
 | `src/renderer/src/agent/stageBridge.ts` | 955 |
 | `src/renderer/src/agent/timelineBridge.ts` | 1080 |
-| `src/renderer/src/mcp/commandBridge.ts` | 146 |
+| `src/renderer/src/mcp/commandBridge.ts` | 185 |
 | `src/shared/agent-proposal.ts` | 140 |
 | `src/shared/agent-tools.ts` | 59 |
-| `src/shared/agent.ts` | 264 |
+| `src/shared/agent.ts` | 266 |
 | `src/shared/capabilities.ts` | 321 |
 | `src/shared/mcp-command.ts` | 14 |
 | `src/shared/skills.ts` | 273 |
@@ -262,12 +265,14 @@ AgentPanel
 | `src/main/agent/tools/skills.ts` | `SKILL_TOOLS`、`validateSkillToolArgs` |
 | `src/main/agent/tools/stage.ts` | `STAGE_TOOLS`、`validateStageToolArgs` |
 | `src/main/agent/tools/timeline.ts` | `TIMELINE_TOOLS`、`isTimelineWriteTool`、`validateTimelineToolArgs` |
-| `src/main/mcp/app-tools.ts` | `registerCineLabAppTools` |
-| `src/main/mcp/catalog.ts` | `McpToolCategory`、`McpToolMeta`、`MCP_TOOL_CATALOG`、`mcpToolCatalog` |
+| `src/main/mcp/auto-tools.ts` | `buildMcpTools`、`MCP_TOOL_CATALOG`、`mcpToolCatalog`、`registerMcpTools` |
 | `src/main/mcp/config.ts` | `McpStdioConfig`、`McpServerConfig`、`mcpConfigPath`、`createMcpToken`、`readMcpConfig`、`writeMcpConfig`、`removeMcpConfigSync` |
+| `src/main/mcp/exclusive-tools.ts` | `MCP_EXCLUSIVE_TOOLS` |
+| `src/main/mcp/exposure.ts` | `McpToolCategory`、`McpExposureMeta`、`McpToolMeta`、`MCP_EXPOSURE` |
+| `src/main/mcp/schema-validate.ts` | `JsonSchema`、`ValidationResult`、`validateJsonSchema` |
 | `src/main/mcp/server.ts` | `startMcpServer`、`stopMcpServer`、`McpServerStatus`、`mcpStatus`、`mcpConfigSnapshot`、`resetMcpToken` |
-| `src/main/mcp/tools.ts` | `registerCineLabTools` |
-| `src/main/mcp/write-tools.ts` | `registerMcpCommandIpc`、`registerCineLabWriteTools` |
+| `src/main/mcp/tool-types.ts` | `McpToolDefinition` |
+| `src/main/mcp/write-runner.ts` | `registerMcpCommandIpc`、`result`、`errorResult`、`sendCommand`、`runWrite`、`runRead` |
 | `src/renderer/src/agent/AgentPanel.tsx` | `AgentPanel` |
 | `src/renderer/src/agent/agentStore.ts` | `AgentMessage`、`AgentActivity`、`agentTurnChangeCount`、`AGENT_CONTEXT_BUDGET_TOKENS`、`AGENT_KEEP_RECENT_MESSAGES`、`AgentContextStats`、`agentContextStats`、`useAgentStore` |
 | `src/renderer/src/agent/canvasBridge.ts` | `executeAgentTool`、`initAgentCanvasBridge` |

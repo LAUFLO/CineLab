@@ -17,7 +17,13 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     modes: ['read-only', 'current', 'full-access'],
     parameters: {
       type: 'object',
-      properties: {},
+      properties: {
+        kind: {
+          type: 'string',
+          description:
+            '只返回指定 kind 的节点；省略时返回全部。例如 text / image / video / audio / study / studio / stage / group / film'
+        }
+      },
       additionalProperties: false
     },
     replay: 'safe'

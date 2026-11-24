@@ -485,13 +485,25 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
   }
 
   if (call.name === 'canvas_get') {
+    const kindFilter =
+      typeof call.args.kind === 'string' && call.args.kind.trim()
+        ? call.args.kind.trim()
+        : undefined
+    const nodes = kindFilter
+      ? state.nodes.filter((node) =>
+          node.type === 'cine'
+            ? node.data.kind === kindFilter
+            : node.type === kindFilter
+        )
+      : state.nodes
+
     return {
       ok: true,
       result: {
-        nodeCount: state.nodes.length,
+        nodeCount: nodes.length,
         edgeCount: state.edges.length,
         selectedNodes: selectedNodeSummary(),
-        nodes: state.nodes.slice(0, 200).map((node) => {
+        nodes: nodes.slice(0, 200).map((node) => {
           const output = selectedNodeOutput(node)
           const data = node.data as {
             title?: unknown
@@ -521,7 +533,8 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
           target: edge.target,
           ...(edge.data?.role ? { role: edge.data.role } : {})
         })),
-        ...(state.nodes.length > 200 ? { nodesTruncated: true } : {})
+        ...(nodes.length > 200 ? { nodesTruncated: true } : {}),
+        ...(kindFilter ? { kind: kindFilter } : {})
       }
     }
   }
@@ -689,6 +702,12 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
     if (sourceNodeId === targetNodeId) {
       return { ok: false, error: '不能把节点连接到自身' }
     }
+    if (
+      !state.nodes.some((node) => node.id === sourceNodeId) ||
+      !state.nodes.some((node) => node.id === targetNodeId)
+    ) {
+      return { ok: false, error: '找不到上游或下游节点' }
+    }
 
     const edge: CanvasCommandEdge = {
       id: `edge-${crypto.randomUUID().slice(0, 8)}`,
@@ -733,7 +752,7 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
       return { ok: false, error: '这两个节点之间没有连线' }
     }
 
-    if (edgeId) {
+    if (edgeId && !call.scope.allowAnyNode) {
       targets = targets.filter(
         (edge) => selected.has(edge.source) || selected.has(edge.target)
       )
@@ -764,6 +783,9 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
     const nodeId = String(call.args.nodeId ?? '')
     if (!nodeId) {
       return { ok: false, error: '缺少 nodeId' }
+    }
+    if (!state.nodes.some((node) => node.id === nodeId)) {
+      return { ok: false, error: '找不到这个画布节点' }
     }
     const change = state.applyCommands(
       [{ type: 'removeNode', nodeId }],

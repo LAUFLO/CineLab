@@ -648,6 +648,12 @@ corepack pnpm check:agent-coverage
 
 ## 13. 实施顺序
 
+### 13.0 实施状态
+
+- 2026-11-24：阶段 1/2 提交 1 已实施（`21df943`）：MCP 从 `AGENT_TOOLS` 投影 77 个工具，低层 `Server` 直出 JSON Schema，旧工具名移除。
+- 2026-11-24：阶段 1/2 提交 2 已实施：`allowAnyNode` 生效，`timeline_open({ nodeId })` / `stage_open({ nodeId })` 打开已有节点。
+- 阶段 3、4 待实施。
+
 ### 13.1 阶段 1 / 2（同一分支，两个提交）
 
 1. **提交 1**：命名统一 + 自动投影 + catalog 计算化 + 文档生成。不改 scope。

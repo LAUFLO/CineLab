@@ -63,6 +63,25 @@ async function handleCommand(command: McpWriteCommand): Promise<void> {
     }
 
     if (command.tool === 'timeline_open') {
+      const targetNodeId =
+        typeof command.args.nodeId === 'string'
+          ? command.args.nodeId.trim()
+          : ''
+
+      if (targetNodeId) {
+        const node = canvas.nodes.find((item) => item.id === targetNodeId)
+        if (!node || node.type !== 'studio') {
+          throw new Error('找不到这个剪辑室节点')
+        }
+        useStudioStore.getState().openStudio(targetNodeId)
+        window.api.mcp.sendResult({
+          id: command.id,
+          ok: true,
+          result: { studioNodeId: targetNodeId }
+        })
+        return
+      }
+
       const x = typeof command.args.x === 'number' ? command.args.x : undefined
       const y = typeof command.args.y === 'number' ? command.args.y : undefined
       const title =
@@ -81,6 +100,25 @@ async function handleCommand(command: McpWriteCommand): Promise<void> {
     }
 
     if (command.tool === 'stage_open') {
+      const targetNodeId =
+        typeof command.args.nodeId === 'string'
+          ? command.args.nodeId.trim()
+          : ''
+
+      if (targetNodeId) {
+        const node = canvas.nodes.find((item) => item.id === targetNodeId)
+        if (!node || node.type !== 'stage') {
+          throw new Error('找不到这个导演台节点')
+        }
+        await useStageStore.getState().openStage(targetNodeId)
+        window.api.mcp.sendResult({
+          id: command.id,
+          ok: true,
+          result: { nodeId: targetNodeId }
+        })
+        return
+      }
+
       const name =
         typeof command.args.name === 'string' && command.args.name.trim()
           ? command.args.name.trim()
@@ -110,6 +148,7 @@ async function handleCommand(command: McpWriteCommand): Promise<void> {
         selectedNodeIds: canvas.nodes
           .filter((node) => node.selected)
           .map((node) => node.id),
+        allowAnyNode: true,
         ...(useTimelineStore.getState().doc?.id
           ? { timelineId: useTimelineStore.getState().doc?.id }
           : {}),

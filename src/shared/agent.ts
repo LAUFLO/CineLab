@@ -18,6 +18,8 @@ export interface AgentScope {
   playheadMs?: number
   /** CineBot 导演台作用域：当前打开的导演台画布节点 */
   stageNodeId?: string
+  /** MCP 外部调用：不要求节点在画布选中范围内 */
+  allowAnyNode?: boolean
 }
 
 export interface AgentAttachment {

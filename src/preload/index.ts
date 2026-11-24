@@ -173,6 +173,7 @@ const api: CineApi = {
       ipcRenderer.send('mcp:command-result', result),
     status: () => ipcRenderer.invoke('mcp:status'),
     config: () => ipcRenderer.invoke('mcp:config'),
+    resetToken: () => ipcRenderer.invoke('mcp:reset-token'),
     revealConfig: () => ipcRenderer.invoke('mcp:reveal-config'),
     copy: (text: string) => ipcRenderer.invoke('mcp:copy', text)
   },

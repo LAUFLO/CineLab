@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { clipboard, ipcMain, shell } from 'electron'
-import { mcpConfigSnapshot, mcpStatus } from '../mcp/server'
+import { mcpConfigSnapshot, mcpStatus, resetMcpToken } from '../mcp/server'
 import { mcpToolCatalog } from '../mcp/catalog'
 import { getPreferences } from '../settings/preferences'
 
@@ -17,6 +17,11 @@ export function registerMcpIpc(): void {
   })
 
   ipcMain.handle('mcp:config', () => mcpConfigSnapshot())
+
+  ipcMain.handle('mcp:reset-token', async () => {
+    await resetMcpToken()
+    return mcpConfigSnapshot()
+  })
 
   ipcMain.handle('mcp:reveal-config', async () => {
     const { configPath } = mcpStatus()

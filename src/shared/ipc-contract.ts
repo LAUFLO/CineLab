@@ -673,6 +673,7 @@ export interface McpApi {
   sendResult(result: McpWriteResult): void
   status(): Promise<McpServerStatus>
   config(): Promise<McpConfigInfo | null>
+  resetToken(): Promise<McpConfigInfo | null>
   revealConfig(): Promise<void>
   copy(text: string): Promise<void>
 }

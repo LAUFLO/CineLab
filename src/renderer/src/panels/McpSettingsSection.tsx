@@ -43,6 +43,7 @@ export function McpSettingsSection(): React.JSX.Element {
   const preferences = usePreferencesStore((state) => state.preferences)
   const updateMcp = usePreferencesStore((state) => state.updateMcp)
   const showToast = useUIStore((state) => state.showToast)
+  const requestConfirm = useUIStore((state) => state.requestConfirm)
 
   const [status, setStatus] = useState<McpServerStatus | null>(null)
   const [config, setConfig] = useState<McpConfigInfo | null>(null)
@@ -70,6 +71,21 @@ export function McpSettingsSection(): React.JSX.Element {
     if (!text) return
     await window.api.mcp.copy(text)
     showToast(`${label}已复制`)
+  }
+
+  const resetToken = (): void => {
+    requestConfirm({
+      title: '重置 MCP token',
+      message:
+        '旧 token 会立即失效，已连接的客户端需要更新配置后重新连接。重置后请重新复制客户端配置。',
+      confirmLabel: '重置',
+      danger: true,
+      onConfirm: async () => {
+        await window.api.mcp.resetToken()
+        await refresh()
+        showToast('MCP token 已重置')
+      }
+    })
   }
 
   const httpConfig = useMemo(() => {
@@ -218,6 +234,14 @@ export function McpSettingsSection(): React.JSX.Element {
             >
               复制
             </Button>
+            <Button
+              size="xs"
+              variant="secondary"
+              disabled={!status?.running}
+              onClick={resetToken}
+            >
+              重置
+            </Button>
           </InfoRow>
         </div>
       </div>
@@ -244,9 +268,32 @@ export function McpSettingsSection(): React.JSX.Element {
             </Button>
           </div>
         </div>
+        <div className="flex flex-col gap-1.5 rounded-md bg-surface p-2.5 text-[11px] leading-[1.7] text-fg-subtle">
+          <div>
+            <span className="text-fg-muted">HTTP</span>
+            ：客户端直连本机端口，CineLab 需要保持运行；适合配置里能填
+            <span className="font-mono">url</span>
+            的客户端。
+          </div>
+          <div>
+            <span className="text-fg-muted">stdio</span>
+            ：由客户端启动桥接进程转发到本机；适合只能填
+            <span className="font-mono">command</span>
+            /
+            <span className="font-mono">args</span>
+            的客户端。
+          </div>
+          <div>
+            不确定时看客户端文档：能填
+            <span className="font-mono">url</span>
+            就选 HTTP，只能填
+            <span className="font-mono">command</span>
+            就选 stdio，两者能力一致。
+          </div>
+        </div>
         <p className="text-[11px] leading-[1.6] text-fg-subtle">
-          粘贴到 Claude Desktop、Cursor 或其他 MCP 客户端的 mcpServers 中。应用退出后
-          地址与 token 会失效，下次启动以本页为准。
+          常用客户端：Claude Desktop、Cursor、Cline、Windsurf、Codex、Trae、Qoder、WorkBuddy 等。应用退出后地址与
+          token 会失效，下次启动以本页为准。
         </p>
         <pre className="max-h-[180px] overflow-auto whitespace-pre-wrap break-all rounded-md bg-surface p-3 font-mono text-[10.5px] leading-[1.6] text-fg-muted">
           {httpConfig || '启动 MCP server 后生成配置'}

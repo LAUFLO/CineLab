@@ -34,7 +34,7 @@ CineLab 已内置 MCP server，外部 Agent 可通过 HTTP 或 stdio 连接并�
 
 - 运行状态：运行中 / 已停止、地址、端口、版本；
 - 配置文件路径，一键打开所在目录；
-- token 显示（默认打码）与一键复制；
+- 显示 / 隐藏 / 复制 token，可重置 token（旧 token 立即失效，客户端配置自动更新）；
 - 一键复制 HTTP 配置、stdio 配置；
 - 客户端示例（Claude Desktop / Cursor 片段）；
 - 工具清单：按类别分组，标注只读 / 写 / 危险；
@@ -77,10 +77,10 @@ CineLab 已内置 MCP server，外部 Agent 可通过 HTTP 或 stdio 连接并�
 |---|---|
 | `src/shared/preferences.ts` | 新增 `mcpEnabled`、`mcpReadOnly` |
 | `src/main/mcp/catalog.ts` | 新增工具目录（名称、类别、只读、危险） |
-| `src/main/mcp/server.ts` | 状态导出、按设置启停、工具目录 |
+| `src/main/mcp/server.ts` | 状态导出、按设置启停、工具目录、重置 token |
 | `src/main/mcp/write-tools.ts` | 新增 10 个写工具、只读模式检查 |
 | `src/main/mcp/app-tools.ts` | 新增 5 个只读工具 |
-| `src/main/ipc/mcp.ts` | 新增状态、配置、工具清单 IPC |
+| `src/main/ipc/mcp.ts` | 新增状态、配置、工具清单、重置 token IPC |
 | `src/main/index.ts` | 按设置启停 server、设置变更生效 |
 | `src/preload/index.ts`、`src/shared/ipc-contract.ts` | 暴露 MCP API |
 | `src/renderer/src/panels/McpSettingsSection.tsx` | 新增设置面板 |

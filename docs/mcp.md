@@ -14,8 +14,8 @@
 打开「设置 → MCP」，可以完成全部配置：
 
 - 查看 server 运行状态、版本、地址和端口；
-- 显示 / 隐藏 / 复制 token；
-- 一键复制 HTTP 或 stdio 的客户端配置；
+- 显示 / 隐藏 / 复制 token，重置 token（旧 token 立即失效，客户端配置自动更新）；
+- 一键复制 HTTP 或 stdio 的客户端配置，支持 Claude Desktop、Cursor、Cline、Windsurf、Codex、Trae、Qoder、WorkBuddy 等常用客户端；
 - 打开 `mcp.json` 所在目录；
 - 开关 MCP server、开关只读模式；
 - 查看全部已注册工具及只读 / 写 / 危险标记。
@@ -48,11 +48,14 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 ```
 
 - `token` 首次启动生成，之后跨重启复用；删除 `mcp.json` 会重新生成。
+- 设置页可以重置 token；重置后旧 token 立即失效，已连接的客户端需要更新配置后重新连接，下方客户端配置会自动更新。
 - 端口默认 `7788`，被占用时顺延到 `7789`–`7792`；实际地址以 `url` 为准。
 - 文件权限为 `0600`；不要把 `mcp.json` 提交到仓库或发给别人。
 - 应用正常退出或关闭 MCP server 时删除 `mcp.json`。
 
 ## 3. HTTP 配置
+
+适合配置里能填 `url` 字段的客户端，需要 CineLab 保持运行。
 
 ```json
 {
@@ -68,6 +71,8 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 ```
 
 ## 4. stdio 配置
+
+适合只能填 `command` / `args` 字段的客户端。客户端会启动一个桥接进程，转发到本机 HTTP server；能力与 HTTP 完全一致。
 
 客户端只支持 stdio 时，使用 `mcp.json` 里的 `stdio` 块：
 

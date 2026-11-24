@@ -205,3 +205,27 @@ export function mcpStatus(): McpServerStatus {
 export async function mcpConfigSnapshot(): Promise<McpServerConfig | null> {
   return readMcpConfig()
 }
+
+/** 生成新 token 并让旧 token 立即失效；已连接的会话会断开。 */
+export async function resetMcpToken(): Promise<string> {
+  token = createMcpToken()
+
+  const config = await readMcpConfig()
+  if (config) {
+    await writeMcpConfig({
+      ...config,
+      token,
+      serverVersion: app.getVersion(),
+      startedAt: new Date().toISOString()
+    })
+  }
+
+  const currentSessions = [...sessions.values()]
+  sessions.clear()
+  for (const session of currentSessions) {
+    await session.transport.close().catch(() => undefined)
+    await session.server.close().catch(() => undefined)
+  }
+
+  return token
+}

@@ -26,7 +26,7 @@ CineBot 会话、工具注册与执行、生成提案、技能、能力审计。
 
 ## MCP server
 
-外部 Agent 通过 `src/main/mcp/` 连接 CineLab：内置 Streamable HTTP server（`127.0.0.1` + Bearer token），以及 stdio 桥接进程。MCP 不再手写工具注册：`auto-tools.ts` 遍历 `AGENT_TOOLS`，按 `exposure.ts` 的元数据投影出 69 个工具，再合并 8 个专属工具（项目、适配器、打开剪辑室/导演台、生成提交），共 77 个。工具名与 CineBot 一致；参数直接使用 `AgentToolDefinition.parameters` 的 JSON Schema，低层 `Server` 注册 `tools/list` 与 `tools/call`，`schema-validate.ts` 做轻量预校验。写操作执行前需要应用内确认；配置与安全说明见 `docs/mcp.md`。
+外部 Agent 通过 `src/main/mcp/` 连接 CineLab：内置 Streamable HTTP server（`127.0.0.1` + Bearer token），以及 stdio 桥接进程。MCP 不再手写工具注册：`auto-tools.ts` 遍历 `AGENT_TOOLS`，按每个工具的 `mcp` 元数据投影出 69 个工具，再合并 8 个专属工具（项目、适配器、打开剪辑室/导演台、生成提交），共 77 个。工具名与 CineBot 一致；参数直接使用 `AgentToolDefinition.parameters` 的 JSON Schema，低层 `Server` 注册 `tools/list` 与 `tools/call`，`schema-validate.ts` 做轻量预校验。写操作执行前需要应用内确认；配置与安全说明见 `docs/mcp.md`。
 
 ## 工具分组
 
@@ -188,25 +188,24 @@ AgentPanel
 | `src/main/agent/skills-config.ts` | 110 |
 | `src/main/agent/skills-import.ts` | 487 |
 | `src/main/agent/skills.ts` | 216 |
-| `src/main/agent/tools/canvas.ts` | 551 |
-| `src/main/agent/tools/capability.ts` | 129 |
+| `src/main/agent/tools/canvas.ts` | 599 |
+| `src/main/agent/tools/capability.ts` | 137 |
 | `src/main/agent/tools/errors.ts` | 11 |
-| `src/main/agent/tools/film.ts` | 651 |
-| `src/main/agent/tools/generation.ts` | 365 |
+| `src/main/agent/tools/film.ts` | 695 |
+| `src/main/agent/tools/generation.ts` | 378 |
 | `src/main/agent/tools/index.ts` | 162 |
 | `src/main/agent/tools/scope.ts` | 10 |
-| `src/main/agent/tools/skills.ts` | 90 |
-| `src/main/agent/tools/stage.ts` | 1235 |
-| `src/main/agent/tools/timeline.ts` | 930 |
-| `src/main/mcp/auto-tools.ts` | 161 |
-| `src/main/mcp/catalog.ts` | 9 |
+| `src/main/agent/tools/skills.ts` | 98 |
+| `src/main/agent/tools/stage.ts` | 1327 |
+| `src/main/agent/tools/timeline.ts` | 998 |
+| `src/main/mcp/auto-tools.ts` | 160 |
+| `src/main/mcp/catalog.ts` | 11 |
 | `src/main/mcp/config.ts` | 54 |
 | `src/main/mcp/exclusive-tools.ts` | 243 |
-| `src/main/mcp/exposure.ts` | 153 |
 | `src/main/mcp/schema-validate.ts` | 169 |
 | `src/main/mcp/server.ts` | 228 |
 | `src/main/mcp/stdio-bridge.ts` | 104 |
-| `src/main/mcp/tool-types.ts` | 16 |
+| `src/main/mcp/tool-types.ts` | 26 |
 | `src/main/mcp/write-runner.ts` | 135 |
 | `src/renderer/src/agent/AgentPanel.tsx` | 1277 |
 | `src/renderer/src/agent/agentStore.ts` | 1224 |
@@ -222,7 +221,7 @@ AgentPanel
 | `src/renderer/src/agent/timelineBridge.ts` | 1080 |
 | `src/renderer/src/mcp/commandBridge.ts` | 185 |
 | `src/shared/agent-proposal.ts` | 140 |
-| `src/shared/agent-tools.ts` | 59 |
+| `src/shared/agent-tools.ts` | 85 |
 | `src/shared/agent.ts` | 266 |
 | `src/shared/capabilities.ts` | 321 |
 | `src/shared/mcp-command.ts` | 14 |
@@ -268,10 +267,9 @@ AgentPanel
 | `src/main/mcp/auto-tools.ts` | `buildMcpTools`、`MCP_TOOL_CATALOG`、`mcpToolCatalog`、`registerMcpTools` |
 | `src/main/mcp/config.ts` | `McpStdioConfig`、`McpServerConfig`、`mcpConfigPath`、`createMcpToken`、`readMcpConfig`、`writeMcpConfig`、`removeMcpConfigSync` |
 | `src/main/mcp/exclusive-tools.ts` | `MCP_EXCLUSIVE_TOOLS` |
-| `src/main/mcp/exposure.ts` | `McpToolCategory`、`McpExposureMeta`、`McpToolMeta`、`MCP_EXPOSURE` |
 | `src/main/mcp/schema-validate.ts` | `JsonSchema`、`ValidationResult`、`validateJsonSchema` |
 | `src/main/mcp/server.ts` | `startMcpServer`、`stopMcpServer`、`McpServerStatus`、`mcpStatus`、`mcpConfigSnapshot`、`resetMcpToken` |
-| `src/main/mcp/tool-types.ts` | `McpToolDefinition` |
+| `src/main/mcp/tool-types.ts` | `McpToolMeta`、`McpToolDefinition` |
 | `src/main/mcp/write-runner.ts` | `registerMcpCommandIpc`、`result`、`errorResult`、`sendCommand`、`runWrite`、`runRead` |
 | `src/renderer/src/agent/AgentPanel.tsx` | `AgentPanel` |
 | `src/renderer/src/agent/agentStore.ts` | `AgentMessage`、`AgentActivity`、`agentTurnChangeCount`、`AGENT_CONTEXT_BUDGET_TOKENS`、`AGENT_KEEP_RECENT_MESSAGES`、`AgentContextStats`、`agentContextStats`、`useAgentStore` |
@@ -287,7 +285,7 @@ AgentPanel
 | `src/renderer/src/agent/timelineBridge.ts` | `TimelineToolResult`、`executeTimelineTool` |
 | `src/renderer/src/mcp/commandBridge.ts` | `initMcpCommandBridge` |
 | `src/shared/agent-proposal.ts` | `PROPOSAL_TTL_MS`、`proposalExpiresAt`、`isProposalExpired`、`NormalizedParams`、`normalizeGenerationParams`、`proposalCount`、`proposalStatusLabel` |
-| `src/shared/agent-tools.ts` | `AgentToolScope`、`AgentToolDefinition`、`filterAgentTools`、`toModelTools` |
+| `src/shared/agent-tools.ts` | `AgentToolScope`、`McpToolCategory`、`AgentToolMcpMeta`、`AgentToolDefinition`、`filterAgentTools`、`toModelTools` |
 | `src/shared/agent.ts` | `AgentProfileId`、`AgentPermissionMode`、`AgentScope`、`AgentAttachment`、`AgentReference`、`AgentChatRequest`、`AgentModelInfo`、`AgentGenerationModels`、`AgentSessionInfo`、`AgentUsage`、`AgentProposalStatus`、`AgentProposal`、`AgentProposalDraft`、`AgentToolCall`、`AgentToolResult`、`AgentTurnChange`、`AgentTurnStatus`、`AgentTurn`、`AgentEvent`、`AgentSessionMessage`、`AgentSessionSnapshot`、`AgentToolCallRequest`、`AgentToolResultInput`、`AgentConfirmInput` …（共 26 个） |
 | `src/shared/capabilities.ts` | `ModelInputFeature`、`ModelOutputFeature`、`AdapterCapability`、`CapabilityGapKind`、`CapabilityGap`、`EffectiveCapabilities`、`ADAPTER_CAPABILITIES`、`resolveAdapter`、`contractFor`、`normalizeFeatureSets`、`effectiveCapabilities` |
 | `src/shared/mcp-command.ts` | `McpWriteCommand`、`McpWriteResult` |

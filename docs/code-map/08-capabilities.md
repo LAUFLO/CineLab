@@ -42,7 +42,7 @@
 | 06 | CineBot 工具、生成提案、会话、技能 | `src/main/agent/` |
 | 06 | 技能文件夹/ZIP 导入、SKILL.md 校验、卡片启用开关 | `src/main/agent/skills-import.ts`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
 | 06 | 本地可信适配器 MCP server（HTTP + stdio）、认证与 77 个工具 | `src/main/mcp/`、`docs/mcp.md` |
-| 06 | MCP 工具从 `AGENT_TOOLS` 投影，工具名与 CineBot 统一 | `src/main/mcp/auto-tools.ts`、`src/main/mcp/exposure.ts` |
+| 06 | MCP 工具从 `AGENT_TOOLS` 投影，工具名与 CineBot 统一 | `src/main/mcp/auto-tools.ts`、`src/shared/agent-tools.ts` |
 | 06 | MCP 项目/适配器/工作台打开等 8 个专属工具 | `src/main/mcp/exclusive-tools.ts`、`src/main/mcp/write-runner.ts` |
 | 06 | MCP 写工具与生成提交（应用内确认、只读模式） | `src/main/mcp/write-runner.ts`、`src/renderer/src/mcp/commandBridge.ts` |
 | 06 | MCP 独立 scope：`allowAnyNode` 不依赖画布选中节点 | `src/shared/agent.ts`、`src/renderer/src/mcp/commandBridge.ts` |

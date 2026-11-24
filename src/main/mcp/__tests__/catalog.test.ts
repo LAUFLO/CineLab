@@ -1,18 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { AGENT_TOOLS } from '../../agent/tools'
 import { buildMcpTools, MCP_TOOL_CATALOG } from '../auto-tools'
-import { MCP_EXPOSURE } from '../exposure'
 
 const tools = buildMcpTools()
 
 describe('mcp tool catalog', () => {
-  it('has exposure metadata for every exposed agent tool', () => {
-    const missing = AGENT_TOOLS.filter(
-      (tool) => MCP_EXPOSURE[tool.name]?.expose !== false
+  it('has mcp metadata for every agent tool', () => {
+    const missing = AGENT_TOOLS.filter((tool) => !tool.mcp).map(
+      (tool) => tool.name
     )
-      .filter((tool) => !MCP_EXPOSURE[tool.name]?.title)
-      .map((tool) => tool.name)
+    expect(missing).toEqual([])
+  })
 
+  it('has a title for every exposed tool', () => {
+    const missing = AGENT_TOOLS.filter(
+      (tool) => tool.mcp?.expose !== false && !tool.mcp?.title
+    ).map((tool) => tool.name)
     expect(missing).toEqual([])
   })
 

@@ -38,7 +38,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '读取导演台',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.capabilities',
@@ -55,6 +59,10 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'safe',
+    mcp: {
+      title: '读取导演台能力',
+      category: '导演台',
+    },
     executor: 'main'
   },
   {
@@ -85,7 +93,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'type'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '添加对象',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.transformObject',
@@ -108,7 +120,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'objectId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '变换对象',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.addCamera',
@@ -132,7 +148,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '添加机位',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.transformCamera',
@@ -157,7 +177,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'cameraId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '调整机位',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.addShot',
@@ -183,7 +207,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'cameraId', 'durationMs', 'aspect'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '添加镜头',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.updateShot',
@@ -207,7 +235,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'shotId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '修改镜头',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.removeShot',
@@ -227,6 +259,10 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '删除镜头',
+      category: '导演台',
+    },
     requiresConfirm: true
   },
   {
@@ -269,6 +305,10 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '设置运镜',
+      category: '导演台',
+    },
     requiresConfirm: true
   },
   {
@@ -290,7 +330,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'kind', 'value'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '设置背景',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.updateObject',
@@ -313,7 +357,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'objectId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '修改对象',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.exportPreview',
@@ -361,6 +409,10 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '导出预演',
+      category: '导演台',
+    },
     requiresConfirm: true
   },
   {
@@ -380,7 +432,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'cameraId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '切换活动机位',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.removeObject',
@@ -400,6 +456,10 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '删除对象',
+      category: '导演台',
+    },
     requiresConfirm: true
   },
   {
@@ -425,7 +485,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'shotId', 'intent'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '设置镜头意图',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.clearShotIntent',
@@ -444,7 +508,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'shotId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '清除镜头意图',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.autoCoverage',
@@ -479,7 +547,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'subjectIds'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '自动分镜',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.dialogueCoverage',
@@ -503,7 +575,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'script'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '按对白分镜',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.setWorld',
@@ -557,7 +633,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'world'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '设置世界',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.addObjects',
@@ -603,7 +683,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'objects'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '批量添加对象',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.randomizeWorld',
@@ -621,7 +705,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '随机化世界',
+      category: '导演台',
+    },
   },
   {
     id: 'stage.fromSceneImage',
@@ -651,7 +739,11 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       required: ['nodeId', 'imagePath'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '从场景图生成白膜',
+      category: '导演台',
+    },
   }
 ]
 

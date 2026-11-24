@@ -27,7 +27,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       properties: {},
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '读取时间线',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.setVideo',
@@ -58,7 +62,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       },
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '设置画幅参数',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.selectClips',
@@ -81,7 +89,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       required: ['clipIds'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '选择片段',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.moveClips',
@@ -107,7 +119,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       required: ['clipIds'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '移动片段',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.trimClip',
@@ -129,7 +145,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       required: ['clipId', 'edge', 'deltaMs'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '裁剪片段',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.splitClips',
@@ -148,7 +168,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       required: ['clipIds', 'atMs'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '切分片段',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.splitByShots',
@@ -176,6 +200,10 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '按镜头切分',
+      category: '剪辑室',
+    },
     requiresConfirm: true
   },
   {
@@ -197,7 +225,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       required: ['clipId'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '添加节拍标记',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.beatSplit',
@@ -225,6 +257,10 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '按节拍切分',
+      category: '剪辑室',
+    },
     requiresConfirm: true
   },
   {
@@ -245,6 +281,10 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '删除片段',
+      category: '剪辑室',
+    },
     requiresConfirm: true
   },
   {
@@ -269,7 +309,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       required: ['clipId', 'patch'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '修改片段',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.setTrack',
@@ -289,7 +333,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       required: ['trackId', 'flag', 'value'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '设置轨道',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.addMarker',
@@ -309,7 +357,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       required: ['atMs'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '添加标记',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.autoSubtitles',
@@ -330,7 +382,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       },
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '自动字幕',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.removeSilence',
@@ -367,6 +423,10 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '删除静音',
+      category: '剪辑室',
+    },
     requiresConfirm: true
   },
   {
@@ -395,7 +455,11 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       required: ['clipId', 'type'],
       additionalProperties: false
     },
-    replay: 'safe'
+    replay: 'safe',
+    mcp: {
+      title: '设置转场',
+      category: '剪辑室',
+    },
   },
   {
     id: 'timeline.export',
@@ -418,6 +482,10 @@ export const TIMELINE_TOOLS: AgentToolDefinition[] = [
       additionalProperties: false
     },
     replay: 'unsafe',
+    mcp: {
+      title: '导出时间线',
+      category: '剪辑室',
+    },
     requiresConfirm: true
   }
 ]

@@ -87,5 +87,44 @@ export const SKILL_ADMIN_TOOLS: AgentToolDefinition[] = [
     requiresConfirm: true,
     executor: 'main',
     mcp: { title: '创建技能', category: '技能' }
+  },
+  {
+    id: 'skill.import',
+    name: 'skill_import',
+    description:
+      '从本地文件夹或 ZIP 导入一个技能。需要用户确认；同名技能可用 overwrite 覆盖。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'skill',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: '本地技能文件夹或 ZIP 压缩包的绝对路径'
+        },
+        kind: {
+          type: 'string',
+          enum: ['folder', 'zip'],
+          description: '来源类型'
+        },
+        scope: {
+          type: 'string',
+          enum: ['global', 'project'],
+          description: '安装到全局还是当前项目'
+        },
+        overwrite: {
+          type: 'boolean',
+          description: '同名技能是否覆盖，默认 false'
+        }
+      },
+      required: ['path', 'kind', 'scope'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    requiresConfirm: true,
+    executor: 'main',
+    mcp: { title: '导入技能', category: '技能' }
   }
 ]

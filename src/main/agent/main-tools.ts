@@ -26,7 +26,11 @@ import { listAllAssets } from '../library/store'
 import { listProviders } from '../settings/store'
 import { AGENT_CAPABILITIES } from './capabilities/registry'
 import { listSkills, readSkill } from './skills'
-import { createSkill, setSkillOverride } from './skills-admin'
+import { createSkill, setSkillOverride } from './skills-admin'
+import {
+  installSkillImport,
+  previewSkillImport
+} from './skills-import'
 import {
   deleteTemplate,
   listTemplates,
@@ -292,6 +296,25 @@ export async function executeMainTool(
         ? { version: call.args.version }
         : {}),
       body: String(call.args.body ?? '')
+    })
+    return { ok: true, result: entry }
+  }
+
+  if (call.name === 'skill_import') {
+    const kind = call.args.kind === 'zip' ? 'zip' : 'folder'
+    const targetScope = call.args.scope === 'project' ? 'project' : 'global'
+    const preview = await previewSkillImport({
+      kind,
+      sourcePath: String(call.args.path ?? ''),
+      projectRoot: scope.projectPath
+    })
+    const entry = await installSkillImport({
+      projectRoot: scope.projectPath,
+      data: {
+        token: preview.token,
+        scope: targetScope,
+        ...(call.args.overwrite === true ? { overwrite: true } : {})
+      }
     })
     return { ok: true, result: entry }
   }

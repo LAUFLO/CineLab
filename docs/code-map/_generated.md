@@ -12,8 +12,8 @@
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 47 | 20219 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5803 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 64 | 20798 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12368 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 21068 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12396 |
 | 10 | [UI 组件与面板](./10-ui.md) | 51 | 11007 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
@@ -85,6 +85,9 @@
 | `style_delete` | `library.styleDelete` | 是 |  |
 | `asset_ingest` | `media.assetIngest` | 是 |  |
 | `stem_separate` | `media.stemSeparate` | 是 |  |
+| `project_create` | `project.create` | 是 |  |
+| `project_open` | `project.open` | 是 |  |
+| `project_export` | `project.export` | 是 |  |
 | `skill_toggle` | `skill.toggle` | 是 |  |
 | `skill_create` | `skill.create` |  |  |
 | `skill_import` | `skill.import` |  |  |

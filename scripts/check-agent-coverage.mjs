@@ -32,7 +32,8 @@ function extractTools() {
     'skills',
     'library',
     'media',
-    'skill-admin'
+    'skill-admin',
+    'project'
   ]
   const tools = []
 
@@ -127,11 +128,49 @@ const bridgeHandlers = new Set([
     'handlers'
   ),
   ...extractHandlers('src/renderer/src/agent/stageBridge.ts', 'handlers'),
-  ...extractHandlers('src/renderer/src/agent/filmBridge.ts', 'handlers')
+  ...extractHandlers('src/renderer/src/agent/filmBridge.ts', 'handlers'),
+  ...extractHandlers('src/renderer/src/agent/projectBridge.ts', 'handlers')
 ])
 
 const mcpOnly = new Set(extractMcpOnlyTools())
 const handlers = new Set([...bridgeHandlers, ...mcpOnly])
+
+function readAsyncHandlers() {
+  const path = 'handler-allowlist.json'
+  if (!existsSync(join(root, path))) {
+    errors.push(`${path} 不存在`)
+    return []
+  }
+  try {
+    const parsed = JSON.parse(read(path))
+    return Array.isArray(parsed.asyncHandlers) ? parsed.asyncHandlers : []
+  } catch {
+    errors.push(`${path} 不是合法 JSON`)
+    return []
+  }
+}
+
+const asyncHandlers = readAsyncHandlers()
+const timeoutSource = read('src/main/agent/pi/timeouts.ts')
+const timeoutKeys = new Set(
+  [...timeoutSource.matchAll(/^  ([a-z0-9_]+): [\d_ *]+/gm)].map(
+    (match) => match[1]
+  )
+)
+
+for (const item of asyncHandlers) {
+  if (!item.tool || !toolNames.has(item.tool)) {
+    errors.push(
+      `异步 handler 白名单引用了不存在的工具：${item.tool ?? '未知'}`
+    )
+  }
+  if (!item.reason) {
+    errors.push(`异步 handler 白名单缺少 reason：${item.tool ?? '未知'}`)
+  }
+  if (item.tool && !timeoutKeys.has(item.tool)) {
+    errors.push(`异步 handler 缺少长任务超时：${item.tool}`)
+  }
+}
 
 const exemptions = readExemptions()
 const now = Date.now()

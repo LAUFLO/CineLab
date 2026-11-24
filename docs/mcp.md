@@ -104,7 +104,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 
 ## 6. 工具
 
-共 96 个工具，按类别如下。写工具直接执行，只读模式下全部拒绝。
+共 99 个工具，按类别如下。写工具直接执行，只读模式下全部拒绝。
 
 ### 6.1 适配器（3）
 
@@ -114,12 +114,15 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `local_adapter_reload` | 重载本地适配器 | 否 |  |
 | `local_adapter_logs` | 读取适配器日志 | 是 |  |
 
-### 6.2 项目（2）
+### 6.2 项目（5）
 
 | 工具 | 作用 | 只读 | 危险 |
 |---|---|---|---|
 | `project_list` | 最近项目 | 是 |  |
 | `project_current` | 当前项目 | 是 |  |
+| `project_create` | 创建项目 | 否 |  |
+| `project_open` | 打开项目 | 否 |  |
+| `project_export` | 导出项目 | 否 |  |
 
 ### 6.3 画布（12）
 

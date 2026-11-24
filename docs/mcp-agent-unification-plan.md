@@ -655,6 +655,7 @@ corepack pnpm check:agent-coverage
 - 2026-11-24：阶段 3 第一步已实施：70 个工具的 MCP 元数据并入 `AgentToolDefinition.mcp`，删除 `exposure.ts`，MCP 投影直接读工具定义。
 - 2026-11-24：阶段 3 第二步已实施：画布 / 时间线 / 导演台 / 拉片 4 个 bridge 的 `if (call.name === ...)` 分支改为 handler 表；`rg "call\.name ===" src/renderer/src/agent` 已清零。独立 `commandHandlers.ts` 与 `toCommands` 尚未抽出。
 - 2026-11-24：阶段 4 已实施：`check:agent-coverage` 校验工具声明、handler 与 MCP 元数据；新增 `agent-coverage-exempt.json`、`AGENTS.md` 约定与 PR 模板检查项。
+- 2026-11-24：阶段 3 收尾：项目创建/打开/导出接入 renderer 项目状态；4 个画布 CRUD 启用 `toCommands`；新增 `commandHandlers` 统一入口；`handler-allowlist.json` 校验长任务超时。
 
 ### 13.1 阶段 1 / 2（同一分支，两个提交）
 

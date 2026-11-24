@@ -26,6 +26,7 @@ import { listAllAssets } from '../library/store'
 import { listProviders } from '../settings/store'
 import { AGENT_CAPABILITIES } from './capabilities/registry'
 import { listSkills, readSkill } from './skills'
+import { createSkill, setSkillOverride } from './skills-admin'
 import {
   deleteTemplate,
   listTemplates,
@@ -271,6 +272,28 @@ export async function executeMainTool(
         total: styles.length
       }
     }
+  }
+
+  if (call.name === 'skill_toggle') {
+    const entry = await setSkillOverride(scope.projectPath, {
+      scope: call.args.scope === 'project' ? 'project' : 'global',
+      name: String(call.args.name ?? ''),
+      enabled: Boolean(call.args.enabled)
+    })
+    return { ok: true, result: entry }
+  }
+
+  if (call.name === 'skill_create') {
+    const entry = await createSkill(scope.projectPath, {
+      scope: call.args.scope === 'project' ? 'project' : 'global',
+      name: String(call.args.name ?? ''),
+      description: String(call.args.description ?? ''),
+      ...(typeof call.args.version === 'string'
+        ? { version: call.args.version }
+        : {}),
+      body: String(call.args.body ?? '')
+    })
+    return { ok: true, result: entry }
   }
 
   if (call.name === 'asset_ingest') {

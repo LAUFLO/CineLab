@@ -166,7 +166,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `timeline_remove_silence` | 删除静音 | 否 |  |
 | `timeline_set_transition` | 设置转场 | 否 |  |
 | `timeline_export` | 导出时间线 | 否 |  |
-| `timeline_open` | 打开剪辑室 | 否 |  |
+| `timeline_open` | 打开剪辑室（传 `nodeId` 打开已有，省略则创建） | 否 |  |
 
 ### 6.6 导演台（24）
 
@@ -195,7 +195,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `stage_add_objects` | 批量添加对象 | 否 |  |
 | `stage_randomize_world` | 随机化世界 | 否 |  |
 | `stage_from_scene_image` | 从场景图生成白膜 | 否 |  |
-| `stage_open` | 打开导演台 | 否 |  |
+| `stage_open` | 打开导演台（传 `nodeId` 打开已有，省略则创建） | 否 |  |
 
 ### 6.7 拉片（11）
 
@@ -233,7 +233,7 @@ macOS:   ~/Library/Application Support/cinelab/mcp.json
 | `skill_list` | 技能列表 | 是 |  |
 | `skill_read` | 读取技能 | 是 |  |
 
-时间线工具要求剪辑室已打开；导演台工具需要 `nodeId`；拉片工具需要 `nodeId` 或 `studyId`。写工具复用 CineBot 的画布、时间线、导演台和拉片执行器，不直接改项目 JSON。
+时间线工具要求剪辑室已打开，外部 Agent 可以先调用 `timeline_open({ nodeId })` 打开已有剪辑室；导演台工具需要 `nodeId`；拉片工具需要 `nodeId` 或 `studyId`。写工具复用 CineBot 的画布、时间线、导演台和拉片执行器，不直接改项目 JSON。
 
 ### 6.11 旧名迁移
 

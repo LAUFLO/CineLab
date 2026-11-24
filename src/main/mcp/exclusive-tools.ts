@@ -166,6 +166,10 @@ export const MCP_EXCLUSIVE_TOOLS: McpToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
+        nodeId: {
+          type: 'string',
+          description: '已有剪辑室节点 ID；传了就打开，不创建新节点'
+        },
         x: { type: 'number', description: '画布坐标 X' },
         y: { type: 'number', description: '画布坐标 Y' },
         title: { type: 'string', maxLength: 200, description: '节点标题' }
@@ -186,6 +190,10 @@ export const MCP_EXCLUSIVE_TOOLS: McpToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
+        nodeId: {
+          type: 'string',
+          description: '已有导演台节点 ID；传了就打开，不创建新节点'
+        },
         name: { type: 'string', maxLength: 200, description: '导演台名称' },
         x: { type: 'number', description: '画布坐标 X' },
         y: { type: 'number', description: '画布坐标 Y' }

@@ -702,6 +702,12 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
     if (sourceNodeId === targetNodeId) {
       return { ok: false, error: '不能把节点连接到自身' }
     }
+    if (
+      !state.nodes.some((node) => node.id === sourceNodeId) ||
+      !state.nodes.some((node) => node.id === targetNodeId)
+    ) {
+      return { ok: false, error: '找不到上游或下游节点' }
+    }
 
     const edge: CanvasCommandEdge = {
       id: `edge-${crypto.randomUUID().slice(0, 8)}`,
@@ -746,7 +752,7 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
       return { ok: false, error: '这两个节点之间没有连线' }
     }
 
-    if (edgeId) {
+    if (edgeId && !call.scope.allowAnyNode) {
       targets = targets.filter(
         (edge) => selected.has(edge.source) || selected.has(edge.target)
       )
@@ -777,6 +783,9 @@ async function executeTool(call: AgentToolCallRequest): Promise<{
     const nodeId = String(call.args.nodeId ?? '')
     if (!nodeId) {
       return { ok: false, error: '缺少 nodeId' }
+    }
+    if (!state.nodes.some((node) => node.id === nodeId)) {
+      return { ok: false, error: '找不到这个画布节点' }
     }
     const change = state.applyCommands(
       [{ type: 'removeNode', nodeId }],

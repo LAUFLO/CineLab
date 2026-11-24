@@ -29,6 +29,29 @@ describe('agent tool permissions', () => {
     ).toThrow(AgentToolError)
   })
 
+  it('allows any node when allowAnyNode is set', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_update_title', {
+          nodeId: 'node-b',
+          title: '新标题'
+        }),
+        { ...scope, allowAnyNode: true },
+        'current'
+      )
+    ).not.toThrow()
+  })
+
+  it('still requires a valid node when allowAnyNode is set', () => {
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_update_title', { nodeId: '', title: '新标题' }),
+        { ...scope, allowAnyNode: true },
+        'current'
+      )
+    ).toThrow(AgentToolError)
+  })
+
   it('allows creating a node without a selection', () => {
     expect(() =>
       assertToolAllowed(

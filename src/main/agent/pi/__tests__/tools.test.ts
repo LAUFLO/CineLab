@@ -96,7 +96,9 @@ describe('pi tool adapter', () => {
         'preset_delete',
         'style_create',
         'style_update',
-        'style_delete'
+        'style_delete',
+        'asset_ingest',
+        'stem_separate'
       ])
     )
   })

@@ -26,6 +26,7 @@ import { FILM_TOOLS } from './film'
 import { CAPABILITY_TOOLS } from './capability'
 import { SKILL_TOOLS } from './skills'
 import { LIBRARY_TOOLS } from './library'
+import { MEDIA_TOOLS } from './media'
 
 export { AgentToolError } from './errors'
 export { CANVAS_TOOLS } from './canvas'
@@ -36,6 +37,7 @@ export { FILM_TOOLS } from './film'
 export { CAPABILITY_TOOLS } from './capability'
 export { SKILL_TOOLS } from './skills'
 export { LIBRARY_TOOLS } from './library'
+export { MEDIA_TOOLS } from './media'
 
 export const AGENT_TOOLS = [
   ...CANVAS_TOOLS,
@@ -45,7 +47,8 @@ export const AGENT_TOOLS = [
   ...FILM_TOOLS,
   ...CAPABILITY_TOOLS,
   ...SKILL_TOOLS,
-  ...LIBRARY_TOOLS
+  ...LIBRARY_TOOLS,
+  ...MEDIA_TOOLS
 ]
 
 export function toolDefinitionsForModel(

@@ -10,7 +10,8 @@ export const LONG_TOOL_TIMEOUTS: Record<string, number> = {
   stage_export_preview: 30 * 60_000,
   film_study_auto: 30 * 60_000,
   film_study_export: 10 * 60_000,
-  canvas_node_operation: 30 * 60_000
+  canvas_node_operation: 30 * 60_000,
+  stem_separate: 30 * 60_000
 }
 
 export function toolTimeoutMs(name: string | undefined): number {

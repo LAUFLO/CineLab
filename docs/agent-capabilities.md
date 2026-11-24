@@ -6,7 +6,7 @@
 最后核对：2026-11-23
 关联：`docs/agent-architecture-plan.md`
 
-当前注册 82 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库、提示词模板、风格和技能。
+当前注册 84 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库、提示词模板、风格、素材处理和技能。
 本文件记录已开放给 CineBot 的能力、参数校验、确认规则和回合撤销方式。
 所有写操作都走命令层；UI 和 Agent 共用执行器。
 
@@ -16,9 +16,9 @@
 
 `canvas_get`、`canvas_update_title`、`canvas_update_text`、`canvas_move_node`、`canvas_add_node`、`canvas_connect`、`canvas_remove_edge`、`canvas_delete_node`、`canvas_group`、`canvas_ungroup`、`canvas_node_operations`、`canvas_node_operation`
 
-### 生成与资产（3）
+### 生成与资产（5）
 
-`generation_catalog`、`generation_propose`、`library_search`
+`generation_catalog`、`generation_propose`、`library_search`、`asset_ingest`、`stem_separate`
 
 ### 提示词与风格（12）
 

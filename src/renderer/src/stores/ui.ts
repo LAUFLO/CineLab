@@ -62,6 +62,7 @@ interface UIStore {
   edgeContextMenu: EdgeContextMenuState | null
   nodeCommand: NodeCommandState | null
   pendingPrompt: string | null
+  pendingInsertPrompt: { text: string; nonce: number } | null
   confirm: ConfirmState | null
   toast: ToastState | null
   snapToGrid: boolean
@@ -103,6 +104,8 @@ interface UIStore {
   closeTextEditor: () => void
   applyPrompt: (prompt: string) => void
   clearPendingPrompt: () => void
+  insertPrompt: (prompt: string) => void
+  clearPendingInsertPrompt: () => void
   requestConfirm: (confirm: ConfirmState) => void
   closeConfirm: () => void
   showToast: (message: string, tone?: ToastState['tone']) => void
@@ -118,6 +121,7 @@ export const useUIStore = create<UIStore>((set) => ({
   edgeContextMenu: null,
   nodeCommand: null,
   pendingPrompt: null,
+  pendingInsertPrompt: null,
   confirm: null,
   toast: null,
   snapToGrid: false,
@@ -169,6 +173,9 @@ export const useUIStore = create<UIStore>((set) => ({
   closeTextEditor: () => set({ textEditorNodeId: null }),
   applyPrompt: (prompt) => set({ pendingPrompt: prompt }),
   clearPendingPrompt: () => set({ pendingPrompt: null }),
+  insertPrompt: (text) =>
+    set({ pendingInsertPrompt: { text, nonce: Date.now() } }),
+  clearPendingInsertPrompt: () => set({ pendingInsertPrompt: null }),
   requestConfirm: (confirm) => set({ confirm }),
   closeConfirm: () => set({ confirm: null }),
   showToast: (message, tone = 'info') => set({ toast: { message, tone } }),

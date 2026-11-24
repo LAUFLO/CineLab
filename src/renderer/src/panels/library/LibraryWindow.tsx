@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   NODE_META,
@@ -28,6 +28,7 @@ import { useUIStore } from '../../stores/ui'
 import { AssetGrid } from './AssetGrid'
 import { FolderTree } from './FolderTree'
 import { NameDialog } from './NameDialog'
+import { StyleFolderGrid, filterStyles } from './StyleFolderGrid'
 import { TemplateDialog } from './TemplateDialog'
 import { TemplateGrid } from './TemplateGrid'
 
@@ -46,6 +47,19 @@ function toOutput(asset: LibraryAsset): OutputRef {
     createdAt: asset.modifiedAt,
     model: '资产库'
   }
+}
+
+function withStyleCount(
+  nodes: LibraryFolderNode[],
+  count: number
+): LibraryFolderNode[] {
+  return nodes
+    .filter((node) => !node.path.startsWith('风格/'))
+    .map((node) => ({
+      ...node,
+      assetCount: node.path === '风格' ? count : node.assetCount,
+      children: withStyleCount(node.children, count)
+    }))
 }
 
 async function addAssetToCanvas(asset: LibraryAsset): Promise<void> {
@@ -123,6 +137,8 @@ export function LibraryWindow() {
   const folder = useLibraryStore((state) => state.folder)
   const assets = useLibraryStore((state) => state.assets)
   const templates = useLibraryStore((state) => state.templates)
+  const styles = useLibraryStore((state) => state.styles)
+  const loadStyles = useLibraryStore((state) => state.loadStyles)
   const loading = useLibraryStore((state) => state.loading)
   const error = useLibraryStore((state) => state.error)
   const pendingAdds = useLibraryStore((state) => state.pendingAdds)
@@ -142,7 +158,7 @@ export function LibraryWindow() {
   const saveTemplate = useLibraryStore((state) => state.saveTemplate)
   const deleteTemplate = useLibraryStore((state) => state.deleteTemplate)
 
-  const applyPrompt = useUIStore((state) => state.applyPrompt)
+  const insertPrompt = useUIStore((state) => state.insertPrompt)
   const showToast = useUIStore((state) => state.showToast)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
 
@@ -171,6 +187,21 @@ export function LibraryWindow() {
   const [concatNarrationVolume, setConcatNarrationVolume] = useState(100)
   const [tagTarget, setTagTarget] = useState<LibraryAsset | null>(null)
   const [tagDraft, setTagDraft] = useState('')
+
+  const isStyleFolder = folder === '风格'
+  const filteredStyles = useMemo(
+    () => filterStyles(styles, query),
+    [styles, query]
+  )
+  const displayTree = useMemo(
+    () => withStyleCount(tree, styles.length),
+    [tree, styles.length]
+  )
+
+  useEffect(() => {
+    if (!open || !isStyleFolder) return
+    void loadStyles()
+  }, [open, isStyleFolder, loadStyles])
 
   if (!open) return null
 
@@ -352,8 +383,8 @@ export function LibraryWindow() {
   }
 
   const handleUseTemplate = (template: PromptTemplate): void => {
-    applyPrompt(template.prompt)
-    showToast(`已套用模板：${template.name}`)
+    insertPrompt(template.prompt)
+    showToast(`已插入模板：${template.name}`)
     close()
   }
 
@@ -426,11 +457,11 @@ export function LibraryWindow() {
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="搜索当前文件夹"
+                placeholder={isStyleFolder ? '搜索风格' : '搜索当前文件夹'}
                 className="!h-auto !w-[180px] !rounded-none !border-0 !bg-transparent !p-0 !text-xs focus:!border-0"
               />
             </div>
-            {mode === 'browse' && !isTemplateFolder ? (
+            {mode === 'browse' && !isTemplateFolder && !isStyleFolder ? (
               <Button
                 variant="secondary"
                 size="xs"
@@ -458,8 +489,9 @@ export function LibraryWindow() {
         <div className="flex min-h-0 flex-1">
           <aside className="flex w-[248px] shrink-0 flex-col border-r border-divider bg-surface-raised">
             <FolderTree
-              tree={tree}
+              tree={displayTree}
               current={folder}
+              readOnly={isStyleFolder}
               onSelect={handleSelectFolder}
               onCreate={handleCreateFolder}
               onRename={(node) =>
@@ -529,7 +561,16 @@ export function LibraryWindow() {
               />
             ) : null}
 
-            {!loading && !isTemplateFolder ? (
+            {!loading && isStyleFolder ? (
+              <>
+                <div className="mb-3 text-[11px] text-fg-subtle">
+                  与画布风格库同源；官方风格只读，自定义风格请在画布提示条中管理。
+                </div>
+                <StyleFolderGrid styles={styles} query={query} />
+              </>
+            ) : null}
+
+            {!loading && !isTemplateFolder && !isStyleFolder ? (
               <AssetGrid
                 assets={assets}
                 query={query}
@@ -581,7 +622,7 @@ export function LibraryWindow() {
               </>
             ) : (
               <>
-                {mode === 'browse' ? (
+                {mode === 'browse' && !isStyleFolder ? (
                   <Button
                     variant="secondary"
                     className="shrink-0 whitespace-nowrap"
@@ -591,16 +632,20 @@ export function LibraryWindow() {
                     上传
                   </Button>
                 ) : null}
-                <Button
-                  variant="secondary"
-                  className="shrink-0 whitespace-nowrap"
-                  onClick={() => handleCreateFolder(folder)}
-                >
-                  <Icon name="folder-plus" size={13} />
-                  新建文件夹
-                </Button>
+                {!isStyleFolder ? (
+                  <Button
+                    variant="secondary"
+                    className="shrink-0 whitespace-nowrap"
+                    onClick={() => handleCreateFolder(folder)}
+                  >
+                    <Icon name="folder-plus" size={13} />
+                    新建文件夹
+                  </Button>
+                ) : null}
                 <span className="ml-1 min-w-0 truncate text-[11px] text-fg-subtle">
-                  {assets.length} 个素材 · {templates.length} 个模板
+                  {isStyleFolder
+                    ? `${filteredStyles.length} 个风格 · 官方 ${styles.filter((style) => style.source === 'official').length} · 自定义 ${styles.filter((style) => style.source === 'user').length}`
+                    : `${assets.length} 个素材 · ${templates.length} 个模板`}
                 </span>
               </>
             )}
@@ -664,7 +709,7 @@ export function LibraryWindow() {
                   variant="primary"
                   className="shrink-0 whitespace-nowrap"
                   onClick={handleConfirmAdd}
-                  disabled={!folder || pendingAdds.length === 0}
+                  disabled={!folder || pendingAdds.length === 0 || isStyleFolder}
                 >
                   加入到这里
                 </Button>

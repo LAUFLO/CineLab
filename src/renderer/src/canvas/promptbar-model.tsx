@@ -1,7 +1,14 @@
 import type { ReactNode } from 'react'
 import type { NodeKind } from '@shared/canvas-schema'
+import type { PromptTemplate } from '@shared/library-schema'
+import {
+  findPresetTokens,
+  type PresetToken
+} from '@shared/prompt-preset'
 import type { ModelDef, ParamDef } from '@shared/provider-schema'
 import type { ReferenceInput } from '@shared/generation'
+import { Icon } from '../components/Icon'
+import { Button } from '../components/ui'
 
 export const WIDTH = 760
 export const HEIGHT = 196
@@ -197,4 +204,67 @@ export function renderMentionText(text: string, names: string[]): ReactNode[] {
       part
     )
   })
+}
+
+/** 统一渲染 @ 引用与预设提示词胶囊；预设保留 # 前缀以维持字符宽度对齐。 */
+export function renderPromptText(
+  text: string,
+  names: string[],
+  templates: PromptTemplate[],
+  onRemovePreset?: (token: PresetToken) => void
+): ReactNode[] {
+  const tokens = findPresetTokens(text, templates)
+  if (tokens.length === 0) return renderMentionText(text, names)
+
+  const nodes: ReactNode[] = []
+  let last = 0
+
+  tokens.forEach((token, index) => {
+    if (token.start > last) {
+      nodes.push(
+        <span key={`text-${index}`}>
+          {renderMentionText(text.slice(last, token.start), names)}
+        </span>
+      )
+    }
+
+    nodes.push(
+      <span
+        key={`preset-${index}`}
+        className="relative inline-block rounded-full text-fg [text-indent:0]"
+      >
+        <span className="invisible">#{token.name}</span>
+        <span className="pointer-events-none absolute -left-[2px] -right-[5px] top-1/2 flex h-6 -translate-y-1/2 items-center gap-px overflow-hidden rounded-full border border-accent/50 bg-accent/10 px-px text-[11px] leading-none text-fg">
+          <Icon name="text" size={8} className="shrink-0 text-accent" />
+          <span className="min-w-0 flex-1 truncate">{token.name}</span>
+          {onRemovePreset ? (
+            <Button
+              type="button"
+              unstyled
+              aria-label={`移除预设 ${token.name}`}
+              className="pointer-events-auto flex h-3 w-2.5 shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-surface-hover hover:text-fg"
+              onPointerDown={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                onRemovePreset(token)
+              }}
+            >
+              <Icon name="close" size={8} />
+            </Button>
+          ) : null}
+        </span>
+      </span>
+    )
+    last = token.end
+  })
+
+  if (last < text.length) {
+    nodes.push(
+      <span key="text-tail">
+        {renderMentionText(text.slice(last), names)}
+      </span>
+    )
+  }
+
+  return nodes
 }

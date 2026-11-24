@@ -45,6 +45,15 @@
     "source": "official"
   },
   {
+    "id": "wong-kar-wai",
+    "name": "王家卫",
+    "category": "电影感",
+    "cover": "covers/wong-kar-wai.webp",
+    "prompt": "王家卫式电影感，霓虹招牌的饱和红绿与琥珀色，湿镜面强反射，浅景深特写，抽帧与慢门拖影，暗部浓郁，玻璃与镜中倒影，都市夜色的浪漫忧郁。",
+    "version": 1,
+    "source": "official"
+  },
+  {
     "id": "japanese-anime",
     "name": "日系动画",
     "category": "动画与手绘",
@@ -86,6 +95,33 @@
     "category": "动画与手绘",
     "cover": "covers/watercolor-handdrawn.webp",
     "prompt": "手绘水彩，明显纸纹，湿画法颜料晕染，边缘自然渗开，低饱和莫兰迪色，大量留白。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "pixar",
+    "name": "皮克斯",
+    "category": "动画与手绘",
+    "cover": "covers/pixar.webp",
+    "prompt": "皮克斯式 3D 动画，圆润夸张的角色造型与大眼睛，柔和全局光照，温暖棚拍布光，细腻毛发与布料材质，色彩明快饱和，电影级景深。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "miyazaki",
+    "name": "宫崎骏",
+    "category": "动画与手绘",
+    "cover": "covers/miyazaki.webp",
+    "prompt": "宫崎骏式手绘动画，赛璐璐人物配水彩背景，纸张纹理与颜料晕染，积云天空与阳光草甸，自然光空气透视，色彩温暖克制，安静的生活感。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "shinkai",
+    "name": "新海诚",
+    "category": "动画与手绘",
+    "cover": "covers/shinkai.webp",
+    "prompt": "新海诚式动画，近乎摄影级的精细背景，层积云天空与青蓝橙渐变，逆光眩光与体积光，雨滴湿地面，电线杆与玻璃反射，青春都市的透明光感。",
     "version": 1,
     "source": "official"
   },
@@ -266,6 +302,15 @@
     "category": "国风与东方",
     "cover": "covers/ukiyo-e.webp",
     "prompt": "浮世绘，木刻线条清晰，平涂色块，靛蓝与米色主调，波浪与云纹装饰，线条稳定，印刷颗粒。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "bamboo-swordsman",
+    "name": "竹林侠影",
+    "category": "国风与东方",
+    "cover": "covers/bamboo-swordsman.webp",
+    "prompt": "卧虎藏龙式实拍武侠，青翠竹海与月下冷青，低反差胶片与柔和中间调，米白衣袂在竹梢轻盈对峙，前景竹叶摇曳遮挡，薄雾与自然柔光，东方留白构图，诗意克制。",
     "version": 1,
     "source": "official"
   }

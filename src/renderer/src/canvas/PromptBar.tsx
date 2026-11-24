@@ -1,9 +1,11 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ChangeEvent,
+  type CSSProperties,
   type ReactNode
 } from 'react'
 import { createPortal } from 'react-dom'
@@ -60,7 +62,11 @@ import { ParamPanel } from './promptbar/ParamPanel'
 import { UploadMenu } from './promptbar/UploadMenu'
 import { MaskEditorDialog } from './nodes/MaskEditorDialog'
 import { StyleLibraryDialog } from './StyleLibraryDialog'
+import { PresetPromptDialog } from './PresetPromptDialog'
 import { buildStyledPrompt } from '@shared/style-prompt'
+import { expandPresetTokens, findPresetTokens } from '@shared/prompt-preset'
+import type { PresetToken } from '@shared/prompt-preset'
+import type { PromptTemplate } from '@shared/library-schema'
 import type { StyleCard } from '@shared/style-schema'
 
 import {
@@ -83,7 +89,7 @@ import {
   MENTION_GROUPS,
   escapeRegExp,
   matchTitleSpans,
-  renderMentionText
+  renderPromptText
 } from './promptbar-model'
 
 interface ModeSlotView {
@@ -118,9 +124,9 @@ const SLOT_REMOVE_CLASS =
   'absolute right-0.5 top-0.5 z-[3] !flex h-3 w-3 items-center justify-center !rounded-full border border-border bg-surface p-0 !font-normal text-fg-muted hover:!border-danger hover:!bg-danger hover:!text-media-text'
 
 const MIRROR_CLASS =
-  'pointer-events-none absolute inset-0 h-full w-full overflow-hidden whitespace-pre-wrap break-words bg-transparent px-1.5 py-2 text-sm leading-5 text-fg [word-break:break-word]'
+  'pointer-events-none absolute inset-0 h-full w-full overflow-hidden whitespace-pre-wrap break-words bg-transparent px-1.5 py-2 text-sm leading-5 text-fg [word-break:break-word] [text-indent:var(--style-indent,0px)]'
 const INPUT_CLASS =
-  'absolute inset-0 h-full w-full !min-h-0 !resize-none !rounded-none !border-0 !bg-transparent !px-1.5 py-2 !text-transparent caret-fg text-sm leading-5 outline-none overflow-y-auto placeholder:text-fg-subtle'
+  'absolute inset-0 h-full w-full !min-h-0 !resize-none !rounded-none !border-0 !bg-transparent !px-1.5 py-2 !text-transparent caret-fg text-sm leading-5 outline-none overflow-y-auto placeholder:text-fg-subtle [text-indent:var(--style-indent,0px)]'
 
 const SEND_CLASS = '!rounded-full'
 const SEND_IDLE_CLASS = 'bg-surface-hover !text-fg-subtle'
@@ -160,6 +166,11 @@ export function PromptBar() {
   )
   const pendingPrompt = useUIStore((state) => state.pendingPrompt)
   const clearPendingPrompt = useUIStore((state) => state.clearPendingPrompt)
+  const pendingInsertPrompt = useUIStore((state) => state.pendingInsertPrompt)
+  const clearPendingInsertPrompt = useUIStore(
+    (state) => state.clearPendingInsertPrompt
+  )
+  const templates = useLibraryStore((state) => state.templates)
 
   const runGeneration = useGenerationStore((state) => state.run)
   const cancelGeneration = useGenerationStore((state) => state.cancel)
@@ -191,7 +202,9 @@ export function PromptBar() {
   const [expanded, setExpanded] = useState(false)
   const [uploadMenuOpen, setUploadMenuOpen] = useState(false)
   const [styleOpen, setStyleOpen] = useState(false)
+  const [presetOpen, setPresetOpen] = useState(false)
   const [selectedStyle, setSelectedStyle] = useState<StyleCard | null>(null)
+  const [styleChipWidth, setStyleChipWidth] = useState(0)
   const [mentionOpen, setMentionOpen] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
   const [mentionStart, setMentionStart] = useState<number | null>(null)
@@ -214,7 +227,17 @@ export function PromptBar() {
   const promptSaveTimer = useRef<number | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const mirrorRef = useRef<HTMLDivElement>(null)
+  const styleChipRef = useRef<HTMLSpanElement>(null)
+  const presetCursorRef = useRef<number | null>(null)
   const showToast = useUIStore((state) => state.showToast)
+
+  useLayoutEffect(() => {
+    if (!selectedStyle) {
+      setStyleChipWidth(0)
+      return
+    }
+    setStyleChipWidth(styleChipRef.current?.offsetWidth ?? 0)
+  }, [selectedStyle])
 
   const selectedNodes = nodes.filter((item) => item.selected)
   const single = selectedNodes.length === 1 ? selectedNodes[0] : undefined
@@ -683,6 +706,95 @@ export function PromptBar() {
     setInputMode(null)
     useCanvasStore.getState().patchNodeData(node.id, { inputMode: undefined })
   }, [active?.key, inputMode, node?.id])
+
+  // 预设提示词插入与资产库待插入消费
+  const updatePromptText = (value: string): void => {
+    setPromptText(value)
+    promptRef.current = value
+
+    const id = node?.id
+    if (!id) return
+    if (promptSaveTimer.current) window.clearTimeout(promptSaveTimer.current)
+    promptSaveTimer.current = window.setTimeout(() => {
+      promptSaveTimer.current = null
+      useCanvasStore.getState().patchNodeData(id, { prompt: value })
+    }, 350)
+  }
+
+  const presetTokens = findPresetTokens(promptText, templates)
+
+  const insertIntoPrompt = (text: string): number => {
+    const textarea = inputRef.current
+    const focused = document.activeElement === textarea
+    const current = promptRef.current
+    const fallback = presetCursorRef.current ?? current.length
+    const start = focused && textarea ? textarea.selectionStart : fallback
+    const end = focused && textarea ? textarea.selectionEnd : start
+    const before = current.slice(0, start)
+    const after = current.slice(end)
+    const prefix = before && !/[\s\n]$/.test(before) ? ' ' : ''
+    const suffix = after && !/^[\s\n]/.test(after) ? ' ' : ''
+    const inserted = `${prefix}${text}${suffix}`
+    const next = before + inserted + after
+    const cursor = start + inserted.length
+
+    presetCursorRef.current = cursor
+    updatePromptText(next)
+    return cursor
+  }
+
+  const insertPresetToken = (template: PromptTemplate): void => {
+    insertIntoPrompt(`#${template.name}`)
+  }
+
+  const removePresetToken = (token: PresetToken): void => {
+    const start =
+      promptText[token.start - 1] === ' ' ? token.start - 1 : token.start
+    const end =
+      start === token.start && promptText[token.end] === ' '
+        ? token.end + 1
+        : token.end
+
+    updatePromptText(promptText.slice(0, start) + promptText.slice(end))
+    presetCursorRef.current = start
+    requestAnimationFrame(() => {
+      const textarea = inputRef.current
+      textarea?.focus()
+      textarea?.setSelectionRange(start, start)
+    })
+  }
+
+  const closePresetDialog = (): void => {
+    setPresetOpen(false)
+    requestAnimationFrame(() => {
+      const textarea = inputRef.current
+      textarea?.focus()
+      const cursor = presetCursorRef.current ?? promptRef.current.length
+      textarea?.setSelectionRange(cursor, cursor)
+    })
+  }
+
+  const openPresetDialog = (): void => {
+    const textarea = inputRef.current
+    if (textarea) {
+      const active = document.activeElement === textarea
+      if (active || textarea.selectionStart > 0) {
+        presetCursorRef.current = textarea.selectionStart
+      }
+    }
+    setPresetOpen(true)
+  }
+
+  useEffect(() => {
+    if (!pendingInsertPrompt) return
+    const cursor = insertIntoPrompt(pendingInsertPrompt.text)
+    clearPendingInsertPrompt()
+    requestAnimationFrame(() => {
+      const textarea = inputRef.current
+      textarea?.focus()
+      textarea?.setSelectionRange(cursor, cursor)
+    })
+  }, [pendingInsertPrompt, clearPendingInsertPrompt])
 
   if (!node || !layout) return null
 
@@ -1392,19 +1504,6 @@ export function PromptBar() {
   const inputLabel = (inputs: MediaInput[]): string =>
     inputs.map((input) => MEDIA_INPUT_LABEL[input]).join('、')
 
-  const updatePromptText = (value: string): void => {
-    setPromptText(value)
-    promptRef.current = value
-
-    const id = node?.id
-    if (!id) return
-    if (promptSaveTimer.current) window.clearTimeout(promptSaveTimer.current)
-    promptSaveTimer.current = window.setTimeout(() => {
-      promptSaveTimer.current = null
-      useCanvasStore.getState().patchNodeData(id, { prompt: value })
-    }, 350)
-  }
-
   const refKey = (ref: Pick<ReferenceInput, 'path' | 'scope'>): string =>
     `${ref.scope ?? 'project'}:${ref.path}`
 
@@ -1657,7 +1756,10 @@ export function PromptBar() {
       nodeId: node.id,
       modelKey: active.key,
       prompt: buildStyledPrompt(
-        buildPromptWithContext(promptText.trim(), textContexts),
+        expandPresetTokens(
+          buildPromptWithContext(promptText.trim(), textContexts),
+          templates
+        ),
         selectedStyle
       ),
       params: { ...values, watermark },
@@ -1802,6 +1904,18 @@ export function PromptBar() {
             <Icon name="sparkles" size={13} />
             风格库
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="none"
+            className={`${TOOL_CLASS} ${
+              presetTokens.length > 0 ? TOOL_ACTIVE_CLASS : ''
+            }`}
+            onClick={openPresetDialog}
+          >
+            <Icon name="text" size={13} />
+            预设提示词
+          </Button>
           <div className="flex-1" />
           {autoRefs.length > 0 ? (
             <span
@@ -1821,23 +1935,6 @@ export function PromptBar() {
             <Icon name="expand" size={13} />
           </IconButton>
         </div>
-
-        {selectedStyle ? (
-          <div className="flex shrink-0 items-center gap-1.5 px-2.5 pt-2">
-            <span className="inline-flex h-6 max-w-[220px] items-center gap-1.5 rounded-full border border-accent/50 bg-accent/10 px-2 text-[11px] text-fg">
-              <Icon name="sparkles" size={10} />
-              <span className="truncate">{selectedStyle.name}</span>
-              <IconButton
-                label="移除风格"
-                size="xs"
-                className="h-4 w-4"
-                onClick={() => setSelectedStyle(null)}
-              >
-                <Icon name="close" size={9} />
-              </IconButton>
-            </span>
-          </div>
-        ) : null}
 
         {textSlots.length > 0 || modeSlots.length > 0 ? (
           <div
@@ -2057,9 +2154,21 @@ export function PromptBar() {
           ref={mentionRef}
           data-promptbar-input
           className={`relative flex-1 ${expanded ? 'min-h-[200px]' : 'min-h-0'}`}
+          style={
+            {
+              '--style-indent': selectedStyle
+                ? `${styleChipWidth + 6}px`
+                : '0px'
+            } as CSSProperties
+          }
         >
           <div className={MIRROR_CLASS} ref={mirrorRef} aria-hidden>
-            {renderMentionText(promptText, mentionNames)}
+            {renderPromptText(
+              promptText,
+              mentionNames,
+              templates,
+              removePresetToken
+            )}
             {'\u200b'}
           </div>
 
@@ -2075,7 +2184,45 @@ export function PromptBar() {
                 mirrorRef.current.scrollTop = event.currentTarget.scrollTop
               }
             }}
+            onSelect={(event) => {
+              presetCursorRef.current = event.currentTarget.selectionStart
+            }}
+            onFocus={(event) => {
+              presetCursorRef.current = event.currentTarget.selectionStart
+            }}
             onKeyDown={(event) => {
+              if (
+                (event.key === 'Backspace' || event.key === 'Delete') &&
+                !event.nativeEvent.isComposing
+              ) {
+                const textarea = event.currentTarget
+                if (textarea.selectionStart === textarea.selectionEnd) {
+                  const position = textarea.selectionStart
+                  const hit = presetTokens.find((token) =>
+                    event.key === 'Backspace'
+                      ? position > token.start && position <= token.end
+                      : position >= token.start && position < token.end
+                  )
+                  if (hit) {
+                    event.preventDefault()
+                    const start =
+                      promptText[hit.start - 1] === ' ' ? hit.start - 1 : hit.start
+                    const end =
+                      start === hit.start && promptText[hit.end] === ' '
+                        ? hit.end + 1
+                        : hit.end
+                    updatePromptText(
+                      promptText.slice(0, start) + promptText.slice(end)
+                    )
+                    presetCursorRef.current = start
+                    requestAnimationFrame(() => {
+                      textarea.setSelectionRange(start, start)
+                    })
+                    return
+                  }
+                }
+              }
+
               if (mentionOpen) {
                 if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                   if (flatMentions.length === 0) return
@@ -2119,6 +2266,24 @@ export function PromptBar() {
               }
             }}
           />
+
+          {selectedStyle ? (
+            <span
+              ref={styleChipRef}
+              className="absolute left-1.5 top-2 z-[2] inline-flex h-5 max-w-[180px] items-center gap-1 rounded-full border border-accent/50 bg-accent/10 px-2 text-[11px] text-fg"
+            >
+              <Icon name="sparkles" size={10} />
+              <span className="truncate">{selectedStyle.name}</span>
+              <IconButton
+                label="移除风格"
+                size="xs"
+                className="h-4 w-4"
+                onClick={() => setSelectedStyle(null)}
+              >
+                <Icon name="close" size={9} />
+              </IconButton>
+            </span>
+          ) : null}
 
           <MentionMenu
             open={mentionOpen}
@@ -2399,6 +2564,13 @@ export function PromptBar() {
         open={styleOpen}
         onClose={() => setStyleOpen(false)}
         onSelect={setSelectedStyle}
+      />
+
+      <PresetPromptDialog
+        open={presetOpen}
+        kind={kind}
+        onClose={closePresetDialog}
+        onInsert={insertPresetToken}
       />
 
       <MaskEditorDialog

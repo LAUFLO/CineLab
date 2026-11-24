@@ -58,6 +58,7 @@
 |---|---|
 | 新增/删除文件、导出符号 | 运行 `corepack pnpm map:code`（自动更新 AUTO 区与 `_generated.md`） |
 | 能力状态变化 | 改对应模块文档的「当前状态」和 [08-capabilities.md](08-capabilities.md) |
+| 新增或修改 Agent 工具 | 在 `src/main/agent/tools/` 登记并补 `mcp` 元数据与执行 handler，运行 `corepack pnpm check:agent-coverage` |
 | 新增模块 | 在 `scripts/gen-code-map.mjs` 的 `MODULES` 登记，并创建 `docs/code-map/NN-xxx.md` |
 | 方案完成 | 方案文档标「已实施」，按 `docs/README.md` 约定移入 `docs/archive/` |
 

@@ -18,8 +18,13 @@
 - [ ] `corepack pnpm test:coverage`
 - [ ] `corepack pnpm check:docs`
 - [ ] `corepack pnpm check:ui`
+- [ ] `corepack pnpm check:agent-coverage`
 - [ ] `corepack pnpm build`
 - [ ] `corepack pnpm audit --prod --audit-level high` (dependency changes)
+
+## Agent capability
+
+- [ ] 新功能已评估 Agent 能力（登记工具或写入 `agent-coverage-exempt.json`）
 
 ## Documentation impact
 

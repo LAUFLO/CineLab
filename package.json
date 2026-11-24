@@ -25,6 +25,7 @@
     "map:code": "node scripts/gen-code-map.mjs",
     "map:skill": "node scripts/check-model-skill.mjs --update",
     "check:ui": "node scripts/check-ui.mjs",
+    "check:agent-coverage": "node scripts/check-agent-coverage.mjs",
     "notify:release": "node scripts/notify-feishu.mjs",
     "models:check": "node scripts/models-check.mjs",
     "dist": "electron-vite build && electron-builder",

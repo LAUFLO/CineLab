@@ -82,6 +82,7 @@ corepack pnpm dist:mac     # 打包 macOS 安装包（需在 macOS 上运行）
 - 存储用 JSON / JSONL，不引入 SQLite 或原生模块。
 - 弹窗必须与 topbar 平级，禁止渲染在 topbar 内部（会被层叠上下文压住，且顶部 40px 是窗口拖拽区）。
 - 每次发版必须同步更新 `README.md` 与 `README.en.md`：当前版本、下载文件名、核心能力，并检查中英文结构与链接一致。
+- 新增功能必须评估 Agent 能力：开放则在 `src/main/agent/tools/` 登记并补 `mcp` 元数据与执行 handler；不开放则在 `agent-coverage-exempt.json` 写明理由。提交前运行 `corepack pnpm check:agent-coverage`。
 
 ## 已知环境注意事项
 

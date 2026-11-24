@@ -535,6 +535,23 @@ export function LibraryWindow() {
                   </span>
                 )
               })}
+              {isTemplateFolder ? (
+                <>
+                  <div className="flex-1" />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="shrink-0 whitespace-nowrap"
+                    onClick={() =>
+                      setTemplateDialog({ name: '', kind: 'image', prompt: '' })
+                    }
+                  >
+                    <Icon name="plus" size={12} />
+                    新建提示词
+                  </Button>
+                </>
+              ) : null}
             </div>
 
             {error ? (
@@ -555,9 +572,6 @@ export function LibraryWindow() {
                 onUse={handleUseTemplate}
                 onEdit={(template) => setTemplateDialog(template)}
                 onDelete={handleDeleteTemplate}
-                onCreate={() =>
-                  setTemplateDialog({ name: '', kind: 'image', prompt: '' })
-                }
               />
             ) : null}
 

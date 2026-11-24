@@ -73,6 +73,12 @@ export interface Preferences {
     proxyUrl: string
     /** 单次模型请求超时（毫秒） */
     requestTimeout: number
+  },
+  mcp: {
+    /** 启动时开启 MCP server，供外部 Agent 连接 */
+    enabled: boolean
+    /** 只读模式：写工具直接拒绝，不弹确认框 */
+    readOnly: boolean
   }
 }
 
@@ -136,6 +142,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
     proxyMode: 'direct',
     proxyUrl: '',
     requestTimeout: 120000
+  },
+  mcp: {
+    enabled: true,
+    readOnly: false
   }
 }
 
@@ -191,6 +201,7 @@ export function normalizePreferences(input: unknown): Preferences {
   const storage = isRecord(raw.storage) ? raw.storage : {}
   const ui = isRecord(raw.ui) ? raw.ui : {}
   const network = isRecord(raw.network) ? raw.network : {}
+  const mcp = isRecord(raw.mcp) ? raw.mcp : {}
   const shortcuts = isRecord(raw.shortcuts) ? raw.shortcuts : {}
   const shortcutBindingsRaw = isRecord(shortcuts.bindings)
     ? shortcuts.bindings
@@ -345,6 +356,10 @@ export function normalizePreferences(input: unknown): Preferences {
         REQUEST_TIMEOUTS,
         DEFAULT_PREFERENCES.network.requestTimeout
       )
+    },
+    mcp: {
+      enabled: readBoolean(mcp.enabled, DEFAULT_PREFERENCES.mcp.enabled),
+      readOnly: readBoolean(mcp.readOnly, DEFAULT_PREFERENCES.mcp.readOnly)
     }
   }
 }

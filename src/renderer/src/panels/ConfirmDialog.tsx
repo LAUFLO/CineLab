@@ -46,7 +46,7 @@ export function ConfirmDialog() {
       onClose={() => void handleCancel()}
       bare
       ariaLabel={confirm.title}
-      overlayClassName="fixed inset-0 z-[300] flex items-center justify-center bg-overlay p-6"
+      overlayClassName="fixed inset-0 z-[1200] flex items-center justify-center bg-overlay p-6"
       panelClassName={`w-[min(420px,100%)] ${DIALOG_PANEL}`}
     >
       <div className="mb-2.5 text-[16px] text-fg">{confirm.title}</div>

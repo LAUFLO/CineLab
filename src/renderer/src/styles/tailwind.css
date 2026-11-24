@@ -25,6 +25,7 @@
   --color-switch-knob: var(--switch-knob);
   --color-link: var(--link);
   --color-success: var(--success);
+  --color-preset: var(--preset);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
 

@@ -234,25 +234,24 @@ export function renderPromptText(
         className="relative inline-block rounded-full text-fg [text-indent:0]"
       >
         <span className="invisible">#{token.name}</span>
-        <span className="pointer-events-none absolute -left-[2px] -right-[5px] top-1/2 flex h-6 -translate-y-1/2 items-center gap-px overflow-hidden rounded-full border border-accent/50 bg-accent/10 px-px text-[11px] leading-none text-fg">
-          <Icon name="text" size={8} className="shrink-0 text-accent" />
+        <span className="pointer-events-none absolute left-0 right-0 top-1/2 flex h-[22px] -translate-y-1/2 items-center overflow-hidden rounded-full border border-preset/50 bg-preset/10 pl-[6px] pr-1 text-[11px] leading-none text-fg">
           <span className="min-w-0 flex-1 truncate">{token.name}</span>
-          {onRemovePreset ? (
-            <Button
-              type="button"
-              unstyled
-              aria-label={`移除预设 ${token.name}`}
-              className="pointer-events-auto flex h-3 w-2.5 shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-surface-hover hover:text-fg"
-              onPointerDown={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                onRemovePreset(token)
-              }}
-            >
-              <Icon name="close" size={8} />
-            </Button>
-          ) : null}
         </span>
+        {onRemovePreset ? (
+          <Button
+            type="button"
+            unstyled
+            aria-label={`移除预设 ${token.name}`}
+            className="pointer-events-auto absolute -right-1 -top-1 z-[1] flex h-3 w-3 items-center justify-center rounded-full border border-border bg-surface text-fg-muted hover:border-danger hover:text-danger"
+            onPointerDown={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              onRemovePreset(token)
+            }}
+          >
+            <Icon name="close" size={7} />
+          </Button>
+        ) : null}
       </span>
     )
     last = token.end

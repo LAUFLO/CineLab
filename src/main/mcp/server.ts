@@ -8,6 +8,8 @@ import { log } from '../logger'
 import {
   createMcpToken,
   readMcpConfig,
+  mcpConfigPath,
+  type McpServerConfig,
   removeMcpConfigSync,
   writeMcpConfig
 } from './config'
@@ -184,6 +186,46 @@ export async function stopMcpServer(): Promise<void> {
   }
 }
 
-export function mcpStatus(): { running: boolean; url?: string } {
-  return httpServer ? { running: true, url } : { running: false }
+export interface McpServerStatus {
+  running: boolean
+  url?: string
+  configPath: string
+  serverVersion: string
+}
+
+export function mcpStatus(): McpServerStatus {
+  return {
+    running: Boolean(httpServer),
+    ...(httpServer ? { url } : {}),
+    configPath: mcpConfigPath(),
+    serverVersion: app.getVersion()
+  }
+}
+
+export async function mcpConfigSnapshot(): Promise<McpServerConfig | null> {
+  return readMcpConfig()
+}
+
+/** 生成新 token 并让旧 token 立即失效；已连接的会话会断开。 */
+export async function resetMcpToken(): Promise<string> {
+  token = createMcpToken()
+
+  const config = await readMcpConfig()
+  if (config) {
+    await writeMcpConfig({
+      ...config,
+      token,
+      serverVersion: app.getVersion(),
+      startedAt: new Date().toISOString()
+    })
+  }
+
+  const currentSessions = [...sessions.values()]
+  sessions.clear()
+  for (const session of currentSessions) {
+    await session.transport.close().catch(() => undefined)
+    await session.server.close().catch(() => undefined)
+  }
+
+  return token
 }

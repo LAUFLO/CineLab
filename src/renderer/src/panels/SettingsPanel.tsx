@@ -35,6 +35,7 @@ import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
 import { GeneralSettingsSection } from './GeneralSettingsSection'
 import { SkillsSection } from './SkillsSection'
+import { McpSettingsSection } from './McpSettingsSection'
 import { ShortcutsSettingsSection } from './ShortcutsSettingsSection'
 import { ObjectPresetsSection } from './ObjectPresetsSection'
 import { ModelConfigDialog } from '../canvas/nodes/ModelConfigDialog'
@@ -54,6 +55,7 @@ type SectionId =
   | 'generation'
   | 'models'
   | 'skills'
+  | 'mcp'
   | 'storage'
   | 'shortcuts'
   | 'about'
@@ -85,6 +87,7 @@ const SECTIONS: SectionDef[] = [
   { id: 'generation', label: '创作与生成', icon: 'image' },
   { id: 'models', label: '模型与运行时', icon: 'robot' },
   { id: 'skills', label: '技能', icon: 'sparkles' },
+  { id: 'mcp', label: 'MCP', icon: 'link' },
   { id: 'storage', label: '资产与存储', icon: 'library' },
   { id: 'shortcuts', label: '快捷键', icon: 'help' },
   { id: 'about', label: '关于与更新', icon: 'logo' }
@@ -1670,6 +1673,7 @@ export function SettingsPanel() {
             ) : null}
             {active === 'models' ? <ModelsSection /> : null}
             {active === 'skills' ? <SkillsSection /> : null}
+            {active === 'mcp' ? <McpSettingsSection /> : null}
             {active === 'storage' ? (
               <>
                 <LibrarySection />

@@ -170,7 +170,12 @@ const api: CineApi = {
       return () => ipcRenderer.removeListener('mcp:command', listener)
     },
     sendResult: (result: McpWriteResult) =>
-      ipcRenderer.send('mcp:command-result', result)
+      ipcRenderer.send('mcp:command-result', result),
+    status: () => ipcRenderer.invoke('mcp:status'),
+    config: () => ipcRenderer.invoke('mcp:config'),
+    resetToken: () => ipcRenderer.invoke('mcp:reset-token'),
+    revealConfig: () => ipcRenderer.invoke('mcp:reveal-config'),
+    copy: (text: string) => ipcRenderer.invoke('mcp:copy', text)
   },
   generate: {
     run: (request: GenerateRequest) => ipcRenderer.invoke('generate:run', request),

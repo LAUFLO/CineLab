@@ -21,6 +21,7 @@ export type IconName =
   | 'maximize'
   | 'expand'
   | 'close'
+  | 'eye'
   | 'image'
   | 'video'
   | 'audio'
@@ -130,6 +131,12 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   close: <path d="M6 6l12 12M18 6 6 18" />,
+  eye: (
+    <>
+      <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="2.4" />
+    </>
+  ),
   image: (
     <>
       <rect x="3.5" y="4.5" width="17" height="15" rx="2" />

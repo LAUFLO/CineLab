@@ -46,6 +46,7 @@
 | 06 | MCP 项目/适配器/工作台打开等 8 个专属工具 | `src/main/mcp/exclusive-tools.ts`、`src/main/mcp/write-runner.ts` |
 | 06 | MCP 写工具与生成提交（应用内确认、只读模式） | `src/main/mcp/write-runner.ts`、`src/renderer/src/mcp/commandBridge.ts` |
 | 06 | MCP 独立 scope：`allowAnyNode` 不依赖画布选中节点 | `src/shared/agent.ts`、`src/renderer/src/mcp/commandBridge.ts` |
+| 06 | 四个 bridge 改为 handler 表，`call.name ===` 工具分支清零 | `src/renderer/src/agent/canvasBridge.ts`、`timelineBridge.ts`、`stageBridge.ts`、`filmBridge.ts` |
 | 06 | MCP 时间线/导演台/拉片工具复用 CineBot 执行器 | `src/main/mcp/auto-tools.ts`、`src/renderer/src/agent/timelineBridge.ts`、`stageBridge.ts`、`filmBridge.ts` |
 | 07 | IPC、preload、设置、素材库、安全、更新 | `src/main/ipc/`、`src/preload/` |
 | 07 | 模型配置弹窗保存直接写入 models.json；Agent pending 自动应用 | `SettingsPanel.tsx`、`src/main/settings/models-watch.ts` |

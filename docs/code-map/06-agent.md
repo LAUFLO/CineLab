@@ -106,10 +106,10 @@ CineBot 会话、工具注册与执行、生成提案、技能、能力审计。
 |---|---|
 | `AgentPanel.tsx` | 对话、工具状态、提案卡片 |
 | `agentStore.ts` | 消息、会话、提案、工具调用的前端状态 |
-| `canvasBridge.ts` | 画布工具落到 canvas store |
-| `filmBridge.ts` | 拉片工具落到 film-study store |
-| `stageBridge.ts` | 导演台工具落到 stage store |
-| `timelineBridge.ts` | 时间线工具落到 timeline store |
+| `canvasBridge.ts` | 画布工具落到 canvas store，内部用 handler 表分发 |
+| `filmBridge.ts` | 拉片工具落到 film-study store，内部用 handler 表分发 |
+| `stageBridge.ts` | 导演台工具落到 stage store，内部用 handler 表分发 |
+| `timelineBridge.ts` | 时间线工具落到 timeline store，内部用 handler 表分发 |
 
 ## 数据流
 
@@ -209,16 +209,16 @@ AgentPanel
 | `src/main/mcp/write-runner.ts` | 135 |
 | `src/renderer/src/agent/AgentPanel.tsx` | 1277 |
 | `src/renderer/src/agent/agentStore.ts` | 1224 |
-| `src/renderer/src/agent/canvasBridge.ts` | 1167 |
-| `src/renderer/src/agent/filmBridge.ts` | 747 |
+| `src/renderer/src/agent/canvasBridge.ts` | 1183 |
+| `src/renderer/src/agent/filmBridge.ts` | 763 |
 | `src/renderer/src/agent/panel/ContextRing.tsx` | 55 |
 | `src/renderer/src/agent/panel/MessageActions.tsx` | 31 |
 | `src/renderer/src/agent/panel/MessageBubble.tsx` | 38 |
 | `src/renderer/src/agent/panel/ProposalCard.tsx` | 162 |
 | `src/renderer/src/agent/panel/ThoughtGroup.tsx` | 77 |
 | `src/renderer/src/agent/panel/utils.tsx` | 146 |
-| `src/renderer/src/agent/stageBridge.ts` | 955 |
-| `src/renderer/src/agent/timelineBridge.ts` | 1080 |
+| `src/renderer/src/agent/stageBridge.ts` | 939 |
+| `src/renderer/src/agent/timelineBridge.ts` | 1064 |
 | `src/renderer/src/mcp/commandBridge.ts` | 185 |
 | `src/shared/agent-proposal.ts` | 140 |
 | `src/shared/agent-tools.ts` | 85 |

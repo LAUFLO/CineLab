@@ -26,6 +26,8 @@ import { listAllAssets } from '../library/store'
 import { listProviders } from '../settings/store'
 import { AGENT_CAPABILITIES } from './capabilities/registry'
 import { listSkills, readSkill } from './skills'
+import { listTemplates } from '../library/templates'
+import { listStyles } from '../library/styles'
 
 export interface MainToolResult {
   ok: boolean
@@ -174,6 +176,96 @@ export async function executeMainTool(
       typeof call.args.kind === 'string' ? call.args.kind : undefined,
       typeof call.args.limit === 'number' ? call.args.limit : 20
     )
+  }
+
+  if (call.name === 'preset_list' || call.name === 'preset_search') {
+    const kind =
+      typeof call.args.kind === 'string' ? call.args.kind : undefined
+    const query =
+      typeof call.args.query === 'string'
+        ? call.args.query.trim().toLowerCase()
+        : ''
+    const limit =
+      typeof call.args.limit === 'number' ? call.args.limit : 50
+    let templates = await listTemplates()
+    if (kind) templates = templates.filter((item) => item.kind === kind)
+    if (query) {
+      templates = templates.filter(
+        (item) =>
+          item.name.toLowerCase().includes(query) ||
+          item.prompt.toLowerCase().includes(query)
+      )
+    }
+    const max = Math.max(1, Math.min(100, limit))
+    return {
+      ok: true,
+      result: {
+        templates: templates.slice(0, max).map((item) => ({
+          id: item.id,
+          name: item.name,
+          kind: item.kind,
+          updatedAt: item.updatedAt,
+          preview:
+            item.prompt.length > 200
+              ? `${item.prompt.slice(0, 200)}…`
+              : item.prompt
+        })),
+        total: templates.length
+      }
+    }
+  }
+
+  if (call.name === 'preset_read') {
+    const id = String(call.args.id ?? '').trim()
+    const templates = await listTemplates()
+    const template = templates.find((item) => item.id === id)
+    if (!template) return { ok: false, error: '找不到这个提示词模板' }
+    return { ok: true, result: template }
+  }
+
+  if (call.name === 'style_list' || call.name === 'style_search') {
+    const category =
+      typeof call.args.category === 'string'
+        ? call.args.category.trim()
+        : undefined
+    const query =
+      typeof call.args.query === 'string'
+        ? call.args.query.trim().toLowerCase()
+        : ''
+    const limit =
+      typeof call.args.limit === 'number' ? call.args.limit : 50
+    let styles = await listStyles()
+    if (category) styles = styles.filter((item) => item.category === category)
+    if (query) {
+      styles = styles.filter(
+        (item) =>
+          item.name.toLowerCase().includes(query) ||
+          item.category.toLowerCase().includes(query) ||
+          item.prompt.toLowerCase().includes(query)
+      )
+    }
+    const max = Math.max(1, Math.min(100, limit))
+    return {
+      ok: true,
+      result: {
+        styles: styles.slice(0, max).map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          source: item.source,
+          prompt: item.prompt
+        })),
+        total: styles.length
+      }
+    }
+  }
+
+  if (call.name === 'style_read') {
+    const id = String(call.args.id ?? '').trim()
+    const styles = await listStyles()
+    const style = styles.find((item) => item.id === id)
+    if (!style) return { ok: false, error: '找不到这个风格' }
+    return { ok: true, result: style }
   }
 
   if (call.name === 'capability_search') {

@@ -84,7 +84,13 @@ describe('pi tool adapter', () => {
         'capability_search',
         'skill_list',
         'skill_read',
-        'stage_capabilities'
+        'stage_capabilities',
+        'preset_list',
+        'preset_search',
+        'preset_read',
+        'style_list',
+        'style_search',
+        'style_read'
       ])
     )
   })

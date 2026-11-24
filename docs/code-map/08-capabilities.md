@@ -47,6 +47,7 @@
 | 06 | MCP 写工具与生成提交（应用内确认、只读模式） | `src/main/mcp/write-runner.ts`、`src/renderer/src/mcp/commandBridge.ts` |
 | 06 | MCP 独立 scope：`allowAnyNode` 不依赖画布选中节点 | `src/shared/agent.ts`、`src/renderer/src/mcp/commandBridge.ts` |
 | 06 | 四个 bridge 改为 handler 表，`call.name ===` 工具分支清零 | `src/renderer/src/agent/canvasBridge.ts`、`timelineBridge.ts`、`stageBridge.ts`、`filmBridge.ts` |
+| 02 | 提示词模板与风格库只读工具：`preset_*` / `style_*` | `src/main/agent/tools/library.ts`、`src/main/agent/main-tools.ts` |
 | 06 | MCP 设置页工具清单：中文标题、悬浮代码名、搜索与只读/写/危险筛选、危险项红色 | `src/renderer/src/panels/McpSettingsSection.tsx` |
 | 06 | Agent 能力覆盖率校验：工具声明、handler、MCP 元数据 | `scripts/check-agent-coverage.mjs`、`agent-coverage-exempt.json` |
 | 06 | MCP 时间线/导演台/拉片工具复用 CineBot 执行器 | `src/main/mcp/auto-tools.ts`、`src/renderer/src/agent/timelineBridge.ts`、`stageBridge.ts`、`filmBridge.ts` |

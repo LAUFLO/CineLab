@@ -29,7 +29,8 @@ function extractTools() {
     'timeline',
     'film',
     'capability',
-    'skills'
+    'skills',
+    'library'
   ]
   const tools = []
 
@@ -38,15 +39,21 @@ function extractTools() {
     for (const block of source.split('\n  {\n')) {
       const name = /^    name: '([a-z0-9_]+)'/m.exec(block)
       if (!name) continue
-      const title = /^      title: '([^']+)'/m.exec(block)
+      const mcpStart = block.indexOf('mcp: {')
+      const mcpEnd = mcpStart >= 0 ? block.indexOf('}', mcpStart) : -1
+      const mcpText =
+        mcpStart >= 0 && mcpEnd >= 0
+          ? block.slice(mcpStart, mcpEnd + 1)
+          : ''
+      const title = /title: '([^']+)'/.exec(mcpText)
       tools.push({
         name: name[1],
         group,
         main: /^    executor: 'main'/m.test(block),
-        hasMcp: /^    mcp: \{/m.test(block),
+        hasMcp: mcpStart >= 0,
         title: title?.[1],
-        expose: !/^      expose: false/m.test(block),
-        destructive: /^      destructive: true/m.test(block)
+        expose: !/expose: false/.test(mcpText),
+        destructive: /destructive: true/.test(mcpText)
       })
     }
   }

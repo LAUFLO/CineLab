@@ -9,7 +9,12 @@ vi.mock('../settings/preferences', () => ({
   getPreferences: async () => ({ project: { defaultDir: '' } })
 }))
 
-import { getCurrentProjectRoot, projectNameFromPath, setCurrentProjectRoot } from '../manager'
+import {
+  closeProject,
+  getCurrentProjectRoot,
+  projectNameFromPath,
+  setCurrentProjectRoot
+} from '../manager'
 
 describe('project manager', () => {
   it('derives the project name from a .cinelab path', () => {
@@ -26,6 +31,12 @@ describe('project manager', () => {
     setCurrentProjectRoot('C:/work/Demo.cinelab')
     expect(getCurrentProjectRoot()).toBe('C:/work/Demo.cinelab')
     setCurrentProjectRoot(null)
+    expect(getCurrentProjectRoot()).toBeNull()
+  })
+
+  it('clears the current project root on close', () => {
+    setCurrentProjectRoot('C:/work/Demo.cinelab')
+    closeProject()
     expect(getCurrentProjectRoot()).toBeNull()
   })
 })

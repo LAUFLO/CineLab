@@ -4,8 +4,11 @@ import { BrandWordmark } from '../components/Brand'
 import { Icon } from '../components/Icon'
 import { ProjectCard } from '../components/ProjectCard'
 import { PROJECT_TEMPLATES } from '@shared/project-templates'
+import type { WorkflowSummary } from '@shared/workflow-schema'
 import { useProjectStore } from '../stores/project'
 import { useSettingsStore } from '../stores/settings'
+import { useUIStore } from '../stores/ui'
+import { assetUrl } from '../lib/asset-url'
 import { Button, IconButton } from '../components/ui'
 
 export function ProjectCenter() {
@@ -31,6 +34,35 @@ export function ProjectCenter() {
   const [recent, setRecent] = useState<RecentProject[]>([])
   const [loading, setLoading] = useState(true)
   const [templateOpen, setTemplateOpen] = useState(false)
+  const [workflows, setWorkflows] = useState<WorkflowSummary[]>([])
+  const [importing, setImporting] = useState(false)
+  const showToast = useUIStore((state) => state.showToast)
+
+  const loadWorkflows = (): void => {
+    void window.api.workflow.list().then(setWorkflows)
+  }
+
+  useEffect(() => {
+    loadWorkflows()
+  }, [])
+
+  const importWorkflow = async (): Promise<void> => {
+    setImporting(true)
+    try {
+      const result = await window.api.workflow.import()
+      if (result) {
+        showToast(`已导入工作流「${result.summary.name}」`)
+        loadWorkflows()
+      }
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        'error'
+      )
+    } finally {
+      setImporting(false)
+    }
+  }
 
   const refreshRecent = (): void => {
     void window.api.project.recent().then(setRecent)
@@ -159,10 +191,10 @@ export function ProjectCenter() {
             <header className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <div className="text-[15px] font-semibold text-fg">
-                  选择项目模板
+                  选择工作流
                 </div>
                 <div className="mt-1 text-[11px] text-fg-subtle">
-                  模板只生成画布结构，不会预置模型或素材
+                  空白项目或你保存的工作流；不会预置模型和素材
                 </div>
               </div>
               <IconButton
@@ -193,6 +225,52 @@ export function ProjectCenter() {
                   </span>
                 </Button>
               ))}
+              {workflows.map((workflow) => (
+                <Button
+                  key={workflow.slug}
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className="flex flex-col !items-start gap-1.5 rounded-card border border-border bg-surface-hover p-3.5 !text-left transition-[border-color,background] duration-[120ms] hover:border-border-selected hover:bg-surface-raised"
+                  onClick={() => {
+                    setTemplateOpen(false)
+                    void startNew(workflow.slug)
+                  }}
+                >
+                  {workflow.thumbnail ? (
+                    <img
+                      src={assetUrl(workflow.thumbnail, 'global')}
+                      alt=""
+                      className="h-20 w-full rounded-md border border-border bg-surface object-cover"
+                    />
+                  ) : null}
+                  <span className="text-sm text-fg">{workflow.name}</span>
+                  <span className="text-[11px] leading-[1.6] text-fg-subtle">
+                    {workflow.meta.nodeCount} 个节点 ·{' '}
+                    {workflow.meta.generationCount} 个生成
+                    {workflow.meta.uploadSlotCount > 0
+                      ? ` · ${workflow.meta.uploadSlotCount} 个待上传`
+                      : ''}
+                  </span>
+                </Button>
+              ))}
+            </div>
+
+            {workflows.length === 0 ? (
+              <div className="mt-3 text-center text-[11px] leading-[1.7] text-fg-subtle">
+                还没有保存的工作流。在画布中选中节点，右键「保存为工作流」。
+              </div>
+            ) : null}
+
+            <div className="mt-4 flex justify-end">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={importing}
+                onClick={() => void importWorkflow()}
+              >
+                {importing ? '导入中…' : '导入工作流…'}
+              </Button>
             </div>
           </div>
         </div>

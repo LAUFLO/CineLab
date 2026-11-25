@@ -9,16 +9,17 @@ export interface ParamTemplate {
 
 const IMAGE_SIZE: ParamDef = {
   key: 'size',
-  label: '尺寸',
+  label: '尺寸 / 分辨率',
   group: '尺寸',
   type: 'select',
   options: [
-    { value: '1024x1024', label: '1024×1024' },
-    { value: '1536x1024', label: '1536×1024' },
-    { value: '1024x1536', label: '1024×1536' },
-    { value: '512x512', label: '512×512' }
+    { value: '1K', label: '1K' },
+    { value: '1.5K', label: '1.5K' },
+    { value: '2K', label: '2K' },
+    { value: '3K', label: '3K' },
+    { value: '4K', label: '4K' }
   ],
-  defaultValue: '1024x1024',
+  defaultValue: '1K',
   allowCustom: true
 }
 
@@ -207,7 +208,7 @@ const IMAGE_TEMPLATES: ParamTemplate[] = [
   {
     id: 'size',
     def: IMAGE_SIZE,
-    description: '生成图片的实际像素尺寸，常用 1024×1024、1536×1024'
+    description: '按供应商支持的尺寸档位选择；像素尺寸的模型可自定义为 1024×1024 等'
   },
   {
     id: 'ratio',

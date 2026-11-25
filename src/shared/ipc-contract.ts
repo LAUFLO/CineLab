@@ -7,6 +7,13 @@ import type {
 } from './project-schema'
 import type { ProjectTemplateId } from './project-templates'
 import type {
+  WorkflowApplyResult,
+  WorkflowImportResult,
+  WorkflowPackage,
+  WorkflowSaveInput,
+  WorkflowSummary
+} from './workflow-schema'
+import type {
   ConnectionTestInput,
   ConnectionTestResult,
   FetchModelsResult,
@@ -144,6 +151,21 @@ export interface ProjectApi {
   renameCanvas(path: string, canvasId: string, name: string): Promise<ProjectMeta>
   deleteCanvas(path: string, canvasId: string): Promise<ProjectSnapshot>
   delete(): Promise<boolean>
+  close(): Promise<void>
+}
+
+export interface WorkflowApi {
+  list(): Promise<WorkflowSummary[]>
+  read(slug: string): Promise<WorkflowPackage>
+  save(input: WorkflowSaveInput): Promise<WorkflowSummary>
+  rename(slug: string, name: string): Promise<WorkflowSummary>
+  delete(slug: string): Promise<void>
+  export(slug: string): Promise<ExportResult>
+  import(): Promise<WorkflowImportResult | null>
+  apply(
+    slug: string,
+    offset?: { x: number; y: number }
+  ): Promise<WorkflowApplyResult>
 }
 
 export interface SettingsApi {
@@ -693,6 +715,7 @@ export interface CineApi {
     close(): void
   }
   project: ProjectApi
+  workflow: WorkflowApi
   settings: SettingsApi
   localAdapters: LocalAdapterApi
   mcp: McpApi

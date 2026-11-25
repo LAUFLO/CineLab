@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 74 | 25783 |
-| 02 | [生成与模型](./02-generation.md) | 67 | 14635 |
+| 01 | [画布](./01-canvas.md) | 75 | 26106 |
+| 02 | [生成与模型](./02-generation.md) | 67 | 14639 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10058 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
 | 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 20966 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12403 |
-| 10 | [UI 组件与面板](./10-ui.md) | 51 | 11030 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 74 | 13554 |
+| 10 | [UI 组件与面板](./10-ui.md) | 52 | 11430 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -22,7 +22,8 @@
 
 | 接口 | 方法 |
 |---|---|
-| `ProjectApi` | `bootstrap`、`create`、`open`、`saveCanvas`、`recent`、`readCover`、`setCoverFromLocal`、`setCoverFromAsset`、`removeCover`、`pickCreate`、`pickOpen`、`reveal`、`rename`、`createCanvas`、`switchCanvas`、`renameCanvas`、`deleteCanvas`、`delete` |
+| `ProjectApi` | `bootstrap`、`create`、`open`、`saveCanvas`、`recent`、`readCover`、`setCoverFromLocal`、`setCoverFromAsset`、`removeCover`、`pickCreate`、`pickOpen`、`reveal`、`rename`、`createCanvas`、`switchCanvas`、`renameCanvas`、`deleteCanvas`、`delete`、`close` |
+| `WorkflowApi` | `list`、`read`、`save`、`rename`、`delete`、`export`、`import`、`apply` |
 | `SettingsApi` | `listProviders`、`saveProvider`、`deleteProvider`、`testConnection`、`fetchModels`、`modelsConfig`、`pendingModels`、`applyPendingModels`、`discardPendingModels`、`onModelsPending`、`openModelsFile`、`downloadModelSkill`、`copyText`、`getOperationBindings`、`saveOperationBindings`、`getPreferences`、`savePreferences`、`resetPreferences`、`exportPreferences`、`importPreferences`、`chooseProjectDir`、`openDataDir`、`onModelsChanged` |
 | `GenerateApi` | `run`、`cancel`、`cancelAll`、`onEvent` |
 | `LibraryApi` | `root`、`chooseRoot`、`resetRoot`、`revealRoot`、`tree`、`listAssets`、`listAllAssets`、`createFolder`、`renameFolder`、`deleteFolder`、`importAssets`、`addAsset`、`renameAsset`、`moveAsset`、`deleteAsset`、`setAssetTags`、`reveal`、`listCharacters`、`listStyles`、`saveStyle`、`deleteStyle`、`pickStyleCover`、`saveAssets`、`listTemplates`、`saveTemplate`、`deleteTemplate`、`thumbCacheInfo`、`clearThumbCache` |
@@ -185,6 +186,7 @@
 - `src/main/components/__tests__/manifest.test.ts`
 - `src/main/components/__tests__/zip-extract.test.ts`
 - `src/main/engine/__tests__/generation-error.test.ts`
+- `src/main/engine/__tests__/queue.test.ts`
 - `src/main/export/__tests__/project-export.test.ts`
 - `src/main/film-study/__tests__/analysis.test.ts`
 - `src/main/film-study/__tests__/auto.test.ts`
@@ -222,6 +224,7 @@
 - `src/main/settings/__tests__/models-config.test.ts`
 - `src/main/stage/__tests__/storage.test.ts`
 - `src/main/update/__tests__/fallback.test.ts`
+- `src/main/workflows/__tests__/build.test.ts`
 - `src/renderer/src/agent/__tests__/filmBridge.test.ts`
 - `src/renderer/src/agent/__tests__/timelineBridge.test.ts`
 - `src/renderer/src/canvas/__tests__/media-size.test.ts`
@@ -246,6 +249,7 @@
 - `src/shared/__tests__/model-modes.test.ts`
 - `src/shared/__tests__/node-operation-specs.test.ts`
 - `src/shared/__tests__/preferences.test.ts`
+- `src/shared/__tests__/project-schema.test.ts`
 - `src/shared/__tests__/prompt-preset.test.ts`
 - `src/shared/__tests__/protocol-templates.test.ts`
 - `src/shared/__tests__/reference-inputs.test.ts`

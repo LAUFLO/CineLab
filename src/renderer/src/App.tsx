@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { BottomBar } from './canvas/BottomBar'
 import { Canvas } from './canvas/Canvas'
 import { StatusBar } from './canvas/StatusBar'
+import { WorkflowSaveDialog } from './canvas/WorkflowSaveDialog'
 import { TopBar } from './canvas/TopBar'
 import { AppTooltip } from './components/AppTooltip'
 import { BrandWordmark } from './components/Brand'
@@ -264,6 +265,7 @@ export default function App() {
         <div className="fixed inset-x-0 top-0 z-[15] h-10 [-webkit-app-region:drag]" />
       )}
       <SettingsPanel />
+      <WorkflowSaveDialog />
       {studioOpen ? (
         <Suspense fallback={null}>
           <StudioWindow />

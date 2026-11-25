@@ -98,7 +98,20 @@ const api: CineApi = {
       ipcRenderer.invoke('project:rename-canvas', path, canvasId, name),
     deleteCanvas: (path: string, canvasId: string) =>
       ipcRenderer.invoke('project:delete-canvas', path, canvasId),
-    delete: () => ipcRenderer.invoke('project:delete')
+    delete: () => ipcRenderer.invoke('project:delete'),
+    close: () => ipcRenderer.invoke('project:close')
+  },
+  workflow: {
+    list: () => ipcRenderer.invoke('workflow:list'),
+    read: (slug: string) => ipcRenderer.invoke('workflow:read', slug),
+    save: (input) => ipcRenderer.invoke('workflow:save', input),
+    rename: (slug: string, name: string) =>
+      ipcRenderer.invoke('workflow:rename', slug, name),
+    delete: (slug: string) => ipcRenderer.invoke('workflow:delete', slug),
+    export: (slug: string) => ipcRenderer.invoke('workflow:export', slug),
+    import: () => ipcRenderer.invoke('workflow:import'),
+    apply: (slug: string, offset?: { x: number; y: number }) =>
+      ipcRenderer.invoke('workflow:apply', slug, offset)
   },
   settings: {
     listProviders: () => ipcRenderer.invoke('settings:list-providers'),

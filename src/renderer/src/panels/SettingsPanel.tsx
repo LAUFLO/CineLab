@@ -714,18 +714,7 @@ function ModelsSection() {
                         {FEATURE_LABEL[feature]}
                       </span>
                     ))}
-                    {(() => {
-                      const gaps = effectiveCapabilities(model).gaps
-                      if (gaps.length === 0) return null
-                      return (
-                        <span
-                          className="rounded-full border border-[color-mix(in_srgb,var(--danger)_40%,var(--border))] px-1.5 py-px text-[10px] leading-4 text-danger"
-                          title={gaps.map((gap) => gap.message).join('\n')}
-                        >
-                          {gaps.length} 项能力未实现
-                        </span>
-                      )
-                    })()}
+                    <ModelGapBadge model={model} />
                     {findProtocolTemplate(model.protocol)?.status ? (
                       <span
                         className={`rounded-full px-1.5 py-px text-[10px] leading-4 ${
@@ -1460,6 +1449,61 @@ function updateLabel(status: UpdateStatus | null): string {
   }
 }
 
+function ModelGapBadge({ model }: { model: ModelDef }) {
+  const gaps = effectiveCapabilities(model).gaps
+  const [open, setOpen] = useState(false)
+  const anchorRef = useRef<HTMLButtonElement>(null)
+
+  if (gaps.length === 0) return null
+
+  const onlyParams = gaps.every((gap) => gap.kind === 'param')
+
+  return (
+    <>
+      <Button
+        ref={anchorRef}
+        type="button"
+        variant="ghost"
+        size="none"
+        className="rounded-full border border-[color-mix(in_srgb,var(--danger)_40%,var(--border))] px-1.5 py-px !text-[10px] !font-normal leading-4 text-danger hover:!bg-[color-mix(in_srgb,var(--danger)_8%,transparent)]"
+        onClick={() => setOpen((value) => !value)}
+      >
+        {onlyParams
+          ? `${gaps.length} 个参数不会生效`
+          : `${gaps.length} 项能力未实现`}
+      </Button>
+      <Popover
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={anchorRef}
+        width={380}
+        ariaLabel="模型配置提示"
+      >
+        <div className="flex flex-col gap-2">
+          <div className="text-xs font-medium text-fg">
+            {onlyParams ? '以下参数不会生效' : '以下能力当前不可用'}
+          </div>
+          {gaps.map((gap) => (
+            <div
+              key={`${gap.kind}-${gap.value}`}
+              className="rounded-md bg-surface-hover px-2.5 py-2"
+            >
+              <div className="text-[11px] leading-[1.6] text-fg-muted">
+                {gap.message}
+              </div>
+              <div className="mt-1 text-[10.5px] leading-[1.5] text-fg-subtle">
+                {gap.kind === 'param'
+                  ? '生成时不会传给接口。可在模型配置里删除该参数，或等待适配器支持。'
+                  : '模型声明与适配器实现不一致，保存时可能被拦截。'}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Popover>
+    </>
+  )
+}
+
 function AboutSection() {
   const [version, setVersion] = useState('—')
   const status = useUpdateStore((state) => state.status)
@@ -1477,35 +1521,37 @@ function AboutSection() {
 
   return (
     <div className="flex flex-col">
-      <BrandWordmark height={20} className="mb-3.5" />
-      <p className="mb-4 mt-0 text-xs leading-[1.8] text-fg-subtle">
-        本地 AI 创作无限画布。模型完全自定义，数据存在你自己的硬盘上。
-      </p>
-      <div className="flex h-[34px] items-center gap-3 text-xs text-fg-muted">
-        <span className="w-14 text-fg-subtle">版本</span>
-        <code className="font-[inherit] text-fg">{version}</code>
-      </div>
-      <div className="flex h-[34px] items-center gap-3 text-xs text-fg-muted">
-        <span className="w-14 text-fg-subtle">仓库</span>
-        <code className="font-[inherit] text-fg">github.com/LAUFLO/CineLab</code>
-      </div>
-      <div className="flex h-[34px] items-center gap-3 text-xs text-fg-muted">
-        <span className="w-14 text-fg-subtle">协议</span>
-        <code className="font-[inherit] text-fg">MIT</code>
-      </div>
-      <div className="flex h-[34px] items-center gap-3 text-xs text-fg-muted">
-        <span className="w-14 text-fg-subtle">日志</span>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={() => void window.api.app.openLogs()}
-        >
-          打开日志目录
-        </Button>
+      <div className="flex flex-col items-center text-center">
+        <BrandWordmark height={40} className="mb-4" />
+        <p className="mb-5 mt-0 max-w-[380px] text-xs leading-[1.8] text-fg-subtle">
+          本地 AI 创作无限画布。模型完全自定义，数据存在你自己的硬盘上。
+        </p>
+        <div className="inline-grid grid-cols-[auto_auto] items-center gap-x-3 gap-y-1.5 text-left text-xs text-fg-muted">
+          <span className="text-fg-subtle">版本</span>
+          <code className="font-[inherit] text-fg">{version}</code>
+          <span className="text-fg-subtle">仓库</span>
+          <code className="font-[inherit] text-fg">github.com/LAUFLO/CineLab</code>
+          <span className="text-fg-subtle">协议</span>
+          <code className="font-[inherit] text-fg">MIT</code>
+          <span className="flex h-[34px] items-center text-fg-subtle">日志</span>
+          <div className="flex h-[34px] items-center">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void window.api.app.openLogs()}
+            >
+              打开日志目录
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-[18px] rounded-card border border-border bg-surface-raised p-3.5">
+      <div className="mt-6">
+        <GeneralSettingsSection part="about" />
+      </div>
+
+      <div className="rounded-card border border-border bg-surface-raised p-3.5">
         <div className="flex items-center justify-between gap-3">
           <span className="text-[13px] text-fg">软件更新</span>
           <Button
@@ -1621,7 +1667,7 @@ export function SettingsPanel() {
         className="flex h-[660px] max-h-[calc(100vh-80px)] w-[920px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface-raised shadow-float [-webkit-app-region:no-drag]"
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-divider pl-5 pr-4 text-[15px] font-semibold">
+        <header className="flex h-14 shrink-0 items-center justify-between pl-5 pr-4 text-[15px] font-semibold">
           <span>设置</span>
           <IconButton label="关闭" size="sm" onClick={close}>
             <Icon name="close" size={14} />
@@ -1680,14 +1726,7 @@ export function SettingsPanel() {
               </>
             ) : null}
             {active === 'shortcuts' ? <ShortcutsSettingsSection /> : null}
-            {active === 'about' ? (
-              <>
-                <GeneralSettingsSection part="about" />
-                <div className="mt-5">
-                  <AboutSection />
-                </div>
-              </>
-            ) : null}
+            {active === 'about' ? <AboutSection /> : null}
           </div>
         </div>
       </div>

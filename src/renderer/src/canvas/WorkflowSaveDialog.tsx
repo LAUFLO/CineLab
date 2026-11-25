@@ -1,0 +1,131 @@
+import { useState } from 'react'
+import type { WorkflowSaveInput } from '@shared/workflow-schema'
+import { Button, Dialog, Input, Textarea } from '../components/ui'
+import { useCanvasStore } from '../stores/canvas'
+import { useUIStore } from '../stores/ui'
+
+export function WorkflowSaveDialog() {
+  const request = useUIStore((state) => state.workflowSaveRequest)
+  const close = useUIStore((state) => state.closeWorkflowSave)
+  const showToast = useUIStore((state) => state.showToast)
+  const nodes = useCanvasStore((state) => state.nodes)
+  const edges = useCanvasStore((state) => state.edges)
+
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [includeText, setIncludeText] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  if (!request) return null
+
+  const selectedIds = request.selectedIds
+  const nodeCount = selectedIds?.length ?? nodes.length
+  const edgeCount = selectedIds
+    ? edges.filter(
+        (edge) =>
+          selectedIds.includes(edge.source) && selectedIds.includes(edge.target)
+      ).length
+    : edges.length
+
+  const submit = async (): Promise<void> => {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      showToast('请输入工作流名称', 'error')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const summary = await window.api.workflow.save({
+        name: trimmed,
+        description: description.trim() || undefined,
+        nodes: nodes as unknown as WorkflowSaveInput['nodes'],
+        edges: edges as unknown as WorkflowSaveInput['edges'],
+        selectedIds,
+        projectPath: '',
+        includeLinkedText: includeText,
+        overwriteSlug: request.overwriteSlug
+      })
+      showToast(
+        request.overwriteSlug
+          ? `工作流「${summary.name}」已更新`
+          : `工作流「${summary.name}」已保存`
+      )
+      setName('')
+      setDescription('')
+      setIncludeText(true)
+      close()
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        'error'
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      onClose={close}
+      ariaLabel="保存为工作流"
+      panelClassName="w-[min(460px,100%)] p-5"
+    >
+      <div className="mb-1 text-[16px] text-fg">
+        {request.overwriteSlug ? '更新工作流' : '保存为工作流'}
+      </div>
+      <p className="mb-4 mt-0 text-[12px] leading-[1.7] text-fg-subtle">
+        只保存节点结构、提示词、模型和参数；生成结果和项目内素材不会保存。
+      </p>
+
+      <label className="mb-3 flex flex-col gap-1.5 text-[11px] text-fg-subtle">
+        <span>名称</span>
+        <Input
+          className="!h-9 !rounded-md border-border-strong bg-surface !px-2.5 !text-[13px] focus:!border-border-selected"
+          value={name}
+          placeholder="例如：产品宣传片"
+          autoFocus
+          onChange={(event) => setName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') void submit()
+          }}
+        />
+      </label>
+
+      <label className="mb-3 flex flex-col gap-1.5 text-[11px] text-fg-subtle">
+        <span>描述（选填）</span>
+        <Textarea
+          className="!h-[72px] !min-h-[72px] !rounded-md border-border-strong bg-surface !px-2.5 !py-2 !text-[12px] focus:!border-border-selected"
+          value={description}
+          placeholder="这个工作流适合什么场景"
+          onChange={(event) => setDescription(event.target.value)}
+        />
+      </label>
+
+      <label className="mb-4 flex cursor-pointer items-center gap-2 text-[11px] text-fg-muted">
+        <Input
+          type="checkbox"
+          className="!h-auto !w-auto !rounded-none !border-0 !bg-transparent !p-0 accent-fg"
+          checked={includeText}
+          onChange={(event) => setIncludeText(event.target.checked)}
+        />
+        <span>一并包含关联的文本节点（@ 提及）</span>
+      </label>
+
+      <div className="mb-4 rounded-md bg-surface-hover px-2.5 py-2 text-[11px] leading-[1.6] text-fg-subtle">
+        当前将保存 {nodeCount} 个节点、{edgeCount} 条连线
+        {selectedIds ? '（选中范围）' : '（整个画布）'}。外部连线会被丢弃。
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={close} disabled={saving}>
+          取消
+        </Button>
+        <Button variant="primary" onClick={() => void submit()} disabled={saving}>
+          {saving ? '保存中…' : request.overwriteSlug ? '更新' : '保存'}
+        </Button>
+      </div>
+    </Dialog>
+  )
+}

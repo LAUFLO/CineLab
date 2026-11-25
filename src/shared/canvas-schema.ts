@@ -54,6 +54,12 @@ export interface CineNodeData extends Record<string, unknown> {
   inputMode?: ModelModeId
   /** Prompt Bar 中用户选择的风格，按节点保留；只影响生成提示词 */
   style?: StyleCard
+  /** Prompt Bar 中最近一次选择的模型，格式 providerId/modelId */
+  modelKey?: string
+  /** Prompt Bar 中最近一次使用的生成参数 */
+  params?: Record<string, unknown>
+  /** 工作流实例化后的占位标记；upload=待上传素材，generate=待生成 */
+  workflowSlot?: 'upload' | 'generate'
   /** Prompt Bar 槽位顺序，key 为 `scope:path` */
   refOrder?: string[]
   /** 拉片节点：关联的 study.json */
@@ -131,6 +137,8 @@ export interface StudioNodeData extends Record<string, unknown> {
   selectedOutputId?: string
   /** 上次导出时的上游输出签名，避免同一版本反复标 stale */
   upstreamAck?: string
+  /** 工作流实例化后的占位标记 */
+  workflowSlot?: 'upload' | 'generate'
   templates: string[]
 }
 

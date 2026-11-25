@@ -1123,6 +1123,7 @@ export function ModelConfigDialog({
                         }
                       />
                       <Select
+                        className="!h-8 !min-w-[104px] !px-2.5 !text-[13px]"
                         value={row.type}
                         options={[
                           { value: 'select', label: TYPE_LABEL.select },
@@ -1242,9 +1243,10 @@ export function ModelConfigDialog({
                           </div>
                         ))}
 
-                        <div className="flex items-center gap-2 text-[11px] text-fg-subtle">
+                        <div className="flex items-center justify-between gap-2 text-[11px] text-fg-subtle">
                           <span>默认选项</span>
                           <Select
+                            className="!h-7 !min-w-[92px] !px-2 !text-[11px]"
                             value={String(row.defaultValue ?? '')}
                             options={(row.options ?? []).map((option) => ({
                               value: option.value,

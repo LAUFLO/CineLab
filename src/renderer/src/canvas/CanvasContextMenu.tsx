@@ -130,6 +130,27 @@ export function CanvasContextMenu() {
         <span>粘贴</span>
         <span className="text-xs text-fg-subtle">{pasteLabel}</span>
       </Button>
+
+      <div className="mx-2 my-[5px] h-px bg-divider" />
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="none"
+        className="!flex h-[38px] w-full items-center !justify-between gap-3 rounded-md px-3 text-[13px] !font-normal !text-fg"
+        onClick={() => {
+          const selectedIds = useCanvasStore
+            .getState()
+            .nodes.filter((node) => node.selected)
+            .map((node) => node.id)
+          close()
+          useUIStore.getState().openWorkflowSave({
+            selectedIds: selectedIds.length > 0 ? selectedIds : undefined
+          })
+        }}
+      >
+        <span>保存为工作流</span>
+      </Button>
     </Menu>
   )
 }

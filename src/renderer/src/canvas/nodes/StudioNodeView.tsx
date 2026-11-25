@@ -564,11 +564,19 @@ export function StudioNodeView({ id, data, selected }: NodeProps<StudioNode>) {
                 onClick={open}
               >
                 <Icon name="film" size={34} />
-                <span>{clipCount > 0 ? '当前为实时预览' : '还没有素材'}</span>
+                <span>
+                  {data.workflowSlot === 'generate'
+                    ? '待创建时间线'
+                    : clipCount > 0
+                      ? '当前为实时预览'
+                      : '还没有素材'}
+                </span>
                 <span className="text-[10.5px] text-fg-subtle opacity-80">
-                  {clipCount > 0
-                    ? '点下方「导出成片」'
-                    : '双击进入剪辑室添加素材'}
+                  {data.workflowSlot === 'generate'
+                    ? '双击打开剪辑室，创建空时间线'
+                    : clipCount > 0
+                      ? '点下方「导出成片」'
+                      : '双击进入剪辑室添加素材'}
                 </span>
               </Button>
             )}

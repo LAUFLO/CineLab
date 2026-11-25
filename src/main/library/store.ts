@@ -10,6 +10,7 @@ import type {
   LibraryFolderNode
 } from '@shared/library-schema'
 import { CHARACTER_FOLDER, DEFAULT_LIBRARY_FOLDERS } from '@shared/library-schema'
+import { WORKFLOW_FOLDER } from '@shared/workflow-schema'
 import { getCurrentProjectRoot } from '../project/manager'
 import { getLibraryRoot } from './config'
 import { mapLimit } from './concurrency'
@@ -183,6 +184,10 @@ async function pathToAsset(root: string, relPath: string): Promise<LibraryAsset>
 }
 
 export async function listAssets(folder: string): Promise<LibraryAsset[]> {
+  if (folder === WORKFLOW_FOLDER || folder.startsWith(`${WORKFLOW_FOLDER}/`)) {
+    return []
+  }
+
   const root = await getLibraryRoot()
   const dir = safeJoin(root, folder)
 
@@ -245,6 +250,7 @@ async function walkFolders(
   const nodes: LibraryFolderNode[] = []
   for (const entry of entries) {
     if (!entry.isDirectory() || isIgnored(entry.name)) continue
+    if (entry.name === WORKFLOW_FOLDER) continue
 
     const childPath = toPosix(join(toNative(parentPath), entry.name))
     const childDir = safeJoin(root, childPath)
@@ -290,6 +296,7 @@ export async function listAllAssets(): Promise<LibraryAsset[]> {
 
       const childPath = toPosix(join(toNative(relPath), entry.name))
       if (entry.isDirectory()) {
+        if (entry.name === WORKFLOW_FOLDER) continue
         await walk(childPath, depth + 1)
       } else if (kindFromExt(extname(entry.name).toLowerCase())) {
         result.push(await pathToAsset(root, childPath))

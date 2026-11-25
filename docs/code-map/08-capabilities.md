@@ -67,6 +67,7 @@
 | 02 | 官方/自定义风格库：按输入框居中的 620×480 浮窗、一行 8 列小封面、分类浏览、单击即应用并关闭、单选胶囊（内联提示词首行、× 角标）；资产库“风格”与风格库同源展示 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`style-prompt.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`style-prompt.test.ts` |
 | 02 | 预设提示词：按输入框居中的 620×480 浮窗、CRUD、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、发送原位展开、风格置顶；胶囊宽度对齐占位、绿色无图标、连续插入不重叠；资产库“使用”插入正文 | `src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx`、`prompt-preset.test.ts` |
 | 02 | 资产库提示词卡片：按钮行统一 28px、卡片等高、新建入口位于面包屑右侧 | `TemplateGrid.tsx`、`LibraryWindow.tsx` |
+| 02 | 工作流模板：保存画布子图为资产库 `工作流/` 目录包；本地上传/生成节点转 `workflowSlot` 占位；导演台文档打包，拉片/剪辑室占位；支持重命名、删除、更新、导入导出 zip；`modelKey`/`params` 按节点持久化 | `src/main/workflows/`、`src/main/library/workflows.ts`、`src/shared/workflow-schema.ts`、`WorkflowSaveDialog.tsx`、`WorkflowGrid.tsx`、`PromptBar.tsx` |
 
 ## 部分实现（别当已完成）
 

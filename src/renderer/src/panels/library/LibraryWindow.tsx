@@ -31,6 +31,8 @@ import { NameDialog } from './NameDialog'
 import { StyleFolderGrid, filterStyles } from './StyleFolderGrid'
 import { TemplateDialog } from './TemplateDialog'
 import { TemplateGrid } from './TemplateGrid'
+import { WorkflowGrid } from './WorkflowGrid'
+import { useProjectStore } from '../../stores/project'
 
 type NameDialogState =
   | { kind: 'create-folder'; parent: string }
@@ -163,6 +165,10 @@ export function LibraryWindow() {
   const revealRoot = useLibraryStore((state) => state.revealRoot)
   const saveTemplate = useLibraryStore((state) => state.saveTemplate)
   const deleteTemplate = useLibraryStore((state) => state.deleteTemplate)
+  const workflows = useLibraryStore((state) => state.workflows)
+  const loadWorkflows = useLibraryStore((state) => state.loadWorkflows)
+  const renameWorkflow = useLibraryStore((state) => state.renameWorkflow)
+  const deleteWorkflow = useLibraryStore((state) => state.deleteWorkflow)
 
   const insertPrompt = useUIStore((state) => state.insertPrompt)
   const showToast = useUIStore((state) => state.showToast)
@@ -195,19 +201,34 @@ export function LibraryWindow() {
   const [tagDraft, setTagDraft] = useState('')
 
   const isStyleFolder = folder === '风格'
+  const isWorkflowFolder = folder === '工作流'
   const filteredStyles = useMemo(
     () => filterStyles(styles, query),
     [styles, query]
   )
-  const displayTree = useMemo(
-    () => withSpecialCounts(tree, styles.length, templates.length),
-    [tree, styles.length, templates.length]
-  )
+  const displayTree = useMemo(() => {
+    const nodes = withSpecialCounts(tree, styles.length, templates.length)
+    if (workflows.length === 0) return nodes
+    return [
+      {
+        path: '工作流',
+        name: '工作流',
+        children: [],
+        assetCount: workflows.length
+      },
+      ...nodes
+    ]
+  }, [tree, styles.length, templates.length, workflows.length])
 
   useEffect(() => {
     if (!open || !isStyleFolder) return
     void loadStyles()
   }, [open, isStyleFolder, loadStyles])
+
+  useEffect(() => {
+    if (!open || !isWorkflowFolder) return
+    void loadWorkflows()
+  }, [open, isWorkflowFolder, loadWorkflows])
 
   if (!open) return null
 
@@ -279,6 +300,42 @@ export function LibraryWindow() {
   const canConcat =
     selectedVideos.length >= 2 &&
     selectedVideos.length === selectedAssets.length
+
+  const addWorkflowToCanvas = async (
+    workflow: (typeof workflows)[number]
+  ): Promise<void> => {
+    const store = useCanvasStore.getState()
+    const { viewport } = store
+    const offset = {
+      x: (window.innerWidth / 2 - viewport.x) / viewport.zoom - 300,
+      y: (window.innerHeight / 2 - viewport.y) / viewport.zoom - 200
+    }
+
+    try {
+      const result = await window.api.workflow.apply(workflow.slug, offset)
+      store.loadCanvas(
+        result.canvas.nodes as never,
+        result.canvas.edges as never,
+        result.canvas.viewport
+      )
+      useCanvasStore.getState().onNodesChange(
+        result.nodeIds.map((id) => ({
+          id,
+          type: 'select' as const,
+          selected: true
+        }))
+      )
+      showToast(`已添加工作流「${workflow.name}」`)
+      if (result.warnings.length > 0) {
+        showToast(result.warnings[0], 'error')
+      }
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        'error'
+      )
+    }
+  }
 
   const handleSelectFolder = (path: string): void => {
     setSelectedPaths(new Set())
@@ -467,7 +524,7 @@ export function LibraryWindow() {
                 className="!h-auto !w-[180px] !rounded-none !border-0 !bg-transparent !p-0 !text-xs focus:!border-0"
               />
             </div>
-            {mode === 'browse' && !isTemplateFolder && !isStyleFolder ? (
+            {mode === 'browse' && !isTemplateFolder && !isStyleFolder && !isWorkflowFolder ? (
               <Button
                 variant="secondary"
                 size="xs"
@@ -581,6 +638,37 @@ export function LibraryWindow() {
               />
             ) : null}
 
+            {!loading && isWorkflowFolder ? (
+              <WorkflowGrid
+                workflows={workflows}
+                query={query}
+                onAddToCanvas={(workflow) => void addWorkflowToCanvas(workflow)}
+                onRename={(slug, name) => void renameWorkflow(slug, name)}
+                onDelete={(workflow) =>
+                  requestConfirm({
+                    title: '删除工作流？',
+                    message: `「${workflow.name}」会从资产库永久删除，已用它创建的项目不受影响。`,
+                    confirmLabel: '删除',
+                    danger: true,
+                    onConfirm: () => void deleteWorkflow(workflow.slug)
+                  })
+                }
+                onExport={(workflow) => {
+                  void window.api.workflow
+                    .export(workflow.slug)
+                    .then((result) => {
+                      if (result.ok) showToast('工作流已导出')
+                      else if (!result.canceled)
+                        showToast(result.error ?? '导出失败', 'error')
+                    })
+                }}
+                onCreateProject={(workflow) => {
+                  close()
+                  void useProjectStore.getState().startNew(workflow.slug)
+                }}
+              />
+            ) : null}
+
             {!loading && isStyleFolder ? (
               <>
                 <div className="mb-3 text-[11px] text-fg-subtle">
@@ -590,7 +678,7 @@ export function LibraryWindow() {
               </>
             ) : null}
 
-            {!loading && !isTemplateFolder && !isStyleFolder ? (
+            {!loading && !isTemplateFolder && !isStyleFolder && !isWorkflowFolder ? (
               <AssetGrid
                 assets={assets}
                 query={query}

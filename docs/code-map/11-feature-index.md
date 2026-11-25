@@ -103,7 +103,7 @@
 |---|---|---|---|
 | Agent 工具 | 画布/生成/导演台/时间线/拉片/能力/技能 | `src/main/agent/tools/` | 已实现 |
 | 生成提案 | `AgentProposal`、`.cinelab/agent/proposals` | `src/main/agent/proposals.ts` | 已实现 |
-| 会话/压缩 | `.cinelab/agent/sessions/*.jsonl` | `src/main/agent/session.ts`、`compact.ts` | 已实现 |
+| 会话 | `.cinelab/agent/sessions/*.jsonl` | `src/main/agent/session.ts`、`pi/session.ts` | 已实现 |
 | 技能 | 内置/全局/项目三级、启用状态过滤 | `src/main/agent/skills.ts`、`skills-config.ts` | 已实现 |
 | 技能卡片 | 全部显示、卡片启用开关、Markdown 预览 | `SkillsSection.tsx` | 已实现 |
 | 技能导入 | 文件夹/ZIP、SKILL.md 校验、同名覆盖、原子安装 | `src/main/agent/skills-import.ts`、`SkillImportDialog.tsx` | 已实现 |

@@ -16,7 +16,7 @@
 | `src/shared/` 中的 schema / IPC 合同 | `docs/architecture.md`、`docs/models.md` |
 | `src/shared/model-modes.ts`、`model-contracts.ts`、`models-file.ts`、`provider-schema.ts`、`http-template.ts`、`protocol-templates.ts`、`src/main/local-adapters/`、`docs/models.md`、`docs/local-adapters.md` | `resources/model-config-skill/SKILL.md`；`check:model-skill` 会校验自动枚举与指纹 |
 | `src/main/agent/tools.ts` | `docs/agent-capabilities.md` |
-| `src/main/agent/runtime.ts`、`src/main/agent/` | `docs/agent-architecture-plan.md`、`docs/agent-capabilities.md` |
+| `src/main/agent/pi/`、`src/main/agent/` | `docs/agent-architecture-plan.md`、`docs/agent-capabilities.md` |
 | `src/renderer/src/styles/tokens.css`、`src/renderer/src/components/` | `docs/ui-spec.md` |
 | `src/renderer/src/canvas/`、`src/renderer/src/studio/` | `docs/ui-spec.md` |
 | `src/main/components/` | `docs/code-map/07-storage-ipc.md`、`docs/code-map/08-capabilities.md` |

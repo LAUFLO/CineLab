@@ -14,6 +14,11 @@ import {
   setLibraryRoot
 } from '../library/config'
 import {
+  cancelMigration,
+  migrateLibraryRoot,
+  migrateLibraryRootToDefault
+} from '../library/migrate-root'
+import {
   addAsset,
   createFolder,
   deleteAsset,
@@ -89,6 +94,44 @@ export function registerLibraryIpc(): void {
 
     const next = await setLibraryRoot(result.filePaths[0])
     return { root: next, isDefault: next === defaultLibraryRoot() }
+  })
+
+  ipcMain.handle('library:pick-root', async (event) => {
+    const current = await getLibraryRoot()
+    const win = windowFromEvent(event)
+    const options: Electron.OpenDialogOptions = {
+      title: '选择全局资产库文件夹',
+      defaultPath: current,
+      properties: ['openDirectory', 'createDirectory']
+    }
+
+    const result = win
+      ? await dialog.showOpenDialog(win, options)
+      : await dialog.showOpenDialog(options)
+
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0]
+  })
+
+  ipcMain.handle('library:set-root', async (_event, path: string) => {
+    const next = await setLibraryRoot(path)
+    return { root: next, isDefault: next === defaultLibraryRoot() }
+  })
+
+  ipcMain.handle('library:migrate-root', async (event, target: string) => {
+    return migrateLibraryRoot(target, (progress) => {
+      event.sender.send('library:migrate-progress', progress)
+    })
+  })
+
+  ipcMain.handle('library:migrate-default', async (event) => {
+    return migrateLibraryRootToDefault((progress) => {
+      event.sender.send('library:migrate-progress', progress)
+    })
+  })
+
+  ipcMain.handle('library:migrate-cancel', () => {
+    cancelMigration()
   })
 
   ipcMain.handle('library:reset-root', async () => {

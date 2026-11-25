@@ -51,6 +51,10 @@ import type {
   ThumbCacheInfo
 } from './library-schema'
 import type { StyleCard, StyleSaveInput } from './style-schema'
+import type {
+  LibraryMigrateProgress,
+  LibraryMigrateResult
+} from './library-migration'
 import type { ModelsConfigStatus, ModelsFileProvider } from './models-file'
 import type {
   AgentChatRequest,
@@ -214,6 +218,14 @@ export interface GenerateApi {
 export interface LibraryApi {
   root(): Promise<LibraryRootInfo>
   chooseRoot(): Promise<LibraryRootInfo | null>
+  pickRoot(): Promise<string | null>
+  setRoot(path: string): Promise<LibraryRootInfo>
+  migrateRoot(target: string): Promise<LibraryMigrateResult>
+  migrateDefault(): Promise<LibraryMigrateResult>
+  cancelMigrate(): Promise<void>
+  onMigrateProgress(
+    callback: (progress: LibraryMigrateProgress) => void
+  ): () => void
   resetRoot(): Promise<LibraryRootInfo>
   revealRoot(): Promise<void>
 

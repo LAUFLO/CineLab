@@ -13,8 +13,8 @@
 | 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10058 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
 | 06 | [CineBot 与 Agent](./06-agent.md) | 69 | 21163 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 74 | 13675 |
-| 10 | [UI 组件与面板](./10-ui.md) | 54 | 11807 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 76 | 14035 |
+| 10 | [UI 组件与面板](./10-ui.md) | 55 | 11989 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -26,7 +26,7 @@
 | `WorkflowApi` | `list`、`read`、`save`、`rename`、`delete`、`export`、`import`、`apply` |
 | `SettingsApi` | `listProviders`、`saveProvider`、`deleteProvider`、`testConnection`、`fetchModels`、`modelsConfig`、`pendingModels`、`applyPendingModels`、`discardPendingModels`、`onModelsPending`、`openModelsFile`、`downloadModelSkill`、`copyText`、`getOperationBindings`、`saveOperationBindings`、`getPreferences`、`savePreferences`、`resetPreferences`、`exportPreferences`、`importPreferences`、`chooseProjectDir`、`openDataDir`、`onModelsChanged` |
 | `GenerateApi` | `run`、`cancel`、`cancelAll`、`onEvent` |
-| `LibraryApi` | `root`、`chooseRoot`、`resetRoot`、`revealRoot`、`tree`、`listAssets`、`listAllAssets`、`createFolder`、`renameFolder`、`deleteFolder`、`importAssets`、`addAsset`、`renameAsset`、`moveAsset`、`deleteAsset`、`setAssetTags`、`reveal`、`listCharacters`、`listStyles`、`saveStyle`、`deleteStyle`、`pickStyleCover`、`saveAssets`、`listTemplates`、`saveTemplate`、`deleteTemplate`、`thumbCacheInfo`、`clearThumbCache` |
+| `LibraryApi` | `root`、`chooseRoot`、`pickRoot`、`setRoot`、`migrateRoot`、`migrateDefault`、`cancelMigrate`、`onMigrateProgress`、`resetRoot`、`revealRoot`、`tree`、`listAssets`、`listAllAssets`、`createFolder`、`renameFolder`、`deleteFolder`、`importAssets`、`addAsset`、`renameAsset`、`moveAsset`、`deleteAsset`、`setAssetTags`、`reveal`、`listCharacters`、`listStyles`、`saveStyle`、`deleteStyle`、`pickStyleCover`、`saveAssets`、`listTemplates`、`saveTemplate`、`deleteTemplate`、`thumbCacheInfo`、`clearThumbCache` |
 | `ClipboardApi` | `read` |
 | `ExportApi` | `project`、`canvasPng`、`asset`、`deleteFile`、`assets`、`concatVideos`、`pickFile` |
 | `MediaApi` | `splitGrid`、`stitch`、`extractFrame`、`splitAv`、`startStemTask`、`cancelStemTask`、`onStemTaskEvent`、`cropVideo`、`probe`、`exists`、`existsMany`、`thumbnail`、`proxy`、`audioPeaks`、`listSounds`、`importSound`、`cropImage`、`cropImageRect`、`trimVideo`、`trimAudio`、`audioSpeed`、`removeSubtitles`、`detectSubtitleRect`、`captureDepth`、`startDepthCapture`、`cancelDepthCapture`、`onDepthCaptureEvent`、`startVisionTask`、`cancelVisionTask`、`onVisionTaskEvent` |
@@ -202,6 +202,7 @@
 - `src/main/film-study/__tests__/shots.test.ts`
 - `src/main/film-study/__tests__/style.test.ts`
 - `src/main/ipc/__tests__/index.test.ts`
+- `src/main/library/__tests__/migrate-root.test.ts`
 - `src/main/library/__tests__/store.test.ts`
 - `src/main/library/__tests__/tag-utils.test.ts`
 - `src/main/library/__tests__/workflows.test.ts`

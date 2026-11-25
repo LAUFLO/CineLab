@@ -89,7 +89,7 @@ export function WorkflowGrid({
             <Button
               variant="ghost"
               size="none"
-              className="relative block aspect-video w-full overflow-hidden !rounded-none border-y border-divider bg-surface !p-0"
+              className="relative block aspect-video w-full overflow-hidden !rounded-none bg-surface !p-0"
               onClick={() => onAddToCanvas(workflow)}
             >
               {workflow.thumbnail ? (

@@ -209,6 +209,23 @@ const api: CineApi = {
   library: {
     root: () => ipcRenderer.invoke('library:root'),
     chooseRoot: () => ipcRenderer.invoke('library:choose-root'),
+    pickRoot: () => ipcRenderer.invoke('library:pick-root'),
+    setRoot: (path: string) => ipcRenderer.invoke('library:set-root', path),
+    migrateRoot: (target: string) =>
+      ipcRenderer.invoke('library:migrate-root', target),
+    migrateDefault: () => ipcRenderer.invoke('library:migrate-default'),
+    cancelMigrate: () => ipcRenderer.invoke('library:migrate-cancel'),
+    onMigrateProgress: (
+      callback: (progress: import('../shared/library-migration').LibraryMigrateProgress) => void
+    ) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        progress: import('../shared/library-migration').LibraryMigrateProgress
+      ): void => callback(progress)
+      ipcRenderer.on('library:migrate-progress', listener)
+      return () =>
+        ipcRenderer.removeListener('library:migrate-progress', listener)
+    },
     resetRoot: () => ipcRenderer.invoke('library:reset-root'),
     revealRoot: () => ipcRenderer.invoke('library:reveal-root'),
 

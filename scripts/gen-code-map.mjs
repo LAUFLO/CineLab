@@ -177,6 +177,7 @@ const MODULES = [
       'src/shared/project-templates.ts',
       'src/shared/preferences.ts',
       'src/shared/library-schema.ts',
+      'src/shared/library-migration.ts',
       'src/shared/workflow-schema.ts',
       'src/shared/asset-schema.ts',
       'src/shared/models-file.ts',

@@ -34,6 +34,8 @@ import { useUIStore } from '../stores/ui'
 import { useUpdateStore } from '../stores/update'
 import { ComponentsSection } from './ComponentsSection'
 import { GeneralSettingsSection } from './GeneralSettingsSection'
+import { LibraryMigrateDialog } from './LibraryMigrateDialog'
+import type { LibraryMigrateTarget } from './LibraryMigrateDialog'
 import { SkillsSection } from './SkillsSection'
 import { McpSettingsSection } from './McpSettingsSection'
 import { ShortcutsSettingsSection } from './ShortcutsSettingsSection'
@@ -1319,10 +1321,10 @@ function ModelsSection() {
 function LibrarySection() {
   const root = useLibraryStore((state) => state.root)
   const isDefault = useLibraryStore((state) => state.isDefault)
-  const chooseRoot = useLibraryStore((state) => state.chooseRoot)
-  const resetRoot = useLibraryStore((state) => state.resetRoot)
   const revealRoot = useLibraryStore((state) => state.revealRoot)
   const refresh = useLibraryStore((state) => state.refresh)
+  const [migrateTarget, setMigrateTarget] =
+    useState<LibraryMigrateTarget>(null)
 
   useEffect(() => {
     void refresh()
@@ -1333,8 +1335,7 @@ function LibrarySection() {
       <div className="mb-3 text-[13px] font-semibold text-fg">全局资产库</div>
       <p className="mt-2 text-xs leading-[1.7] text-fg-subtle">
         所有项目共用这个文件夹。删除项目不会删除资产库，图片、视频和提示词模板都可以跨项目使用。
-        建议选择空目录，应用会自动创建「角色 / 场景 / 道具 / 风格 / 音频 /
-        提示词」。
+        更改位置时可以选择把现有内容一起迁移，迁移完成后旧目录会移入回收站。
       </p>
 
       <div className="mt-3.5 overflow-hidden rounded-card border border-border bg-surface-raised px-3 py-2.5">
@@ -1347,7 +1348,11 @@ function LibrarySection() {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => void chooseRoot()}
+          onClick={() => {
+            void window.api.library.pickRoot().then((path) => {
+              if (path) setMigrateTarget({ kind: 'path', path })
+            })
+          }}
         >
           选择文件夹
         </Button>
@@ -1361,12 +1366,17 @@ function LibrarySection() {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => void resetRoot()}
+          onClick={() => setMigrateTarget({ kind: 'default' })}
           disabled={isDefault}
         >
           恢复默认
         </Button>
       </div>
+
+      <LibraryMigrateDialog
+        target={migrateTarget}
+        onClose={() => setMigrateTarget(null)}
+      />
 
       <p className="mt-2 text-xs leading-[1.7] text-fg-subtle">
         默认路径是「文档 / CineLab

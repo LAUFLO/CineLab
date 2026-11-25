@@ -235,7 +235,7 @@ export function ProjectCenter() {
                         从空画布开始
                       </span>
                     </div>
-                    <div className="flex aspect-video w-full items-center justify-center border-y border-divider bg-surface">
+                    <div className="flex aspect-video w-full items-center justify-center bg-surface">
                       <Icon name="plus" size={28} className="text-fg-subtle" />
                     </div>
                     <div className="flex items-center px-1.5 py-1">

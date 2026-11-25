@@ -1,6 +1,9 @@
-import { useState } from 'react'
-import type { WorkflowSaveInput } from '@shared/workflow-schema'
-import { Button, Dialog, Input, Textarea } from '../components/ui'
+import { useEffect, useState } from 'react'
+import type {
+  WorkflowSaveInput,
+  WorkflowSummary
+} from '@shared/workflow-schema'
+import { Button, Dialog, Input, Select, Textarea } from '../components/ui'
 import { useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
 
@@ -15,17 +18,31 @@ export function WorkflowSaveDialog() {
   const [description, setDescription] = useState('')
   const [includeText, setIncludeText] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [workflows, setWorkflows] = useState<WorkflowSummary[]>([])
+  const [overwriteSlug, setOverwriteSlug] = useState('')
+
+  useEffect(() => {
+    if (!request) return
+    setOverwriteSlug(request.overwriteSlug ?? '')
+    void window.api.workflow.list().then(setWorkflows)
+  }, [request])
 
   if (!request) return null
 
   const selectedIds = request.selectedIds
   const nodeCount = selectedIds?.length ?? nodes.length
+  const selectedSet = new Set(selectedIds ?? nodes.map((node) => node.id))
   const edgeCount = selectedIds
     ? edges.filter(
         (edge) =>
           selectedIds.includes(edge.source) && selectedIds.includes(edge.target)
       ).length
     : edges.length
+  const droppedEdges = edges.filter((edge) => {
+    const sourceInside = selectedSet.has(edge.source)
+    const targetInside = selectedSet.has(edge.target)
+    return sourceInside !== targetInside
+  }).length
 
   const submit = async (): Promise<void> => {
     const trimmed = name.trim()
@@ -36,6 +53,7 @@ export function WorkflowSaveDialog() {
 
     setSaving(true)
     try {
+      const targetSlug = request.overwriteSlug ?? (overwriteSlug || undefined)
       const summary = await window.api.workflow.save({
         name: trimmed,
         description: description.trim() || undefined,
@@ -44,16 +62,17 @@ export function WorkflowSaveDialog() {
         selectedIds,
         projectPath: '',
         includeLinkedText: includeText,
-        overwriteSlug: request.overwriteSlug
+        overwriteSlug: targetSlug
       })
       showToast(
-        request.overwriteSlug
+        targetSlug
           ? `工作流「${summary.name}」已更新`
           : `工作流「${summary.name}」已保存`
       )
       setName('')
       setDescription('')
       setIncludeText(true)
+      setOverwriteSlug('')
       close()
     } catch (error) {
       showToast(
@@ -103,6 +122,22 @@ export function WorkflowSaveDialog() {
         />
       </label>
 
+      <label className="mb-3 flex flex-col gap-1.5 text-[11px] text-fg-subtle">
+        <span>保存方式</span>
+        <Select
+          value={overwriteSlug}
+          options={[
+            { value: '', label: '新建工作流' },
+            ...workflows.map((workflow) => ({
+              value: workflow.slug,
+              label: `覆盖「${workflow.name}」`
+            }))
+          ]}
+          onChange={setOverwriteSlug}
+          className="!h-9 !w-full !text-[13px]"
+        />
+      </label>
+
       <label className="mb-4 flex cursor-pointer items-center gap-2 text-[11px] text-fg-muted">
         <Input
           type="checkbox"
@@ -115,7 +150,10 @@ export function WorkflowSaveDialog() {
 
       <div className="mb-4 rounded-md bg-surface-hover px-2.5 py-2 text-[11px] leading-[1.6] text-fg-subtle">
         当前将保存 {nodeCount} 个节点、{edgeCount} 条连线
-        {selectedIds ? '（选中范围）' : '（整个画布）'}。外部连线会被丢弃。
+        {selectedIds ? '（选中范围）' : '（整个画布）'}。
+        {droppedEdges > 0
+          ? `将丢弃 ${droppedEdges} 条外部连接。`
+          : '没有外部连接。'}
       </div>
 
       <div className="flex justify-end gap-2">

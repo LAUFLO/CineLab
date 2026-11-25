@@ -5,6 +5,7 @@ import { Icon } from '../../components/Icon'
 import { useCanvasStore } from '../../stores/canvas'
 import { useFilmStudyStore } from '../../stores/film-study'
 import { useSettingsStore } from '../../stores/settings'
+import { useUIStore } from '../../stores/ui'
 import { Button, Select, cn } from '../../components/ui'
 
 interface StudyNodeCardProps {
@@ -76,6 +77,33 @@ export function StudyNodeCard({ nodeId, data }: StudyNodeCardProps) {
   ]
 
   const start = (): void => {
+    const store = useCanvasStore.getState()
+    if (!data.sourcePath) {
+      const incoming = store.edges
+        .filter((edge) => edge.target === nodeId)
+        .map((edge) => store.nodes.find((node) => node.id === edge.source))
+        .filter((node): node is NonNullable<typeof node> => Boolean(node))
+      const video = incoming.find(
+        (node) =>
+          node.type === 'cine' &&
+          node.data.outputs?.some((output) => output.kind === 'video')
+      )
+      const output =
+        video && video.type === 'cine'
+          ? video.data.outputs?.find((item) => item.kind === 'video')
+          : undefined
+      if (!video || video.type !== 'cine' || !output) {
+        useUIStore.getState().showToast('请先连接一个视频节点', 'error')
+        return
+      }
+      store.patchNodeData(nodeId, {
+        sourcePath: output.path,
+        sourceScope: output.scope,
+        sourceName: video.data.title,
+        sourceNodeId: video.id
+      })
+    }
+
     void runAuto(nodeId, {
       interval: 0,
       modelKey: modelKey || undefined,

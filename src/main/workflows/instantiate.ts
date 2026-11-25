@@ -9,6 +9,7 @@ import {
 } from '@shared/stage-schema'
 import { saveStageFile } from '../stage/storage'
 import { getLibraryRoot } from '../library/config'
+import { listProviders } from '../settings/store'
 
 export interface InstantiateOptions {
   projectPath: string
@@ -80,6 +81,13 @@ export async function instantiateWorkflow(
   const warnings: string[] = []
   const libraryRoot = await getLibraryRoot()
   const stageMap = new Map<string, string>()
+  const providers = await listProviders()
+  const modelIndex = new Map<string, string>()
+  for (const provider of providers) {
+    for (const model of provider.models) {
+      modelIndex.set(model.id, `${provider.id}/${model.id}`)
+    }
+  }
 
   for (const [oldId, doc] of Object.entries(pkg.stages)) {
     const stageDoc = doc as DirectorStageDoc
@@ -156,6 +164,22 @@ export async function instantiateWorkflow(
           .filter((id): id is string => Boolean(id))
       }
 
+      if (typeof data.modelKey === 'string') {
+        const [providerId, modelId] = data.modelKey.split('/')
+        const provider = providers.find((item) => item.id === providerId)
+        const exists = provider?.models.some((model) => model.id === modelId)
+        if (!exists) {
+          const fallback = modelIndex.get(modelId)
+          if (fallback) {
+            data.modelKey = fallback
+            warnings.push(`节点「${label}」的模型已按模型 ID 重新匹配`)
+          } else {
+            delete data.modelKey
+            warnings.push(`节点「${label}」的模型不可用，已回退默认模型`)
+          }
+        }
+      }
+
       await pruneGlobalRefs(data, libraryRoot, warnings, label)
 
       const hasOutput = Array.isArray(data.outputs) && data.outputs.length > 0
@@ -171,8 +195,14 @@ export async function instantiateWorkflow(
 
   const idSet = new Set(nodes.map((node) => node.id))
   const edges = pkg.canvas.edges
+    .map((edge, index) => {
+      const next = structuredClone(edge)
+      next.id = `edge_${stamp}_${index + 1}`
+      next.source = idMap.get(edge.source) ?? edge.source
+      next.target = idMap.get(edge.target) ?? edge.target
+      return next
+    })
     .filter((edge) => idSet.has(edge.source) && idSet.has(edge.target))
-    .map((edge) => structuredClone(edge))
 
   return {
     nodes,

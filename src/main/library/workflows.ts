@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import {
@@ -63,6 +63,41 @@ async function uniqueSlug(
   }
 }
 
+function missingGlobalAssets(
+  pkg: WorkflowPackage,
+  libraryRoot: string
+): number {
+  const exists = (path: string): boolean =>
+    existsSync(join(libraryRoot, ...path.split('/')))
+  let count = 0
+
+  for (const node of pkg.canvas.nodes) {
+    const data = node.data as Record<string, unknown>
+    if (Array.isArray(data.refOrder)) {
+      for (const entry of data.refOrder) {
+        if (typeof entry !== 'string' || !entry.startsWith('global:')) continue
+        if (!exists(entry.slice('global:'.length))) count += 1
+      }
+    }
+    if (
+      data.referenceScope === 'global' &&
+      typeof data.referencePath === 'string' &&
+      !exists(data.referencePath)
+    ) {
+      count += 1
+    }
+    if (
+      data.sourceScope === 'global' &&
+      typeof data.sourcePath === 'string' &&
+      !exists(data.sourcePath)
+    ) {
+      count += 1
+    }
+  }
+
+  return count
+}
+
 function summaryFor(pkg: WorkflowPackage, slug: string): WorkflowSummary {
   return {
     slug,
@@ -106,6 +141,7 @@ async function writePackage(
 
 export async function listWorkflows(): Promise<WorkflowSummary[]> {
   const root = await workflowRoot()
+  const libraryRoot = await getLibraryRoot()
   let entries
   try {
     entries = await fs.readdir(root, { withFileTypes: true })
@@ -118,7 +154,12 @@ export async function listWorkflows(): Promise<WorkflowSummary[]> {
     if (!entry.isDirectory()) continue
     const pkg = await readPackage(root, entry.name)
     if (!pkg) continue
-    items.push(summaryFor(pkg, entry.name))
+    const summary = summaryFor(pkg, entry.name)
+    summary.meta = {
+      ...summary.meta,
+      missingGlobalAssets: missingGlobalAssets(pkg, libraryRoot)
+    }
+    items.push(summary)
   }
 
   return items.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))

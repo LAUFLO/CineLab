@@ -10,6 +10,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { assetUrl } from '../lib/asset-url'
 import { Button, IconButton } from '../components/ui'
+import { WorkflowManageDialog } from './WorkflowManageDialog'
 
 export function ProjectCenter() {
   const startNew = useProjectStore((state) => state.startNew)
@@ -36,6 +37,7 @@ export function ProjectCenter() {
   const [templateOpen, setTemplateOpen] = useState(false)
   const [workflows, setWorkflows] = useState<WorkflowSummary[]>([])
   const [importing, setImporting] = useState(false)
+  const [manageOpen, setManageOpen] = useState(false)
   const showToast = useUIStore((state) => state.showToast)
 
   const loadWorkflows = (): void => {
@@ -262,7 +264,14 @@ export function ProjectCenter() {
               </div>
             ) : null}
 
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setManageOpen(true)}
+              >
+                管理工作流
+              </Button>
               <Button
                 variant="secondary"
                 size="sm"
@@ -275,6 +284,13 @@ export function ProjectCenter() {
           </div>
         </div>
       ) : null}
+
+      <WorkflowManageDialog
+        workflows={workflows}
+        open={manageOpen}
+        onClose={() => setManageOpen(false)}
+        onChanged={loadWorkflows}
+      />
     </div>
   )
 }

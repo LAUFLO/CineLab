@@ -2,6 +2,14 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { createPortal } from 'react-dom'
 import { Icon } from '../Icon'
 import { cn } from './cn'
+import type { ControlSize } from './Input'
+
+const SELECT_SIZES: Record<ControlSize, string> = {
+  xs: 'h-[26px] min-w-[88px] px-2 text-[11px]',
+  sm: 'h-7 min-w-[96px] px-2 text-xs',
+  md: 'h-9 min-w-[120px] px-3 text-sm',
+  lg: 'h-10 min-w-[140px] px-4 text-sm'
+}
 
 export interface SelectOption<T extends string> {
   value: T
@@ -13,6 +21,7 @@ export interface SelectOption<T extends string> {
 
 interface SelectProps<T extends string> {
   value: T
+  size?: ControlSize
   options: SelectOption<T>[]
   onChange: (value: T) => void
   disabled?: boolean
@@ -42,7 +51,8 @@ export function Select<T extends string>({
   id,
   name,
   ariaLabel,
-  menuWidth = 'auto'
+  menuWidth = 'auto',
+  size = 'md'
 }: SelectProps<T>) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState<MenuPosition | null>(null)
@@ -151,7 +161,8 @@ export function Select<T extends string>({
         ref={triggerRef}
         type="button"
         className={cn(
-          'inline-flex h-9 min-w-[120px] items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-sm text-fg transition-colors',
+          'inline-flex items-center justify-between gap-2 rounded-md border border-border bg-surface text-fg transition-colors',
+          SELECT_SIZES[size],
           'hover:border-border-selected hover:bg-surface-hover focus-visible:border-border-selected focus-visible:outline-none',
           'disabled:pointer-events-none disabled:opacity-55',
           className

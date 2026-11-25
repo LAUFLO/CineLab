@@ -64,7 +64,8 @@ export function WorkflowManageDialog({
             >
               {editing === workflow.slug ? (
                 <Input
-                  className="!h-8 min-w-0 flex-1 !rounded-md border-border-strong bg-surface !px-2 !text-[12px]"
+                  size="sm"
+                  className="min-w-0 flex-1 !rounded-md border-border-strong bg-surface !px-2"
                   value={draft}
                   autoFocus
                   onChange={(event) => setDraft(event.target.value)}

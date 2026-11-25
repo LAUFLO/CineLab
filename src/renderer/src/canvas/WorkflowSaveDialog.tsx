@@ -146,7 +146,7 @@ export function WorkflowSaveDialog() {
       <label className="mb-3 flex flex-col gap-1.5 text-[11px] text-fg-subtle">
         <span>名称</span>
         <Input
-          className="!h-9 !rounded-md border-border-strong bg-surface !px-2.5 !text-[13px] focus:!border-border-selected"
+          className="!rounded-md border-border-strong bg-surface !px-2.5 !text-[13px] focus:!border-border-selected"
           value={name}
           placeholder="例如：产品宣传片"
           autoFocus
@@ -160,7 +160,7 @@ export function WorkflowSaveDialog() {
       <label className="mb-3 flex flex-col gap-1.5 text-[11px] text-fg-subtle">
         <span>描述（选填）</span>
         <Textarea
-          className="!h-[72px] !min-h-[72px] !rounded-md border-border-strong bg-surface !px-2.5 !py-2 !text-[12px] focus:!border-border-selected"
+          className="!min-h-[72px] !rounded-md border-border-strong bg-surface !px-2.5 !py-2 !text-[12px] focus:!border-border-selected"
           value={description}
           placeholder="这个工作流适合什么场景"
           onChange={(event) => setDescription(event.target.value)}
@@ -179,7 +179,7 @@ export function WorkflowSaveDialog() {
             }))
           ]}
           onChange={setOverwriteSlug}
-          className="!h-9 !w-full !text-[13px]"
+          className="!w-full !text-[13px]"
         />
       </label>
 

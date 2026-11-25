@@ -9,8 +9,9 @@ import { useProjectStore } from '../stores/project'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { assetUrl } from '../lib/asset-url'
-import { Button, IconButton } from '../components/ui'
+import { Button, IconButton, Input } from '../components/ui'
 import { WorkflowManageDialog } from './WorkflowManageDialog'
+import { WorkflowGrid } from './library/WorkflowGrid'
 
 export function ProjectCenter() {
   const startNew = useProjectStore((state) => state.startNew)
@@ -38,7 +39,9 @@ export function ProjectCenter() {
   const [workflows, setWorkflows] = useState<WorkflowSummary[]>([])
   const [importing, setImporting] = useState(false)
   const [manageOpen, setManageOpen] = useState(false)
+  const [templateQuery, setTemplateQuery] = useState('')
   const showToast = useUIStore((state) => state.showToast)
+  const requestConfirm = useUIStore((state) => state.requestConfirm)
 
   const loadWorkflows = (): void => {
     void window.api.workflow.list().then(setWorkflows)
@@ -187,7 +190,7 @@ export function ProjectCenter() {
           onPointerDown={() => setTemplateOpen(false)}
         >
           <div
-            className="w-[640px] max-w-[calc(100vw-48px)] rounded-panel border border-border bg-surface-raised p-5 shadow-float"
+            className="w-[840px] max-w-[calc(100vw-48px)] rounded-panel border border-border bg-surface-raised p-5 shadow-float"
             onPointerDown={(event) => event.stopPropagation()}
           >
             <header className="mb-4 flex items-start justify-between gap-4">
@@ -199,63 +202,87 @@ export function ProjectCenter() {
                   空白项目或你保存的工作流；不会预置模型和素材
                 </div>
               </div>
-              <IconButton
-                label="关闭"
-                size="sm"
-                onClick={() => setTemplateOpen(false)}
-              >
-                <Icon name="close" size={14} />
-              </IconButton>
+              <div className="flex items-center gap-2">
+                <Input
+                  size="sm"
+                  value={templateQuery}
+                  onChange={(event) => setTemplateQuery(event.target.value)}
+                  placeholder="搜索工作流"
+                  className="!w-[180px]"
+                />
+                <IconButton
+                  label="关闭"
+                  size="sm"
+                  onClick={() => setTemplateOpen(false)}
+                >
+                  <Icon name="close" size={14} />
+                </IconButton>
+              </div>
             </header>
 
-            <div className="grid grid-cols-2 gap-2.5">
-              {PROJECT_TEMPLATES.map((template) => (
-                <Button
-                  key={template.id}
-                  type="button"
-                  variant="ghost"
-                  size="none"
-                  className="flex flex-col !items-start gap-1.5 rounded-card border border-border bg-surface-hover p-3.5 !text-left transition-[border-color,background] duration-[120ms] hover:border-border-selected hover:bg-surface-raised"
-                  onClick={() => {
-                    setTemplateOpen(false)
-                    void startNew(template.id)
-                  }}
-                >
-                  <span className="text-sm text-fg">{template.name}</span>
-                  <span className="text-[11px] leading-[1.6] text-fg-subtle">
-                    {template.description}
-                  </span>
-                </Button>
-              ))}
-              {workflows.map((workflow) => (
-                <Button
-                  key={workflow.slug}
-                  type="button"
-                  variant="ghost"
-                  size="none"
-                  className="flex flex-col !items-start gap-1.5 rounded-card border border-border bg-surface-hover p-3.5 !text-left transition-[border-color,background] duration-[120ms] hover:border-border-selected hover:bg-surface-raised"
-                  onClick={() => {
-                    setTemplateOpen(false)
-                    void startNew(workflow.slug)
-                  }}
-                >
-                  {workflow.thumbnail ? (
-                    <img
-                      src={assetUrl(workflow.thumbnail, 'global')}
-                      alt=""
-                      className="h-20 w-full rounded-md border border-border bg-surface object-cover"
-                    />
-                  ) : null}
-                  <span className="text-sm text-fg">{workflow.name}</span>
-                  <span className="text-[11px] leading-[1.6] text-fg-subtle">
-                    {workflow.meta.nodeCount} 个节点 ·{' '}
-                    {workflow.meta.generationCount} 个生成
-                    {workflow.meta.uploadSlotCount > 0
-                      ? ` · ${workflow.meta.uploadSlotCount} 个待上传`
-                      : ''}
-                  </span>
-                </Button>
-              ))}
+            <div className="max-h-[430px] overflow-y-auto pr-1">
+              <WorkflowGrid
+                workflows={workflows}
+                query={templateQuery}
+                mode="project"
+                leading={
+                  <div className="flex flex-col overflow-hidden rounded-card border border-border bg-surface-hover transition-[border-color,background] duration-[120ms] hover:border-border-selected hover:bg-surface-raised">
+                    <div className="flex h-8 shrink-0 items-center gap-2 px-2.5">
+                      <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg">
+                        空白项目
+                      </span>
+                      <span className="shrink-0 text-[10.5px] text-fg-subtle">
+                        从空画布开始
+                      </span>
+                    </div>
+                    <div className="flex aspect-video w-full items-center justify-center border-y border-divider bg-surface">
+                      <Icon name="plus" size={28} className="text-fg-subtle" />
+                    </div>
+                    <div className="flex items-center px-1.5 py-1">
+                      <Button
+                        variant="ghost"
+                        size="none"
+                        className="!h-6 !px-1.5 !text-[10.5px] !font-normal"
+                        onClick={() => {
+                          setTemplateOpen(false)
+                          void startNew('blank')
+                        }}
+                      >
+                        新建项目
+                      </Button>
+                    </div>
+                  </div>
+                }
+                onAddToCanvas={() => undefined}
+                onRename={(slug, name) => {
+                  void window.api.workflow.rename(slug, name).then(loadWorkflows)
+                }}
+                onDelete={(workflow) => {
+                  requestConfirm({
+                    title: '删除工作流？',
+                    message: `「${workflow.name}」会从资产库永久删除，已用它创建的项目不受影响。`,
+                    confirmLabel: '删除',
+                    danger: true,
+                    onConfirm: () =>
+                      void window.api.workflow
+                        .delete(workflow.slug)
+                        .then(loadWorkflows)
+                  })
+                }}
+                onExport={(workflow) => {
+                  void window.api.workflow
+                    .export(workflow.slug)
+                    .then((result) => {
+                      if (result.ok) showToast('工作流已导出')
+                      else if (!result.canceled)
+                        showToast(result.error ?? '导出失败', 'error')
+                    })
+                }}
+                onCreateProject={(workflow) => {
+                  setTemplateOpen(false)
+                  void startNew(workflow.slug)
+                }}
+              />
             </div>
 
             {workflows.length === 0 ? (

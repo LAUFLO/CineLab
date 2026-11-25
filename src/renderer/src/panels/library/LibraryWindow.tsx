@@ -519,16 +519,23 @@ export function LibraryWindow() {
             <div className="flex h-7 items-center gap-1.5 rounded-md border border-border bg-surface-raised px-[9px] text-fg-subtle focus-within:border-border-strong">
               <Icon name="search" size={13} />
               <Input
+                size="sm"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={isStyleFolder ? '搜索风格' : '搜索当前文件夹'}
-                className="!h-auto !w-[180px] !rounded-none !border-0 !bg-transparent !p-0 !text-xs focus:!border-0"
+                placeholder={
+                  isWorkflowFolder
+                    ? '搜索工作流'
+                    : isStyleFolder
+                      ? '搜索风格'
+                      : '搜索当前文件夹'
+                }
+                className="!w-[180px] !rounded-none !border-0 !bg-transparent !p-0 focus:!border-0"
               />
             </div>
             {mode === 'browse' && !isTemplateFolder && !isStyleFolder && !isWorkflowFolder ? (
               <Button
                 variant="secondary"
-                size="xs"
+                size="sm"
                 onClick={() => {
                   setSelectionMode((current) => !current)
                   setSelectedPaths(new Set())

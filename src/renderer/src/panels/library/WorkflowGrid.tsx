@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type {
   WorkflowPackage,
   WorkflowSummary
@@ -10,6 +10,8 @@ import { assetUrl } from '../../lib/asset-url'
 interface WorkflowGridProps {
   workflows: WorkflowSummary[]
   query: string
+  mode?: 'library' | 'project'
+  leading?: ReactNode
   onAddToCanvas: (workflow: WorkflowSummary) => void
   onRename: (slug: string, name: string) => void
   onDelete: (workflow: WorkflowSummary) => void
@@ -17,9 +19,22 @@ interface WorkflowGridProps {
   onCreateProject: (workflow: WorkflowSummary) => void
 }
 
+function statsOf(workflow: WorkflowSummary): string {
+  const parts = [
+    `${workflow.meta.nodeCount} 节点`,
+    `${workflow.meta.generationCount} 生成`
+  ]
+  if (workflow.meta.uploadSlotCount > 0) {
+    parts.push(`${workflow.meta.uploadSlotCount} 待上传`)
+  }
+  return parts.join(' · ')
+}
+
 export function WorkflowGrid({
   workflows,
   query,
+  mode = 'library',
+  leading,
   onAddToCanvas,
   onRename,
   onDelete,
@@ -38,7 +53,7 @@ export function WorkflowGrid({
     )
   }, [workflows, query])
 
-  if (filtered.length === 0) {
+  if (filtered.length === 0 && !leading) {
     return (
       <div className="flex flex-col items-center gap-2 py-16 text-center text-xs leading-[1.8] text-fg-subtle">
         <Icon name="folder" size={28} className="text-fg-subtle" />
@@ -50,53 +65,57 @@ export function WorkflowGrid({
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-3 max-[900px]:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-3">
+        {leading}
         {filtered.map((workflow) => (
           <div
             key={workflow.slug}
-            className="group relative flex flex-col overflow-hidden rounded-card border border-border bg-surface-hover transition-[border-color,background] duration-[120ms] hover:border-border-selected hover:bg-surface-raised"
+            className="flex flex-col overflow-hidden rounded-card border border-border bg-surface-hover transition-[border-color,background] duration-[120ms] hover:border-border-selected hover:bg-surface-raised"
           >
+            <div className="flex h-8 shrink-0 items-center gap-2 px-2.5">
+              <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg">
+                {workflow.name}
+              </span>
+              <span className="shrink-0 text-[10.5px] text-fg-subtle">
+                {statsOf(workflow)}
+              </span>
+              {workflow.meta.missingGlobalAssets > 0 ? (
+                <span className="shrink-0 text-[10.5px] text-danger">
+                  缺 {workflow.meta.missingGlobalAssets}
+                </span>
+              ) : null}
+            </div>
+
             <Button
-              type="button"
               variant="ghost"
               size="none"
-              className="flex flex-col gap-2 p-3 !text-left !font-normal"
+              className="relative block aspect-video w-full overflow-hidden !rounded-none border-y border-divider bg-surface !p-0"
               onClick={() => onAddToCanvas(workflow)}
             >
-              <div className="flex h-24 items-center justify-center overflow-hidden rounded-md border border-border bg-surface">
-                {workflow.thumbnail ? (
-                  <img
-                    src={assetUrl(workflow.thumbnail, 'global')}
-                    alt=""
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
+              {workflow.thumbnail ? (
+                <img
+                  src={`${assetUrl(workflow.thumbnail, 'global')}?v=${encodeURIComponent(workflow.updatedAt)}`}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
                   <Icon name="folder" size={28} className="text-fg-subtle" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="truncate text-[13px] text-fg">
-                  {workflow.name}
                 </div>
-                <div className="mt-0.5 text-[10.5px] leading-[1.6] text-fg-subtle">
-                  {workflow.meta.nodeCount} 个节点 ·{' '}
-                  {workflow.meta.generationCount} 个生成
-                  {workflow.meta.uploadSlotCount > 0
-                    ? ` · ${workflow.meta.uploadSlotCount} 个待上传`
-                    : ''}
-                </div>
-              </div>
+              )}
             </Button>
 
-            <div className="flex items-center gap-1 border-t border-divider px-2 py-1.5">
-              <Button
-                variant="ghost"
-                size="none"
-                className="!h-6 !px-1.5 !text-[10.5px] !font-normal"
-                onClick={() => onAddToCanvas(workflow)}
-              >
-                添加到画布
-              </Button>
+            <div className="flex items-center gap-0.5 px-1.5 py-1">
+              {mode === 'library' ? (
+                <Button
+                  variant="ghost"
+                  size="none"
+                  className="!h-6 !px-1.5 !text-[10.5px] !font-normal"
+                  onClick={() => onAddToCanvas(workflow)}
+                >
+                  添加到画布
+                </Button>
+              ) : null}
               <Button
                 variant="ghost"
                 size="none"
@@ -155,6 +174,12 @@ export function WorkflowGrid({
         ))}
       </div>
 
+      {filtered.length === 0 ? (
+        <div className="mt-3 text-center text-[11px] leading-[1.7] text-fg-subtle">
+          没有匹配的工作流
+        </div>
+      ) : null}
+
       {renaming ? (
         <Dialog
           open
@@ -164,7 +189,7 @@ export function WorkflowGrid({
         >
           <div className="mb-3 text-[15px] text-fg">重命名工作流</div>
           <Input
-            className="!h-9 !rounded-md border-border-strong bg-surface !px-2.5 !text-[13px] focus:!border-border-selected"
+            size="md"
             value={draft}
             autoFocus
             onChange={(event) => setDraft(event.target.value)}
@@ -194,6 +219,7 @@ export function WorkflowGrid({
           </div>
         </Dialog>
       ) : null}
+
       {preview ? (
         <Dialog
           open
@@ -213,16 +239,16 @@ export function WorkflowGrid({
             </Button>
           </div>
 
-          <div className="mb-3 flex h-44 items-center justify-center overflow-hidden rounded-md border border-border bg-surface">
+          <div className="mb-3 flex aspect-video items-center justify-center overflow-hidden rounded-md border border-border bg-surface">
             {(() => {
               const thumbnail = workflows.find(
                 (item) => item.id === preview.id
               )?.thumbnail
               return thumbnail ? (
                 <img
-                  src={assetUrl(thumbnail, 'global')}
+                  src={`${assetUrl(thumbnail, 'global')}?v=${encodeURIComponent(preview.updatedAt)}`}
                   alt=""
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-cover"
                 />
               ) : (
                 <Icon name="folder" size={28} className="text-fg-subtle" />

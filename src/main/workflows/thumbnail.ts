@@ -10,6 +10,10 @@ interface Box extends Point {
   height: number
 }
 
+const CANVAS_WIDTH = 640
+const CANVAS_HEIGHT = 360
+const PADDING = 20
+
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -26,7 +30,6 @@ function nodeSize(node: WorkflowNode): { width: number; height: number } {
   }
 }
 
-/** React Flow 子节点坐标相对父节点，逐层累加得到绝对坐标。 */
 function absolutePosition(
   nodes: WorkflowNode[],
   node: WorkflowNode,
@@ -79,15 +82,21 @@ export function buildWorkflowThumbnail(
   const maxY = values.length
     ? Math.max(...values.map((box) => box.y + box.height))
     : 180
-  const padding = 24
-  const width = Math.max(320, Math.ceil(maxX - minX + padding * 2))
-  const height = Math.max(180, Math.ceil(maxY - minY + padding * 2))
+  const contentWidth = Math.max(1, maxX - minX)
+  const contentHeight = Math.max(1, maxY - minY)
+  const scale = Math.min(
+    (CANVAS_WIDTH - PADDING * 2) / contentWidth,
+    (CANVAS_HEIGHT - PADDING * 2) / contentHeight,
+    1.4
+  )
+  const offsetX = (CANVAS_WIDTH - contentWidth * scale) / 2 - minX * scale
+  const offsetY = (CANVAS_HEIGHT - contentHeight * scale) / 2 - minY * scale
 
-  const shift = (box: Box): Box => ({
-    x: box.x - minX + padding,
-    y: box.y - minY + padding,
-    width: box.width,
-    height: box.height
+  const project = (box: Box): Box => ({
+    x: box.x * scale + offsetX,
+    y: box.y * scale + offsetY,
+    width: box.width * scale,
+    height: box.height * scale
   })
 
   const edgeLines = edges
@@ -95,8 +104,8 @@ export function buildWorkflowThumbnail(
       const source = boxes.get(edge.source)
       const target = boxes.get(edge.target)
       if (!source || !target) return ''
-      const from = shift(source)
-      const to = shift(target)
+      const from = project(source)
+      const to = project(target)
       return `<line x1="${from.x + from.width / 2}" y1="${from.y + from.height / 2}" x2="${to.x + to.width / 2}" y2="${to.y + to.height / 2}" stroke="#94a3b8" stroke-width="1.5" />`
     })
     .join('')
@@ -105,21 +114,21 @@ export function buildWorkflowThumbnail(
     .map(([id, box]) => {
       const node = nodes.find((item) => item.id === id)
       if (!node) return ''
-      const shifted = shift(box)
+      const shifted = project(box)
       const title = truncate(
         String((node.data as { title?: string }).title ?? '节点'),
-        18
+        16
       )
       return [
-        `<rect x="${shifted.x}" y="${shifted.y}" width="${shifted.width}" height="${shifted.height}" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />`,
-        `<text x="${shifted.x + 10}" y="${shifted.y + 22}" font-family="sans-serif" font-size="12" fill="#334155">${escapeXml(title)}</text>`
+        `<rect x="${shifted.x.toFixed(1)}" y="${shifted.y.toFixed(1)}" width="${shifted.width.toFixed(1)}" height="${shifted.height.toFixed(1)}" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />`,
+        `<text x="${(shifted.x + 8).toFixed(1)}" y="${(shifted.y + 18).toFixed(1)}" font-family="sans-serif" font-size="12" fill="#334155">${escapeXml(title)}</text>`
       ].join('')
     })
     .join('')
 
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
-    `<rect width="${width}" height="${height}" fill="#f8fafc" />`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" viewBox="0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}">`,
+    `<rect width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" fill="#f8fafc" />`,
     edgeLines,
     nodeShapes,
     '</svg>'

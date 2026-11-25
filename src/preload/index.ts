@@ -558,7 +558,12 @@ const api: CineApi = {
       name: string
       mime: string
       data: ArrayBuffer
-    }) => ipcRenderer.invoke('scene:upload-image', input)
+    }) => ipcRenderer.invoke('scene:upload-image', input),
+    uploadAsset: (input: {
+      kind: 'image' | 'video' | 'audio'
+      mime: string
+      data: ArrayBuffer
+    }) => ipcRenderer.invoke('scene:upload-asset', input)
   },
   skills: {
     list: () => ipcRenderer.invoke('skills:list'),

@@ -131,22 +131,30 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   }
 
   const uploadPlaceholderAsset = (): void => {
-    if (data.kind !== 'image') {
-      showToast('当前占位支持上传图片，视频/音频请从资产库添加', 'error')
+    const kind = data.kind
+    if (kind !== 'image' && kind !== 'video' && kind !== 'audio') {
+      showToast('这个节点不支持上传素材', 'error')
       return
     }
 
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = 'image/*'
+    input.accept =
+      kind === 'image' ? 'image/*' : kind === 'video' ? 'video/*' : 'audio/*'
     input.onchange = () => {
       const file = input.files?.[0]
       if (!file) return
       void (async () => {
         try {
-          const asset = await window.api.scene.uploadImage({
-            name: file.name,
-            mime: file.type || 'image/png',
+          const asset = await window.api.scene.uploadAsset({
+            kind,
+            mime:
+              file.type ||
+              (kind === 'image'
+                ? 'image/png'
+                : kind === 'video'
+                  ? 'video/mp4'
+                  : 'audio/mpeg'),
             data: await file.arrayBuffer()
           })
           const output = {
@@ -156,7 +164,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             createdAt: asset.createdAt,
             model: asset.model,
             width: asset.width,
-            height: asset.height
+            height: asset.height,
+            duration: asset.duration,
+            fps: asset.fps,
+            hasAudio: asset.hasAudio
           }
           patchNodeData(id, {
             status: 'done',
@@ -165,6 +176,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             selectedOutputId: output.id,
             workflowSlot: undefined
           })
+          useUIStore.getState().requestFitView()
           showToast('素材已上传')
         } catch (error) {
           showToast(

@@ -615,6 +615,11 @@ export interface SceneApi {
     mime: string
     data: ArrayBuffer
   }): Promise<import('./generation').GeneratedAsset>
+  uploadAsset(input: {
+    kind: 'image' | 'video' | 'audio'
+    mime: string
+    data: ArrayBuffer
+  }): Promise<import('./generation').GeneratedAsset>
 }
 
 export interface LocalAdapterApi {

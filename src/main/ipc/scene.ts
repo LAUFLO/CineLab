@@ -38,6 +38,34 @@ export function registerSceneIpc(): void {
     }
   )
 
+  ipcMain.handle(
+    'scene:upload-asset',
+    async (
+      _event,
+      input: {
+        kind: 'image' | 'video' | 'audio'
+        mime: string
+        data: ArrayBuffer
+      }
+    ) => {
+      const root = getCurrentProjectRoot()
+      if (!root) throw new Error('当前没有打开的项目')
+      return ingestAsset({
+        projectPath: root,
+        data: Buffer.from(input.data),
+        kind: input.kind,
+        mime:
+          input.mime ||
+          (input.kind === 'image'
+            ? 'image/png'
+            : input.kind === 'video'
+              ? 'video/mp4'
+              : 'audio/mpeg'),
+        model: '本地上传'
+      })
+    }
+  )
+
   ipcMain.handle('scene:get-object-presets', () =>
     loadUserObjectPresets()
   )

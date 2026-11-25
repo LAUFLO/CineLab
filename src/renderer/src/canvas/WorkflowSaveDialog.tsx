@@ -5,6 +5,7 @@ import type {
 } from '@shared/workflow-schema'
 import { Button, Dialog, Input, Select, Textarea } from '../components/ui'
 import { useCanvasStore } from '../stores/canvas'
+import { useProjectStore } from '../stores/project'
 import { useUIStore } from '../stores/ui'
 
 export function WorkflowSaveDialog() {
@@ -20,14 +21,58 @@ export function WorkflowSaveDialog() {
   const [saving, setSaving] = useState(false)
   const [workflows, setWorkflows] = useState<WorkflowSummary[]>([])
   const [overwriteSlug, setOverwriteSlug] = useState('')
+  const [saved, setSaved] = useState<WorkflowSummary | null>(null)
 
   useEffect(() => {
     if (!request) return
+    setSaved(null)
     setOverwriteSlug(request.overwriteSlug ?? '')
     void window.api.workflow.list().then(setWorkflows)
   }, [request])
 
   if (!request) return null
+
+  if (saved) {
+    return (
+      <Dialog
+        open
+        onClose={() => {
+          setSaved(null)
+          close()
+        }}
+        ariaLabel="工作流已保存"
+        panelClassName="w-[min(440px,100%)] p-5"
+      >
+        <div className="mb-1 text-[16px] text-fg">工作流已保存</div>
+        <p className="mb-4 mt-0 text-[12px] leading-[1.7] text-fg-subtle">
+          「{saved.name}」已存入资产库「工作流」，包含 {saved.meta.nodeCount}{' '}
+          个节点、{saved.meta.generationCount} 个生成节点。
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setSaved(null)
+              close()
+            }}
+          >
+            完成
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              const slug = saved.slug
+              setSaved(null)
+              close()
+              void useProjectStore.getState().startNew(slug)
+            }}
+          >
+            用此工作流新建项目
+          </Button>
+        </div>
+      </Dialog>
+    )
+  }
 
   const selectedIds = request.selectedIds
   const nodeCount = selectedIds?.length ?? nodes.length
@@ -73,7 +118,7 @@ export function WorkflowSaveDialog() {
       setDescription('')
       setIncludeText(true)
       setOverwriteSlug('')
-      close()
+      setSaved(summary)
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : String(error),

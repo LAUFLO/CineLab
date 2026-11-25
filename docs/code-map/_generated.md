@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 75 | 26163 |
+| 01 | [画布](./01-canvas.md) | 75 | 26229 |
 | 02 | [生成与模型](./02-generation.md) | 67 | 14639 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10058 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
 | 06 | [CineBot 与 Agent](./06-agent.md) | 69 | 21163 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 74 | 13625 |
-| 10 | [UI 组件与面板](./10-ui.md) | 53 | 11589 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 74 | 13663 |
+| 10 | [UI 组件与面板](./10-ui.md) | 53 | 11683 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -36,7 +36,7 @@
 | `AgentApi` | `chat`、`cancel`、`toolResult`、`confirm`、`sessionLoad`、`sessionList`、`sessionCreate`、`sessionRename`、`sessionDelete`、`sessionCompact`、`modelInfo`、`textModels`、`models`、`proposalCreate`、`proposalActive`、`proposalSubmit`、`proposalCancel`、`onEvent`、`onToolCall` |
 | `SkillsApi` | `list`、`files`、`readFile`、`create`、`save`、`remove`、`uploadFiles`、`removeFile`、`clone`、`setOverride`、`pickImport`、`installImport`、`discardImport`、`openDirectory`、`openFile` |
 | `StageApi` | `create`、`load`、`save`、`delete`、`duplicate`、`capture`、`exportPreview`、`cancelExport`、`onExportProgress` |
-| `SceneApi` | `analyze`、`loadObjectPresets`、`saveObjectPresets`、`importObjectPresets`、`exportObjectPresets`、`uploadImage` |
+| `SceneApi` | `analyze`、`loadObjectPresets`、`saveObjectPresets`、`importObjectPresets`、`exportObjectPresets`、`uploadImage`、`uploadAsset` |
 | `LocalAdapterApi` | `list`、`reload`、`openDir`、`onChanged` |
 | `McpApi` | `onCommand`、`sendResult`、`status`、`config`、`resetToken`、`revealConfig`、`copy` |
 
@@ -204,6 +204,7 @@
 - `src/main/ipc/__tests__/index.test.ts`
 - `src/main/library/__tests__/store.test.ts`
 - `src/main/library/__tests__/tag-utils.test.ts`
+- `src/main/library/__tests__/workflows.test.ts`
 - `src/main/local-adapters/__tests__/build.test.ts`
 - `src/main/local-adapters/__tests__/manifest.test.ts`
 - `src/main/mcp/__tests__/catalog.test.ts`

@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
-import type { WorkflowSummary } from '@shared/workflow-schema'
+import type {
+  WorkflowPackage,
+  WorkflowSummary
+} from '@shared/workflow-schema'
 import { Icon } from '../../components/Icon'
 import { Button, Dialog, Input } from '../../components/ui'
 import { assetUrl } from '../../lib/asset-url'
@@ -25,6 +28,7 @@ export function WorkflowGrid({
 }: WorkflowGridProps) {
   const [renaming, setRenaming] = useState<WorkflowSummary | null>(null)
   const [draft, setDraft] = useState('')
+  const [preview, setPreview] = useState<WorkflowPackage | null>(null)
 
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase()
@@ -106,6 +110,19 @@ export function WorkflowGrid({
                   variant="ghost"
                   size="none"
                   className="!h-6 !w-6"
+                  title="预览"
+                  onClick={() => {
+                    void window.api.workflow
+                      .read(workflow.slug)
+                      .then(setPreview)
+                  }}
+                >
+                  <Icon name="search" size={12} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="none"
+                  className="!h-6 !w-6"
                   title="重命名"
                   onClick={() => {
                     setRenaming(workflow)
@@ -173,6 +190,82 @@ export function WorkflowGrid({
               }}
             >
               保存
+            </Button>
+          </div>
+        </Dialog>
+      ) : null}
+      {preview ? (
+        <Dialog
+          open
+          onClose={() => setPreview(null)}
+          ariaLabel="工作流预览"
+          panelClassName="w-[min(560px,100%)] p-5"
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <div className="text-[15px] text-fg">{preview.name}</div>
+            <Button
+              variant="ghost"
+              size="none"
+              className="h-7 w-7"
+              onClick={() => setPreview(null)}
+            >
+              <Icon name="close" size={14} />
+            </Button>
+          </div>
+
+          <div className="mb-3 flex h-44 items-center justify-center overflow-hidden rounded-md border border-border bg-surface">
+            {(() => {
+              const thumbnail = workflows.find(
+                (item) => item.id === preview.id
+              )?.thumbnail
+              return thumbnail ? (
+                <img
+                  src={assetUrl(thumbnail, 'global')}
+                  alt=""
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <Icon name="folder" size={28} className="text-fg-subtle" />
+              )
+            })()}
+          </div>
+
+          <div className="mb-2 text-[11px] leading-[1.7] text-fg-subtle">
+            {preview.meta.nodeCount} 个节点 · {preview.meta.generationCount}{' '}
+            个生成节点 · {preview.meta.uploadSlotCount} 个待上传
+          </div>
+
+          <div className="mb-4 max-h-[170px] overflow-y-auto rounded-md border border-border">
+            {preview.canvas.nodes.slice(0, 100).map((node) => (
+              <div
+                key={node.id}
+                className="flex items-center justify-between gap-2 border-b border-divider px-2.5 py-1 text-[11px] last:border-b-0"
+              >
+                <span className="min-w-0 truncate text-fg-muted">
+                  {String(
+                    (node.data as { title?: string }).title ?? node.id
+                  )}
+                </span>
+                <span className="shrink-0 text-fg-subtle">{node.type}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setPreview(null)}>
+              关闭
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                const summary = workflows.find(
+                  (item) => item.id === preview.id
+                )
+                setPreview(null)
+                if (summary) onAddToCanvas(summary)
+              }}
+            >
+              添加到画布
             </Button>
           </div>
         </Dialog>

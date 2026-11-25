@@ -326,6 +326,7 @@ export function LibraryWindow() {
         }))
       )
       showToast(`已添加工作流「${workflow.name}」`)
+      useUIStore.getState().requestFitView()
       if (result.warnings.length > 0) {
         showToast(result.warnings[0], 'error')
       }

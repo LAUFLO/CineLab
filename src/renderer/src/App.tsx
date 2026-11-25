@@ -252,7 +252,6 @@ export default function App() {
         <StatusBar />
         <LibraryPanel />
         <ToolbarSettings />
-        <ConfirmDialog />
         {error ? <ToastView tone="error">{error}</ToastView> : null}
       </div>
     )
@@ -265,6 +264,7 @@ export default function App() {
         <div className="fixed inset-x-0 top-0 z-[15] h-10 [-webkit-app-region:drag]" />
       )}
       <SettingsPanel />
+      <ConfirmDialog />
       <WorkflowSaveDialog />
       {studioOpen ? (
         <Suspense fallback={null}>

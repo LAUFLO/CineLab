@@ -96,14 +96,11 @@ export function LibraryMigrateDialog({
       onClose={() => {
         if (!busy) onClose()
       }}
+      title="更改资产库位置"
+      description="旧位置的内容可以选择一起迁移。迁移完成后旧目录会移入回收站。"
       ariaLabel="更改资产库位置"
       panelClassName="w-[min(520px,100%)] p-5"
     >
-      <div className="mb-2 text-[16px] text-fg">更改资产库位置</div>
-      <p className="mb-4 mt-0 text-[12px] leading-[1.7] text-fg-subtle">
-        旧位置的内容可以选择一起迁移。迁移完成后旧目录会移入回收站。
-      </p>
-
       <div className="mb-3 flex flex-col gap-1 rounded-md bg-surface-hover px-2.5 py-2 text-[11px] leading-[1.6] text-fg-muted">
         <div>
           <span className="text-fg-subtle">当前：</span>

@@ -40,14 +40,11 @@ export function WorkflowSaveDialog() {
           setSaved(null)
           close()
         }}
+        title="工作流已保存"
+        description={`「${saved.name}」已存入资产库「工作流」，包含 ${saved.meta.nodeCount} 个节点、${saved.meta.generationCount} 个生成节点。`}
         ariaLabel="工作流已保存"
         panelClassName="w-[min(440px,100%)] p-5"
       >
-        <div className="mb-1 text-[16px] text-fg">工作流已保存</div>
-        <p className="mb-4 mt-0 text-[12px] leading-[1.7] text-fg-subtle">
-          「{saved.name}」已存入资产库「工作流」，包含 {saved.meta.nodeCount}{' '}
-          个节点、{saved.meta.generationCount} 个生成节点。
-        </p>
         <div className="flex justify-end gap-2">
           <Button
             variant="secondary"
@@ -133,16 +130,11 @@ export function WorkflowSaveDialog() {
     <Dialog
       open
       onClose={close}
+      title={request.overwriteSlug ? '更新工作流' : '保存为工作流'}
+      description="只保存节点结构、提示词、模型和参数；生成结果和项目内素材不会保存。"
       ariaLabel="保存为工作流"
       panelClassName="w-[min(460px,100%)] p-5"
     >
-      <div className="mb-1 text-[16px] text-fg">
-        {request.overwriteSlug ? '更新工作流' : '保存为工作流'}
-      </div>
-      <p className="mb-4 mt-0 text-[12px] leading-[1.7] text-fg-subtle">
-        只保存节点结构、提示词、模型和参数；生成结果和项目内素材不会保存。
-      </p>
-
       <label className="mb-3 flex flex-col gap-1.5 text-[11px] text-fg-subtle">
         <span>名称</span>
         <Input

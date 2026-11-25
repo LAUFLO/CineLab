@@ -184,10 +184,10 @@ export function WorkflowGrid({
         <Dialog
           open
           onClose={() => setRenaming(null)}
+          title="重命名工作流"
           ariaLabel="重命名工作流"
           panelClassName="w-[min(380px,100%)] p-5"
         >
-          <div className="mb-3 text-[15px] text-fg">重命名工作流</div>
           <Input
             size="md"
             value={draft}
@@ -224,21 +224,10 @@ export function WorkflowGrid({
         <Dialog
           open
           onClose={() => setPreview(null)}
+          title={preview.name}
           ariaLabel="工作流预览"
           panelClassName="w-[min(560px,100%)] p-5"
         >
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-[15px] text-fg">{preview.name}</div>
-            <Button
-              variant="ghost"
-              size="none"
-              className="h-7 w-7"
-              onClick={() => setPreview(null)}
-            >
-              <Icon name="close" size={14} />
-            </Button>
-          </div>
-
           <div className="mb-3 flex aspect-video items-center justify-center overflow-hidden rounded-md border border-border bg-surface">
             {(() => {
               const thumbnail = workflows.find(

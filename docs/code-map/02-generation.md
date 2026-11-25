@@ -147,7 +147,7 @@ Prompt Bar / 节点操作
 |---|---|
 | `src/main/assets/ingest.ts` | 155 |
 | `src/main/engine/generation-error.ts` | 55 |
-| `src/main/engine/queue.ts` | 87 |
+| `src/main/engine/queue.ts` | 90 |
 | `src/main/engine/start-generation.ts` | 437 |
 | `src/main/local-adapters/build.ts` | 64 |
 | `src/main/local-adapters/host-process.ts` | 166 |
@@ -204,7 +204,7 @@ Prompt Bar / 节点操作
 | `src/shared/model-contracts.ts` | 395 |
 | `src/shared/model-modes.ts` | 278 |
 | `src/shared/param-constraints.ts` | 107 |
-| `src/shared/param-presets.ts` | 304 |
+| `src/shared/param-presets.ts` | 305 |
 | `src/shared/prompt-preset.ts` | 74 |
 | `src/shared/protocol-templates.ts` | 1341 |
 | `src/shared/provider-presets.ts` | 313 |

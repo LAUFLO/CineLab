@@ -23,6 +23,15 @@ function walk(directory) {
 
 const violations = [];
 
+/** 存量高度覆盖白名单；新文件和已迁移文件不再豁免。 */
+const CONTROL_HEIGHT_EXEMPT = new Set([
+  "panels/SettingsPanel.tsx",
+  "panels/GeneralSettingsSection.tsx",
+  "panels/ShortcutsSettingsSection.tsx",
+  "panels/SkillsSection.tsx",
+  "panels/ShortcutPanel.tsx"
+]);
+
 for (const file of walk(root)) {
   if (file.startsWith(uiDirectory)) continue
   const relative = file.slice(root.length + 1).replace(/\\/g, "/")
@@ -38,6 +47,17 @@ for (const file of walk(root)) {
       report(
         "native-control",
         "业务代码禁止原生控件；请用 Button / Input / Textarea / NativeSelect"
+      )
+    }
+
+    if (
+      /<(Input|Select|Textarea)\b/.test(line) &&
+      /!h-/.test(line) &&
+      !CONTROL_HEIGHT_EXEMPT.has(relative)
+    ) {
+      report(
+        "control-height",
+        "Input / Select / Textarea 禁止用 !h-* 覆盖高度，请用 size 属性"
       )
     }
 

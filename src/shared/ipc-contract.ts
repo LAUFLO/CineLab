@@ -7,6 +7,13 @@ import type {
 } from './project-schema'
 import type { ProjectTemplateId } from './project-templates'
 import type {
+  WorkflowApplyResult,
+  WorkflowImportResult,
+  WorkflowPackage,
+  WorkflowSaveInput,
+  WorkflowSummary
+} from './workflow-schema'
+import type {
   ConnectionTestInput,
   ConnectionTestResult,
   FetchModelsResult,
@@ -44,6 +51,10 @@ import type {
   ThumbCacheInfo
 } from './library-schema'
 import type { StyleCard, StyleSaveInput } from './style-schema'
+import type {
+  LibraryMigrateProgress,
+  LibraryMigrateResult
+} from './library-migration'
 import type { ModelsConfigStatus, ModelsFileProvider } from './models-file'
 import type {
   AgentChatRequest,
@@ -144,6 +155,21 @@ export interface ProjectApi {
   renameCanvas(path: string, canvasId: string, name: string): Promise<ProjectMeta>
   deleteCanvas(path: string, canvasId: string): Promise<ProjectSnapshot>
   delete(): Promise<boolean>
+  close(): Promise<void>
+}
+
+export interface WorkflowApi {
+  list(): Promise<WorkflowSummary[]>
+  read(slug: string): Promise<WorkflowPackage>
+  save(input: WorkflowSaveInput): Promise<WorkflowSummary>
+  rename(slug: string, name: string): Promise<WorkflowSummary>
+  delete(slug: string): Promise<void>
+  export(slug: string): Promise<ExportResult>
+  import(): Promise<WorkflowImportResult | null>
+  apply(
+    slug: string,
+    offset?: { x: number; y: number }
+  ): Promise<WorkflowApplyResult>
 }
 
 export interface SettingsApi {
@@ -192,6 +218,14 @@ export interface GenerateApi {
 export interface LibraryApi {
   root(): Promise<LibraryRootInfo>
   chooseRoot(): Promise<LibraryRootInfo | null>
+  pickRoot(): Promise<string | null>
+  setRoot(path: string): Promise<LibraryRootInfo>
+  migrateRoot(target: string): Promise<LibraryMigrateResult>
+  migrateDefault(): Promise<LibraryMigrateResult>
+  cancelMigrate(): Promise<void>
+  onMigrateProgress(
+    callback: (progress: LibraryMigrateProgress) => void
+  ): () => void
   resetRoot(): Promise<LibraryRootInfo>
   revealRoot(): Promise<void>
 
@@ -593,6 +627,11 @@ export interface SceneApi {
     mime: string
     data: ArrayBuffer
   }): Promise<import('./generation').GeneratedAsset>
+  uploadAsset(input: {
+    kind: 'image' | 'video' | 'audio'
+    mime: string
+    data: ArrayBuffer
+  }): Promise<import('./generation').GeneratedAsset>
 }
 
 export interface LocalAdapterApi {
@@ -693,6 +732,7 @@ export interface CineApi {
     close(): void
   }
   project: ProjectApi
+  workflow: WorkflowApi
   settings: SettingsApi
   localAdapters: LocalAdapterApi
   mcp: McpApi

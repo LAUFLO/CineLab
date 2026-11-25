@@ -9,6 +9,7 @@ import {
 } from 'electron'
 import type { ThemeMode } from '../../shared/ipc-contract'
 import { registerProjectIpc } from './project'
+import { registerWorkflowIpc } from './workflow'
 import { registerSettingsIpc } from './settings'
 import { registerGenerateIpc } from './generate'
 import { registerLibraryIpc } from './library'
@@ -35,6 +36,7 @@ function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
 
 export function registerIpc(): void {
   registerProjectIpc()
+  registerWorkflowIpc()
   registerSettingsIpc()
   registerGenerateIpc()
   registerLibraryIpc()

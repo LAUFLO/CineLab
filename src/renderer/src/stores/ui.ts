@@ -108,6 +108,12 @@ interface UIStore {
   clearPendingInsertPrompt: () => void
   requestConfirm: (confirm: ConfirmState) => void
   closeConfirm: () => void
+  workflowSaveRequest: { selectedIds?: string[]; overwriteSlug?: string } | null
+  openWorkflowSave: (request?: {
+    selectedIds?: string[]
+    overwriteSlug?: string
+  }) => void
+  closeWorkflowSave: () => void
   showToast: (message: string, tone?: ToastState['tone']) => void
   clearToast: () => void
   requestFitView: () => void
@@ -123,6 +129,7 @@ export const useUIStore = create<UIStore>((set) => ({
   pendingPrompt: null,
   pendingInsertPrompt: null,
   confirm: null,
+  workflowSaveRequest: null,
   toast: null,
   snapToGrid: false,
   edgesVisible: true,
@@ -178,6 +185,9 @@ export const useUIStore = create<UIStore>((set) => ({
   clearPendingInsertPrompt: () => set({ pendingInsertPrompt: null }),
   requestConfirm: (confirm) => set({ confirm }),
   closeConfirm: () => set({ confirm: null }),
+  openWorkflowSave: (request) =>
+    set({ workflowSaveRequest: request ?? {} }),
+  closeWorkflowSave: () => set({ workflowSaveRequest: null }),
   showToast: (message, tone = 'info') => set({ toast: { message, tone } }),
   clearToast: () => set({ toast: null }),
   requestFitView: () => set((state) => ({ fitViewToken: state.fitViewToken + 1 })),

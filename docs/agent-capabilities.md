@@ -6,7 +6,7 @@
 最后核对：2026-11-25
 关联：`docs/agent-architecture-plan.md`
 
-当前注册 90 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库、提示词模板、风格、素材处理、项目管理、技能和技能管理。
+当前注册 93 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库、提示词模板、风格、素材处理、项目管理、技能和技能管理。
 本文件记录已开放给 CineBot 的能力、参数校验、确认规则和回合撤销方式。
 所有写操作都走命令层；UI 和 Agent 共用执行器。
 
@@ -43,6 +43,8 @@
 ### 项目（3）
 
 `project_create`、`project_open`、`project_export`
+
+`workflow_list`、`workflow_save`、`workflow_apply`
 
 ## 1. 画布
 

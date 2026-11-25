@@ -130,6 +130,65 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
     closeTextEditor()
   }
 
+  const uploadPlaceholderAsset = (): void => {
+    const kind = data.kind
+    if (kind !== 'image' && kind !== 'video' && kind !== 'audio') {
+      showToast('这个节点不支持上传素材', 'error')
+      return
+    }
+
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept =
+      kind === 'image' ? 'image/*' : kind === 'video' ? 'video/*' : 'audio/*'
+    input.onchange = () => {
+      const file = input.files?.[0]
+      if (!file) return
+      void (async () => {
+        try {
+          const asset = await window.api.scene.uploadAsset({
+            kind,
+            mime:
+              file.type ||
+              (kind === 'image'
+                ? 'image/png'
+                : kind === 'video'
+                  ? 'video/mp4'
+                  : 'audio/mpeg'),
+            data: await file.arrayBuffer()
+          })
+          const output = {
+            id: asset.id,
+            path: asset.path,
+            kind: asset.kind,
+            createdAt: asset.createdAt,
+            model: asset.model,
+            width: asset.width,
+            height: asset.height,
+            duration: asset.duration,
+            fps: asset.fps,
+            hasAudio: asset.hasAudio
+          }
+          patchNodeData(id, {
+            status: 'done',
+            assetOnly: true,
+            outputs: [output],
+            selectedOutputId: output.id,
+            workflowSlot: undefined
+          })
+          useUIStore.getState().requestFitView()
+          showToast('素材已上传')
+        } catch (error) {
+          showToast(
+            error instanceof Error ? error.message : String(error),
+            'error'
+          )
+        }
+      })()
+    }
+    input.click()
+  }
+
   const retryGeneration = (): void => {
     const entry = useGenerationHistoryStore
       .getState()
@@ -549,6 +608,25 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                     className="h-full w-full object-contain"
                     loading="lazy"
                   />
+                ) : data.workflowSlot === 'upload' ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="none"
+                    className="nodrag nopan flex flex-col items-center gap-2 rounded-md border border-dashed border-border-strong px-4 py-3 !text-[11px] !font-normal text-fg-subtle transition-colors hover:border-link hover:text-fg"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      uploadPlaceholderAsset()
+                    }}
+                  >
+                    <Icon name="plus" size={20} />
+                    <span>点击上传素材</span>
+                  </Button>
+                ) : data.workflowSlot === 'generate' ? (
+                  <div className="flex flex-col items-center gap-1.5 text-[11px] text-fg-subtle">
+                    <Icon name="image" size={28} />
+                    <span>待生成</span>
+                  </div>
                 ) : data.kind === 'text' && data.text ? null : (
                   <Icon
                     name={NODE_ICON[data.kind]}

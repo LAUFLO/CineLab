@@ -176,6 +176,8 @@ export function PromptBar() {
   const cancelGeneration = useGenerationStore((state) => state.cancel)
 
   const [modelKey, setModelKey] = useState<string | null>(null)
+  const hydratedNodeRef = useRef<string | null>(null)
+  const paramSaveTimerRef = useRef<number | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [paramValues, setParamValues] = useState<Record<string, unknown>>({})
   const [inputMode, setInputMode] = useState<ModelModeId | null>(null)
@@ -266,6 +268,39 @@ export function PromptBar() {
   const runningRunId = node ? runningMap[node.id] : undefined
 
   useEffect(() => {
+    if (!node || hydratedNodeRef.current !== node.id) return
+
+    const storedKey = node.data.modelKey ?? null
+    const nextKey = modelKey ?? null
+    const storedParams = JSON.stringify(node.data.params ?? {})
+    const nextParams = JSON.stringify(paramValues)
+    if (nextKey === storedKey && nextParams === storedParams) return
+
+    if (paramSaveTimerRef.current) {
+      window.clearTimeout(paramSaveTimerRef.current)
+    }
+    paramSaveTimerRef.current = window.setTimeout(() => {
+      useCanvasStore.getState().patchNodeData(node.id, {
+        modelKey: nextKey ?? undefined,
+        params: paramValues
+      })
+    }, 250)
+
+    return () => {
+      if (paramSaveTimerRef.current) {
+        window.clearTimeout(paramSaveTimerRef.current)
+        paramSaveTimerRef.current = null
+      }
+    }
+  }, [
+    node?.id,
+    modelKey,
+    paramValues,
+    node?.data.modelKey,
+    node?.data.params
+  ])
+
+  useEffect(() => {
     const currentId = node?.id
     const nextPrompt = node?.data.prompt ?? ''
     setPromptText(nextPrompt)
@@ -284,6 +319,9 @@ export function PromptBar() {
     setMaskEditor(null)
     setRefPreview(null)
     setInputMode(node?.data.inputMode ?? null)
+    setModelKey(node?.data.modelKey ?? null)
+    setParamValues(node?.data.params ?? {})
+    hydratedNodeRef.current = node?.id ?? null
 
     return () => {
       if (!currentId) return

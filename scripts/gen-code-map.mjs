@@ -157,6 +157,7 @@ const MODULES = [
       'src/main/update',
       'src/main/components',
       'src/main/types',
+      'src/main/workflows',
       'src/preload'
     ],
     files: [
@@ -176,6 +177,8 @@ const MODULES = [
       'src/shared/project-templates.ts',
       'src/shared/preferences.ts',
       'src/shared/library-schema.ts',
+      'src/shared/library-migration.ts',
+      'src/shared/workflow-schema.ts',
       'src/shared/asset-schema.ts',
       'src/shared/models-file.ts',
       'src/shared/update.ts',

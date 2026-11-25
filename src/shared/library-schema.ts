@@ -89,7 +89,8 @@ export const DEFAULT_LIBRARY_FOLDERS = [
   '道具',
   '风格',
   '音频',
-  '提示词'
+  '提示词',
+  '工作流'
 ] as const
 
 export const CHARACTER_FOLDER = '角色'

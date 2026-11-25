@@ -29,8 +29,8 @@ export const PROJECT_TOOLS: AgentToolDefinition[] = [
         },
         template: {
           type: 'string',
-          enum: ['blank', 'storyboard', 'product', 'character'],
-          description: '项目模板，默认 blank'
+          description:
+            '项目模板：blank 或工作流目录名（从 workflow_list 获取），默认 blank'
         }
       },
       required: ['name'],

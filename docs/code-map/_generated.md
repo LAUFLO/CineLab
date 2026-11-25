@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 74 | 25783 |
-| 02 | [生成与模型](./02-generation.md) | 67 | 14635 |
+| 01 | [画布](./01-canvas.md) | 75 | 26221 |
+| 02 | [生成与模型](./02-generation.md) | 67 | 14639 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10058 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 20966 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12403 |
-| 10 | [UI 组件与面板](./10-ui.md) | 51 | 11030 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 69 | 21163 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 76 | 14035 |
+| 10 | [UI 组件与面板](./10-ui.md) | 55 | 11969 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -22,10 +22,11 @@
 
 | 接口 | 方法 |
 |---|---|
-| `ProjectApi` | `bootstrap`、`create`、`open`、`saveCanvas`、`recent`、`readCover`、`setCoverFromLocal`、`setCoverFromAsset`、`removeCover`、`pickCreate`、`pickOpen`、`reveal`、`rename`、`createCanvas`、`switchCanvas`、`renameCanvas`、`deleteCanvas`、`delete` |
+| `ProjectApi` | `bootstrap`、`create`、`open`、`saveCanvas`、`recent`、`readCover`、`setCoverFromLocal`、`setCoverFromAsset`、`removeCover`、`pickCreate`、`pickOpen`、`reveal`、`rename`、`createCanvas`、`switchCanvas`、`renameCanvas`、`deleteCanvas`、`delete`、`close` |
+| `WorkflowApi` | `list`、`read`、`save`、`rename`、`delete`、`export`、`import`、`apply` |
 | `SettingsApi` | `listProviders`、`saveProvider`、`deleteProvider`、`testConnection`、`fetchModels`、`modelsConfig`、`pendingModels`、`applyPendingModels`、`discardPendingModels`、`onModelsPending`、`openModelsFile`、`downloadModelSkill`、`copyText`、`getOperationBindings`、`saveOperationBindings`、`getPreferences`、`savePreferences`、`resetPreferences`、`exportPreferences`、`importPreferences`、`chooseProjectDir`、`openDataDir`、`onModelsChanged` |
 | `GenerateApi` | `run`、`cancel`、`cancelAll`、`onEvent` |
-| `LibraryApi` | `root`、`chooseRoot`、`resetRoot`、`revealRoot`、`tree`、`listAssets`、`listAllAssets`、`createFolder`、`renameFolder`、`deleteFolder`、`importAssets`、`addAsset`、`renameAsset`、`moveAsset`、`deleteAsset`、`setAssetTags`、`reveal`、`listCharacters`、`listStyles`、`saveStyle`、`deleteStyle`、`pickStyleCover`、`saveAssets`、`listTemplates`、`saveTemplate`、`deleteTemplate`、`thumbCacheInfo`、`clearThumbCache` |
+| `LibraryApi` | `root`、`chooseRoot`、`pickRoot`、`setRoot`、`migrateRoot`、`migrateDefault`、`cancelMigrate`、`onMigrateProgress`、`resetRoot`、`revealRoot`、`tree`、`listAssets`、`listAllAssets`、`createFolder`、`renameFolder`、`deleteFolder`、`importAssets`、`addAsset`、`renameAsset`、`moveAsset`、`deleteAsset`、`setAssetTags`、`reveal`、`listCharacters`、`listStyles`、`saveStyle`、`deleteStyle`、`pickStyleCover`、`saveAssets`、`listTemplates`、`saveTemplate`、`deleteTemplate`、`thumbCacheInfo`、`clearThumbCache` |
 | `ClipboardApi` | `read` |
 | `ExportApi` | `project`、`canvasPng`、`asset`、`deleteFile`、`assets`、`concatVideos`、`pickFile` |
 | `MediaApi` | `splitGrid`、`stitch`、`extractFrame`、`splitAv`、`startStemTask`、`cancelStemTask`、`onStemTaskEvent`、`cropVideo`、`probe`、`exists`、`existsMany`、`thumbnail`、`proxy`、`audioPeaks`、`listSounds`、`importSound`、`cropImage`、`cropImageRect`、`trimVideo`、`trimAudio`、`audioSpeed`、`removeSubtitles`、`detectSubtitleRect`、`captureDepth`、`startDepthCapture`、`cancelDepthCapture`、`onDepthCaptureEvent`、`startVisionTask`、`cancelVisionTask`、`onVisionTaskEvent` |
@@ -35,7 +36,7 @@
 | `AgentApi` | `chat`、`cancel`、`toolResult`、`confirm`、`sessionLoad`、`sessionList`、`sessionCreate`、`sessionRename`、`sessionDelete`、`sessionCompact`、`modelInfo`、`textModels`、`models`、`proposalCreate`、`proposalActive`、`proposalSubmit`、`proposalCancel`、`onEvent`、`onToolCall` |
 | `SkillsApi` | `list`、`files`、`readFile`、`create`、`save`、`remove`、`uploadFiles`、`removeFile`、`clone`、`setOverride`、`pickImport`、`installImport`、`discardImport`、`openDirectory`、`openFile` |
 | `StageApi` | `create`、`load`、`save`、`delete`、`duplicate`、`capture`、`exportPreview`、`cancelExport`、`onExportProgress` |
-| `SceneApi` | `analyze`、`loadObjectPresets`、`saveObjectPresets`、`importObjectPresets`、`exportObjectPresets`、`uploadImage` |
+| `SceneApi` | `analyze`、`loadObjectPresets`、`saveObjectPresets`、`importObjectPresets`、`exportObjectPresets`、`uploadImage`、`uploadAsset` |
 | `LocalAdapterApi` | `list`、`reload`、`openDir`、`onChanged` |
 | `McpApi` | `onCommand`、`sendResult`、`status`、`config`、`resetToken`、`revealConfig`、`copy` |
 
@@ -133,6 +134,9 @@
 | `timeline_set_transition` | `timeline.setTransition` |  |  |
 | `timeline_export` | `timeline.export` | 是 |  |
 | `timeline_export_subtitles` | `timeline.exportSubtitles` | 是 |  |
+| `workflow_list` | `workflow.list` |  | 是 |
+| `workflow_save` | `workflow.save` | 是 |  |
+| `workflow_apply` | `workflow.apply` | 是 |  |
 
 ## 节点组件
 
@@ -185,6 +189,7 @@
 - `src/main/components/__tests__/manifest.test.ts`
 - `src/main/components/__tests__/zip-extract.test.ts`
 - `src/main/engine/__tests__/generation-error.test.ts`
+- `src/main/engine/__tests__/queue.test.ts`
 - `src/main/export/__tests__/project-export.test.ts`
 - `src/main/film-study/__tests__/analysis.test.ts`
 - `src/main/film-study/__tests__/auto.test.ts`
@@ -197,8 +202,10 @@
 - `src/main/film-study/__tests__/shots.test.ts`
 - `src/main/film-study/__tests__/style.test.ts`
 - `src/main/ipc/__tests__/index.test.ts`
+- `src/main/library/__tests__/migrate-root.test.ts`
 - `src/main/library/__tests__/store.test.ts`
 - `src/main/library/__tests__/tag-utils.test.ts`
+- `src/main/library/__tests__/workflows.test.ts`
 - `src/main/local-adapters/__tests__/build.test.ts`
 - `src/main/local-adapters/__tests__/manifest.test.ts`
 - `src/main/mcp/__tests__/catalog.test.ts`
@@ -222,6 +229,8 @@
 - `src/main/settings/__tests__/models-config.test.ts`
 - `src/main/stage/__tests__/storage.test.ts`
 - `src/main/update/__tests__/fallback.test.ts`
+- `src/main/workflows/__tests__/build.test.ts`
+- `src/main/workflows/__tests__/instantiate.test.ts`
 - `src/renderer/src/agent/__tests__/filmBridge.test.ts`
 - `src/renderer/src/agent/__tests__/timelineBridge.test.ts`
 - `src/renderer/src/canvas/__tests__/media-size.test.ts`
@@ -246,6 +255,7 @@
 - `src/shared/__tests__/model-modes.test.ts`
 - `src/shared/__tests__/node-operation-specs.test.ts`
 - `src/shared/__tests__/preferences.test.ts`
+- `src/shared/__tests__/project-schema.test.ts`
 - `src/shared/__tests__/prompt-preset.test.ts`
 - `src/shared/__tests__/protocol-templates.test.ts`
 - `src/shared/__tests__/reference-inputs.test.ts`

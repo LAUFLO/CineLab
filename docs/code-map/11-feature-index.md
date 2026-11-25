@@ -28,6 +28,8 @@
 | 项目画布、多画布 | `.cinelab` 项目 | `src/main/project/manager.ts` | 已实现 |
 | 素材库 | 全局/项目素材、标签、模板 | `src/main/library/` | 已实现 |
 | 提示词栏、参数面板 | PromptBar、ModelMenu、ParamPanel | `src/renderer/src/canvas/PromptBar.tsx` | 已实现 |
+| 节点生成配置持久化 | `modelKey` / `params` 随节点保存，切换节点恢复 | `src/shared/canvas-schema.ts`、`PromptBar.tsx` | 已实现 |
+| 工作流模板、占位节点 | 画布子图保存为资产库 `工作流/` 目录包；`workflowSlot` 占位；导演台打包、拉片/剪辑室占位；导入导出 | `src/main/workflows/`、`src/main/library/workflows.ts`、`src/renderer/src/canvas/WorkflowSaveDialog.tsx`、`panels/library/WorkflowGrid.tsx` | 已实现 |
 
 ## 生成与模型
 

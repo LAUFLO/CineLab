@@ -308,6 +308,21 @@ export function MultiSelectBar() {
         variant="ghost"
         size="none"
         className={BTN_CLASS}
+        onClick={() =>
+          useUIStore.getState().openWorkflowSave({
+            selectedIds: selected.map((node) => node.id)
+          })
+        }
+      >
+        <Icon name="folder-plus" size={14} />
+        <span>保存为工作流</span>
+      </Button>
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="none"
+        className={BTN_CLASS}
         onClick={duplicate}
       >
         <Icon name="plus" size={14} />

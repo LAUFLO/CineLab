@@ -15,6 +15,8 @@ import {
   type ProjectTemplateId
 } from '@shared/project-templates'
 import { getPreferences } from '../settings/preferences'
+import { readWorkflow } from '../library/workflows'
+import { instantiateWorkflow } from '../workflows/instantiate'
 
 const PROJECT_EXT = '.cinelab'
 
@@ -217,8 +219,6 @@ export async function createProject(
     activeCanvasId: canvasId
   }
 
-  const canvas: CanvasData = buildTemplateCanvas(templateId, canvasId)
-
   for (const dir of [
     'assets/img',
     'assets/vid',
@@ -229,6 +229,29 @@ export async function createProject(
     'stages'
   ]) {
     await fs.mkdir(join(path, dir), { recursive: true })
+  }
+
+  let canvas: CanvasData
+  if (templateId && templateId !== 'blank') {
+    try {
+      const workflow = await readWorkflow(templateId)
+      const result = await instantiateWorkflow(workflow, {
+        projectPath: path
+      })
+      canvas = {
+        schemaVersion: 1,
+        id: canvasId,
+        name: '画布 1',
+        viewport: { x: 0, y: 0, zoom: 1 },
+        nodes: result.nodes,
+        edges: result.edges
+      }
+    } catch (error) {
+      console.warn('[project] workflow template failed, using blank', error)
+      canvas = buildTemplateCanvas('blank', canvasId)
+    }
+  } else {
+    canvas = buildTemplateCanvas(templateId, canvasId)
   }
 
   await writeJsonAtomic(join(path, 'project.json'), meta)
@@ -417,6 +440,11 @@ export async function deleteCanvas(
     meta.canvases.find((item) => item.id === meta.activeCanvasId) ?? meta.canvases[0]
   const canvas = canvasDataSchema.parse(await readJson(join(path, active.file)))
   return { path, meta, canvas }
+}
+
+/** 关闭当前项目：清空主进程持有的项目根，不删除任何文件。 */
+export function closeProject(): void {
+  setCurrentProjectRoot(null)
 }
 
 export async function deleteProject(projectPath: string): Promise<void> {

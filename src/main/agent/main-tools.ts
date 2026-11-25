@@ -36,6 +36,17 @@ import { extname } from 'node:path'
 import { ingestAsset } from '../assets/ingest'
 import { separateStems } from '../media/stems'
 import { resolveMediaPath } from '../media/paths'
+import {
+  listWorkflows,
+  readWorkflow,
+  saveWorkflow
+} from '../library/workflows'
+import {
+  openProject,
+  saveCanvas
+} from '../project/manager'
+import { buildWorkflow } from '../workflows/build'
+import { instantiateWorkflow } from '../workflows/instantiate'
 
 export interface MainToolResult {
   ok: boolean
@@ -142,6 +153,85 @@ export async function executeMainTool(
   call: AgentToolCall,
   scope: AgentScope
 ): Promise<MainToolResult> {
+  if (call.name === 'workflow_list') {
+    const query =
+      typeof call.args.query === 'string'
+        ? call.args.query.trim().toLowerCase()
+        : ''
+    const limit =
+      typeof call.args.limit === 'number' ? call.args.limit : 50
+    let items = await listWorkflows()
+    if (query) {
+      items = items.filter((item) =>
+        item.name.toLowerCase().includes(query)
+      )
+    }
+    return {
+      ok: true,
+      result: {
+        workflows: items.slice(0, Math.max(1, Math.min(100, limit))),
+        total: items.length
+      }
+    }
+  }
+
+  if (call.name === 'workflow_save') {
+    const name = String(call.args.name ?? '').trim()
+    if (!name) return { ok: false, error: '工作流名称不能为空' }
+    if (!scope.projectPath) return { ok: false, error: '没有打开的项目' }
+
+    try {
+      const snapshot = await openProject(scope.projectPath)
+      const { package: pkg, thumbnail } = await buildWorkflow({
+        name,
+        description:
+          typeof call.args.description === 'string'
+            ? call.args.description
+            : undefined,
+        nodes: snapshot.canvas.nodes,
+        edges: snapshot.canvas.edges,
+        projectPath: scope.projectPath
+      })
+      return {
+        ok: true,
+        result: { workflow: await saveWorkflow(pkg, thumbnail) }
+      }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error)
+      }
+    }
+  }
+
+  if (call.name === 'workflow_apply') {
+    const slug = String(call.args.slug ?? '').trim()
+    if (!slug) return { ok: false, error: 'slug 不能为空' }
+    if (!scope.projectPath) return { ok: false, error: '没有打开的项目' }
+
+    try {
+      const snapshot = await openProject(scope.projectPath)
+      const pkg = await readWorkflow(slug)
+      const result = await instantiateWorkflow(pkg, {
+        projectPath: scope.projectPath
+      })
+      await saveCanvas(scope.projectPath, {
+        ...snapshot.canvas,
+        nodes: [...snapshot.canvas.nodes, ...result.nodes],
+        edges: [...snapshot.canvas.edges, ...result.edges]
+      })
+      return {
+        ok: true,
+        result: { nodeIds: result.nodeIds, warnings: result.warnings }
+      }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error)
+      }
+    }
+  }
+
   if (call.name === 'stage_capabilities') {
     return {
       ok: true,

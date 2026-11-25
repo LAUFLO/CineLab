@@ -16,6 +16,7 @@ import {
   createCanvas,
   createProject,
   defaultProjectsDir,
+  closeProject,
   deleteCanvas,
   deleteProject,
   getCurrentProjectRoot,
@@ -154,4 +155,6 @@ export function registerProjectIpc(): void {
     await deleteProject(root)
     return true
   })
+
+  ipcMain.handle('project:close', () => closeProject())
 }

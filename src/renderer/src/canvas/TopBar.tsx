@@ -34,9 +34,11 @@ export function TopBar() {
   const renameCanvas = useProjectStore((state) => state.renameCanvas)
   const deleteCanvas = useProjectStore((state) => state.deleteCanvas)
   const deleteProject = useProjectStore((state) => state.deleteProject)
+  const closeProject = useProjectStore((state) => state.closeProject)
   const requestConfirm = useUIStore((state) => state.requestConfirm)
   const updateStatus = useUpdateStore((state) => state.status)
   const openSettings = useSettingsStore((state) => state.openPanel)
+  const openWorkflowSave = useUIStore((state) => state.openWorkflowSave)
 
   const [projectMenuOpen, setProjectMenuOpen] = useState(false)
   const [canvasMenuOpen, setCanvasMenuOpen] = useState(false)
@@ -48,6 +50,7 @@ export function TopBar() {
   const [projectDraft, setProjectDraft] = useState(name)
   const [editingCanvasId, setEditingCanvasId] = useState<string | null>(null)
   const [canvasDraft, setCanvasDraft] = useState('')
+  const toolbarCardRef = useRef<HTMLDivElement>(null)
   const projectTriggerRef = useRef<HTMLButtonElement>(null)
   const canvasTriggerRef = useRef<HTMLButtonElement>(null)
   const exportTriggerRef = useRef<HTMLButtonElement>(null)
@@ -137,7 +140,10 @@ export function TopBar() {
         <div
           className="pointer-events-auto ml-1 flex items-center gap-1 pt-4 [-webkit-app-region:no-drag] [[data-platform='darwin']_&]:pl-[68px]"
         >
-          <div className="relative flex h-10 items-center rounded-card border border-border bg-surface px-1.5 py-1 shadow-float">
+          <div
+            ref={toolbarCardRef}
+            className="relative flex h-10 items-center rounded-card border border-border bg-surface px-1.5 py-1 shadow-float"
+          >
             <Button
               type="button"
               variant="ghost"
@@ -187,7 +193,7 @@ export function TopBar() {
               <Popover
                 open={projectMenuOpen}
                 onClose={() => setProjectMenuOpen(false)}
-                anchorRef={projectTriggerRef}
+                anchorRef={toolbarCardRef}
                 align="start"
                 width={280}
                 className="!p-1.5"
@@ -201,6 +207,19 @@ export function TopBar() {
                 >
                   <Icon name="folder" size={16} />
                   <span>全部项目</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className="!flex h-[42px] w-full !justify-start rounded-md px-3 text-[15px] !font-normal"
+                  onClick={() => {
+                    closeAll()
+                    void closeProject()
+                  }}
+                >
+                  <Icon name="chevron-left" size={16} />
+                  <span>关闭项目</span>
                 </Button>
                 <Button
                   type="button"
@@ -230,6 +249,20 @@ export function TopBar() {
                   <Icon name="text" size={16} />
                   <span>重命名项目</span>
                 </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className="!flex h-[42px] w-full !justify-start rounded-md px-3 text-[15px] !font-normal"
+                  onClick={() => {
+                    closeAll()
+                    openWorkflowSave()
+                  }}
+                >
+                  <Icon name="folder-plus" size={16} />
+                  <span>保存当前画布为工作流</span>
+                </Button>
+                <div className="mx-1.5 my-1 h-px bg-divider" />
                 <Button
                   type="button"
                   variant="ghost"

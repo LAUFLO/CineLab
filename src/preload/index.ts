@@ -98,7 +98,20 @@ const api: CineApi = {
       ipcRenderer.invoke('project:rename-canvas', path, canvasId, name),
     deleteCanvas: (path: string, canvasId: string) =>
       ipcRenderer.invoke('project:delete-canvas', path, canvasId),
-    delete: () => ipcRenderer.invoke('project:delete')
+    delete: () => ipcRenderer.invoke('project:delete'),
+    close: () => ipcRenderer.invoke('project:close')
+  },
+  workflow: {
+    list: () => ipcRenderer.invoke('workflow:list'),
+    read: (slug: string) => ipcRenderer.invoke('workflow:read', slug),
+    save: (input) => ipcRenderer.invoke('workflow:save', input),
+    rename: (slug: string, name: string) =>
+      ipcRenderer.invoke('workflow:rename', slug, name),
+    delete: (slug: string) => ipcRenderer.invoke('workflow:delete', slug),
+    export: (slug: string) => ipcRenderer.invoke('workflow:export', slug),
+    import: () => ipcRenderer.invoke('workflow:import'),
+    apply: (slug: string, offset?: { x: number; y: number }) =>
+      ipcRenderer.invoke('workflow:apply', slug, offset)
   },
   settings: {
     listProviders: () => ipcRenderer.invoke('settings:list-providers'),
@@ -196,6 +209,23 @@ const api: CineApi = {
   library: {
     root: () => ipcRenderer.invoke('library:root'),
     chooseRoot: () => ipcRenderer.invoke('library:choose-root'),
+    pickRoot: () => ipcRenderer.invoke('library:pick-root'),
+    setRoot: (path: string) => ipcRenderer.invoke('library:set-root', path),
+    migrateRoot: (target: string) =>
+      ipcRenderer.invoke('library:migrate-root', target),
+    migrateDefault: () => ipcRenderer.invoke('library:migrate-default'),
+    cancelMigrate: () => ipcRenderer.invoke('library:migrate-cancel'),
+    onMigrateProgress: (
+      callback: (progress: import('../shared/library-migration').LibraryMigrateProgress) => void
+    ) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        progress: import('../shared/library-migration').LibraryMigrateProgress
+      ): void => callback(progress)
+      ipcRenderer.on('library:migrate-progress', listener)
+      return () =>
+        ipcRenderer.removeListener('library:migrate-progress', listener)
+    },
     resetRoot: () => ipcRenderer.invoke('library:reset-root'),
     revealRoot: () => ipcRenderer.invoke('library:reveal-root'),
 
@@ -545,7 +575,12 @@ const api: CineApi = {
       name: string
       mime: string
       data: ArrayBuffer
-    }) => ipcRenderer.invoke('scene:upload-image', input)
+    }) => ipcRenderer.invoke('scene:upload-image', input),
+    uploadAsset: (input: {
+      kind: 'image' | 'video' | 'audio'
+      mime: string
+      data: ArrayBuffer
+    }) => ipcRenderer.invoke('scene:upload-asset', input)
   },
   skills: {
     list: () => ipcRenderer.invoke('skills:list'),

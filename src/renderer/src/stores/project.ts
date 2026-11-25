@@ -8,6 +8,11 @@ import type {
 import type { ProjectTemplateId } from '@shared/project-templates'
 import { useCanvasStore, type CineEdge, type CineNode } from './canvas'
 import { usePreferencesStore } from './preferences'
+import { useGenerationStore } from './generation'
+import { useStudioStore } from './studio'
+import { useFilmStudyStore } from './film-study'
+import { useStageStore } from '../stage/stageStore'
+import { useUIStore } from './ui'
 import { confirmCancelStemTasks } from './stem-tasks'
 
 type Phase = 'loading' | 'ready' | 'welcome' | 'error'
@@ -37,7 +42,8 @@ interface ProjectState {
   }) => Promise<ProjectSnapshot>
   openByAgent: (path: string) => Promise<ProjectSnapshot>
   scheduleSave: () => void
-  saveNow: () => Promise<void>
+  saveNow: (options?: { throwOnError?: boolean }) => Promise<void>
+  closeProject: () => Promise<void>
   revealInFolder: () => Promise<void>
   renameProject: (name: string) => Promise<void>
   createCanvas: (name?: string) => Promise<void>
@@ -113,7 +119,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       if (!(await confirmCancelStemTasks())) return
       const snapshot = await window.api.project.pickCreate(templateId)
-      if (snapshot) get().applySnapshot(snapshot)
+      if (snapshot) {
+        get().applySnapshot(snapshot)
+        useUIStore.getState().requestFitView()
+      }
     } catch (error) {
       set({ error: String(error) })
     }
@@ -172,7 +181,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }, delay)
   },
 
-  saveNow: async () => {
+  saveNow: async (options) => {
     const { path, canvasId, canvasName } = get()
     if (!path || !canvasId) return
 
@@ -197,6 +206,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       })
     } catch (error) {
       set({ saving: false, error: String(error) })
+      if (options?.throwOnError) throw error
     }
   },
 
@@ -274,6 +284,55 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (error) {
       set({ error: String(error) })
     }
+  },
+
+  closeProject: async () => {
+    if (!(await confirmCancelStemTasks())) return
+
+    const runIds = Object.values(useGenerationStore.getState().running)
+    if (runIds.length > 0) {
+      const confirmed = await new Promise<boolean>((resolve) => {
+        useUIStore.getState().requestConfirm({
+          title: '关闭项目？',
+          message: `还有 ${runIds.length} 个生成任务在进行中，关闭项目会取消这些任务。`,
+          confirmLabel: '关闭并取消',
+          danger: true,
+          onConfirm: () => resolve(true),
+          onCancel: () => resolve(false)
+        })
+      })
+      if (!confirmed) return
+      await Promise.all(
+        runIds.map((runId) =>
+          window.api.generate.cancel(runId).catch(() => undefined)
+        )
+      )
+    }
+
+    try {
+      await get().saveNow({ throwOnError: true })
+      await window.api.project.close()
+    } catch (error) {
+      set({ error: String(error) })
+      return
+    }
+
+    useStudioStore.getState().closeStudio()
+    useStageStore.getState().closeStage()
+    useFilmStudyStore.getState().closeSheet()
+    useCanvasStore.getState().loadCanvas([], [], { x: 0, y: 0, zoom: 1 })
+    set({
+      phase: 'welcome',
+      path: null,
+      name: 'CineLab',
+      canvasId: null,
+      canvasName: '',
+      canvases: [],
+      saving: false,
+      dirty: false,
+      lastSavedAt: null,
+      error: null
+    })
   },
 
   deleteProject: async () => {

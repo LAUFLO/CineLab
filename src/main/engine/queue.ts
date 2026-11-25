@@ -1,5 +1,8 @@
 import { EventEmitter } from 'node:events'
 import type { GeneratedAsset } from '@shared/generation'
+import { GENERATION_CONCURRENCY } from '@shared/preferences'
+
+const MAX_CONCURRENCY = Math.max(...GENERATION_CONCURRENCY)
 
 export interface QueueJob {
   id: string
@@ -14,7 +17,7 @@ class GenerationQueue extends EventEmitter {
   private pending: QueueJob[] = []
   private running = new Map<string, QueueJob>()
   private controllers = new Map<string, AbortController>()
-  private concurrency = 2
+  private concurrency = MAX_CONCURRENCY
 
   enqueue(job: QueueJob): void {
     this.pending.push(job)
@@ -25,8 +28,8 @@ class GenerationQueue extends EventEmitter {
   setConcurrency(value: number): void {
     const next = Math.floor(value)
     this.concurrency = Number.isFinite(next)
-      ? Math.max(1, Math.min(4, next))
-      : 2
+      ? Math.max(1, Math.min(MAX_CONCURRENCY, next))
+      : MAX_CONCURRENCY
     this.pump()
   }
 

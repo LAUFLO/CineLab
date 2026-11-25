@@ -101,7 +101,10 @@ describe('pi tool adapter', () => {
         'stem_separate',
         'skill_toggle',
         'skill_create',
-        'skill_import'
+        'skill_import',
+        'workflow_list',
+        'workflow_save',
+        'workflow_apply'
       ])
     )
   })

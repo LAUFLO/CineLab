@@ -29,6 +29,7 @@ import { LIBRARY_TOOLS } from './library'
 import { MEDIA_TOOLS } from './media'
 import { SKILL_ADMIN_TOOLS } from './skill-admin'
 import { PROJECT_TOOLS } from './project'
+import { WORKFLOW_TOOLS } from './workflow'
 
 export { AgentToolError } from './errors'
 export { CANVAS_TOOLS } from './canvas'
@@ -42,6 +43,7 @@ export { LIBRARY_TOOLS } from './library'
 export { MEDIA_TOOLS } from './media'
 export { SKILL_ADMIN_TOOLS } from './skill-admin'
 export { PROJECT_TOOLS } from './project'
+export { WORKFLOW_TOOLS } from './workflow'
 
 export const AGENT_TOOLS = [
   ...CANVAS_TOOLS,
@@ -54,7 +56,8 @@ export const AGENT_TOOLS = [
   ...LIBRARY_TOOLS,
   ...MEDIA_TOOLS,
   ...SKILL_ADMIN_TOOLS,
-  ...PROJECT_TOOLS
+  ...PROJECT_TOOLS,
+  ...WORKFLOW_TOOLS
 ]
 
 export function toolDefinitionsForModel(

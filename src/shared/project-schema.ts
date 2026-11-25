@@ -86,6 +86,16 @@ export const groupColorSchema = z.enum([
   'brown'
 ])
 
+export const styleCardSchema = z.object({
+  id: z.string().min(1).max(200),
+  name: z.string().max(200),
+  category: z.string().max(100),
+  cover: z.string().max(2000),
+  prompt: z.string().max(2000),
+  version: z.number(),
+  source: z.enum(['official', 'user'])
+})
+
 export const cineNodeSchema = z.object({
   id: z.string().min(1).max(120),
   type: z.literal('cine'),
@@ -180,7 +190,11 @@ export const cineNodeSchema = z.object({
     progress: z.number().min(0).max(100).optional(),
     error: z.string().max(2000).optional(),
     templates: z.array(z.string().max(100)).max(20),
-    assetOnly: z.boolean().optional()
+    assetOnly: z.boolean().optional(),
+    modelKey: z.string().max(300).optional(),
+    params: z.record(z.string(), z.unknown()).optional(),
+    workflowSlot: z.enum(['upload', 'generate']).optional(),
+    style: styleCardSchema.optional()
   }),
   style: z
     .object({
@@ -217,6 +231,7 @@ export const studioNodeSchema = z.object({
     outputs: z.array(outputRefSchema).max(100).optional(),
     selectedOutputId: z.string().max(120).optional(),
     upstreamAck: z.string().max(2000).optional(),
+    workflowSlot: z.enum(['upload', 'generate']).optional(),
     templates: z.array(z.string().max(100)).max(20)
   }),
   style: z

@@ -8,6 +8,7 @@ import type {
   TemplateInput
 } from '@shared/library-schema'
 import type { StyleCard, StyleSaveInput } from '@shared/style-schema'
+import type { WorkflowSummary } from '@shared/workflow-schema'
 import { PROMPT_FOLDER } from '@shared/library-schema'
 
 export interface PendingAdd {
@@ -28,6 +29,7 @@ interface LibraryState {
   characters: CharacterCard[]
   styles: StyleCard[]
   templates: PromptTemplate[]
+  workflows: WorkflowSummary[]
   loading: boolean
   error: string | null
   pendingAdds: PendingAdd[]
@@ -39,6 +41,10 @@ interface LibraryState {
   refresh: () => Promise<void>
   loadCharacters: () => Promise<void>
   loadStyles: () => Promise<void>
+  loadWorkflows: () => Promise<void>
+  renameWorkflow: (slug: string, name: string) => Promise<void>
+  deleteWorkflow: (slug: string) => Promise<void>
+  importWorkflow: () => Promise<WorkflowSummary | null>
   saveStyle: (input: StyleSaveInput) => Promise<boolean>
   deleteStyle: (id: string) => Promise<void>
   pickStyleCover: () => Promise<{ path: string; dataUrl: string } | null>
@@ -107,6 +113,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
     characters: [],
     styles: [],
     templates: [],
+    workflows: [],
     loading: false,
     error: null,
     pendingAdds: [],
@@ -153,7 +160,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
           allAssets,
           characters,
           styles,
-          templates
+          templates,
+          workflows
         ] = await Promise.all([
           window.api.library.root(),
           window.api.library.tree(),
@@ -161,7 +169,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
           window.api.library.listAllAssets(),
           window.api.library.listCharacters(),
           window.api.library.listStyles(),
-          window.api.library.listTemplates()
+          window.api.library.listTemplates(),
+          window.api.workflow.list()
         ])
 
         set({
@@ -173,6 +182,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
           characters,
           styles,
           templates,
+          workflows,
           loading: false,
           error: null
         })
@@ -183,6 +193,22 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
 
     loadCharacters,
     loadStyles,
+    loadWorkflows: async () => {
+      set({ workflows: await window.api.workflow.list() })
+    },
+    renameWorkflow: async (slug, name) => {
+      await window.api.workflow.rename(slug, name)
+      await get().loadWorkflows()
+    },
+    deleteWorkflow: async (slug) => {
+      await window.api.workflow.delete(slug)
+      await get().loadWorkflows()
+    },
+    importWorkflow: async () => {
+      const result = await window.api.workflow.import()
+      await get().loadWorkflows()
+      return result?.summary ?? null
+    },
     loadTemplates,
 
     saveStyle: async (input) => {

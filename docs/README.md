@@ -2,7 +2,7 @@
 
 日期：2026-11-25
 状态：现行
-适用版本：v0.5.1
+适用版本：v0.5.2
 最后核对：2026-11-25
 
 > 远程仓库只保留稳定契约、参考文档和一份精简的归档。过程记录、截图和批次 evidence 放本地 `.opencode/`，不入库。
@@ -42,7 +42,7 @@
 | [stage-previs-upgrade-plan.md](stage-previs-upgrade-plan.md) | 导演台整片/每镜预演、重叠优先级、交付物、光照预设与人物动作改造，已实施 |
 | [model-adapter-plan.md](model-adapter-plan.md) | 模型适配体系：契约、媒体载荷、本地适配器、Agent 接入与首尾帧修复 |
 | [local-adapters.md](local-adapters.md) | 本地可信适配器：目录、manifest、接口、构建与热重载 |
-| [mcp.md](mcp.md) | MCP server：设置页配置、HTTP/stdio、97 个工具、只读模式与排查 |
+| [mcp.md](mcp.md) | MCP server：设置页配置、HTTP/stdio、100 个工具、只读模式与排查 |
 | [mcp-expansion-plan.md](mcp-expansion-plan.md) | MCP 开放能力与配置面板：设置页、只读模式、新增 15 个工具，已实施 |
 | [mcp-agent-unification-plan.md](mcp-agent-unification-plan.md) | MCP 与 CineBot 能力统一：命名对齐、声明投影、独立 scope、命令注册表、覆盖率校验，方案阶段 |
 | [macos-packaging-gaps-plan.md](macos-packaging-gaps-plan.md) | macOS 打包资源缺口、视觉组件复用、字幕字体与发版校验，待实施 |
@@ -50,6 +50,7 @@
 | [xyflow-v13-migration-plan.md](xyflow-v13-migration-plan.md) | React Flow 13 迁移评估：破坏性变更影响矩阵、store changeset、useStore 拆分、fitView padding 与 CSS layer 改动方案，待实施 |
 | [prompt-preset-plan.md](prompt-preset-plan.md) | 预设提示词：悬浮窗、名称胶囊、任意位置插入与发送展开，已确认 |
 | [promptbar-popover-plan.md](promptbar-popover-plan.md) | PromptBar 浮窗与胶囊改造：确认框层级、居中浮窗、卡片网格与预览、绿色预设胶囊、节点自动就位，已实施 |
+| [workflow-plan.md](workflow-plan.md) | 工作流模板：保存用户画布流程、占位节点、导演台打包、拉片/剪辑占位、导入导出与 Agent 工具，方案确定 |
 
 ## 3. 代码地图
 

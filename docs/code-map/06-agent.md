@@ -78,7 +78,7 @@ CineBot 会话、工具注册与执行、生成提案、技能、能力审计。
 
 - 目录：`.cinelab/agent/sessions/<id>.jsonl`，索引 `.index.json`；
 - `session.ts` 负责创建、加载、追加消息、标题、快照；
-- `compact.ts` 负责上下文压缩（长会话裁剪）；
+- 上下文压缩由 pi 运行时内置处理，不再维护独立的压缩实现；
 - 会话 id 形如 `main-<base36>-<uuid4>`，有长度与字符校验。
 
 ## 技能
@@ -127,7 +127,7 @@ AgentPanel
 | 能力 | 状态 | 证据 |
 |---|---|---|
 | 工具注册、过滤、确认 | 已实现 | `tools/index.ts`、`tools.test.ts` |
-| 会话读写、标题、压缩 | 已实现 | `session.ts`、`compact.ts`、`session.test.ts` |
+| 会话读写、标题 | 已实现 | `session.ts`、`session.test.ts`（压缩由 pi 内置） |
 | 生成提案 | 已实现 | `proposals.ts`、`proposals.test.ts` |
 | 技能 | 已实现 | `skills.ts`、`skills-admin.ts`、`skills-import.ts`、`skills.test.ts`、`skills-import.test.ts` |
 | 能力审计 | 已实现 | `capabilities/registry.ts`、`capability-audit.test.ts` |
@@ -149,9 +149,9 @@ AgentPanel
 |---|---|
 | 新增工具 | `src/main/agent/tools/*.ts` + `docs/agent-capabilities.md` |
 | 工具确认规则 | `src/main/agent/tools/index.ts` 的 `toolConfirmationReason` |
-| 运行时/超时 | `src/main/agent/runtime.ts`（旧）、`src/main/agent/pi/runtime.ts`（v3） |
+| 运行时/超时 | `src/main/agent/pi/runtime.ts`、`pi/timeouts.ts` |
 | 提案 | `src/main/agent/proposals.ts`、`src/shared/agent-proposal.ts` |
-| 会话/压缩 | `src/main/agent/session.ts`、`compact.ts` |
+| 会话 | `src/main/agent/session.ts`、`pi/session.ts` |
 | 技能 | `src/main/agent/skills.ts`、`skills-admin.ts` |
 | 前端 | `src/renderer/src/agent/AgentPanel.tsx`、`agentStore.ts` |
 | 能力审计 | `src/main/agent/capabilities/`、`src/main/__tests__/capability-audit.test.ts` |
@@ -163,7 +163,6 @@ AgentPanel
 |---|---|
 | `src/main/agent/capabilities/registry.ts` | 25 |
 | `src/main/agent/capabilities/types.ts` | 91 |
-| `src/main/agent/compact.ts` | 93 |
 | `src/main/agent/main-tools.ts` | 596 |
 | `src/main/agent/model.ts` | 375 |
 | `src/main/agent/pi/events.ts` | 144 |
@@ -178,7 +177,6 @@ AgentPanel
 | `src/main/agent/pi/timeouts.ts` | 20 |
 | `src/main/agent/pi/tools.ts` | 120 |
 | `src/main/agent/proposals.ts` | 499 |
-| `src/main/agent/runtime.ts` | 751 |
 | `src/main/agent/session.ts` | 407 |
 | `src/main/agent/skills-admin.ts` | 592 |
 | `src/main/agent/skills-config.ts` | 110 |
@@ -237,7 +235,6 @@ AgentPanel
 |---|---|
 | `src/main/agent/capabilities/registry.ts` | `AGENT_CAPABILITIES`、`findCapability` |
 | `src/main/agent/capabilities/types.ts` | `CapabilityConfirmation`、`AgentCapability`、`toAgentCapability`、`listAgentCapabilities`、`capabilitiesForProfile`、`capabilitySummary` |
-| `src/main/agent/compact.ts` | `compactSession` |
 | `src/main/agent/main-tools.ts` | `MainToolResult`、`executeMainTool` |
 | `src/main/agent/model.ts` | `AgentRuntimeModel`、`AgentChatMessage`、`AgentChatResult`、`listAgentModels`、`listTextModels`、`resolveTextModel`、`chatWithTools` |
 | `src/main/agent/pi/events.ts` | `createAgentTurn`、`syncScopeWithChange`、`mergeChange`、`textOfContent`、`usageOf`、`assistantTextOf`、`looksLikePreamble`、`toolCallOf` |
@@ -252,7 +249,6 @@ AgentPanel
 | `src/main/agent/pi/timeouts.ts` | `TOOL_TIMEOUT_MS`、`LONG_TOOL_TIMEOUTS`、`toolTimeoutMs` |
 | `src/main/agent/pi/tools.ts` | `PiToolRuntime`、`createPiTools` |
 | `src/main/agent/proposals.ts` | `setProposalChangeListener`、`proposalDirectory`、`createProposal`、`activeProposal`、`expireSessionProposals`、`submitProposal`、`cancelProposal`、`deleteSessionProposals`、`updateProposalFromRun` |
-| `src/main/agent/runtime.ts` | `AgentTurnCallbacks`、`startTurn`、`resolveToolResult`、`resolveConfirmation`、`cancelTurn`、`getActiveTurnInfo` |
 | `src/main/agent/session.ts` | `sessionDirectory`、`sessionFile`、`createSessionId`、`ensureSession`、`appendSessionEntry`、`appendMessage`、`appendTurn`、`loadSession`、`listSessions`、`createSession`、`deleteSession`、`renameSession`、`ensureSessionTitle`、`appendSessionSummary`、`requireProjectRoot` |
 | `src/main/agent/skills-admin.ts` | `isBinaryPath`、`skillScopeDirectory`、`listSkillAdmin`、`createSkill`、`saveSkill`、`deleteSkill`、`readSkillFile`、`listSkillFiles`、`importSkillFiles`、`removeSkillFile`、`cloneSkill`、`setSkillOverride`、`skillDirectoryFor`、`skillFileFor`、`ensureScopeDirectory`、`projectSkillDirectory` |
 | `src/main/agent/skills-config.ts` | `SkillOverride`、`SkillOverrides`、`skillOverrideKey`、`loadSkillOverrides`、`saveSkillOverride`、`removeSkillOverride` |

@@ -12,7 +12,7 @@
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10058 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 69 | 21163 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 67 | 20319 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 76 | 14035 |
 | 10 | [UI 组件与面板](./10-ui.md) | 55 | 11969 |
 
@@ -174,7 +174,6 @@
 - `src/main/__tests__/capability-audit.test.ts`
 - `src/main/__tests__/protocol.test.ts`
 - `src/main/agent/__tests__/capabilities.test.ts`
-- `src/main/agent/__tests__/compact.test.ts`
 - `src/main/agent/__tests__/model.test.ts`
 - `src/main/agent/__tests__/proposals.test.ts`
 - `src/main/agent/__tests__/session.test.ts`

@@ -13,7 +13,7 @@
 
 ### 已落地
 
-- **运行时**：`src/main/agent/runtime.ts`，自研循环、SSE 流式、工具调用、取消、超时、会话历史。
+- **运行时**：`src/main/agent/pi/runtime.ts`（基于 `@earendil-works/pi-coding-agent`），工具权限、确认、提案和会话锁仍由 CineLab 自研层负责。
 - **工具注册**：`src/main/agent/tools/`，当前注册 56 个工具；`src/main/agent/capabilities/` 提供能力投影和关键词搜索。
 - **Profile**：`canvas` / `clip` / `film` / `stage`。当前主入口使用 `canvas` 和 `clip`；拉片和导演台能力挂在对应 scope。
 - **工具桥**：`src/renderer/src/agent/canvasBridge.ts`、`timelineBridge.ts`、`stageBridge.ts`、`filmBridge.ts`。

@@ -7,12 +7,12 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 75 | 26221 |
-| 02 | [生成与模型](./02-generation.md) | 67 | 14639 |
+| 01 | [画布](./01-canvas.md) | 77 | 26619 |
+| 02 | [生成与模型](./02-generation.md) | 68 | 15110 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10058 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 67 | 20319 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 67 | 20378 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 76 | 14035 |
 | 10 | [UI 组件与面板](./10-ui.md) | 55 | 11969 |
 
@@ -165,9 +165,11 @@
 | `TextEditorDialog.tsx` |
 | `ToolbarSettings.tsx` |
 | `TrimDialog.tsx` |
+| `VideoCropDialog.tsx` |
 | `VideoOpNodeView.tsx` |
 | `VideoPlayer.tsx` |
 | `VideoPreview.tsx` |
+| `WysiwygMarkdownEditor.tsx` |
 
 ## 测试清单
 
@@ -237,6 +239,8 @@
 - `src/renderer/src/canvas/nodes/__tests__/node-operations.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/study-sheet.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/text-markdown.test.ts`
+- `src/renderer/src/canvas/nodes/__tests__/wysiwyg-input-rules.test.ts`
+- `src/renderer/src/canvas/nodes/__tests__/wysiwyg-markdown-editor.test.ts`
 - `src/renderer/src/components/ui/native-controls.test.ts`
 - `src/renderer/src/stores/__tests__/canvas.test.ts`
 - `src/renderer/src/stores/__tests__/edge-references.test.ts`
@@ -249,10 +253,12 @@
 - `src/shared/__tests__/capabilities.test.ts`
 - `src/shared/__tests__/film-study-v2.test.ts`
 - `src/shared/__tests__/filters.test.ts`
+- `src/shared/__tests__/media.test.ts`
 - `src/shared/__tests__/model-contracts.test.ts`
 - `src/shared/__tests__/model-inputs.test.ts`
 - `src/shared/__tests__/model-modes.test.ts`
 - `src/shared/__tests__/node-operation-specs.test.ts`
+- `src/shared/__tests__/outpaint.test.ts`
 - `src/shared/__tests__/preferences.test.ts`
 - `src/shared/__tests__/project-schema.test.ts`
 - `src/shared/__tests__/prompt-preset.test.ts`

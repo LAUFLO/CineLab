@@ -4,7 +4,6 @@ Tasks:
   matte-image     RVM single image -> transparent PNG
   layer-split     RVM foreground + LaMa background -> two PNGs
   inpaint-image   LaMa masked image repair
-  outpaint-image  LaMa image expansion
   matte-video     RVM video -> transparent WebM
   repair-video    LaMa per-frame region repair -> MP4
 
@@ -279,32 +278,6 @@ def task_inpaint_image(vision: Vision, args: argparse.Namespace) -> dict:
     return {"output": args.output, "width": image.shape[1], "height": image.shape[0]}
 
 
-def task_outpaint_image(vision: Vision, args: argparse.Namespace) -> dict:
-    image = read_image(args.input)
-    target_w = max(8, int(args.width))
-    target_h = max(8, int(args.height))
-    h, w = image.shape[:2]
-    scale = min(target_w / w, target_h / h)
-    new_w = max(1, int(round(w * scale)))
-    new_h = max(1, int(round(h * scale)))
-    resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
-    left = (target_w - new_w) // 2
-    top = (target_h - new_h) // 2
-    right = target_w - new_w - left
-    bottom = target_h - new_h - top
-
-    base = cv2.copyMakeBorder(
-        resized, top, bottom, left, right, cv2.BORDER_REFLECT_101
-    )
-    mask = np.full((target_h, target_w), 255, dtype=np.uint8)
-    mask[top : top + new_h, left : left + new_w] = 0
-
-    result = lama_inpaint(vision, base, mask)
-    write_image(args.output, result)
-    progress(100, "扩图完成")
-    return {"output": args.output, "width": target_w, "height": target_h}
-
-
 def ffmpeg_decode(
     ffmpeg: str, input_path: str, width: int, height: int
 ) -> Iterator[np.ndarray]:
@@ -524,7 +497,6 @@ TASKS = {
     "matte-image": task_matte_image,
     "layer-split": task_layer_split,
     "inpaint-image": task_inpaint_image,
-    "outpaint-image": task_outpaint_image,
     "matte-video": task_matte_video,
     "repair-video": task_repair_video,
 }

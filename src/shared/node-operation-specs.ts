@@ -1,4 +1,6 @@
 import type { NodeKind } from './canvas-schema'
+import { parseAspectRatio } from './media'
+import { OUTPAINT_RATIOS } from './outpaint'
 
 /**
  * 节点操作对 Agent 的暴露方式。
@@ -251,7 +253,15 @@ export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> 
   'video-crop': {
     executable: true,
     itemRequired: true,
-    itemOptions: ['16:9', '9:16', '1:1', 'source']
+    itemOptions: [...OUTPAINT_RATIOS, 'custom'],
+    params: [
+      {
+        key: 'ratio',
+        label: '自定义比例',
+        type: 'string',
+        description: '仅 itemId=custom 使用，例如 4:5 或 2.35:1'
+      }
+    ]
   },
   subtitle: {
     executable: true,
@@ -284,10 +294,12 @@ export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> 
   matting: { executable: true, requiresConfirm: true },
   extend: { executable: true },
   outpaint: {
-    executable: true,
-    requiresConfirm: true,
+    executable: false,
+    generationProposable: true,
     itemRequired: true,
-    itemOptions: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9']
+    itemOptions: [...OUTPAINT_RATIOS],
+    reason:
+      '扩图需要选择图片模型，请用 generation_propose 并传入 operationId 和 itemId；没有精确比例时会自动近似'
   },
   cutout: {
     executable: true,
@@ -456,6 +468,13 @@ export function validateNodeOperationParams(
     const end = params.end
     if (typeof start === 'number' && typeof end === 'number' && end <= start) {
       return 'params.end 必须大于 params.start'
+    }
+  }
+  if (operationId === 'video-crop' && itemId === 'custom') {
+    const ratio = typeof params.ratio === 'string' ? params.ratio.trim() : ''
+    if (!ratio) return '自定义画面裁切需要 params.ratio'
+    if (!parseAspectRatio(ratio)) {
+      return 'params.ratio 格式无效，请用 4:5 这样的格式'
     }
   }
 

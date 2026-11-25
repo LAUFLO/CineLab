@@ -63,7 +63,8 @@ const MODULES = [
       'src/shared/local-adapter.ts',
       'src/shared/style-schema.ts',
       'src/shared/style-prompt.ts',
-      'src/shared/prompt-preset.ts'
+      'src/shared/prompt-preset.ts',
+      'src/shared/outpaint.ts'
     ]
   },
   {

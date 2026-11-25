@@ -100,6 +100,30 @@ describe('node operation agent specs', () => {
     }
   })
 
+  it('routes outpaint through generation proposals instead of local vision', () => {
+    const spec = NODE_OPERATION_AGENT_SPECS.outpaint
+    expect(spec.executable).toBe(false)
+    expect(spec.generationProposable).toBe(true)
+    expect(spec.itemRequired).toBe(true)
+    expect(spec.itemOptions).toEqual([
+      '16:9',
+      '9:16',
+      '1:1',
+      '4:3',
+      '3:4',
+      '21:9'
+    ])
+    expect(
+      validateNodeOperationParams('outpaint', undefined, {})
+    ).toContain('itemId')
+    expect(
+      validateNodeOperationParams('outpaint', '16:9', {})
+    ).toBeNull()
+    expect(
+      validateNodeOperationParams('outpaint', '2:1', {})
+    ).toContain('不支持')
+  })
+
   it('requires a menu item for split av', () => {
     expect(
       validateNodeOperationParams('split-av', undefined, {})
@@ -132,6 +156,34 @@ describe('node operation agent specs', () => {
         validateNodeOperationParams(operationId, 'auto', {})
       ).toBeNull()
     }
+  })
+
+  it('validates custom video crop ratios', () => {
+    expect(NODE_OPERATION_AGENT_SPECS['video-crop'].itemOptions).toEqual([
+      '16:9',
+      '9:16',
+      '1:1',
+      '4:3',
+      '3:4',
+      '21:9',
+      'custom'
+    ])
+    expect(
+      validateNodeOperationParams('video-crop', '16:9', {})
+    ).toBeNull()
+    expect(
+      validateNodeOperationParams('video-crop', 'custom', {})
+    ).toContain('params.ratio')
+    expect(
+      validateNodeOperationParams('video-crop', 'custom', {
+        ratio: '4:5'
+      })
+    ).toBeNull()
+    expect(
+      validateNodeOperationParams('video-crop', 'custom', {
+        ratio: 'bad'
+      })
+    ).toContain('格式')
   })
 
   it('identifies operation result nodes without hiding creative versions', () => {
@@ -171,6 +223,9 @@ describe('node operation agent specs', () => {
     expect(
       NODE_OPERATION_AGENT_SPECS['character-sheet'].generationProposable
     ).toBe(true)
+    expect(NODE_OPERATION_AGENT_SPECS.outpaint.generationProposable).toBe(
+      true
+    )
     expect(NODE_OPERATION_AGENT_SPECS.inpaint.generationProposable).toBe(
       false
     )

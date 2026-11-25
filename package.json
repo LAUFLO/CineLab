@@ -1,6 +1,6 @@
 {
   "name": "cinelab",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "CineLab — AI 创作无限画布",
   "main": "./out/main/index.js",
   "private": true,
@@ -36,6 +36,11 @@
   "dependencies": {
     "@earendil-works/pi-ai": "1.5.2",
     "@earendil-works/pi-coding-agent": "1.5.2",
+    "@milkdown/core": "7.23.0",
+    "@milkdown/plugin-history": "7.23.0",
+    "@milkdown/plugin-listener": "7.23.0",
+    "@milkdown/preset-commonmark": "7.23.0",
+    "@milkdown/preset-gfm": "7.23.0",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@xyflow/react": "13.0.2",
     "dompurify": "^3.4.18",

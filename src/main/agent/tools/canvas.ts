@@ -326,7 +326,7 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     id: 'canvas.nodeOperation',
     name: 'canvas_node_operation',
     description:
-      '在一个选中节点上执行工具栏操作，例如宫格切分、裁剪、抽帧、片段截取、分离音视频（含人声提取/背景音提取）、去字幕、图层分离、抠图、主体消除、扩图、白模预演等。operationId 和 itemId 必须来自 canvas_node_operations；需要模型的操作请改用 generation_propose。',
+      '在一个选中节点上执行工具栏操作，例如宫格切分、裁剪、抽帧、片段截取、分离音视频（含人声提取/背景音提取）、去字幕、图层分离、抠图、主体消除、白模预演等。operationId 和 itemId 必须来自 canvas_node_operations；需要模型的操作请改用 generation_propose。',
     profiles: ['canvas'],
     readOnly: false,
     scope: 'canvas',

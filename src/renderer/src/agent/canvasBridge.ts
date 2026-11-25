@@ -12,6 +12,12 @@ import {
 import { NODE_META, TITLE_HEIGHT, type OutputRef } from '@shared/canvas-schema'
 import { agentToolCommands } from '@shared/agent-commands'
 import type { ReferenceInput } from '@shared/generation'
+import type { ModelDef } from '@shared/provider-schema'
+import { modelInputs } from '@shared/provider-schema'
+import {
+  isOutpaintRatio,
+  planOutpaint
+} from '@shared/outpaint'
 import {
   absolutePosition,
   isGroupNode,
@@ -30,6 +36,7 @@ import {
   listNodeOperations,
   executeNodeOperation
 } from '../canvas/nodes/node-operation-runner'
+import { useSettingsStore } from '../stores/settings'
 import { useStageStore } from '../stage/stageStore'
 import { useStudioStore } from '../stores/studio'
 import { useTimelineStore } from '../stores/timeline'
@@ -76,6 +83,22 @@ function selectedNodeSummary(): Array<{
 
 function nodeTitleOf(node: { data?: unknown }): string {
   return String((node.data as { title?: unknown } | undefined)?.title ?? '')
+}
+
+async function findModelByKey(modelKey: string): Promise<ModelDef | null> {
+  const slash = modelKey.indexOf('/')
+  if (slash <= 0) return null
+  const providerId = modelKey.slice(0, slash)
+  const modelId = modelKey.slice(slash + 1)
+
+  let providers = useSettingsStore.getState().providers
+  if (providers.length === 0) {
+    await useSettingsStore.getState().load()
+    providers = useSettingsStore.getState().providers
+  }
+
+  const provider = providers.find((item) => item.id === providerId)
+  return provider?.models.find((model) => model.id === modelId) ?? null
 }
 
 interface CollectedRefs {
@@ -1118,6 +1141,41 @@ export async function executeCanvasTool(call: AgentToolCallRequest): Promise<{
         baseParams.negative_prompt = negativePrompt
       }
 
+      let finalPrompt = prompt
+      let finalParams = baseParams
+      let outpaintRatio: { exact?: boolean; effective?: string } | undefined
+      if (operationId === 'outpaint') {
+        if (!isOutpaintRatio(itemId)) {
+          return { ok: false, error: '扩图需要选择目标比例' }
+        }
+        const model = await findModelByKey(effectiveModelKey)
+        if (!model) {
+          return {
+            ok: false,
+            error: '找不到扩图模型，请先在设置中配置图片模型'
+          }
+        }
+        if (!modelInputs(model).includes('image')) {
+          return {
+            ok: false,
+            error: '扩图需要支持图片输入的图片模型'
+          }
+        }
+        const support = planOutpaint(model, prompt, itemId, baseParams)
+        if (!support.supported) {
+          return {
+            ok: false,
+            error: support.reason ?? `当前模型不支持 ${itemId} 扩图`
+          }
+        }
+        finalPrompt = support.prompt
+        finalParams = support.params
+        outpaintRatio = {
+          exact: support.exact,
+          effective: support.effective
+        }
+      }
+
       const count =
         typeof call.args.count === 'number' ? call.args.count : undefined
 
@@ -1127,8 +1185,8 @@ export async function executeCanvasTool(call: AgentToolCallRequest): Promise<{
           request: {
             nodeId,
             modelKey: effectiveModelKey,
-            prompt,
-            params: baseParams,
+            prompt: finalPrompt,
+            params: finalParams,
             ...(operationId ? { op: operationId } : {}),
             ...(mask ? { mask } : {}),
             ...(collected.refs.length > 0 ? { refs: collected.refs } : {}),
@@ -1203,7 +1261,8 @@ export async function executeCanvasTool(call: AgentToolCallRequest): Promise<{
                 }
               : null,
             createdNodeIds: change.createdNodeIds,
-            connectedNodeIds
+            connectedNodeIds,
+            ...(outpaintRatio ? { outpaintRatio } : {})
           },
           change
         }

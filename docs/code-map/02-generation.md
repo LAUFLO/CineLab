@@ -107,6 +107,8 @@ Prompt Bar / 节点操作
 | 本地适配器 registry / utilityProcess | 已实现（S2a/S2b） | `main/local-adapters/`、`shared/local-adapter.ts`、设置页本地适配器区块 |
 | L4 sidecar（OpenAI / http-template） | 已实现（S4） | `main/local-adapters/registry.ts`、`docs/local-adapters.md` |
 | 媒体处理 | 已实现 | `main/media/`、`concat.test.ts` |
+| 视频画面裁切 | 已实现；6 档预设 + 自定义宽高比，居中裁切 | `shared/media.ts`、`main/media/video.ts`、`renderer/src/canvas/nodes/VideoCropDialog.tsx` |
+| 扩图（生图模型图生图） | 已实现；精确优先，无精确选项时自动选最接近的尺寸，完全无法控制比例的模型置灰 | `shared/outpaint.ts`、`renderer/src/canvas/nodes/AiOperationDialog.tsx`、`NodeToolbar.tsx` |
 | 人声/背景音分离 | 已实现；真实素材听感待验收 | `main/media/stems.ts`、`stem-tasks.ts`、`resources/stem-worker/worker.py` |
 | 错误文案 | 已实现 | `generation-error.test.ts` |
 | 官方/自定义风格库 | 已实现 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`src/shared/style-prompt.ts`、`src/renderer/src/canvas/StyleLibraryDialog.tsx`、`PromptBar.tsx` |
@@ -115,6 +117,7 @@ Prompt Bar / 节点操作
 ## 已知限制
 
 - 模型能力由 `provider-schema.ts` 与模型清单决定；新增能力先改 schema 与适配器。
+- 扩图只使用配置的图片模型；比例精确优先，没有精确选项时自动选最接近的尺寸，并在对话框中标注实际比例；完全无法控制比例的模型置灰。
 - 生成结果的计费/预扣在供应商适配层，不在 UI。
 - 参考素材数量由供应商 API 决定，本地不做上限建模。
 - 首尾帧变量 `refs.firstFrame` / `refs.lastFrame` 已改为纯 base64；旧自定义模板需手动迁移到 `firstFrameDataUrl` / `lastFrameDataUrl`。
@@ -176,9 +179,9 @@ Prompt Bar / 节点操作
 | `src/main/media/temp.ts` | 19 |
 | `src/main/media/thumbnail.ts` | 145 |
 | `src/main/media/video-ops.ts` | 134 |
-| `src/main/media/video.ts` | 245 |
+| `src/main/media/video.ts` | 233 |
 | `src/main/media/vision-tasks.ts` | 102 |
-| `src/main/media/vision.ts` | 438 |
+| `src/main/media/vision.ts` | 375 |
 | `src/main/providers/agnes.ts` | 205 |
 | `src/main/providers/headers.ts` | 30 |
 | `src/main/providers/http-template.ts` | 827 |
@@ -188,7 +191,7 @@ Prompt Bar / 节点操作
 | `src/main/providers/media.ts` | 49 |
 | `src/main/providers/minimax.ts` | 297 |
 | `src/main/providers/model-body.ts` | 252 |
-| `src/main/providers/openai-compat.ts` | 789 |
+| `src/main/providers/openai-compat.ts` | 858 |
 | `src/main/providers/retry.ts` | 57 |
 | `src/main/providers/sora.ts` | 232 |
 | `src/main/providers/volcengine.ts` | 187 |
@@ -200,9 +203,10 @@ Prompt Bar / 节点操作
 | `src/shared/generation.ts` | 141 |
 | `src/shared/http-template.ts` | 110 |
 | `src/shared/local-adapter.ts` | 14 |
-| `src/shared/media.ts` | 273 |
+| `src/shared/media.ts` | 336 |
 | `src/shared/model-contracts.ts` | 395 |
 | `src/shared/model-modes.ts` | 278 |
+| `src/shared/outpaint.ts` | 414 |
 | `src/shared/param-constraints.ts` | 107 |
 | `src/shared/param-presets.ts` | 305 |
 | `src/shared/prompt-preset.ts` | 74 |
@@ -271,9 +275,10 @@ Prompt Bar / 节点操作
 | `src/shared/generation.ts` | `OutputKind`、`ReferenceMedia`、`ReferenceRole`、`VideoRange`、`VideoOperationOptions`、`ReferenceInput`、`LayerBounds`、`LayerBox`、`AssetLayer`、`TextRecognitionStyle`、`TextRecognitionRun`、`TextRecognitionLine`、`TextRecognition`、`GeneratedAsset`、`GenerateRequest`、`GenerationEvent`、`GenerateHandle` |
 | `src/shared/http-template.ts` | `HttpTemplateMode`、`HttpTemplateSignType`、`HttpTemplateSign`、`HttpTemplateAuth`、`HttpTemplateMultipartFile`、`HttpTemplateMultipart`、`HttpTemplateSubmit`、`HttpTemplateCondition`、`HttpTemplateConditionalField`、`HttpTemplatePoll`、`HttpTemplate`、`LEGACY_KEYFRAME_VARIABLE_WARNING`、`hasLegacyKeyframeVariables` |
 | `src/shared/local-adapter.ts` | `LocalAdapterStatusKind`、`LocalAdapterStatus` |
-| `src/shared/media.ts` | `AudioPeaksRequest`、`GridSplitRequest`、`GridSplitResult`、`StitchRequest`、`StitchResult`、`FrameMode`、`ExtractFrameRequest`、`ExtractFrameResult`、`StemMode`、`SplitAvMode`、`SplitAvRequest`、`SplitAvResult`、`StemTaskRequest`、`StemTaskResult`、`StemTaskStatus`、`StemTaskEvent`、`StemTaskStartResult`、`CropVideoRequest`、`CropVideoResult`、`AudioTrimRequest`、`AudioTrimResult`、`AudioSpeedRequest`、`AudioSpeedResult`、`MediaProbe` …（共 44 个） |
+| `src/shared/media.ts` | `AspectRatioValue`、`parseAspectRatio`、`CenterCropRect`、`centerCropRect`、`AudioPeaksRequest`、`GridSplitRequest`、`GridSplitResult`、`StitchRequest`、`StitchResult`、`FrameMode`、`ExtractFrameRequest`、`ExtractFrameResult`、`StemMode`、`SplitAvMode`、`SplitAvRequest`、`SplitAvResult`、`StemTaskRequest`、`StemTaskResult`、`StemTaskStatus`、`StemTaskEvent`、`StemTaskStartResult`、`CropVideoRequest`、`CropVideoResult`、`AudioTrimRequest` …（共 48 个） |
 | `src/shared/model-contracts.ts` | `ContractTransport`、`ModelContractFields`、`ModelContractTransports`、`ModelContractRoles`、`ModelContractLimits`、`ModelContractSource`、`ModelContract`、`ContractGap`、`AGNES_VIDEO_CONTRACT`、`KLING_VIDEO_CONTRACT`、`MINIMAX_VIDEO_CONTRACT`、`MINIMAX_LEGACY_CONTRACT`、`VOLCENGINE_VIDEO_CONTRACT`、`SORA_VIDEO_CONTRACT`、`OPENAI_COMPAT_CONTRACT`、`HTTP_TEMPLATE_CONTRACT`、`OFFICIAL_CONTRACTS`、`contractForAdapter`、`isOfficialModel`、`contractGapsForAdapter` |
 | `src/shared/model-modes.ts` | `ModelModeId`、`MediaKind`、`SlotRole`、`InputSlot`、`OperationSupport`、`ModelModeConfig`、`ModelModeDefinition`、`MODEL_MODE_DEFINITIONS`、`MODEL_MODE_LABEL`、`OPERATION_SUPPORT_LABEL`、`isModelModeId`、`getModelModeDefinition`、`normalizeModeConfig`、`normalizeModelModes`、`modeMediaKinds`、`modeSupportsOperation`、`modeOperationIds`、`highestOperationSupport` |
+| `src/shared/outpaint.ts` | `OUTPAINT_RATIOS`、`OutpaintRatio`、`OutpaintParamTarget`、`OutpaintSupport`、`OutpaintPlan`、`isOutpaintRatio`、`outpaintRatioOf`、`outpaintSupport`、`outpaintPrompt`、`planOutpaint` |
 | `src/shared/param-constraints.ts` | `ParamEvalContext`、`EvaluatedParam`、`evaluateParam`、`applyParamConstraints` |
 | `src/shared/param-presets.ts` | `ParamTemplate`、`PARAM_TEMPLATES`、`paramTemplatesFor` |
 | `src/shared/prompt-preset.ts` | `PresetToken`、`findPresetTokens`、`expandPresetTokens` |

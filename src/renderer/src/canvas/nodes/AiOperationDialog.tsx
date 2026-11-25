@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ModelDef } from '@shared/provider-schema'
 import { modelInputs } from '@shared/provider-schema'
+import {
+  outpaintSupport,
+  type OutpaintRatio
+} from '@shared/outpaint'
 import { Icon } from '../../components/Icon'
 import { useSettingsStore } from '../../stores/settings'
 import { usePreferencesStore } from '../../stores/preferences'
@@ -25,6 +29,10 @@ interface AiOperationDialogProps {
   modelKind?: 'image' | 'text'
   /** 提示词保存键；同一操作/菜单项只保存一个版本 */
   operationKey?: string
+  /** 扩图目标比例；模型优先精确，没有精确时自动近似 */
+  outpaintRatio?: OutpaintRatio
+  /** 优先选中的模型；不可用时退回第一个可用模型 */
+  preferredModelKey?: string
   onClose: () => void
   onConfirm: (prompt: string, modelKey: string, model: ModelDef) => void
 }
@@ -38,6 +46,8 @@ export function AiOperationDialog({
   createsNode = false,
   modelKind = 'image',
   operationKey,
+  outpaintRatio,
+  preferredModelKey,
   onClose,
   onConfirm
 }: AiOperationDialogProps) {
@@ -73,13 +83,35 @@ export function AiOperationDialog({
               model.capability === 'image.t2i'
             )
           })
-          .map((model) => ({
-            key: `${provider.id}/${model.id}`,
-            providerName: provider.name,
-            model
-          }))
+          .map((model) => {
+            const supportsImage = modelInputs(model).includes('image')
+            const support =
+              !wantsText && outpaintRatio
+                ? outpaintSupport(model, outpaintRatio)
+                : null
+            let reason: string | undefined
+            if (!supportsImage) {
+              reason = wantsText ? '不支持图片输入' : '不支持参考图'
+            } else if (support && !support.supported) {
+              reason = support.reason ?? `不支持 ${outpaintRatio}`
+            }
+            return {
+              key: `${provider.id}/${model.id}`,
+              providerName: provider.name,
+              model,
+              disabled: Boolean(reason),
+              reason,
+              exact: support?.supported ? support.exact !== false : undefined,
+              effective: support?.supported ? support.effective : undefined
+            }
+          })
       )
       .sort((a, b) => {
+        const tier = (item: {
+          disabled: boolean
+          exact?: boolean
+        }): number => (item.disabled ? 2 : item.exact === false ? 1 : 0)
+        if (tier(a) !== tier(b)) return tier(a) - tier(b)
         const rank = (item: { model: ModelDef }): number => {
           if (wantsText) {
             return modelInputs(item.model).includes('image') ? 0 : 10
@@ -91,11 +123,12 @@ export function AiOperationDialog({
         }
         return rank(a) - rank(b)
       })
-  }, [providers, wantsText])
+  }, [providers, wantsText, outpaintRatio])
 
+  const availableModels = models.filter((item) => !item.disabled)
   const firstModelKey =
-    models.find((item) => modelInputs(item.model).includes('image'))?.key ??
-    models[0]?.key ??
+    availableModels.find((item) => item.key === preferredModelKey)?.key ??
+    availableModels[0]?.key ??
     ''
   const [prompt, setPrompt] = useState(initialPrompt)
   const [modelKey, setModelKey] = useState(firstModelKey)
@@ -112,8 +145,10 @@ export function AiOperationDialog({
 
   const active = models.find((item) => item.key === modelKey)
   const activeSupportsImage = active
-    ? modelInputs(active.model).includes('image')
+    ? !active.disabled && modelInputs(active.model).includes('image')
     : false
+  const activeApproximate =
+    active && !active.disabled && active.exact === false ? active : undefined
   const valid =
     Boolean(active) && activeSupportsImage && prompt.trim().length > 0
   const dirty = prompt.trim() !== (savedPrompt ?? initialPrompt).trim()
@@ -151,13 +186,21 @@ export function AiOperationDialog({
         </IconButton>
       </div>
 
-      {models.length === 0 ? (
+      {availableModels.length === 0 ? (
         <div className="mt-4 flex flex-col gap-2 rounded-card border border-border bg-surface-hover p-[14px] text-xs text-fg-muted">
-          <p>{wantsText ? '还没有可用的文本模型。' : '还没有可用的图片模型。'}</p>
+          <p>
+            {wantsText
+              ? '还没有可用的文本模型。'
+              : outpaintRatio
+                ? '还没有可用于扩图的图片模型。'
+                : '还没有可用的图片模型。'}
+          </p>
           <p>
             {wantsText
               ? '反推提示词需要支持图片输入的文本模型，请先在设置中添加。'
-              : '该操作需要支持图生图的模型，请先在设置中添加。'}
+              : outpaintRatio
+                ? '扩图需要模型支持参考图，并提供 ratio / aspect_ratio / size / width / height 参数。'
+                : '该操作需要支持图生图的模型，请先在设置中添加。'}
           </p>
           <Button
             type="button"
@@ -179,17 +222,25 @@ export function AiOperationDialog({
               value={modelKey}
               options={models.map((item) => ({
                 value: item.key,
-                label: `${item.providerName} · ${item.model.name}${
-                  modelInputs(item.model).includes('image')
-                    ? ''
-                    : '（不支持参考图）'
-                }`,
-                disabled: !modelInputs(item.model).includes('image')
+                label: `${item.providerName} · ${item.model.name}`,
+                disabled: item.disabled,
+                ...(item.disabled && item.reason
+                  ? { hint: item.reason }
+                  : item.exact === false && item.effective
+                    ? { hint: `将按 ${item.effective} 近似生成` }
+                    : {})
               }))}
               onChange={(next) => setModelKey(next)}
               disabled={busy}
             />
           </label>
+
+          {activeApproximate?.effective ? (
+            <div className="text-[11px] leading-[1.6] text-fg-subtle">
+              该模型没有精确的 {outpaintRatio} 选项，将按{' '}
+              {activeApproximate.effective} 近似生成。
+            </div>
+          ) : null}
 
           <label className="flex flex-col gap-1.5 text-xs text-fg-muted">
             <span>提示词</span>
@@ -254,7 +305,9 @@ export function AiOperationDialog({
           <div className="mt-3 text-[11px] leading-[1.6] text-fg-subtle">
             {wantsText
               ? '建议选择支持图片输入的文本模型；提示词可以按需微调。'
-              : '建议选择支持图生图的模型；提示词可以按需微调。'}
+              : outpaintRatio
+                ? `优先选择能精确输出 ${outpaintRatio} 的模型；没有精确选项时会自动选最接近的尺寸。`
+                : '建议选择支持图生图的模型；提示词可以按需微调。'}
             {masked
               ? ' 当前操作会把蒙版一起提交，模型需要支持 /images/edits mask。'
               : ''}
@@ -276,7 +329,7 @@ export function AiOperationDialog({
           variant="primary"
           disabled={!valid || busy}
           onClick={() => {
-            if (!active || !prompt.trim()) return
+            if (!active || active.disabled || !prompt.trim()) return
             onConfirm(prompt.trim(), modelKey, active.model)
           }}
         >

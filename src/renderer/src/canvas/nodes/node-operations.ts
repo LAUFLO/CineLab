@@ -3,6 +3,7 @@ import {
   nodeOperationOutputTarget,
   type NodeOperationOutputTarget
 } from '@shared/node-operation-specs'
+import { OUTPAINT_RATIOS } from '@shared/outpaint'
 import type { IconName } from '../../components/Icon'
 
 export interface OperationContext {
@@ -199,10 +200,8 @@ const LAYER_SPLIT_MENU: OperationMenuItem[] = [
 
 
 const VIDEO_CROP_MENU: OperationMenuItem[] = [
-  { id: '16:9', label: '16:9' },
-  { id: '9:16', label: '9:16' },
-  { id: '1:1', label: '1:1' },
-  { id: 'source', label: '原比例' }
+  ...OUTPAINT_RATIOS.map((ratio) => ({ id: ratio, label: ratio })),
+  { id: 'custom', label: '自定义…' }
 ]
 
 const SUBTITLE_MENU: OperationMenuItem[] = [
@@ -435,14 +434,10 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     section: 'edit',
     prompt: PROMPT_OUTPAINT,
     hint: '向四周扩展',
-    menu: [
-      { id: '16:9', label: '扩成 16:9' },
-      { id: '9:16', label: '扩成 9:16' },
-      { id: '1:1', label: '扩成 1:1' },
-      { id: '4:3', label: '扩成 4:3' },
-      { id: '3:4', label: '扩成 3:4' },
-      { id: '21:9', label: '扩成 21:9' }
-    ]
+    menu: OUTPAINT_RATIOS.map((ratio) => ({
+      id: ratio,
+      label: `扩成 ${ratio}`
+    }))
   },
   {
     id: 'cutout',

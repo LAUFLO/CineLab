@@ -48,9 +48,9 @@ const COMPONENT_META: Record<
   'vision-models': {
     name: '视觉模型（InSPyReNet + LaMa）',
     description:
-      'InSPyReNet 抠像与 LaMa 修复模型，约 570MB。复用「本地 AI 运行时」的 Python/PyTorch 环境，请先安装运行时。安装后可解锁抠图、图层分离、视频抠像、智能去字幕、主体消除和本地扩图。',
+      'InSPyReNet 抠像与 LaMa 修复模型，约 570MB。复用「本地 AI 运行时」的 Python/PyTorch 环境，请先安装运行时。安装后可解锁抠图、图层分离、视频抠像、智能去字幕和主体消除。',
     uninstallHint:
-      '卸载后，抠图、图层分离、视频抠像、智能修复和本地扩图将无法使用。已生成的素材节点不受影响，可随时重新下载。'
+      '卸载后，抠图、图层分离、视频抠像、智能修复和主体消除将无法使用。已生成的素材节点不受影响，可随时重新下载。'
   },
   'stem-model': {
     name: 'HTDemucs 人声分离模型',

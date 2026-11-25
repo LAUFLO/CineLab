@@ -45,6 +45,7 @@ The model layer is fully open: providers, models, Base URL, API key, headers and
 - Multiple projects and canvases, autosave, crash recovery, project covers
 - Groups, storyboard groups, 2K stitching, version stacks
 - Node toolbar: grid split, multi-angle, relight, portrait, cutout, free crop, 3D lighting
+- Text nodes support Markdown WYSIWYG: type `#`, `-`, `>`, `**` and more to format in place
 - Reference slots for images, videos, audio and text, plus `@` text mentions
 - Result nodes keep the toolbar but hide the Prompt Bar
 
@@ -108,7 +109,8 @@ The model layer is fully open: providers, models, Base URL, API key, headers and
 - Vocal / background separation: video sources produce a silent video plus audio, audio sources produce audio only
 - Depth motion capture (VDA Small), output ratio follows the input
 - Frame extraction, cropping, audio/video demux, subtitle removal, shot retakes
-- Cutout, outpainting, layer separation, grid split, storyboard stitching
+- Video crop presets 16:9 / 9:16 / 1:1 / 4:3 / 3:4 / 21:9 plus custom aspect ratio
+- Cutout, outpainting through configured image models, layer separation, grid split, storyboard stitching
 - Models and runtimes download on demand and are not bundled in the installer
 
 ### Fully open model configuration
@@ -130,12 +132,12 @@ The model layer is fully open: providers, models, Base URL, API key, headers and
 
 Download the latest build from [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest):
 
-Current version: **v0.5.2**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
+Current version: **v0.5.3**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
 
 | Platform | Recommended file | Requirements |
 |---|---|---|
-| Windows | `CineLab-0.5.2-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.5.2-arm64.dmg` | macOS 12+, Apple Silicon |
+| Windows | `CineLab-0.5.3-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.5.3-arm64.dmg` | macOS 12+, Apple Silicon |
 
 ### Windows
 

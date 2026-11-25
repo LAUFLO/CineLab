@@ -1,13 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState
+} from 'react'
 import { Icon } from '../../components/Icon'
-import { renderMarkdown, MARKDOWN_CLASS } from './text-markdown'
 import {
   Button,
   DIALOG_SURFACE,
   Dialog,
-  IconButton,
-  Textarea
+  IconButton
 } from '../../components/ui'
+import type { WysiwygMarkdownEditorHandle } from './WysiwygMarkdownEditor'
+
+const WysiwygMarkdownEditor = lazy(async () => {
+  const module = await import('./WysiwygMarkdownEditor')
+  return { default: module.WysiwygMarkdownEditor }
+})
 
 interface TextEditorDialogProps {
   open: boolean
@@ -17,19 +28,6 @@ interface TextEditorDialogProps {
   onSave: (text: string) => void
 }
 
-const TOOLBAR: Array<{
-  label: string
-  before: string
-  after?: string
-}> = [
-  { label: 'H2', before: '## ' },
-  { label: '粗体', before: '**', after: '**' },
-  { label: '列表', before: '- ' },
-  { label: '引用', before: '> ' },
-  { label: '代码', before: '```\n', after: '\n```' },
-  { label: '表格', before: '| 列 1 | 列 2 |\n| --- | --- |\n| 内容 | 内容 |\n' }
-]
-
 export function TextEditorDialog({
   open,
   title,
@@ -38,49 +36,36 @@ export function TextEditorDialog({
   onSave
 }: TextEditorDialogProps) {
   const [draft, setDraft] = useState(initialText)
-  const [view, setView] = useState<'edit' | 'preview'>('edit')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const editorRef = useRef<WysiwygMarkdownEditorHandle>(null)
+  const saveRef = useRef<() => void>(() => undefined)
+
+  const save = useCallback((): void => {
+    let text = draft
+    try {
+      text = editorRef.current?.getMarkdown() ?? draft
+    } catch {
+      // 序列化失败时退回最后一次监听值，避免无法保存
+    }
+    onSave(text)
+  }, [draft, onSave])
+  saveRef.current = save
 
   useEffect(() => {
     if (!open) return
     setDraft(initialText)
-    setView('edit')
-    window.setTimeout(() => textareaRef.current?.focus(), 30)
   }, [open, initialText])
-
-  useEffect(() => {
-    if (!open || view !== 'edit') return
-    textareaRef.current?.focus()
-  }, [open, view])
 
   useEffect(() => {
     if (!open) return
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
         event.preventDefault()
-        onSave(draft)
+        saveRef.current()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, draft, onClose, onSave])
-
-  const preview = useMemo(() => renderMarkdown(draft), [draft])
-
-  const insert = (before: string, after = ''): void => {
-    const textarea = textareaRef.current
-    if (!textarea) return
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const selected = draft.slice(start, end) || '文本'
-    const next = `${draft.slice(0, start)}${before}${selected}${after}${draft.slice(end)}`
-    setDraft(next)
-    requestAnimationFrame(() => {
-      textarea.focus()
-      textarea.selectionStart = start + before.length
-      textarea.selectionEnd = start + before.length + selected.length
-    })
-  }
+  }, [open])
 
   if (!open) return null
 
@@ -106,57 +91,28 @@ export function TextEditorDialog({
         </IconButton>
       </header>
 
-      <div className="flex shrink-0 items-center gap-1.5 border-b border-divider px-4 py-2">
-        {view === 'edit' ? (
-          TOOLBAR.map((item) => (
-            <Button
-              key={item.label}
-              type="button"
-              variant="ghost"
-              size="none"
-              className="h-[26px] !rounded-md bg-surface-hover px-2.5 text-[11px] text-fg-muted hover:text-fg"
-              onClick={() => insert(item.before, item.after ?? '')}
-            >
-              {item.label}
-            </Button>
-          ))
-        ) : (
-          <span className="text-[11px] text-fg-subtle">Markdown 预览</span>
-        )}
-        <Button
-          type="button"
-          variant="secondary"
-          size="none"
-          className="ml-auto h-[26px] !rounded-md px-3 text-[11px]"
-          onClick={() =>
-            setView((current) => (current === 'edit' ? 'preview' : 'edit'))
-          }
-        >
-          {view === 'edit' ? '预览' : 'Markdown'}
-        </Button>
-        <span className="ml-3 text-[11px] text-fg-subtle">
-          支持 Markdown · Ctrl+Enter 保存
+      <div className="flex shrink-0 items-center gap-2 border-b border-divider px-4 py-2 text-[11px] text-fg-subtle">
+        <span className="shrink-0">支持 Markdown</span>
+        <span className="min-w-0 truncate">
+          {'输入 # 标题、- 列表、> 引用、**粗体**、``` 代码、|3x3| 空格 表格'}
         </span>
+        <span className="ml-auto shrink-0">Ctrl+Enter 保存</span>
       </div>
 
       <div className="min-h-0 flex-1">
-        {view === 'edit' ? (
-          <Textarea
-            ref={textareaRef}
-            className="h-full w-full !min-h-0 !resize-none !rounded-none !border-0 bg-surface !p-4 font-mono !text-[13px] leading-[1.75] text-fg outline-none [&::-webkit-scrollbar]:h-[7px] [&::-webkit-scrollbar]:w-[7px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-pill [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-[color-mix(in_srgb,var(--text-3)_52%,transparent)] [&::-webkit-scrollbar-thumb]:bg-clip-padding [&::-webkit-scrollbar-thumb:hover]:bg-[color-mix(in_srgb,var(--text-3)_72%,transparent)]"
-            value={draft}
-            spellCheck={false}
-            placeholder="在这里输入文本，支持 Markdown…"
-            onChange={(event) => setDraft(event.target.value)}
+        <Suspense
+          fallback={
+            <div className="flex h-full items-center justify-center text-xs text-fg-subtle">
+              加载编辑器…
+            </div>
+          }
+        >
+          <WysiwygMarkdownEditor
+            ref={editorRef}
+            initialMarkdown={initialText}
+            onChange={setDraft}
           />
-        ) : (
-          <div className="h-full overflow-y-auto px-6 py-5 [&::-webkit-scrollbar]:h-[7px] [&::-webkit-scrollbar]:w-[7px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-pill [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-[color-mix(in_srgb,var(--text-3)_52%,transparent)] [&::-webkit-scrollbar-thumb]:bg-clip-padding [&::-webkit-scrollbar-thumb:hover]:bg-[color-mix(in_srgb,var(--text-3)_72%,transparent)]">
-            <div
-              className={`${MARKDOWN_CLASS} !static !inset-auto !overflow-visible !p-0`}
-              dangerouslySetInnerHTML={{ __html: preview }}
-            />
-          </div>
-        )}
+        </Suspense>
       </div>
 
       <footer className="flex h-[52px] shrink-0 items-center justify-end gap-2 border-t border-divider px-4">
@@ -166,7 +122,7 @@ export function TextEditorDialog({
         <Button variant="secondary" size="sm" onClick={onClose}>
           取消
         </Button>
-        <Button variant="primary" size="sm" onClick={() => onSave(draft)}>
+        <Button variant="primary" size="sm" onClick={save}>
           保存
         </Button>
       </footer>

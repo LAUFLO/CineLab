@@ -24,6 +24,8 @@
 | 节点类型 | text/image/video/audio/study/studio/film/video-op/stage | `src/shared/canvas-schema.ts` | 已实现 |
 | 连线、分组、框选 | `CanvasCommand` 8 种命令 | `src/shared/canvas-commands.ts` | 已实现 |
 | 节点工具栏操作 | 17 个 operationId | `src/shared/node-operation-specs.ts` | 已实现 |
+| 视频画面裁切 | 6 档预设 + 自定义宽高比，居中裁切 | `src/shared/media.ts`、`src/renderer/src/canvas/nodes/VideoCropDialog.tsx`、`src/main/media/video.ts` | 已实现 |
+| 文本节点所见即所得 | Milkdown 核心、Markdown 输入规则、无预览切换和格式工具栏 | `src/renderer/src/canvas/nodes/WysiwygMarkdownEditor.tsx`、`TextEditorDialog.tsx` | 已实现 |
 | 版本栈、上游引用 | `OutputRef` + `clearEdgeReferences` | `src/renderer/src/stores/canvas-model.ts` | 已实现 |
 | 项目画布、多画布 | `.cinelab` 项目 | `src/main/project/manager.ts` | 已实现 |
 | 素材库 | 全局/项目素材、标签、模板 | `src/main/library/` | 已实现 |
@@ -40,6 +42,7 @@
 | 参数预设/约束 | `ParamDef` 条件（when/force/deny） | `src/shared/param-presets.ts` | 已实现 |
 | 生成队列 | 并发 2（1–4）、取消、事件 | `src/main/engine/queue.ts` | 已实现 |
 | 参考输入 | 图/视频/音频、角色/遮罩 | `src/shared/reference-inputs.ts` | 已实现 |
+| 扩图 | 生图模型图生图；精确优先，无精确选项时自动选最接近尺寸 | `src/shared/outpaint.ts`、`src/renderer/src/canvas/nodes/AiOperationDialog.tsx`、`node-operation-runner.ts` | 已实现 |
 | 宫格/拼接/抽帧/裁剪/转码 | 媒体处理 | `src/main/media/` | 已实现 |
 | 结果节点隐藏 PromptBar | 操作/AI/拉片/导演台/剪辑室结果只保留工具栏 | `PromptBar.tsx`、`node-operation-specs.ts`、`stores/canvas/slices/assets.ts` | 已实现 |
 | 人声/背景音分离 | Demucs htdemucs、无声视频 + 音频、FIFO 任务 | `src/main/media/stems.ts`、`resources/stem-worker/worker.py` | 已实现 |

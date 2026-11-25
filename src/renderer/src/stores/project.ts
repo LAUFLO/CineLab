@@ -119,7 +119,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       if (!(await confirmCancelStemTasks())) return
       const snapshot = await window.api.project.pickCreate(templateId)
-      if (snapshot) get().applySnapshot(snapshot)
+      if (snapshot) {
+        get().applySnapshot(snapshot)
+        useUIStore.getState().requestFitView()
+      }
     } catch (error) {
       set({ error: String(error) })
     }

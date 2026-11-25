@@ -731,7 +731,7 @@ export function LibraryWindow() {
               </>
             ) : (
               <>
-                {mode === 'browse' && !isStyleFolder ? (
+                {mode === 'browse' && !isStyleFolder && !isWorkflowFolder ? (
                   <Button
                     variant="secondary"
                     className="shrink-0 whitespace-nowrap"
@@ -741,7 +741,7 @@ export function LibraryWindow() {
                     上传
                   </Button>
                 ) : null}
-                {!isStyleFolder ? (
+                {!isStyleFolder && !isWorkflowFolder ? (
                   <Button
                     variant="secondary"
                     className="shrink-0 whitespace-nowrap"
@@ -754,7 +754,9 @@ export function LibraryWindow() {
                 <span className="ml-1 min-w-0 truncate text-[11px] text-fg-subtle">
                   {isStyleFolder
                     ? `${filteredStyles.length} 个风格 · 官方 ${styles.filter((style) => style.source === 'official').length} · 自定义 ${styles.filter((style) => style.source === 'user').length}`
-                    : `${assets.length} 个素材 · ${templates.length} 个模板`}
+                    : isWorkflowFolder
+                      ? `${workflows.length} 个工作流`
+                      : `${assets.length} 个素材 · ${templates.length} 个模板`}
                 </span>
               </>
             )}

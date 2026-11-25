@@ -10,7 +10,7 @@
 | 01 | [画布](./01-canvas.md) | 74 | 25783 |
 | 02 | [生成与模型](./02-generation.md) | 67 | 14635 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
-| 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10055 |
+| 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10058 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
 | 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 20966 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 68 | 12403 |

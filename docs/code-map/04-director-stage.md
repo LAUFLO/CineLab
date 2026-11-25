@@ -154,7 +154,7 @@ StageWindow → scene.analyze
 | `src/main/scene/analyze.ts` | 158 |
 | `src/main/scene/object-presets.ts` | 71 |
 | `src/main/stage/export.ts` | 816 |
-| `src/main/stage/storage.ts` | 147 |
+| `src/main/stage/storage.ts` | 150 |
 | `src/renderer/src/stage/ShotInspector.tsx` | 292 |
 | `src/renderer/src/stage/StageInspector.tsx` | 414 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 730 |

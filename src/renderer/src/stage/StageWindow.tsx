@@ -10,9 +10,7 @@ import { shortcutMatches } from '../shortcuts/useShortcut'
 import { StageInspector } from './StageInspector'
 import { StageTimeline } from './StageTimeline'
 import { StageViewport } from './StageViewport'
-import { normalizePrevisWorldRef } from '@shared/previs/world-gen'
 import { buildProgramTimeline } from '@shared/stage-program'
-import { WorldSettingsDialog } from './WorldSettingsDialog'
 import { useStageStore } from './stageStore'
 import { exportStagePreviewToCanvas } from './preview-runner'
 import {
@@ -31,7 +29,6 @@ import {
   applyLightingPreset,
   STAGE_LIGHTING_PRESETS
 } from '@shared/stage-lighting'
-import type { StageCommand } from '@shared/stage-commands'
 
 const OBJECT_OPTIONS: Array<{ type: StageObjectType; label: string }> = [
   { type: 'human', label: '人物' },
@@ -117,7 +114,6 @@ export function StageWindow() {
   const [frameDensity, setFrameDensity] =
     useState<StageFrameDensity>('three')
   const [addObjectOpen, setAddObjectOpen] = useState(false)
-  const [worldSettingsOpen, setWorldSettingsOpen] = useState(false)
   const [lightingPreset, setLightingPreset] = useState('')
   const [exportMenuPosition, setExportMenuPosition] = useState({
     x: 0,
@@ -317,27 +313,6 @@ export function StageWindow() {
     }
   }
 
-  const handleWorld = (): void => {
-    const current = useStageStore.getState().doc
-    if (!current) return
-    const seed = current.world
-      ? (current.world.seed + 1) % 1_000_000
-      : 1
-    const world = normalizePrevisWorldRef({
-      ...(current.world ?? {
-        generatorVersion: 'styled-v1',
-        style: 'modern_city',
-        layout: 'street',
-        density: 'medium',
-        timeOfDay: 'dusk',
-        weather: 'clear',
-        extentM: [160, 160]
-      }),
-      seed
-    })
-    useStageStore.getState().applyCommands([{ type: 'setWorld', world }])
-  }
-
   const stageReferenceImage = (): ReturnType<typeof selectedNodeOutput> => {
     if (!nodeId) return null
     const canvas = useCanvasStore.getState()
@@ -353,12 +328,7 @@ export function StageWindow() {
     const state = useStageStore.getState()
     if (!state.doc) return
     const next = applyLightingPreset(state.doc, presetId)
-    const commands: StageCommand[] = []
-    if (next.world && next.world !== state.doc.world) {
-      commands.push({ type: 'setWorld', world: next.world })
-    }
-    commands.push({ type: 'setLighting', lighting: next.lighting })
-    state.applyCommands(commands)
+    state.applyCommands([{ type: 'setLighting', lighting: next.lighting }])
     setLightingPreset(presetId)
   }
 
@@ -453,28 +423,6 @@ export function StageWindow() {
       <div data-window="stage" className="grid min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden rounded-panel border border-border bg-canvas p-1.5 text-fg shadow-float [grid-template-areas:'top_top_top'_'left_viewport_right'_'timeline_timeline_timeline'] [grid-template-columns:240px_minmax(0,1fr)_280px] [grid-template-rows:48px_minmax(0,1fr)_168px] max-[900px]:[grid-template-columns:190px_minmax(0,1fr)_220px] max-[900px]:[grid-template-rows:48px_minmax(0,1fr)_150px] max-[720px]:[grid-template-areas:'top'_'viewport'_'timeline'] max-[720px]:[grid-template-columns:minmax(0,1fr)] max-[720px]:[grid-template-rows:48px_minmax(0,1fr)_150px]">
         <header className="flex min-w-0 items-center justify-between gap-3 rounded-card border border-border bg-surface px-2.5 [grid-area:top]">
           <div className="flex min-w-0 items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="none"
-              className={TEXT_BUTTON_CLASS}
-              onClick={handleWorld}
-              disabled={!doc}
-              title="生成或更换程序化白膜世界"
-            >
-              {doc?.world ? '换世界' : '生成世界'}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="none"
-              className={TEXT_BUTTON_CLASS}
-              onClick={() => setWorldSettingsOpen(true)}
-              disabled={!doc}
-              title="手动调整世界参数"
-            >
-              世界设置
-            </Button>
             <Select
               value={lightingPreset}
               options={[
@@ -919,10 +867,6 @@ export function StageWindow() {
           </div>
         ) : null}
       </div>
-      <WorldSettingsDialog
-        open={worldSettingsOpen}
-        onClose={() => setWorldSettingsOpen(false)}
-      />
       <Dialog
         open={privacyOpen}
         onClose={() => setPrivacyOpen(false)}

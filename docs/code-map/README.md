@@ -17,7 +17,7 @@
 | [01 画布](01-canvas.md) | 无限画布、节点、连线、项目文件 | 稳定 |
 | [02 生成与模型](02-generation.md) | 供应商、模型、生成任务、参数、素材 | 稳定 |
 | [03 剪辑室](03-clip-studio.md) | 时间线、剪辑、字幕、音频 | 稳定 |
-| [04 导演台与白模预演](04-director-stage.md) | StageDoc、语义镜头、程序化世界、白模导出 | 部分实现 |
+| [04 导演台与白模预演](04-director-stage.md) | StageDoc、语义镜头、白模导出 | 部分实现 |
 | [05 拉片室](05-film-study.md) | 视频拆解、自动分镜、分镜表 | 稳定 |
 | [06 CineBot 与 Agent](06-agent.md) | 工具、提案、会话、技能 | 稳定 |
 | [07 存储、IPC 与安全](07-storage-ipc.md) | 项目存储、IPC、preload、安全 | 稳定 |

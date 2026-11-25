@@ -37,7 +37,7 @@ import { GeneralSettingsSection } from './GeneralSettingsSection'
 import { SkillsSection } from './SkillsSection'
 import { McpSettingsSection } from './McpSettingsSection'
 import { ShortcutsSettingsSection } from './ShortcutsSettingsSection'
-import { ObjectPresetsSection } from './ObjectPresetsSection'
+
 import { ModelConfigDialog } from '../canvas/nodes/ModelConfigDialog'
 import type { ModelConfigValue } from '../canvas/nodes/ModelConfigDialog'
 import {
@@ -1666,10 +1666,7 @@ export function SettingsPanel() {
               </>
             ) : null}
             {active === 'generation' ? (
-              <>
-                <GeneralSettingsSection part="generation" />
-                <ObjectPresetsSection />
-              </>
+              <GeneralSettingsSection part="generation" />
             ) : null}
             {active === 'models' ? <ModelsSection /> : null}
             {active === 'skills' ? <SkillsSection /> : null}

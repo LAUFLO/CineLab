@@ -12,16 +12,6 @@ import {
   STAGE_OBJECT_TYPES,
   STAGE_POSE_PRESETS
 } from '@shared/stage-schema'
-import {
-  PREVIS_WORLD_DENSITIES,
-  PREVIS_WORLD_EXTENT_DEFAULT_M,
-  PREVIS_WORLD_EXTENT_MAX_M,
-  PREVIS_WORLD_EXTENT_MIN_M,
-  PREVIS_WORLD_GENERATOR_VERSIONS,
-  PREVIS_WORLD_LAYOUTS,
-  PREVIS_WORLD_STYLES,
-  PREVIS_WORLD_TIMES
-} from '@shared/previs/world-gen'
 import { listAllAssets } from '../library/store'
 import { listProviders } from '../settings/store'
 import { AGENT_CAPABILITIES } from './capabilities/registry'
@@ -161,20 +151,7 @@ export async function executeMainTool(
         easings: STAGE_EASINGS,
         aspects: STAGE_ASPECTS,
         limits: STAGE_LIMITS,
-        preview: DEFAULT_PREVIEW_OPTIONS,
-        world: {
-          generatorVersions: PREVIS_WORLD_GENERATOR_VERSIONS,
-          styles: PREVIS_WORLD_STYLES,
-          layouts: PREVIS_WORLD_LAYOUTS,
-          densities: PREVIS_WORLD_DENSITIES,
-          times: PREVIS_WORLD_TIMES,
-          weather: ['rain', 'snow'],
-          extent: {
-            min: PREVIS_WORLD_EXTENT_MIN_M,
-            max: PREVIS_WORLD_EXTENT_MAX_M,
-            default: PREVIS_WORLD_EXTENT_DEFAULT_M
-          }
-        }
+        preview: DEFAULT_PREVIEW_OPTIONS
       }
     }
   }

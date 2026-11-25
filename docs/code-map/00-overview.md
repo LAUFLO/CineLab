@@ -41,7 +41,7 @@ scripts/             构建、检查、CDP、发布辅助
 | `src/renderer/src/canvas/` | 画布、节点、连线、工具栏、提示词栏 | [01](01-canvas.md) |
 | `src/main/providers/`、`src/main/engine/`、`src/main/media/` | 供应商、生成、媒体 | [02](02-generation.md) |
 | `src/main/timeline/`、`src/renderer/src/studio/` | 时间线、剪辑、字幕、音频 | [03](03-clip-studio.md) |
-| `src/main/stage/`、`src/renderer/src/stage/`、`src/shared/previs/` | 导演台、程序化世界、白模预演 | [04](04-director-stage.md) |
+| `src/main/stage/`、`src/renderer/src/stage/` | 导演台、白模预演 | [04](04-director-stage.md) |
 | `src/main/film-study/` | 拉片、自动分镜 | [05](05-film-study.md) |
 | `src/main/agent/`、`src/renderer/src/agent/` | CineBot、工具、提案、技能 | [06](06-agent.md) |
 | `src/main/ipc/`、`src/preload/`、`src/main/project/`、`src/main/settings/` | 存储、IPC、安全 | [07](07-storage-ipc.md) |
@@ -56,7 +56,6 @@ scripts/             构建、检查、CDP、发布辅助
   canvases/<id>.json          画布（节点/连线/视图）
   timelines/<id>.json         时间线
   stages/<id>.json            导演台
-  stages/<id>.world.json      程序化世界
   study/<id>.json             拉片
   assets/                     项目素材
   exports/                    导出物

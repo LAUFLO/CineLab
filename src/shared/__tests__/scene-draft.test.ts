@@ -11,7 +11,6 @@ describe('parseSceneDraft', () => {
   it('normalizes a valid draft', () => {
     const draft = parseSceneDraft({
       set: { kind: 'indoor', description: 'office' },
-      world: null,
       room: { type: 'office', widthM: 99, depthM: 4, heightM: 2.8 },
       objects: [
         {
@@ -39,7 +38,6 @@ describe('parseSceneDraft', () => {
     }))
     const draft = parseSceneDraft({
       set: { kind: 'outdoor' },
-      world: null,
       room: null,
       objects: [{ label: '' }, ...objects],
       camera: {}
@@ -75,7 +73,6 @@ describe('calibrateScene', () => {
   it('uses hints for high confidence', () => {
     const draft = parseSceneDraft({
       set: { kind: 'outdoor' },
-      world: null,
       room: null,
       objects: [],
       camera: { fovHintDeg: 40, horizonY: 0.4, heightHint: 'eye' }
@@ -93,7 +90,6 @@ describe('calibrateScene', () => {
   it('falls back when the draft has no hints', () => {
     const draft = parseSceneDraft({
       set: { kind: 'outdoor' },
-      world: null,
       room: null,
       objects: [],
       camera: {}

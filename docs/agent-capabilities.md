@@ -3,10 +3,10 @@
 日期：2026-11-13
 状态：现行
 适用版本：v0.1.0
-最后核对：2026-11-23
+最后核对：2026-11-25
 关联：`docs/agent-architecture-plan.md`
 
-当前注册 92 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库、提示词模板、风格、素材处理、项目管理、技能和技能管理。
+当前注册 90 个工具，覆盖画布、剪辑室、导演台、拉片、生成提案、资产库、提示词模板、风格、素材处理、项目管理、技能和技能管理。
 本文件记录已开放给 CineBot 的能力、参数校验、确认规则和回合撤销方式。
 所有写操作都走命令层；UI 和 Agent 共用执行器。
 
@@ -24,9 +24,9 @@
 
 `preset_list`、`preset_search`、`preset_read`、`preset_create`、`preset_update`、`preset_delete`、`style_list`、`style_search`、`style_read`、`style_create`、`style_update`、`style_delete`
 
-### 导演台（24）
+### 导演台（22）
 
-`stage_get`、`stage_capabilities`、`stage_add_object`、`stage_add_objects`、`stage_transform_object`、`stage_add_camera`、`stage_transform_camera`、`stage_add_shot`、`stage_update_shot`、`stage_remove_shot`、`stage_set_camera_track`、`stage_set_background`、`stage_update_object`、`stage_export_preview`、`stage_set_active_camera`、`stage_remove_object`、`stage_set_shot_intent`、`stage_clear_shot_intent`、`stage_auto_coverage`、`stage_dialogue_coverage`、`stage_set_world`、`stage_randomize_world`、`stage_from_scene_image`、`stage_capture`
+`stage_get`、`stage_capabilities`、`stage_add_object`、`stage_add_objects`、`stage_transform_object`、`stage_add_camera`、`stage_transform_camera`、`stage_add_shot`、`stage_update_shot`、`stage_remove_shot`、`stage_set_camera_track`、`stage_set_background`、`stage_update_object`、`stage_export_preview`、`stage_set_active_camera`、`stage_remove_object`、`stage_set_shot_intent`、`stage_clear_shot_intent`、`stage_auto_coverage`、`stage_dialogue_coverage`、`stage_from_scene_image`、`stage_capture`
 
 ### 剪辑室（18）
 
@@ -93,8 +93,6 @@
 | `stage_clear_shot_intent` | `stage.clearShotIntent` | 否 | 否 | 场景历史 |
 | `stage_auto_coverage` | `stage.autoCoverage` | 否 | 否 | 场景历史 |
 | `stage_dialogue_coverage` | `stage.dialogueCoverage` | 否 | 否 | 场景历史 |
-| `stage_set_world` | `stage.setWorld` | 否 | 否 | 场景历史 |
-| `stage_randomize_world` | `stage.randomizeWorld` | 否 | 否 | 场景历史 |
 | `stage_from_scene_image` | `stage.fromSceneImage` | 否 | 是 | 场景历史（调用模型） |
 
 实现说明：
@@ -107,8 +105,7 @@
 - 同一轮场景命令通过 `turnId` 合并为一条撤销记录；本轮撤销时 `agentStore.undoLastTurn` 会同时回退画布与场景。
 - 导出参数：`shotId` 必填；`resolution` 为 `720p / 1080p`；`fps` 为 `24 / 30`。
 - 语义镜头通过 `solveStageShotIntent` 解算成 `cameraTrack`；支持单/双/群体构图，Agent 只写关系，不猜坐标。
-- 世界通过 `StageCommand.setWorld` 写入 `doc.world`，场景历史可撤销；`stage_randomize_world` 只换 seed。
-- 场景图通过 `scene:analyze` 调用用户配置的多模态文本模型，生成 world/objects/camera；图片会发送给该模型。
+- 场景图通过 `scene:analyze` 调用用户配置的多模态文本模型，生成 objects/camera；图片会发送给该模型。
 
 ## 4. 拉片
 

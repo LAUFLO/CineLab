@@ -70,87 +70,138 @@ function escapeCell(value?: string): string {
     .trim()
 }
 
-export function buildStudyTableMarkdown(study: FilmStudy): string {
+export const STUDY_TABLE_HEADERS = [
+  '镜号',
+  '时间',
+  '时长',
+  '景别',
+  '机位',
+  '运镜',
+  '光线',
+  '画面',
+  '台词',
+  '制作方式',
+  '提示词',
+  '人声 / 音乐'
+] as const
+
+/** 分镜表统一行模型：弹窗和文本节点共用，优先 shots，旧数据回退 segments。 */
+export interface StudyTableRow {
+  index: number
+  time: string
+  duration: string
+  shotSize: string
+  cameraAngle: string
+  cameraMove: string
+  lighting: string
+  visual: string
+  dialogue: string
+  production: string
+  prompt: string
+  sound: string
+}
+
+function soundLine(
+  voiceOver?: string,
+  musicCue?: string
+): string {
+  return [
+    voiceOver ? `人声：${voiceOver}` : '',
+    musicCue ? `音乐：${musicCue}` : ''
+  ]
+    .filter(Boolean)
+    .join('；')
+}
+
+export function buildStudyTableRows(study: FilmStudy): StudyTableRow[] {
   const shots = study.shots ?? []
   if (shots.length > 0) {
-    const header =
-      '| 镜号 | 时间 | 时长 | 景别 | 机位 | 运镜 | 光线 | 画面 | 台词 | 制作方式 | 提示词 |'
-    const divider =
-      '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
-    const rows = shots.map((shot) => {
+    return shots.map((shot) => {
       const scene = study.scenes?.find(
         (item) =>
           shot.index >= item.shots[0] && shot.index <= item.shots[1]
       )
-      const dialogue = shot.dialogue
-        ?.map(
-          (line) =>
-            `${line.speaker ? `${line.speaker}：` : ''}${line.text}`
-        )
-        .join(' / ')
-      const production = shot.production
-        ? `${PRODUCTION_LABEL[shot.production.label] ?? shot.production.label} ${Math.round(shot.production.confidence * 100)}%`
-        : ''
-      return [
-        `| ${String(shot.index).padStart(2, '0')}`,
-        `${studyClock(shot.startTime)} – ${studyClock(shot.endTime)}`,
-        `${shot.duration.toFixed(1)}s`,
-        escapeCell(shot.shotSize),
-        escapeCell(shot.cameraAngle),
-        escapeCell(shot.cameraMove),
-        escapeCell(shot.lighting),
-        escapeCell(shot.visualDescription ?? scene?.name),
-        escapeCell(dialogue),
-        escapeCell(production),
-        `${escapeCell(shot.imagePrompt)} |`
-      ].join(' | ')
+      const segment = study.segments[shot.index - 1]
+      return {
+        index: shot.index,
+        time: `${studyClock(shot.startTime)} – ${studyClock(shot.endTime)}`,
+        duration: `${shot.duration.toFixed(1)}s`,
+        shotSize: shot.shotSize ?? '',
+        cameraAngle: shot.cameraAngle ?? '',
+        cameraMove: shot.cameraMove ?? '',
+        lighting: shot.lighting ?? '',
+        visual: shot.visualDescription ?? scene?.name ?? '',
+        dialogue: (shot.dialogue ?? [])
+          .map(
+            (line) =>
+              `${line.speaker ? `${line.speaker}：` : ''}${line.text}`
+          )
+          .join(' / '),
+        production: shot.production
+          ? `${PRODUCTION_LABEL[shot.production.label] ?? shot.production.label} ${Math.round(shot.production.confidence * 100)}%`
+          : '',
+        prompt: shot.imagePrompt ?? '',
+        sound: soundLine(segment?.voiceOver, segment?.musicCue)
+      }
     })
-
-    return [
-      `# ${study.sourceName} · 分镜表`,
-      '',
-      `片长 ${studyClock(study.duration)} · ${shots.length} 个镜头`,
-      study.analysisModel ? `分析模型 ${study.analysisModel}` : '',
-      '',
-      header,
-      divider,
-      ...rows
-    ].join('\n')
   }
 
-  const header =
-    '| 镜号 | 时间 | 时长 | 景别 | 机位 | 运镜 | 光线 | 画面 | 提示词 | 人声 / 音乐 |'
-  const divider =
-    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
+  return study.segments.map((segment, index) => ({
+    index: index + 1,
+    time: `${studyClock(segment.startTime)} – ${studyClock(segment.endTime)}`,
+    duration: `${segmentDuration(segment).toFixed(1)}s`,
+    shotSize: segment.shotSize ?? '',
+    cameraAngle: segment.cameraAngle ?? '',
+    cameraMove: segment.cameraMove ?? '',
+    lighting: segment.lighting ?? '',
+    visual: segment.visualDescription ?? segment.title ?? '',
+    dialogue: '',
+    production: '',
+    prompt: segment.imagePrompt ?? '',
+    sound: soundLine(segment.voiceOver, segment.musicCue)
+  }))
+}
 
-  const rows = study.segments.map((segment, index) => {
-    const sound = [segment.voiceOver ? `人声：${segment.voiceOver}` : '', segment.musicCue ? `音乐：${segment.musicCue}` : '']
-      .filter(Boolean)
-      .join('；')
-    return [
-      `| ${String(index + 1).padStart(2, '0')}`,
-      `${studyClock(segment.startTime)} – ${studyClock(segment.endTime)}`,
-      `${segmentDuration(segment).toFixed(1)}s`,
-      escapeCell(segment.shotSize),
-      escapeCell(segment.cameraAngle),
-      escapeCell(segment.cameraMove),
-      escapeCell(segment.lighting),
-      escapeCell(segment.visualDescription ?? segment.title),
-      escapeCell(segment.imagePrompt),
-      `${escapeCell(sound)} |`
-    ].join(' | ')
-  })
+export function buildStudyTableMarkdown(study: FilmStudy): string {
+  const rows = buildStudyTableRows(study)
+  const shotCount = study.shots?.length ?? 0
+  const summary =
+    shotCount > 0
+      ? `片长 ${studyClock(study.duration)} · ${shotCount} 个镜头`
+      : `片长 ${studyClock(study.duration)} · ${study.segments.length} 个分镜 · ${study.frames.length} 张代表帧`
+  const divider = `| ${STUDY_TABLE_HEADERS.map(() => '---').join(' | ')} |`
+  const body = rows.map((row) =>
+    `| ${[
+      String(row.index).padStart(2, '0'),
+      row.time,
+      row.duration,
+      row.shotSize,
+      row.cameraAngle,
+      row.cameraMove,
+      row.lighting,
+      row.visual,
+      row.dialogue,
+      row.production,
+      row.prompt,
+      row.sound
+    ]
+      .map(escapeCell)
+      .join(' | ')} |`
+  )
 
-  return [
+  const lines = [
     `# ${study.sourceName} · 分镜表`,
     '',
-    `片长 ${studyClock(study.duration)} · ${study.segments.length} 个分镜 · ${study.frames.length} 张代表帧`,
-    study.analysisModel ? `分析模型 ${study.analysisModel}` : '',
+    summary
+  ]
+  if (study.analysisModel) lines.push(`分析模型 ${study.analysisModel}`)
+  lines.push(
     '',
-    header,
+    `| ${STUDY_TABLE_HEADERS.join(' | ')} |`,
     divider,
-    ...rows
-  ].join('\n')
+    ...body
+  )
+  return lines.join('\n')
 }
 
 const PRODUCTION_LABEL: Record<string, string> = {

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { AgentTurnChange } from '@shared/agent'
-import { looksLikePreamble, mergeChange, usageOf } from '../events'
+import {
+  looksLikePreamble,
+  mergeChange,
+  syncScopeWithChange,
+  usageOf
+} from '../events'
 
 describe('pi events helpers', () => {
   it('recognizes short preamble text', () => {
@@ -37,6 +42,34 @@ describe('pi events helpers', () => {
     expect(target.previousTitles).toEqual({ a: 'old', b: 'old-b' })
     expect(target.previousPositions).toEqual({ c: { x: 1, y: 2 } })
     expect(target.timelineUpdated).toBe(true)
+  })
+
+  it('adds nodes created in the turn to the active scope', () => {
+    const scope = { selectedNodeIds: ['selected'] }
+    syncScopeWithChange(scope, {
+      createdNodeIds: ['selected', 'new-a', 'new-b'],
+      updatedNodeIds: [],
+      deletedNodeIds: [],
+      createdEdgeIds: [],
+      deletedEdgeIds: [],
+      previousTitles: {},
+      previousPositions: {}
+    })
+    expect(scope.selectedNodeIds).toEqual(['selected', 'new-a', 'new-b'])
+
+    syncScopeWithChange(scope, {
+      createdNodeIds: ['new-b', 'new-c'],
+      updatedNodeIds: [],
+      deletedNodeIds: [],
+      createdEdgeIds: [],
+      deletedEdgeIds: [],
+      previousTitles: {},
+      previousPositions: {}
+    })
+    expect(scope.selectedNodeIds).toEqual(['selected', 'new-a', 'new-b', 'new-c'])
+
+    syncScopeWithChange(scope, undefined)
+    expect(scope.selectedNodeIds).toEqual(['selected', 'new-a', 'new-b', 'new-c'])
   })
 
   it('maps pi usage to AgentUsage', () => {

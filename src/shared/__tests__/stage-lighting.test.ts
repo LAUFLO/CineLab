@@ -1,34 +1,45 @@
 import { describe, expect, it } from 'vitest'
-import { resolveStageLighting } from '../stage-lighting'
+import { applyLightingPreset, resolveStageLighting } from '../stage-lighting'
 
 describe('resolveStageLighting', () => {
-  it('falls back to day for an unknown timeOfDay', () => {
-    const lighting = resolveStageLighting({
-      world: { timeOfDay: 'noon' } as never,
-      lighting: undefined
-    })
+  it('falls back to day lighting', () => {
+    const lighting = resolveStageLighting(undefined)
     expect(lighting.background).toBe('#f5f7fa')
     expect(lighting.ambient.intensity).toBeGreaterThan(0)
   })
 
-  it('keeps known times', () => {
-    const night = resolveStageLighting({
-      world: { timeOfDay: 'night' } as never,
-      lighting: undefined
+  it('applies manual lighting overrides', () => {
+    const lighting = resolveStageLighting({
+      lighting: {
+        background: '#000000',
+        ambient: { intensity: 2 }
+      }
     })
-    expect(night.background).toBe('#151b2b')
+    expect(lighting.background).toBe('#000000')
+    expect(lighting.ambient.intensity).toBe(2)
   })
 
   it('survives missing or malformed docs', () => {
     expect(() => resolveStageLighting(undefined)).not.toThrow()
     expect(() =>
-      resolveStageLighting({ world: null, lighting: null } as never)
+      resolveStageLighting({ lighting: null } as never)
     ).not.toThrow()
     expect(() =>
-      resolveStageLighting({
-        world: { timeOfDay: 123 } as never,
-        lighting: 'bad' as never
-      })
+      resolveStageLighting({ lighting: 'bad' as never })
     ).not.toThrow()
+  })
+})
+
+describe('applyLightingPreset', () => {
+  it('returns preset lighting without touching other doc fields', () => {
+    const next = applyLightingPreset({ lighting: undefined }, 'night')
+    expect(next).toEqual({
+      lighting: { }
+    })
+  })
+
+  it('keeps the current lighting for unknown presets', () => {
+    const lighting = { background: '#123456' }
+    expect(applyLightingPreset({ lighting }, 'missing')).toEqual({ lighting })
   })
 })

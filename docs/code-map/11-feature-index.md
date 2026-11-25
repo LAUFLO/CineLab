@@ -65,7 +65,6 @@
 |---|---|---|---|
 | 场景/机位/镜头 | `StageDoc`、`StageShot`、`StageCamera` | `src/shared/stage-schema.ts` | 已实现 |
 | 语义镜头 | 关系/距离/高度/构图求解 | `src/shared/stage-shot-intent.ts` | 已实现 |
-| 程序化世界 | 街道/十字/丁字/广场、室内 | `src/shared/previs/` | 已实现 |
 | 整片时间线、重叠 | `StageProgramEntry` + `front` | `src/shared/stage-program.ts` | 已实现 |
 | 整片播放 | `playbackScope='program'` | `src/renderer/src/stage/stageStore.ts` | 已实现 |
 | 整片/每镜导出 | `exportPreview(scope/items)` | `src/main/stage/export.ts` | 已实现 |

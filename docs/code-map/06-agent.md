@@ -46,28 +46,24 @@ CineBot 会话、工具注册与执行、生成提案、技能、能力审计。
 
 ## 运行时
 
-`src/main/agent/runtime.ts`：
+桌面端 CineBot 使用 `src/main/agent/pi/runtime.ts`（pi-coding-agent）：
 
-- 单轮最多 `MAX_STEPS = 8` 次工具调用；
+- 单轮工具调用不设次数上限，直到模型不再调用工具或用户取消；
 - 默认工具超时 `TOOL_TIMEOUT_MS = 30_000`；
-- 历史消息上限 `MAX_HISTORY_CHARS = 12_000`；
 - 长任务单独放宽：字幕/静音/分镜/节拍 5–15 分钟，导出/自动拉片/节点操作 30 分钟；
-- 模型调用走 `chatWithTools`；工具结果回填后继续下一轮，直到模型不再调用工具。
+- 主进程通过 `pi/loader.ts` 动态 import ESM-only 的 pi-coding-agent；
+- `pi/runtime.ts` 用 `createAgentSession` 创建会话，保留 `startTurn/cancelTurn/resolve*` API；
+- `pi/model-runtime.ts` 自定义 `streamSimple`，复用 `httpFetch`；
+- `pi/session.ts` 只读写 `.cinelab/agent/sessions/v2`，`pi/session-lock.ts` 提供单写者锁；
+- `pi/tools.ts` 用 `Type.Unsafe` 把已注册工具转成 `customTools`；
+- 权限和确认规则仍由 CineLab 拥有，extension `tool_call` 内联在 `pi/runtime.ts`；
+- 工具执行成功后，`pi/runtime.ts` 会把 `change.createdNodeIds` 同步进当前回合 scope，保证同一轮内可继续修改、连接或对新建节点登记提案；
+- 旧 `runtime.ts` 保留作历史参考，当前 IPC 入口不再引用。
 
 执行路径有两条：
 
 1. **主进程工具**：`main-tools.ts` 直接查目录、发请求、读项目文件；
 2. **渲染进程操作**：通过 `AgentApi.toolResult` 与四个 bridge（`canvasBridge`、`filmBridge`、`stageBridge`、`timelineBridge`）把工具调用落到对应 store/UI。
-
-### v3 运行时（M1，分支 spike/agent-runtime-v3）
-
-- 主进程通过 `pi/loader.ts` 动态 import ESM-only 的 pi-coding-agent；
-- `pi/runtime.ts` 用 `createAgentSession` 替换旧循环，保留 `startTurn/cancelTurn/resolve*` API；
-- `pi/model-runtime.ts` 自定义 `streamSimple`，复用 `httpFetch`；
-- `pi/session.ts` 只读写 `.cinelab/agent/sessions/v2`，`pi/session-lock.ts` 提供单写者锁；
-- `pi/tools.ts` 用 `Type.Unsafe` 把 63 个工具注册为 `customTools`；
-- 权限和确认规则仍由 CineLab 拥有，extension `tool_call` 内联在 `pi/runtime.ts`；
-- 旧 `runtime.ts` / `session.ts` 仍在，作为回退，M5 删除。
 
 ## 生成提案
 
@@ -168,27 +164,27 @@ AgentPanel
 | `src/main/agent/capabilities/registry.ts` | 25 |
 | `src/main/agent/capabilities/types.ts` | 91 |
 | `src/main/agent/compact.ts` | 93 |
-| `src/main/agent/main-tools.ts` | 529 |
+| `src/main/agent/main-tools.ts` | 506 |
 | `src/main/agent/model.ts` | 375 |
-| `src/main/agent/pi/events.ts` | 127 |
+| `src/main/agent/pi/events.ts` | 144 |
 | `src/main/agent/pi/loader.ts` | 34 |
 | `src/main/agent/pi/model-runtime.ts` | 724 |
 | `src/main/agent/pi/permissions.ts` | 28 |
-| `src/main/agent/pi/prompt.ts` | 152 |
+| `src/main/agent/pi/prompt.ts` | 151 |
 | `src/main/agent/pi/resources.ts` | 41 |
-| `src/main/agent/pi/runtime.ts` | 586 |
+| `src/main/agent/pi/runtime.ts` | 588 |
 | `src/main/agent/pi/session-lock.ts` | 55 |
 | `src/main/agent/pi/session.ts` | 244 |
 | `src/main/agent/pi/timeouts.ts` | 20 |
 | `src/main/agent/pi/tools.ts` | 120 |
 | `src/main/agent/proposals.ts` | 499 |
-| `src/main/agent/runtime.ts` | 758 |
+| `src/main/agent/runtime.ts` | 751 |
 | `src/main/agent/session.ts` | 407 |
 | `src/main/agent/skills-admin.ts` | 592 |
 | `src/main/agent/skills-config.ts` | 110 |
 | `src/main/agent/skills-import.ts` | 487 |
 | `src/main/agent/skills.ts` | 216 |
-| `src/main/agent/tools/canvas.ts` | 601 |
+| `src/main/agent/tools/canvas.ts` | 608 |
 | `src/main/agent/tools/capability.ts` | 137 |
 | `src/main/agent/tools/errors.ts` | 11 |
 | `src/main/agent/tools/film.ts` | 695 |
@@ -200,7 +196,7 @@ AgentPanel
 | `src/main/agent/tools/scope.ts` | 10 |
 | `src/main/agent/tools/skill-admin.ts` | 131 |
 | `src/main/agent/tools/skills.ts` | 98 |
-| `src/main/agent/tools/stage.ts` | 1353 |
+| `src/main/agent/tools/stage.ts` | 1265 |
 | `src/main/agent/tools/timeline.ts` | 1018 |
 | `src/main/mcp/auto-tools.ts` | 161 |
 | `src/main/mcp/catalog.ts` | 11 |
@@ -213,9 +209,9 @@ AgentPanel
 | `src/main/mcp/write-runner.ts` | 108 |
 | `src/renderer/src/agent/AgentPanel.tsx` | 1277 |
 | `src/renderer/src/agent/agentStore.ts` | 1224 |
-| `src/renderer/src/agent/canvasBridge.ts` | 1182 |
+| `src/renderer/src/agent/canvasBridge.ts` | 1225 |
 | `src/renderer/src/agent/commandHandlers.ts` | 62 |
-| `src/renderer/src/agent/filmBridge.ts` | 763 |
+| `src/renderer/src/agent/filmBridge.ts` | 768 |
 | `src/renderer/src/agent/panel/ContextRing.tsx` | 55 |
 | `src/renderer/src/agent/panel/MessageActions.tsx` | 31 |
 | `src/renderer/src/agent/panel/MessageBubble.tsx` | 38 |
@@ -223,7 +219,7 @@ AgentPanel
 | `src/renderer/src/agent/panel/ThoughtGroup.tsx` | 77 |
 | `src/renderer/src/agent/panel/utils.tsx` | 146 |
 | `src/renderer/src/agent/projectBridge.ts` | 77 |
-| `src/renderer/src/agent/stageBridge.ts` | 1018 |
+| `src/renderer/src/agent/stageBridge.ts` | 961 |
 | `src/renderer/src/agent/timelineBridge.ts` | 1073 |
 | `src/renderer/src/mcp/commandBridge.ts` | 185 |
 | `src/shared/agent-commands.ts` | 40 |
@@ -243,7 +239,7 @@ AgentPanel
 | `src/main/agent/compact.ts` | `compactSession` |
 | `src/main/agent/main-tools.ts` | `MainToolResult`、`executeMainTool` |
 | `src/main/agent/model.ts` | `AgentRuntimeModel`、`AgentChatMessage`、`AgentChatResult`、`listAgentModels`、`listTextModels`、`resolveTextModel`、`chatWithTools` |
-| `src/main/agent/pi/events.ts` | `createAgentTurn`、`mergeChange`、`textOfContent`、`usageOf`、`assistantTextOf`、`looksLikePreamble`、`toolCallOf` |
+| `src/main/agent/pi/events.ts` | `createAgentTurn`、`syncScopeWithChange`、`mergeChange`、`textOfContent`、`usageOf`、`assistantTextOf`、`looksLikePreamble`、`toolCallOf` |
 | `src/main/agent/pi/loader.ts` | `loadPiCodingAgent`、`loadPiAi` |
 | `src/main/agent/pi/model-runtime.ts` | `PiModelHandle`、`createPiModelRuntime` |
 | `src/main/agent/pi/permissions.ts` | `piPermissionBlock`、`piConfirmationReason` |

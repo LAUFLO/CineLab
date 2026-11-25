@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type {
+  AgentScope,
   AgentToolCall,
   AgentTurn,
   AgentTurnChange,
@@ -29,6 +30,22 @@ export function createAgentTurn(
       previousPositions: {}
     },
     startedAt: new Date().toISOString()
+  }
+}
+
+/**
+ * 把本轮新建节点并入作用域，保证「创建节点 → 继续连接/修改/登记提案」
+ * 在同一轮内放行；否则后续工具仍按发消息时的旧选区校验。
+ */
+export function syncScopeWithChange(
+  scope: Pick<AgentScope, 'selectedNodeIds'>,
+  change?: AgentTurnChange
+): void {
+  if (!change) return
+  for (const id of change.createdNodeIds ?? []) {
+    if (!scope.selectedNodeIds.includes(id)) {
+      scope.selectedNodeIds.push(id)
+    }
   }
 }
 

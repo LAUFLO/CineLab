@@ -4,9 +4,8 @@ import { useUIStore } from '../../stores/ui'
 import { Icon } from '../../components/Icon'
 import {
   buildStudyTableMarkdown,
-  segmentCopyText,
-  segmentDuration,
-  segmentMetaLine,
+  buildStudyTableRows,
+  STUDY_TABLE_HEADERS,
   studyClock
 } from './study-sheet'
 import { Button, IconButton } from '../../components/ui'
@@ -24,6 +23,8 @@ export function FilmStudySheet() {
   const showToast = useUIStore((state) => state.showToast)
 
   if (!nodeId) return null
+
+  const rows = study ? buildStudyTableRows(study) : []
 
   const copy = async (text: string): Promise<void> => {
     try {
@@ -51,72 +52,64 @@ export function FilmStudySheet() {
         </div>
       ) : null}
 
-      <div className="min-w-[1080px]">
+      <div className="min-w-[1280px]">
         <table className="w-full border-collapse text-[11.5px]">
           <thead>
             <tr>
-              <th className={TH_CLASS}>镜号</th>
-              <th className={TH_CLASS}>时间</th>
-              <th className={TH_CLASS}>景别</th>
-              <th className={TH_CLASS}>机位</th>
-              <th className={TH_CLASS}>运镜</th>
-              <th className={TH_CLASS}>光线</th>
-              <th className={TH_CLASS}>画面</th>
-              <th className={TH_CLASS}>提示词</th>
-              <th className={TH_CLASS}>人声 / 音乐</th>
+              {STUDY_TABLE_HEADERS.map((header) => (
+                <th key={header} className={TH_CLASS}>
+                  {header}
+                </th>
+              ))}
               <th className={TH_CLASS} />
             </tr>
           </thead>
           <tbody className="text-fg-muted">
-            {study.segments.map((segment, index) => (
-              <tr key={segment.id} className="hover:[&>td]:bg-surface-hover">
+            {rows.map((row) => (
+              <tr key={row.index} className="hover:[&>td]:bg-surface-hover">
                 <td
                   className={`${TD_CLASS} whitespace-nowrap tabular-nums text-fg`}
                 >
-                  {String(index + 1).padStart(2, '0')}
+                  {String(row.index).padStart(2, '0')}
                 </td>
                 <td
                   className={`${TD_CLASS} whitespace-nowrap tabular-nums text-fg-subtle`}
                 >
-                  {studyClock(segment.startTime)}
-                  <br />
-                  <span className="text-fg-subtle opacity-[0.72]">
-                    {segmentDuration(segment).toFixed(1)}s
-                  </span>
+                  {row.time}
                 </td>
-                <td className={TD_CLASS}>{segment.shotSize ?? '—'}</td>
-                <td className={TD_CLASS}>{segment.cameraAngle ?? '—'}</td>
-                <td className={TD_CLASS}>{segment.cameraMove ?? '—'}</td>
-                <td className={TD_CLASS}>{segment.lighting ?? '—'}</td>
-                <td className={TEXT_CLASS}>
-                  <strong className="mb-[3px] block font-medium text-fg">
-                    {segment.title}
-                  </strong>
-                  {segment.visualDescription ? (
-                    <p className="mt-0 mb-[3px] text-fg-muted">
-                      {segment.visualDescription}
-                    </p>
-                  ) : null}
+                <td className={`${TD_CLASS} whitespace-nowrap tabular-nums`}>
+                  {row.duration}
                 </td>
-                <td className={TEXT_CLASS}>{segment.imagePrompt ?? '—'}</td>
-                <td className={TEXT_CLASS}>
-                  {segment.voiceOver ? (
-                    <p className="mt-0 mb-[3px] text-fg-muted">
-                      人声：{segment.voiceOver}
-                    </p>
-                  ) : null}
-                  {segment.musicCue ? (
-                    <p className="mt-0 mb-[3px] text-fg-muted">
-                      音乐：{segment.musicCue}
-                    </p>
-                  ) : null}
-                  {!segment.voiceOver && !segment.musicCue ? '—' : null}
-                </td>
+                <td className={TD_CLASS}>{row.shotSize || '—'}</td>
+                <td className={TD_CLASS}>{row.cameraAngle || '—'}</td>
+                <td className={TD_CLASS}>{row.cameraMove || '—'}</td>
+                <td className={TD_CLASS}>{row.lighting || '—'}</td>
+                <td className={TEXT_CLASS}>{row.visual || '—'}</td>
+                <td className={TEXT_CLASS}>{row.dialogue || '—'}</td>
+                <td className={TD_CLASS}>{row.production || '—'}</td>
+                <td className={TEXT_CLASS}>{row.prompt || '—'}</td>
+                <td className={TEXT_CLASS}>{row.sound || '—'}</td>
                 <td className={TD_CLASS}>
                   <IconButton
                     label="复制这一镜的提示词"
                     size="sm"
-                    onClick={() => void copy(segmentCopyText(segment, index))}
+                    onClick={() =>
+                      void copy(
+                        [
+                          `镜 ${String(row.index).padStart(2, '0')} · ${row.time}`,
+                          [
+                            row.shotSize,
+                            row.cameraAngle,
+                            row.cameraMove
+                          ]
+                            .filter(Boolean)
+                            .join(' · '),
+                          row.prompt || row.visual
+                        ]
+                          .filter(Boolean)
+                          .join('\n')
+                      )
+                    }
                   >
                     <Icon name="copy" size={12} />
                   </IconButton>
@@ -149,7 +142,7 @@ export function FilmStudySheet() {
           <div className="ml-auto flex items-center gap-2.5 whitespace-nowrap text-[11px] text-fg-subtle">
             {study ? (
               <>
-                <span>{study.segments.length} 个分镜</span>
+                <span>{rows.length} 个镜头</span>
                 <span>{study.frames.length} 张代表帧</span>
                 <span>{studyClock(study.duration)}</span>
               </>

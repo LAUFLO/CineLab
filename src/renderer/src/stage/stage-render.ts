@@ -10,10 +10,7 @@ import { resolveStageLighting } from '@shared/stage-lighting'
 import { applyStageFigurePose } from './stage-figure'
 import { isStagePoseName } from '@shared/stage-motions'
 import { createStageObject, disposeObject3D } from './stage-scene'
-import {
-  createStageWorldRender,
-  type StageWorldRender
-} from './stage-world-scene'
+import { createStageGround, type StageGround } from './stage-ground'
 
 interface StageRenderInput {
   doc: DirectorStageDoc
@@ -61,7 +58,7 @@ let camera: THREE.PerspectiveCamera | null = null
 let objectsGroup: THREE.Group | null = null
 let doc: DirectorStageDoc | null = null
 let shot: StageShot | null = null
-let worldRender: StageWorldRender | null = null
+let ground: StageGround | null = null
 let programTimeline: ReturnType<typeof buildProgramTimeline> | null = null
 let fps = 24
 let overlayCanvas: HTMLCanvasElement | null = null
@@ -134,17 +131,8 @@ function buildScene(input: StageRenderInput): void {
       scene.add(fill)
     }
 
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(60, 60),
-      new THREE.MeshStandardMaterial({
-        color: 0x18181b,
-        roughness: 1,
-        metalness: 0
-      })
-    )
-    floor.rotation.x = -Math.PI / 2
-    floor.position.y = -0.01
-    scene.add(floor)
+    ground = createStageGround(lighting.background)
+    scene.add(ground.mesh)
 
     objectsGroup = new THREE.Group()
     scene.add(objectsGroup)
@@ -163,24 +151,15 @@ function buildScene(input: StageRenderInput): void {
   if (!scene || !objectsGroup) return
   const lighting = resolveStageLighting(doc)
   renderer.toneMappingExposure = lighting.exposure
-  scene.background = new THREE.Color(
+  const background =
     doc.background.kind === 'color' && doc.background.value
       ? doc.background.value
       : lighting.background
-  )
+  scene.background = new THREE.Color(background)
+  ground?.setBackground(background)
   scene.fog = lighting.fog
     ? new THREE.Fog(lighting.fog.color, lighting.fog.near, lighting.fog.far)
     : null
-
-  if (worldRender) {
-    scene.remove(worldRender.group)
-    worldRender.dispose()
-    worldRender = null
-  }
-  if (doc.world) {
-    worldRender = createStageWorldRender(doc.world, lighting)
-    scene.add(worldRender.group)
-  }
 
   disposeCurrent()
   for (const object of doc.objects) {
@@ -245,6 +224,7 @@ function renderShotFrame(
   camera.fov = sample.fov
   camera.lookAt(new THREE.Vector3(...sample.target))
   camera.updateProjectionMatrix()
+  ground?.setCameraPosition(camera.position)
   renderer.render(scene, camera)
 }
 
@@ -383,6 +363,7 @@ window.__renderOverview = (width: number, height: number): string => {
     camera.lookAt(center)
   }
   camera.updateProjectionMatrix()
+  ground?.setCameraPosition(camera.position)
   renderer.render(scene, camera)
   return renderer.domElement.toDataURL('image/jpeg', 0.92)
 }

@@ -1,4 +1,4 @@
-import type { PrevisWorldRef } from './previs/world-gen'
+
 
 export type StageVec3 = [number, number, number]
 
@@ -171,11 +171,9 @@ export interface DirectorStageDoc {
   cameras: StageCamera[]
   shots: StageShot[]
   activeCameraId?: string
-  /** 程序化 previs 世界；缺省时行为不变。 */
-  world?: PrevisWorldRef
   /** 成片编排；缺省时按 shots 数组顺序串行。 */
   program?: StageProgram
-  /** 手调光照；缺省按 world 时段/天气推导。 */
+  /** 手调光照；缺省使用日戏基础光照。 */
   lighting?: StageLightingOverride
   updatedAt: string
 }

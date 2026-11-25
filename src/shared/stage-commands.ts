@@ -54,7 +54,6 @@ export type StageCommand =
       solvedAt: string
     }
   | { type: 'clearShotIntent'; shotId: string }
-  | { type: 'setWorld'; world?: import('./previs/world-gen').PrevisWorldRef }
   | { type: 'setActionTrack'; shotId: string; track: ActionTrack }
   | { type: 'setActiveCamera'; cameraId: string | null }
   | { type: 'setBackground'; background: StageBackground }
@@ -89,7 +88,6 @@ export interface StageChange {
   deletedShotIds: string[]
   activeCameraChanged: boolean
   backgroundChanged: boolean
-  worldChanged: boolean
   programChanged: boolean
   lightingChanged: boolean
 }
@@ -119,7 +117,6 @@ export function emptyStageChange(): StageChange {
     deletedShotIds: [],
     activeCameraChanged: false,
     backgroundChanged: false,
-    worldChanged: false,
     programChanged: false,
     lightingChanged: false
   }
@@ -141,7 +138,6 @@ function mergeChange(target: StageChange, source: StageChange): void {
   for (const id of source.deletedShotIds) pushUnique(target.deletedShotIds, id)
   target.activeCameraChanged ||= source.activeCameraChanged
   target.backgroundChanged ||= source.backgroundChanged
-  target.worldChanged ||= source.worldChanged
   target.programChanged ||= source.programChanged
   target.lightingChanged ||= source.lightingChanged
 }
@@ -666,16 +662,6 @@ export function applyStageCommand(
           : shot
       )
       change.updatedShotIds.push(target.id)
-      break
-    }
-
-    case 'setWorld': {
-      if (command.world) {
-        next.world = command.world
-      } else {
-        next.world = undefined
-      }
-      change.worldChanged = true
       break
     }
 

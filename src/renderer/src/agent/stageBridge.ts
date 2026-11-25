@@ -13,10 +13,6 @@ import type {
   StageTransform,
   StageVec3
 } from '@shared/stage-schema'
-import {
-  normalizePrevisWorldRef,
-  type PrevisWorldRef
-} from '@shared/previs/world-gen'
 import { solveStageShotIntent } from '@shared/stage-shot-intent'
 import { buildAutoCoverage } from '@shared/stage-auto-coverage'
 import { buildDialogueCoverage, parseDialogue } from '@shared/stage-dialogue'
@@ -752,34 +748,6 @@ export async function executeStageTool(
       }
     },
 
-    stage_set_world: async (call) => {
-      await ensureStageOpen(nodeId)
-      const world = call.args.world
-      if (!world || typeof world !== 'object' || Array.isArray(world)) {
-        return { ok: false, error: 'world 参数无效' }
-      }
-      let normalized: PrevisWorldRef
-      try {
-        normalized = normalizePrevisWorldRef(world)
-      } catch (error) {
-        return {
-          ok: false,
-          error:
-            error instanceof Error ? error.message : 'world 参数不符合场景格式'
-        }
-      }
-      const updated = await applyToStage(
-        nodeId,
-        [{ type: 'setWorld', world: normalized }],
-        call.turnId
-      )
-      return {
-        ok: true,
-        result: { hasWorld: Boolean(updated.world) },
-        change: stageChange()
-      }
-    },
-
     stage_add_objects: async (call) => {
       await ensureStageOpen(nodeId)
       const raw = call.args.objects
@@ -847,28 +815,6 @@ export async function executeStageTool(
       }
     },
 
-    stage_randomize_world: async (call) => {
-      await ensureStageOpen(nodeId)
-      const { doc } = await readDoc(nodeId)
-      if (!doc.world) {
-        return { ok: false, error: '当前没有世界' }
-      }
-      const world = {
-        ...doc.world,
-        seed: Math.floor(Math.random() * 1_000_000_000)
-      }
-      const updated = await applyToStage(
-        nodeId,
-        [{ type: 'setWorld', world }],
-        call.turnId
-      )
-      return {
-        ok: true,
-        result: { seed: world.seed, hasWorld: Boolean(updated.world) },
-        change: stageChange()
-      }
-    },
-
     stage_from_scene_image: async (call) => {
       await ensureStageOpen(nodeId)
       const imagePath = String(call.args.imagePath ?? '')
@@ -883,14 +829,11 @@ export async function executeStageTool(
             : undefined
       const modelKey =
         typeof call.args.modelKey === 'string' ? call.args.modelKey : undefined
-      const seed =
-        typeof call.args.seed === 'number' ? call.args.seed : undefined
       try {
         const result = await generateStageFromScene({
           imagePath,
           imageScope,
-          modelKey,
-          seed
+          modelKey
         })
         return {
           ok: true,

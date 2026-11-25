@@ -301,7 +301,7 @@ describe('agent tool permissions', () => {
     ).toThrow(AgentToolError)
   })
 
-  it('supports placing a new node near a reference node', () => {
+  it('supports placing a new node near a reference node or automatically', () => {
     expect(() =>
       assertToolAllowed(
         call('canvas_add_node', { kind: 'video', nearNodeId: 'node-a' }),
@@ -316,7 +316,7 @@ describe('agent tool permissions', () => {
         scope,
         'current'
       )
-    ).toThrow(AgentToolError)
+    ).not.toThrow()
 
     expect(() =>
       assertToolAllowed(
@@ -325,6 +325,14 @@ describe('agent tool permissions', () => {
         'current'
       )
     ).not.toThrow()
+
+    expect(() =>
+      assertToolAllowed(
+        call('canvas_add_node', { kind: 'video', x: 10 }),
+        scope,
+        'current'
+      )
+    ).toThrow(AgentToolError)
   })
 
   it('validates library search params', () => {

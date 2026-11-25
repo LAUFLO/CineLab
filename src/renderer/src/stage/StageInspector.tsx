@@ -6,6 +6,7 @@ import {
   type StageObject,
   type StageVec3
 } from '@shared/stage-schema'
+import { STAGE_MOTIONS } from '@shared/stage-motions'
 import { ShotInspector } from './ShotInspector'
 import { useStageStore } from './stageStore'
 import { Input, NativeSelect, Button } from '../components/ui'
@@ -251,7 +252,7 @@ function ObjectInspector({ object }: { object: StageObject }) {
         >
           {STAGE_POSE_PRESETS.map((pose) => (
             <option key={pose} value={pose}>
-              {pose}
+              {STAGE_MOTIONS[pose]?.name ?? pose}
             </option>
           ))}
         </NativeSelect>

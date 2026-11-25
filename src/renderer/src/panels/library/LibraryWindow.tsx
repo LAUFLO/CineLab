@@ -49,16 +49,22 @@ function toOutput(asset: LibraryAsset): OutputRef {
   }
 }
 
-function withStyleCount(
+function withSpecialCounts(
   nodes: LibraryFolderNode[],
-  count: number
+  styleCount: number,
+  templateCount: number
 ): LibraryFolderNode[] {
   return nodes
     .filter((node) => !node.path.startsWith('风格/'))
     .map((node) => ({
       ...node,
-      assetCount: node.path === '风格' ? count : node.assetCount,
-      children: withStyleCount(node.children, count)
+      assetCount:
+        node.path === '风格'
+          ? styleCount
+          : node.path === '提示词'
+            ? templateCount
+            : node.assetCount,
+      children: withSpecialCounts(node.children, styleCount, templateCount)
     }))
 }
 
@@ -194,8 +200,8 @@ export function LibraryWindow() {
     [styles, query]
   )
   const displayTree = useMemo(
-    () => withStyleCount(tree, styles.length),
-    [tree, styles.length]
+    () => withSpecialCounts(tree, styles.length, templates.length),
+    [tree, styles.length, templates.length]
   )
 
   useEffect(() => {

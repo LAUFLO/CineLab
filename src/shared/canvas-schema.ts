@@ -2,6 +2,7 @@ import type { AssetScope } from './asset-schema'
 import type { AssetLayer, TextRecognition } from './generation'
 import type { ModelModeId } from './model-modes'
 import type { VideoOperationId } from './operation-schema'
+import type { StyleCard } from './style-schema'
 
 export type NodeKind = 'text' | 'image' | 'video' | 'audio' | 'study'
 
@@ -51,6 +52,8 @@ export interface CineNodeData extends Record<string, unknown> {
   prompt?: string
   /** Prompt Bar 中用户选择的生成模式，按节点保留 */
   inputMode?: ModelModeId
+  /** Prompt Bar 中用户选择的风格，按节点保留；只影响生成提示词 */
+  style?: StyleCard
   /** Prompt Bar 槽位顺序，key 为 `scope:path` */
   refOrder?: string[]
   /** 拉片节点：关联的 study.json */

@@ -43,6 +43,7 @@ export function TemplateDialog({
       open
       onClose={onCancel}
       bare
+      closeOnOverlayClick={false}
       ariaLabel={isEdit ? '编辑提示词模板' : '新建提示词模板'}
       overlayClassName={
         overlayClassName ??

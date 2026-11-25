@@ -242,9 +242,11 @@ export function PromptBar() {
 
   const selectedNodes = nodes.filter((item) => item.selected)
   const single = selectedNodes.length === 1 ? selectedNodes[0] : undefined
+  const isStudyNode =
+    single?.type === 'cine' && single.data.kind === 'study'
   const pureAsset =
     single?.type === 'cine' &&
-    single.data.kind !== 'study' &&
+    !isStudyNode &&
     (single.data.assetOnly === true ||
       single.data.outputs?.some((output) => isResultOutput(output)) === true ||
       (!single.data.prompt &&
@@ -253,7 +255,12 @@ export function PromptBar() {
           single.data.outputs?.[0]?.model ?? ''
         )))
   const node =
-    single && single.type === 'cine' && !pureAsset ? single : undefined
+    single &&
+    single.type === 'cine' &&
+    !isStudyNode &&
+    !pureAsset
+      ? single
+      : undefined
   const kind: NodeKind = node?.data.kind ?? 'image'
   const runningMap = useGenerationStore((state) => state.running)
   const runningRunId = node ? runningMap[node.id] : undefined
@@ -303,6 +310,18 @@ export function PromptBar() {
     setPromptText(nextPrompt)
     promptRef.current = nextPrompt
   }, [node?.id, node?.data.prompt])
+
+  useEffect(() => {
+    setSelectedStyle(node?.data.style ?? null)
+  }, [node?.id, node?.data.style])
+
+  const applyStyle = (style: StyleCard | null): void => {
+    setSelectedStyle(style)
+    if (!node) return
+    useCanvasStore.getState().patchNodeData(node.id, {
+      style: style ?? undefined
+    })
+  }
 
   useEffect(() => {
     setAutoLink(autoLinkPreference)
@@ -2099,7 +2118,7 @@ export function PromptBar() {
                       variant="ghost"
                       size="none"
                       className={SLOT_THUMB_CLASS}
-                      title="拖动交换位置，双击在画布上定位"
+                      aria-label="拖动交换位置，双击在画布上定位"
                       draggable
                       onDragStart={() => {
                         if (!slot.ref) return
@@ -2317,7 +2336,7 @@ export function PromptBar() {
                 label="移除风格"
                 unstyled
                 className="absolute -right-1 -top-1 z-[1] flex h-3 w-3 items-center justify-center rounded-full border border-border bg-surface text-fg-muted hover:border-danger hover:text-danger"
-                onClick={() => setSelectedStyle(null)}
+                onClick={() => applyStyle(null)}
               >
                 <Icon name="close" size={7} />
               </IconButton>
@@ -2594,6 +2613,9 @@ export function PromptBar() {
                   alt=""
                 />
               )}
+              <div className="px-1 pt-1 text-center text-[10px] leading-[1.4] text-fg-muted">
+                拖动交换位置 · 双击定位
+              </div>
             </div>,
             document.body
           )
@@ -2604,7 +2626,7 @@ export function PromptBar() {
         anchorRef={barRef}
         avoidRef={mentionRef}
         onClose={() => setStyleOpen(false)}
-        onSelect={setSelectedStyle}
+        onSelect={applyStyle}
       />
 
       <PresetPromptDialog

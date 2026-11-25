@@ -584,64 +584,6 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
     },
   },
   {
-    id: 'stage.setWorld',
-    name: 'stage_set_world',
-    description:
-      '设置导演台的程序化 previs 世界（街道、城市、江户、雨夜、火星等）。world 结构见 stage_capabilities。',
-    profiles: ['canvas', 'stage'],
-    readOnly: false,
-    scope: 'stage',
-    modes: ['current', 'full-access'],
-    parameters: {
-      type: 'object',
-      properties: {
-        nodeId: stageNodeIdParameter,
-        world: {
-          type: 'object',
-          properties: {
-            generatorVersion: {
-              type: 'string',
-              enum: ['modern-v1', 'styled-v1'],
-              description: '缺省按 style 推导，一般不用传'
-            },
-            style: {
-              type: 'string',
-              enum: ['modern_city', 'jp_modern', 'edo', 'custom'],
-              description: '街区风格；没有 market 这类值，菜市场请用 stage_scene_preset'
-            },
-            layout: {
-              type: 'string',
-              enum: ['street', 'crossroad', 't_junction', 'plaza']
-            },
-            density: { type: 'string', enum: ['low', 'medium', 'high'] },
-            seed: { type: 'number', description: '随机种子' },
-            extentM: {
-              type: 'array',
-              items: { type: 'number' },
-              minItems: 2,
-              maxItems: 2,
-              description: '[宽, 深]，单位米，60–200'
-            },
-            timeOfDay: { type: 'string', enum: ['day', 'dusk', 'night'] },
-            weather: { type: 'string', enum: ['rain', 'snow'] },
-            stageAnchor: { type: 'object' },
-            landmarks: { type: 'array', items: { type: 'object' } },
-            water: { type: 'boolean' },
-            overrides: { type: 'array', items: { type: 'object' } }
-          },
-          required: ['style', 'layout', 'density', 'seed', 'extentM']
-        }
-      },
-      required: ['nodeId', 'world'],
-      additionalProperties: false
-    },
-    replay: 'safe',
-    mcp: {
-      title: '设置世界',
-      category: '导演台',
-    },
-  },
-  {
     id: 'stage.addObjects',
     name: 'stage_add_objects',
     description:
@@ -692,32 +634,10 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
     },
   },
   {
-    id: 'stage.randomizeWorld',
-    name: 'stage_randomize_world',
-    description: '用新的随机种子重新生成当前世界。',
-    profiles: ['canvas', 'stage'],
-    readOnly: false,
-    scope: 'stage',
-    modes: ['current', 'full-access'],
-    parameters: {
-      type: 'object',
-      properties: {
-        nodeId: stageNodeIdParameter
-      },
-      required: ['nodeId'],
-      additionalProperties: false
-    },
-    replay: 'safe',
-    mcp: {
-      title: '随机化世界',
-      category: '导演台',
-    },
-  },
-  {
     id: 'stage.fromSceneImage',
     name: 'stage_from_scene_image',
     description:
-      '根据上游参考图生成白膜场景：调用多模态模型解析场景图，写入世界、物体和机位。',
+      '根据上游参考图生成白膜场景：调用多模态模型解析场景图，写入物体和机位。',
     profiles: ['canvas', 'stage'],
     readOnly: false,
     scope: 'stage',
@@ -735,8 +655,7 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
         modelKey: {
           type: 'string',
           description: 'providerId/modelId；省略时自动选第一个文本模型'
-        },
-        seed: { type: 'number', description: '世界随机种子' }
+        }
       },
       required: ['nodeId', 'imagePath'],
       additionalProperties: false
@@ -1280,13 +1199,6 @@ export function validateStageToolArgs(
         !call.args.shotId.trim()
       ) {
         throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
-      }
-    }
-
-    if (call.name === 'stage_set_world') {
-      const world = call.args.world
-      if (!world || typeof world !== 'object' || Array.isArray(world)) {
-        throw new AgentToolError('invalid_params', 'world 必须是对象')
       }
     }
 

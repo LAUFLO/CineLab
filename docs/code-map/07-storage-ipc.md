@@ -28,7 +28,6 @@
   canvases/<id>.json          画布
   timelines/<id>.json         时间线
   stages/<id>.json            导演台
-  stages/<id>.world.json      程序化世界
   study/<id>.json             拉片
   assets/                     项目素材（含 study/<id>/frames）
   exports/                    导出物
@@ -188,7 +187,7 @@ Renderer
 | `src/shared/ipc-contract.ts` | 713 |
 | `src/shared/library-schema.ts` | 98 |
 | `src/shared/models-file.ts` | 66 |
-| `src/shared/preferences.ts` | 366 |
+| `src/shared/preferences.ts` | 373 |
 | `src/shared/project-schema.ts` | 441 |
 | `src/shared/project-templates.ts` | 255 |
 | `src/shared/template-vars.ts` | 66 |

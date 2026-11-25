@@ -13,7 +13,6 @@ export interface GenerateStageFromSceneInput {
   imagePath: string
   imageScope?: AssetScope
   modelKey?: string
-  seed?: number
 }
 
 export interface GenerateStageFromSceneResult {
@@ -32,8 +31,7 @@ export async function generateStageFromScene(
   const result = await window.api.scene.analyze({
     imagePath: input.imagePath,
     imageScope: input.imageScope,
-    modelKey: input.modelKey,
-    seed: input.seed
+    modelKey: input.modelKey
   })
 
   const presets = builtinObjectPresets()
@@ -76,7 +74,6 @@ export async function generateStageFromScene(
   }
 
   const commands: StageCommand[] = [
-    { type: 'setWorld', world: result.world },
     ...objects.map((object) => ({ type: 'addObject' as const, object })),
     { type: 'addCamera', camera },
     { type: 'setActiveCamera', cameraId: camera.id }

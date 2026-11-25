@@ -88,11 +88,18 @@ export function PresetPromptDialog({
     })
   }
 
+  // 新建/预览弹窗走 portal，点击它们内部也会被 Popover 当成外部点击；
+  // 子弹窗打开时先保住预设浮窗，等子弹窗关闭后再恢复外部点击关闭。
+  const handlePopoverClose = (): void => {
+    if (editing || previewing) return
+    onClose()
+  }
+
   return (
     <>
       <Popover
         open={open}
-        onClose={onClose}
+        onClose={handlePopoverClose}
         anchorRef={anchorRef}
         avoidRef={avoidRef}
         placement="top"

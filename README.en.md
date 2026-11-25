@@ -50,14 +50,14 @@ The model layer is fully open: providers, models, Base URL, API key, headers and
 
 ### CineBot and MCP
 
-**CineBot** is the built-in agent and currently exposes 92 tools:
+**CineBot** is the built-in agent and currently exposes 90 tools:
 
 - Covers canvas, Clip Studio, Director Stage, Film Study, generation, asset library, prompts, styles, skills and projects
 - Generation proposals are submitted only after confirmation, so nothing is charged up front
 - Permission modes, turn undo, project-scoped sessions, three-level skill directories
 - Import skills from a folder or ZIP and enable them per global / project scope
 
-**MCP** lets external agents use the same capabilities and currently exposes 99 tools:
+**MCP** lets external agents use the same capabilities and currently exposes 97 tools:
 
 - Built-in MCP server over HTTP and stdio, bound to localhost and protected by a Bearer token
 - Tool names match CineBot; coverage includes projects, canvas, Clip Studio, Director Stage, Film Study, assets, prompts, styles, skills, asset ingest and vocal/background separation
@@ -88,7 +88,6 @@ The model layer is fully open: providers, models, Base URL, API key, headers and
 - three.js scene: mannequins, primitives, planes, crowd arrays, local glTF
 - Multiple cameras, camera keyframe moves, shot duration and aspect ratio
 - Semantic shots: describe framing such as "over-the-shoulder A looking at B" or "two-person medium shot" and let the solver place cameras without crossing the line
-- Deterministic procedural worlds: streets, plazas, interiors, weather, water, landmarks and themes, reproducible with the same seed
 - Scene image to blockout: drop in a concept image and generate a shootable 3D scene
 - Object position, rotation, scale, pose, color, visibility and background
 - Export blockout previews back to the canvas; viewport captures become image nodes
@@ -130,12 +129,12 @@ The model layer is fully open: providers, models, Base URL, API key, headers and
 
 Download the latest build from [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest):
 
-Current version: **v0.5.0**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
+Current version: **v0.5.1**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
 
 | Platform | Recommended file | Requirements |
 |---|---|---|
-| Windows | `CineLab-0.5.0-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.5.0-arm64.dmg` | macOS 12+, Apple Silicon |
+| Windows | `CineLab-0.5.1-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.5.1-arm64.dmg` | macOS 12+, Apple Silicon |
 
 ### Windows
 
@@ -185,7 +184,7 @@ Please do not report security vulnerabilities in public issues. Follow [SECURITY
 - [Model configuration](docs/models.md): `models.json` format and provider configuration
 - [UI spec](docs/ui-spec.md): layout, node structure, Prompt Bar, toolbar inventory
 - [CineBot capabilities](docs/agent-capabilities.md): current tools, validation, confirmation rules and turn undo
-- [MCP](docs/mcp.md): HTTP / stdio setup, 99 tools, read-only mode and troubleshooting
+- [MCP](docs/mcp.md): HTTP / stdio setup, 97 tools, read-only mode and troubleshooting
 - [Clip Studio](docs/code-map/03-clip-studio.md)
 - [Director Stage](docs/code-map/04-director-stage.md)
 - [Film Study](docs/code-map/05-film-study.md)

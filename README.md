@@ -50,14 +50,14 @@ CineLab 是一个本地优先的 AI 创作工作台。图片、视频、音频�
 
 ### CineBot 与 MCP
 
-**CineBot** 是应用内 Agent，当前开放 92 个工具：
+**CineBot** 是应用内 Agent，当前开放 90 个工具：
 
 - 覆盖画布、剪辑室、导演台、逐帧拉片、生成、资产库、提示词、风格、技能和项目
 - 生成提案确认后才提交，不会先扣费
 - 权限模式、回合撤销、项目内会话、三级技能目录
 - 支持从文件夹或 ZIP 导入技能，按全局 / 项目范围启用
 
-**MCP** 让外部 Agent 接入同一套能力，当前开放 99 个工具：
+**MCP** 让外部 Agent 接入同一套能力，当前开放 97 个工具：
 
 - 内置 MCP server，支持 HTTP 与 stdio，仅监听本机，使用 Bearer token 鉴权
 - 工具名与 CineBot 一致，能力覆盖项目、画布、剪辑室、导演台、拉片、资产、提示词、风格、技能、素材入库和人声分离
@@ -88,7 +88,6 @@ CineLab 是一个本地优先的 AI 创作工作台。图片、视频、音频�
 - three.js 3D 场景：人物素模、基础几何体、平面、群众阵列、本地 glTF
 - 多机位、机位关键帧运镜、镜头时长和画幅
 - 语义镜头：用「过肩拍 A 看 B」「双人中景」描述构图，自动解算机位并处理不越轴
-- 确定性程序化世界：街道、广场、室内等布局，支持天气、水域、地标和主题，同 seed 可复现
 - 场景图白膜：拖入一张概念图，自动生成可开拍的 3D 场景
 - 对象位置、旋转、缩放、姿势、颜色、可见性、背景
 - 白模预演导出为视频并回到画布；视口截图可直接变成画布图片节点
@@ -130,12 +129,12 @@ CineLab 是一个本地优先的 AI 创作工作台。图片、视频、音频�
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
 
-当前版本 **v0.5.0**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **v0.5.1**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 | 平台 | 推荐文件 | 系统要求 |
 |---|---|---|
-| Windows | `CineLab-0.5.0-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.5.0-arm64.dmg` | macOS 12+，Apple Silicon |
+| Windows | `CineLab-0.5.1-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.5.1-arm64.dmg` | macOS 12+，Apple Silicon |
 
 ### Windows
 
@@ -185,7 +184,7 @@ Bug 和功能建议请提到 [GitHub Issues](https://github.com/LAUFLO/CineLab/i
 - [模型配置](docs/models.md)：`models.json` 格式与 Provider 配置
 - [界面规格](docs/ui-spec.md)：布局尺寸、节点结构、Prompt Bar、工具栏清单
 - [CineBot 能力清单](docs/agent-capabilities.md)：当前工具、参数校验、确认规则和回合撤销
-- [MCP](docs/mcp.md)：HTTP / stdio 配置、99 个工具、只读模式和排查
+- [MCP](docs/mcp.md)：HTTP / stdio 配置、97 个工具、只读模式和排查
 - [剪辑室](docs/code-map/03-clip-studio.md)
 - [导演台](docs/code-map/04-director-stage.md)
 - [逐帧拉片](docs/code-map/05-film-study.md)

@@ -71,6 +71,7 @@ CineLab 是一个本地优先的 AI 创作工作台。图片、视频、音频�
 - 预设提示词：创建、编辑、删除、全文预览，名称胶囊可插入输入框任意位置，发送时原位展开
 - 风格库：官方只读 + 自定义风格，按分类浏览，一行 8 列小封面，单击即应用
 - 资产库：全局 / 项目素材、提示词模板、角色卡和风格同源展示
+- 工作流模板：把画布流程保存到资产库「工作流」，新建项目时直接选择；上传、生成、拉片和剪辑室节点会转为占位，替换素材后重新生成
 - 预设、风格和提示词模板也开放给 CineBot 与 MCP，Agent 可以搜索、读取和管理
 
 ### 剪辑室
@@ -129,12 +130,12 @@ CineLab 是一个本地优先的 AI 创作工作台。图片、视频、音频�
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
 
-当前版本 **v0.5.1**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **v0.5.2**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 | 平台 | 推荐文件 | 系统要求 |
 |---|---|---|
-| Windows | `CineLab-0.5.1-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.5.1-arm64.dmg` | macOS 12+，Apple Silicon |
+| Windows | `CineLab-0.5.2-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.5.2-arm64.dmg` | macOS 12+，Apple Silicon |
 
 ### Windows
 

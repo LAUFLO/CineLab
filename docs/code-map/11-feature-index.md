@@ -81,6 +81,7 @@
 | GLB 导入与渲染 | `scene:pick-model` + `ingestAsset(model)` + GLTFLoader（仅导入不导出） | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts` | 已实现 |
 | 预演结构约束 | 结构 JSON + 提示词模板随导出回画布并写入视频节点 | `src/shared/stage-previs-reference.ts`、`preview-runner.ts` | 已实现 |
 | 场景字段消费 | sizeClass/facing/room/scale/pitch → 白模摆位与室内结构 | `src/shared/stage-from-scene-build.ts` | 已实现 |
+| 对话式预演编排 | 动作轨工具 + 批量计划确认 + previs Skill SOP | `src/main/agent/tools/stage.ts`、`stageBridge.ts`、`resources/skills/stage-previs/SKILL.md` | 已实现 |
 
 ## 逐帧拉片
 
@@ -106,6 +107,7 @@
 | 关键词 | 已有实现 | 入口 | 状态 |
 |---|---|---|---|
 | Agent 工具 | 画布/生成/导演台/时间线/拉片/能力/技能 | `src/main/agent/tools/` | 已实现 |
+| 对话式白模预演 | stage-previs Skill、批量计划确认 Dialog、每轮精简场景快照 | `resources/skills/stage-previs/SKILL.md`、`src/shared/stage-snapshot.ts`、`stageBridge.ts` | 已实现 |
 | 生成提案 | `AgentProposal`、`.cinelab/agent/proposals` | `src/main/agent/proposals.ts` | 已实现 |
 | 会话 | `.cinelab/agent/sessions/*.jsonl` | `src/main/agent/session.ts`、`pi/session.ts` | 已实现 |
 | 技能 | 内置/全局/项目三级、启用状态过滤 | `src/main/agent/skills.ts`、`skills-config.ts` | 已实现 |

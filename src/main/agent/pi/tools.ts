@@ -24,6 +24,8 @@ export interface PiToolRuntime {
     callId: string,
     signal?: AbortSignal
   ) => Promise<AgentToolResultInput>
+  /** 本轮是否已调用 stage_get；用于给写工具加软提示 */
+  stageRead: { called: boolean }
 }
 
 function proposalIdOf(result: {
@@ -50,6 +52,12 @@ function detailsOf(result: {
   }
 }
 
+const STAGE_NON_WRITE_TOOLS = new Set([
+  'stage_get',
+  'stage_capabilities',
+  'stage_previs_plan'
+])
+
 function toPiTool(
   definition: AgentToolDefinition,
   runtime: PiToolRuntime
@@ -71,6 +79,12 @@ function toPiTool(
             : {}
       }
 
+      const isStageWrite =
+        runtime.profileId === 'stage' &&
+        definition.name.startsWith('stage_') &&
+        !STAGE_NON_WRITE_TOOLS.has(definition.name)
+      const needsStageReadHint = isStageWrite && !runtime.stageRead.called
+
       const result =
         definition.executor === 'main'
           ? await executeMainTool(call, runtime.scope)
@@ -83,6 +97,10 @@ function toPiTool(
               })
               return runtime.waitForToolResult(callId, signal)
             })()
+
+      if (result.ok && definition.name === 'stage_get') {
+        runtime.stageRead.called = true
+      }
 
       if (!result.ok) {
         return {
@@ -101,7 +119,11 @@ function toPiTool(
         content: [
           {
             type: 'text',
-            text: JSON.stringify(result.result ?? { ok: true })
+            text: `${
+              needsStageReadHint
+                ? '提示：本轮尚未调用 stage_get，用户可能已手动修改场景；建议先读取最新状态再继续（本次不阻断）。\n'
+                : ''
+            }${JSON.stringify(result.result ?? { ok: true })}`
           }
         ],
         details: detailsOf(result)

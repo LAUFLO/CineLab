@@ -143,7 +143,8 @@ const MODULES = [
       'src/shared/agent-commands.ts',
       'src/shared/capabilities.ts',
       'src/shared/skills.ts',
-      'src/shared/mcp-command.ts'
+      'src/shared/mcp-command.ts',
+      'src/shared/stage-snapshot.ts'
     ]
   },
   {

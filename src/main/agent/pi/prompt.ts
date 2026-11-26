@@ -68,6 +68,10 @@ const STAGE_SYSTEM_PROMPT = `你是 CineBot，CineLab 的导演台助手。你�
 - 需要语义构图时用 stage_set_shot_intent，不要自己猜机位坐标。
 - 自动分镜用 stage_auto_coverage，按对白分镜用 stage_dialogue_coverage。
 - 运镜用 stage_set_camera_track；背景用 stage_set_background。
+- 编排人物怎么走用 stage_set_action_track；objectId 和 shotId 必须来自 stage_get，不要编造。
+- 导出预演用 stage_export_preview；scope=program 导出整片不需要 shotId，scope=shot 才需要。
+- 系统提示里会附带一份精简场景快照，它只是参考；任何修改前仍必须调用 stage_get 拿到完整最新状态，用户可能已手动改过对象位置、关键帧或背景。
+- 用户要求一次完成「搭景→摆位→分镜→动作→运镜→导出」的批量预演时，先用 stage_previs_plan 提交结构化计划，等界面确认后再逐条执行；不要绕过确认直接批量改场景。
 - 用户要求搭建具体场景（菜市场、婚礼、车站、教室等）时，先 stage_get 看现状，再用 stage_add_objects 一次批量摆放道具、摊位、家具和人物；不要只改背景就声称完成。
 - stage_add_objects 的每个对象用 type / position / rotation / scale / color / pose / count 描述；坐标单位米，y 轴向上。单批提交 5-8 个对象，复杂场景分 2-3 批，避免单次输出被 token 上限截断。
 - 参考图生成白膜用 stage_from_scene_image，图片路径来自系统提示中的引用或附件。
@@ -92,9 +96,15 @@ export function systemPromptFor(profile: AgentProfileId): string {
   return CANVAS_SYSTEM_PROMPT
 }
 
-export function stageContext(stageNodeId?: string): string {
+export function stageContext(stageNodeId?: string, snapshot?: string): string {
   if (!stageNodeId) return ''
-  return `\n\n当前正在导演台编辑场景：导演台画布节点 nodeId=${stageNodeId}。\n- 所有 stage_* 工具的 nodeId 都使用这个值。\n- 用户要求搭景、加人物、加机位或分镜时，直接修改当前导演台场景，不要创建画布节点；具体场景用 stage_add_objects 批量搭建。`
+  const parts = [
+    `\n\n当前正在导演台编辑场景：导演台画布节点 nodeId=${stageNodeId}。\n- 所有 stage_* 工具的 nodeId 都使用这个值。\n- 用户要求搭景、加人物、加机位或分镜时，直接修改当前导演台场景，不要创建画布节点；具体场景用 stage_add_objects 批量搭建。`
+  ]
+  if (snapshot) {
+    parts.push(`\n- 本轮开始时的精简场景快照（非完整状态，详细字段请用 stage_get 读取）：\n${snapshot}`)
+  }
+  return parts.join('')
 }
 
 export function attachmentContext(

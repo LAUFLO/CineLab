@@ -133,6 +133,9 @@ AgentPanel
 | 能力审计 | 已实现 | `capabilities/registry.ts`、`capability-audit.test.ts` |
 | 四个 bridge | 已实现 | `src/renderer/src/agent/*Bridge.ts` |
 | v3 运行时（pi） | 部分实现 | `src/main/agent/pi/*`；M1–M3 已接入；M4 四空间回归通过（canvas/stage 真模型，timeline/film 桥接），正式 asar 待复测 |
+| 对话式白模预演编排 | 已实现 | `resources/skills/stage-previs/SKILL.md`、`stage_set_action_track`、`stage_previs_plan` |
+| 批量预演计划确认 | 已实现 | `stageBridge.ts` 经 `UIStore.requestConfirm` 展示计划全文，仅 Skill 批量流程使用 |
+| 导演台上下文一致性 | 已实现 | `stage-snapshot.ts` 每轮精简快照、`stageContext()`、`stageSummary` 扩展、写工具前软提示 |
 
 ## 已知限制
 
@@ -169,13 +172,13 @@ AgentPanel
 | `src/main/agent/pi/loader.ts` | 34 |
 | `src/main/agent/pi/model-runtime.ts` | 724 |
 | `src/main/agent/pi/permissions.ts` | 28 |
-| `src/main/agent/pi/prompt.ts` | 151 |
+| `src/main/agent/pi/prompt.ts` | 161 |
 | `src/main/agent/pi/resources.ts` | 41 |
-| `src/main/agent/pi/runtime.ts` | 588 |
+| `src/main/agent/pi/runtime.ts` | 589 |
 | `src/main/agent/pi/session-lock.ts` | 55 |
 | `src/main/agent/pi/session.ts` | 244 |
 | `src/main/agent/pi/timeouts.ts` | 20 |
-| `src/main/agent/pi/tools.ts` | 120 |
+| `src/main/agent/pi/tools.ts` | 142 |
 | `src/main/agent/proposals.ts` | 499 |
 | `src/main/agent/session.ts` | 407 |
 | `src/main/agent/skills-admin.ts` | 592 |
@@ -194,7 +197,7 @@ AgentPanel
 | `src/main/agent/tools/scope.ts` | 10 |
 | `src/main/agent/tools/skill-admin.ts` | 131 |
 | `src/main/agent/tools/skills.ts` | 98 |
-| `src/main/agent/tools/stage.ts` | 1265 |
+| `src/main/agent/tools/stage.ts` | 1423 |
 | `src/main/agent/tools/timeline.ts` | 1018 |
 | `src/main/agent/tools/workflow.ts` | 104 |
 | `src/main/mcp/auto-tools.ts` | 161 |
@@ -207,8 +210,8 @@ AgentPanel
 | `src/main/mcp/tool-types.ts` | 26 |
 | `src/main/mcp/write-runner.ts` | 108 |
 | `src/renderer/src/agent/AgentPanel.tsx` | 1277 |
-| `src/renderer/src/agent/agentStore.ts` | 1224 |
-| `src/renderer/src/agent/canvasBridge.ts` | 1225 |
+| `src/renderer/src/agent/agentStore.ts` | 1230 |
+| `src/renderer/src/agent/canvasBridge.ts` | 1240 |
 | `src/renderer/src/agent/commandHandlers.ts` | 62 |
 | `src/renderer/src/agent/filmBridge.ts` | 768 |
 | `src/renderer/src/agent/panel/ContextRing.tsx` | 55 |
@@ -218,16 +221,17 @@ AgentPanel
 | `src/renderer/src/agent/panel/ThoughtGroup.tsx` | 77 |
 | `src/renderer/src/agent/panel/utils.tsx` | 146 |
 | `src/renderer/src/agent/projectBridge.ts` | 77 |
-| `src/renderer/src/agent/stageBridge.ts` | 961 |
+| `src/renderer/src/agent/stageBridge.ts` | 1039 |
 | `src/renderer/src/agent/timelineBridge.ts` | 1073 |
 | `src/renderer/src/mcp/commandBridge.ts` | 185 |
 | `src/shared/agent-commands.ts` | 40 |
 | `src/shared/agent-proposal.ts` | 140 |
 | `src/shared/agent-tools.ts` | 87 |
-| `src/shared/agent.ts` | 266 |
+| `src/shared/agent.ts` | 268 |
 | `src/shared/capabilities.ts` | 321 |
 | `src/shared/mcp-command.ts` | 14 |
 | `src/shared/skills.ts` | 273 |
+| `src/shared/stage-snapshot.ts` | 77 |
 <!-- AUTO:files:end -->
 
 <!-- AUTO:exports:start -->
@@ -298,4 +302,5 @@ AgentPanel
 | `src/shared/capabilities.ts` | `ModelInputFeature`、`ModelOutputFeature`、`AdapterCapability`、`CapabilityGapKind`、`CapabilityGap`、`EffectiveCapabilities`、`ADAPTER_CAPABILITIES`、`resolveAdapter`、`contractFor`、`normalizeFeatureSets`、`effectiveCapabilities` |
 | `src/shared/mcp-command.ts` | `McpWriteCommand`、`McpWriteResult` |
 | `src/shared/skills.ts` | `SkillScope`、`SkillFrontmatter`、`SkillSummary`、`SkillAdminEntry`、`SkillFileEntry`、`SkillFileContent`、`SkillWriteInput`、`SkillOverrideInput`、`SkillUploadFolder`、`SkillUploadResult`、`SkillCloneInput`、`SkillImportKind`、`SkillImportScope`、`SkillImportPreview`、`SkillImportInstallInput`、`SkillMarkdownInspection`、`SkillReadResult`、`SKILL_NAME_PATTERN`、`MAX_SKILL_DESCRIPTION_LENGTH`、`MAX_SKILL_BODY_BYTES`、`MAX_SKILL_REFERENCE_BYTES`、`MAX_SKILL_PATH_LENGTH`、`MAX_SKILL_UPLOAD_FILES`、`MAX_SKILL_UPLOAD_BYTES` …（共 30 个） |
+| `src/shared/stage-snapshot.ts` | `STAGE_SNAPSHOT_MAX_CHARS`、`buildStageSnapshot` |
 <!-- AUTO:exports:end -->

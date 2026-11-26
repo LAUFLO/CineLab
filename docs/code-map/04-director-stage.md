@@ -155,7 +155,7 @@ StageWindow → scene.analyze
 <!-- AUTO:files:start -->
 | 文件 | 行数 |
 |---|---|
-| `src/main/scene/analyze.ts` | 182 |
+| `src/main/scene/analyze.ts` | 190 |
 | `src/main/stage/export.ts` | 832 |
 | `src/main/stage/storage.ts` | 150 |
 | `src/renderer/src/stage/ShotInspector.tsx` | 292 |
@@ -166,12 +166,12 @@ StageWindow → scene.analyze
 | `src/renderer/src/stage/preview-runner.ts` | 206 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |
-| `src/renderer/src/stage/stage-from-scene.ts` | 56 |
+| `src/renderer/src/stage/stage-from-scene.ts` | 58 |
 | `src/renderer/src/stage/stage-ground.ts` | 88 |
 | `src/renderer/src/stage/stage-render.ts` | 408 |
 | `src/renderer/src/stage/stage-scene.ts` | 156 |
 | `src/renderer/src/stage/stageStore.ts` | 823 |
-| `src/shared/scene-analyze.ts` | 20 |
+| `src/shared/scene-analyze.ts` | 22 |
 | `src/shared/scene-calibrate.ts` | 71 |
 | `src/shared/scene-draft.ts` | 126 |
 | `src/shared/scene-object-presets.ts` | 106 |

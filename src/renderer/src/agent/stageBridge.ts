@@ -1,11 +1,14 @@
 import type { AgentToolCallRequest, AgentTurnChange } from '@shared/agent'
 import { applyStageCommands, type StageCommand } from '@shared/stage-commands'
 import type {
+  ActionKeyframe,
+  ActionTrack,
   CameraKeyframe,
   DirectorStageDoc,
   StageAspect,
   StageBackground,
   StageCamera,
+  StageEasing,
   StageObject,
   StageObjectType,
   StageShot,
@@ -20,6 +23,7 @@ import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
 import { syncStageNodeSummary, useStageStore } from '../stage/stageStore'
 import { exportStagePreviewToCanvas } from '../stage/preview-runner'
 import { generateStageFromScene } from '../stage/stage-from-scene'
+import { useUIStore } from '../stores/ui'
 
 const OBJECT_LABEL: Record<StageObjectType, string> = {
   human: '人物',
@@ -160,14 +164,20 @@ function stageSummary(doc: DirectorStageDoc): Record<string, unknown> {
       fov: camera.fov,
       ...(camera.aspect ? { aspect: camera.aspect } : {})
     })),
+    background: doc.background,
     shots: doc.shots.map((shot) => ({
       id: shot.id,
       name: shot.name ?? null,
       cameraId: shot.cameraId,
       durationMs: shot.durationMs,
       aspect: shot.aspect,
-      cameraKeyframes: shot.cameraTrack?.length ?? 0,
-      actionTracks: shot.actionTracks?.length ?? 0
+      source: shot.source ?? 'manual',
+      caption: shot.caption ?? null,
+      intent: shot.intent ?? null,
+      cameraKeyframeCount: shot.cameraTrack?.length ?? 0,
+      actionTrackCount: shot.actionTracks?.length ?? 0,
+      cameraTrack: shot.cameraTrack ?? [],
+      actionTracks: shot.actionTracks ?? []
     }))
   }
 }
@@ -833,7 +843,9 @@ export async function executeStageTool(
         const result = await generateStageFromScene({
           imagePath,
           imageScope,
-          modelKey
+          modelKey,
+          prompt:
+            typeof call.args.prompt === 'string' ? call.args.prompt : undefined
         })
         return {
           ok: true,
@@ -895,6 +907,72 @@ export async function executeStageTool(
           objectId,
           object: objectSummary(object)
         },
+        change: stageChange()
+      }
+    },
+
+    stage_set_action_track: async (call) => {
+      const shotId = String(call.args.shotId ?? '')
+      const objectId = String(call.args.objectId ?? '')
+      const rawKeys = Array.isArray(call.args.keys) ? call.args.keys : []
+      const keys: ActionKeyframe[] = rawKeys.map((entry) => {
+        const key = entry as Record<string, unknown>
+        return {
+          timeMs: Number(key.timeMs),
+          ...(key.position !== undefined
+            ? { position: readVec(key.position, [0, 0, 0]) }
+            : {}),
+          ...(key.rotation !== undefined
+            ? { rotation: readVec(key.rotation, [0, 0, 0]) }
+            : {}),
+          ...(typeof key.pose === 'string' ? { pose: key.pose } : {}),
+          ...(typeof key.easing === 'string'
+            ? { easing: key.easing as StageEasing }
+            : {})
+        }
+      })
+      const track: ActionTrack = { objectId, keys }
+      const updated = await applyToStage(
+        nodeId,
+        [{ type: 'setActionTrack', shotId, track }],
+        call.turnId
+      )
+      return {
+        ok: true,
+        result: {
+          shotId,
+          objectId,
+          keyCount: keys.length,
+          object:
+            updated.objects.find((item) => item.id === objectId) ?? null
+        },
+        change: stageChange()
+      }
+    },
+
+    stage_previs_plan: async (call) => {
+      const summary = String(call.args.summary ?? '')
+      const steps = Array.isArray(call.args.steps) ? call.args.steps : []
+      const planText = [
+        `预演计划：${summary}`,
+        '',
+        ...steps.map((entry, index) => {
+          const step = entry as Record<string, unknown>
+          return `${index + 1}. ${String(step.reason ?? step.name ?? '')}\n   工具：${String(step.name ?? '')}\n   参数：${JSON.stringify(step.args ?? {})}`
+        })
+      ].join('\n')
+      const approved = await new Promise<boolean>((resolve) => {
+        useUIStore.getState().requestConfirm({
+          title: '确认批量预演计划',
+          message: planText,
+          confirmLabel: '允许执行',
+          onConfirm: () => resolve(true),
+          onCancel: () => resolve(false)
+        })
+      })
+      return {
+        ok: true,
+        result: { approved, stepCount: steps.length, summary },
         change: stageChange()
       }
     },

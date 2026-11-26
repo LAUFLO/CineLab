@@ -159,7 +159,7 @@ StageWindow → scene.analyze
 | `src/renderer/src/stage/StageInspector.tsx` | 414 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 730 |
 | `src/renderer/src/stage/StageViewport.tsx` | 670 |
-| `src/renderer/src/stage/StageWindow.tsx` | 910 |
+| `src/renderer/src/stage/StageWindow.tsx` | 953 |
 | `src/renderer/src/stage/preview-runner.ts` | 202 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |
@@ -175,7 +175,7 @@ StageWindow → scene.analyze
 | `src/shared/stage-auto-coverage.ts` | 205 |
 | `src/shared/stage-commands.ts` | 975 |
 | `src/shared/stage-dialogue.ts` | 142 |
-| `src/shared/stage-lighting.ts` | 226 |
+| `src/shared/stage-lighting.ts` | 227 |
 | `src/shared/stage-motions.ts` | 444 |
 | `src/shared/stage-preview.ts` | 52 |
 | `src/shared/stage-program.ts` | 105 |

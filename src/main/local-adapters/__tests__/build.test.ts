@@ -1,4 +1,5 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { rmSync, statSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -7,6 +8,17 @@ import { buildLocalAdapter, resolveLocalAdapterEntry } from '../build'
 import type { LocalAdapterManifest } from '../manifest'
 
 const requireCjs = createRequire(import.meta.url)
+
+/** 透明加密环境下 esbuild 读不到明文临时文件，跳过真实构建用例 */
+function hasTransparentEncryption(): boolean {
+  const probe = join(tmpdir(), `cinelab-enc-build-${process.pid}.txt`)
+  try {
+    writeFileSync(probe, '0123456789')
+    return statSync(probe).size !== 10
+  } finally {
+    rmSync(probe, { force: true })
+  }
+}
 
 const manifest: LocalAdapterManifest = {
   id: 'echo',
@@ -23,7 +35,7 @@ afterEach(async () => {
 })
 
 describe('local adapter build', () => {
-  it('bundles TypeScript to CommonJS and keeps the default export', async () => {
+  it.skipIf(hasTransparentEncryption())('bundles TypeScript to CommonJS and keeps the default export', async () => {
     dir = await mkdtemp(join(tmpdir(), 'cinelab-adapter-'))
     await writeFile(
       join(dir, 'adapter.ts'),

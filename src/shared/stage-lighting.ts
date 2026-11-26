@@ -221,5 +221,6 @@ export function applyLightingPreset(
 ): Pick<DirectorStageDoc, 'lighting'> {
   const preset = STAGE_LIGHTING_PRESETS.find((item) => item.id === presetId)
   if (!preset) return { lighting: doc.lighting }
-  return { lighting: preset.lighting }
+  const base = cloneLighting(TIME_LOOK[preset.timeOfDay ?? 'day'])
+  return { lighting: mergeLighting(base, preset.lighting) }
 }

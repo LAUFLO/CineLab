@@ -10,11 +10,11 @@
 | 01 | [画布](./01-canvas.md) | 75 | 26221 |
 | 02 | [生成与模型](./02-generation.md) | 67 | 14639 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
-| 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10058 |
+| 04 | [导演台与白模预演](./04-director-stage.md) | 32 | 10102 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
 | 06 | [CineBot 与 Agent](./06-agent.md) | 67 | 20319 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 76 | 14035 |
-| 10 | [UI 组件与面板](./10-ui.md) | 55 | 11969 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 77 | 14265 |
+| 10 | [UI 组件与面板](./10-ui.md) | 57 | 12135 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -36,7 +36,7 @@
 | `AgentApi` | `chat`、`cancel`、`toolResult`、`confirm`、`sessionLoad`、`sessionList`、`sessionCreate`、`sessionRename`、`sessionDelete`、`sessionCompact`、`modelInfo`、`textModels`、`models`、`proposalCreate`、`proposalActive`、`proposalSubmit`、`proposalCancel`、`onEvent`、`onToolCall` |
 | `SkillsApi` | `list`、`files`、`readFile`、`create`、`save`、`remove`、`uploadFiles`、`removeFile`、`clone`、`setOverride`、`pickImport`、`installImport`、`discardImport`、`openDirectory`、`openFile` |
 | `StageApi` | `create`、`load`、`save`、`delete`、`duplicate`、`capture`、`exportPreview`、`cancelExport`、`onExportProgress` |
-| `SceneApi` | `analyze`、`loadObjectPresets`、`saveObjectPresets`、`importObjectPresets`、`exportObjectPresets`、`uploadImage`、`uploadAsset` |
+| `SceneApi` | `analyze`、`loadObjectPresets`、`saveObjectPresets`、`importObjectPresets`、`exportObjectPresets`、`uploadImage`、`uploadAsset`、`pickImage` |
 | `LocalAdapterApi` | `list`、`reload`、`openDir`、`onChanged` |
 | `McpApi` | `onCommand`、`sendResult`、`status`、`config`、`resetToken`、`revealConfig`、`copy` |
 

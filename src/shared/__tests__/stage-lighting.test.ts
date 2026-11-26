@@ -31,11 +31,16 @@ describe('resolveStageLighting', () => {
 })
 
 describe('applyLightingPreset', () => {
-  it('returns preset lighting without touching other doc fields', () => {
-    const next = applyLightingPreset({ lighting: undefined }, 'night')
-    expect(next).toEqual({
-      lighting: { }
-    })
+  it('uses time-of-day look as base then applies preset overrides', () => {
+    const night = applyLightingPreset({ lighting: undefined }, 'night')
+    expect(night.lighting?.background).toBe('#151b2b')
+    expect(night.lighting?.sun?.position).toEqual([-4, 8, -3])
+
+    const dusk = applyLightingPreset({ lighting: undefined }, 'dusk')
+    expect(dusk.lighting?.background).toBe('#f3c9a4')
+
+    const neon = applyLightingPreset({ lighting: undefined }, 'neon')
+    expect(neon.lighting?.fill?.color).toBe('#ff4fa3')
   })
 
   it('keeps the current lighting for unknown presets', () => {

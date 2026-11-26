@@ -76,6 +76,35 @@ export function registerIpc(): void {
     if (win) allowWindowClose(win)
   })
 
+  ipcMain.on('app:hide-to-tray', (event) => {
+    const win = windowFromEvent(event.sender)
+    if (!win || win.isDestroyed()) return
+    win.hide()
+    win.setSkipTaskbar(true)
+  })
+
+  ipcMain.on('app:restore-window', (event) => {
+    const win = windowFromEvent(event.sender)
+    if (!win || win.isDestroyed()) return
+    if (win.isMinimized()) win.restore()
+    win.setSkipTaskbar(false)
+    win.show()
+    win.focus()
+  })
+
+  ipcMain.on('app:quit', () => {
+    app.quit()
+  })
+
+  ipcMain.on('app:request-quit', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (!win || win.isDestroyed()) return
+    win.setSkipTaskbar(false)
+    win.show()
+    win.focus()
+    win.webContents.send('app:quit-requested')
+  })
+
   ipcMain.handle('app:open-logs', async () => {
     await shell.openPath(logDirectory())
   })
@@ -107,6 +136,7 @@ export function registerIpc(): void {
           : BrowserWindow.getAllWindows()[0]
       if (!win) return
       if (win.isMinimized()) win.restore()
+      win.setSkipTaskbar(false)
       win.show()
       win.focus()
     })

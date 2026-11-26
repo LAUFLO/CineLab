@@ -21,10 +21,12 @@ import {
   MenuSeparator,
   Select
 } from '../components/ui'
+import type { GeneratedAsset } from '@shared/generation'
 import type {
   StageExportItems,
   StageFrameDensity
 } from '@shared/ipc-contract'
+import type { AssetScope } from '@shared/asset-schema'
 import {
   applyLightingPreset,
   STAGE_LIGHTING_PRESETS
@@ -120,6 +122,8 @@ export function StageWindow() {
     y: 0
   })
   const [generatingScene, setGeneratingScene] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [pendingAsset, setPendingAsset] = useState<GeneratedAsset | null>(null)
   const [privacyOpen, setPrivacyOpen] = useState(false)
 
   useEffect(() => {
@@ -316,12 +320,13 @@ export function StageWindow() {
   const stageReferenceImage = (): ReturnType<typeof selectedNodeOutput> => {
     if (!nodeId) return null
     const canvas = useCanvasStore.getState()
-    const edge = canvas.edges.find((item) => item.target === nodeId)
-    if (!edge) return null
-    const source = canvas.nodes.find((item) => item.id === edge.source)
-    if (!source) return null
-    const output = selectedNodeOutput(source)
-    return output && output.kind === 'image' ? output : null
+    for (const edge of canvas.edges) {
+      if (edge.target !== nodeId) continue
+      const source = canvas.nodes.find((item) => item.id === edge.source)
+      const output = source ? selectedNodeOutput(source) : null
+      if (output?.kind === 'image') return output
+    }
+    return null
   }
 
   const handleLightingPreset = (presetId: string): void => {
@@ -332,8 +337,10 @@ export function StageWindow() {
     setLightingPreset(presetId)
   }
 
-  const runGenerateFromScene = async (): Promise<void> => {
-    const output = stageReferenceImage()
+  const runGenerateFromScene = async (
+    asset?: { path: string; scope?: AssetScope }
+  ): Promise<void> => {
+    const output = asset ?? stageReferenceImage()
     if (!output) return
     setGeneratingScene(true)
     try {
@@ -358,6 +365,29 @@ export function StageWindow() {
       return
     }
     void runGenerateFromScene()
+  }
+
+  const handleImportImage = async (): Promise<void> => {
+    if (!doc || importing || generatingScene) return
+    setImporting(true)
+    try {
+      const asset = await window.api.scene.pickImage()
+      if (!asset) return
+      if (
+        window.localStorage.getItem('cinelab.scenePrivacyAcknowledged') !== '1'
+      ) {
+        setPendingAsset(asset)
+        setPrivacyOpen(true)
+        return
+      }
+      await runGenerateFromScene(asset)
+    } catch (error) {
+      useStageStore.setState({
+        error: error instanceof Error ? error.message : String(error)
+      })
+    } finally {
+      setImporting(false)
+    }
   }
 
   const handleCapture = async (): Promise<void> => {
@@ -440,6 +470,17 @@ export function StageWindow() {
               disabled={!doc}
               title="切换日戏、黄昏、夜戏等光照预设"
             />
+            <Button
+              type="button"
+              variant="secondary"
+              size="none"
+              className={TEXT_BUTTON_CLASS}
+              onClick={() => void handleImportImage()}
+              disabled={!doc || importing || generatingScene}
+              title="选择本地图片生成白膜场景"
+            >
+              {importing ? '导入中…' : '导入图片'}
+            </Button>
             <Button
               type="button"
               variant="secondary"
@@ -890,7 +931,9 @@ export function StageWindow() {
                   '1'
                 )
                 setPrivacyOpen(false)
-                void runGenerateFromScene()
+                const asset = pendingAsset
+                setPendingAsset(null)
+                void runGenerateFromScene(asset ?? undefined)
               }}
             >
               继续
@@ -899,7 +942,7 @@ export function StageWindow() {
         }
       >
         <p className="text-xs leading-relaxed text-fg-muted">
-          「从参考图生成」会把这张图片发送给你在设置中配置的多模态文本模型，用于解析场景。
+          「从参考图生成」或「导入图片」会把图片发送给你在设置中配置的多模态文本模型，用于解析场景。
           图片不会上传到 CineLab 服务器；解析结果只写回当前项目。
         </p>
       </Dialog>

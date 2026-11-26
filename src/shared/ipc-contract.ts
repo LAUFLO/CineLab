@@ -632,6 +632,7 @@ export interface SceneApi {
     mime: string
     data: ArrayBuffer
   }): Promise<import('./generation').GeneratedAsset>
+  pickImage(): Promise<import('./generation').GeneratedAsset | null>
 }
 
 export interface LocalAdapterApi {
@@ -730,6 +731,11 @@ export interface CineApi {
     minimize(): void
     maximize(): void
     close(): void
+    hideToTray(): void
+    restoreWindow(): void
+    quit(): void
+    requestQuit(): void
+    onQuitRequested(callback: () => void): () => void
   }
   project: ProjectApi
   workflow: WorkflowApi

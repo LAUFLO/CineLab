@@ -103,6 +103,7 @@ const MODULES = [
       'src/shared/stage-program.ts',
       'src/shared/stage-lighting.ts',
       'src/shared/stage-motions.ts',
+      'src/shared/stage-camera-moves.ts',
       'src/shared/stage-auto-coverage.ts',
       'src/shared/stage-dialogue.ts',
       'src/shared/stage-shot-list.ts',

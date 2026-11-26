@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { StageObjectType } from '@shared/stage-schema'
 import { Icon } from '../components/Icon'
 import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
 import { selectedNodeOutput } from '../stores/canvas-model'
 import { generateStageFromScene } from './stage-from-scene'
+import { assetUrl } from '../lib/asset-url'
 import { useUIStore } from '../stores/ui'
 import { shortcutMatches } from '../shortcuts/useShortcut'
 import { StageInspector } from './StageInspector'
@@ -41,6 +42,7 @@ const OBJECT_OPTIONS: Array<{ type: StageObjectType; label: string }> = [
 ]
 
 const EXPORT_ITEM_OPTIONS: Array<[keyof StageExportItems, string]> = [
+  ['previs', '白模预演'],
   ['clips', '每镜片段'],
   ['frames', '分镜图'],
   ['overview', '场景鸟瞰'],
@@ -125,6 +127,12 @@ export function StageWindow() {
   const [importing, setImporting] = useState(false)
   const [pendingAsset, setPendingAsset] = useState<GeneratedAsset | null>(null)
   const [privacyOpen, setPrivacyOpen] = useState(false)
+  const [panoramaMenuOpen, setPanoramaMenuOpen] = useState(false)
+  const [panoramaMenuPosition, setPanoramaMenuPosition] = useState({ x: 0, y: 0 })
+  const [selectedForGroup, setSelectedForGroup] = useState<string[]>([])
+  const [drawMoveOpen, setDrawMoveOpen] = useState(false)
+  const drawStartRef = useRef<{ x: number; y: number } | null>(null)
+  const [drawLine, setDrawLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
 
   useEffect(() => {
     if (!playing) return
@@ -329,6 +337,100 @@ export function StageWindow() {
     return null
   }
 
+  const panoramaCandidates = (): Array<{ id: string; label: string; url: string }> => {
+    const canvas = useCanvasStore.getState()
+    const list: Array<{ id: string; label: string; url: string }> = []
+    for (const node of canvas.nodes) {
+      if (node.type !== 'cine' && node.type !== 'film' && node.type !== 'studio') continue
+      const output = selectedNodeOutput(node)
+      if (!output || output.kind !== 'image') continue
+      if (node.data.kind !== 'image') continue
+      list.push({
+        id: node.id,
+        label: node.data.title || '全景图',
+        url: assetUrl(output.path, output.scope)
+      })
+    }
+    return list
+  }
+
+  const handlePanoramaBackground = (url: string): void => {
+    const state = useStageStore.getState()
+    if (!state.doc) return
+    state.applyCommands([
+      { type: 'setBackground', background: { kind: 'panorama', value: url } }
+    ])
+    setPanoramaMenuOpen(false)
+  }
+
+  const handleGroupSelected = (): void => {
+    const chosen = selectedForGroup
+    if (chosen.length < 2) return
+    const parent = chosen[0]
+    const state = useStageStore.getState()
+    state.applyCommands(
+      chosen.slice(1).map((id) => ({
+        type: 'setParent' as const,
+        objectId: id,
+        parentId: parent
+      }))
+    )
+    setSelectedForGroup([])
+  }
+
+  const handleObjectClick = (objectId: string, additive: boolean): void => {
+    selectObject(objectId)
+    if (!additive) {
+      setSelectedForGroup([objectId])
+      return
+    }
+    setSelectedForGroup((ids) =>
+      ids.includes(objectId)
+        ? ids.filter((id) => id !== objectId)
+        : [...ids, objectId]
+    )
+  }
+
+  const handleDrawMoveEnd = (event: React.PointerEvent<HTMLDivElement>): void => {
+    const start = drawStartRef.current
+    drawStartRef.current = null
+    setDrawLine(null)
+    if (!start) return
+    const dx = event.clientX - start.x
+    const dy = event.clientY - start.y
+    if (Math.hypot(dx, dy) < 12) return
+    const state = useStageStore.getState()
+    const doc = state.doc
+    const shotId = state.selectedShotId
+    if (!doc || !shotId) return
+    const shot = doc.shots.find((item) => item.id === shotId)
+    const camera = shot
+      ? doc.cameras.find((item) => item.id === shot.cameraId)
+      : undefined
+    if (!shot || !camera) return
+    const scale = 0.02
+    const target = camera.target
+    const at = (t: number): [number, number, number] => [
+      target[0] + dx * scale * t,
+      target[1] - dy * scale * t,
+      target[2]
+    ]
+    state.applyCommands([
+      {
+        type: 'setCameraTrack',
+        shotId,
+        track: [0, 0.5, 1].map((t) => ({
+          timeMs: Math.round(shot.durationMs * t),
+          position: [...camera.position] as [number, number, number],
+          target: at(t),
+          fov: camera.fov,
+          easing: 'easeInOut' as const
+        }))
+      }
+    ])
+    setDrawMoveOpen(false)
+  }
+
   const handleLightingPreset = (presetId: string): void => {
     const state = useStageStore.getState()
     if (!state.doc) return
@@ -475,6 +577,43 @@ export function StageWindow() {
               variant="secondary"
               size="none"
               className={TEXT_BUTTON_CLASS}
+              onClick={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect()
+                setPanoramaMenuPosition({ x: rect.left, y: rect.bottom + 6 })
+                setPanoramaMenuOpen((open) => !open)
+              }}
+              disabled={!doc}
+              title="从画布选择全景图作为场景背景"
+            >
+              全景背景
+            </Button>
+            <Menu
+              open={panoramaMenuOpen}
+              onClose={() => setPanoramaMenuOpen(false)}
+              x={panoramaMenuPosition.x}
+              y={panoramaMenuPosition.y}
+              width={224}
+            >
+              {panoramaCandidates().length ? (
+                panoramaCandidates().map((item) => (
+                  <MenuItem
+                    key={item.id}
+                    onSelect={() => handlePanoramaBackground(item.url)}
+                  >
+                    {item.label}
+                  </MenuItem>
+                ))
+              ) : (
+                <div className="px-2 py-2 text-[11px] text-fg-subtle">
+                  画布里没有可用的全景图
+                </div>
+              )}
+            </Menu>
+            <Button
+              type="button"
+              variant="secondary"
+              size="none"
+              className={TEXT_BUTTON_CLASS}
               onClick={() => void handleImportImage()}
               disabled={!doc || importing || generatingScene}
               title="选择本地图片生成白膜场景"
@@ -488,19 +627,13 @@ export function StageWindow() {
               className={TEXT_BUTTON_CLASS}
               onClick={() => void handleGenerateFromScene()}
               disabled={!doc || generatingScene || !stageReferenceImage()}
-              title="从上游第一张参考图生成白膜场景"
+              title={
+                stageReferenceImage()
+                  ? '从上游第一张参考图生成白膜场景'
+                  : '需要先连接一张图片节点到导演台'
+              }
             >
               {generatingScene ? '生成中…' : '从参考图生成'}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="none"
-              className={ICON_BUTTON_CLASS}
-              onClick={closeStage}
-              title="返回画布"
-            >
-              <Icon name="chevron-left" size={16} />
             </Button>
             <div className="flex min-w-0 flex-col">
               <span className="overflow-hidden text-ellipsis text-[13px] font-semibold whitespace-nowrap">
@@ -680,6 +813,16 @@ export function StageWindow() {
             </Button>
             <Button
               type="button"
+              variant={drawMoveOpen ? 'primary' : 'secondary'}
+              size="none"
+              className={TEXT_BUTTON_CLASS}
+              onClick={() => setDrawMoveOpen((open) => !open)}
+              title="手绘运镜轨迹"
+            >
+              手绘运镜
+            </Button>
+            <Button
+              type="button"
               variant="ghost"
               size="none"
               className={ICON_BUTTON_CLASS}
@@ -699,6 +842,17 @@ export function StageWindow() {
                 <small className="font-normal text-fg-subtle">
                   {doc?.objects.length ?? 0}
                 </small>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className={MINI_BUTTON_CLASS}
+                  title="打组（Ctrl/Shift 点击多选）"
+                  disabled={selectedForGroup.length < 2}
+                  onClick={handleGroupSelected}
+                >
+                  组
+                </Button>
                 <Button
                   type="button"
                   variant="ghost"
@@ -742,7 +896,12 @@ export function StageWindow() {
                     data-active={
                       object.id === selectedObjectId ? '' : undefined
                     }
-                    onClick={() => selectObject(object.id)}
+                    onClick={(event) =>
+                      handleObjectClick(
+                        object.id,
+                        event.ctrlKey || event.metaKey || event.shiftKey
+                      )
+                    }
                   >
                     <Icon name="grid" size={13} />
                     <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
@@ -848,6 +1007,51 @@ export function StageWindow() {
 
         <main className="relative min-h-0 min-w-0 overflow-hidden rounded-card border border-border bg-media-bg [grid-area:viewport]">
           <StageViewport />
+          {drawMoveOpen ? (
+            <div
+              className="absolute inset-0 z-[3] cursor-crosshair"
+              onPointerDown={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect()
+                drawStartRef.current = {
+                  x: event.clientX - rect.left,
+                  y: event.clientY - rect.top
+                }
+                setDrawLine({
+                  x1: event.clientX - rect.left,
+                  y1: event.clientY - rect.top,
+                  x2: event.clientX - rect.left,
+                  y2: event.clientY - rect.top
+                })
+              }}
+              onPointerMove={(event) => {
+                if (!drawStartRef.current) return
+                const rect = event.currentTarget.getBoundingClientRect()
+                setDrawLine({
+                  x1: drawStartRef.current.x,
+                  y1: drawStartRef.current.y,
+                  x2: event.clientX - rect.left,
+                  y2: event.clientY - rect.top
+                })
+              }}
+              onPointerUp={handleDrawMoveEnd}
+            >
+              {drawLine ? (
+                <svg className="pointer-events-none absolute inset-0 h-full w-full">
+                  <line
+                    x1={drawLine.x1}
+                    y1={drawLine.y1}
+                    x2={drawLine.x2}
+                    y2={drawLine.y2}
+                    stroke="var(--accent)"
+                    strokeWidth={2}
+                  />
+                </svg>
+              ) : null}
+              <div className="pointer-events-none absolute top-2 left-1/2 -translate-x-1/2 rounded-md bg-black/55 px-2 py-1 text-[10px] text-white/80">
+                在视口画一条线，松开生成运镜
+              </div>
+            </div>
+          ) : null}
           {viewMode === 'director' && selectedObjectId ? (
             <div
               className="absolute top-2.5 left-1/2 flex -translate-x-1/2 overflow-hidden rounded-md border border-border bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] shadow-float"

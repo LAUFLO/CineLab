@@ -31,6 +31,7 @@ import {
 import { useFilmStudyStore } from '../stores/film-study'
 import { useProjectStore } from '../stores/project'
 import { useStageStore } from '../stage/stageStore'
+import { buildStageSnapshot } from '@shared/stage-snapshot'
 import { useStudioStore } from '../stores/studio'
 import { useTimelineStore } from '../stores/timeline'
 
@@ -883,6 +884,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       set({ error: '剪辑室时间线还没有加载' })
       return
     }
+    const stageSnapshot = stageNodeId
+      ? buildStageSnapshot(useStageStore.getState().doc)
+      : ''
+
     const profileId = stageNodeId
       ? 'stage'
       : studio.open
@@ -910,6 +915,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         canvasId: project.canvasId,
         selectedNodeIds,
         ...(stageNodeId ? { stageNodeId } : {}),
+        ...(stageSnapshot ? { stageSnapshot } : {}),
         sessionId: state.sessionId,
         ...(state.modelKey ? { modelKey: state.modelKey } : {}),
         ...(Object.keys(state.generationModels).length > 0

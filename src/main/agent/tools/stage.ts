@@ -655,6 +655,10 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
         modelKey: {
           type: 'string',
           description: 'providerId/modelId；省略时自动选第一个文本模型'
+        },
+        prompt: {
+          type: 'string',
+          description: '一句话场景描述，与参考图一起解析；省略时只按图片解析'
         }
       },
       required: ['nodeId', 'imagePath'],
@@ -665,6 +669,83 @@ export const STAGE_TOOLS: AgentToolDefinition[] = [
       title: '从场景图生成白膜',
       category: '导演台',
     },
+  },
+  {
+    id: 'stage.setActionTrack',
+    name: 'stage_set_action_track',
+    description:
+      '为镜头设置人物动作轨：按时间点给对象设置位置/旋转/姿势关键帧，让对话能编排人物怎么走。objectId 和 shotId 必须来自 stage_get。',
+    profiles: ['stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        shotId: { type: 'string', description: '镜头 ID，来自 stage_get' },
+        objectId: { type: 'string', description: '对象 ID，来自 stage_get' },
+        keys: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 500,
+          description: '动作关键帧，按 timeMs 升序',
+          items: {
+            type: 'object',
+            properties: {
+              timeMs: { type: 'number', minimum: 0 },
+              position: stageVec3Parameter,
+              rotation: stageVec3Parameter,
+              pose: { type: 'string', description: '人物姿势预设，可选' },
+              easing: { type: 'string', enum: STAGE_EASINGS }
+            },
+            required: ['timeMs'],
+            additionalProperties: false
+          }
+        }
+      },
+      required: ['nodeId', 'shotId', 'objectId', 'keys'],
+      additionalProperties: false
+    },
+    replay: 'safe',
+    mcp: { title: '设置动作轨', category: '导演台' }
+  },
+  {
+    id: 'stage.previsPlan',
+    name: 'stage_previs_plan',
+    description:
+      '批量预演前提交结构化工具计划，等待用户在界面确认；只有确认后才逐条执行。仅用于对话式预演 Skill 的批量流程，单工具调用不需要它。',
+    profiles: ['stage'],
+    readOnly: false,
+    scope: 'stage',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: stageNodeIdParameter,
+        summary: { type: 'string', description: '计划摘要，一句话说清要做什么' },
+        steps: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 60,
+          description: '将按顺序执行的工具调用列表',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: '工具名，如 stage_add_objects' },
+              args: { type: 'object', description: '该工具的参数对象，含 nodeId' },
+              reason: { type: 'string', description: '这一步要做什么' }
+            },
+            required: ['name', 'args'],
+            additionalProperties: false
+          }
+        }
+      },
+      required: ['nodeId', 'summary', 'steps'],
+      additionalProperties: false
+    },
+    replay: 'safe',
+    mcp: { title: '预演计划确认', category: '导演台' }
   },
   {
     id: 'stage.capture',
@@ -1085,11 +1166,15 @@ export function validateStageToolArgs(
     }
 
     if (call.name === 'stage_export_preview') {
+      const exportScope = call.args.scope === 'program' ? 'program' : 'shot'
       if (
-        typeof call.args.shotId !== 'string' ||
-        !call.args.shotId.trim()
+        exportScope === 'shot' &&
+        (typeof call.args.shotId !== 'string' || !call.args.shotId.trim())
       ) {
-        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+        throw new AgentToolError(
+          'invalid_params',
+          'scope=shot 时 shotId 必须是非空字符串'
+        )
       }
       if (
         call.args.resolution !== undefined &&
@@ -1256,6 +1341,79 @@ export function validateStageToolArgs(
         (typeof call.args.seed !== 'number' || !Number.isFinite(call.args.seed))
       ) {
         throw new AgentToolError('invalid_params', 'seed 必须是数字')
+      }
+      if (
+        call.args.prompt !== undefined &&
+        typeof call.args.prompt !== 'string'
+      ) {
+        throw new AgentToolError('invalid_params', 'prompt 必须是字符串')
+      }
+    }
+
+    if (call.name === 'stage_set_action_track') {
+      if (
+        typeof call.args.shotId !== 'string' ||
+        !call.args.shotId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'shotId 必须是非空字符串')
+      }
+      if (
+        typeof call.args.objectId !== 'string' ||
+        !call.args.objectId.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'objectId 必须是非空字符串')
+      }
+      if (
+        !Array.isArray(call.args.keys) ||
+        call.args.keys.length === 0 ||
+        call.args.keys.length > 500
+      ) {
+        throw new AgentToolError('invalid_params', 'keys 必须是 1-500 个关键帧')
+      }
+      for (const key of call.args.keys) {
+        if (
+          !key ||
+          typeof key !== 'object' ||
+          typeof key.timeMs !== 'number' ||
+          !Number.isFinite(key.timeMs) ||
+          key.timeMs < 0
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            '动作关键帧的 timeMs 必须是非负数字'
+          )
+        }
+      }
+    }
+
+    if (call.name === 'stage_previs_plan') {
+      if (
+        typeof call.args.summary !== 'string' ||
+        !call.args.summary.trim()
+      ) {
+        throw new AgentToolError('invalid_params', 'summary 必须是非空字符串')
+      }
+      if (
+        !Array.isArray(call.args.steps) ||
+        call.args.steps.length === 0 ||
+        call.args.steps.length > 60
+      ) {
+        throw new AgentToolError('invalid_params', 'steps 必须是 1-60 个步骤')
+      }
+      for (const step of call.args.steps) {
+        if (
+          !step ||
+          typeof step !== 'object' ||
+          typeof step.name !== 'string' ||
+          !step.name.trim() ||
+          !step.args ||
+          typeof step.args !== 'object'
+        ) {
+          throw new AgentToolError(
+            'invalid_params',
+            '计划步骤必须包含 name 和 args 对象'
+          )
+        }
       }
     }
 

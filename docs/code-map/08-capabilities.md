@@ -73,6 +73,8 @@
 | 04 | GLB 导入与真实模型渲染（视口 + 导出等待加载），失败回退 wireframe | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts`、`stage-render.ts` |
 | 04 | 预演导出附带结构 JSON 与生成参考提示词，回画布后写入视频节点 | `src/shared/stage-previs-reference.ts`、`src/main/stage/export.ts`、`preview-runner.ts` |
 | 02 | model 资产入库到 `assets/model/`，支持 `.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` |
+| 06 | 对话式白模预演编排：动作轨工具、批量计划确认、previs Skill SOP | `resources/skills/stage-previs/SKILL.md`、`src/main/agent/tools/stage.ts`、`stageBridge.ts` |
+| 06 | 导演台上下文一致性：每轮精简快照 + `stage_get` 摘要扩展 + 写前软提示 | `src/shared/stage-snapshot.ts`、`pi/prompt.ts`、`pi/tools.ts`、`stageBridge.ts` |
 
 ## 部分实现（别当已完成）
 

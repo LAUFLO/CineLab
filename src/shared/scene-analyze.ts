@@ -10,6 +10,8 @@ export interface SceneAnalyzeInput {
   modelKey?: string
   /** 可选深度统计；缺省按 16:9 估计 */
   depth?: DepthStats
+  /** 用户一句话场景描述，与参考图一起送给 VLM */
+  prompt?: string
 }
 
 export interface SceneAnalyzeResult {

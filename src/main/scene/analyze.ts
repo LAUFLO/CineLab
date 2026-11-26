@@ -135,6 +135,14 @@ export async function analyzeScene(
                 role: 'user',
                 content: [
                   { type: 'text', text: SCENE_PROMPT },
+                  ...(input.prompt?.trim()
+                    ? [
+                        {
+                          type: 'text' as const,
+                          text: `场景描述：${input.prompt.trim().slice(0, 500)}`
+                        }
+                      ]
+                    : []),
                   {
                     type: 'image_url',
                     image_url: {

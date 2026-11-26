@@ -21,6 +21,7 @@ const runtime = {
   turnId: 'turn-1',
   scope,
   sendToolCall: () => undefined,
+  stageRead: { called: false },
   waitForToolResult: async () => ({
     turnId: 'turn-1',
     callId: 'call-1',

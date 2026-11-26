@@ -51,6 +51,8 @@ export interface AgentChatRequest {
   selectedClipIds?: string[]
   playheadMs?: number
   stageNodeId?: string
+  /** 渲染侧生成的精简场景快照，避免每轮注入完整 StageDoc */
+  stageSnapshot?: string
   sessionId?: string
   /** 用户选择的文本模型；省略时自动选择第一个可用模型 */
   modelKey?: string

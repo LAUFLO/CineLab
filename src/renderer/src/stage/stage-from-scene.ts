@@ -13,6 +13,7 @@ export interface GenerateStageFromSceneInput {
   imagePath: string
   imageScope?: AssetScope
   modelKey?: string
+  prompt?: string
 }
 
 export interface GenerateStageFromSceneResult {
@@ -32,7 +33,8 @@ export async function generateStageFromScene(
   const result = await window.api.scene.analyze({
     imagePath: input.imagePath,
     imageScope: input.imageScope,
-    modelKey: input.modelKey
+    modelKey: input.modelKey,
+    prompt: input.prompt
   })
 
   const built = buildStageFromDraft(result)

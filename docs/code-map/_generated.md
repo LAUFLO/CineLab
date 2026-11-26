@@ -10,9 +10,9 @@
 | 01 | [画布](./01-canvas.md) | 75 | 26262 |
 | 02 | [生成与模型](./02-generation.md) | 67 | 14652 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
-| 04 | [导演台与白模预演](./04-director-stage.md) | 34 | 10816 |
+| 04 | [导演台与白模预演](./04-director-stage.md) | 34 | 10828 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 67 | 20319 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 20688 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 77 | 14263 |
 | 10 | [UI 组件与面板](./10-ui.md) | 56 | 11878 |
 
@@ -115,6 +115,8 @@
 | `stage_dialogue_coverage` | `stage.dialogueCoverage` |  |  |
 | `stage_add_objects` | `stage.addObjects` |  |  |
 | `stage_from_scene_image` | `stage.fromSceneImage` |  |  |
+| `stage_set_action_track` | `stage.setActionTrack` |  |  |
+| `stage_previs_plan` | `stage.previsPlan` |  |  |
 | `stage_capture` | `stage.capture` | 是 |  |
 | `timeline_get` | `timeline.get` |  | 是 |
 | `timeline_set_video` | `timeline.setVideo` |  |  |
@@ -179,6 +181,7 @@
 - `src/main/agent/__tests__/session.test.ts`
 - `src/main/agent/__tests__/skills-admin.test.ts`
 - `src/main/agent/__tests__/skills-import.test.ts`
+- `src/main/agent/__tests__/stage-previs-tools.test.ts`
 - `src/main/agent/__tests__/tools.test.ts`
 - `src/main/agent/pi/__tests__/events.test.ts`
 - `src/main/agent/pi/__tests__/model-runtime.test.ts`
@@ -269,6 +272,7 @@
 - `src/shared/__tests__/stage-previs-reference.test.ts`
 - `src/shared/__tests__/stage-program.test.ts`
 - `src/shared/__tests__/stage-shot-intent.test.ts`
+- `src/shared/__tests__/stage-snapshot.test.ts`
 - `src/shared/__tests__/stage-timeline.test.ts`
 - `src/shared/__tests__/style-prompt.test.ts`
 - `src/shared/__tests__/style-schema.test.ts`

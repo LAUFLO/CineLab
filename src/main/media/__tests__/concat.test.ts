@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { promises as fs } from 'node:fs'
+import { promises as fs, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegPath from 'ffmpeg-static'
@@ -20,6 +20,17 @@ vi.mock('../../library/config', () => ({
 }))
 
 import { concatVideos } from '../concat'
+
+/** 透明加密环境下外部 ffmpeg 读不到明文 list.txt，跳过真实转码 */
+function hasTransparentEncryption(): boolean {
+  const probe = join(tmpdir(), `cinelab-enc-concat-${process.pid}.txt`)
+  try {
+    writeFileSync(probe, '0123456789')
+    return statSync(probe).size !== 10
+  } finally {
+    rmSync(probe, { force: true })
+  }
+}
 
 const ffmpeg = ffmpegPath ?? ''
 const ffprobe = ffprobeStatic.path
@@ -112,7 +123,7 @@ afterAll(async () => {
   await fs.rm(libraryRoot, { recursive: true, force: true })
 })
 
-describe('concatVideos', () => {
+describe.skipIf(hasTransparentEncryption())('concatVideos', () => {
   it('mixes original audio, bgm and narration with independent volumes', async () => {
     const output = join(libraryRoot, 'mixed.mp4')
     await concatVideos(['a.mp4', 'b.mp4'], output, {

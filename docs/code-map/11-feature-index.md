@@ -73,6 +73,7 @@
 | 整片/每镜导出 | `exportPreview(scope/items)` | `src/main/stage/export.ts` | 已实现 |
 | 每镜关键帧、鸟瞰、镜头表、脚本 | `StageExportItems` | `src/main/stage/export.ts`、`stage-shot-list.ts` | 已实现 |
 | 光照预设 | 10 个氛围预设 | `src/shared/stage-lighting.ts` | 已实现 |
+| 天气粒子 | 雨天/雪天，视口实时 + 导出逐帧 | `src/shared/stage-lighting.ts`、`src/renderer/src/stage/stage-weather.ts` | 已实现 |
 | 人物动作 | 13 关节、17 个动作 | `src/shared/stage-motions.ts`、`stage-figure.ts` | 已实现 |
 | 自动分镜 | 单/双/群、不越轴 | `src/shared/stage-auto-coverage.ts` | 已实现 |
 | 按对白分镜 | 解析台词、按句切镜 | `src/shared/stage-dialogue.ts` | 已实现 |

@@ -20,15 +20,10 @@ import {
   Dialog,
   Menu,
   MenuItem,
-  MenuSeparator,
   NativeSelect,
   Select
 } from '../components/ui'
 import type { GeneratedAsset } from '@shared/generation'
-import type {
-  StageExportItems,
-  StageFrameDensity
-} from '@shared/ipc-contract'
 import type { AssetScope } from '@shared/asset-schema'
 import {
   applyLightingPreset,
@@ -43,15 +38,6 @@ const OBJECT_OPTIONS: Array<{ type: StageObjectType; label: string }> = [
   { type: 'plane', label: '平面' },
   { type: 'gltf', label: '模型' },
   { type: 'crowd', label: '群众' }
-]
-
-const EXPORT_ITEM_OPTIONS: Array<[keyof StageExportItems, string]> = [
-  ['previs', '白模预演'],
-  ['clips', '每镜片段'],
-  ['frames', '分镜图'],
-  ['overview', '场景鸟瞰'],
-  ['shotList', '镜头表'],
-  ['script', '分镜脚本']
 ]
 
 const TRANSFORM_OPTIONS = [
@@ -110,23 +96,8 @@ export function StageWindow() {
   const [capturing, setCapturing] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState(0)
-  const [exportOptionsOpen, setExportOptionsOpen] = useState(false)
-  const [exportItems, setExportItems] = useState<StageExportItems>({
-    previs: true,
-    clips: true,
-    frames: true,
-    overview: true,
-    shotList: true,
-    script: true
-  })
-  const [frameDensity, setFrameDensity] =
-    useState<StageFrameDensity>('three')
   const [addObjectOpen, setAddObjectOpen] = useState(false)
   const [lightingPreset, setLightingPreset] = useState('')
-  const [exportMenuPosition, setExportMenuPosition] = useState({
-    x: 0,
-    y: 0
-  })
   const [generatingScene, setGeneratingScene] = useState(false)
   const [importing, setImporting] = useState(false)
   const [pendingAsset, setPendingAsset] = useState<GeneratedAsset | null>(null)
@@ -316,18 +287,15 @@ export function StageWindow() {
           ? { shotId: state.selectedShotId ?? undefined }
           : {}),
         resolution: '720p',
-        fps: 24,
-        items: exportItems,
-        frameDensity
+        fps: 24
       })
 
-      const clipCount = result.clips?.length ?? 0
       useUIStore
         .getState()
         .showToast(
           result.nodeIds.length > 0
             ? scope === 'program'
-              ? `整片预演已导出${clipCount ? `，含 ${clipCount} 个镜头片段` : ''}`
+              ? '整片预演已导出并添加到画布'
               : '白模预演已导出并添加到画布'
             : '白模预演已导出'
         )
@@ -787,61 +755,6 @@ export function StageWindow() {
               variant="secondary"
               size="none"
               className={TEXT_BUTTON_CLASS}
-              onClick={(event) => {
-                const rect = event.currentTarget.getBoundingClientRect()
-                setExportMenuPosition({
-                  x: rect.right - 224,
-                  y: rect.bottom + 6
-                })
-                setExportOptionsOpen((open) => !open)
-              }}
-              disabled={exporting}
-            >
-              选项
-            </Button>
-            <Menu
-              open={exportOptionsOpen}
-              onClose={() => setExportOptionsOpen(false)}
-              x={exportMenuPosition.x}
-              y={exportMenuPosition.y}
-              width={224}
-            >
-              {EXPORT_ITEM_OPTIONS.map(([key, label]) => (
-                <MenuItem
-                  key={key}
-                  active={exportItems[key]}
-                  trailing={exportItems[key] ? '✓' : undefined}
-                  onSelect={() =>
-                    setExportItems((items) => ({
-                      ...items,
-                      [key]: !items[key]
-                    }))
-                  }
-                >
-                  {label}
-                </MenuItem>
-              ))}
-              <MenuSeparator />
-              <MenuItem
-                active={frameDensity === 'three'}
-                trailing={frameDensity === 'three' ? '✓' : undefined}
-                onSelect={() => setFrameDensity('three')}
-              >
-                三张
-              </MenuItem>
-              <MenuItem
-                active={frameDensity === 'first-only'}
-                trailing={frameDensity === 'first-only' ? '✓' : undefined}
-                onSelect={() => setFrameDensity('first-only')}
-              >
-                仅首帧
-              </MenuItem>
-            </Menu>
-            <Button
-              type="button"
-              variant="secondary"
-              size="none"
-              className={TEXT_BUTTON_CLASS}
               onClick={() => {
                 if (exporting) {
                   const stageId = doc?.stageId
@@ -900,8 +813,8 @@ export function StageWindow() {
           </div>
         </header>
 
-        <aside className="flex min-h-0 flex-col gap-1.5 overflow-x-hidden overflow-y-auto rounded-card border border-border bg-surface p-2 [grid-area:left] max-[720px]:hidden">
-          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+        <aside className="flex min-h-0 flex-col gap-1.5 overflow-hidden rounded-card border border-border bg-surface p-2 [grid-area:left] max-[720px]:hidden">
+          <div className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>对象</span>
               <div className="flex items-center gap-1.5">
@@ -950,7 +863,7 @@ export function StageWindow() {
                 ))}
               </div>
             ) : null}
-            <div className="flex flex-col gap-[3px]">
+            <div className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto pr-1">
               {doc?.objects.length ? (
                 doc.objects.map((object) => (
                   <Button
@@ -986,7 +899,7 @@ export function StageWindow() {
             </div>
           </div>
 
-          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+          <div className="[&+&]:mt-2 flex min-h-0 flex-1 flex-col [&+&]:border-t [&+&]:border-border [&+&]:pt-2">
             <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>机位</span>
               <div className="flex items-center gap-1.5">
@@ -1005,7 +918,7 @@ export function StageWindow() {
                 </Button>
               </div>
             </div>
-            <div className="flex flex-col gap-[3px]">
+            <div className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto pr-1">
               {doc?.cameras.length ? (
                 doc.cameras.map((camera) => (
                   <Button
@@ -1034,14 +947,14 @@ export function StageWindow() {
             </div>
           </div>
 
-          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+          <div className="[&+&]:mt-2 flex min-h-0 flex-1 flex-col [&+&]:border-t [&+&]:border-border [&+&]:pt-2">
             <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>镜头</span>
               <small className="font-normal text-fg-subtle">
                 {doc?.shots.length ?? 0}
               </small>
             </div>
-            <div className="flex flex-col gap-[3px]">
+            <div className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto pr-1">
               {doc?.shots.length ? (
                 doc.shots.map((shot) => (
                   <Button

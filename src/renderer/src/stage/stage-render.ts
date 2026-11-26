@@ -15,6 +15,7 @@ import {
   waitForStageModels
 } from './stage-scene'
 import { createStageGround, type StageGround } from './stage-ground'
+import { createStageWeather, type StageWeather } from './stage-weather'
 import { assetUrl } from '../lib/asset-url'
 
 interface StageRenderInput {
@@ -68,8 +69,14 @@ let programTimeline: ReturnType<typeof buildProgramTimeline> | null = null
 let fps = 24
 let overlayCanvas: HTMLCanvasElement | null = null
 let panoramaMesh: THREE.Mesh | null = null
+let weather: StageWeather | null = null
 
 function disposeCurrent(): void {
+  if (weather) {
+    scene?.remove(weather.object)
+    weather.dispose()
+    weather = null
+  }
   if (!objectsGroup) return
   disposeObject3D(objectsGroup)
   objectsGroup.clear()
@@ -205,6 +212,10 @@ function buildScene(input: StageRenderInput): void {
       child.receiveShadow = true
     }
   })
+  if (lighting.weather && scene) {
+    weather = createStageWeather(lighting.weather)
+    scene.add(weather.object)
+  }
 }
 
 function applyActionPose(target: StageShot, timeMs: number): void {
@@ -260,6 +271,7 @@ function renderShotFrame(
   camera.lookAt(new THREE.Vector3(...sample.target))
   camera.updateProjectionMatrix()
   ground?.setCameraPosition(camera.position)
+  weather?.update(timeMs, camera.position)
   renderer.render(scene, camera)
 }
 

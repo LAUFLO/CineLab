@@ -142,6 +142,8 @@ export interface StageProgram {
 export interface StageLightingOverride {
   background?: string
   exposure?: number
+  /** 天气效果；仅 rain / snow 有粒子实现 */
+  weather?: 'rain' | 'snow'
   ambient?: { color?: string; intensity?: number }
   hemi?: { sky?: string; ground?: string; intensity?: number }
   sun?: {

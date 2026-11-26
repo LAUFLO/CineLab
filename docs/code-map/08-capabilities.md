@@ -33,8 +33,9 @@
 | 04 | 整片时间线与镜头重叠/优先级 | `src/shared/stage-program.ts`、`stage-program.test.ts` |
 | 04 | 整片播放与整片导出 | `stageStore`、`src/main/stage/export.ts` |
 | 04 | 每镜白模片段 | `StageExportItems.clips`、`export.ts` |
-| 04 | 每镜关键帧、鸟瞰、镜头表、分镜脚本 | `src/shared/stage-shot-list.ts`、`export.ts` |
+| 04 | 每镜片段/分镜图/鸟瞰/镜头表/脚本（Agent 显式 `items` 可用，UI 不暴露） | `src/shared/stage-shot-list.ts`、`export.ts` |
 | 04 | 10 个光照预设 | `src/shared/stage-lighting.ts`、`StageWindow` |
+| 04 | 雨天/雪天粒子效果（视口实时 + 导出逐帧） | `src/shared/stage-lighting.ts`、`src/renderer/src/stage/stage-weather.ts` |
 | 04 | 13 关节骨架 + 17 个动作 | `src/shared/stage-motions.ts`、`stage-figure.ts` |
 | 04 | 自动分镜与按对白分镜 | `stage-auto-coverage.ts`、`stage-dialogue.ts` |
 | 04 | 单镜预演导出与截图回画布 | `src/main/stage/export.ts`、`StageWindow.tsx` |

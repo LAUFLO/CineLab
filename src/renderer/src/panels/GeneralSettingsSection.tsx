@@ -10,6 +10,7 @@ import {
   REQUEST_TIMEOUTS,
   UI_SCALES,
   type CapabilityGroup,
+  type CloseAction,
   type Preferences
 } from '@shared/preferences'
 import { Input, Select, SettingRow, Switch, Button } from '../components/ui'
@@ -125,6 +126,14 @@ export function GeneralSettingsSection({
 
     return groups
   }, [providers])
+
+  const closeActionOptions: Array<{
+    value: Preferences['project']['closeDefaultAction']
+    label: string
+  }> = [
+    { value: 'background', label: '后台运行' },
+    { value: 'quit', label: '退出程序' }
+  ]
 
   const autoSaveOptions = AUTO_SAVE_DELAYS.map((value) => ({
     value: String(value),
@@ -262,7 +271,7 @@ export function GeneralSettingsSection({
 
         <SettingRow
           title="关闭前确认"
-          hint="有未保存修改时先提示，并在退出前保存"
+          hint="每次关闭时弹出确认；选择「后台运行」可不再提示"
         >
           <Switch
             checked={preferences.project.confirmBeforeClose}
@@ -270,6 +279,32 @@ export function GeneralSettingsSection({
               void updateProject({ confirmBeforeClose: next })
             }
           />
+        </SettingRow>
+
+        <SettingRow title="关闭时默认动作" hint="确认框默认高亮的操作">
+          <Select
+            value={preferences.project.closeDefaultAction}
+            options={closeActionOptions}
+            onChange={(next) =>
+              void updateProject({ closeDefaultAction: next as CloseAction })
+            }
+          />
+        </SettingRow>
+
+        <SettingRow
+          title="重置关闭确认偏好"
+          hint="清除「不再提示」记忆，恢复每次关闭都确认"
+        >
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              void updateProject({ closeRememberBackground: false })
+            }
+          >
+            重置
+          </Button>
         </SettingRow>
 
         <SettingRow title="默认项目目录" hint="新建项目时的默认位置">

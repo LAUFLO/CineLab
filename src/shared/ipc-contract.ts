@@ -730,6 +730,11 @@ export interface CineApi {
     minimize(): void
     maximize(): void
     close(): void
+    hideToTray(): void
+    restoreWindow(): void
+    quit(): void
+    requestQuit(): void
+    onQuitRequested(callback: () => void): () => void
   }
   project: ProjectApi
   workflow: WorkflowApi

@@ -1,4 +1,11 @@
-import { lazy, Suspense, useEffect, type ReactNode } from 'react'
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+  type ReactNode
+} from 'react'
 import { BottomBar } from './canvas/BottomBar'
 import { Canvas } from './canvas/Canvas'
 import { StatusBar } from './canvas/StatusBar'
@@ -10,6 +17,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { Toast } from './components/Toast'
 import { WindowControls } from './components/WindowControls'
 import { ConfirmDialog } from './panels/ConfirmDialog'
+import { CloseConfirmDialog } from './components/CloseConfirmDialog'
 import { LibraryPanel } from './panels/LibraryPanel'
 import { ToolbarSettings } from './canvas/nodes/ToolbarSettings'
 import { ProjectCenter } from './panels/ProjectCenter'
@@ -84,9 +92,10 @@ export default function App() {
   const historyLimit = usePreferencesStore(
     (state) => state.preferences.generation.historyLimit
   )
-  const confirmBeforeClose = usePreferencesStore(
-    (state) => state.preferences.project.confirmBeforeClose
+  const closeDefaultAction = usePreferencesStore(
+    (state) => state.preferences.project.closeDefaultAction
   )
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false)
 
   useEffect(() => {
     void loadPreferences()
@@ -96,36 +105,49 @@ export default function App() {
     useGenerationHistoryStore.getState().trim()
   }, [historyLimit])
 
+  const performClose = useCallback(
+    async (action: 'background' | 'quit', remember: boolean): Promise<void> => {
+      cancelAllTrackedStemTasks()
+      try {
+        await useProjectStore.getState().saveNow()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        useUIStore
+          .getState()
+          .showToast(`保存失败，已取消关闭：${message}`, 'error')
+        return
+      }
+      if (remember) {
+        await usePreferencesStore
+          .getState()
+          .updateProject({ closeRememberBackground: true })
+      }
+      if (action === 'background') window.api.app.hideToTray()
+      else window.api.app.quit()
+    },
+    []
+  )
+
   useEffect(() => {
-    return window.api.app.onCloseRequested(() => {
-      const project = useProjectStore.getState()
-      const dirty = project.dirty || project.saving
-      const close = (): void => {
-        cancelAllTrackedStemTasks()
-        window.api.app.confirmClose()
-      }
-
-      if (!dirty) {
-        close()
+    const handleClose = (): void => {
+      const settings = usePreferencesStore.getState().preferences.project
+      if (settings.closeRememberBackground) {
+        void performClose('background', false)
         return
       }
-
-      if (!confirmBeforeClose) {
-        void project.saveNow().finally(close)
+      if (!settings.confirmBeforeClose) {
+        void performClose(settings.closeDefaultAction, false)
         return
       }
-
-      useUIStore.getState().requestConfirm({
-        title: '退出 CineLab',
-        message: '当前项目还有未保存的修改，退出前会自动保存。',
-        confirmLabel: '保存并退出',
-        onConfirm: async () => {
-          await useProjectStore.getState().saveNow()
-          close()
-        }
-      })
-    })
-  }, [confirmBeforeClose])
+      setCloseDialogOpen(true)
+    }
+    const offClose = window.api.app.onCloseRequested(handleClose)
+    const offQuit = window.api.app.onQuitRequested(() => setCloseDialogOpen(true))
+    return () => {
+      offClose()
+      offQuit()
+    }
+  }, [performClose])
 
   useEffect(() => {
     void bootstrap()
@@ -265,6 +287,19 @@ export default function App() {
       )}
       <SettingsPanel />
       <ConfirmDialog />
+      <CloseConfirmDialog
+        open={closeDialogOpen}
+        defaultAction={closeDefaultAction}
+        onBackground={(remember) => {
+          setCloseDialogOpen(false)
+          void performClose('background', remember)
+        }}
+        onQuit={() => {
+          setCloseDialogOpen(false)
+          void performClose('quit', false)
+        }}
+        onCancel={() => setCloseDialogOpen(false)}
+      />
       <WorkflowSaveDialog />
       {studioOpen ? (
         <Suspense fallback={null}>

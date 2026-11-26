@@ -68,7 +68,16 @@ const api: CineApi = {
       ipcRenderer.send('app:notify', title, body),
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),
-    close: () => ipcRenderer.send('window:close')
+    close: () => ipcRenderer.send('window:close'),
+    hideToTray: () => ipcRenderer.send('app:hide-to-tray'),
+    restoreWindow: () => ipcRenderer.send('app:restore-window'),
+    quit: () => ipcRenderer.send('app:quit'),
+    requestQuit: () => ipcRenderer.send('app:request-quit'),
+    onQuitRequested: (callback: () => void) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('app:quit-requested', listener)
+      return () => ipcRenderer.removeListener('app:quit-requested', listener)
+    }
   },
   project: {
     bootstrap: () => ipcRenderer.invoke('project:bootstrap'),

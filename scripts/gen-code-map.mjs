@@ -158,6 +158,7 @@ const MODULES = [
       'src/main/components',
       'src/main/types',
       'src/main/workflows',
+      'src/main/tray',
       'src/preload'
     ],
     files: [
@@ -195,7 +196,8 @@ const MODULES = [
       'src/renderer/src/styles',
       'src/renderer/src/theme',
       'src/renderer/src/lib',
-      'src/renderer/src/shortcuts'
+      'src/renderer/src/shortcuts',
+      'src/renderer/src/tray'
     ],
     files: [
       'src/renderer/src/App.tsx',

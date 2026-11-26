@@ -45,6 +45,8 @@ describe('normalizePreferences', () => {
       project: {
         autoSaveDelay: 3000,
         confirmBeforeClose: false,
+        closeDefaultAction: 'quit',
+        closeRememberBackground: true,
         defaultDir: 'D:/Projects'
       },
       canvas: {
@@ -85,6 +87,17 @@ describe('normalizePreferences', () => {
     expect(preferences.project.autoSaveDelay).toBe(3000)
     expect(preferences.project.confirmBeforeClose).toBe(false)
     expect(preferences.project.defaultDir).toBe('D:/Projects')
+    expect(preferences.project.closeDefaultAction).toBe('quit')
+    expect(preferences.project.closeRememberBackground).toBe(true)
+
+    const invalid = normalizePreferences({
+      project: {
+        closeDefaultAction: 'unknown',
+        closeRememberBackground: 'yes'
+      }
+    })
+    expect(invalid.project.closeDefaultAction).toBe('background')
+    expect(invalid.project.closeRememberBackground).toBe(false)
     expect(preferences.canvas).toEqual({
       snapToGrid: true,
       minimapVisible: true,

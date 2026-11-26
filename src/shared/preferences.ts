@@ -8,6 +8,7 @@ export type CapabilityGroup = 'image' | 'video' | 'text' | 'audio'
 export type CanvasScrollMode = 'pan' | 'zoom'
 export type CanvasGridStyle = 'dots' | 'lines' | 'none'
 export type ProxyMode = 'direct' | 'system' | 'manual'
+export type CloseAction = 'background' | 'quit'
 
 export interface Preferences {
   version: 1
@@ -18,8 +19,12 @@ export interface Preferences {
   project: {
     /** 自动保存防抖间隔（毫秒） */
     autoSaveDelay: number
-    /** 关闭窗口时若有未保存修改则确认 */
+    /** 每次关闭窗口时弹出确认（含后台运行/退出） */
     confirmBeforeClose: boolean
+    /** 关闭确认框默认高亮的动作 */
+    closeDefaultAction: CloseAction
+    /** 已记住「后台运行」并不再提示 */
+    closeRememberBackground: boolean
     /** 新项目默认目录；空字符串使用「文档/CineLab」 */
     defaultDir: string
   }
@@ -87,6 +92,7 @@ export interface Preferences {
 export const PREFERENCES_VERSION = 1
 
 export const AUTO_SAVE_DELAYS = [300, 600, 1000, 3000] as const
+export const CLOSE_ACTIONS = ['background', 'quit'] as const
 export const GENERATION_CONCURRENCY = [1, 2, 3, 4, 6, 8] as const
 export const HISTORY_LIMITS = [0, 20, 50, 100] as const
 export const AUTO_RETRY_COUNTS = [0, 1, 2] as const
@@ -102,6 +108,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   project: {
     autoSaveDelay: 600,
     confirmBeforeClose: true,
+    closeDefaultAction: 'background',
+    closeRememberBackground: false,
     defaultDir: ''
   },
   canvas: {
@@ -249,6 +257,15 @@ export function normalizePreferences(input: unknown): Preferences {
       confirmBeforeClose: readBoolean(
         project.confirmBeforeClose,
         DEFAULT_PREFERENCES.project.confirmBeforeClose
+      ),
+      closeDefaultAction: readEnum(
+        project.closeDefaultAction,
+        CLOSE_ACTIONS,
+        DEFAULT_PREFERENCES.project.closeDefaultAction
+      ),
+      closeRememberBackground: readBoolean(
+        project.closeRememberBackground,
+        DEFAULT_PREFERENCES.project.closeRememberBackground
       ),
       defaultDir: readString(
         project.defaultDir,

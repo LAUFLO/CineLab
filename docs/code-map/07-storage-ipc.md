@@ -70,6 +70,7 @@ IPC 模块（`main/ipc/`）：`app`、`project`、`settings`、`generate`、`lib
 - `security/external-url.ts`：白名单外部链接；
 - `security/navigation.ts`：限制窗口导航；
 - `window.ts`：窗口创建、关闭控制、错误日志；
+- `main/tray/`：系统托盘（复用品牌 logo）、隐藏主窗口到后台、自绘右键菜单窗口；退出复用 `app.quit()` 与现有 `before-quit` 清理链；
 - 渲染进程禁用 Node，所有文件/网络走主进程。
 
 ## 更新与组件
@@ -131,14 +132,14 @@ Renderer
 | `src/main/components/zip-extract.ts` | 158 |
 | `src/main/export/project-export.ts` | 135 |
 | `src/main/export/zip.ts` | 159 |
-| `src/main/index.ts` | 208 |
+| `src/main/index.ts` | 217 |
 | `src/main/ipc/agent.ts` | 464 |
 | `src/main/ipc/clipboard.ts` | 39 |
 | `src/main/ipc/components.ts` | 43 |
 | `src/main/ipc/export.ts` | 310 |
 | `src/main/ipc/film-study.ts` | 244 |
 | `src/main/ipc/generate.ts` | 73 |
-| `src/main/ipc/index.ts` | 132 |
+| `src/main/ipc/index.ts` | 162 |
 | `src/main/ipc/library.ts` | 279 |
 | `src/main/ipc/local-adapters.ts` | 22 |
 | `src/main/ipc/mcp.ts` | 41 |
@@ -162,7 +163,7 @@ Renderer
 | `src/main/library/thumbs.ts` | 71 |
 | `src/main/library/workflows.ts` | 334 |
 | `src/main/logger.ts` | 34 |
-| `src/main/menu.ts` | 49 |
+| `src/main/menu.ts` | 62 |
 | `src/main/project/manager.ts` | 461 |
 | `src/main/protocol.ts` | 164 |
 | `src/main/security/external-url.ts` | 14 |
@@ -174,6 +175,7 @@ Renderer
 | `src/main/settings/models-watch.ts` | 94 |
 | `src/main/settings/preferences.ts` | 74 |
 | `src/main/settings/store.ts` | 635 |
+| `src/main/tray/index.ts` | 96 |
 | `src/main/types/ffprobe-static.d.ts` | 11 |
 | `src/main/update/fallback.ts` | 147 |
 | `src/main/update/service.ts` | 263 |
@@ -182,7 +184,7 @@ Renderer
 | `src/main/workflows/instantiate.ts` | 214 |
 | `src/main/workflows/thumbnail.ts` | 137 |
 | `src/preload/index.d.ts` | 10 |
-| `src/preload/index.ts` | 637 |
+| `src/preload/index.ts` | 646 |
 | `src/renderer/src/stores/depth-tasks.ts` | 70 |
 | `src/renderer/src/stores/library.ts` | 441 |
 | `src/renderer/src/stores/preferences.ts` | 296 |
@@ -190,11 +192,11 @@ Renderer
 | `src/renderer/src/stores/settings.ts` | 65 |
 | `src/renderer/src/stores/update.ts` | 41 |
 | `src/shared/asset-schema.ts` | 16 |
-| `src/shared/ipc-contract.ts` | 753 |
+| `src/shared/ipc-contract.ts` | 758 |
 | `src/shared/library-migration.ts` | 17 |
 | `src/shared/library-schema.ts` | 99 |
 | `src/shared/models-file.ts` | 66 |
-| `src/shared/preferences.ts` | 373 |
+| `src/shared/preferences.ts` | 390 |
 | `src/shared/project-schema.ts` | 456 |
 | `src/shared/project-templates.ts` | 32 |
 | `src/shared/template-vars.ts` | 66 |
@@ -254,6 +256,7 @@ Renderer
 | `src/main/settings/models-watch.ts` | `startModelsWatcher`、`stopModelsWatcher` |
 | `src/main/settings/preferences.ts` | `getPreferences`、`savePreferences`、`resetPreferences` |
 | `src/main/settings/store.ts` | `ensureMigrated`、`listProviders`、`ResolvedProvider`、`resolveProvider`、`saveProvider`、`deleteProvider`、`getOperationBindings`、`saveOperationBindings`、`testConnection`、`fetchModels` |
+| `src/main/tray/index.ts` | `restoreMainWindow`、`installTray`、`destroyTray` |
 | `src/main/update/fallback.ts` | `RELEASES_URL`、`REPOSITORY_URL`、`PROBE_URL`、`MIRROR_TIMEOUT`、`DEFAULT_MIRRORS`、`PendingInstaller`、`UpdateFileLike`、`UpdateInfoLike`、`mirrorPrefixes`、`installerFor`、`hostOf`、`releasesFallback`、`installerFallback`、`probeMirror`、`resolveInstallerFallback` |
 | `src/main/update/service.ts` | `getUpdateStatus`、`checkForUpdates`、`downloadUpdate`、`installUpdate`、`openFallbackDownload`、`initUpdateService`、`shutdownUpdateService` |
 | `src/main/window.ts` | `brandIconPath`、`allowWindowClose`、`allowAllWindowClose`、`createMainWindow` |
@@ -271,7 +274,7 @@ Renderer
 | `src/shared/library-migration.ts` | `LibraryMigrateProgress`、`LibraryMigrateResult` |
 | `src/shared/library-schema.ts` | `LibraryAssetKind`、`LibraryAsset`、`LibraryFolderNode`、`LibraryRootInfo`、`ThumbCacheInfo`、`SaveAssetInput`、`AddToLibraryInput`、`CharacterCard`、`PromptTemplate`、`TemplateInput`、`DEFAULT_LIBRARY_FOLDERS`、`CHARACTER_FOLDER`、`PROMPT_FOLDER`、`TEMPLATE_EXT` |
 | `src/shared/models-file.ts` | `ModelsFileModel`、`ModelsFileProvider`、`ModelsFile`、`ModelsConfigStatus` |
-| `src/shared/preferences.ts` | `CapabilityGroup`、`CanvasScrollMode`、`CanvasGridStyle`、`ProxyMode`、`Preferences`、`PREFERENCES_VERSION`、`AUTO_SAVE_DELAYS`、`GENERATION_CONCURRENCY`、`HISTORY_LIMITS`、`AUTO_RETRY_COUNTS`、`UI_SCALES`、`CACHE_CLEAN_DAYS`、`REQUEST_TIMEOUTS`、`DEFAULT_PREFERENCES`、`normalizePreferences` |
+| `src/shared/preferences.ts` | `CapabilityGroup`、`CanvasScrollMode`、`CanvasGridStyle`、`ProxyMode`、`CloseAction`、`Preferences`、`PREFERENCES_VERSION`、`AUTO_SAVE_DELAYS`、`CLOSE_ACTIONS`、`GENERATION_CONCURRENCY`、`HISTORY_LIMITS`、`AUTO_RETRY_COUNTS`、`UI_SCALES`、`CACHE_CLEAN_DAYS`、`REQUEST_TIMEOUTS`、`DEFAULT_PREFERENCES`、`normalizePreferences` |
 | `src/shared/project-schema.ts` | `nodeKindSchema`、`outputRefSchema`、`nodeStatusSchema`、`groupColorSchema`、`styleCardSchema`、`cineNodeSchema`、`studioNodeSchema`、`stageNodeSchema`、`filmNodeSchema`、`videoOpNodeSchema`、`groupNodeSchema`、`canvasNodeSchema`、`cineEdgeSchema`、`canvasDataSchema`、`projectMetaSchema`、`ProjectMeta`、`CanvasData`、`PersistedCineNode`、`PersistedStudioNode`、`PersistedStageNode`、`PersistedFilmNode`、`PersistedNode`、`PersistedEdge`、`ProjectSnapshot` …（共 25 个） |
 | `src/shared/project-templates.ts` | `ProjectTemplateId`、`ProjectTemplate`、`PROJECT_TEMPLATES`、`buildTemplateCanvas` |
 | `src/shared/template-vars.ts` | `TemplateTokenResolver`、`replaceTemplateVariables`、`createTemplateResolver` |

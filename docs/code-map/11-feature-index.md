@@ -114,6 +114,7 @@
 | 安全/更新/组件 | 外部链接、导航、更新、运行时组件 | `src/main/security/`、`update/`、`components/` | 已实现 |
 | UI 组件库 | Button/Select/Menu/Popover/Dialog 等 | `src/renderer/src/components/ui/` | 已实现 |
 | 主题 | `tokens.css` | `src/renderer/src/styles/tokens.css` | 已实现 |
+| 关闭确认与后台运行 | 每次关闭弹「后台运行/退出程序」，自动保存且失败拦截；「不再提示」仅记忆后台运行；托盘 logo + 自绘右键菜单（显示主窗口/退出） | `src/main/tray/`、`App.tsx`、`CloseConfirmDialog.tsx`、`TrayMenuWindow.tsx`、`GeneralSettingsSection.tsx` | 已实现 |
 
 ## 维护规则
 

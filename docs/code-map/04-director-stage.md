@@ -152,28 +152,28 @@ StageWindow → scene.analyze
 | 文件 | 行数 |
 |---|---|
 | `src/main/scene/analyze.ts` | 158 |
-| `src/main/scene/object-presets.ts` | 71 |
 | `src/main/stage/export.ts` | 816 |
 | `src/main/stage/storage.ts` | 150 |
 | `src/renderer/src/stage/ShotInspector.tsx` | 292 |
-| `src/renderer/src/stage/StageInspector.tsx` | 414 |
-| `src/renderer/src/stage/StageTimeline.tsx` | 730 |
-| `src/renderer/src/stage/StageViewport.tsx` | 670 |
-| `src/renderer/src/stage/StageWindow.tsx` | 953 |
+| `src/renderer/src/stage/StageInspector.tsx` | 423 |
+| `src/renderer/src/stage/StageTimeline.tsx` | 815 |
+| `src/renderer/src/stage/StageViewport.tsx` | 702 |
+| `src/renderer/src/stage/StageWindow.tsx` | 1157 |
 | `src/renderer/src/stage/preview-runner.ts` | 202 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |
 | `src/renderer/src/stage/stage-from-scene.ts` | 92 |
 | `src/renderer/src/stage/stage-ground.ts` | 88 |
-| `src/renderer/src/stage/stage-render.ts` | 370 |
+| `src/renderer/src/stage/stage-render.ts` | 400 |
 | `src/renderer/src/stage/stage-scene.ts` | 91 |
-| `src/renderer/src/stage/stageStore.ts` | 814 |
+| `src/renderer/src/stage/stageStore.ts` | 822 |
 | `src/shared/scene-analyze.ts` | 20 |
 | `src/shared/scene-calibrate.ts` | 71 |
 | `src/shared/scene-draft.ts` | 126 |
-| `src/shared/scene-object-presets.ts` | 162 |
+| `src/shared/scene-object-presets.ts` | 106 |
 | `src/shared/stage-auto-coverage.ts` | 205 |
-| `src/shared/stage-commands.ts` | 975 |
+| `src/shared/stage-camera-moves.ts` | 85 |
+| `src/shared/stage-commands.ts` | 1012 |
 | `src/shared/stage-dialogue.ts` | 142 |
 | `src/shared/stage-lighting.ts` | 227 |
 | `src/shared/stage-motions.ts` | 444 |
@@ -189,7 +189,6 @@ StageWindow → scene.analyze
 | 文件 | 导出 |
 |---|---|
 | `src/main/scene/analyze.ts` | `analyzeScene` |
-| `src/main/scene/object-presets.ts` | `loadUserObjectPresets`、`saveUserObjectPresets`、`importUserObjectPresets`、`exportUserObjectPresets` |
 | `src/main/stage/export.ts` | `exportStagePreview`、`exportStageProgram` |
 | `src/main/stage/storage.ts` | `assertStageId`、`stageDirectory`、`ensureStageDir`、`createStageFile`、`loadStageFile`、`saveStageFile`、`duplicateStageFile`、`deleteStageFile` |
 | `src/renderer/src/stage/ShotInspector.tsx` | `ShotInspector` |
@@ -207,8 +206,9 @@ StageWindow → scene.analyze
 | `src/shared/scene-analyze.ts` | `SceneAnalyzeInput`、`SceneAnalyzeResult` |
 | `src/shared/scene-calibrate.ts` | `DepthStats`、`CalibratedScene`、`calibrateScene` |
 | `src/shared/scene-draft.ts` | `SceneSetKind`、`SceneSizeClass`、`SceneDepthLayer`、`SceneFacing`、`SceneHeightHint`、`ScenePitchHint`、`SceneDraftObject`、`SceneDraftRoom`、`SceneDraftCamera`、`SceneDraft`、`SCENE_MAX_OBJECTS`、`parseSceneDraft` |
-| `src/shared/scene-object-presets.ts` | `SceneObjectShape`、`SceneObjectPreset`、`builtinObjectPresets`、`normalizeObjectPreset`、`mergeObjectPresets`、`findObjectPreset`、`FALLBACK_OBJECT_PRESET` |
+| `src/shared/scene-object-presets.ts` | `SceneObjectShape`、`SceneObjectPreset`、`builtinObjectPresets`、`findObjectPreset`、`FALLBACK_OBJECT_PRESET` |
 | `src/shared/stage-auto-coverage.ts` | `AutoCoverageMode`、`AutoCoverageOptions`、`AutoCoveragePlan`、`buildAutoCoverage` |
+| `src/shared/stage-camera-moves.ts` | `CameraMovePreset`、`CAMERA_MOVE_PRESETS`、`buildCameraMoveTrack`、`describeCameraMove` |
 | `src/shared/stage-commands.ts` | `StageCommand`、`StageEffect`、`StageChange`、`StageCommandResult`、`StageApplyResult`、`emptyStageChange`、`applyStageCommand`、`applyStageCommands`、`StageHistoryState`、`STAGE_HISTORY_LIMIT`、`createStageHistory`、`pushStageHistory`、`undoStageHistory`、`redoStageHistory` |
 | `src/shared/stage-dialogue.ts` | `DialogueLine`、`parseDialogue`、`buildDialogueCoverage` |
 | `src/shared/stage-lighting.ts` | `StageTimeOfDay`、`StageLighting`、`StageLightingPreset`、`resolveStageLighting`、`STAGE_LIGHTING_PRESETS`、`applyLightingPreset` |

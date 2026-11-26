@@ -8,11 +8,12 @@ interface PanoramaViewerProps {
   open: boolean
   src: string
   onClose: () => void
+  onUseInStage?: () => void
 }
 
 const SPHERE_RADIUS = 500
 
-export function PanoramaViewer({ open, src, onClose }: PanoramaViewerProps) {
+export function PanoramaViewer({ open, src, onClose, onUseInStage }: PanoramaViewerProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -167,16 +168,29 @@ export function PanoramaViewer({ open, src, onClose }: PanoramaViewerProps) {
         <div className="text-[13px] tracking-[0.04em] text-white/80">
           720 度全景预览
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="none"
-          className="pointer-events-auto h-[34px] w-[34px] !rounded-md border border-white/20 !bg-black/45 !text-white hover:!bg-black/70 hover:!text-white"
-          title="退出全景"
-          onClick={onClose}
-        >
-          <Icon name="close" size={16} />
-        </Button>
+        <div className="pointer-events-auto flex items-center gap-2">
+          {onUseInStage ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="none"
+              className="!h-[34px] !rounded-md !border !border-white/24 !bg-black/55 !px-3.5 !text-xs !font-normal !text-white hover:!bg-black/70 hover:!text-white"
+              onClick={onUseInStage}
+            >
+              在导演台中使用
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            size="none"
+            className="h-[34px] w-[34px] !rounded-md border border-white/20 !bg-black/45 !text-white hover:!bg-black/70 hover:!text-white"
+            title="退出全景"
+            onClick={onClose}
+          >
+            <Icon name="close" size={16} />
+          </Button>
+        </div>
       </div>
 
       {loading ? (

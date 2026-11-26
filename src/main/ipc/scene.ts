@@ -10,12 +10,6 @@ import type { SceneAnalyzeInput } from '@shared/scene-analyze'
 import { getCurrentProjectRoot } from '../project/manager'
 import { analyzeScene } from '../scene/analyze'
 import { ingestAsset } from '../assets/ingest'
-import {
-  exportUserObjectPresets,
-  importUserObjectPresets,
-  loadUserObjectPresets,
-  saveUserObjectPresets
-} from '../scene/object-presets'
 
 export function registerSceneIpc(): void {
   ipcMain.handle(
@@ -115,16 +109,4 @@ export function registerSceneIpc(): void {
     }
   )
 
-  ipcMain.handle('scene:get-object-presets', () =>
-    loadUserObjectPresets()
-  )
-  ipcMain.handle('scene:save-object-presets', (_event, presets: unknown) =>
-    saveUserObjectPresets(presets)
-  )
-  ipcMain.handle('scene:import-object-presets', () =>
-    importUserObjectPresets()
-  )
-  ipcMain.handle('scene:export-object-presets', () =>
-    exportUserObjectPresets()
-  )
 }

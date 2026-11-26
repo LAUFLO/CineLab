@@ -52,6 +52,7 @@
 | [promptbar-popover-plan.md](promptbar-popover-plan.md) | PromptBar 浮窗与胶囊改造：确认框层级、居中浮窗、卡片网格与预览、绿色预设胶囊、节点自动就位，已实施 |
 | [workflow-plan.md](workflow-plan.md) | 工作流模板：保存用户画布流程、占位节点、导演台打包、拉片/剪辑占位、导入导出与 Agent 工具，方案确定 |
 | [close-background-plan.md](close-background-plan.md) | 关闭确认（后台运行/退出）与系统托盘自绘菜单，已实施 |
+| [stage-previs-redesign-plan.md](stage-previs-redesign-plan.md) | 导演台 3D 白模预演改进：全景背景、摆位打组、运镜时间轴、GLB、生成闭环与对话式智能预演，方案已确认 |
 
 ## 3. 代码地图
 

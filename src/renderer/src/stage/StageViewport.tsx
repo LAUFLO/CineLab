@@ -14,6 +14,7 @@ import {
 } from './stage-scene'
 import { createStageGround, type StageGround } from './stage-ground'
 import { useStageStore } from './stageStore'
+import { assetUrl } from '../lib/asset-url'
 
 const DEFAULT_BACKGROUND = '#1a1a1a'
 const SELECTED_COLOR = '#4ade80'
@@ -85,6 +86,7 @@ export function StageViewport() {
   const groundRef = useRef<StageGround | null>(null)
   const cameraGroupRef = useRef<THREE.Group | null>(null)
   const selectionRef = useRef<THREE.BoxHelper | null>(null)
+  const panoramaRef = useRef<THREE.Mesh | null>(null)
   const aspectRef = useRef(FALLBACK_ASPECT)
   const viewModeRef = useRef(viewMode)
   const selectedCameraRef = useRef<string | null>(selectedCameraId)
@@ -440,12 +442,42 @@ export function StageViewport() {
     if (!scene || !objectsGroup || !cameraGroup || !doc) return
 
     const lighting = resolveStageLighting(doc)
+    const isPanorama = doc.background.kind === 'panorama' && Boolean(doc.background.value.trim())
     const background =
       doc.background.kind === 'color' && doc.background.value
         ? doc.background.value
         : lighting.background
-    scene.background = new THREE.Color(background)
+    scene.background = isPanorama ? null : new THREE.Color(background)
     groundRef.current?.setBackground(background)
+
+    if (panoramaRef.current) {
+      scene.remove(panoramaRef.current)
+      const old = panoramaRef.current
+      old.geometry.dispose()
+      const mat = old.material as THREE.MeshBasicMaterial
+      if (mat.map) mat.map.dispose()
+      mat.dispose()
+      panoramaRef.current = null
+    }
+    if (isPanorama) {
+      const geometry = new THREE.SphereGeometry(500, 64, 40)
+      const material = new THREE.MeshBasicMaterial({ side: THREE.BackSide })
+      const mesh = new THREE.Mesh(geometry, material)
+      new THREE.TextureLoader().load(
+        assetUrl(doc.background.value, 'project'),
+        (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace
+          texture.minFilter = THREE.LinearFilter
+          texture.generateMipmaps = false
+          material.map = texture
+          material.needsUpdate = true
+        },
+        undefined,
+        () => undefined
+      )
+      scene.add(mesh)
+      panoramaRef.current = mesh
+    }
 
     disposeObject(objectsGroup)
     objectsGroup.clear()
@@ -660,7 +692,7 @@ export function StageViewport() {
     if (rendererRef.current) {
       rendererRef.current.toneMappingExposure = lighting.exposure
     }
-    if (sceneRef.current) {
+    if (sceneRef.current && !panoramaRef.current) {
       sceneRef.current.background = new THREE.Color(lighting.background)
     }
   }, [doc])

@@ -11,6 +11,7 @@ import { applyStageFigurePose } from './stage-figure'
 import { isStagePoseName } from '@shared/stage-motions'
 import { createStageObject, disposeObject3D } from './stage-scene'
 import { createStageGround, type StageGround } from './stage-ground'
+import { assetUrl } from '../lib/asset-url'
 
 interface StageRenderInput {
   doc: DirectorStageDoc
@@ -62,6 +63,7 @@ let ground: StageGround | null = null
 let programTimeline: ReturnType<typeof buildProgramTimeline> | null = null
 let fps = 24
 let overlayCanvas: HTMLCanvasElement | null = null
+let panoramaMesh: THREE.Mesh | null = null
 
 function disposeCurrent(): void {
   if (!objectsGroup) return
@@ -151,12 +153,40 @@ function buildScene(input: StageRenderInput): void {
   if (!scene || !objectsGroup) return
   const lighting = resolveStageLighting(doc)
   renderer.toneMappingExposure = lighting.exposure
+  const isPanorama = doc.background.kind === 'panorama' && Boolean(doc.background.value.trim())
   const background =
     doc.background.kind === 'color' && doc.background.value
       ? doc.background.value
       : lighting.background
-  scene.background = new THREE.Color(background)
+  scene.background = isPanorama ? null : new THREE.Color(background)
   ground?.setBackground(background)
+
+  if (panoramaMesh) {
+    scene.remove(panoramaMesh)
+    panoramaMesh.geometry.dispose()
+    const mat = panoramaMesh.material
+    if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
+    else mat.dispose()
+    panoramaMesh = null
+  }
+  if (isPanorama) {
+    const geometry = new THREE.SphereGeometry(500, 64, 40)
+    const material = new THREE.MeshBasicMaterial({ side: THREE.BackSide })
+    panoramaMesh = new THREE.Mesh(geometry, material)
+    new THREE.TextureLoader().load(
+      assetUrl(doc.background.value, 'project'),
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace
+        texture.minFilter = THREE.LinearFilter
+        texture.generateMipmaps = false
+        material.map = texture
+        material.needsUpdate = true
+      },
+      undefined,
+      () => undefined
+    )
+    scene.add(panoramaMesh)
+  }
   scene.fog = lighting.fog
     ? new THREE.Fog(lighting.fog.color, lighting.fog.near, lighting.fog.far)
     : null

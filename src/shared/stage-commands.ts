@@ -31,6 +31,8 @@ export type StageCommand =
   | { type: 'setPose'; objectId: string; pose: string }
   | { type: 'setColor'; objectId: string; color: string }
   | { type: 'setVisible'; objectId: string; visible: boolean }
+  | { type: 'setName'; objectId: string; name: string }
+  | { type: 'setParent'; objectId: string; parentId: string | null }
   | { type: 'addCamera'; camera: StageCamera }
   | {
       type: 'updateCamera'
@@ -488,6 +490,41 @@ export function applyStageCommand(
           ? { ...object, visible: command.visible }
           : object
       )
+      change.updatedObjectIds.push(target.id)
+      break
+    }
+
+    case 'setName': {
+      const target = findObject(doc, command.objectId)
+      if (!target) return fail(doc, '对象不存在')
+      if (!isName(command.name, 60)) return fail(doc, '名称无效')
+      next.objects = doc.objects.map((object) =>
+        object.id === target.id ? { ...object, name: command.name } : object
+      )
+      change.updatedObjectIds.push(target.id)
+      break
+    }
+
+    case 'setParent': {
+      const target = findObject(doc, command.objectId)
+      if (!target) return fail(doc, '对象不存在')
+      if (command.parentId === null) {
+        next.objects = doc.objects.map((object) =>
+          object.id === target.id ? { ...object, parentId: undefined } : object
+        )
+      } else {
+        const parent = findObject(doc, command.parentId)
+        if (!parent || parent.id === target.id) return fail(doc, '父对象不存在')
+        let cursor: string | null = parent.id
+        while (cursor) {
+          if (cursor === target.id) return fail(doc, '不能把对象设为自己的子级')
+          const current = findObject(doc, cursor)
+          cursor = current?.parentId ?? null
+        }
+        next.objects = doc.objects.map((object) =>
+          object.id === target.id ? { ...object, parentId: parent.id } : object
+        )
+      }
       change.updatedObjectIds.push(target.id)
       break
     }

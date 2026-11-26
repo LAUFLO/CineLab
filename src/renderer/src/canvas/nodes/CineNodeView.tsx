@@ -24,6 +24,7 @@ import {
 } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useGenerationHistoryStore } from '../../stores/generation-history'
+import { useStageStore } from '../../stage/stageStore'
 import {
   cancelStemTaskFromNode,
   retryStemTask
@@ -862,6 +863,28 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         open={panoramaOpen && Boolean(current)}
         src={current ? assetUrl(current.path, current.scope) : ''}
         onClose={() => setPanoramaOpen(false)}
+        onUseInStage={
+          current
+            ? () => {
+                const state = useStageStore.getState()
+                if (!state.doc) {
+                  useUIStore.getState().showToast('请先打开导演台', 'error')
+                  return
+                }
+                state.applyCommands([
+                  {
+                    type: 'setBackground',
+                    background: {
+                      kind: 'panorama',
+                      value: assetUrl(current.path, current.scope)
+                    }
+                  }
+                ])
+                setPanoramaOpen(false)
+                useUIStore.getState().showToast('已设为导演台全景背景')
+              }
+            : undefined
+        }
       />
     </>
   )

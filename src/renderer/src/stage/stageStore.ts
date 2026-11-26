@@ -115,6 +115,8 @@ interface StageState {
       pose?: string
       color?: string
       visible?: boolean
+      name?: string
+      parentId?: string | null
     }
   ) => void
   updateCamera: (cameraId: string, patch: Partial<Omit<StageCamera, 'id'>>) => void
@@ -786,6 +788,12 @@ export const useStageStore = create<StageState>((set, get) => ({
     }
     if (patch.visible !== undefined) {
       commands.push({ type: 'setVisible', objectId, visible: patch.visible })
+    }
+    if (patch.name !== undefined) {
+      commands.push({ type: 'setName', objectId, name: patch.name })
+    }
+    if (patch.parentId !== undefined) {
+      commands.push({ type: 'setParent', objectId, parentId: patch.parentId })
     }
     if (commands.length > 0) get().applyCommands(commands)
   },

@@ -618,10 +618,6 @@ export interface StageApi {
 
 export interface SceneApi {
   analyze(input: import('./scene-analyze').SceneAnalyzeInput): Promise<import('./scene-analyze').SceneAnalyzeResult>
-  loadObjectPresets(): Promise<import('./scene-object-presets').SceneObjectPreset[]>
-  saveObjectPresets(presets: import('./scene-object-presets').SceneObjectPreset[]): Promise<import('./scene-object-presets').SceneObjectPreset[]>
-  importObjectPresets(): Promise<import('./scene-object-presets').SceneObjectPreset[]>
-  exportObjectPresets(): Promise<boolean>
   uploadImage(input: {
     name: string
     mime: string

@@ -123,6 +123,7 @@ StageWindow → scene.analyze
 | 整片/每镜导出 | 已实现 | `src/main/stage/export.ts`、`StageExportItems` |
 | 每镜片段/分镜图/鸟瞰/镜头表/脚本 | 已实现（仅 Agent 显式 `items` 启用，UI 已移除选项菜单） | `src/shared/stage-shot-list.ts`、`export.ts` |
 | 10 个光照预设 | 已实现 | `src/shared/stage-lighting.ts`、`StageWindow` |
+| 雨天/雪天粒子效果 | 已实现 | `src/shared/stage-lighting.ts`（weather 写入场景）、`stage-weather.ts`（视口 + 导出渲染共用） |
 | 无限网格地面 | 已实现 | `src/renderer/src/stage/stage-ground.ts`；视口与导出共用 |
 | 13 关节骨架 + 17 个动作 | 已实现 | `src/shared/stage-motions.ts`、`stage-figure.ts` |
 | 自动分镜 | 已实现 | `src/shared/stage-auto-coverage.ts`、`StageTimeline` |
@@ -161,15 +162,16 @@ StageWindow → scene.analyze
 | `src/renderer/src/stage/ShotInspector.tsx` | 292 |
 | `src/renderer/src/stage/StageInspector.tsx` | 433 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 815 |
-| `src/renderer/src/stage/StageViewport.tsx` | 770 |
+| `src/renderer/src/stage/StageViewport.tsx` | 785 |
 | `src/renderer/src/stage/StageWindow.tsx` | 1136 |
 | `src/renderer/src/stage/preview-runner.ts` | 206 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |
 | `src/renderer/src/stage/stage-from-scene.ts` | 58 |
 | `src/renderer/src/stage/stage-ground.ts` | 88 |
-| `src/renderer/src/stage/stage-render.ts` | 408 |
+| `src/renderer/src/stage/stage-render.ts` | 420 |
 | `src/renderer/src/stage/stage-scene.ts` | 156 |
+| `src/renderer/src/stage/stage-weather.ts` | 103 |
 | `src/renderer/src/stage/stageStore.ts` | 823 |
 | `src/shared/scene-analyze.ts` | 22 |
 | `src/shared/scene-calibrate.ts` | 71 |
@@ -180,12 +182,12 @@ StageWindow → scene.analyze
 | `src/shared/stage-commands.ts` | 1012 |
 | `src/shared/stage-dialogue.ts` | 142 |
 | `src/shared/stage-from-scene-build.ts` | 126 |
-| `src/shared/stage-lighting.ts` | 227 |
+| `src/shared/stage-lighting.ts` | 242 |
 | `src/shared/stage-motions.ts` | 444 |
 | `src/shared/stage-preview.ts` | 52 |
 | `src/shared/stage-previs-reference.ts` | 67 |
 | `src/shared/stage-program.ts` | 105 |
-| `src/shared/stage-schema.ts` | 680 |
+| `src/shared/stage-schema.ts` | 682 |
 | `src/shared/stage-shot-intent.ts` | 433 |
 | `src/shared/stage-shot-list.ts` | 187 |
 | `src/shared/stage-timeline.ts` | 209 |
@@ -208,6 +210,7 @@ StageWindow → scene.analyze
 | `src/renderer/src/stage/stage-from-scene.ts` | `GenerateStageFromSceneInput`、`GenerateStageFromSceneResult`、`generateStageFromScene` |
 | `src/renderer/src/stage/stage-ground.ts` | `StageGround`、`createStageGround` |
 | `src/renderer/src/stage/stage-scene.ts` | `createHuman`、`waitForStageModels`、`createStageObject`、`disposeObject3D` |
+| `src/renderer/src/stage/stage-weather.ts` | `StageWeatherKind`、`StageWeather`、`createStageWeather` |
 | `src/renderer/src/stage/stageStore.ts` | `StagePlaybackScope`、`StageViewMode`、`StageTransformMode`、`StageViewCapture`、`syncStageNodeSummary`、`useStageStore` |
 | `src/shared/scene-analyze.ts` | `SceneAnalyzeInput`、`SceneAnalyzeResult` |
 | `src/shared/scene-calibrate.ts` | `DepthStats`、`CalibratedScene`、`calibrateScene` |

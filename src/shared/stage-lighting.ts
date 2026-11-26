@@ -22,6 +22,7 @@ export interface StageLighting {
   }
   fog?: { color: string; near: number; far: number }
   exposure: number
+  weather?: 'rain' | 'snow'
 }
 
 export interface StageLightingPreset {
@@ -77,6 +78,7 @@ function mergeLighting(
   if (!override) return base
   return {
     ...base,
+    ...(override.weather ? { weather: override.weather } : base.weather ? { weather: base.weather } : {}),
     ...(override.background ? { background: override.background } : {}),
     ...(override.exposure !== undefined ? { exposure: override.exposure } : {}),
     ambient: { ...base.ambient, ...(override.ambient ?? {}) },
@@ -167,16 +169,24 @@ export const STAGE_LIGHTING_PRESETS: StageLightingPreset[] = [
     name: '雨天',
     timeOfDay: 'day',
     weather: 'rain',
-    lighting: { exposure: 1.15 },
-    note: '低照度、冷调、湿反光'
+    lighting: {
+      exposure: 1.15,
+      ambient: { color: '#b9c9e0' },
+      hemi: { sky: '#9fb4d0' }
+    },
+    note: '雨线粒子、冷调、低照度'
   },
   {
     id: 'snow',
     name: '雪天',
     timeOfDay: 'day',
     weather: 'snow',
-    lighting: { exposure: 1.2 },
-    note: '高反射、冷白、低饱和'
+    lighting: {
+      exposure: 1.2,
+      ambient: { color: '#e8f0ff' },
+      hemi: { sky: '#e6efff' }
+    },
+    note: '雪花粒子、冷白、低饱和'
   },
   {
     id: 'interior-warm',
@@ -222,5 +232,10 @@ export function applyLightingPreset(
   const preset = STAGE_LIGHTING_PRESETS.find((item) => item.id === presetId)
   if (!preset) return { lighting: doc.lighting }
   const base = cloneLighting(TIME_LOOK[preset.timeOfDay ?? 'day'])
-  return { lighting: mergeLighting(base, preset.lighting) }
+  return {
+    lighting: mergeLighting(base, {
+      ...preset.lighting,
+      ...(preset.weather ? { weather: preset.weather } : {})
+    })
+  }
 }

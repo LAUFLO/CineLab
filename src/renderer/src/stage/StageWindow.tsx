@@ -813,8 +813,8 @@ export function StageWindow() {
           </div>
         </header>
 
-        <aside className="flex min-h-0 flex-col gap-1.5 overflow-x-hidden overflow-y-auto rounded-card border border-border bg-surface p-2 [grid-area:left] max-[720px]:hidden">
-          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+        <aside className="flex min-h-0 flex-col gap-1.5 overflow-hidden rounded-card border border-border bg-surface p-2 [grid-area:left] max-[720px]:hidden">
+          <div className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>对象</span>
               <div className="flex items-center gap-1.5">
@@ -863,7 +863,7 @@ export function StageWindow() {
                 ))}
               </div>
             ) : null}
-            <div className="flex flex-col gap-[3px]">
+            <div className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto pr-1">
               {doc?.objects.length ? (
                 doc.objects.map((object) => (
                   <Button
@@ -899,7 +899,7 @@ export function StageWindow() {
             </div>
           </div>
 
-          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+          <div className="[&+&]:mt-2 flex min-h-0 flex-1 flex-col [&+&]:border-t [&+&]:border-border [&+&]:pt-2">
             <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>机位</span>
               <div className="flex items-center gap-1.5">
@@ -918,7 +918,7 @@ export function StageWindow() {
                 </Button>
               </div>
             </div>
-            <div className="flex flex-col gap-[3px]">
+            <div className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto pr-1">
               {doc?.cameras.length ? (
                 doc.cameras.map((camera) => (
                   <Button
@@ -947,14 +947,14 @@ export function StageWindow() {
             </div>
           </div>
 
-          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+          <div className="[&+&]:mt-2 flex min-h-0 flex-1 flex-col [&+&]:border-t [&+&]:border-border [&+&]:pt-2">
             <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>镜头</span>
               <small className="font-normal text-fg-subtle">
                 {doc?.shots.length ?? 0}
               </small>
             </div>
-            <div className="flex flex-col gap-[3px]">
+            <div className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto pr-1">
               {doc?.shots.length ? (
                 doc.shots.map((shot) => (
                   <Button

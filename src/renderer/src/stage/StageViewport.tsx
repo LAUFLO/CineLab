@@ -6,6 +6,7 @@ import type { StageCamera, StageShot } from '@shared/stage-schema'
 import { sampleCameraTrack } from '@shared/stage-timeline'
 import { buildProgramTimeline, programAt } from '@shared/stage-program'
 import { resolveStageLighting } from '@shared/stage-lighting'
+import { createStageWeather, type StageWeather } from './stage-weather'
 import { isStagePoseName } from '@shared/stage-motions'
 import { applyStageFigurePose } from './stage-figure'
 import {
@@ -155,6 +156,7 @@ export function StageViewport() {
   const cameraGroupRef = useRef<THREE.Group | null>(null)
   const selectionRef = useRef<THREE.BoxHelper | null>(null)
   const panoramaRef = useRef<THREE.Mesh | null>(null)
+  const weatherRef = useRef<StageWeather | null>(null)
   const aspectRef = useRef(FALLBACK_ASPECT)
   const viewModeRef = useRef(viewMode)
   const selectedCameraRef = useRef<string | null>(selectedCameraId)
@@ -428,6 +430,7 @@ export function StageViewport() {
       const camera = activeCameraRef.current
       if (camera) {
         groundRef.current?.setCameraPosition(camera.position)
+        weatherRef.current?.update(performance.now(), camera.position)
         renderer.render(scene, camera)
       }
     })
@@ -762,6 +765,18 @@ export function StageViewport() {
     }
     if (sceneRef.current && !panoramaRef.current) {
       sceneRef.current.background = new THREE.Color(lighting.background)
+    }
+    if (sceneRef.current) {
+      if (weatherRef.current) {
+        sceneRef.current.remove(weatherRef.current.object)
+        weatherRef.current.dispose()
+        weatherRef.current = null
+      }
+      if (lighting.weather) {
+        const weather = createStageWeather(lighting.weather)
+        weatherRef.current = weather
+        sceneRef.current.add(weather.object)
+      }
     }
   }, [doc])
 

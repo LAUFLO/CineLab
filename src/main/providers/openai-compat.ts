@@ -210,6 +210,69 @@ async function parseImageResponse(
   return outputs
 }
 
+const DECLARED_IMAGE_DIMENSION_KEYS = [
+  'ratio',
+  'aspect_ratio',
+  'width',
+  'height'
+] as const
+
+function extraBodyHas(model: ModelDef, key: string): boolean {
+  return Boolean(
+    model.extraBody &&
+      Object.prototype.hasOwnProperty.call(model.extraBody, key)
+  )
+}
+
+function declaredImageParam(
+  model: ModelDef,
+  key: string,
+  mode: 't2i' | 'i2i'
+): boolean {
+  return model.params.some(
+    (param) =>
+      param.key === key &&
+      (!param.appliesTo || param.appliesTo.includes(mode)) &&
+      (!param.when?.mode || param.when.mode === mode)
+  )
+}
+
+/**
+ * 模型显式声明了比例/宽高参数时，OpenAI 兼容的 edits / generations
+ * 默认只发送 size。这里把这些字段补进表单或 JSON，避免本地已判定支持
+ * 目标比例、请求却被适配器静默丢弃。
+ * extraBody 已配置同名字段时交给 extraBody，避免重复。
+ */
+function appendDeclaredImageDimensions(
+  form: FormData,
+  model: ModelDef,
+  params: Record<string, unknown>
+): void {
+  for (const key of DECLARED_IMAGE_DIMENSION_KEYS) {
+    if (!declaredImageParam(model, key, 'i2i')) continue
+    const value = params[key]
+    if (value === undefined || value === null || value === '') continue
+    if (extraBodyHas(model, key)) continue
+    form.append(key, String(value))
+  }
+}
+
+function declaredImageDimensions(
+  model: ModelDef,
+  params: Record<string, unknown>,
+  mode: 't2i' | 'i2i'
+): Record<string, unknown> {
+  const values: Record<string, unknown> = {}
+  for (const key of DECLARED_IMAGE_DIMENSION_KEYS) {
+    if (!declaredImageParam(model, key, mode)) continue
+    const value = params[key]
+    if (value === undefined || value === null || value === '') continue
+    if (extraBodyHas(model, key)) continue
+    values[key] = value
+  }
+  return values
+}
+
 function buildEditForm(
   model: ModelDef,
   prompt: string,
@@ -225,6 +288,7 @@ function buildEditForm(
   form.append('n', String(Number(params.n ?? 1)))
   if (params.size) form.append('size', String(params.size))
   if (params.quality) form.append('quality', String(params.quality))
+  appendDeclaredImageDimensions(form, model, params)
   if (isMoss && params.watermark !== undefined) {
     form.append(
       'output_watermark',
@@ -298,6 +362,10 @@ export async function generateImage(
           : {})
       }
     }
+    Object.assign(
+      body,
+      declaredImageDimensions(model, params, refs.length > 0 ? 'i2i' : 't2i')
+    )
     applyModelRequestBody(body, model, { prompt, params, refs })
 
     ctx.onProgress(5, refs.length > 0 ? '提交图生图请求' : '提交请求')
@@ -395,6 +463,7 @@ export async function generateImage(
   if (isMoss && params.watermark !== undefined) {
     body.output_watermark = { enabled: Boolean(params.watermark) }
   }
+  Object.assign(body, declaredImageDimensions(model, params, 't2i'))
 
   applyModelRequestBody(body, model, {
     prompt,

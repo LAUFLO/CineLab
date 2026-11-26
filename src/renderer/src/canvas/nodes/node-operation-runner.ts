@@ -9,7 +9,12 @@ import {
   validateNodeOperationParams,
   type NodeOperationParamSpec
 } from '@shared/node-operation-specs'
-import type { SplitAvMode, StemMode, SubtitleRect } from '@shared/media'
+import {
+  parseAspectRatio,
+  type SplitAvMode,
+  type StemMode,
+  type SubtitleRect
+} from '@shared/media'
 import {
   absolutePosition,
   isGroupNode,
@@ -38,6 +43,7 @@ export type NodeOperationUiEffect =
       height?: number
     }
   | { type: 'trim-dialog'; duration: number }
+  | { type: 'video-crop-dialog'; defaultRatio: string }
   | {
       type: 'mask-dialog'
       op: NodeOperation
@@ -539,32 +545,48 @@ async function executeCrop(
 }
 
 async function executeVideoCrop(
-  request: NodeOperationRequest,
   node: CanvasNode,
   item: OperationMenuItem | undefined,
+  params: Record<string, unknown>,
   host?: NodeOperationUiHost
 ): Promise<NodeOperationResult> {
   const output = selectedNodeOutput(node)
   if (!output) return { ok: false, error: '节点还没有可用输出' }
   if (!item) return { ok: false, error: '画面裁切需要选择比例' }
-  if (item.id === 'source') {
-    return { ok: false, error: '当前已是原比例，无需裁切' }
+
+  const customRatio =
+    typeof params.ratio === 'string' ? params.ratio.trim() : ''
+  const ratio = item.id === 'custom' ? customRatio : item.id
+  if (item.id === 'custom' && !ratio) {
+    if (!host) {
+      return {
+        ok: false,
+        needsUi: true,
+        error: '自定义画面裁切需要 params.ratio 或界面输入'
+      }
+    }
+    host.effect({ type: 'video-crop-dialog', defaultRatio: '16:9' })
+    return { ok: true, result: { dialog: 'video-crop' } }
+  }
+  if (!parseAspectRatio(ratio)) {
+    return { ok: false, error: '裁切比例格式无效，请用 4:5 这样的格式' }
   }
 
+  const cropLabel = item.id === 'custom' ? ratio : item.label
   const pendingId = useCanvasStore.getState().addPendingNodes(
     'video',
     originFor(node),
     1,
-    `${node.data.title} · 裁切 ${item.label}`,
+    `${node.data.title} · 裁切 ${cropLabel}`,
     node.id
   )[0]
 
   host?.setRunning?.(true)
-  consumeToast(host, `正在裁切为 ${item.label}…`)
+  consumeToast(host, `正在裁切为 ${cropLabel}…`)
   try {
     const result = await window.api.media.cropVideo({
       path: output.path,
-      ratio: item.id
+      ratio
     })
     useCanvasStore
       .getState()
@@ -1320,8 +1342,7 @@ async function executeObjectRemove(
   }
 }
 
-async function executeOutpaintOrCutout(
-  request: NodeOperationRequest,
+async function executeCutout(
   node: CanvasNode,
   op: NodeOperation,
   item: OperationMenuItem | undefined,
@@ -1335,11 +1356,8 @@ async function executeOutpaintOrCutout(
     return openAiDialog(host, op, item)
   }
 
-  const boxRect =
-    op.id === 'cutout' && item?.id === 'box'
-      ? rectParam(operationParams)
-      : null
-  if (op.id === 'cutout' && item?.id === 'box' && !boxRect) {
+  const boxRect = item?.id === 'box' ? rectParam(operationParams) : null
+  if (item?.id === 'box' && !boxRect) {
     if (!host) {
       return {
         ok: false,
@@ -1358,29 +1376,14 @@ async function executeOutpaintOrCutout(
     return { ok: true, result: { dialog: 'cutout-box' } }
   }
 
-  const params =
-    op.id === 'outpaint'
-      ? {
-          kind: 'outpaint-image' as const,
-          path: output.path,
-          ...(output.scope ? { scope: output.scope } : {}),
-          ratio: (item?.id ?? '16:9') as
-            | '16:9'
-            | '9:16'
-            | '1:1'
-            | '4:3'
-            | '3:4'
-            | '21:9'
-        }
-      : {
-          kind: 'matte-image' as const,
-          path: output.path,
-          ...(output.scope ? { scope: output.scope } : {}),
-          ...(boxRect ? { rect: boxRect } : {})
-        }
+  const params = {
+    kind: 'matte-image' as const,
+    path: output.path,
+    ...(output.scope ? { scope: output.scope } : {}),
+    ...(boxRect ? { rect: boxRect } : {})
+  }
 
-  const label =
-    op.id === 'cutout' && item?.id === 'box' ? '框选抠图' : op.label
+  const label = item?.id === 'box' ? '框选抠图' : op.label
   const pendingId = useCanvasStore.getState().addPendingNodes(
     'image',
     originFor(node),
@@ -1477,7 +1480,7 @@ export async function executeNodeOperation(
     } else if (op.id === 'crop') {
       result = await executeCrop(request, node, item, params, host)
     } else if (op.id === 'video-crop') {
-      result = await executeVideoCrop(request, node, item, host)
+      result = await executeVideoCrop(node, item, params, host)
     } else if (op.id === 'frame-study') {
       result = await executeFrame(request, node, item, params, host)
     } else if (op.id === 'split-av') {
@@ -1496,15 +1499,10 @@ export async function executeNodeOperation(
       result = await executeMatting(request, node, host)
     } else if (op.id === 'object-remove') {
       result = await executeObjectRemove(request, node, params, host)
-    } else if (op.id === 'outpaint' || op.id === 'cutout') {
-      result = await executeOutpaintOrCutout(
-        request,
-        node,
-        op,
-        item,
-        params,
-        host
-      )
+    } else if (op.id === 'outpaint') {
+      result = openAiDialog(host, op, item)
+    } else if (op.id === 'cutout') {
+      result = await executeCutout(node, op, item, params, host)
     } else if (isVideoOperation(op.id)) {
       const id = useCanvasStore
         .getState()

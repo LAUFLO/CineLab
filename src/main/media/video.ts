@@ -1,19 +1,19 @@
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { GeneratedAsset } from '@shared/generation'
-import type {
-  CropVideoRequest,
-  RemoveSubtitlesRequest,
-  SplitAvRequest,
-  SplitAvResult,
-  TrimVideoRequest
+import {
+  centerCropRect,
+  parseAspectRatio,
+  type CropVideoRequest,
+  type RemoveSubtitlesRequest,
+  type SplitAvRequest,
+  type SplitAvResult,
+  type TrimVideoRequest
 } from '@shared/media'
 import { ingestAsset } from '../assets/ingest'
 import { probeMedia, runFfmpeg } from './ffmpeg'
 import { resolveMediaPath } from './paths'
 import { withTempDir } from './temp'
-
-const ALLOWED_RATIOS = new Set(['1:1', '16:9', '9:16', '4:3', '3:4'])
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(value)))
@@ -137,33 +137,21 @@ export async function cropVideo(
   projectRoot: string,
   input: CropVideoRequest
 ): Promise<GeneratedAsset> {
-  if (!ALLOWED_RATIOS.has(input.ratio)) throw new Error('不支持的裁切比例')
+  const parsedRatio = parseAspectRatio(input.ratio)
+  if (!parsedRatio) {
+    throw new Error('裁切比例格式无效，请用 4:5 这样的格式')
+  }
 
   const absolute = await resolveMediaPath(projectRoot, input.path)
   const probe = await probeMedia(absolute)
 
   if (!probe.width || !probe.height) throw new Error('无法读取视频尺寸')
 
-  const [ratioWidth, ratioHeight] = input.ratio.split(':').map(Number)
-  const targetRatio = ratioWidth / ratioHeight
-  const sourceRatio = probe.width / probe.height
-
-  let width: number
-  let height: number
-
-  if (sourceRatio > targetRatio) {
-    height = probe.height
-    width = Math.round(probe.height * targetRatio)
-  } else {
-    width = probe.width
-    height = Math.round(probe.width / targetRatio)
-  }
-
-  width = Math.max(2, Math.floor(width / 2) * 2)
-  height = Math.max(2, Math.floor(height / 2) * 2)
-
-  const x = Math.max(0, Math.floor((probe.width - width) / 2))
-  const y = Math.max(0, Math.floor((probe.height - height) / 2))
+  const { width, height, x, y } = centerCropRect(
+    probe.width,
+    probe.height,
+    parsedRatio.value
+  )
 
   return withTempDir('cinelab-vcrop', async (dir) => {
     const outPath = join(dir, 'crop.mp4')

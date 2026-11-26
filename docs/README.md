@@ -1,9 +1,9 @@
 # CineLab 文档索引
 
-日期：2026-11-25
+日期：2026-11-26
 状态：现行
-适用版本：v0.5.2
-最后核对：2026-11-25
+适用版本：v0.5.3
+最后核对：2026-11-26
 
 > 远程仓库只保留稳定契约、参考文档和一份精简的归档。过程记录、截图和批次 evidence 放本地 `.opencode/`，不入库。
 
@@ -51,6 +51,9 @@
 | [prompt-preset-plan.md](prompt-preset-plan.md) | 预设提示词：悬浮窗、名称胶囊、任意位置插入与发送展开，已确认 |
 | [promptbar-popover-plan.md](promptbar-popover-plan.md) | PromptBar 浮窗与胶囊改造：确认框层级、居中浮窗、卡片网格与预览、绿色预设胶囊、节点自动就位，已实施 |
 | [workflow-plan.md](workflow-plan.md) | 工作流模板：保存用户画布流程、占位节点、导演台打包、拉片/剪辑占位、导入导出与 Agent 工具，方案确定 |
+| [outpaint-model-plan.md](outpaint-model-plan.md) | 扩图改为生图模型图生图：删除本地 LaMa、比例只来自菜单、精确优先近似兜底 |
+| [video-crop-custom-plan.md](video-crop-custom-plan.md) | 画面裁切：删除原比例、增加 4:3 / 3:4 / 21:9 与自定义宽高比 |
+| [text-wysiwyg-plan.md](text-wysiwyg-plan.md) | 文本节点 Markdown 所见即所得：Milkdown、删除预览切换与格式工具栏 |
 | [close-background-plan.md](close-background-plan.md) | 关闭确认（后台运行/退出）与系统托盘自绘菜单，已实施 |
 | [stage-previs-redesign-plan.md](stage-previs-redesign-plan.md) | 导演台 3D 白模预演改进：全景背景、摆位打组、运镜时间轴、GLB、生成闭环与对话式智能预演，方案已确认 |
 

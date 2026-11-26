@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NODE_META, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
+import { outpaintRatioOf, planOutpaint } from '@shared/outpaint'
 import { Icon } from '../../components/Icon'
 import { Button, MenuItem } from '../../components/ui'
 import { assetUrl } from '../../lib/asset-url'
@@ -24,6 +25,7 @@ import { MaskEditorDialog } from './MaskEditorDialog'
 import { SphereDialog } from './SphereDialog'
 import { SubtitleDialog } from './SubtitleDialog'
 import { TrimDialog } from './TrimDialog'
+import { VideoCropDialog } from './VideoCropDialog'
 import { DepthCaptureDialog } from './DepthCaptureDialog'
 import {
   OPERATION_SECTIONS,
@@ -90,6 +92,10 @@ export function NodeToolbar({
   const showToast = useUIStore((state) => state.showToast)
   const nodeCommand = useUIStore((state) => state.nodeCommand)
   const consumeNodeCommand = useUIStore((state) => state.consumeNodeCommand)
+  const nodeModelKey = useCanvasStore((state) => {
+    const found = state.nodes.find((entry) => entry.id === nodeId)
+    return found && found.type === 'cine' ? found.data.modelKey : undefined
+  })
 
   const [openId, setOpenId] = useState<string | null>(null)
   const [moreSub, setMoreSub] = useState<{
@@ -101,6 +107,9 @@ export function NodeToolbar({
   const lastCommandRef = useRef(0)
   const [running, setRunning] = useState(false)
   const [trimOpen, setTrimOpen] = useState(false)
+  const [videoCropDialog, setVideoCropDialog] = useState<{
+    defaultRatio: string
+  } | null>(null)
   const [depthDialog, setDepthDialog] = useState<{ duration: number } | null>(
     null
   )
@@ -559,19 +568,43 @@ export function NodeToolbar({
       return
     }
 
+    const targetRatio =
+      opId === 'outpaint' ? outpaintRatioOf(aiDialog.item?.id) : undefined
+    const baseParams: Record<string, unknown> = {
+      ...defaultParams(model),
+      watermark: false
+    }
+    let params: Record<string, unknown> = baseParams
+    let finalPrompt = prompt
+    let approximateNote: string | undefined
+    if (targetRatio) {
+      const plan = planOutpaint(model, prompt, targetRatio, baseParams)
+      if (!plan.supported) {
+        showToast(plan.reason ?? '当前模型不支持这个扩图比例', 'error')
+        return
+      }
+      params = plan.params
+      finalPrompt = plan.prompt
+      if (plan.exact === false) approximateNote = plan.effective
+    }
+
     const targetNodeId =
       aiDialog.op.outputTarget === 'new-node'
         ? createOutputNode(aiDialog.op, label)
         : nodeId
     setAiDialog(null)
     if (!targetNodeId) return
-    showToast(`已提交「${label}」生成`)
+    showToast(
+      approximateNote
+        ? `已提交「${label}」生成，将按 ${approximateNote} 近似输出`
+        : `已提交「${label}」生成`
+    )
 
     void useGenerationStore.getState().run({
       nodeId: targetNodeId,
       modelKey,
-      prompt,
-      params: { ...defaultParams(model), watermark: false },
+      prompt: finalPrompt,
+      params,
       refs: [
         {
           path: current.path,
@@ -679,6 +712,10 @@ export function NodeToolbar({
       setTrimOpen(true)
       return
     }
+    if (effect.type === 'video-crop-dialog') {
+      setVideoCropDialog({ defaultRatio: effect.defaultRatio })
+      return
+    }
     if (effect.type === 'mask-dialog') {
       setMaskDialog({
         op: effect.op,
@@ -715,6 +752,26 @@ export function NodeToolbar({
     }
     showToast(effect.message, 'error')
     useSettingsStore.getState().openPanel(effect.panel)
+  }
+
+  const confirmVideoCrop = (ratio: string): void => {
+    setVideoCropDialog(null)
+    void executeNodeOperation(
+      {
+        nodeId,
+        operationId: 'video-crop',
+        itemId: 'custom',
+        params: { ratio }
+      },
+      {
+        effect: applyUiEffect,
+        toast: showToast,
+        setRunning
+      }
+    ).then((result) => {
+      if (result.ok || result.needsUi || result.needsGeneration) return
+      if (result.error) showToast(result.error, 'error')
+    })
   }
 
   const activate = (op: NodeOperation, item?: OperationMenuItem): void => {
@@ -1152,6 +1209,14 @@ export function NodeToolbar({
         onConfirm={(start, end) => void executeTrim(start, end)}
       />
 
+      <VideoCropDialog
+        open={Boolean(videoCropDialog)}
+        defaultRatio={videoCropDialog?.defaultRatio ?? '16:9'}
+        busy={running}
+        onClose={() => setVideoCropDialog(null)}
+        onConfirm={confirmVideoCrop}
+      />
+
       <AiOperationDialog
         open={Boolean(aiDialog)}
         title={
@@ -1175,6 +1240,14 @@ export function NodeToolbar({
           aiDialog
             ? `${aiDialog.op.id}:${aiDialog.item?.id ?? 'default'}`
             : undefined
+        }
+        outpaintRatio={
+          aiDialog?.op.id === 'outpaint'
+            ? outpaintRatioOf(aiDialog.item?.id)
+            : undefined
+        }
+        preferredModelKey={
+          aiDialog?.op.id === 'outpaint' ? nodeModelKey : undefined
         }
         onClose={() => setAiDialog(null)}
         onConfirm={(prompt, key, model) =>

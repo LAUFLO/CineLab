@@ -162,12 +162,14 @@
 
 - `src/shared/node-operation-specs.ts` 声明每个操作是否 Agent 可执行、需要的 itemId、参数和确认规则。
 - `src/renderer/src/canvas/nodes/node-operation-runner.ts` 是 UI 和 Agent 共用的执行器；UI 传入 dialog host，Agent 不传。
-- Agent 可直接执行 17 个操作：宫格切分、裁剪、深度动作捕捉、片段截取、分离音视频（含人声提取 / 背景音提取）、抽帧、逐帧拉片、画面裁切、去字幕、图层分离、视频抠像、主体消除、扩图、抠图、片段重拍、元素替换、智能续写。
+- Agent 可直接执行 16 个操作：宫格切分、裁剪、深度动作捕捉、片段截取、分离音视频（含人声提取 / 背景音提取）、抽帧、逐帧拉片、画面裁切、去字幕、图层分离、视频抠像、主体消除、抠图、片段重拍、元素替换、智能续写。
+- `outpaint` 不再直接执行；它必须通过 `generation_propose` 选择图片模型，比例精确优先、无精确选项时自动近似，完全无法控制比例的模型返回可读错误。
+- `video-crop` 的 `itemId=custom` 需要 `params.ratio`（例如 `4:5`）；不传或格式非法时 Agent 会收到可读错误。
 - `split-av` 必须传 `itemId`：视频节点可用 `av` / `vocal` / `background`，音频节点只暴露 `vocal` / `background`；人声/背景音返回 `taskId`，完成后由界面自动写入。
 - `cutout` / `layer-split` 支持 `itemId: auto`（默认）和 `itemId: box`；`box` 需要 `params.rect`（原图像素坐标），否则只能走界面框选。
 - `canvas_node_operations` 额外返回 `outputTarget`：`new-node` 表示执行后新建节点并连线，`version` 表示写回当前节点版本栈；规则见 [result-node-promptbar-plan.md](result-node-promptbar-plan.md)。
-- 需要模型或蒙版交互的 11 个操作显式标记 `agentExecutable: false`，提示词仍会通过 `canvas_node_operations` 返回。
-- 其中 8 个模型类操作标记 `generationProposable: true`，Agent 用 `generation_propose` 传 `operationId` / `itemId` 自动复用提示词；3 个蒙版操作仍需界面涂抹。
+- 需要模型或蒙版交互的 12 个操作显式标记 `agentExecutable: false`，提示词仍会通过 `canvas_node_operations` 返回。
+- 其中 9 个模型类操作标记 `generationProposable: true`，Agent 用 `generation_propose` 传 `operationId` / `itemId` 自动复用提示词；3 个蒙版操作仍需界面涂抹。
 - 生成提案同样遵循 `outputTarget`：`new-node` 操作在确认时创建占位节点并连线，主进程把 `request.nodeId` 改写到新节点后再入队；提案卡显示输出方式。
 - 新增节点操作只需要改 `node-operations.ts`、`node-operation-specs.ts` 和 `node-operation-runner.ts`，不需要新增工具。
 

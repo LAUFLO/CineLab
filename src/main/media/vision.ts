@@ -41,35 +41,6 @@ function even(value: number): number {
   return Math.max(2, Math.round(value / 2) * 2)
 }
 
-function targetSize(
-  width: number,
-  height: number,
-  ratio: NonNullable<VisionTaskRequest['ratio']>
-): { width: number; height: number } {
-  const [rw, rh] = ratio.split(':').map(Number)
-  const targetRatio = rw / rh
-  let nextWidth = width
-  let nextHeight = height
-
-  if (width / height > targetRatio) {
-    nextHeight = Math.round(width / targetRatio)
-  } else {
-    nextWidth = Math.round(height * targetRatio)
-  }
-
-  const maxEdge = Math.max(nextWidth, nextHeight)
-  if (maxEdge > 2048) {
-    const scale = 2048 / maxEdge
-    nextWidth = Math.round(nextWidth * scale)
-    nextHeight = Math.round(nextHeight * scale)
-  }
-
-  return {
-    width: Math.max(16, even(nextWidth)),
-    height: Math.max(16, even(nextHeight))
-  }
-}
-
 function parseMaskDataUrl(dataUrl: string): Buffer {
   const match = /^data:image\/png;base64,(.+)$/s.exec(dataUrl)
   if (!match) throw new Error('蒙版格式无效')
@@ -291,40 +262,6 @@ export async function runVisionTask(
         kind: 'image',
         mime: 'image/png',
         model: 'LaMa 修复'
-      })
-      return { kind: request.kind, asset, width: asset.width, height: asset.height }
-    }
-
-    if (request.kind === 'outpaint-image') {
-      if (!probe.width || !probe.height) {
-        throw new Error('无法读取图片尺寸')
-      }
-      const size = targetSize(
-        probe.width,
-        probe.height,
-        request.ratio ?? '1:1'
-      )
-      const output = join(tempDir, 'outpaint.png')
-      await runWorker(
-        [
-          ...baseArgs('outpaint-image', models),
-          '--input',
-          input,
-          '--output',
-          output,
-          '--width',
-          String(size.width),
-          '--height',
-          String(size.height)
-        ],
-        options
-      )
-      const asset = await ingestAsset({
-        projectPath: projectRoot,
-        data: await fs.readFile(output),
-        kind: 'image',
-        mime: 'image/png',
-        model: 'LaMa 扩图'
       })
       return { kind: request.kind, asset, width: asset.width, height: asset.height }
     }

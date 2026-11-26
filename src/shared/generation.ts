@@ -1,6 +1,6 @@
 import type { AssetScope } from './asset-schema'
 
-export type OutputKind = 'image' | 'video' | 'audio' | 'text'
+export type OutputKind = 'image' | 'video' | 'audio' | 'text' | 'model'
 
 export type ReferenceMedia = 'image' | 'video' | 'audio'
 

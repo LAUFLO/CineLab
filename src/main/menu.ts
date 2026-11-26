@@ -1,4 +1,4 @@
-import { app, Menu, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, Menu, type MenuItemConstructorOptions } from 'electron'
 
 export function installApplicationMenu(): void {
   if (process.platform !== 'darwin') return
@@ -18,7 +18,20 @@ export function installApplicationMenu(): void {
         { role: 'hideOthers', label: '隐藏其他' },
         { role: 'unhide', label: '显示全部' },
         { type: 'separator' },
-        { role: 'quit', label: '退出 CineLab' }
+        {
+          label: '退出 CineLab',
+          click: () => {
+            const win = BrowserWindow.getAllWindows()[0]
+            if (!win || win.isDestroyed()) {
+              app.quit()
+              return
+            }
+            win.setSkipTaskbar(false)
+            win.show()
+            win.focus()
+            win.webContents.send('app:quit-requested')
+          }
+        }
       ]
     },
     {

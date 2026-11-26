@@ -9,8 +9,14 @@ import { buildProgramTimeline, programAt } from '@shared/stage-program'
 import { resolveStageLighting } from '@shared/stage-lighting'
 import { applyStageFigurePose } from './stage-figure'
 import { isStagePoseName } from '@shared/stage-motions'
-import { createStageObject, disposeObject3D } from './stage-scene'
+import {
+  createStageObject,
+  disposeObject3D,
+  waitForStageModels
+} from './stage-scene'
 import { createStageGround, type StageGround } from './stage-ground'
+import { createStageWeather, type StageWeather } from './stage-weather'
+import { assetUrl } from '../lib/asset-url'
 
 interface StageRenderInput {
   doc: DirectorStageDoc
@@ -40,9 +46,9 @@ interface ProgramFrame {
 
 declare global {
   interface Window {
-    __setStagePreview?: (input: StageRenderInput) => boolean
+    __setStagePreview?: (input: StageRenderInput) => Promise<boolean>
     __renderStageFrame?: (timeMs: number) => string
-    __setStageProgram?: (input: StageProgramInput) => boolean
+    __setStageProgram?: (input: StageProgramInput) => Promise<boolean>
     __renderProgramFrame?: (
       globalTimeMs: number,
       overlay?: ProgramOverlay
@@ -62,8 +68,15 @@ let ground: StageGround | null = null
 let programTimeline: ReturnType<typeof buildProgramTimeline> | null = null
 let fps = 24
 let overlayCanvas: HTMLCanvasElement | null = null
+let panoramaMesh: THREE.Mesh | null = null
+let weather: StageWeather | null = null
 
 function disposeCurrent(): void {
+  if (weather) {
+    scene?.remove(weather.object)
+    weather.dispose()
+    weather = null
+  }
   if (!objectsGroup) return
   disposeObject3D(objectsGroup)
   objectsGroup.clear()
@@ -151,12 +164,40 @@ function buildScene(input: StageRenderInput): void {
   if (!scene || !objectsGroup) return
   const lighting = resolveStageLighting(doc)
   renderer.toneMappingExposure = lighting.exposure
+  const isPanorama = doc.background.kind === 'panorama' && Boolean(doc.background.value.trim())
   const background =
     doc.background.kind === 'color' && doc.background.value
       ? doc.background.value
       : lighting.background
-  scene.background = new THREE.Color(background)
+  scene.background = isPanorama ? null : new THREE.Color(background)
   ground?.setBackground(background)
+
+  if (panoramaMesh) {
+    scene.remove(panoramaMesh)
+    panoramaMesh.geometry.dispose()
+    const mat = panoramaMesh.material
+    if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
+    else mat.dispose()
+    panoramaMesh = null
+  }
+  if (isPanorama) {
+    const geometry = new THREE.SphereGeometry(500, 64, 40)
+    const material = new THREE.MeshBasicMaterial({ side: THREE.BackSide })
+    panoramaMesh = new THREE.Mesh(geometry, material)
+    new THREE.TextureLoader().load(
+      assetUrl(doc.background.value, 'project'),
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace
+        texture.minFilter = THREE.LinearFilter
+        texture.generateMipmaps = false
+        material.map = texture
+        material.needsUpdate = true
+      },
+      undefined,
+      () => undefined
+    )
+    scene.add(panoramaMesh)
+  }
   scene.fog = lighting.fog
     ? new THREE.Fog(lighting.fog.color, lighting.fog.near, lighting.fog.far)
     : null
@@ -171,6 +212,10 @@ function buildScene(input: StageRenderInput): void {
       child.receiveShadow = true
     }
   })
+  if (lighting.weather && scene) {
+    weather = createStageWeather(lighting.weather)
+    scene.add(weather.object)
+  }
 }
 
 function applyActionPose(target: StageShot, timeMs: number): void {
@@ -205,8 +250,9 @@ function applyActionPose(target: StageShot, timeMs: number): void {
   }
 }
 
-window.__setStagePreview = (input: StageRenderInput): boolean => {
+window.__setStagePreview = async (input: StageRenderInput): Promise<boolean> => {
   buildScene(input)
+  await waitForStageModels()
   return true
 }
 
@@ -225,6 +271,7 @@ function renderShotFrame(
   camera.lookAt(new THREE.Vector3(...sample.target))
   camera.updateProjectionMatrix()
   ground?.setCameraPosition(camera.position)
+  weather?.update(timeMs, camera.position)
   renderer.render(scene, camera)
 }
 
@@ -284,13 +331,16 @@ window.__renderStageFrame = (timeMs: number): string => {
   return renderer.domElement.toDataURL('image/jpeg', 0.92)
 }
 
-window.__setStageProgram = (input: StageProgramInput): boolean => {
+window.__setStageProgram = async (
+  input: StageProgramInput
+): Promise<boolean> => {
   buildScene({
     doc: input.doc,
     shotId: '',
     width: input.width,
     height: input.height
   })
+  await waitForStageModels()
   doc = input.doc
   shot = null
   programTimeline = buildProgramTimeline(input.doc)

@@ -618,20 +618,18 @@ export interface StageApi {
 
 export interface SceneApi {
   analyze(input: import('./scene-analyze').SceneAnalyzeInput): Promise<import('./scene-analyze').SceneAnalyzeResult>
-  loadObjectPresets(): Promise<import('./scene-object-presets').SceneObjectPreset[]>
-  saveObjectPresets(presets: import('./scene-object-presets').SceneObjectPreset[]): Promise<import('./scene-object-presets').SceneObjectPreset[]>
-  importObjectPresets(): Promise<import('./scene-object-presets').SceneObjectPreset[]>
-  exportObjectPresets(): Promise<boolean>
   uploadImage(input: {
     name: string
     mime: string
     data: ArrayBuffer
   }): Promise<import('./generation').GeneratedAsset>
   uploadAsset(input: {
-    kind: 'image' | 'video' | 'audio'
+    kind: 'image' | 'video' | 'audio' | 'model'
     mime: string
     data: ArrayBuffer
   }): Promise<import('./generation').GeneratedAsset>
+  pickImage(): Promise<import('./generation').GeneratedAsset | null>
+  pickModel(): Promise<import('./generation').GeneratedAsset | null>
 }
 
 export interface LocalAdapterApi {
@@ -730,6 +728,11 @@ export interface CineApi {
     minimize(): void
     maximize(): void
     close(): void
+    hideToTray(): void
+    restoreWindow(): void
+    quit(): void
+    requestQuit(): void
+    onQuitRequested(callback: () => void): () => void
   }
   project: ProjectApi
   workflow: WorkflowApi

@@ -68,7 +68,16 @@ const api: CineApi = {
       ipcRenderer.send('app:notify', title, body),
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),
-    close: () => ipcRenderer.send('window:close')
+    close: () => ipcRenderer.send('window:close'),
+    hideToTray: () => ipcRenderer.send('app:hide-to-tray'),
+    restoreWindow: () => ipcRenderer.send('app:restore-window'),
+    quit: () => ipcRenderer.send('app:quit'),
+    requestQuit: () => ipcRenderer.send('app:request-quit'),
+    onQuitRequested: (callback: () => void) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('app:quit-requested', listener)
+      return () => ipcRenderer.removeListener('app:quit-requested', listener)
+    }
   },
   project: {
     bootstrap: () => ipcRenderer.invoke('project:bootstrap'),
@@ -563,24 +572,18 @@ const api: CineApi = {
   scene: {
     analyze: (input: import('../shared/scene-analyze').SceneAnalyzeInput) =>
       ipcRenderer.invoke('scene:analyze', input),
-    loadObjectPresets: () =>
-      ipcRenderer.invoke('scene:get-object-presets'),
-    saveObjectPresets: (presets: import('../shared/scene-object-presets').SceneObjectPreset[]) =>
-      ipcRenderer.invoke('scene:save-object-presets', presets),
-    importObjectPresets: () =>
-      ipcRenderer.invoke('scene:import-object-presets'),
-    exportObjectPresets: () =>
-      ipcRenderer.invoke('scene:export-object-presets'),
     uploadImage: (input: {
       name: string
       mime: string
       data: ArrayBuffer
     }) => ipcRenderer.invoke('scene:upload-image', input),
+    pickImage: () => ipcRenderer.invoke('scene:pick-image'),
     uploadAsset: (input: {
-      kind: 'image' | 'video' | 'audio'
+      kind: 'image' | 'video' | 'audio' | 'model'
       mime: string
       data: ArrayBuffer
-    }) => ipcRenderer.invoke('scene:upload-asset', input)
+    }) => ipcRenderer.invoke('scene:upload-asset', input),
+    pickModel: () => ipcRenderer.invoke('scene:pick-model')
   },
   skills: {
     list: () => ipcRenderer.invoke('skills:list'),

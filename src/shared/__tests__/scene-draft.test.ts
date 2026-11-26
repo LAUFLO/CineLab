@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseSceneDraft } from '../scene-draft'
-import {
-  builtinObjectPresets,
-  findObjectPreset,
-  mergeObjectPresets
-} from '../scene-object-presets'
+import { builtinObjectPresets, findObjectPreset } from '../scene-object-presets'
 import { calibrateScene } from '../scene-calibrate'
 
 describe('parseSceneDraft', () => {
@@ -59,14 +55,6 @@ describe('scene object presets', () => {
     expect(findObjectPreset(presets, 'unknown thing')).toBeNull()
   })
 
-  it('lets the user override a preset', () => {
-    const merged = mergeObjectPresets(builtinObjectPresets(), [
-      { name: 'desk', w: 2, d: 1, h: 1.2, shape: 'box', color: '#123456' },
-      { name: 'bad', shape: 'nope' }
-    ])
-    expect(merged.find((item) => item.name === 'desk')?.w).toBe(2)
-    expect(merged.some((item) => item.name === 'bad')).toBe(false)
-  })
 })
 
 describe('calibrateScene', () => {

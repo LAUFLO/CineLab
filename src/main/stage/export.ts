@@ -32,6 +32,10 @@ import {
   type StageShotRow
 } from '@shared/stage-shot-list'
 import { ingestAsset } from '../assets/ingest'
+import {
+  buildStageStructureJson,
+  STAGE_PREVIS_REFERENCE_PROMPT
+} from '@shared/stage-previs-reference'
 import { ffmpegBinary } from '../media/ffmpeg'
 import { loadStageFile } from './storage'
 
@@ -378,12 +382,14 @@ export async function exportStageProgram(
   if (timeline.segments.length === 0) throw new Error('成片还没有镜头')
 
   const fps = input.fps === 30 ? 30 : 24
+  // UI 只提供「导出预演」按钮，缺省只生成白模预演视频；
+  // 镜头片段/分镜图/镜头表等仅在 Agent 显式传 items 时生成。
   const items: StageExportItems = {
     previs: true,
-    clips: true,
-    frames: true,
+    clips: false,
+    frames: false,
     overview: false,
-    shotList: true,
+    shotList: false,
     script: false,
     ...input.items
   }
@@ -643,6 +649,18 @@ export async function exportStageProgram(
     }
 
     const documents: StageExportDocument[] = []
+    const structureJson = buildStageStructureJson(doc)
+    await fs.writeFile(join(dir, '白模结构约束.json'), structureJson, 'utf8')
+    documents.push({ label: '白模结构约束.json', text: structureJson })
+    await fs.writeFile(
+      join(dir, '生成参考提示词.txt'),
+      STAGE_PREVIS_REFERENCE_PROMPT,
+      'utf8'
+    )
+    documents.push({
+      label: '生成参考提示词',
+      text: STAGE_PREVIS_REFERENCE_PROMPT
+    })
     if (items.shotList || items.script) {
       const rows = buildShotList(doc, timeline)
       if (items.shotList) {

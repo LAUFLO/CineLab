@@ -416,7 +416,7 @@ async function runTurn(input: {
     const catalog = await skillCatalogPrompt(root)
     const systemPrompt = [
       systemPromptFor(request.profileId),
-      stageContext(request.stageNodeId),
+      stageContext(request.stageNodeId, request.stageSnapshot),
       attachmentContext(request.attachments),
       referenceContext(request.references),
       generationModelsContext(request.generationModels),
@@ -432,7 +432,8 @@ async function runTurn(input: {
       profileId: request.profileId,
       permissionMode: request.permissionMode,
       sendToolCall: toolCallbacks.sendToolCall,
-      waitForToolResult: toolCallbacks.waitForToolResult
+      waitForToolResult: toolCallbacks.waitForToolResult,
+      stageRead: { called: false }
     })
 
     const extensionFactory: ExtensionFactory = (pi) => {

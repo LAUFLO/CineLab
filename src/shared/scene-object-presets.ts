@@ -69,64 +69,8 @@ const BUILTIN: SceneObjectPreset[] = [
   { name: 'plane', aliases: ['平面', '地面'], w: 2.0, d: 2.0, h: 0.02, color: '#9ca3af', shape: 'plane' }
 ]
 
-const SHAPES: SceneObjectShape[] = ['box', 'sphere', 'plane', 'human', 'crowd']
-
 export function builtinObjectPresets(): SceneObjectPreset[] {
   return BUILTIN.map((item) => ({ ...item, aliases: [...item.aliases] }))
-}
-
-export function normalizeObjectPreset(raw: unknown): SceneObjectPreset | null {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
-  const item = raw as Record<string, unknown>
-  const name =
-    typeof item.name === 'string' ? item.name.trim().slice(0, 60) : ''
-  const shape = SHAPES.includes(item.shape as SceneObjectShape)
-    ? (item.shape as SceneObjectShape)
-    : null
-  if (!name || !shape) return null
-
-  const number = (value: unknown, fallback: number): number =>
-    typeof value === 'number' && Number.isFinite(value) && value > 0
-      ? Math.min(50, value)
-      : fallback
-
-  return {
-    name,
-    aliases: Array.isArray(item.aliases)
-      ? item.aliases
-          .filter((alias): alias is string => typeof alias === 'string')
-          .map((alias) => alias.trim())
-          .filter(Boolean)
-          .slice(0, 12)
-      : [],
-    w: number(item.w, 1),
-    d: number(item.d, 1),
-    h: number(item.h, 1),
-    color:
-      typeof item.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(item.color)
-        ? item.color
-        : '#9ca3af',
-    shape
-  }
-}
-
-export function mergeObjectPresets(
-  base: SceneObjectPreset[],
-  user: unknown
-): SceneObjectPreset[] {
-  const incoming = Array.isArray(user)
-    ? user
-    : user && typeof user === 'object' && Array.isArray((user as { presets?: unknown }).presets)
-      ? ((user as { presets: unknown[] }).presets)
-      : []
-
-  const merged = new Map(base.map((item) => [item.name.toLowerCase(), item]))
-  for (const raw of incoming) {
-    const preset = normalizeObjectPreset(raw)
-    if (!preset) continue
-    merged.set(preset.name.toLowerCase(), preset)
-  }
-  return [...merged.values()]
 }
 
 export function findObjectPreset(

@@ -67,13 +67,17 @@ describe('asset protocol', () => {
   })
 
   it('handles HEAD and byte ranges', async () => {
+    // 透明加密下 stat.size 反映密文长度；以实现实际读到的 size 为准
+    const expectedSize = String(
+      (await fs.stat(join(root, 'assets', 'hello.txt'))).size
+    )
     const head = await handler()(
       new Request('cinelab-asset://local/assets/hello.txt', {
         method: 'HEAD'
       })
     )
     expect(head.status).toBe(200)
-    expect(head.headers.get('Content-Length')).toBe('11')
+    expect(head.headers.get('Content-Length')).toBe(expectedSize)
 
     const range = await handler()(
       new Request('cinelab-asset://local/assets/hello.txt', {
@@ -81,7 +85,7 @@ describe('asset protocol', () => {
       })
     )
     expect(range.status).toBe(206)
-    expect(range.headers.get('Content-Range')).toBe('bytes 0-4/11')
+    expect(range.headers.get('Content-Range')).toBe(`bytes 0-4/${expectedSize}`)
     expect(await range.text()).toBe('hello')
   })
 

@@ -207,11 +207,25 @@ function ObjectInspector({ object }: { object: StageObject }) {
     <section className="flex flex-col gap-1">
       <header className="mb-1 flex flex-col gap-0.5 border-b border-border pb-2">
         <span className="text-[10px] text-fg-subtle">对象</span>
-        <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px]">
-          {object.name}
-        </strong>
+        <Input
+          className="!h-7 !text-[13px]"
+          value={object.name}
+          onChange={(event) =>
+            updateObject(object.id, { name: event.target.value })
+          }
+        />
       </header>
       <Row label="类型" value={TYPE_LABEL[object.type]} />
+      {object.type === 'gltf' ? (
+        <Row
+          label="模型"
+          value={
+            object.assetPath
+              ? object.assetPath.split('/').pop() ?? object.assetPath
+              : '未指定模型'
+          }
+        />
+      ) : null}
 
       <Vec3Field
         label="位置"
@@ -405,6 +419,11 @@ export function StageInspector() {
       <Row label="机位" value={`${doc.cameras.length}`} />
       <Row label="镜头" value={`${doc.shots.length}`} />
       <Row label="背景" value={doc.background.kind} />
+      {doc.background.kind === 'model' ? (
+        <p className="text-[10px] leading-relaxed text-warning">
+          模型背景暂不支持显示，请改用全景图或纯色。
+        </p>
+      ) : null}
       <p className="mt-2.5 text-[10px] leading-relaxed text-fg-subtle">
         选中对象或机位后可编辑属性；也可以在视口里拖拽变换。
       </p>

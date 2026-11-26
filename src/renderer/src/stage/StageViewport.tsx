@@ -6,6 +6,7 @@ import type { StageCamera, StageShot } from '@shared/stage-schema'
 import { sampleCameraTrack } from '@shared/stage-timeline'
 import { buildProgramTimeline, programAt } from '@shared/stage-program'
 import { resolveStageLighting } from '@shared/stage-lighting'
+import { createStageWeather, type StageWeather } from './stage-weather'
 import { isStagePoseName } from '@shared/stage-motions'
 import { applyStageFigurePose } from './stage-figure'
 import {
@@ -14,6 +15,7 @@ import {
 } from './stage-scene'
 import { createStageGround, type StageGround } from './stage-ground'
 import { useStageStore } from './stageStore'
+import { assetUrl } from '../lib/asset-url'
 
 const DEFAULT_BACKGROUND = '#1a1a1a'
 const SELECTED_COLOR = '#4ade80'
@@ -40,22 +42,90 @@ function createCameraMarker(
   group.userData.stageCameraId = camera.id
   group.position.fromArray(camera.position)
 
-  const color = selected ? SELECTED_COLOR : '#f59e0b'
-  const marker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 16, 12),
-    new THREE.MeshStandardMaterial({ color })
-  )
-  group.add(marker)
+  const target = new THREE.Vector3(...camera.target)
+  const position = new THREE.Vector3(...camera.position)
+  const distance = Math.max(target.distanceTo(position), 0.001)
 
-  const lineGeometry = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(...camera.position),
-    new THREE.Vector3(...camera.target)
-  ])
-  const line = new THREE.Line(
-    lineGeometry,
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.7 })
+  const color = selected ? SELECTED_COLOR : '#f59e0b'
+  const material = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.5,
+    metalness: 0.12,
+    emissive: color,
+    emissiveIntensity: selected ? 0.3 : 0.1
+  })
+
+  // 简化的机身 + 镜头 + 取景器；普通 Object3D 的 +Z 朝向 lookAt 目标
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.24), material)
+  group.add(body)
+  const lens = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1, 0.12, 0.18, 12),
+    material
   )
-  group.add(line)
+  lens.rotation.x = Math.PI / 2
+  lens.position.z = 0.2
+  group.add(lens)
+  const viewfinder = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.06, 0.12),
+    material
+  )
+  viewfinder.position.set(0.06, 0.13, 0)
+  group.add(viewfinder)
+  group.lookAt(target)
+
+  // 视锥线框：远端矩形按 FOV 展开，直观表达朝向与视野
+  const fov = THREE.MathUtils.clamp(camera.fov, 10, 120)
+  const aspect =
+    camera.aspect === '9:16' ? 9 / 16 : camera.aspect === '1:1' ? 1 : 16 / 9
+  const far = Math.max(0.6, Math.min(distance, 2.4))
+  const halfHeight = Math.tan(THREE.MathUtils.degToRad(fov / 2)) * far
+  const halfWidth = halfHeight * aspect
+  const corners = [
+    new THREE.Vector3(-halfWidth, -halfHeight, far),
+    new THREE.Vector3(halfWidth, -halfHeight, far),
+    new THREE.Vector3(halfWidth, halfHeight, far),
+    new THREE.Vector3(-halfWidth, halfHeight, far)
+  ]
+  const points: number[] = []
+  for (const corner of corners) {
+    points.push(0, 0, 0, corner.x, corner.y, corner.z)
+  }
+  for (let index = 0; index < corners.length; index += 1) {
+    const next = corners[(index + 1) % corners.length]!
+    points.push(
+      corners[index]!.x,
+      corners[index]!.y,
+      corners[index]!.z,
+      next.x,
+      next.y,
+      next.z
+    )
+  }
+  const frustumGeometry = new THREE.BufferGeometry()
+  frustumGeometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(points, 3)
+  )
+  group.add(
+    new THREE.LineSegments(
+      frustumGeometry,
+      new THREE.LineBasicMaterial({
+        color,
+        transparent: true,
+        opacity: selected ? 0.75 : 0.35
+      })
+    )
+  )
+
+  // 中心视线用局部坐标，修正旧版世界坐标叠加造成的偏移
+  const sight = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, distance)
+    ]),
+    new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5 })
+  )
+  group.add(sight)
 
   return group
 }
@@ -85,6 +155,8 @@ export function StageViewport() {
   const groundRef = useRef<StageGround | null>(null)
   const cameraGroupRef = useRef<THREE.Group | null>(null)
   const selectionRef = useRef<THREE.BoxHelper | null>(null)
+  const panoramaRef = useRef<THREE.Mesh | null>(null)
+  const weatherRef = useRef<StageWeather | null>(null)
   const aspectRef = useRef(FALLBACK_ASPECT)
   const viewModeRef = useRef(viewMode)
   const selectedCameraRef = useRef<string | null>(selectedCameraId)
@@ -358,6 +430,7 @@ export function StageViewport() {
       const camera = activeCameraRef.current
       if (camera) {
         groundRef.current?.setCameraPosition(camera.position)
+        weatherRef.current?.update(performance.now(), camera.position)
         renderer.render(scene, camera)
       }
     })
@@ -440,12 +513,42 @@ export function StageViewport() {
     if (!scene || !objectsGroup || !cameraGroup || !doc) return
 
     const lighting = resolveStageLighting(doc)
+    const isPanorama = doc.background.kind === 'panorama' && Boolean(doc.background.value.trim())
     const background =
       doc.background.kind === 'color' && doc.background.value
         ? doc.background.value
         : lighting.background
-    scene.background = new THREE.Color(background)
+    scene.background = isPanorama ? null : new THREE.Color(background)
     groundRef.current?.setBackground(background)
+
+    if (panoramaRef.current) {
+      scene.remove(panoramaRef.current)
+      const old = panoramaRef.current
+      old.geometry.dispose()
+      const mat = old.material as THREE.MeshBasicMaterial
+      if (mat.map) mat.map.dispose()
+      mat.dispose()
+      panoramaRef.current = null
+    }
+    if (isPanorama) {
+      const geometry = new THREE.SphereGeometry(500, 64, 40)
+      const material = new THREE.MeshBasicMaterial({ side: THREE.BackSide })
+      const mesh = new THREE.Mesh(geometry, material)
+      new THREE.TextureLoader().load(
+        assetUrl(doc.background.value, 'project'),
+        (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace
+          texture.minFilter = THREE.LinearFilter
+          texture.generateMipmaps = false
+          material.map = texture
+          material.needsUpdate = true
+        },
+        undefined,
+        () => undefined
+      )
+      scene.add(mesh)
+      panoramaRef.current = mesh
+    }
 
     disposeObject(objectsGroup)
     objectsGroup.clear()
@@ -660,8 +763,20 @@ export function StageViewport() {
     if (rendererRef.current) {
       rendererRef.current.toneMappingExposure = lighting.exposure
     }
-    if (sceneRef.current) {
+    if (sceneRef.current && !panoramaRef.current) {
       sceneRef.current.background = new THREE.Color(lighting.background)
+    }
+    if (sceneRef.current) {
+      if (weatherRef.current) {
+        sceneRef.current.remove(weatherRef.current.object)
+        weatherRef.current.dispose()
+        weatherRef.current = null
+      }
+      if (lighting.weather) {
+        const weather = createStageWeather(lighting.weather)
+        weatherRef.current = weather
+        sceneRef.current.add(weather.object)
+      }
     }
   }, [doc])
 

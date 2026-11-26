@@ -104,7 +104,7 @@ interface StageState {
   setViewMode: (mode: StageViewMode) => void
   setTransformMode: (mode: StageTransformMode) => void
   setActiveCamera: (cameraId: string | null) => void
-  addObject: (type: StageObjectType) => string | null
+  addObject: (type: StageObjectType, assetPath?: string) => string | null
   addCamera: () => string | null
   removeSelectedObject: () => boolean
   removeSelectedCamera: () => boolean
@@ -115,6 +115,8 @@ interface StageState {
       pose?: string
       color?: string
       visible?: boolean
+      name?: string
+      parentId?: string | null
     }
   ) => void
   updateCamera: (cameraId: string, patch: Partial<Omit<StageCamera, 'id'>>) => void
@@ -697,7 +699,7 @@ export const useStageStore = create<StageState>((set, get) => ({
 
   setTransformMode: (mode) => set({ transformMode: mode }),
 
-  addObject: (type) => {
+  addObject: (type, assetPath) => {
     const { doc, selectedObjectId } = get()
     if (!doc) return null
 
@@ -723,7 +725,8 @@ export const useStageStore = create<StageState>((set, get) => ({
         scale: [1, 1, 1]
       },
       ...(type === 'human' || type === 'crowd' ? { pose: 'stand' } : {}),
-      ...(type === 'crowd' ? { count: 3 } : {})
+      ...(type === 'crowd' ? { count: 3 } : {}),
+      ...(assetPath ? { assetPath } : {})
     }
 
     if (!get().applyCommands([{ type: 'addObject', object }])) return null
@@ -786,6 +789,12 @@ export const useStageStore = create<StageState>((set, get) => ({
     }
     if (patch.visible !== undefined) {
       commands.push({ type: 'setVisible', objectId, visible: patch.visible })
+    }
+    if (patch.name !== undefined) {
+      commands.push({ type: 'setName', objectId, name: patch.name })
+    }
+    if (patch.parentId !== undefined) {
+      commands.push({ type: 'setParent', objectId, parentId: patch.parentId })
     }
     if (commands.length > 0) get().applyCommands(commands)
   },

@@ -127,7 +127,7 @@ export function HistoryPanel() {
       x: (window.innerWidth / 2 - viewport.x) / viewport.zoom,
       y: (window.innerHeight / 2 - viewport.y) / viewport.zoom
     }
-    const kind: NodeKind = item.output.kind
+    const kind = item.output.kind as NodeKind
     addAssetNodes(kind, center, [toAsset(item.output)], item.title, undefined, undefined, true)
     showToast('已添加到画布')
     close()

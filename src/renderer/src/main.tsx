@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import { TrayMenuWindow } from './tray/TrayMenuWindow'
 import './styles/tailwind.css'
 import './styles/infrastructure.css'
 
@@ -19,8 +20,10 @@ window.addEventListener('unhandledrejection', (event) => {
     .catch(() => undefined)
 })
 
+const isTrayMenu = window.location.hash === '#tray-menu'
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    {isTrayMenu ? <TrayMenuWindow /> : <App />}
   </React.StrictMode>
 )

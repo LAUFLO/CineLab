@@ -13,6 +13,11 @@ import {
 } from '../components/ui'
 import { buildProgramTimeline, programAt } from '@shared/stage-program'
 import type { ProgramSegment } from '@shared/stage-program'
+import {
+  buildCameraMoveTrack,
+  CAMERA_MOVE_PRESETS,
+  type CameraMovePreset
+} from '@shared/stage-camera-moves'
 import type {
   DirectorStageDoc,
   StageProgramEntry
@@ -113,6 +118,67 @@ export function StageTimeline() {
         })()
   const canPlay =
     playbackScope === 'program' ? timeline.durationMs > 0 : !!shot
+
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+
+  const applyCameraMove = (presetId: string): void => {
+    const state = useStageStore.getState()
+    const doc = state.doc
+    const shotId = state.selectedShotId
+    if (!doc || !shotId || !presetId) return
+    const shot = doc.shots.find((item) => item.id === shotId)
+    const camera = shot
+      ? doc.cameras.find((item) => item.id === shot.cameraId)
+      : undefined
+    if (!shot || !camera) return
+    state.applyCommands([
+      {
+        type: 'setCameraTrack',
+        shotId,
+        track: buildCameraMoveTrack(presetId as CameraMovePreset, camera, shot.durationMs)
+      }
+    ])
+  }
+
+  const startDrag = (
+    event: React.PointerEvent,
+    index: number,
+    keyTimeMs: number
+  ): void => {
+    event.stopPropagation()
+    const target = event.currentTarget as HTMLElement
+    const trackEl = target.parentElement
+    if (!trackEl) return
+    setDragIndex(index)
+    useStageStore.setState({ selectedKeyframeIndex: index })
+    seek(keyTimeMs)
+    const move = (moveEvent: PointerEvent): void => {
+      const rect = trackEl.getBoundingClientRect()
+      if (rect.width <= 0) return
+      const ratio = Math.min(1, Math.max(0, (moveEvent.clientX - rect.left) / rect.width))
+      const state = useStageStore.getState()
+      const doc = state.doc
+      const shotId = state.selectedShotId
+      if (!doc || !shotId) return
+      const shot = doc.shots.find((item) => item.id === shotId)
+      if (!shot) return
+      const nextTrack = (shot.cameraTrack ?? []).map((key, i) =>
+        i === index
+          ? { ...key, timeMs: Math.round(ratio * shot.durationMs) }
+          : key
+      )
+      state.applyCommands([
+        { type: 'setCameraTrack', shotId, track: nextTrack }
+      ])
+    }
+    const up = (): void => {
+      setDragIndex(null)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
 
   const [durationDraft, setDurationDraft] = useState(
     (duration / 1000).toFixed(1)
@@ -413,6 +479,23 @@ export function StageTimeline() {
           >
             按对白
           </Button>
+          <NativeSelect
+            className="!h-7 !min-w-[76px] !rounded-md !px-2 !text-[11px]"
+            value=""
+            disabled={!shot}
+            onChange={(event) => {
+              applyCameraMove(event.target.value)
+              event.target.value = ''
+            }}
+            title="按当前机位生成运镜预设"
+          >
+            <option value="">运镜预设</option>
+            {CAMERA_MOVE_PRESETS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </NativeSelect>
           <Button
             type="button"
             variant="secondary"
@@ -665,13 +748,15 @@ export function StageTimeline() {
                     left: `${(key.timeMs / duration) * 100}%`
                   }}
                   title={`${formatTime(key.timeMs)} · FOV ${key.fov}`}
-                  onPointerDown={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => startDrag(event, index, key.timeMs)}
                   onClick={(event) => {
                     event.stopPropagation()
-                    useStageStore.setState({
-                      selectedKeyframeIndex: index
-                    })
-                    seek(key.timeMs)
+                    if (dragIndex === null) {
+                      useStageStore.setState({
+                        selectedKeyframeIndex: index
+                      })
+                      seek(key.timeMs)
+                    }
                   }}
                 />
               ))}

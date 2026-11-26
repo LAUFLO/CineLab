@@ -54,6 +54,8 @@
 | [outpaint-model-plan.md](outpaint-model-plan.md) | 扩图改为生图模型图生图：删除本地 LaMa、比例只来自菜单、精确优先近似兜底 |
 | [video-crop-custom-plan.md](video-crop-custom-plan.md) | 画面裁切：删除原比例、增加 4:3 / 3:4 / 21:9 与自定义宽高比 |
 | [text-wysiwyg-plan.md](text-wysiwyg-plan.md) | 文本节点 Markdown 所见即所得：Milkdown、删除预览切换与格式工具栏 |
+| [close-background-plan.md](close-background-plan.md) | 关闭确认（后台运行/退出）与系统托盘自绘菜单，已实施 |
+| [stage-previs-redesign-plan.md](stage-previs-redesign-plan.md) | 导演台 3D 白模预演改进：全景背景、摆位打组、运镜时间轴、GLB、生成闭环与对话式智能预演，方案已确认 |
 
 ## 3. 代码地图
 

@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { StageObjectType } from '@shared/stage-schema'
 import { Icon } from '../components/Icon'
 import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
+import { useSettingsStore } from '../stores/settings'
 import { selectedNodeOutput } from '../stores/canvas-model'
 import { generateStageFromScene } from './stage-from-scene'
+import { assetUrl } from '../lib/asset-url'
 import { useUIStore } from '../stores/ui'
 import { shortcutMatches } from '../shortcuts/useShortcut'
 import { StageInspector } from './StageInspector'
@@ -18,32 +20,24 @@ import {
   Dialog,
   Menu,
   MenuItem,
-  MenuSeparator,
+  NativeSelect,
   Select
 } from '../components/ui'
-import type {
-  StageExportItems,
-  StageFrameDensity
-} from '@shared/ipc-contract'
+import type { GeneratedAsset } from '@shared/generation'
+import type { AssetScope } from '@shared/asset-schema'
 import {
   applyLightingPreset,
   STAGE_LIGHTING_PRESETS
 } from '@shared/stage-lighting'
+import { modelInputs } from '@shared/provider-schema'
 
 const OBJECT_OPTIONS: Array<{ type: StageObjectType; label: string }> = [
   { type: 'human', label: '人物' },
   { type: 'box', label: '立方体' },
   { type: 'sphere', label: '球体' },
   { type: 'plane', label: '平面' },
+  { type: 'gltf', label: '模型' },
   { type: 'crowd', label: '群众' }
-]
-
-const EXPORT_ITEM_OPTIONS: Array<[keyof StageExportItems, string]> = [
-  ['clips', '每镜片段'],
-  ['frames', '分镜图'],
-  ['overview', '场景鸟瞰'],
-  ['shotList', '镜头表'],
-  ['script', '分镜脚本']
 ]
 
 const TRANSFORM_OPTIONS = [
@@ -102,25 +96,35 @@ export function StageWindow() {
   const [capturing, setCapturing] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState(0)
-  const [exportOptionsOpen, setExportOptionsOpen] = useState(false)
-  const [exportItems, setExportItems] = useState<StageExportItems>({
-    previs: true,
-    clips: true,
-    frames: true,
-    overview: true,
-    shotList: true,
-    script: true
-  })
-  const [frameDensity, setFrameDensity] =
-    useState<StageFrameDensity>('three')
   const [addObjectOpen, setAddObjectOpen] = useState(false)
   const [lightingPreset, setLightingPreset] = useState('')
-  const [exportMenuPosition, setExportMenuPosition] = useState({
-    x: 0,
-    y: 0
-  })
   const [generatingScene, setGeneratingScene] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [pendingAsset, setPendingAsset] = useState<GeneratedAsset | null>(null)
   const [privacyOpen, setPrivacyOpen] = useState(false)
+  const [panoramaMenuOpen, setPanoramaMenuOpen] = useState(false)
+  const [panoramaMenuPosition, setPanoramaMenuPosition] = useState({ x: 0, y: 0 })
+  const [sceneModelKey, setSceneModelKey] = useState('')
+  const providers = useSettingsStore((state) => state.providers)
+  const sceneModelOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = []
+    for (const provider of providers) {
+      if (!provider.hasKey) continue
+      for (const model of provider.models) {
+        if (model.capability !== 'text.chat') continue
+        if (!modelInputs(model).includes('image')) continue
+        options.push({
+          value: `${provider.id}/${model.id}`,
+          label: `${provider.name} · ${model.name}`
+        })
+      }
+    }
+    return options
+  }, [providers])
+  const [selectedForGroup, setSelectedForGroup] = useState<string[]>([])
+  const [drawMoveOpen, setDrawMoveOpen] = useState(false)
+  const drawStartRef = useRef<{ x: number; y: number } | null>(null)
+  const [drawLine, setDrawLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
 
   useEffect(() => {
     if (!playing) return
@@ -283,18 +287,15 @@ export function StageWindow() {
           ? { shotId: state.selectedShotId ?? undefined }
           : {}),
         resolution: '720p',
-        fps: 24,
-        items: exportItems,
-        frameDensity
+        fps: 24
       })
 
-      const clipCount = result.clips?.length ?? 0
       useUIStore
         .getState()
         .showToast(
           result.nodeIds.length > 0
             ? scope === 'program'
-              ? `整片预演已导出${clipCount ? `，含 ${clipCount} 个镜头片段` : ''}`
+              ? '整片预演已导出并添加到画布'
               : '白模预演已导出并添加到画布'
             : '白模预演已导出'
         )
@@ -316,12 +317,107 @@ export function StageWindow() {
   const stageReferenceImage = (): ReturnType<typeof selectedNodeOutput> => {
     if (!nodeId) return null
     const canvas = useCanvasStore.getState()
-    const edge = canvas.edges.find((item) => item.target === nodeId)
-    if (!edge) return null
-    const source = canvas.nodes.find((item) => item.id === edge.source)
-    if (!source) return null
-    const output = selectedNodeOutput(source)
-    return output && output.kind === 'image' ? output : null
+    for (const edge of canvas.edges) {
+      if (edge.target !== nodeId) continue
+      const source = canvas.nodes.find((item) => item.id === edge.source)
+      const output = source ? selectedNodeOutput(source) : null
+      if (output?.kind === 'image') return output
+    }
+    return null
+  }
+
+  const panoramaCandidates = (): Array<{ id: string; label: string; url: string }> => {
+    const canvas = useCanvasStore.getState()
+    const list: Array<{ id: string; label: string; url: string }> = []
+    for (const node of canvas.nodes) {
+      if (node.type !== 'cine' && node.type !== 'film' && node.type !== 'studio') continue
+      const output = selectedNodeOutput(node)
+      if (!output || output.kind !== 'image') continue
+      if (node.data.kind !== 'image') continue
+      list.push({
+        id: node.id,
+        label: node.data.title || '全景图',
+        url: assetUrl(output.path, output.scope)
+      })
+    }
+    return list
+  }
+
+  const handlePanoramaBackground = (url: string): void => {
+    const state = useStageStore.getState()
+    if (!state.doc) return
+    state.applyCommands([
+      { type: 'setBackground', background: { kind: 'panorama', value: url } }
+    ])
+    setPanoramaMenuOpen(false)
+  }
+
+  const handleGroupSelected = (): void => {
+    const chosen = selectedForGroup
+    if (chosen.length < 2) return
+    const parent = chosen[0]
+    const state = useStageStore.getState()
+    state.applyCommands(
+      chosen.slice(1).map((id) => ({
+        type: 'setParent' as const,
+        objectId: id,
+        parentId: parent
+      }))
+    )
+    setSelectedForGroup([])
+  }
+
+  const handleObjectClick = (objectId: string, additive: boolean): void => {
+    selectObject(objectId)
+    if (!additive) {
+      setSelectedForGroup([objectId])
+      return
+    }
+    setSelectedForGroup((ids) =>
+      ids.includes(objectId)
+        ? ids.filter((id) => id !== objectId)
+        : [...ids, objectId]
+    )
+  }
+
+  const handleDrawMoveEnd = (event: React.PointerEvent<HTMLDivElement>): void => {
+    const start = drawStartRef.current
+    drawStartRef.current = null
+    setDrawLine(null)
+    if (!start) return
+    const dx = event.clientX - start.x
+    const dy = event.clientY - start.y
+    if (Math.hypot(dx, dy) < 12) return
+    const state = useStageStore.getState()
+    const doc = state.doc
+    const shotId = state.selectedShotId
+    if (!doc || !shotId) return
+    const shot = doc.shots.find((item) => item.id === shotId)
+    const camera = shot
+      ? doc.cameras.find((item) => item.id === shot.cameraId)
+      : undefined
+    if (!shot || !camera) return
+    const scale = 0.02
+    const target = camera.target
+    const at = (t: number): [number, number, number] => [
+      target[0] + dx * scale * t,
+      target[1] - dy * scale * t,
+      target[2]
+    ]
+    state.applyCommands([
+      {
+        type: 'setCameraTrack',
+        shotId,
+        track: [0, 0.5, 1].map((t) => ({
+          timeMs: Math.round(shot.durationMs * t),
+          position: [...camera.position] as [number, number, number],
+          target: at(t),
+          fov: camera.fov,
+          easing: 'easeInOut' as const
+        }))
+      }
+    ])
+    setDrawMoveOpen(false)
   }
 
   const handleLightingPreset = (presetId: string): void => {
@@ -332,15 +428,21 @@ export function StageWindow() {
     setLightingPreset(presetId)
   }
 
-  const runGenerateFromScene = async (): Promise<void> => {
-    const output = stageReferenceImage()
+  const runGenerateFromScene = async (
+    asset?: { path: string; scope?: AssetScope }
+  ): Promise<void> => {
+    const output = asset ?? stageReferenceImage()
     if (!output) return
     setGeneratingScene(true)
     try {
-      await generateStageFromScene({
+      const generated = await generateStageFromScene({
         imagePath: output.path,
-        imageScope: output.scope
+        imageScope: output.scope,
+        modelKey: sceneModelKey || undefined
       })
+      if (generated.warnings?.length) {
+        useStageStore.setState({ error: generated.warnings.join('；') })
+      }
     } catch (error) {
       useStageStore.setState({
         error: error instanceof Error ? error.message : String(error)
@@ -358,6 +460,45 @@ export function StageWindow() {
       return
     }
     void runGenerateFromScene()
+  }
+
+  const handleImportImage = async (): Promise<void> => {
+    if (!doc || importing || generatingScene) return
+    setImporting(true)
+    try {
+      const asset = await window.api.scene.pickImage()
+      if (!asset) return
+      if (
+        window.localStorage.getItem('cinelab.scenePrivacyAcknowledged') !== '1'
+      ) {
+        setPendingAsset(asset)
+        setPrivacyOpen(true)
+        return
+      }
+      await runGenerateFromScene(asset)
+    } catch (error) {
+      useStageStore.setState({
+        error: error instanceof Error ? error.message : String(error)
+      })
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleImportModel = async (): Promise<void> => {
+    if (!doc || importing || generatingScene) return
+    setImporting(true)
+    try {
+      const asset = await window.api.scene.pickModel()
+      if (!asset) return
+      addObject('gltf', asset.path)
+    } catch (error) {
+      useStageStore.setState({
+        error: error instanceof Error ? error.message : String(error)
+      })
+    } finally {
+      setImporting(false)
+    }
   }
 
   const handleCapture = async (): Promise<void> => {
@@ -445,21 +586,88 @@ export function StageWindow() {
               variant="secondary"
               size="none"
               className={TEXT_BUTTON_CLASS}
-              onClick={() => void handleGenerateFromScene()}
-              disabled={!doc || generatingScene || !stageReferenceImage()}
-              title="从上游第一张参考图生成白膜场景"
+              onClick={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect()
+                setPanoramaMenuPosition({ x: rect.left, y: rect.bottom + 6 })
+                setPanoramaMenuOpen((open) => !open)
+              }}
+              disabled={!doc}
+              title="从画布选择全景图作为场景背景"
             >
-              {generatingScene ? '生成中…' : '从参考图生成'}
+              全景背景
+            </Button>
+            <Menu
+              open={panoramaMenuOpen}
+              onClose={() => setPanoramaMenuOpen(false)}
+              x={panoramaMenuPosition.x}
+              y={panoramaMenuPosition.y}
+              width={224}
+            >
+              {panoramaCandidates().length ? (
+                panoramaCandidates().map((item) => (
+                  <MenuItem
+                    key={item.id}
+                    onSelect={() => handlePanoramaBackground(item.url)}
+                  >
+                    {item.label}
+                  </MenuItem>
+                ))
+              ) : (
+                <div className="px-2 py-2 text-[11px] text-fg-subtle">
+                  画布里没有可用的全景图
+                </div>
+              )}
+            </Menu>
+            <Button
+              type="button"
+              variant="secondary"
+              size="none"
+              className={TEXT_BUTTON_CLASS}
+              onClick={() => void handleImportImage()}
+              disabled={!doc || importing || generatingScene}
+              title="选择本地图片生成白膜场景"
+            >
+              {importing ? '导入中…' : '导入图片'}
             </Button>
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               size="none"
-              className={ICON_BUTTON_CLASS}
-              onClick={closeStage}
-              title="返回画布"
+              className={TEXT_BUTTON_CLASS}
+              onClick={() => void handleImportModel()}
+              disabled={!doc || importing || generatingScene}
+              title="选择本地 GLB / glTF 模型加入导演台"
             >
-              <Icon name="chevron-left" size={16} />
+              {importing ? '导入中…' : '导入模型'}
+            </Button>
+            {sceneModelOptions.length > 0 ? (
+              <NativeSelect
+                className="!h-[26px] !max-w-[150px] !text-[10px]"
+                value={sceneModelKey}
+                onChange={(event) => setSceneModelKey(event.target.value)}
+              >
+                <option value="">视觉模型：自动</option>
+                {sceneModelOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            ) : null}
+            <Button
+              type="button"
+              variant="secondary"
+              size="none"
+              className={TEXT_BUTTON_CLASS}
+              onClick={() => void handleGenerateFromScene()}
+              disabled={!doc || generatingScene || !stageReferenceImage()}
+              title={
+                stageReferenceImage()
+                  ? '从上游第一张参考图生成白膜场景'
+                  : '需要先连接一张图片节点到导演台'
+              }
+            >
+              {generatingScene ? '生成中…' : '从参考图生成'}
             </Button>
             <div className="flex min-w-0 flex-col">
               <span className="overflow-hidden text-ellipsis text-[13px] font-semibold whitespace-nowrap">
@@ -547,61 +755,6 @@ export function StageWindow() {
               variant="secondary"
               size="none"
               className={TEXT_BUTTON_CLASS}
-              onClick={(event) => {
-                const rect = event.currentTarget.getBoundingClientRect()
-                setExportMenuPosition({
-                  x: rect.right - 224,
-                  y: rect.bottom + 6
-                })
-                setExportOptionsOpen((open) => !open)
-              }}
-              disabled={exporting}
-            >
-              选项
-            </Button>
-            <Menu
-              open={exportOptionsOpen}
-              onClose={() => setExportOptionsOpen(false)}
-              x={exportMenuPosition.x}
-              y={exportMenuPosition.y}
-              width={224}
-            >
-              {EXPORT_ITEM_OPTIONS.map(([key, label]) => (
-                <MenuItem
-                  key={key}
-                  active={exportItems[key]}
-                  trailing={exportItems[key] ? '✓' : undefined}
-                  onSelect={() =>
-                    setExportItems((items) => ({
-                      ...items,
-                      [key]: !items[key]
-                    }))
-                  }
-                >
-                  {label}
-                </MenuItem>
-              ))}
-              <MenuSeparator />
-              <MenuItem
-                active={frameDensity === 'three'}
-                trailing={frameDensity === 'three' ? '✓' : undefined}
-                onSelect={() => setFrameDensity('three')}
-              >
-                三张
-              </MenuItem>
-              <MenuItem
-                active={frameDensity === 'first-only'}
-                trailing={frameDensity === 'first-only' ? '✓' : undefined}
-                onSelect={() => setFrameDensity('first-only')}
-              >
-                仅首帧
-              </MenuItem>
-            </Menu>
-            <Button
-              type="button"
-              variant="secondary"
-              size="none"
-              className={TEXT_BUTTON_CLASS}
               onClick={() => {
                 if (exporting) {
                   const stageId = doc?.stageId
@@ -639,6 +792,16 @@ export function StageWindow() {
             </Button>
             <Button
               type="button"
+              variant={drawMoveOpen ? 'primary' : 'secondary'}
+              size="none"
+              className={TEXT_BUTTON_CLASS}
+              onClick={() => setDrawMoveOpen((open) => !open)}
+              title="手绘运镜轨迹"
+            >
+              手绘运镜
+            </Button>
+            <Button
+              type="button"
               variant="ghost"
               size="none"
               className={ICON_BUTTON_CLASS}
@@ -650,14 +813,25 @@ export function StageWindow() {
           </div>
         </header>
 
-        <aside className="flex min-h-0 flex-col gap-1.5 overflow-x-hidden overflow-y-auto rounded-card border border-border bg-surface p-2 [grid-area:left] max-[720px]:hidden">
-          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+        <aside className="flex min-h-0 flex-col gap-1.5 overflow-hidden rounded-card border border-border bg-surface p-2 [grid-area:left] max-[720px]:hidden">
+          <div className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>对象</span>
               <div className="flex items-center gap-1.5">
                 <small className="font-normal text-fg-subtle">
                   {doc?.objects.length ?? 0}
                 </small>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  className={MINI_BUTTON_CLASS}
+                  title="打组（Ctrl/Shift 点击多选）"
+                  disabled={selectedForGroup.length < 2}
+                  onClick={handleGroupSelected}
+                >
+                  组
+                </Button>
                 <Button
                   type="button"
                   variant="ghost"
@@ -689,7 +863,7 @@ export function StageWindow() {
                 ))}
               </div>
             ) : null}
-            <div className="flex flex-col gap-[3px]">
+            <div className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto pr-1">
               {doc?.objects.length ? (
                 doc.objects.map((object) => (
                   <Button
@@ -701,7 +875,12 @@ export function StageWindow() {
                     data-active={
                       object.id === selectedObjectId ? '' : undefined
                     }
-                    onClick={() => selectObject(object.id)}
+                    onClick={(event) =>
+                      handleObjectClick(
+                        object.id,
+                        event.ctrlKey || event.metaKey || event.shiftKey
+                      )
+                    }
                   >
                     <Icon name="grid" size={13} />
                     <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
@@ -720,7 +899,7 @@ export function StageWindow() {
             </div>
           </div>
 
-          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+          <div className="[&+&]:mt-2 flex min-h-0 flex-1 flex-col [&+&]:border-t [&+&]:border-border [&+&]:pt-2">
             <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>机位</span>
               <div className="flex items-center gap-1.5">
@@ -739,7 +918,7 @@ export function StageWindow() {
                 </Button>
               </div>
             </div>
-            <div className="flex flex-col gap-[3px]">
+            <div className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto pr-1">
               {doc?.cameras.length ? (
                 doc.cameras.map((camera) => (
                   <Button
@@ -768,14 +947,14 @@ export function StageWindow() {
             </div>
           </div>
 
-          <div className="[&+&]:mt-3 [&+&]:border-t [&+&]:border-border [&+&]:pt-2.5">
+          <div className="[&+&]:mt-2 flex min-h-0 flex-1 flex-col [&+&]:border-t [&+&]:border-border [&+&]:pt-2">
             <div className="flex items-center justify-between px-1 pb-1.5 text-[11px] font-semibold text-fg-muted">
               <span>镜头</span>
               <small className="font-normal text-fg-subtle">
                 {doc?.shots.length ?? 0}
               </small>
             </div>
-            <div className="flex flex-col gap-[3px]">
+            <div className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto pr-1">
               {doc?.shots.length ? (
                 doc.shots.map((shot) => (
                   <Button
@@ -807,6 +986,51 @@ export function StageWindow() {
 
         <main className="relative min-h-0 min-w-0 overflow-hidden rounded-card border border-border bg-media-bg [grid-area:viewport]">
           <StageViewport />
+          {drawMoveOpen ? (
+            <div
+              className="absolute inset-0 z-[3] cursor-crosshair"
+              onPointerDown={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect()
+                drawStartRef.current = {
+                  x: event.clientX - rect.left,
+                  y: event.clientY - rect.top
+                }
+                setDrawLine({
+                  x1: event.clientX - rect.left,
+                  y1: event.clientY - rect.top,
+                  x2: event.clientX - rect.left,
+                  y2: event.clientY - rect.top
+                })
+              }}
+              onPointerMove={(event) => {
+                if (!drawStartRef.current) return
+                const rect = event.currentTarget.getBoundingClientRect()
+                setDrawLine({
+                  x1: drawStartRef.current.x,
+                  y1: drawStartRef.current.y,
+                  x2: event.clientX - rect.left,
+                  y2: event.clientY - rect.top
+                })
+              }}
+              onPointerUp={handleDrawMoveEnd}
+            >
+              {drawLine ? (
+                <svg className="pointer-events-none absolute inset-0 h-full w-full">
+                  <line
+                    x1={drawLine.x1}
+                    y1={drawLine.y1}
+                    x2={drawLine.x2}
+                    y2={drawLine.y2}
+                    stroke="var(--accent)"
+                    strokeWidth={2}
+                  />
+                </svg>
+              ) : null}
+              <div className="pointer-events-none absolute top-2 left-1/2 -translate-x-1/2 rounded-md bg-black/55 px-2 py-1 text-[10px] text-white/80">
+                在视口画一条线，松开生成运镜
+              </div>
+            </div>
+          ) : null}
           {viewMode === 'director' && selectedObjectId ? (
             <div
               className="absolute top-2.5 left-1/2 flex -translate-x-1/2 overflow-hidden rounded-md border border-border bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] shadow-float"
@@ -890,7 +1114,9 @@ export function StageWindow() {
                   '1'
                 )
                 setPrivacyOpen(false)
-                void runGenerateFromScene()
+                const asset = pendingAsset
+                setPendingAsset(null)
+                void runGenerateFromScene(asset ?? undefined)
               }}
             >
               继续
@@ -899,7 +1125,7 @@ export function StageWindow() {
         }
       >
         <p className="text-xs leading-relaxed text-fg-muted">
-          「从参考图生成」会把这张图片发送给你在设置中配置的多模态文本模型，用于解析场景。
+          「从参考图生成」或「导入图片」会把图片发送给你在设置中配置的多模态文本模型，用于解析场景。
           图片不会上传到 CineLab 服务器；解析结果只写回当前项目。
         </p>
       </Dialog>

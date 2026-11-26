@@ -35,8 +35,9 @@
 | 04 | 整片时间线与镜头重叠/优先级 | `src/shared/stage-program.ts`、`stage-program.test.ts` |
 | 04 | 整片播放与整片导出 | `stageStore`、`src/main/stage/export.ts` |
 | 04 | 每镜白模片段 | `StageExportItems.clips`、`export.ts` |
-| 04 | 每镜关键帧、鸟瞰、镜头表、分镜脚本 | `src/shared/stage-shot-list.ts`、`export.ts` |
+| 04 | 每镜片段/分镜图/鸟瞰/镜头表/脚本（Agent 显式 `items` 可用，UI 不暴露） | `src/shared/stage-shot-list.ts`、`export.ts` |
 | 04 | 10 个光照预设 | `src/shared/stage-lighting.ts`、`StageWindow` |
+| 04 | 雨天/雪天粒子效果（视口实时 + 导出逐帧） | `src/shared/stage-lighting.ts`、`src/renderer/src/stage/stage-weather.ts` |
 | 04 | 13 关节骨架 + 17 个动作 | `src/shared/stage-motions.ts`、`stage-figure.ts` |
 | 04 | 自动分镜与按对白分镜 | `stage-auto-coverage.ts`、`stage-dialogue.ts` |
 | 04 | 单镜预演导出与截图回画布 | `src/main/stage/export.ts`、`StageWindow.tsx` |
@@ -71,13 +72,18 @@
 | 02 | 预设提示词：按输入框居中的 620×480 浮窗、CRUD、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、发送原位展开、风格置顶；胶囊宽度对齐占位、绿色无图标、连续插入不重叠；资产库“使用”插入正文 | `src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx`、`prompt-preset.test.ts` |
 | 02 | 资产库提示词卡片：按钮行统一 28px、卡片等高、新建入口位于面包屑右侧 | `TemplateGrid.tsx`、`LibraryWindow.tsx` |
 | 02 | 工作流模板：保存画布子图为资产库 `工作流/` 目录包；本地上传/生成节点转 `workflowSlot` 占位；导演台文档打包，拉片/剪辑室占位；支持重命名、删除、更新、导入导出 zip；`modelKey`/`params` 按节点持久化 | `src/main/workflows/`、`src/main/library/workflows.ts`、`src/shared/workflow-schema.ts`、`WorkflowSaveDialog.tsx`、`WorkflowGrid.tsx`、`PromptBar.tsx` |
+| 07 | 关闭确认（后台运行/退出）、系统托盘品牌 logo 与自绘右键菜单；保存失败拦截、「不再提示」仅记忆后台运行 | `src/main/tray/`、`src/renderer/src/App.tsx`、`CloseConfirmDialog.tsx`、`TrayMenuWindow.tsx`、`preferences.ts` |
+| 04 | GLB 导入与真实模型渲染（视口 + 导出等待加载），失败回退 wireframe | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts`、`stage-render.ts` |
+| 04 | 预演导出附带结构 JSON 与生成参考提示词，回画布后写入视频节点 | `src/shared/stage-previs-reference.ts`、`src/main/stage/export.ts`、`preview-runner.ts` |
+| 02 | model 资产入库到 `assets/model/`，支持 `.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` |
+| 06 | 对话式白模预演编排：动作轨工具、批量计划确认、previs Skill SOP | `resources/skills/stage-previs/SKILL.md`、`src/main/agent/tools/stage.ts`、`stageBridge.ts` |
+| 06 | 导演台上下文一致性：每轮精简快照 + `stage_get` 摘要扩展 + 写前软提示 | `src/shared/stage-snapshot.ts`、`pi/prompt.ts`、`pi/tools.ts`、`stageBridge.ts` |
 
 ## 部分实现（别当已完成）
 
 | 模块 | 能力 | 现状 | 证据 |
 |---|---|---|---|
-| 04 | `gltf` 对象类型 | 未接 GLTFLoader，`assetPath` 未读取，wireframe 人形占位 | `src/renderer/src/stage/stage-scene.ts` |
-| 04 | 场景图 → 白膜 | VLM 解析对象与机位已接；深度校准未接，`depth` 默认为空 | `src/main/scene/analyze.ts`、`src/shared/scene-calibrate.ts` |
+| 04 | 场景图 → 白膜 | VLM 解析已消费 sizeClass/facing/room/scale/pitch；深度校准未接，`depth` 默认为空 | `src/main/scene/analyze.ts`、`src/shared/stage-from-scene-build.ts` |
 | 04 | 舞台对象资产 | 只有 human/box/sphere/plane/gltf/crowd；无家具/建筑/自然资产库 | `src/shared/scene-object-presets.ts` |
 
 | 06 | Agent 运行时 v3（pi） | M1–M3 已接入动态 import、v2 会话、63 工具审计、确认、撤销、自动续跑、前端新事件；M4 四空间回归通过（canvas/stage 真模型，timeline/film 桥接），正式 asar 待复测 | `src/main/agent/pi/` |
@@ -86,7 +92,6 @@
 
 | 模块 | 能力 | 文档 | 状态 |
 |---|---|---|---|
-| 04 | glTF 加载 | `docs/stage-previs-upgrade-plan.md` | P2 评估 |
 | 04 | 四视图、EDL | 同上 | 按需 |
 
 ## 维护规则

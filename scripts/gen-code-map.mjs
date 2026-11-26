@@ -104,13 +104,17 @@ const MODULES = [
       'src/shared/stage-program.ts',
       'src/shared/stage-lighting.ts',
       'src/shared/stage-motions.ts',
+      'src/shared/stage-camera-moves.ts',
       'src/shared/stage-auto-coverage.ts',
       'src/shared/stage-dialogue.ts',
       'src/shared/stage-shot-list.ts',
       'src/shared/scene-analyze.ts',
       'src/shared/scene-calibrate.ts',
       'src/shared/scene-draft.ts',
-      'src/shared/scene-object-presets.ts'
+      'src/shared/scene-object-presets.ts',
+      'src/shared/stage-from-scene-build.ts',
+      'src/shared/stage-previs-reference.ts',
+      'src/renderer/src/stage/stage-weather.ts'
     ]
   },
   {
@@ -141,7 +145,8 @@ const MODULES = [
       'src/shared/agent-commands.ts',
       'src/shared/capabilities.ts',
       'src/shared/skills.ts',
-      'src/shared/mcp-command.ts'
+      'src/shared/mcp-command.ts',
+      'src/shared/stage-snapshot.ts'
     ]
   },
   {
@@ -159,6 +164,7 @@ const MODULES = [
       'src/main/components',
       'src/main/types',
       'src/main/workflows',
+      'src/main/tray',
       'src/preload'
     ],
     files: [
@@ -196,7 +202,8 @@ const MODULES = [
       'src/renderer/src/styles',
       'src/renderer/src/theme',
       'src/renderer/src/lib',
-      'src/renderer/src/shortcuts'
+      'src/renderer/src/shortcuts',
+      'src/renderer/src/tray'
     ],
     files: [
       'src/renderer/src/App.tsx',

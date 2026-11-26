@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import { registerIpc } from './ipc'
 import { registerAssetProtocol, registerAssetScheme } from './protocol'
 import { createMainWindow, allowAllWindowClose } from './window'
+import { installTray, destroyTray } from './tray'
 import { installApplicationMenu } from './menu'
 import { ensureLibrary } from './library/config'
 import { cleanupThumbCache } from './library/thumbs'
@@ -163,11 +164,18 @@ if (!hasLock) {
       mainWindow.webContents.setZoomFactor(startupPreferences.ui.scale / 100)
     }
     diagLog('createMainWindow done')
+    installTray()
 
     app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
+      const win = BrowserWindow.getAllWindows()[0]
+      if (!win) {
         createMainWindow()
+        return
       }
+      if (win.isMinimized()) win.restore()
+      win.setSkipTaskbar(false)
+      win.show()
+      win.focus()
     })
   }).catch((error) => {
     diagLog(
@@ -198,6 +206,7 @@ if (!hasLock) {
   })
 
   app.on('before-quit', () => {
+    destroyTray()
     cancelAllStemTasks()
     void disposeStemCache()
     stopLocalAdapterRegistry()

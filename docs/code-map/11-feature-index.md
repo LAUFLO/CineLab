@@ -47,6 +47,7 @@
 | 结果节点隐藏 PromptBar | 操作/AI/拉片/导演台/剪辑室结果只保留工具栏 | `PromptBar.tsx`、`node-operation-specs.ts`、`stores/canvas/slices/assets.ts` | 已实现 |
 | 人声/背景音分离 | Demucs htdemucs、无声视频 + 音频、FIFO 任务 | `src/main/media/stems.ts`、`resources/stem-worker/worker.py` | 已实现 |
 | 素材入库 | `ingestAsset` | `src/main/assets/ingest.ts` | 已实现 |
+| 3D 模型入库 | `kind:'model'` → `assets/model/`，`.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` | 已实现 |
 | 错误文案 | 配额/鉴权/超时 | `src/main/engine/generation-error.ts` | 已实现 |
 | 风格库、风格胶囊 | 官方只读 + 自定义、按输入框居中浮窗（一行 8 列小封面）、分类浏览、单击即应用、单选胶囊内联输入框首行（× 角标）；资产库“风格”同源展示 | `src/main/library/styles.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`src/shared/style-prompt.ts` | 已实现 |
 | 预设提示词 | 资产库“提示词”同源、按输入框居中浮窗、CRUD、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、胶囊不重叠（绿色无图标）、发送原位展开、风格置顶 | `src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx` | 已实现 |
@@ -75,11 +76,16 @@
 | 整片/每镜导出 | `exportPreview(scope/items)` | `src/main/stage/export.ts` | 已实现 |
 | 每镜关键帧、鸟瞰、镜头表、脚本 | `StageExportItems` | `src/main/stage/export.ts`、`stage-shot-list.ts` | 已实现 |
 | 光照预设 | 10 个氛围预设 | `src/shared/stage-lighting.ts` | 已实现 |
+| 天气粒子 | 雨天/雪天，视口实时 + 导出逐帧 | `src/shared/stage-lighting.ts`、`src/renderer/src/stage/stage-weather.ts` | 已实现 |
 | 人物动作 | 13 关节、17 个动作 | `src/shared/stage-motions.ts`、`stage-figure.ts` | 已实现 |
 | 自动分镜 | 单/双/群、不越轴 | `src/shared/stage-auto-coverage.ts` | 已实现 |
 | 按对白分镜 | 解析台词、按句切镜 | `src/shared/stage-dialogue.ts` | 已实现 |
 | 场景图 → 白膜 | VLM + 校准（深度未接） | `src/main/scene/analyze.ts` | 部分实现 |
 | 截图回画布 | `stage.capture` | `src/main/ipc/stage.ts` | 已实现 |
+| GLB 导入与渲染 | `scene:pick-model` + `ingestAsset(model)` + GLTFLoader（仅导入不导出） | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts` | 已实现 |
+| 预演结构约束 | 结构 JSON + 提示词模板随导出回画布并写入视频节点 | `src/shared/stage-previs-reference.ts`、`preview-runner.ts` | 已实现 |
+| 场景字段消费 | sizeClass/facing/room/scale/pitch → 白模摆位与室内结构 | `src/shared/stage-from-scene-build.ts` | 已实现 |
+| 对话式预演编排 | 动作轨工具 + 批量计划确认 + previs Skill SOP | `src/main/agent/tools/stage.ts`、`stageBridge.ts`、`resources/skills/stage-previs/SKILL.md` | 已实现 |
 
 ## 逐帧拉片
 
@@ -105,6 +111,7 @@
 | 关键词 | 已有实现 | 入口 | 状态 |
 |---|---|---|---|
 | Agent 工具 | 画布/生成/导演台/时间线/拉片/能力/技能 | `src/main/agent/tools/` | 已实现 |
+| 对话式白模预演 | stage-previs Skill、批量计划确认 Dialog、每轮精简场景快照 | `resources/skills/stage-previs/SKILL.md`、`src/shared/stage-snapshot.ts`、`stageBridge.ts` | 已实现 |
 | 生成提案 | `AgentProposal`、`.cinelab/agent/proposals` | `src/main/agent/proposals.ts` | 已实现 |
 | 会话 | `.cinelab/agent/sessions/*.jsonl` | `src/main/agent/session.ts`、`pi/session.ts` | 已实现 |
 | 技能 | 内置/全局/项目三级、启用状态过滤 | `src/main/agent/skills.ts`、`skills-config.ts` | 已实现 |
@@ -117,6 +124,7 @@
 | 安全/更新/组件 | 外部链接、导航、更新、运行时组件 | `src/main/security/`、`update/`、`components/` | 已实现 |
 | UI 组件库 | Button/Select/Menu/Popover/Dialog 等 | `src/renderer/src/components/ui/` | 已实现 |
 | 主题 | `tokens.css` | `src/renderer/src/styles/tokens.css` | 已实现 |
+| 关闭确认与后台运行 | 每次关闭弹「后台运行/退出程序」，自动保存且失败拦截；「不再提示」仅记忆后台运行；托盘 logo + 自绘右键菜单（显示主窗口/退出） | `src/main/tray/`、`App.tsx`、`CloseConfirmDialog.tsx`、`TrayMenuWindow.tsx`、`GeneralSettingsSection.tsx` | 已实现 |
 
 ## 维护规则
 

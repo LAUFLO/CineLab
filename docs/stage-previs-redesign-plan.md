@@ -32,7 +32,7 @@
 ## 二、现状（代码事实）
 
 - **全景**：`node-operations.ts:376-384` 有 `panorama` 操作（`PROMPT_PANORAMA` 要求 2:1 等距柱状投影，走通用图模型，产出普通 image 节点，`op='panorama'`）；`PanoramaViewer.tsx:15-199` 是纯只读球体查看器（`BackSide` + `TextureLoader`，拖拽/滚轮/ESC），无编辑、无机位、无与导演台联动。`stage-schema.ts:19,160-163` 声明 `background.kind='panorama'`，但 `StageViewport.tsx:443-448` 与 `stage-render.ts:94-135` 只渲染纯色；`stage_set_background` 工具可写但写了不显示。
-- **UI**：`StageWindow.tsx:446-953` 全屏 portal，`top(48)/left(240)/viewport/right(280)/timeline(168)` 网格；header 有光照、导入图片、从参考图生成、视角切换、播放范围、导出选项、截图、关闭；左栏 `:694-847` 是对象/机位/镜头清单（仅添加与选中）；`StageInspector.tsx:200-298` 对象名称只读，颜色/可见可改；`CameraInspector` 名称可编辑。
+- **UI**：`StageWindow.tsx` 全屏 portal，`top(48)/left(240)/viewport/right(280)/timeline(168)` 网格；header 有光照、导入图片/模型、从参考图生成、视角切换、播放范围、导出预演（无选项菜单）、截图、关闭；左栏是对象/机位/镜头清单（可重命名、多选打组）；`StageInspector` 对象名称可编辑；`CameraInspector` 名称可编辑。
 - **打组**：`StageObject.parentId` 存在（`stage-schema.ts:35`），无 group/setParent 命令（`stage-commands.ts:23-70`）。
 - **运镜**：`stage-timeline.ts` 有 `sampleCameraTrack` + Hermite 插值；`StageTimeline.tsx:645-685` 关键帧圆点只能点击 seek 与选中，不能拖拽；无手绘轨迹、无推拉/环绕/跟拍预设；语义镜头求解在 `ShotInspector.tsx:92-291`，自动分镜在 `StageTimeline.tsx:351-415`。
 - **回画布**：`StageWindow.tsx:393-436` → `stage.capture` IPC（`main/ipc/stage.ts:121-150`）→ `ingestAsset(model:'导演台')` → `addAssetNodes`；`preview-runner.ts:24-201` 已导出整片视频/每镜片段/分镜图/鸟瞰/镜头表并自动打组；`main/stage/export.ts:93-225,368+` 有完整逐帧渲染链路。
@@ -97,15 +97,15 @@
 基于导演台 UI 全量盘点的结论：**不需要大改，主要是去冗余与消除误导**。逐项清单：
 
 - **合并重复控件**：`StageWindow.tsx:495-504` 的返回箭头与 `:681-690` 的 `×` 都调 `closeStage`，留一个。
-- **修隐藏默认项**：`exportItems` 初值含 `previs:true`（`:108-115`）但「选项」菜单（`:586-640`）不列出该项，导致主视频无法关闭——补上开关或删掉死字段。
+- **导出项收敛（最终决策）**：移除整个「选项」菜单，只保留 header 的「导出预演」按钮；整片导出缺省只生成白模预演视频（外加阶段二自动附带的结构 JSON 与生成参考提示词）。每镜片段/分镜图/鸟瞰/镜头表/分镜脚本不再在 UI 暴露，仅当 Agent 显式传 `items` 时生成。
 - **收敛重复选中态**：镜头的选中状态同时出现在左栏列表、时间轴镜头下拉、成片列表三处，可收敛为一处主控件。
 - **完善禁用提示**：「从参考图生成」`disabled={!doc || generatingScene || !stageReferenceImage()}`（`:484-494`）目前只有静态 title，应在无上游图片节点时明确提示「需要先连接一张图片节点到导演台」。
 - **标灰/实现无效功能**：背景 `panorama/model` 在 schema 与 `stage_set_background` 可写，但视口与导出只渲染纯色（`StageViewport.tsx:442-448`、`stage-render.ts:94-135`），`StageInspector:407` 还显示背景 kind 形成误导——按阶段 1.1 真渲染全景，否则标「暂不支持显示」；`gltf` 的 `TYPE_LABEL:'模型'` 与 wireframe 人形占位（`stage-scene.ts:41-59`）应标灰提示。
 - **对象重命名/打组**：左栏对象名只读、无打组——按阶段 1.2 实现后再在左栏放开，不提前暴露。
-- **保留不动**：光照下拉、截图到画布、导出按钮与选项、视角切换、播放范围、三类清单、Inspector 属性、自动分镜/按对白/成片排序/捕获关键帧、视口变换工具——都有真实命令与渲染链路支撑。
+- **保留不动**：光照下拉、截图到画布、导出按钮（无选项菜单）、视角切换、播放范围、三类清单、Inspector 属性、自动分镜/按对白/成片排序/捕获关键帧、视口变换工具——都有真实命令与渲染链路支撑。
 - **不新增**：独立 Agent 输入框、手动/智能模式切换、独立入口/新窗口（见第五节）。
 
-验收补充：导演台无重复关闭入口；导出选项可关闭主视频；无上游图时按钮有明确提示；无效功能不再误导用户。
+验收补充：导演台无重复关闭入口；导出仅生成白模预演，无冗余选项菜单；无上游图时按钮有明确提示；无效功能不再误导用户。
 
 ### 阶段 3：命名（本方案不实施）
 

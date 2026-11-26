@@ -382,12 +382,14 @@ export async function exportStageProgram(
   if (timeline.segments.length === 0) throw new Error('成片还没有镜头')
 
   const fps = input.fps === 30 ? 30 : 24
+  // UI 只提供「导出预演」按钮，缺省只生成白模预演视频；
+  // 镜头片段/分镜图/镜头表等仅在 Agent 显式传 items 时生成。
   const items: StageExportItems = {
     previs: true,
-    clips: true,
-    frames: true,
+    clips: false,
+    frames: false,
     overview: false,
-    shotList: true,
+    shotList: false,
     script: false,
     ...input.items
   }

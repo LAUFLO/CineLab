@@ -72,7 +72,7 @@ stageStore.playbackScope = 'shot' | 'program'
 StageWindow → stage.exportPreview({ scope: 'program', items })
   → main/stage/export.ts exportStageProgram
   → 隐藏 BrowserWindow + stage-render.html
-  → 整片视频 + 每镜片段 + 每镜关键帧 + 鸟瞰 + 镜头表/脚本
+  → 整片视频 + 结构 JSON/提示词（附加产物仅 Agent 显式 items 时生成）
   → ingestAsset → 画布节点
 
 单镜导出：
@@ -121,7 +121,7 @@ StageWindow → scene.analyze
 | 整片时间线/重叠优先级 | 已实现 | `src/shared/stage-program.ts`、`stage-program.test.ts` |
 | 整片播放 | 已实现 | `stageStore.playbackScope/programMs`、`StageViewport` |
 | 整片/每镜导出 | 已实现 | `src/main/stage/export.ts`、`StageExportItems` |
-| 每镜关键帧/鸟瞰/镜头表/脚本 | 已实现 | `src/shared/stage-shot-list.ts`、`export.ts` |
+| 每镜片段/分镜图/鸟瞰/镜头表/脚本 | 已实现（仅 Agent 显式 `items` 启用，UI 已移除选项菜单） | `src/shared/stage-shot-list.ts`、`export.ts` |
 | 10 个光照预设 | 已实现 | `src/shared/stage-lighting.ts`、`StageWindow` |
 | 无限网格地面 | 已实现 | `src/renderer/src/stage/stage-ground.ts`；视口与导出共用 |
 | 13 关节骨架 + 17 个动作 | 已实现 | `src/shared/stage-motions.ts`、`stage-figure.ts` |
@@ -156,13 +156,13 @@ StageWindow → scene.analyze
 | 文件 | 行数 |
 |---|---|
 | `src/main/scene/analyze.ts` | 190 |
-| `src/main/stage/export.ts` | 832 |
+| `src/main/stage/export.ts` | 834 |
 | `src/main/stage/storage.ts` | 150 |
 | `src/renderer/src/stage/ShotInspector.tsx` | 292 |
 | `src/renderer/src/stage/StageInspector.tsx` | 433 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 815 |
 | `src/renderer/src/stage/StageViewport.tsx` | 702 |
-| `src/renderer/src/stage/StageWindow.tsx` | 1223 |
+| `src/renderer/src/stage/StageWindow.tsx` | 1136 |
 | `src/renderer/src/stage/preview-runner.ts` | 206 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |

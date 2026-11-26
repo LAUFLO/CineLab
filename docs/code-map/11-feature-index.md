@@ -44,6 +44,7 @@
 | 结果节点隐藏 PromptBar | 操作/AI/拉片/导演台/剪辑室结果只保留工具栏 | `PromptBar.tsx`、`node-operation-specs.ts`、`stores/canvas/slices/assets.ts` | 已实现 |
 | 人声/背景音分离 | Demucs htdemucs、无声视频 + 音频、FIFO 任务 | `src/main/media/stems.ts`、`resources/stem-worker/worker.py` | 已实现 |
 | 素材入库 | `ingestAsset` | `src/main/assets/ingest.ts` | 已实现 |
+| 3D 模型入库 | `kind:'model'` → `assets/model/`，`.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` | 已实现 |
 | 错误文案 | 配额/鉴权/超时 | `src/main/engine/generation-error.ts` | 已实现 |
 | 风格库、风格胶囊 | 官方只读 + 自定义、按输入框居中浮窗（一行 8 列小封面）、分类浏览、单击即应用、单选胶囊内联输入框首行（× 角标）；资产库“风格”同源展示 | `src/main/library/styles.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`src/shared/style-prompt.ts` | 已实现 |
 | 预设提示词 | 资产库“提示词”同源、按输入框居中浮窗、CRUD、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、胶囊不重叠（绿色无图标）、发送原位展开、风格置顶 | `src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx` | 已实现 |
@@ -77,6 +78,9 @@
 | 按对白分镜 | 解析台词、按句切镜 | `src/shared/stage-dialogue.ts` | 已实现 |
 | 场景图 → 白膜 | VLM + 校准（深度未接） | `src/main/scene/analyze.ts` | 部分实现 |
 | 截图回画布 | `stage.capture` | `src/main/ipc/stage.ts` | 已实现 |
+| GLB 导入与渲染 | `scene:pick-model` + `ingestAsset(model)` + GLTFLoader（仅导入不导出） | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts` | 已实现 |
+| 预演结构约束 | 结构 JSON + 提示词模板随导出回画布并写入视频节点 | `src/shared/stage-previs-reference.ts`、`preview-runner.ts` | 已实现 |
+| 场景字段消费 | sizeClass/facing/room/scale/pitch → 白模摆位与室内结构 | `src/shared/stage-from-scene-build.ts` | 已实现 |
 
 ## 逐帧拉片
 

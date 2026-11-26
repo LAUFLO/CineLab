@@ -86,7 +86,7 @@ export function registerSceneIpc(): void {
     async (
       _event,
       input: {
-        kind: 'image' | 'video' | 'audio'
+        kind: 'image' | 'video' | 'audio' | 'model'
         mime: string
         data: ArrayBuffer
       }
@@ -103,10 +103,36 @@ export function registerSceneIpc(): void {
             ? 'image/png'
             : input.kind === 'video'
               ? 'video/mp4'
-              : 'audio/mpeg'),
+              : input.kind === 'audio'
+                ? 'audio/mpeg'
+                : 'model/gltf-binary'),
         model: '本地上传'
       })
     }
   )
+
+  ipcMain.handle('scene:pick-model', async () => {
+    const root = getCurrentProjectRoot()
+    if (!root) throw new Error('当前没有打开的项目')
+    const options: OpenDialogOptions = {
+      properties: ['openFile'],
+      filters: [{ name: '3D 模型', extensions: ['glb', 'gltf'] }]
+    }
+    const win = BrowserWindow.getFocusedWindow()
+    const picked = win
+      ? await dialog.showOpenDialog(win, options)
+      : await dialog.showOpenDialog(options)
+    if (picked.canceled || picked.filePaths.length === 0) return null
+    const file = picked.filePaths[0]
+    const ext = extname(file).toLowerCase()
+    const data = await readFile(file)
+    return ingestAsset({
+      projectPath: root,
+      data,
+      kind: 'model',
+      mime: ext === '.gltf' ? 'model/gltf+json' : 'model/gltf-binary',
+      model: '导入'
+    })
+  })
 
 }

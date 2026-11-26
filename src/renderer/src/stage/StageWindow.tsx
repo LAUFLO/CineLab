@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { StageObjectType } from '@shared/stage-schema'
 import { Icon } from '../components/Icon'
 import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
+import { useSettingsStore } from '../stores/settings'
 import { selectedNodeOutput } from '../stores/canvas-model'
 import { generateStageFromScene } from './stage-from-scene'
 import { assetUrl } from '../lib/asset-url'
@@ -20,6 +21,7 @@ import {
   Menu,
   MenuItem,
   MenuSeparator,
+  NativeSelect,
   Select
 } from '../components/ui'
 import type { GeneratedAsset } from '@shared/generation'
@@ -32,12 +34,14 @@ import {
   applyLightingPreset,
   STAGE_LIGHTING_PRESETS
 } from '@shared/stage-lighting'
+import { modelInputs } from '@shared/provider-schema'
 
 const OBJECT_OPTIONS: Array<{ type: StageObjectType; label: string }> = [
   { type: 'human', label: '人物' },
   { type: 'box', label: '立方体' },
   { type: 'sphere', label: '球体' },
   { type: 'plane', label: '平面' },
+  { type: 'gltf', label: '模型' },
   { type: 'crowd', label: '群众' }
 ]
 
@@ -129,6 +133,23 @@ export function StageWindow() {
   const [privacyOpen, setPrivacyOpen] = useState(false)
   const [panoramaMenuOpen, setPanoramaMenuOpen] = useState(false)
   const [panoramaMenuPosition, setPanoramaMenuPosition] = useState({ x: 0, y: 0 })
+  const [sceneModelKey, setSceneModelKey] = useState('')
+  const providers = useSettingsStore((state) => state.providers)
+  const sceneModelOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = []
+    for (const provider of providers) {
+      if (!provider.hasKey) continue
+      for (const model of provider.models) {
+        if (model.capability !== 'text.chat') continue
+        if (!modelInputs(model).includes('image')) continue
+        options.push({
+          value: `${provider.id}/${model.id}`,
+          label: `${provider.name} · ${model.name}`
+        })
+      }
+    }
+    return options
+  }, [providers])
   const [selectedForGroup, setSelectedForGroup] = useState<string[]>([])
   const [drawMoveOpen, setDrawMoveOpen] = useState(false)
   const drawStartRef = useRef<{ x: number; y: number } | null>(null)
@@ -446,10 +467,14 @@ export function StageWindow() {
     if (!output) return
     setGeneratingScene(true)
     try {
-      await generateStageFromScene({
+      const generated = await generateStageFromScene({
         imagePath: output.path,
-        imageScope: output.scope
+        imageScope: output.scope,
+        modelKey: sceneModelKey || undefined
       })
+      if (generated.warnings?.length) {
+        useStageStore.setState({ error: generated.warnings.join('；') })
+      }
     } catch (error) {
       useStageStore.setState({
         error: error instanceof Error ? error.message : String(error)
@@ -483,6 +508,22 @@ export function StageWindow() {
         return
       }
       await runGenerateFromScene(asset)
+    } catch (error) {
+      useStageStore.setState({
+        error: error instanceof Error ? error.message : String(error)
+      })
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleImportModel = async (): Promise<void> => {
+    if (!doc || importing || generatingScene) return
+    setImporting(true)
+    try {
+      const asset = await window.api.scene.pickModel()
+      if (!asset) return
+      addObject('gltf', asset.path)
     } catch (error) {
       useStageStore.setState({
         error: error instanceof Error ? error.message : String(error)
@@ -620,6 +661,31 @@ export function StageWindow() {
             >
               {importing ? '导入中…' : '导入图片'}
             </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="none"
+              className={TEXT_BUTTON_CLASS}
+              onClick={() => void handleImportModel()}
+              disabled={!doc || importing || generatingScene}
+              title="选择本地 GLB / glTF 模型加入导演台"
+            >
+              {importing ? '导入中…' : '导入模型'}
+            </Button>
+            {sceneModelOptions.length > 0 ? (
+              <NativeSelect
+                className="!h-[26px] !max-w-[150px] !text-[10px]"
+                value={sceneModelKey}
+                onChange={(event) => setSceneModelKey(event.target.value)}
+              >
+                <option value="">视觉模型：自动</option>
+                {sceneModelOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            ) : null}
             <Button
               type="button"
               variant="secondary"

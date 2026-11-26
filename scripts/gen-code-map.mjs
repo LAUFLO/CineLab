@@ -110,7 +110,9 @@ const MODULES = [
       'src/shared/scene-analyze.ts',
       'src/shared/scene-calibrate.ts',
       'src/shared/scene-draft.ts',
-      'src/shared/scene-object-presets.ts'
+      'src/shared/scene-object-presets.ts',
+      'src/shared/stage-from-scene-build.ts',
+      'src/shared/stage-previs-reference.ts'
     ]
   },
   {

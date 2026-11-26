@@ -104,7 +104,7 @@ interface StageState {
   setViewMode: (mode: StageViewMode) => void
   setTransformMode: (mode: StageTransformMode) => void
   setActiveCamera: (cameraId: string | null) => void
-  addObject: (type: StageObjectType) => string | null
+  addObject: (type: StageObjectType, assetPath?: string) => string | null
   addCamera: () => string | null
   removeSelectedObject: () => boolean
   removeSelectedCamera: () => boolean
@@ -699,7 +699,7 @@ export const useStageStore = create<StageState>((set, get) => ({
 
   setTransformMode: (mode) => set({ transformMode: mode }),
 
-  addObject: (type) => {
+  addObject: (type, assetPath) => {
     const { doc, selectedObjectId } = get()
     if (!doc) return null
 
@@ -725,7 +725,8 @@ export const useStageStore = create<StageState>((set, get) => ({
         scale: [1, 1, 1]
       },
       ...(type === 'human' || type === 'crowd' ? { pose: 'stand' } : {}),
-      ...(type === 'crowd' ? { count: 3 } : {})
+      ...(type === 'crowd' ? { count: 3 } : {}),
+      ...(assetPath ? { assetPath } : {})
     }
 
     if (!get().applyCommands([{ type: 'addObject', object }])) return null

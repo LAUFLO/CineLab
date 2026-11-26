@@ -9,7 +9,11 @@ import { buildProgramTimeline, programAt } from '@shared/stage-program'
 import { resolveStageLighting } from '@shared/stage-lighting'
 import { applyStageFigurePose } from './stage-figure'
 import { isStagePoseName } from '@shared/stage-motions'
-import { createStageObject, disposeObject3D } from './stage-scene'
+import {
+  createStageObject,
+  disposeObject3D,
+  waitForStageModels
+} from './stage-scene'
 import { createStageGround, type StageGround } from './stage-ground'
 import { assetUrl } from '../lib/asset-url'
 
@@ -41,9 +45,9 @@ interface ProgramFrame {
 
 declare global {
   interface Window {
-    __setStagePreview?: (input: StageRenderInput) => boolean
+    __setStagePreview?: (input: StageRenderInput) => Promise<boolean>
     __renderStageFrame?: (timeMs: number) => string
-    __setStageProgram?: (input: StageProgramInput) => boolean
+    __setStageProgram?: (input: StageProgramInput) => Promise<boolean>
     __renderProgramFrame?: (
       globalTimeMs: number,
       overlay?: ProgramOverlay
@@ -235,8 +239,9 @@ function applyActionPose(target: StageShot, timeMs: number): void {
   }
 }
 
-window.__setStagePreview = (input: StageRenderInput): boolean => {
+window.__setStagePreview = async (input: StageRenderInput): Promise<boolean> => {
   buildScene(input)
+  await waitForStageModels()
   return true
 }
 
@@ -314,13 +319,16 @@ window.__renderStageFrame = (timeMs: number): string => {
   return renderer.domElement.toDataURL('image/jpeg', 0.92)
 }
 
-window.__setStageProgram = (input: StageProgramInput): boolean => {
+window.__setStageProgram = async (
+  input: StageProgramInput
+): Promise<boolean> => {
   buildScene({
     doc: input.doc,
     shotId: '',
     width: input.width,
     height: input.height
   })
+  await waitForStageModels()
   doc = input.doc
   shot = null
   programTimeline = buildProgramTimeline(input.doc)

@@ -70,13 +70,15 @@
 | 02 | 资产库提示词卡片：按钮行统一 28px、卡片等高、新建入口位于面包屑右侧 | `TemplateGrid.tsx`、`LibraryWindow.tsx` |
 | 02 | 工作流模板：保存画布子图为资产库 `工作流/` 目录包；本地上传/生成节点转 `workflowSlot` 占位；导演台文档打包，拉片/剪辑室占位；支持重命名、删除、更新、导入导出 zip；`modelKey`/`params` 按节点持久化 | `src/main/workflows/`、`src/main/library/workflows.ts`、`src/shared/workflow-schema.ts`、`WorkflowSaveDialog.tsx`、`WorkflowGrid.tsx`、`PromptBar.tsx` |
 | 07 | 关闭确认（后台运行/退出）、系统托盘品牌 logo 与自绘右键菜单；保存失败拦截、「不再提示」仅记忆后台运行 | `src/main/tray/`、`src/renderer/src/App.tsx`、`CloseConfirmDialog.tsx`、`TrayMenuWindow.tsx`、`preferences.ts` |
+| 04 | GLB 导入与真实模型渲染（视口 + 导出等待加载），失败回退 wireframe | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts`、`stage-render.ts` |
+| 04 | 预演导出附带结构 JSON 与生成参考提示词，回画布后写入视频节点 | `src/shared/stage-previs-reference.ts`、`src/main/stage/export.ts`、`preview-runner.ts` |
+| 02 | model 资产入库到 `assets/model/`，支持 `.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` |
 
 ## 部分实现（别当已完成）
 
 | 模块 | 能力 | 现状 | 证据 |
 |---|---|---|---|
-| 04 | `gltf` 对象类型 | 未接 GLTFLoader，`assetPath` 未读取，wireframe 人形占位 | `src/renderer/src/stage/stage-scene.ts` |
-| 04 | 场景图 → 白膜 | VLM 解析对象与机位已接；深度校准未接，`depth` 默认为空 | `src/main/scene/analyze.ts`、`src/shared/scene-calibrate.ts` |
+| 04 | 场景图 → 白膜 | VLM 解析已消费 sizeClass/facing/room/scale/pitch；深度校准未接，`depth` 默认为空 | `src/main/scene/analyze.ts`、`src/shared/stage-from-scene-build.ts` |
 | 04 | 舞台对象资产 | 只有 human/box/sphere/plane/gltf/crowd；无家具/建筑/自然资产库 | `src/shared/scene-object-presets.ts` |
 
 | 06 | Agent 运行时 v3（pi） | M1–M3 已接入动态 import、v2 会话、63 工具审计、确认、撤销、自动续跑、前端新事件；M4 四空间回归通过（canvas/stage 真模型，timeline/film 桥接），正式 asar 待复测 | `src/main/agent/pi/` |
@@ -85,7 +87,6 @@
 
 | 模块 | 能力 | 文档 | 状态 |
 |---|---|---|---|
-| 04 | glTF 加载 | `docs/stage-previs-upgrade-plan.md` | P2 评估 |
 | 04 | 四视图、EDL | 同上 | 按需 |
 
 ## 维护规则

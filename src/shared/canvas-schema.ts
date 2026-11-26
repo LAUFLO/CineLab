@@ -1,5 +1,9 @@
 import type { AssetScope } from './asset-schema'
-import type { AssetLayer, TextRecognition } from './generation'
+import type {
+  AssetLayer,
+  OutputKind,
+  TextRecognition
+} from './generation'
 import type { ModelModeId } from './model-modes'
 import type { VideoOperationId } from './operation-schema'
 import type { StyleCard } from './style-schema'
@@ -22,7 +26,7 @@ export interface OutputRef {
   id: string
   path: string
   scope?: AssetScope
-  kind: 'image' | 'video' | 'audio' | 'text'
+  kind: OutputKind
   createdAt: string
   model: string
   width?: number

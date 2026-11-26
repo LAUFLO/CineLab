@@ -145,7 +145,7 @@ Prompt Bar / 节点操作
 <!-- AUTO:files:start -->
 | 文件 | 行数 |
 |---|---|
-| `src/main/assets/ingest.ts` | 155 |
+| `src/main/assets/ingest.ts` | 168 |
 | `src/main/engine/generation-error.ts` | 55 |
 | `src/main/engine/queue.ts` | 90 |
 | `src/main/engine/start-generation.ts` | 437 |

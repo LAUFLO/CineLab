@@ -5,6 +5,7 @@ import type {
   StageExportResult
 } from '@shared/ipc-contract'
 import { GROUP_COLORS, type GroupColor } from '@shared/canvas-schema'
+import { STAGE_PREVIS_REFERENCE_PROMPT } from '@shared/stage-previs-reference'
 import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
 
 export interface StagePreviewExportResult extends StageExportResult {
@@ -91,7 +92,10 @@ export async function exportStagePreviewToCanvas(input: {
       true
     )
     for (const id of wholeVideo) {
-      canvas.patchNodeData(id, { title: '整片预演' })
+      canvas.patchNodeData(id, {
+        title: '整片预演',
+        prompt: STAGE_PREVIS_REFERENCE_PROMPT
+      })
     }
     wholeNodes.push(...wholeVideo)
 

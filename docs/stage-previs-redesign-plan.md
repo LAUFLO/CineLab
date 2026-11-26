@@ -1,13 +1,13 @@
 # 导演台 3D 白模预演改进方案
 
 日期：2026-11-26
-状态：方案已确认（含 grilling 拷问后的全部决策），待实施
+状态：阶段一、二已实施并合并（阶段一 PR #143）；阶段三待实施
 类型：跨模块功能（04 导演台 / 01 画布 / 07 IPC / 10 UI / 06 Agent）
 
 ## 交付顺序（已拍板）
 
-1. **PR 1**：阶段 1 + 阶段 2.4（全景、重命名/组织性打组、关键帧拖拽、运镜预设、UI 清理）——无新依赖、风险最低。
-2. **PR 2**：阶段 2（GLB 导入、生成闭环、生成消费字段）。
+1. **PR 1**：阶段 1 + 阶段 2.4（全景、重命名/组织性打组、关键帧拖拽、运镜预设、UI 清理）——已合并（PR #143）。
+2. **PR 2**：阶段 2（GLB 导入、生成闭环、生成消费字段）——已实施（本轮），待推送。
 3. **PR 3**：第五节对话式智能预演（工具/Skill/计划确认/上下文一致性）——依赖前两阶段的稳定数据模型与 UI。
 
 ## 背景与目标
@@ -84,6 +84,13 @@
 - `stage-from-scene.ts:41-74`：`sizeClass`→scale 倍率、`facing`→`rotation[1]`、`room`→四面墙+天花板、`calibration.scale`→全局尺寸、`pitchDeg`→相机 target、`confidence==='low'` 时提示。
 - **物体类别表：用户可编辑部分已删除（不恢复）**。历史上存在「物体类别表」（`ObjectPresetsSection` + `stage-object-presets.json` + 4 个 IPC），但用户表从未接入生成链路——`stage-from-scene.ts:37` 一直只用 `builtinObjectPresets()`。按用户决定已彻底删除用户可编辑表及其 IPC/preload/契约/测试，仅保留 51 条内置映射（`BUILTIN` / `builtinObjectPresets` / `findObjectPreset` / `FALLBACK`）。白模生成继续只用内置表，本方案不恢复用户表。
 - `analyze.ts:47,67` 模型选择增加 `inputs?.includes('image')` 过滤；UI 传 `modelKey`；加 `response_format` 与失败重试一次。
+
+**阶段二实施备注（与方案的细节偏差）**：
+- 纯映射逻辑抽到 `src/shared/stage-from-scene-build.ts`，`stage-from-scene.ts` 只保留 store/IPC 副作用壳，便于单测。
+- 室内墙生成了四面墙 + 天花板，但面向机位的「前墙」默认 `visible=false`，避免导出第一帧被遮挡，用户可在 Inspector 打开。
+- 模型导入是本地文件复制、不外发，未走「从参考图生成」的隐私确认 Dialog。
+- GLB 渲染保证自包含 `.glb` 完整显示；外部依赖的 `.gltf` 可能丢贴图，加载失败回退 wireframe 人形。
+- 导出渲染的 `__setStagePreview` / `__setStageProgram` 改为 async，等待模型加载完成（10s 超时兜底）后才返回。
 
 ### 阶段 2.4：导演台 UI 清理（去冗余 + 修无效）
 

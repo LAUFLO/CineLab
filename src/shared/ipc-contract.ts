@@ -624,11 +624,12 @@ export interface SceneApi {
     data: ArrayBuffer
   }): Promise<import('./generation').GeneratedAsset>
   uploadAsset(input: {
-    kind: 'image' | 'video' | 'audio'
+    kind: 'image' | 'video' | 'audio' | 'model'
     mime: string
     data: ArrayBuffer
   }): Promise<import('./generation').GeneratedAsset>
   pickImage(): Promise<import('./generation').GeneratedAsset | null>
+  pickModel(): Promise<import('./generation').GeneratedAsset | null>
 }
 
 export interface LocalAdapterApi {

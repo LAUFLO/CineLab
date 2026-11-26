@@ -579,10 +579,11 @@ const api: CineApi = {
     }) => ipcRenderer.invoke('scene:upload-image', input),
     pickImage: () => ipcRenderer.invoke('scene:pick-image'),
     uploadAsset: (input: {
-      kind: 'image' | 'video' | 'audio'
+      kind: 'image' | 'video' | 'audio' | 'model'
       mime: string
       data: ArrayBuffer
-    }) => ipcRenderer.invoke('scene:upload-asset', input)
+    }) => ipcRenderer.invoke('scene:upload-asset', input),
+    pickModel: () => ipcRenderer.invoke('scene:pick-model')
   },
   skills: {
     list: () => ipcRenderer.invoke('skills:list'),

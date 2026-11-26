@@ -20,7 +20,9 @@ const EXT_BY_MIME: Record<string, string> = {
   'audio/mpeg': 'mp3',
   'audio/mp4': 'm4a',
   'audio/x-m4a': 'm4a',
-  'audio/wav': 'wav'
+  'audio/wav': 'wav',
+  'model/gltf-binary': 'glb',
+  'model/gltf+json': 'gltf'
 }
 
 function extFromMime(mime: string, fallback: string): string {
@@ -60,9 +62,20 @@ export async function ingestAsset(input: IngestInput): Promise<GeneratedAsset> {
         ? extFromMime(input.mime, 'mp4')
         : input.kind === 'audio'
           ? extFromMime(input.mime, 'mp3')
-          : 'txt'
+          : input.kind === 'model'
+            ? extFromMime(input.mime, 'glb')
+            : 'txt'
 
-  const folder = input.kind === 'image' ? 'img' : input.kind === 'video' ? 'vid' : input.kind === 'audio' ? 'aud' : 'txt'
+  const folder =
+    input.kind === 'image'
+      ? 'img'
+      : input.kind === 'video'
+        ? 'vid'
+        : input.kind === 'audio'
+          ? 'aud'
+          : input.kind === 'model'
+            ? 'model'
+            : 'txt'
   const relativePath = `assets/${folder}/${hash}.${ext}`
   const absolutePath = join(input.projectPath, relativePath)
 

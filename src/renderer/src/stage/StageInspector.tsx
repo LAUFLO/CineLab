@@ -16,7 +16,7 @@ const TYPE_LABEL: Record<StageObject['type'], string> = {
   box: '立方体',
   sphere: '球体',
   plane: '平面',
-  gltf: '模型（占位）',
+  gltf: '模型',
   crowd: '群众'
 }
 
@@ -216,6 +216,16 @@ function ObjectInspector({ object }: { object: StageObject }) {
         />
       </header>
       <Row label="类型" value={TYPE_LABEL[object.type]} />
+      {object.type === 'gltf' ? (
+        <Row
+          label="模型"
+          value={
+            object.assetPath
+              ? object.assetPath.split('/').pop() ?? object.assetPath
+              : '未指定模型'
+          }
+        />
+      ) : null}
 
       <Vec3Field
         label="位置"

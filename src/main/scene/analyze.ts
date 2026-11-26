@@ -1,5 +1,5 @@
 import { promises as fs } from 'node:fs'
-import type { ModelDef } from '@shared/provider-schema'
+import { modelInputs, type ModelDef } from '@shared/provider-schema'
 import type { SceneAnalyzeInput, SceneAnalyzeResult } from '@shared/scene-analyze'
 import { parseSceneDraft } from '@shared/scene-draft'
 import { calibrateScene } from '@shared/scene-calibrate'
@@ -37,14 +37,24 @@ const SCENE_PROMPT = `你是 3D previs 场景解析器。看这张场景图，�
 - 室内场景给 room，室外场景 room 为 null。
 - 只输出 JSON。`
 
+function supportsVisionText(model: ModelDef): boolean {
+  return (
+    model.capability === 'text.chat' && modelInputs(model).includes('image')
+  )
+}
+
 function pickModel(
   provider: { models: ModelDef[] },
   modelId?: string
 ): ModelDef | null {
   if (modelId) {
-    return provider.models.find((item) => item.id === modelId) ?? null
+    return (
+      provider.models.find(
+        (item) => item.id === modelId && supportsVisionText(item)
+      ) ?? null
+    )
   }
-  return provider.models.find((item) => item.capability === 'text.chat') ?? null
+  return provider.models.find(supportsVisionText) ?? null
 }
 
 async function resolveModel(modelKey?: string): Promise<{
@@ -58,19 +68,21 @@ async function resolveModel(modelKey?: string): Promise<{
     if (!provider) throw new Error('找不到模型供应商，请先在设置中配置')
     if (!provider.apiKey) throw new Error('该供应商没有配置 API Key')
     const model = pickModel(provider, modelKey.slice(slash + 1))
-    if (!model) throw new Error('找不到该文本模型')
+    if (!model) throw new Error('找不到支持图片输入的文本模型')
     return { provider, model }
   }
 
   const providers = await listProviders()
   for (const item of providers) {
-    const model = item.models.find((entry) => entry.capability === 'text.chat')
+    const model = item.models.find(supportsVisionText)
     if (!model) continue
     const provider = await resolveProvider(item.id)
     if (!provider || !provider.apiKey) continue
     return { provider, model }
   }
-  throw new Error('还没有可用的文本模型，请先在设置中配置 text.chat 模型')
+  throw new Error(
+    '还没有可用的视觉文本模型，请先在设置中配置支持图片输入的 text.chat 模型'
+  )
 }
 
 function stripJson(raw: string): string {
@@ -101,47 +113,59 @@ export async function analyzeScene(
   const { provider, model } = await resolveModel(input.modelKey)
   if (!provider) throw new Error('模型供应商不可用')
 
-  const response = await httpFetch(
-    `${provider.baseUrl.replace(/\/+$/, '')}/chat/completions`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${provider.apiKey}`,
-        ...(provider.headers ?? {})
-      },
-      body: JSON.stringify({
-        model: model.remoteModel,
-        temperature: 0.2,
-        max_tokens: 4096,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: SCENE_PROMPT },
+  let raw = ''
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await httpFetch(
+        `${provider.baseUrl.replace(/\/+$/, '')}/chat/completions`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${provider.apiKey}`,
+            ...(provider.headers ?? {})
+          },
+          body: JSON.stringify({
+            model: model.remoteModel,
+            temperature: 0.2,
+            max_tokens: 4096,
+            response_format: { type: 'json_object' },
+            messages: [
               {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mime};base64,${data.toString('base64')}`
-                }
+                role: 'user',
+                content: [
+                  { type: 'text', text: SCENE_PROMPT },
+                  {
+                    type: 'image_url',
+                    image_url: {
+                      url: `data:${mime};base64,${data.toString('base64')}`
+                    }
+                  }
+                ]
               }
             ]
-          }
-        ]
-      })
+          })
+        }
+      )
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '')
+        throw new Error(`模型返回 HTTP ${response.status}：${text.slice(0, 300)}`)
+      }
+
+      const json = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>
+      }
+      const content = json.choices?.[0]?.message?.content?.trim()
+      if (!content) throw new Error('模型没有返回场景解析内容')
+      JSON.parse(stripJson(content))
+      raw = content
+      break
+    } catch (error) {
+      if (attempt === 1) throw error
+      console.warn('[scene] 场景解析失败，重试一次', error)
     }
-  )
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => '')
-    throw new Error(`模型返回 HTTP ${response.status}：${text.slice(0, 300)}`)
   }
-
-  const json = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>
-  }
-  const raw = json.choices?.[0]?.message?.content?.trim()
-  if (!raw) throw new Error('模型没有返回场景解析内容')
 
   const draft = parseSceneDraft(JSON.parse(stripJson(raw)) as unknown)
   const calibration = calibrateScene(

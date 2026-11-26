@@ -585,6 +585,7 @@ const api: CineApi = {
       mime: string
       data: ArrayBuffer
     }) => ipcRenderer.invoke('scene:upload-image', input),
+    pickImage: () => ipcRenderer.invoke('scene:pick-image'),
     uploadAsset: (input: {
       kind: 'image' | 'video' | 'audio'
       mime: string

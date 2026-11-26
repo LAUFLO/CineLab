@@ -1,4 +1,11 @@
-import { ipcMain } from 'electron'
+import {
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  type OpenDialogOptions
+} from 'electron'
+import { readFile } from 'node:fs/promises'
+import { extname } from 'node:path'
 import type { SceneAnalyzeInput } from '@shared/scene-analyze'
 import { getCurrentProjectRoot } from '../project/manager'
 import { analyzeScene } from '../scene/analyze'
@@ -34,6 +41,48 @@ export function registerSceneIpc(): void {
         kind: 'image',
         mime: input.mime || 'image/png',
         model: '拖入'
+      })
+    }
+  )
+
+  ipcMain.handle(
+    'scene:pick-image',
+    async () => {
+      const root = getCurrentProjectRoot()
+      if (!root) throw new Error('当前没有打开的项目')
+      const options: OpenDialogOptions = {
+        properties: ['openFile'],
+        filters: [
+          {
+            name: '图片',
+            extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp']
+          }
+        ]
+      }
+      const win = BrowserWindow.getFocusedWindow()
+      const picked = win
+        ? await dialog.showOpenDialog(win, options)
+        : await dialog.showOpenDialog(options)
+      if (picked.canceled || picked.filePaths.length === 0) return null
+      const file = picked.filePaths[0]
+      const ext = extname(file).toLowerCase()
+      const mime =
+        ext === '.jpg' || ext === '.jpeg'
+          ? 'image/jpeg'
+          : ext === '.webp'
+            ? 'image/webp'
+            : ext === '.gif'
+              ? 'image/gif'
+              : ext === '.bmp'
+                ? 'image/bmp'
+                : 'image/png'
+      const data = await readFile(file)
+      return ingestAsset({
+        projectPath: root,
+        data,
+        kind: 'image',
+        mime,
+        model: '导入'
       })
     }
   )

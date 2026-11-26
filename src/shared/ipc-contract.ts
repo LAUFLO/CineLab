@@ -632,6 +632,7 @@ export interface SceneApi {
     mime: string
     data: ArrayBuffer
   }): Promise<import('./generation').GeneratedAsset>
+  pickImage(): Promise<import('./generation').GeneratedAsset | null>
 }
 
 export interface LocalAdapterApi {

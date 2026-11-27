@@ -30,7 +30,7 @@ import {
 import { registerStagePathProjector } from './stage-path-bridge'
 import { assetUrl } from '../lib/asset-url'
 
-const DEFAULT_BACKGROUND = '#1a1a1a'
+const DEFAULT_BACKGROUND = '#242428'
 const SELECTED_COLOR = '#4ade80'
 const FALLBACK_ASPECT = 16 / 9
 
@@ -183,6 +183,10 @@ export function StageViewport() {
     pathId: string
     pointIndex: number
     planeY: number
+    mode: 'plane' | 'height'
+    startY: number
+    startClientY: number
+    worldPerPixel: number
     object: THREE.Object3D
     last: THREE.Vector3 | null
   } | null>(null)
@@ -392,10 +396,21 @@ export function StageViewport() {
       if (event.button !== 0) return
       const control = pathPointAt(event)
       if (control) {
+        const camera = activeCameraRef.current ?? director
+        const distance = camera.position.distanceTo(control.object.position)
+        const worldPerPixel =
+          (2 *
+            distance *
+            Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2)) /
+          Math.max(1, renderer.domElement.clientHeight)
         pathDragRef.current = {
           pathId: control.pathId,
           pointIndex: control.pointIndex,
           planeY: control.object.position.y,
+          mode: event.altKey ? 'height' : 'plane',
+          startY: control.object.position.y,
+          startClientY: event.clientY,
+          worldPerPixel,
           object: control.object,
           last: null
         }
@@ -407,6 +422,18 @@ export function StageViewport() {
     const onPointerMove = (event: PointerEvent): void => {
       const drag = pathDragRef.current
       if (!drag) return
+      if (drag.mode === 'height') {
+        const y =
+          drag.startY -
+          (event.clientY - drag.startClientY) * drag.worldPerPixel
+        drag.object.position.y = y
+        drag.last = new THREE.Vector3(
+          drag.object.position.x,
+          y,
+          drag.object.position.z
+        )
+        return
+      }
       pointer.x =
         ((event.clientX - renderer.domElement.getBoundingClientRect().left) /
           renderer.domElement.getBoundingClientRect().width) *

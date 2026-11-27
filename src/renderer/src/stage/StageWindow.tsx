@@ -25,7 +25,6 @@ import {
   Select,
   WindowDragStrip
 } from '../components/ui'
-import type { GeneratedAsset } from '@shared/generation'
 import type { AssetScope } from '@shared/asset-schema'
 import {
   applyLightingPreset,
@@ -102,7 +101,6 @@ export function StageWindow() {
   const [lightingPreset, setLightingPreset] = useState('')
   const [generatingScene, setGeneratingScene] = useState(false)
   const [importing, setImporting] = useState(false)
-  const [pendingAsset, setPendingAsset] = useState<GeneratedAsset | null>(null)
   const [privacyOpen, setPrivacyOpen] = useState(false)
   const [panoramaMenuOpen, setPanoramaMenuOpen] = useState(false)
   const [panoramaMenuPosition, setPanoramaMenuPosition] = useState({ x: 0, y: 0 })
@@ -497,20 +495,56 @@ export function StageWindow() {
     void runGenerateFromScene()
   }
 
-  const handleImportImage = async (): Promise<void> => {
+  const handleImportReference = async (): Promise<void> => {
     if (!doc || importing || generatingScene) return
+    const state = useStageStore.getState()
+    if (!state.nodeId) return
+    const canvas = useCanvasStore.getState()
+    const stageNode = canvas.nodes.find((node) => node.id === state.nodeId)
+    if (!stageNode || !isStageNode(stageNode)) {
+      useStageStore.setState({ error: '找不到导演台节点' })
+      return
+    }
+
     setImporting(true)
     try {
       const asset = await window.api.scene.pickImage()
       if (!asset) return
-      if (
-        window.localStorage.getItem('cinelab.scenePrivacyAcknowledged') !== '1'
-      ) {
-        setPendingAsset(asset)
-        setPrivacyOpen(true)
-        return
+
+      const size = nodeSize(stageNode)
+      const ids = canvas.addAssetNodes(
+        'image',
+        {
+          x: stageNode.position.x - Math.max(320, size.width + 80),
+          y: stageNode.position.y
+        },
+        [asset],
+        '参考图',
+        undefined,
+        undefined,
+        true
+      )
+      const imageId = ids[0]
+      if (!imageId) throw new Error('参考图节点创建失败')
+
+      useCanvasStore.getState().onConnect({
+        source: imageId,
+        target: stageNode.id
+      })
+
+      const latest = useCanvasStore.getState()
+      const oldImageEdges = latest.edges.filter((edge) => {
+        if (edge.target !== stageNode.id || edge.source === imageId) return false
+        const source = latest.nodes.find((node) => node.id === edge.source)
+        return source ? selectedNodeOutput(source)?.kind === 'image' : false
+      })
+      if (oldImageEdges.length > 0) {
+        latest.removeEdges(oldImageEdges.map((edge) => edge.id))
       }
-      await runGenerateFromScene(asset)
+
+      useUIStore
+        .getState()
+        .showToast('参考图已添加到画布并连接到导演台')
     } catch (error) {
       useStageStore.setState({
         error: error instanceof Error ? error.message : String(error)
@@ -659,11 +693,11 @@ export function StageWindow() {
               variant="secondary"
               size="none"
               className={TEXT_BUTTON_CLASS}
-              onClick={() => void handleImportImage()}
+              onClick={() => void handleImportReference()}
               disabled={!doc || importing || generatingScene}
-              title="选择本地图片并生成白膜场景"
+              title="选择本地图片，上传到画布并连接到导演台"
             >
-              {importing ? '导入中…' : '导入图片生成'}
+              {importing ? '导入中…' : '导入参考图'}
             </Button>
             <Button
               type="button"
@@ -1173,9 +1207,7 @@ export function StageWindow() {
                   '1'
                 )
                 setPrivacyOpen(false)
-                const asset = pendingAsset
-                setPendingAsset(null)
-                void runGenerateFromScene(asset ?? undefined)
+                void runGenerateFromScene()
               }}
             >
               继续
@@ -1184,7 +1216,7 @@ export function StageWindow() {
         }
       >
         <p className="text-xs leading-relaxed text-fg-muted">
-          「从参考图生成」或「导入图片」会把图片发送给你在设置中配置的多模态文本模型，用于解析场景。
+          「从参考图生成」会把图片发送给你在设置中配置的多模态文本模型，用于解析场景。
           图片不会上传到 CineLab 服务器；解析结果只写回当前项目。
         </p>
       </Dialog>

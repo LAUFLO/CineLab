@@ -310,7 +310,7 @@ export function createStageDoc(
     version: 1,
     stageId,
     name,
-    background: { kind: 'color', value: '#1a1a1a' },
+    background: { kind: 'color', value: '#242428' },
     objects: [],
     cameras: [],
     shots: [],

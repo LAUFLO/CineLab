@@ -19,9 +19,9 @@ export function createStageGround(
   geometry.rotateX(-Math.PI / 2)
 
   const uniforms = {
-    uBaseColor: { value: new THREE.Color(0x18181b) },
-    uLineColor: { value: new THREE.Color(0x2a2a2a) },
-    uMajorColor: { value: new THREE.Color(0x555555) },
+    uBaseColor: { value: new THREE.Color(0x242428) },
+    uLineColor: { value: new THREE.Color(0x3d3d45) },
+    uMajorColor: { value: new THREE.Color(0x6a6a74) },
     uFogColor: { value: new THREE.Color(background) },
     uCameraPosition: { value: new THREE.Vector3() }
   }

@@ -135,6 +135,8 @@ StageWindow → scene.analyze
 | 预演结构约束导出 | 已实现 | `stage-previs-reference.ts` 生成结构 JSON + 提示词，随视频节点回画布 |
 | 全屏窗口拖动 | 已实现 | `StageWindow` 顶部 40px `WindowDragStrip`，内容区 no-drag |
 | 手绘路径与运镜 | 已实现（核心） | `StageWindow.tsx` 自由曲线、`StageViewport.tsx` Line2 路径/控制点、`stage-paths.ts` 关键帧生成、`StagePathInspector.tsx` 时间节点/速度曲线；多路径叠加、Shift 垂直平面、路径预设未做 |
+| 路径逐点高度 | 已实现 | `StageViewport.tsx` 控制点平面拖动，按住 Alt 拖动改 Y；路径属性显示提示 |
+| 参考图上传与连线 | 已实现 | `StageWindow.tsx` 的 `handleImportReference`：`scene.pickImage` → `canvas.addAssetNodes('image', assetOnly)` → `canvas.onConnect(image → stage)`；新图替换旧图片入边 |
 
 ## 已知限制
 
@@ -163,11 +165,11 @@ StageWindow → scene.analyze
 | `src/main/stage/export.ts` | 834 |
 | `src/main/stage/storage.ts` | 150 |
 | `src/renderer/src/stage/ShotInspector.tsx` | 292 |
-| `src/renderer/src/stage/StageInspector.tsx` | 441 |
-| `src/renderer/src/stage/StagePathInspector.tsx` | 543 |
+| `src/renderer/src/stage/StageInspector.tsx` | 462 |
+| `src/renderer/src/stage/StagePathInspector.tsx` | 546 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 815 |
-| `src/renderer/src/stage/StageViewport.tsx` | 1099 |
-| `src/renderer/src/stage/StageWindow.tsx` | 1195 |
+| `src/renderer/src/stage/StageViewport.tsx` | 1126 |
+| `src/renderer/src/stage/StageWindow.tsx` | 1227 |
 | `src/renderer/src/stage/preview-runner.ts` | 206 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |

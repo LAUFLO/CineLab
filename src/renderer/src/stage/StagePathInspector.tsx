@@ -418,6 +418,9 @@ function PathEditor({ shot, path }: { shot: StageShot; path: StagePath }) {
           </Button>
         </div>
       </div>
+      <p className="text-[10px] leading-relaxed text-fg-subtle">
+        视口拖动控制点改平面位置，按住 Alt 拖动改高度。
+      </p>
       <label className="flex items-center justify-between text-[11px] text-fg-subtle">
         <span>闭合路径</span>
         <Input

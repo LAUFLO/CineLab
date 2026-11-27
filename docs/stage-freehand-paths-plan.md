@@ -261,6 +261,7 @@ paths?: StagePath[]
 - `addPath` / `updatePath` / `removePath` / `setPathVisible` 命令；
 - 导演台自由曲线绘制、相机路径/对象路径/跟随路径模式、顶部提示与 Esc 取消；
 - `StageViewport` 用 `Line2` 渲染 3D 路径、控制点与时间节点，屏幕点到水平面投影；
+- 控制点平面拖动，按住 Alt 拖动调整逐点高度；
 - 相机沿路径、对象沿路径、look-ahead、跟随对象/路径、手动关键帧保留；
 - 右侧路径列表、显示/隐藏、删除、名称、高度、平滑度、时间节点、速度曲线、控制点末尾增删与闭合；
 - `StageViewport` 补上动作轨位置/旋转插值，视口与导出预览一致。

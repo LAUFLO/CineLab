@@ -420,6 +420,27 @@ export function StageInspector() {
       <Row label="机位" value={`${doc.cameras.length}`} />
       <Row label="镜头" value={`${doc.shots.length}`} />
       <Row label="背景" value={doc.background.kind} />
+      {doc.background.kind === 'color' ? (
+        <label className="mt-2 flex items-center justify-between gap-2 text-[11px] text-fg-subtle">
+          <span>背景颜色</span>
+          <Input
+            type="color"
+            className="!h-6 !w-10 !p-0.5"
+            value={doc.background.value || '#242428'}
+            onChange={(event) =>
+              useStageStore.getState().applyCommands([
+                {
+                  type: 'setBackground',
+                  background: {
+                    kind: 'color',
+                    value: event.target.value
+                  }
+                }
+              ])
+            }
+          />
+        </label>
+      ) : null}
       {doc.background.kind === 'model' ? (
         <p className="text-[10px] leading-relaxed text-warning">
           模型背景暂不支持显示，请改用全景图或纯色。

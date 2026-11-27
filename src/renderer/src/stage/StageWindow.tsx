@@ -661,9 +661,9 @@ export function StageWindow() {
               className={TEXT_BUTTON_CLASS}
               onClick={() => void handleImportImage()}
               disabled={!doc || importing || generatingScene}
-              title="选择本地图片生成白膜场景"
+              title="选择本地图片并生成白膜场景"
             >
-              {importing ? '导入中…' : '导入图片'}
+              {importing ? '导入中…' : '导入图片生成'}
             </Button>
             <Button
               type="button"

@@ -21,6 +21,9 @@ window.addEventListener('unhandledrejection', (event) => {
 })
 
 const isTrayMenu = window.location.hash === '#tray-menu'
+if (isTrayMenu) {
+  document.documentElement.dataset.theme = 'light'
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

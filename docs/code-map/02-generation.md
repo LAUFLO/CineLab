@@ -111,7 +111,7 @@ Prompt Bar / 节点操作
 | 扩图（生图模型图生图） | 已实现；精确优先，无精确选项时自动选最接近的尺寸，完全无法控制比例的模型置灰 | `shared/outpaint.ts`、`renderer/src/canvas/nodes/AiOperationDialog.tsx`、`NodeToolbar.tsx` |
 | 人声/背景音分离 | 已实现；真实素材听感待验收 | `main/media/stems.ts`、`stem-tasks.ts`、`resources/stem-worker/worker.py` |
 | 错误文案 | 已实现 | `generation-error.test.ts` |
-| 官方/自定义风格库 | 已实现 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`src/shared/style-prompt.ts`、`src/renderer/src/canvas/StyleLibraryDialog.tsx`、`PromptBar.tsx` |
+| 官方/自定义风格库（官方 42 个） | 已实现 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`src/shared/style-prompt.ts`、`src/renderer/src/canvas/StyleLibraryDialog.tsx`、`PromptBar.tsx` |
 | 预设提示词 | 已实现 | `src/shared/prompt-preset.ts`、`src/renderer/src/canvas/PresetPromptDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`；名称胶囊原位展开，风格置顶 |
 
 ## 已知限制

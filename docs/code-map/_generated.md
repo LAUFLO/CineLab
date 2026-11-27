@@ -262,6 +262,7 @@
 - `src/shared/__tests__/model-inputs.test.ts`
 - `src/shared/__tests__/model-modes.test.ts`
 - `src/shared/__tests__/node-operation-specs.test.ts`
+- `src/shared/__tests__/official-styles.test.ts`
 - `src/shared/__tests__/outpaint.test.ts`
 - `src/shared/__tests__/preferences.test.ts`
 - `src/shared/__tests__/project-schema.test.ts`

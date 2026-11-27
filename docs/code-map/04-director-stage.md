@@ -137,6 +137,9 @@ StageWindow → scene.analyze
 | 手绘路径与运镜 | 已实现（核心） | `StageWindow.tsx` 自由曲线、`StageViewport.tsx` Line2 路径/控制点、`stage-paths.ts` 关键帧生成、`StagePathInspector.tsx` 时间节点/速度曲线；多路径叠加、Shift 垂直平面、路径预设未做 |
 | 路径逐点高度 | 已实现 | `StageViewport.tsx` 控制点平面拖动，按住 Alt 拖动改 Y；路径属性显示提示 |
 | 参考图上传与连线 | 已实现 | `StageWindow.tsx` 的 `handleImportReference`：`scene.pickImage` → `canvas.addAssetNodes('image', assetOnly)` → `canvas.onConnect(image → stage)`；新图替换旧图片入边 |
+| 机位可视化摆位 | 已实现 | `StageViewport.tsx` 的 `syncTransformControls` / `onTransformDragging` 支持把 gizmo 挂到相机机身并写 `updateCamera({position})`；注视点手柄复用控制点拖拽写 `updateCamera({target})`；`stageStore.selectCamera` 保留导演视角，机位列表双击预览画面 |
+| 新手三步向导 | 已实现 | `StageBeginnerGuide.tsx` 空场景浮层：选起点（导入/生成参考图或空白）→ 加人物 → 一键分镜；节奏三档与单人/双人/群戏预设复用 `autoCoverage`；`ShotInspector` 术语面板折叠为高级设置；localStorage 记忆跳过状态 |
+| 出片闭环增强 | 已实现 | Toast 支持操作按钮，导出完成可一键选中并定位回画布节点；导出前提示 720p/24fps，超 5 分钟确认、超 30 分钟拦截；`stageStore.exporting` 为 UI 与 Agent 共用单导出锁；CineBot 建议提示词升级为含运镜与导出的完整示例 |
 
 ## 已知限制
 
@@ -164,12 +167,13 @@ StageWindow → scene.analyze
 | `src/main/scene/analyze.ts` | 190 |
 | `src/main/stage/export.ts` | 818 |
 | `src/main/stage/storage.ts` | 150 |
-| `src/renderer/src/stage/ShotInspector.tsx` | 292 |
+| `src/renderer/src/stage/ShotInspector.tsx` | 311 |
+| `src/renderer/src/stage/StageBeginnerGuide.tsx` | 239 |
 | `src/renderer/src/stage/StageInspector.tsx` | 462 |
 | `src/renderer/src/stage/StagePathInspector.tsx` | 546 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 815 |
-| `src/renderer/src/stage/StageViewport.tsx` | 1126 |
-| `src/renderer/src/stage/StageWindow.tsx` | 1240 |
+| `src/renderer/src/stage/StageViewport.tsx` | 1276 |
+| `src/renderer/src/stage/StageWindow.tsx` | 1367 |
 | `src/renderer/src/stage/preview-runner.ts` | 198 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |
@@ -179,7 +183,7 @@ StageWindow → scene.analyze
 | `src/renderer/src/stage/stage-render.ts` | 420 |
 | `src/renderer/src/stage/stage-scene.ts` | 156 |
 | `src/renderer/src/stage/stage-weather.ts` | 103 |
-| `src/renderer/src/stage/stageStore.ts` | 1126 |
+| `src/renderer/src/stage/stageStore.ts` | 1132 |
 | `src/shared/scene-analyze.ts` | 22 |
 | `src/shared/scene-calibrate.ts` | 71 |
 | `src/shared/scene-draft.ts` | 126 |
@@ -208,6 +212,7 @@ StageWindow → scene.analyze
 | `src/main/stage/export.ts` | `exportStagePreview`、`exportStageProgram` |
 | `src/main/stage/storage.ts` | `assertStageId`、`stageDirectory`、`ensureStageDir`、`createStageFile`、`loadStageFile`、`saveStageFile`、`duplicateStageFile`、`deleteStageFile` |
 | `src/renderer/src/stage/ShotInspector.tsx` | `ShotInspector` |
+| `src/renderer/src/stage/StageBeginnerGuide.tsx` | `StageBeginnerGuide` |
 | `src/renderer/src/stage/StageInspector.tsx` | `StageInspector` |
 | `src/renderer/src/stage/StagePathInspector.tsx` | `StagePathInspector` |
 | `src/renderer/src/stage/StageTimeline.tsx` | `StageTimeline` |

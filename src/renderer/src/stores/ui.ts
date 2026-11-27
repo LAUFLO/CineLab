@@ -51,6 +51,7 @@ export interface ConfirmState {
 export interface ToastState {
   message: string
   tone: 'info' | 'error'
+  action?: { label: string; onClick: () => void }
 }
 
 export type CanvasTool = 'select' | 'hand'
@@ -114,7 +115,11 @@ interface UIStore {
     overwriteSlug?: string
   }) => void
   closeWorkflowSave: () => void
-  showToast: (message: string, tone?: ToastState['tone']) => void
+  showToast: (
+    message: string,
+    tone?: ToastState['tone'],
+    action?: ToastState['action']
+  ) => void
   clearToast: () => void
   requestFitView: () => void
   requestArrange: () => void
@@ -188,7 +193,8 @@ export const useUIStore = create<UIStore>((set) => ({
   openWorkflowSave: (request) =>
     set({ workflowSaveRequest: request ?? {} }),
   closeWorkflowSave: () => set({ workflowSaveRequest: null }),
-  showToast: (message, tone = 'info') => set({ toast: { message, tone } }),
+  showToast: (message, tone = 'info', action) =>
+    set({ toast: { message, tone, ...(action ? { action } : {}) } }),
   clearToast: () => set({ toast: null }),
   requestFitView: () => set((state) => ({ fitViewToken: state.fitViewToken + 1 })),
   requestArrange: () => set((state) => ({ arrangeToken: state.arrangeToken + 1 }))

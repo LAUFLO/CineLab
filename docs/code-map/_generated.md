@@ -8,13 +8,13 @@
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
 | 01 | [画布](./01-canvas.md) | 77 | 26660 |
-| 02 | [生成与模型](./02-generation.md) | 68 | 15123 |
+| 02 | [生成与模型](./02-generation.md) | 68 | 15195 |
 | 03 | [剪辑室](./03-clip-studio.md) | 44 | 9455 |
-| 04 | [导演台与白模预演](./04-director-stage.md) | 38 | 13086 |
+| 04 | [导演台与白模预演](./04-director-stage.md) | 39 | 13627 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 20849 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 20855 |
 | 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 77 | 14328 |
-| 10 | [UI 组件与面板](./10-ui.md) | 57 | 11913 |
+| 10 | [UI 组件与面板](./10-ui.md) | 57 | 11936 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -196,6 +196,7 @@
 - `src/main/components/__tests__/zip-extract.test.ts`
 - `src/main/engine/__tests__/generation-error.test.ts`
 - `src/main/engine/__tests__/queue.test.ts`
+- `src/main/engine/__tests__/start-generation.test.ts`
 - `src/main/export/__tests__/project-export.test.ts`
 - `src/main/film-study/__tests__/analysis.test.ts`
 - `src/main/film-study/__tests__/auto.test.ts`

@@ -17,7 +17,9 @@ import {
   generateMusic,
   generateSpeech,
   generateText,
-  type ProviderOutput
+  type AdapterContext,
+  type ProviderOutput,
+  type ProviderRuntime
 } from '../providers/openai-compat'
 import { generateVideoAgnes } from '../providers/agnes'
 import { generateVideoHttpTemplate } from '../providers/http-template'
@@ -31,6 +33,76 @@ import { generateWithLocalAdapter } from '../local-adapters/runtime'
 import { resolveProvider } from '../settings/store'
 
 const MAX_REFERENCE_IMAGES = 32
+
+/** 把用户选择的数量归一化为 1–4；非法值按 1 张处理。 */
+export function imageBatchCount(value: unknown): number {
+  const count = Number(value)
+  if (!Number.isFinite(count)) return 1
+  return Math.max(1, Math.min(4, Math.floor(count)))
+}
+
+/**
+ * 某些图片供应商忽略 OpenAI 兼容的 n 参数（例如 agnes-image-2.5-flash），
+ * 一次请求只返回一张。这里先按 n 请求一次；若返回不足，顺序补发单张请求，
+ * 让「一次生成 N 张」对所有图片模型都生效。子请求共用同一个 signal。
+ */
+export async function generateImageBatch(
+  model: Parameters<typeof generateImage>[0],
+  runtime: ProviderRuntime,
+  prompt: string,
+  params: Record<string, unknown>,
+  refs: LoadedRef[],
+  context: AdapterContext,
+  mask?: string
+): Promise<ProviderOutput[]> {
+  const total = imageBatchCount(params.n)
+  if (total <= 1) {
+    return generateImage(model, runtime, prompt, params, refs, context, mask)
+  }
+
+  const { signal, onProgress } = context
+  const outputs: ProviderOutput[] = []
+
+  const requestOnce = async (count: number): Promise<void> => {
+    if (signal.aborted) throw new Error('已取消')
+    const childContext: AdapterContext = {
+      signal,
+      onProgress: (percent, message) => {
+        const done = outputs.length
+        const scaled = ((done + percent / 100) / total) * 100
+        onProgress(
+          Math.min(100, Math.max(0, Math.round(scaled))),
+          `第 ${Math.min(done + 1, total)}/${total} 张${message ? ` · ${message}` : ''}`
+        )
+      }
+    }
+    const once = await generateImage(
+      model,
+      runtime,
+      prompt,
+      { ...params, n: count },
+      refs,
+      childContext,
+      mask
+    )
+    outputs.push(...once)
+  }
+
+  try {
+    await requestOnce(total)
+  } catch (error) {
+    if (signal.aborted || total <= 1) throw error
+    // 模型可能不接受 n 字段，降级为单张请求重来
+    outputs.length = 0
+    await requestOnce(1)
+  }
+
+  while (outputs.length < total && !signal.aborted) {
+    await requestOnce(1)
+  }
+  if (signal.aborted) throw new Error('已取消')
+  return outputs.slice(0, total)
+}
 
 const IMAGE_MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -368,7 +440,7 @@ export async function startGeneration(
           )
         }
 
-        return generateImage(
+        return generateImageBatch(
           model,
           runtime,
           effectivePrompt,

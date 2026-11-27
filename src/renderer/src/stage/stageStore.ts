@@ -96,6 +96,7 @@ interface StageState {
   saving: boolean
   dirty: boolean
   error: string | null
+  exporting: boolean
   captureHandler: (() => string | null) | null
   viewCaptureHandler: (() => StageViewCapture | null) | null
 
@@ -166,6 +167,7 @@ interface StageState {
   registerCapture: (handler: (() => string | null) | null) => void
   capture: () => string | null
   clearError: () => void
+  setExporting: (value: boolean) => void
 }
 
 export function syncStageNodeSummary(
@@ -274,6 +276,7 @@ export const useStageStore = create<StageState>((set, get) => ({
   saving: false,
   dirty: false,
   error: null,
+  exporting: false,
   captureHandler: null,
   viewCaptureHandler: null,
 
@@ -440,6 +443,7 @@ export const useStageStore = create<StageState>((set, get) => ({
   selectObject: (objectId) =>
     set({
       selectedObjectId: objectId,
+      selectedCameraId: null,
       selectedPathId: null,
       playing: false
     }),
@@ -453,7 +457,7 @@ export const useStageStore = create<StageState>((set, get) => ({
         selectedObjectId: null,
         selectedCameraId: cameraId,
         selectedPathId: null,
-        viewMode: applied ? 'camera' : get().viewMode,
+        viewMode: applied ? 'director' : get().viewMode,
         playing: false
       })
       return
@@ -1058,7 +1062,7 @@ export const useStageStore = create<StageState>((set, get) => ({
     set({
       selectedObjectId: null,
       selectedCameraId: camera.id,
-      viewMode: 'camera'
+      viewMode: 'director'
     })
     return camera.id
   },
@@ -1121,5 +1125,7 @@ export const useStageStore = create<StageState>((set, get) => ({
 
   capture: () => get().captureHandler?.() ?? null,
 
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
+
+  setExporting: (value) => set({ exporting: value })
 }))

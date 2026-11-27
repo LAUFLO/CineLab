@@ -32,10 +32,6 @@ import {
   type StageShotRow
 } from '@shared/stage-shot-list'
 import { ingestAsset } from '../assets/ingest'
-import {
-  buildStageStructureJson,
-  STAGE_PREVIS_REFERENCE_PROMPT
-} from '@shared/stage-previs-reference'
 import { ffmpegBinary } from '../media/ffmpeg'
 import { loadStageFile } from './storage'
 
@@ -649,18 +645,6 @@ export async function exportStageProgram(
     }
 
     const documents: StageExportDocument[] = []
-    const structureJson = buildStageStructureJson(doc)
-    await fs.writeFile(join(dir, '白模结构约束.json'), structureJson, 'utf8')
-    documents.push({ label: '白模结构约束.json', text: structureJson })
-    await fs.writeFile(
-      join(dir, '生成参考提示词.txt'),
-      STAGE_PREVIS_REFERENCE_PROMPT,
-      'utf8'
-    )
-    documents.push({
-      label: '生成参考提示词',
-      text: STAGE_PREVIS_REFERENCE_PROMPT
-    })
     if (items.shotList || items.script) {
       const rows = buildShotList(doc, timeline)
       if (items.shotList) {

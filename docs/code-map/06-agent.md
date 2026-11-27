@@ -136,6 +136,8 @@ AgentPanel
 | 对话式白模预演编排 | 已实现 | `resources/skills/stage-previs/SKILL.md`、`stage_set_action_track`、`stage_previs_plan` |
 | 批量预演计划确认 | 已实现 | `stageBridge.ts` 经 `UIStore.requestConfirm` 展示计划全文，仅 Skill 批量流程使用 |
 | 导演台上下文一致性 | 已实现 | `stage-snapshot.ts` 每轮精简快照、`stageContext()`、`stageSummary` 扩展、写工具前软提示 |
+| 错误提示与重试 | 已实现 | `AgentPanel` 错误卡片保留模型厂商原文，按钮下置；`agentStore.retryLastTurn` 重新发送最后一轮 |
+| 工具失败聚合 | 已实现 | `ThoughtGroup` 相邻同工具失败合并，原因限两行，失败项浅红底 |
 
 ## 已知限制
 
@@ -209,8 +211,8 @@ AgentPanel
 | `src/main/mcp/stdio-bridge.ts` | 104 |
 | `src/main/mcp/tool-types.ts` | 26 |
 | `src/main/mcp/write-runner.ts` | 108 |
-| `src/renderer/src/agent/AgentPanel.tsx` | 1277 |
-| `src/renderer/src/agent/agentStore.ts` | 1230 |
+| `src/renderer/src/agent/AgentPanel.tsx` | 1292 |
+| `src/renderer/src/agent/agentStore.ts` | 1248 |
 | `src/renderer/src/agent/canvasBridge.ts` | 1299 |
 | `src/renderer/src/agent/commandHandlers.ts` | 62 |
 | `src/renderer/src/agent/filmBridge.ts` | 768 |
@@ -218,10 +220,10 @@ AgentPanel
 | `src/renderer/src/agent/panel/MessageActions.tsx` | 31 |
 | `src/renderer/src/agent/panel/MessageBubble.tsx` | 38 |
 | `src/renderer/src/agent/panel/ProposalCard.tsx` | 162 |
-| `src/renderer/src/agent/panel/ThoughtGroup.tsx` | 77 |
+| `src/renderer/src/agent/panel/ThoughtGroup.tsx` | 127 |
 | `src/renderer/src/agent/panel/utils.tsx` | 146 |
 | `src/renderer/src/agent/projectBridge.ts` | 77 |
-| `src/renderer/src/agent/stageBridge.ts` | 1039 |
+| `src/renderer/src/agent/stageBridge.ts` | 1049 |
 | `src/renderer/src/agent/timelineBridge.ts` | 1073 |
 | `src/renderer/src/mcp/commandBridge.ts` | 185 |
 | `src/shared/agent-commands.ts` | 40 |
@@ -231,7 +233,7 @@ AgentPanel
 | `src/shared/capabilities.ts` | 321 |
 | `src/shared/mcp-command.ts` | 14 |
 | `src/shared/skills.ts` | 273 |
-| `src/shared/stage-snapshot.ts` | 77 |
+| `src/shared/stage-snapshot.ts` | 86 |
 <!-- AUTO:files:end -->
 
 <!-- AUTO:exports:start -->
@@ -289,7 +291,7 @@ AgentPanel
 | `src/renderer/src/agent/panel/MessageActions.tsx` | `MessageActions` |
 | `src/renderer/src/agent/panel/MessageBubble.tsx` | `MessageBubble` |
 | `src/renderer/src/agent/panel/ProposalCard.tsx` | `ProposalCard` |
-| `src/renderer/src/agent/panel/ThoughtGroup.tsx` | `ThoughtGroup` |
+| `src/renderer/src/agent/panel/ThoughtGroup.tsx` | `buildRows`、`ThoughtGroup` |
 | `src/renderer/src/agent/panel/utils.tsx` | `toolLabel`、`relativeTime`、`modelNameOf`、`MentionItem`、`renderInline`、`RenderItem`、`buildRenderItems` |
 | `src/renderer/src/agent/projectBridge.ts` | `ProjectToolResult`、`executeProjectTool` |
 | `src/renderer/src/agent/stageBridge.ts` | `StageToolResult`、`executeStageTool` |

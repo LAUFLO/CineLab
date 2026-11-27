@@ -12,7 +12,7 @@ import {
 } from '../stores/generation-history'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
-import { Button, IconButton } from '../components/ui'
+import { Button, IconButton, WindowDragStrip } from '../components/ui'
 
 interface HistoryItem {
   key: string
@@ -165,6 +165,7 @@ export function HistoryPanel() {
       className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay backdrop-blur-[2px] [-webkit-app-region:no-drag]"
       onPointerDown={close}
     >
+      <WindowDragStrip />
       <div
         className="flex max-h-[min(680px,calc(100vh-96px))] w-[760px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface-raised shadow-float"
         onPointerDown={(event) => event.stopPropagation()}

@@ -15,9 +15,11 @@ import {
   type StageLightingOverride,
   type StageObject,
   type StageProgram,
+  type StagePath,
   type StageShot,
   type StageTransform,
-  type StageVec3
+  type StageVec3,
+  validateStagePath
 } from './stage-schema'
 
 export type StageCommand =
@@ -57,6 +59,20 @@ export type StageCommand =
     }
   | { type: 'clearShotIntent'; shotId: string }
   | { type: 'setActionTrack'; shotId: string; track: ActionTrack }
+  | { type: 'addPath'; shotId: string; path: StagePath }
+  | {
+      type: 'updatePath'
+      shotId: string
+      pathId: string
+      patch: Partial<Omit<StagePath, 'id'>>
+    }
+  | { type: 'removePath'; shotId: string; pathId: string }
+  | {
+      type: 'setPathVisible'
+      shotId: string
+      pathId: string
+      visible: boolean
+    }
   | { type: 'setActiveCamera'; cameraId: string | null }
   | { type: 'setBackground'; background: StageBackground }
   | { type: 'setProgram'; program?: StageProgram }
@@ -422,14 +438,27 @@ export function applyStageCommand(
             : object
         )
       next.shots = doc.shots.map((shot) => {
-        if (!shot.actionTracks?.some((track) => track.objectId === target.id)) {
-          return shot
-        }
+        const hasActionTrack = shot.actionTracks?.some(
+          (track) => track.objectId === target.id
+        )
+        const hasPath = shot.paths?.some((path) => path.objectId === target.id)
+        if (!hasActionTrack && !hasPath) return shot
         return {
           ...shot,
-          actionTracks: shot.actionTracks.filter(
-            (track) => track.objectId !== target.id
-          )
+          ...(shot.actionTracks
+            ? {
+                actionTracks: shot.actionTracks.filter(
+                  (track) => track.objectId !== target.id
+                )
+              }
+            : {}),
+          ...(shot.paths
+            ? {
+                paths: shot.paths.filter(
+                  (path) => path.objectId !== target.id
+                )
+              }
+            : {})
         }
       })
       change.deletedObjectIds.push(target.id)
@@ -742,6 +771,97 @@ export function applyStageCommand(
       }
       next.shots = doc.shots.map((shot) =>
         shot.id === target.id ? { ...shot, actionTracks } : shot
+      )
+      change.updatedShotIds.push(target.id)
+      break
+    }
+
+    case 'addPath': {
+      const target = findShot(doc, command.shotId)
+      if (!target) return fail(doc, '镜头不存在')
+      const objectIds = new Set(doc.objects.map((object) => object.id))
+      const errors = validateStagePath(
+        command.path,
+        target.durationMs,
+        objectIds
+      )
+      if (errors.length > 0) return fail(doc, errors[0])
+      const paths = target.paths ?? []
+      if (paths.some((path) => path.id === command.path.id)) {
+        return fail(doc, `路径 ${command.path.id} 已存在`)
+      }
+      if (paths.length >= STAGE_LIMITS.maxPathsPerShot) {
+        return fail(doc, '路径数量超过上限')
+      }
+      next.shots = doc.shots.map((shot) =>
+        shot.id === target.id
+          ? { ...shot, paths: [...paths, command.path] }
+          : shot
+      )
+      change.updatedShotIds.push(target.id)
+      break
+    }
+
+    case 'updatePath': {
+      const target = findShot(doc, command.shotId)
+      if (!target) return fail(doc, '镜头不存在')
+      const current = target.paths?.find((path) => path.id === command.pathId)
+      if (!current) return fail(doc, '路径不存在')
+      const merged: StagePath = { ...current, ...command.patch, id: current.id }
+      const objectIds = new Set(doc.objects.map((object) => object.id))
+      const errors = validateStagePath(merged, target.durationMs, objectIds)
+      if (errors.length > 0) return fail(doc, errors[0])
+      next.shots = doc.shots.map((shot) =>
+        shot.id === target.id
+          ? {
+              ...shot,
+              paths: (shot.paths ?? []).map((path) =>
+                path.id === current.id ? merged : path
+              )
+            }
+          : shot
+      )
+      change.updatedShotIds.push(target.id)
+      break
+    }
+
+    case 'removePath': {
+      const target = findShot(doc, command.shotId)
+      if (!target) return fail(doc, '镜头不存在')
+      if (!target.paths?.some((path) => path.id === command.pathId)) {
+        return fail(doc, '路径不存在')
+      }
+      next.shots = doc.shots.map((shot) =>
+        shot.id === target.id
+          ? {
+              ...shot,
+              paths: (shot.paths ?? []).filter(
+                (path) => path.id !== command.pathId
+              )
+            }
+          : shot
+      )
+      change.updatedShotIds.push(target.id)
+      break
+    }
+
+    case 'setPathVisible': {
+      const target = findShot(doc, command.shotId)
+      if (!target) return fail(doc, '镜头不存在')
+      if (!target.paths?.some((path) => path.id === command.pathId)) {
+        return fail(doc, '路径不存在')
+      }
+      next.shots = doc.shots.map((shot) =>
+        shot.id === target.id
+          ? {
+              ...shot,
+              paths: (shot.paths ?? []).map((path) =>
+                path.id === command.pathId
+                  ? { ...path, visible: command.visible }
+                  : path
+              )
+            }
+          : shot
       )
       change.updatedShotIds.push(target.id)
       break

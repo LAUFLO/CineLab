@@ -1,12 +1,51 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { AgentMessage } from '../agentStore'
 import { Icon } from '../../components/Icon'
 import { toolLabel } from './utils'
 
-const DOT_CLASS: Record<string, string> = {
+type ToolStatus = 'running' | 'ok' | 'error'
+
+const DOT_CLASS: Record<ToolStatus, string> = {
   ok: 'bg-success',
   error: 'bg-danger',
   running: 'bg-warning animate-pulse'
+}
+
+interface ToolRow {
+  key: string
+  name: string
+  status: ToolStatus
+  count: number
+  errors: string[]
+}
+
+export function buildRows(tools: AgentMessage[]): ToolRow[] {
+  const rows: ToolRow[] = []
+  for (const tool of tools) {
+    const status = tool.toolStatus ?? 'running'
+    const name = tool.toolName ?? ''
+    const last = rows[rows.length - 1]
+    if (
+      last &&
+      last.status === 'error' &&
+      status === 'error' &&
+      last.name === name
+    ) {
+      last.count += 1
+      if (tool.content && !last.errors.includes(tool.content)) {
+        last.errors.push(tool.content)
+      }
+      continue
+    }
+    rows.push({
+      key: tool.id,
+      name,
+      status,
+      count: 1,
+      errors: status === 'error' && tool.content ? [tool.content] : []
+    })
+  }
+  return rows
 }
 
 export function ThoughtGroup({ tools }: { tools: AgentMessage[] }) {
@@ -14,6 +53,7 @@ export function ThoughtGroup({ tools }: { tools: AgentMessage[] }) {
     (tool) => tool.toolStatus === 'error' || tool.toolStatus === 'running'
   )
   const [open, setOpen] = useState(hasProblem)
+  const rows = useMemo(() => buildRows(tools), [tools])
 
   useEffect(() => {
     if (hasProblem) setOpen(true)
@@ -36,35 +76,45 @@ export function ThoughtGroup({ tools }: { tools: AgentMessage[] }) {
         />
       </summary>
       <div className="flex flex-col gap-0.5 px-2.5 pb-[9px] pt-1">
-        {tools.map((tool) => {
-          const status = tool.toolStatus ?? 'running'
+        {rows.map((row) => {
+          const statusLabel =
+            row.status === 'running'
+              ? '执行中'
+              : row.status === 'error'
+                ? row.count > 1
+                  ? `失败 ${row.count} 次`
+                  : '失败'
+                : '完成'
           return (
             <div
-              key={tool.id}
-              className="flex flex-wrap items-center gap-[7px] py-1 text-[11px] text-fg-subtle"
+              key={row.key}
+              className={`flex flex-col gap-1 rounded-md py-1 text-[11px] ${
+                row.status === 'error'
+                  ? 'bg-[color-mix(in_srgb,var(--danger)_6%,transparent)] px-1.5'
+                  : ''
+              }`}
             >
-              <span
-                className={`size-[5px] shrink-0 rounded-full ${
-                  DOT_CLASS[status] ?? ''
-                }`}
-              />
-              <span className="text-fg-muted">
-                {toolLabel(tool.toolName ?? '')}
-              </span>
-              <span
-                className={`ml-auto text-[10px] ${
-                  status === 'error' ? 'text-danger' : 'text-fg-subtle'
-                }`}
-              >
-                {status === 'running'
-                  ? '执行中'
-                  : status === 'error'
-                    ? '未完成'
-                    : '完成'}
-              </span>
-              {status === 'error' ? (
-                <div className="ml-3 basis-full text-[10px] leading-[1.5] text-danger">
-                  {tool.content}
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`size-[5px] shrink-0 rounded-full ${DOT_CLASS[row.status]}`}
+                />
+                <span className="min-w-0 truncate text-fg-muted">
+                  {toolLabel(row.name)}
+                </span>
+                <span
+                  className={`ml-auto shrink-0 text-[10px] ${
+                    row.status === 'error' ? 'text-danger' : 'text-fg-subtle'
+                  }`}
+                >
+                  {statusLabel}
+                </span>
+              </div>
+              {row.status === 'error' && row.errors.length > 0 ? (
+                <div
+                  className="line-clamp-2 pl-[11px] text-[10px] leading-[1.5] text-danger"
+                  title={row.errors.join('\n')}
+                >
+                  {row.errors.join('\n')}
                 </div>
               ) : null}
             </div>

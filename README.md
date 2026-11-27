@@ -132,12 +132,12 @@ CineLab 是一个本地优先的 AI 创作工作台。图片、视频、音频�
 
 从 [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest) 下载最新版：
 
-当前版本 **v0.5.3**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **v0.5.4**，完整变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 | 平台 | 推荐文件 | 系统要求 |
 |---|---|---|
-| Windows | `CineLab-0.5.3-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.5.3-arm64.dmg` | macOS 12+，Apple Silicon |
+| Windows | `CineLab-0.5.4-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.5.4-arm64.dmg` | macOS 12+，Apple Silicon |
 
 ### Windows
 

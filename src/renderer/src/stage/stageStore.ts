@@ -4,11 +4,23 @@ import type {
   StageCamera,
   StageObject,
   StageObjectType,
+  StagePath,
+  StagePathKind,
+  StagePathTimeKey,
   StageShot,
   StageShotIntent,
   StageTransform,
   StageVec3
 } from '@shared/stage-schema'
+import { createStageId } from '@shared/stage-schema'
+import {
+  actionTrackFromPath,
+  cameraTrackFromPath,
+  mergeActionTrack,
+  mergeCameraTrack,
+  poseOnlyActionTrack,
+  scalePathTimes
+} from '@shared/stage-paths'
 import { solveStageShotIntent } from '@shared/stage-shot-intent'
 import { buildProgramTimeline, programAt } from '@shared/stage-program'
 import {
@@ -34,6 +46,19 @@ import { setActiveStageNode } from './stage-active'
 export type StagePlaybackScope = 'shot' | 'program'
 export type StageViewMode = 'director' | 'camera'
 export type StageTransformMode = 'translate' | 'rotate' | 'scale'
+export type StageDrawMode = 'off' | 'camera' | 'object' | 'follow'
+
+export interface StagePathDraft {
+  kind: StagePathKind
+  points: StageVec3[]
+  objectId?: string
+  name?: string
+  height?: number
+  targetMode?: StagePath['targetMode']
+  lookAhead?: number
+  faceTangent?: boolean
+  rotationOffset?: number
+}
 
 export interface StageViewCapture {
   position: StageVec3
@@ -59,6 +84,8 @@ interface StageState {
   selectedCameraId: string | null
   selectedShotId: string | null
   selectedKeyframeIndex: number | null
+  selectedPathId: string | null
+  drawMode: StageDrawMode
   viewMode: StageViewMode
   transformMode: StageTransformMode
   playing: boolean
@@ -81,6 +108,22 @@ interface StageState {
   selectObject: (objectId: string | null) => void
   selectCamera: (cameraId: string | null) => void
   selectShot: (shotId: string | null) => void
+  selectPath: (pathId: string | null) => void
+  setDrawMode: (mode: StageDrawMode) => void
+  addPath: (draft: StagePathDraft) => string | null
+  updatePath: (
+    shotId: string,
+    pathId: string,
+    patch: Partial<Omit<StagePath, 'id'>>
+  ) => boolean
+  removePath: (shotId: string, pathId: string) => boolean
+  setPathVisible: (shotId: string, pathId: string, visible: boolean) => boolean
+  updatePathPoint: (
+    shotId: string,
+    pathId: string,
+    index: number,
+    position: StageVec3
+  ) => boolean
   addShot: () => string | null
   autoCoverage: (options: AutoCoverageOptions) => boolean
   dialogueCoverage: (
@@ -140,6 +183,76 @@ export function syncStageNodeSummary(
 /** 一轮 Agent 的多个场景命令只压入一条历史记录 */
 const commandTurns = new Set<string>()
 
+function pathTrackCommands(
+  shot: StageShot,
+  doc: DirectorStageDoc,
+  path: StagePath,
+  paths: StagePath[]
+): StageCommand[] {
+  if (path.kind === 'camera') {
+    const camera = doc.cameras.find((item) => item.id === shot.cameraId)
+    if (!camera) return []
+    const follow =
+      paths.find((item) => item.kind === 'follow') ??
+      (path.targetMode === 'follow' && path.objectId
+        ? paths.find(
+            (item) =>
+              item.kind === 'object' && item.objectId === path.objectId
+          )
+        : undefined)
+    const generated = cameraTrackFromPath({
+      path,
+      camera,
+      durationMs: shot.durationMs,
+      ...(follow ? { followPath: follow } : {})
+    })
+    return [
+      {
+        type: 'setCameraTrack',
+        shotId: shot.id,
+        track: mergeCameraTrack(shot.cameraTrack, generated, true)
+      }
+    ]
+  }
+
+  if (path.kind === 'object') {
+    const object = doc.objects.find((item) => item.id === path.objectId)
+    if (!object) return []
+    const generated = actionTrackFromPath({
+      path,
+      object,
+      durationMs: shot.durationMs
+    })
+    const existing = shot.actionTracks?.find(
+      (track) => track.objectId === path.objectId
+    )
+    return [
+      {
+        type: 'setActionTrack',
+        shotId: shot.id,
+        track: mergeActionTrack(existing, generated)
+      }
+    ]
+  }
+
+  const cameraPath = paths.find((item) => item.kind === 'camera')
+  const camera = doc.cameras.find((item) => item.id === shot.cameraId)
+  if (!cameraPath || !camera) return []
+  const generated = cameraTrackFromPath({
+    path: cameraPath,
+    camera,
+    durationMs: shot.durationMs,
+    followPath: path
+  })
+  return [
+    {
+      type: 'setCameraTrack',
+      shotId: shot.id,
+      track: mergeCameraTrack(shot.cameraTrack, generated, true)
+    }
+  ]
+}
+
 export const useStageStore = create<StageState>((set, get) => ({
   open: false,
   nodeId: null,
@@ -149,6 +262,8 @@ export const useStageStore = create<StageState>((set, get) => ({
   selectedCameraId: null,
   selectedShotId: null,
   selectedKeyframeIndex: null,
+  selectedPathId: null,
+  drawMode: 'off',
   viewMode: 'director',
   transformMode: 'translate',
   playing: false,
@@ -183,6 +298,8 @@ export const useStageStore = create<StageState>((set, get) => ({
       selectedCameraId: null,
       selectedShotId: null,
       selectedKeyframeIndex: null,
+      selectedPathId: null,
+      drawMode: 'off',
       viewMode: 'director',
       transformMode: 'translate',
       playing: false,
@@ -207,6 +324,8 @@ export const useStageStore = create<StageState>((set, get) => ({
         selectedCameraId: doc.activeCameraId ?? null,
         selectedShotId: doc.shots[0]?.id ?? null,
         selectedKeyframeIndex: null,
+        selectedPathId: null,
+        drawMode: 'off',
         viewMode: 'director',
         playing: false,
         playbackMs: 0,
@@ -240,6 +359,8 @@ export const useStageStore = create<StageState>((set, get) => ({
       selectedCameraId: null,
       selectedShotId: null,
       selectedKeyframeIndex: null,
+      selectedPathId: null,
+      drawMode: 'off',
       viewMode: 'director',
       playing: false,
       playbackMs: 0,
@@ -317,7 +438,11 @@ export const useStageStore = create<StageState>((set, get) => ({
   },
 
   selectObject: (objectId) =>
-    set({ selectedObjectId: objectId, playing: false }),
+    set({
+      selectedObjectId: objectId,
+      selectedPathId: null,
+      playing: false
+    }),
 
   selectCamera: (cameraId) => {
     if (cameraId) {
@@ -327,12 +452,183 @@ export const useStageStore = create<StageState>((set, get) => ({
       set({
         selectedObjectId: null,
         selectedCameraId: cameraId,
+        selectedPathId: null,
         viewMode: applied ? 'camera' : get().viewMode,
         playing: false
       })
       return
     }
-    set({ selectedCameraId: null, viewMode: 'director', playing: false })
+    set({
+      selectedCameraId: null,
+      selectedPathId: null,
+      viewMode: 'director',
+      playing: false
+    })
+  },
+
+  selectPath: (pathId) =>
+    set({
+      selectedPathId: pathId,
+      ...(pathId ? { selectedObjectId: null, selectedCameraId: null } : {}),
+      playing: false
+    }),
+
+  setDrawMode: (mode) => {
+    if ((mode === 'object' || mode === 'follow') && !get().selectedObjectId) {
+      set({ error: '请先选择一个对象' })
+      return
+    }
+    if (mode === 'camera' && !get().selectedShotId) {
+      set({ error: '请先选择一个镜头' })
+      return
+    }
+    set({
+      drawMode: mode,
+      playing: false,
+      ...(mode === 'off'
+        ? {}
+        : { viewMode: 'director' as const, selectedPathId: null })
+    })
+  },
+
+  addPath: (draft) => {
+    const { doc, selectedShotId } = get()
+    const shot = doc?.shots.find((item) => item.id === selectedShotId)
+    if (!doc || !shot) {
+      set({ error: '请先选择一个镜头' })
+      return null
+    }
+    if (draft.points.length < 2) {
+      set({ error: '路径至少需要 2 个点' })
+      return null
+    }
+    const paths = shot.paths ?? []
+    const kindCount = paths.filter((path) => path.kind === draft.kind).length + 1
+    const objectName = draft.objectId
+      ? doc.objects.find((object) => object.id === draft.objectId)?.name
+      : undefined
+    const name =
+      draft.name ??
+      (draft.kind === 'camera'
+        ? `相机路径 ${kindCount}`
+        : draft.kind === 'object'
+          ? `${objectName ?? '对象'}路径 ${kindCount}`
+          : `跟随路径 ${kindCount}`)
+    const path: StagePath = {
+      id: createStageId('path'),
+      name,
+      kind: draft.kind,
+      ...(draft.objectId ? { objectId: draft.objectId } : {}),
+      points: draft.points.map((position) => ({ position: [...position] })),
+      visible: true,
+      smooth: 0.5,
+      height: draft.height ?? 0,
+      createdAt: new Date().toISOString(),
+      ...(draft.kind === 'camera'
+        ? {
+            targetMode: draft.targetMode ?? 'ahead',
+            lookAhead: draft.lookAhead ?? 2
+          }
+        : {}),
+      ...(draft.kind === 'object'
+        ? {
+            faceTangent: draft.faceTangent ?? true,
+            rotationOffset: draft.rotationOffset ?? 0
+          }
+        : {})
+    }
+    const nextPaths = [...paths, path]
+    const nextShot: StageShot = { ...shot, paths: nextPaths }
+    const commands: StageCommand[] = [
+      { type: 'addPath', shotId: shot.id, path },
+      ...pathTrackCommands(nextShot, doc, path, nextPaths)
+    ]
+    const applied = get().applyCommands(
+      commands,
+      `path-${path.id}-${Date.now()}`
+    )
+    if (!applied) return null
+    set({ selectedPathId: path.id, drawMode: 'off' })
+    return path.id
+  },
+
+  updatePath: (shotId, pathId, patch) => {
+    const { doc } = get()
+    const shot = doc?.shots.find((item) => item.id === shotId)
+    const current = shot?.paths?.find((path) => path.id === pathId)
+    if (!doc || !shot || !current) return false
+    const nextPath: StagePath = { ...current, ...patch, id: current.id }
+    const paths = (shot.paths ?? []).map((path) =>
+      path.id === pathId ? nextPath : path
+    )
+    const nextShot: StageShot = { ...shot, paths }
+    const commands: StageCommand[] = [
+      { type: 'updatePath', shotId, pathId, patch },
+      ...pathTrackCommands(nextShot, doc, nextPath, paths)
+    ]
+    return get().applyCommands(commands, `path-${pathId}-${Date.now()}`)
+  },
+
+  removePath: (shotId, pathId) => {
+    const { doc } = get()
+    const shot = doc?.shots.find((item) => item.id === shotId)
+    const current = shot?.paths?.find((path) => path.id === pathId)
+    if (!doc || !shot || !current) return false
+    const paths = (shot.paths ?? []).filter((path) => path.id !== pathId)
+    const commands: StageCommand[] = [
+      { type: 'removePath', shotId, pathId }
+    ]
+    if (current.kind === 'camera' || current.kind === 'follow') {
+      const cameraPath = paths.find((path) => path.kind === 'camera')
+      if (cameraPath) {
+        commands.push(
+          ...pathTrackCommands(
+            { ...shot, paths },
+            doc,
+            cameraPath,
+            paths
+          )
+        )
+      } else {
+        commands.push({
+          type: 'setCameraTrack',
+          shotId,
+          track: mergeCameraTrack(shot.cameraTrack, [], true)
+        })
+      }
+    }
+    if (current.kind === 'object' && current.objectId) {
+      const existing = shot.actionTracks?.find(
+        (track) => track.objectId === current.objectId
+      )
+      const poseOnly = poseOnlyActionTrack(existing, current.objectId)
+      commands.push({
+        type: 'setActionTrack',
+        shotId,
+        track: poseOnly ?? { objectId: current.objectId, keys: [] }
+      })
+    }
+    const applied = get().applyCommands(
+      commands,
+      `path-${pathId}-${Date.now()}`
+    )
+    if (applied) set({ selectedPathId: null })
+    return applied
+  },
+
+  setPathVisible: (shotId, pathId, visible) =>
+    get().applyCommands([
+      { type: 'setPathVisible', shotId, pathId, visible }
+    ]),
+
+  updatePathPoint: (shotId, pathId, index, position) => {
+    const shot = get().doc?.shots.find((item) => item.id === shotId)
+    const path = shot?.paths?.find((item) => item.id === pathId)
+    if (!path || index < 0 || index >= path.points.length) return false
+    const points = path.points.map((point, pointIndex) =>
+      pointIndex === index ? { position } : point
+    )
+    return get().updatePath(shotId, pathId, { points })
   },
 
   selectShot: (shotId) => {
@@ -346,6 +642,7 @@ export const useStageStore = create<StageState>((set, get) => ({
     set({
       selectedShotId: shotId,
       selectedKeyframeIndex: null,
+      selectedPathId: null,
       playbackMs: 0,
       ...(segment ? { programMs: segment.startMs } : {}),
       playing: false
@@ -465,15 +762,19 @@ export const useStageStore = create<StageState>((set, get) => ({
       return false
     }
 
-    const track = (shot.cameraTrack ?? []).filter(
-      (key) => key.timeMs <= duration
-    )
+    const ratio = duration / Math.max(1, shot.durationMs)
+    const scaleKey = <T extends { timeMs: number }>(key: T): T => ({
+      ...key,
+      timeMs: Math.min(duration, Math.round(key.timeMs * ratio))
+    })
+    const track = (shot.cameraTrack ?? []).map(scaleKey)
     const actionTracks = (shot.actionTracks ?? [])
       .map((action) => ({
         ...action,
-        keys: action.keys.filter((key) => key.timeMs <= duration)
+        keys: action.keys.map(scaleKey)
       }))
       .filter((action) => action.keys.length > 0)
+    const paths = scalePathTimes(shot.paths, shot.durationMs, duration)
 
     const applied = get().applyCommands([
       {
@@ -482,7 +783,8 @@ export const useStageStore = create<StageState>((set, get) => ({
         patch: {
           durationMs: duration,
           cameraTrack: track.length > 0 ? track : undefined,
-          actionTracks: actionTracks.length > 0 ? actionTracks : undefined
+          actionTracks: actionTracks.length > 0 ? actionTracks : undefined,
+          ...(paths ? { paths } : {})
         }
       }
     ])
@@ -562,7 +864,8 @@ export const useStageStore = create<StageState>((set, get) => ({
       position: [...capture.position],
       target: [...capture.target],
       fov: capture.fov,
-      easing: 'linear'
+      easing: 'linear',
+      source: 'manual'
     })
     track.sort((a, b) => a.timeMs - b.timeMs)
 
@@ -694,7 +997,7 @@ export const useStageStore = create<StageState>((set, get) => ({
         get().applyCommands([{ type: 'setActiveCamera', cameraId: targetId }])
       }
     }
-    set({ viewMode: mode, playing: false })
+    set({ viewMode: mode, playing: false, drawMode: 'off' })
   },
 
   setTransformMode: (mode) => set({ transformMode: mode }),

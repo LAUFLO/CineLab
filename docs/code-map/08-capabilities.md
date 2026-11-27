@@ -74,10 +74,13 @@
 | 02 | 工作流模板：保存画布子图为资产库 `工作流/` 目录包；本地上传/生成节点转 `workflowSlot` 占位；导演台文档打包，拉片/剪辑室占位；支持重命名、删除、更新、导入导出 zip；`modelKey`/`params` 按节点持久化 | `src/main/workflows/`、`src/main/library/workflows.ts`、`src/shared/workflow-schema.ts`、`WorkflowSaveDialog.tsx`、`WorkflowGrid.tsx`、`PromptBar.tsx` |
 | 07 | 关闭确认（后台运行/退出）、系统托盘品牌 logo 与自绘右键菜单；保存失败拦截、「不再提示」仅记忆后台运行 | `src/main/tray/`、`src/renderer/src/App.tsx`、`CloseConfirmDialog.tsx`、`TrayMenuWindow.tsx`、`preferences.ts` |
 | 04 | GLB 导入与真实模型渲染（视口 + 导出等待加载），失败回退 wireframe | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts`、`stage-render.ts` |
-| 04 | 预演导出附带结构 JSON 与生成参考提示词，回画布后写入视频节点 | `src/shared/stage-previs-reference.ts`、`src/main/stage/export.ts`、`preview-runner.ts` |
+| 04 | 预演导出回画布：单镜标题为镜头名、整片为「<导演台名> · 成片」，不自动成组，不生成结构 JSON/提示词节点 | `src/renderer/src/stage/preview-runner.ts`、`src/main/stage/export.ts` |
 | 02 | model 资产入库到 `assets/model/`，支持 `.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` |
 | 06 | 对话式白模预演编排：动作轨工具、批量计划确认、previs Skill SOP | `resources/skills/stage-previs/SKILL.md`、`src/main/agent/tools/stage.ts`、`stageBridge.ts` |
 | 06 | 导演台上下文一致性：每轮精简快照 + `stage_get` 摘要扩展 + 写前软提示 | `src/shared/stage-snapshot.ts`、`pi/prompt.ts`、`pi/tools.ts`、`stageBridge.ts` |
+| 04 | 手绘路径与运镜：自由曲线、相机/对象/跟随路径、Line2 3D 显示、控制点拖拽/Alt 高度、时间关键帧/速度曲线、手动关键帧保留 | `src/shared/stage-paths.ts`、`src/renderer/src/stage/StageWindow.tsx`、`StageViewport.tsx`、`StagePathInspector.tsx` |
+| 04 | 参考图上传与连线：本地图片写入项目资产、创建 image 节点、图片→导演台连线、替换旧入边 | `src/renderer/src/stage/StageWindow.tsx`、`stores/canvas/slices/assets.ts`、`graph.ts` |
+| 10 | 全屏面板顶部 40px 拖拽区：导演台、剪辑室、设置、项目中心、节点搜索、快捷键、历史与 Dialog | `WindowDragStrip.tsx`、`StageWindow.tsx`、`StudioWindow.tsx` |
 
 ## 部分实现（别当已完成）
 

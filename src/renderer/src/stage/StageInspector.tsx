@@ -8,6 +8,7 @@ import {
 } from '@shared/stage-schema'
 import { STAGE_MOTIONS } from '@shared/stage-motions'
 import { ShotInspector } from './ShotInspector'
+import { StagePathInspector } from './StagePathInspector'
 import { useStageStore } from './stageStore'
 import { Input, NativeSelect, Button } from '../components/ui'
 
@@ -400,14 +401,14 @@ export function StageInspector() {
   if (!doc) return null
 
   const object = doc.objects.find((item) => item.id === selectedObjectId)
-  if (object) return <ObjectInspector object={object} />
-
   const camera = doc.cameras.find((item) => item.id === selectedCameraId)
-  if (camera) return <CameraInspector camera={camera} />
-
-  if (selectedShotId) return <ShotInspector />
-
-  return (
+  const primary = object ? (
+    <ObjectInspector object={object} />
+  ) : camera ? (
+    <CameraInspector camera={camera} />
+  ) : selectedShotId ? (
+    <ShotInspector />
+  ) : (
     <section className="flex flex-col gap-1">
       <header className="mb-1 flex flex-col gap-0.5 border-b border-border pb-2">
         <span className="text-[10px] text-fg-subtle">场景</span>
@@ -419,6 +420,27 @@ export function StageInspector() {
       <Row label="机位" value={`${doc.cameras.length}`} />
       <Row label="镜头" value={`${doc.shots.length}`} />
       <Row label="背景" value={doc.background.kind} />
+      {doc.background.kind === 'color' ? (
+        <label className="mt-2 flex items-center justify-between gap-2 text-[11px] text-fg-subtle">
+          <span>背景颜色</span>
+          <Input
+            type="color"
+            className="!h-6 !w-10 !p-0.5"
+            value={doc.background.value || '#242428'}
+            onChange={(event) =>
+              useStageStore.getState().applyCommands([
+                {
+                  type: 'setBackground',
+                  background: {
+                    kind: 'color',
+                    value: event.target.value
+                  }
+                }
+              ])
+            }
+          />
+        </label>
+      ) : null}
       {doc.background.kind === 'model' ? (
         <p className="text-[10px] leading-relaxed text-warning">
           模型背景暂不支持显示，请改用全景图或纯色。
@@ -428,5 +450,12 @@ export function StageInspector() {
         选中对象或机位后可编辑属性；也可以在视口里拖拽变换。
       </p>
     </section>
+  )
+
+  return (
+    <div className="flex flex-col gap-3">
+      {primary}
+      {selectedShotId ? <StagePathInspector /> : null}
+    </div>
   )
 }

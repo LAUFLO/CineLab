@@ -42,7 +42,16 @@ export function buildStageSnapshot(
     shots: doc.shots.slice(0, 100).map((shot) => ({
       id: shot.id,
       name: shot.name ?? null,
-      keyframes: shot.cameraTrack?.length ?? 0
+      keyframes: shot.cameraTrack?.length ?? 0,
+      paths: (shot.paths ?? []).map((path) => ({
+        id: path.id,
+        name: path.name ?? null,
+        kind: path.kind,
+        objectId: path.objectId ?? null,
+        points: path.points.length,
+        timeKeys: path.timeKeys?.length ?? 0,
+        visible: path.visible !== false
+      }))
     })),
     truncated:
       doc.objects.length > 100 ||

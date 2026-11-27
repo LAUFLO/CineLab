@@ -9,7 +9,7 @@ import {
 import { Icon } from '../components/Icon'
 import { usePreferencesStore } from '../stores/preferences'
 import { useUIStore } from '../stores/ui'
-import { IconButton } from '../components/ui'
+import { IconButton, WindowDragStrip } from '../components/ui'
 import { shortcutPlatform } from '../shortcuts/useShortcut'
 
 const SCOPES: ShortcutScope[] = ['global', 'canvas', 'timeline', 'stage']
@@ -66,6 +66,7 @@ export function ShortcutPanel() {
       className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay backdrop-blur-[2px] [-webkit-app-region:no-drag]"
       onPointerDown={close}
     >
+      <WindowDragStrip />
       <div
         className="flex max-h-[calc(100vh-96px)] w-[520px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface-raised shadow-float"
         onPointerDown={(event) => event.stopPropagation()}

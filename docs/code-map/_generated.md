@@ -9,12 +9,12 @@
 |---|---|---|---|
 | 01 | [画布](./01-canvas.md) | 77 | 26660 |
 | 02 | [生成与模型](./02-generation.md) | 68 | 15123 |
-| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9453 |
-| 04 | [导演台与白模预演](./04-director-stage.md) | 35 | 10958 |
+| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9455 |
+| 04 | [导演台与白模预演](./04-director-stage.md) | 38 | 13086 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 20747 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 77 | 14263 |
-| 10 | [UI 组件与面板](./10-ui.md) | 56 | 11878 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 20849 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 77 | 14328 |
+| 10 | [UI 组件与面板](./10-ui.md) | 57 | 11913 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -238,6 +238,7 @@
 - `src/main/workflows/__tests__/build.test.ts`
 - `src/main/workflows/__tests__/instantiate.test.ts`
 - `src/renderer/src/agent/__tests__/filmBridge.test.ts`
+- `src/renderer/src/agent/__tests__/thought-group.test.ts`
 - `src/renderer/src/agent/__tests__/timelineBridge.test.ts`
 - `src/renderer/src/canvas/__tests__/media-size.test.ts`
 - `src/renderer/src/canvas/__tests__/promptbar-model.test.ts`
@@ -275,6 +276,7 @@
 - `src/shared/__tests__/stage-commands.test.ts`
 - `src/shared/__tests__/stage-from-scene-build.test.ts`
 - `src/shared/__tests__/stage-lighting.test.ts`
+- `src/shared/__tests__/stage-paths.test.ts`
 - `src/shared/__tests__/stage-preview.test.ts`
 - `src/shared/__tests__/stage-previs-reference.test.ts`
 - `src/shared/__tests__/stage-program.test.ts`

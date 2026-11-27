@@ -56,6 +56,48 @@ export interface CameraKeyframe {
   target: StageVec3
   fov: number
   easing?: StageEasing
+  /** 关键帧来源：路径生成或手动捕获；缺省按 manual 解释。 */
+  source?: 'path' | 'manual'
+}
+
+export const STAGE_PATH_KINDS = ['camera', 'object', 'follow'] as const
+export type StagePathKind = (typeof STAGE_PATH_KINDS)[number]
+
+export const STAGE_PATH_TARGET_MODES = ['ahead', 'fixed', 'follow'] as const
+export type StagePathTargetMode = (typeof STAGE_PATH_TARGET_MODES)[number]
+
+export interface StagePathPoint {
+  position: StageVec3
+}
+
+export interface StagePathTimeKey {
+  /** 归一化路径弧长 0..1 */
+  at: number
+  timeMs: number
+  easing?: StageEasing
+}
+
+export interface StagePath {
+  id: string
+  name?: string
+  kind: StagePathKind
+  objectId?: string
+  points: StagePathPoint[]
+  timeKeys?: StagePathTimeKey[]
+  closed?: boolean
+  smooth?: number
+  color?: string
+  visible?: boolean
+  /** 整体高度偏移 */
+  height?: number
+  /** 相机路径 look-ahead 距离（米） */
+  lookAhead?: number
+  targetMode?: StagePathTargetMode
+  /** 对象路径沿切线朝向 */
+  faceTangent?: boolean
+  /** 朝向偏移（弧度） */
+  rotationOffset?: number
+  createdAt: string
 }
 
 export interface ActionKeyframe {
@@ -113,6 +155,7 @@ export interface StageShot {
   aspect: StageAspect
   cameraTrack?: CameraKeyframe[]
   actionTracks?: ActionTrack[]
+  paths?: StagePath[]
   /** 关键帧插值模式；缺省按 'hermite' 解释。 */
   cameraSmoothing?: CameraTrackSmoothing
   /** 语义镜头；存在时 cameraTrack 由求解器生成。 */
@@ -236,6 +279,9 @@ export const STAGE_LIMITS = {
   maxShots: 100,
   maxCameraTrackKeys: 100,
   maxActionTrackKeys: 500,
+  maxPathsPerShot: 20,
+  maxPathPoints: 200,
+  maxPathTimeKeys: 32,
   maxProgramEntries: 200,
   maxDurationMs: 15_000,
   maxNameLength: 100,
@@ -264,7 +310,7 @@ export function createStageDoc(
     version: 1,
     stageId,
     name,
-    background: { kind: 'color', value: '#1a1a1a' },
+    background: { kind: 'color', value: '#242428' },
     objects: [],
     cameras: [],
     shots: [],
@@ -352,6 +398,129 @@ function validateCameraFields(
   }
 }
 
+export function validateStagePath(
+  value: unknown,
+  durationMs: number,
+  objectIds: Set<string>
+): string[] {
+  const errors: string[] = []
+  if (!isRecord(value)) return ['路径必须是对象']
+  if (!isNonEmptyString(value.id, STAGE_LIMITS.maxNameLength)) {
+    errors.push('路径 id 无效')
+  }
+  if (
+    value.name !== undefined &&
+    !isNonEmptyString(value.name, STAGE_LIMITS.maxNameLength)
+  ) {
+    errors.push('路径名称无效')
+  }
+  if (!STAGE_PATH_KINDS.includes(value.kind as StagePathKind)) {
+    errors.push('路径类型无效')
+  }
+  if (value.kind === 'object' || value.kind === 'follow') {
+    if (typeof value.objectId !== 'string' || !objectIds.has(value.objectId)) {
+      errors.push('路径绑定的对象不存在')
+    }
+  }
+  if (!Array.isArray(value.points)) {
+    errors.push('路径点必须是数组')
+  } else {
+    if (value.points.length < 2) errors.push('路径至少需要 2 个点')
+    if (value.points.length > STAGE_LIMITS.maxPathPoints) {
+      errors.push('路径点过多')
+    }
+    value.points.forEach((point, index) => {
+      if (!isRecord(point) || !isVec3(point.position)) {
+        errors.push(`路径点 ${index + 1} 位置无效`)
+      }
+    })
+  }
+  if (value.timeKeys !== undefined) {
+    if (!Array.isArray(value.timeKeys)) {
+      errors.push('路径时间节点必须是数组')
+    } else {
+      if (value.timeKeys.length > STAGE_LIMITS.maxPathTimeKeys) {
+        errors.push('路径时间节点过多')
+      }
+      let previousAt = -1
+      let previousTime = -1
+      value.timeKeys.forEach((key, index) => {
+        if (!isRecord(key)) {
+          errors.push(`路径时间节点 ${index + 1} 无效`)
+          return
+        }
+        if (!isFiniteNumber(key.at) || key.at < 0 || key.at > 1) {
+          errors.push(`路径时间节点 ${index + 1}.at 必须在 0-1 之间`)
+        } else if (key.at <= previousAt) {
+          errors.push(`路径时间节点 ${index + 1}.at 必须递增`)
+        } else {
+          previousAt = key.at
+        }
+        if (
+          !isFiniteNumber(key.timeMs) ||
+          key.timeMs < 0 ||
+          key.timeMs > durationMs
+        ) {
+          errors.push(`路径时间节点 ${index + 1}.timeMs 超出镜头时长`)
+        } else if (key.timeMs <= previousTime) {
+          errors.push(`路径时间节点 ${index + 1}.timeMs 必须递增`)
+        } else {
+          previousTime = key.timeMs
+        }
+        if (
+          key.easing !== undefined &&
+          !STAGE_EASINGS.includes(key.easing as StageEasing)
+        ) {
+          errors.push(`路径时间节点 ${index + 1}.easing 无效`)
+        }
+      })
+    }
+  }
+  if (value.closed !== undefined && typeof value.closed !== 'boolean') {
+    errors.push('路径 closed 无效')
+  }
+  if (
+    value.smooth !== undefined &&
+    (!isFiniteNumber(value.smooth) || value.smooth < 0 || value.smooth > 1)
+  ) {
+    errors.push('路径 smooth 必须在 0-1 之间')
+  }
+  if (
+    value.color !== undefined &&
+    (!isNonEmptyString(value.color, 40) || !/^#[0-9a-f]{6}$/i.test(value.color))
+  ) {
+    errors.push('路径颜色无效')
+  }
+  if (value.visible !== undefined && typeof value.visible !== 'boolean') {
+    errors.push('路径 visible 无效')
+  }
+  if (value.height !== undefined && !isFiniteNumber(value.height)) {
+    errors.push('路径 height 无效')
+  }
+  if (
+    value.lookAhead !== undefined &&
+    (!isFiniteNumber(value.lookAhead) || value.lookAhead < 0.1 || value.lookAhead > 50)
+  ) {
+    errors.push('路径 lookAhead 必须在 0.1-50 之间')
+  }
+  if (
+    value.targetMode !== undefined &&
+    !STAGE_PATH_TARGET_MODES.includes(value.targetMode as StagePathTargetMode)
+  ) {
+    errors.push('路径 targetMode 无效')
+  }
+  if (value.faceTangent !== undefined && typeof value.faceTangent !== 'boolean') {
+    errors.push('路径 faceTangent 无效')
+  }
+  if (value.rotationOffset !== undefined && !isFiniteNumber(value.rotationOffset)) {
+    errors.push('路径 rotationOffset 无效')
+  }
+  if (!isNonEmptyString(value.createdAt, 80)) {
+    errors.push('路径 createdAt 无效')
+  }
+  return errors
+}
+
 function validateShot(
   shot: Record<string, unknown>,
   path: string,
@@ -426,6 +595,40 @@ function validateShot(
           !STAGE_EASINGS.includes(key.easing as StageEasing)
         ) {
           errors.push(`${keyPath}.easing 无效`)
+        }
+        if (
+          key.source !== undefined &&
+          key.source !== 'path' &&
+          key.source !== 'manual'
+        ) {
+          errors.push(`${keyPath}.source 无效`)
+        }
+      })
+    }
+  }
+
+  if (shot.paths !== undefined) {
+    if (!Array.isArray(shot.paths)) {
+      errors.push(`${path}.paths 必须是数组`)
+    } else if (shot.paths.length > STAGE_LIMITS.maxPathsPerShot) {
+      errors.push(`${path}.paths 数量过多`)
+    } else {
+      const duration = isFiniteNumber(shot.durationMs)
+        ? shot.durationMs
+        : STAGE_LIMITS.maxDurationMs
+      const seen = new Set<string>()
+      shot.paths.forEach((item, index) => {
+        const itemPath = `${path}.paths[${index}]`
+        if (!isRecord(item)) {
+          errors.push(`${itemPath} 必须是对象`)
+          return
+        }
+        for (const message of validateStagePath(item, duration, objectIds)) {
+          errors.push(`${itemPath}: ${message}`)
+        }
+        if (typeof item.id === 'string') {
+          if (seen.has(item.id)) errors.push(`${itemPath}.id 重复`)
+          seen.add(item.id)
         }
       })
     }

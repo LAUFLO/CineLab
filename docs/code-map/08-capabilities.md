@@ -78,6 +78,7 @@
 | 02 | model 资产入库到 `assets/model/`，支持 `.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` |
 | 06 | 对话式白模预演编排：动作轨工具、批量计划确认、previs Skill SOP | `resources/skills/stage-previs/SKILL.md`、`src/main/agent/tools/stage.ts`、`stageBridge.ts` |
 | 06 | 导演台上下文一致性：每轮精简快照 + `stage_get` 摘要扩展 + 写前软提示 | `src/shared/stage-snapshot.ts`、`pi/prompt.ts`、`pi/tools.ts`、`stageBridge.ts` |
+| 10 | 全屏面板顶部 40px 拖拽区：导演台、剪辑室、设置、项目中心、节点搜索、快捷键、历史与 Dialog | `WindowDragStrip.tsx`、`StageWindow.tsx`、`StudioWindow.tsx` |
 
 ## 部分实现（别当已完成）
 

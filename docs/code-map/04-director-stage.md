@@ -132,6 +132,7 @@ StageWindow → scene.analyze
 | `gltf` 对象类型 | 已实现 | `assetUrl` + GLTFLoader 读取 `assetPath`；导出等待加载；仅自包含 `.glb` 保证完整 |
 | GLB 入库与导入 | 已实现 | `scene:pick-model`、`ingestAsset(kind:'model')` → `assets/model/` |
 | 预演结构约束导出 | 已实现 | `stage-previs-reference.ts` 生成结构 JSON + 提示词，随视频节点回画布 |
+| 全屏窗口拖动 | 已实现 | `StageWindow` 顶部 40px `WindowDragStrip`，内容区 no-drag |
 
 ## 已知限制
 
@@ -163,7 +164,7 @@ StageWindow → scene.analyze
 | `src/renderer/src/stage/StageInspector.tsx` | 433 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 815 |
 | `src/renderer/src/stage/StageViewport.tsx` | 785 |
-| `src/renderer/src/stage/StageWindow.tsx` | 1136 |
+| `src/renderer/src/stage/StageWindow.tsx` | 1138 |
 | `src/renderer/src/stage/preview-runner.ts` | 206 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |

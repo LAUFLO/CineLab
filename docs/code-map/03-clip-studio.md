@@ -101,6 +101,7 @@ StudioWindow → TimelineApi.export
 | 音频处理 | 已实现 | `audio-fx.test.ts`、`audio-mix.ts` |
 | 成片导出 | 已实现 | `main/timeline/export.ts` |
 | 转录/分析 | 已实现 | `transcribe.ts`、`analysis.ts` |
+| 全屏窗口拖动 | 已实现 | `StudioWindow` 顶部 40px `WindowDragStrip`，内容区 no-drag |
 
 ## 已知限制
 
@@ -145,7 +146,7 @@ StudioWindow → TimelineApi.export
 | `src/renderer/src/studio/PreviewPane.tsx` | 72 |
 | `src/renderer/src/studio/PreviewStage.tsx` | 48 |
 | `src/renderer/src/studio/StudioTopBar.tsx` | 109 |
-| `src/renderer/src/studio/StudioWindow.tsx` | 276 |
+| `src/renderer/src/studio/StudioWindow.tsx` | 278 |
 | `src/renderer/src/studio/TimelineCanvas.tsx` | 105 |
 | `src/renderer/src/studio/TimelinePane.tsx` | 1256 |
 | `src/renderer/src/studio/assets.ts` | 99 |

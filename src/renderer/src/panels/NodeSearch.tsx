@@ -4,7 +4,7 @@ import { NODE_META, type CanvasNodeKind } from '@shared/canvas-schema'
 import { Icon, type IconName } from '../components/Icon'
 import { isGroupNode, useCanvasStore } from '../stores/canvas'
 import { useUIStore } from '../stores/ui'
-import { Input, Button } from '../components/ui'
+import { Input, Button, WindowDragStrip } from '../components/ui'
 
 const ICONS: Record<CanvasNodeKind, IconName> = {
   text: 'text',
@@ -68,6 +68,7 @@ export function NodeSearch() {
       className="fixed inset-0 z-[240] flex justify-center bg-overlay pt-[12vh] [-webkit-app-region:no-drag]"
       onPointerDown={close}
     >
+      <WindowDragStrip />
       <div
         className="flex max-h-[420px] w-[560px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface-raised shadow-float"
         onPointerDown={(event) => event.stopPropagation()}

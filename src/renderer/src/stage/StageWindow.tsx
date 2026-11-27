@@ -21,7 +21,8 @@ import {
   Menu,
   MenuItem,
   NativeSelect,
-  Select
+  Select,
+  WindowDragStrip
 } from '../components/ui'
 import type { GeneratedAsset } from '@shared/generation'
 import type { AssetScope } from '@shared/asset-schema'
@@ -561,6 +562,7 @@ export function StageWindow() {
       aria-label="导演台"
       data-scope="stage"
     >
+      <WindowDragStrip />
       <div data-window="stage" className="grid min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden rounded-panel border border-border bg-canvas p-1.5 text-fg shadow-float [grid-template-areas:'top_top_top'_'left_viewport_right'_'timeline_timeline_timeline'] [grid-template-columns:240px_minmax(0,1fr)_280px] [grid-template-rows:48px_minmax(0,1fr)_168px] max-[900px]:[grid-template-columns:190px_minmax(0,1fr)_220px] max-[900px]:[grid-template-rows:48px_minmax(0,1fr)_150px] max-[720px]:[grid-template-areas:'top'_'viewport'_'timeline'] max-[720px]:[grid-template-columns:minmax(0,1fr)] max-[720px]:[grid-template-rows:48px_minmax(0,1fr)_150px]">
         <header className="flex min-w-0 items-center justify-between gap-3 rounded-card border border-border bg-surface px-2.5 [grid-area:top]">
           <div className="flex min-w-0 items-center gap-2">

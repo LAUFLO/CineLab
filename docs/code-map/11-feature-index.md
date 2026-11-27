@@ -70,6 +70,7 @@
 | 关键词 | 已有实现 | 入口 | 状态 |
 |---|---|---|---|
 | 场景/机位/镜头 | `StageDoc`、`StageShot`、`StageCamera` | `src/shared/stage-schema.ts` | 已实现 |
+| 手绘路径/运镜 | 自由曲线、相机/对象/跟随路径、Line2 3D、控制点、时间关键帧/速度曲线、手动关键帧保留 | `src/shared/stage-paths.ts`、`stage/StageWindow.tsx`、`StageViewport.tsx`、`StagePathInspector.tsx` | 已实现（核心） |
 | 语义镜头 | 关系/距离/高度/构图求解 | `src/shared/stage-shot-intent.ts` | 已实现 |
 | 整片时间线、重叠 | `StageProgramEntry` + `front` | `src/shared/stage-program.ts` | 已实现 |
 | 整片播放 | `playbackScope='program'` | `src/renderer/src/stage/stageStore.ts` | 已实现 |

@@ -233,7 +233,7 @@ AgentPanel
 | `src/shared/capabilities.ts` | 321 |
 | `src/shared/mcp-command.ts` | 14 |
 | `src/shared/skills.ts` | 273 |
-| `src/shared/stage-snapshot.ts` | 77 |
+| `src/shared/stage-snapshot.ts` | 86 |
 <!-- AUTO:files:end -->
 
 <!-- AUTO:exports:start -->

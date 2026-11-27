@@ -8,7 +8,7 @@ export function WindowDragStrip() {
   return (
     <div
       aria-hidden
-      className="absolute inset-x-0 top-0 z-[1] h-10 [-webkit-app-region:drag]"
+      className="absolute left-0 right-[200px] top-0 z-[1] h-10 [-webkit-app-region:drag]"
     />
   )
 }

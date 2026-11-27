@@ -8,6 +8,7 @@ import {
 } from '@shared/stage-schema'
 import { STAGE_MOTIONS } from '@shared/stage-motions'
 import { ShotInspector } from './ShotInspector'
+import { StagePathInspector } from './StagePathInspector'
 import { useStageStore } from './stageStore'
 import { Input, NativeSelect, Button } from '../components/ui'
 
@@ -400,14 +401,14 @@ export function StageInspector() {
   if (!doc) return null
 
   const object = doc.objects.find((item) => item.id === selectedObjectId)
-  if (object) return <ObjectInspector object={object} />
-
   const camera = doc.cameras.find((item) => item.id === selectedCameraId)
-  if (camera) return <CameraInspector camera={camera} />
-
-  if (selectedShotId) return <ShotInspector />
-
-  return (
+  const primary = object ? (
+    <ObjectInspector object={object} />
+  ) : camera ? (
+    <CameraInspector camera={camera} />
+  ) : selectedShotId ? (
+    <ShotInspector />
+  ) : (
     <section className="flex flex-col gap-1">
       <header className="mb-1 flex flex-col gap-0.5 border-b border-border pb-2">
         <span className="text-[10px] text-fg-subtle">场景</span>
@@ -428,5 +429,12 @@ export function StageInspector() {
         选中对象或机位后可编辑属性；也可以在视口里拖拽变换。
       </p>
     </section>
+  )
+
+  return (
+    <div className="flex flex-col gap-3">
+      {primary}
+      {selectedShotId ? <StagePathInspector /> : null}
+    </div>
   )
 }

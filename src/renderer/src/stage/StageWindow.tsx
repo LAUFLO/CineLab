@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { StageObjectType } from '@shared/stage-schema'
+import type { StageObjectType, StageVec3 } from '@shared/stage-schema'
 import { Icon } from '../components/Icon'
 import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
 import { useSettingsStore } from '../stores/settings'
@@ -13,7 +13,8 @@ import { StageInspector } from './StageInspector'
 import { StageTimeline } from './StageTimeline'
 import { StageViewport } from './StageViewport'
 import { buildProgramTimeline } from '@shared/stage-program'
-import { useStageStore } from './stageStore'
+import { useStageStore, type StageDrawMode } from './stageStore'
+import { projectStagePathPoint } from './stage-path-bridge'
 import { exportStagePreviewToCanvas } from './preview-runner'
 import {
   Button,
@@ -123,9 +124,12 @@ export function StageWindow() {
     return options
   }, [providers])
   const [selectedForGroup, setSelectedForGroup] = useState<string[]>([])
-  const [drawMoveOpen, setDrawMoveOpen] = useState(false)
-  const drawStartRef = useRef<{ x: number; y: number } | null>(null)
-  const [drawLine, setDrawLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
+  const drawMode = useStageStore((state) => state.drawMode)
+  const setDrawMode = useStageStore((state) => state.setDrawMode)
+  const addPath = useStageStore((state) => state.addPath)
+  const [drawPoints, setDrawPoints] = useState<Array<{ x: number; y: number }>>([])
+  const drawingRef = useRef(false)
+  const drawRectRef = useRef<DOMRect | null>(null)
 
   useEffect(() => {
     if (!playing) return
@@ -381,45 +385,75 @@ export function StageWindow() {
     )
   }
 
-  const handleDrawMoveEnd = (event: React.PointerEvent<HTMLDivElement>): void => {
-    const start = drawStartRef.current
-    drawStartRef.current = null
-    setDrawLine(null)
-    if (!start) return
-    const dx = event.clientX - start.x
-    const dy = event.clientY - start.y
-    if (Math.hypot(dx, dy) < 12) return
-    const state = useStageStore.getState()
-    const doc = state.doc
-    const shotId = state.selectedShotId
-    if (!doc || !shotId) return
-    const shot = doc.shots.find((item) => item.id === shotId)
-    const camera = shot
-      ? doc.cameras.find((item) => item.id === shot.cameraId)
-      : undefined
-    if (!shot || !camera) return
-    const scale = 0.02
-    const target = camera.target
-    const at = (t: number): [number, number, number] => [
-      target[0] + dx * scale * t,
-      target[1] - dy * scale * t,
-      target[2]
-    ]
-    state.applyCommands([
-      {
-        type: 'setCameraTrack',
-        shotId,
-        track: [0, 0.5, 1].map((t) => ({
-          timeMs: Math.round(shot.durationMs * t),
-          position: [...camera.position] as [number, number, number],
-          target: at(t),
-          fov: camera.fov,
-          easing: 'easeInOut' as const
-        }))
-      }
-    ])
-    setDrawMoveOpen(false)
+  const drawPlaneY = useMemo(() => {
+    const object = doc?.objects.find((item) => item.id === selectedObjectId)
+    if (object) return object.transform.position[1]
+    const cameraId =
+      selectedCameraId ?? doc?.activeCameraId ?? doc?.cameras[0]?.id
+    const camera = doc?.cameras.find((item) => item.id === cameraId)
+    if (!camera) return 0
+    const targetY = camera.target[1]
+    return Math.abs(camera.position[1] - targetY) < 0.2 ? 0 : targetY
+  }, [doc, selectedObjectId, selectedCameraId])
+
+  const drawHint =
+    drawMode === 'camera'
+      ? '手绘相机路径 · 按住左键拖动 · 松开生成 · Esc 退出'
+      : drawMode === 'object'
+        ? `手绘「${doc?.objects.find((item) => item.id === selectedObjectId)?.name ?? '对象'}」路径 · 松开生成 · Esc 退出`
+        : drawMode === 'follow'
+          ? '手绘跟随目标路径 · 松开生成 · Esc 退出'
+          : ''
+
+  const cancelDraw = (): void => {
+    drawingRef.current = false
+    setDrawPoints([])
   }
+
+  const finishDraw = (): void => {
+    const rect = drawRectRef.current
+    const points = drawPoints
+    drawingRef.current = false
+    drawRectRef.current = null
+    setDrawPoints([])
+    if (drawMode === 'off' || !rect || points.length < 2) return
+    const projected = points
+      .map((point) =>
+        projectStagePathPoint(
+          rect.left + point.x,
+          rect.top + point.y,
+          drawPlaneY
+        )
+      )
+      .filter((point): point is StageVec3 => Boolean(point))
+    if (projected.length < 2) return
+    const cameraId =
+      selectedCameraId ?? doc?.activeCameraId ?? doc?.cameras[0]?.id
+    const camera = doc?.cameras.find((item) => item.id === cameraId)
+    addPath({
+      kind: drawMode,
+      ...(selectedObjectId ? { objectId: selectedObjectId } : {}),
+      ...(drawMode === 'camera' && camera
+        ? { height: camera.position[1] - drawPlaneY }
+        : {}),
+      points: projected
+    })
+  }
+
+  useEffect(() => {
+    if (drawMode === 'off') return
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      if (drawingRef.current) {
+        cancelDraw()
+        return
+      }
+      setDrawMode('off')
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [drawMode, setDrawMode])
 
   const handleLightingPreset = (presetId: string): void => {
     const state = useStageStore.getState()
@@ -792,16 +826,18 @@ export function StageWindow() {
               <Icon name="image" size={14} />
               {capturing ? '截图中…' : '截图到画布'}
             </Button>
-            <Button
-              type="button"
-              variant={drawMoveOpen ? 'primary' : 'secondary'}
-              size="none"
-              className={TEXT_BUTTON_CLASS}
-              onClick={() => setDrawMoveOpen((open) => !open)}
-              title="手绘运镜轨迹"
-            >
-              手绘运镜
-            </Button>
+            <Select
+              value={drawMode}
+              options={[
+                { value: 'off', label: '手绘：关闭' },
+                { value: 'camera', label: '相机路径' },
+                { value: 'object', label: '对象路径' },
+                { value: 'follow', label: '跟随路径' }
+              ]}
+              onChange={(value) => setDrawMode(value as StageDrawMode)}
+              className="!h-7 !min-w-[116px] !rounded-md !px-2 !text-[11px]"
+              title="手绘路径"
+            />
             <Button
               type="button"
               variant="ghost"
@@ -988,48 +1024,69 @@ export function StageWindow() {
 
         <main className="relative min-h-0 min-w-0 overflow-hidden rounded-card border border-border bg-media-bg [grid-area:viewport]">
           <StageViewport />
-          {drawMoveOpen ? (
+          {drawMode !== 'off' ? (
             <div
               className="absolute inset-0 z-[3] cursor-crosshair"
               onPointerDown={(event) => {
+                if (event.button !== 0) return
                 const rect = event.currentTarget.getBoundingClientRect()
-                drawStartRef.current = {
+                drawRectRef.current = rect
+                drawingRef.current = true
+                setDrawPoints([
+                  {
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top
+                  }
+                ])
+                event.currentTarget.setPointerCapture(event.pointerId)
+              }}
+              onPointerMove={(event) => {
+                if (!drawingRef.current) return
+                const rect = event.currentTarget.getBoundingClientRect()
+                const next = {
                   x: event.clientX - rect.left,
                   y: event.clientY - rect.top
                 }
-                setDrawLine({
-                  x1: event.clientX - rect.left,
-                  y1: event.clientY - rect.top,
-                  x2: event.clientX - rect.left,
-                  y2: event.clientY - rect.top
+                setDrawPoints((current) => {
+                  const previous = current[current.length - 1]
+                  if (
+                    previous &&
+                    Math.hypot(next.x - previous.x, next.y - previous.y) < 4
+                  ) {
+                    return current
+                  }
+                  return [...current, next]
                 })
               }}
-              onPointerMove={(event) => {
-                if (!drawStartRef.current) return
-                const rect = event.currentTarget.getBoundingClientRect()
-                setDrawLine({
-                  x1: drawStartRef.current.x,
-                  y1: drawStartRef.current.y,
-                  x2: event.clientX - rect.left,
-                  y2: event.clientY - rect.top
-                })
+              onPointerUp={() => finishDraw()}
+              onPointerCancel={cancelDraw}
+              onContextMenu={(event) => {
+                event.preventDefault()
+                cancelDraw()
               }}
-              onPointerUp={handleDrawMoveEnd}
             >
-              {drawLine ? (
+              {drawPoints.length > 1 ? (
                 <svg className="pointer-events-none absolute inset-0 h-full w-full">
-                  <line
-                    x1={drawLine.x1}
-                    y1={drawLine.y1}
-                    x2={drawLine.x2}
-                    y2={drawLine.y2}
-                    stroke="var(--accent)"
+                  <polyline
+                    points={drawPoints
+                      .map((point) => `${point.x},${point.y}`)
+                      .join(' ')}
+                    fill="none"
+                    stroke={
+                      drawMode === 'camera'
+                        ? '#60a5fa'
+                        : drawMode === 'object'
+                          ? '#4ade80'
+                          : '#f59e0b'
+                    }
                     strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                 </svg>
               ) : null}
               <div className="pointer-events-none absolute top-2 left-1/2 -translate-x-1/2 rounded-md bg-black/55 px-2 py-1 text-[10px] text-white/80">
-                在视口画一条线，松开生成运镜
+                {drawHint}
               </div>
             </div>
           ) : null}

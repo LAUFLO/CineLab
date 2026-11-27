@@ -34,6 +34,7 @@
 | 预演导出 | `src/main/stage/export.ts`、`src/renderer/src/stage/stage-render.ts` |
 | 无限网格地面 | `src/renderer/src/stage/stage-ground.ts` |
 | 导演台 UI | `src/renderer/src/stage/StageWindow.tsx`、`StageViewport.tsx` |
+| 手绘路径/运镜 | `src/renderer/src/stage/StageWindow.tsx`、`StageViewport.tsx`、`StagePathInspector.tsx`、`src/shared/stage-paths.ts` |
 | Agent 工具 | `src/main/agent/tools/stage.ts` |
 
 ## 数据模型
@@ -133,6 +134,7 @@ StageWindow → scene.analyze
 | GLB 入库与导入 | 已实现 | `scene:pick-model`、`ingestAsset(kind:'model')` → `assets/model/` |
 | 预演结构约束导出 | 已实现 | `stage-previs-reference.ts` 生成结构 JSON + 提示词，随视频节点回画布 |
 | 全屏窗口拖动 | 已实现 | `StageWindow` 顶部 40px `WindowDragStrip`，内容区 no-drag |
+| 手绘路径与运镜 | 已实现（核心） | `StageWindow.tsx` 自由曲线、`StageViewport.tsx` Line2 路径/控制点、`stage-paths.ts` 关键帧生成、`StagePathInspector.tsx` 时间节点/速度曲线；多路径叠加、Shift 垂直平面、路径预设未做 |
 
 ## 已知限制
 
@@ -161,34 +163,37 @@ StageWindow → scene.analyze
 | `src/main/stage/export.ts` | 834 |
 | `src/main/stage/storage.ts` | 150 |
 | `src/renderer/src/stage/ShotInspector.tsx` | 292 |
-| `src/renderer/src/stage/StageInspector.tsx` | 433 |
+| `src/renderer/src/stage/StageInspector.tsx` | 441 |
+| `src/renderer/src/stage/StagePathInspector.tsx` | 543 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 815 |
-| `src/renderer/src/stage/StageViewport.tsx` | 785 |
-| `src/renderer/src/stage/StageWindow.tsx` | 1138 |
+| `src/renderer/src/stage/StageViewport.tsx` | 1099 |
+| `src/renderer/src/stage/StageWindow.tsx` | 1195 |
 | `src/renderer/src/stage/preview-runner.ts` | 206 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |
 | `src/renderer/src/stage/stage-from-scene.ts` | 58 |
 | `src/renderer/src/stage/stage-ground.ts` | 88 |
+| `src/renderer/src/stage/stage-path-bridge.ts` | 24 |
 | `src/renderer/src/stage/stage-render.ts` | 420 |
 | `src/renderer/src/stage/stage-scene.ts` | 156 |
 | `src/renderer/src/stage/stage-weather.ts` | 103 |
-| `src/renderer/src/stage/stageStore.ts` | 823 |
+| `src/renderer/src/stage/stageStore.ts` | 1126 |
 | `src/shared/scene-analyze.ts` | 22 |
 | `src/shared/scene-calibrate.ts` | 71 |
 | `src/shared/scene-draft.ts` | 126 |
 | `src/shared/scene-object-presets.ts` | 106 |
 | `src/shared/stage-auto-coverage.ts` | 205 |
 | `src/shared/stage-camera-moves.ts` | 85 |
-| `src/shared/stage-commands.ts` | 1012 |
+| `src/shared/stage-commands.ts` | 1132 |
 | `src/shared/stage-dialogue.ts` | 142 |
 | `src/shared/stage-from-scene-build.ts` | 126 |
 | `src/shared/stage-lighting.ts` | 242 |
 | `src/shared/stage-motions.ts` | 444 |
+| `src/shared/stage-paths.ts` | 482 |
 | `src/shared/stage-preview.ts` | 52 |
 | `src/shared/stage-previs-reference.ts` | 67 |
 | `src/shared/stage-program.ts` | 105 |
-| `src/shared/stage-schema.ts` | 682 |
+| `src/shared/stage-schema.ts` | 885 |
 | `src/shared/stage-shot-intent.ts` | 433 |
 | `src/shared/stage-shot-list.ts` | 187 |
 | `src/shared/stage-timeline.ts` | 209 |
@@ -202,6 +207,7 @@ StageWindow → scene.analyze
 | `src/main/stage/storage.ts` | `assertStageId`、`stageDirectory`、`ensureStageDir`、`createStageFile`、`loadStageFile`、`saveStageFile`、`duplicateStageFile`、`deleteStageFile` |
 | `src/renderer/src/stage/ShotInspector.tsx` | `ShotInspector` |
 | `src/renderer/src/stage/StageInspector.tsx` | `StageInspector` |
+| `src/renderer/src/stage/StagePathInspector.tsx` | `StagePathInspector` |
 | `src/renderer/src/stage/StageTimeline.tsx` | `StageTimeline` |
 | `src/renderer/src/stage/StageViewport.tsx` | `StageViewport` |
 | `src/renderer/src/stage/StageWindow.tsx` | `StageWindow` |
@@ -210,9 +216,10 @@ StageWindow → scene.analyze
 | `src/renderer/src/stage/stage-figure.ts` | `createStageFigure`、`applyStageFigurePose` |
 | `src/renderer/src/stage/stage-from-scene.ts` | `GenerateStageFromSceneInput`、`GenerateStageFromSceneResult`、`generateStageFromScene` |
 | `src/renderer/src/stage/stage-ground.ts` | `StageGround`、`createStageGround` |
+| `src/renderer/src/stage/stage-path-bridge.ts` | `StagePathProjector`、`registerStagePathProjector`、`projectStagePathPoint` |
 | `src/renderer/src/stage/stage-scene.ts` | `createHuman`、`waitForStageModels`、`createStageObject`、`disposeObject3D` |
 | `src/renderer/src/stage/stage-weather.ts` | `StageWeatherKind`、`StageWeather`、`createStageWeather` |
-| `src/renderer/src/stage/stageStore.ts` | `StagePlaybackScope`、`StageViewMode`、`StageTransformMode`、`StageViewCapture`、`syncStageNodeSummary`、`useStageStore` |
+| `src/renderer/src/stage/stageStore.ts` | `StagePlaybackScope`、`StageViewMode`、`StageTransformMode`、`StageDrawMode`、`StagePathDraft`、`StageViewCapture`、`syncStageNodeSummary`、`useStageStore` |
 | `src/shared/scene-analyze.ts` | `SceneAnalyzeInput`、`SceneAnalyzeResult` |
 | `src/shared/scene-calibrate.ts` | `DepthStats`、`CalibratedScene`、`calibrateScene` |
 | `src/shared/scene-draft.ts` | `SceneSetKind`、`SceneSizeClass`、`SceneDepthLayer`、`SceneFacing`、`SceneHeightHint`、`ScenePitchHint`、`SceneDraftObject`、`SceneDraftRoom`、`SceneDraftCamera`、`SceneDraft`、`SCENE_MAX_OBJECTS`、`parseSceneDraft` |
@@ -224,10 +231,11 @@ StageWindow → scene.analyze
 | `src/shared/stage-from-scene-build.ts` | `StageDraftBuild`、`buildStageFromDraft` |
 | `src/shared/stage-lighting.ts` | `StageTimeOfDay`、`StageLighting`、`StageLightingPreset`、`resolveStageLighting`、`STAGE_LIGHTING_PRESETS`、`applyLightingPreset` |
 | `src/shared/stage-motions.ts` | `STAGE_BONES`、`StageBone`、`StagePoseName`、`BoneRotation`、`MotionFrame`、`StageMotion`、`STAGE_MOTIONS`、`sampleStageMotion`、`motionRateForSpeed`、`isStagePoseName` |
+| `src/shared/stage-paths.ts` | `smoothPath`、`pathLength`、`positionAtT`、`tangentAtT`、`pathPointsWithHeight`、`smoothPathPoints`、`normalizeTimeKeys`、`atForTime`、`simplifyPathPoints`、`CameraTrackFromPathArgs`、`cameraTrackFromPath`、`mergeCameraTrack`、`ActionTrackFromPathArgs`、`actionTrackFromPath`、`mergeActionTrack`、`poseOnlyActionTrack`、`scalePathTimes`、`pathColor` |
 | `src/shared/stage-preview.ts` | `StagePreviewResolution`、`StagePreviewSize`、`stagePreviewSize`、`stagePreviewFrameCount`、`previewSizeForShot`、`evenSize` |
 | `src/shared/stage-previs-reference.ts` | `STAGE_PREVIS_REFERENCE_PROMPT`、`buildStageStructureJson` |
 | `src/shared/stage-program.ts` | `ProgramSegment`、`ProgramTimeline`、`buildProgramTimeline`、`programAt`、`segmentShotTime`、`formatTimecode` |
-| `src/shared/stage-schema.ts` | `StageVec3`、`StageAspect`、`StageEasing`、`CameraTrackSmoothing`、`StageObjectType`、`StageBackgroundKind`、`StageTransform`、`StageObject`、`StageCamera`、`CameraKeyframe`、`ActionKeyframe`、`ActionTrack`、`StageCameraRelation`、`StageCameraDistance`、`StageCameraHeight`、`StageCameraAim`、`StageShotFraming`、`StageShotIntentKey`、`StageShotIntent`、`StageShot`、`StageProgramEntry`、`StageProgram`、`StageLightingOverride`、`StageBackground` …（共 39 个） |
+| `src/shared/stage-schema.ts` | `StageVec3`、`StageAspect`、`StageEasing`、`CameraTrackSmoothing`、`StageObjectType`、`StageBackgroundKind`、`StageTransform`、`StageObject`、`StageCamera`、`CameraKeyframe`、`STAGE_PATH_KINDS`、`StagePathKind`、`STAGE_PATH_TARGET_MODES`、`StagePathTargetMode`、`StagePathPoint`、`StagePathTimeKey`、`StagePath`、`ActionKeyframe`、`ActionTrack`、`StageCameraRelation`、`StageCameraDistance`、`StageCameraHeight`、`StageCameraAim`、`StageShotFraming` …（共 47 个） |
 | `src/shared/stage-shot-intent.ts` | `StageShotSolveResult`、`solveStageShotIntent` |
 | `src/shared/stage-shot-list.ts` | `StageShotRow`、`buildShotList`、`shotListToCsv`、`shotListToMarkdown` |
 | `src/shared/stage-timeline.ts` | `SampledCamera`、`easingProgress`、`sampleCameraTrack` |

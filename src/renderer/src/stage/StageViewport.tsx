@@ -1,9 +1,15 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { Line2 } from 'three/examples/jsm/lines/Line2.js'
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
-import type { StageCamera, StageShot } from '@shared/stage-schema'
-import { sampleCameraTrack } from '@shared/stage-timeline'
+import type { StageCamera, StageShot, StageVec3 } from '@shared/stage-schema'
+import {
+  easingProgress,
+  sampleCameraTrack
+} from '@shared/stage-timeline'
 import { buildProgramTimeline, programAt } from '@shared/stage-program'
 import { resolveStageLighting } from '@shared/stage-lighting'
 import { createStageWeather, type StageWeather } from './stage-weather'
@@ -15,11 +21,22 @@ import {
 } from './stage-scene'
 import { createStageGround, type StageGround } from './stage-ground'
 import { useStageStore } from './stageStore'
+import {
+  pathColor,
+  positionAtT,
+  simplifyPathPoints,
+  smoothPathPoints
+} from '@shared/stage-paths'
+import { registerStagePathProjector } from './stage-path-bridge'
 import { assetUrl } from '../lib/asset-url'
 
 const DEFAULT_BACKGROUND = '#1a1a1a'
 const SELECTED_COLOR = '#4ade80'
 const FALLBACK_ASPECT = 16 / 9
+
+function mixVec(a: StageVec3, b: StageVec3, t: number): StageVec3 {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
+}
 
 function findUserData(
   object: THREE.Object3D,
@@ -138,6 +155,8 @@ export function StageViewport() {
   const playing = useStageStore((state) => state.playing)
   const selectedObjectId = useStageStore((state) => state.selectedObjectId)
   const selectedCameraId = useStageStore((state) => state.selectedCameraId)
+  const selectedShotId = useStageStore((state) => state.selectedShotId)
+  const selectedPathId = useStageStore((state) => state.selectedPathId)
 
   const sceneRef = useRef<THREE.Scene | null>(null)
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
@@ -157,6 +176,16 @@ export function StageViewport() {
   const selectionRef = useRef<THREE.BoxHelper | null>(null)
   const panoramaRef = useRef<THREE.Mesh | null>(null)
   const weatherRef = useRef<StageWeather | null>(null)
+  const pathsGroupRef = useRef<THREE.Group | null>(null)
+  const pathControlGroupRef = useRef<THREE.Group | null>(null)
+  const pathMaterialsRef = useRef<LineMaterial[]>([])
+  const pathDragRef = useRef<{
+    pathId: string
+    pointIndex: number
+    planeY: number
+    object: THREE.Object3D
+    last: THREE.Vector3 | null
+  } | null>(null)
   const aspectRef = useRef(FALLBACK_ASPECT)
   const viewModeRef = useRef(viewMode)
   const selectedCameraRef = useRef<string | null>(selectedCameraId)
@@ -178,6 +207,9 @@ export function StageViewport() {
     const aspect = width / height
     aspectRef.current = aspect
     renderer.setSize(width, height, false)
+    for (const material of pathMaterialsRef.current) {
+      material.resolution.set(width, height)
+    }
     director.aspect = aspect
     director.updateProjectionMatrix()
     if (shot) {
@@ -308,17 +340,115 @@ export function StageViewport() {
     objectsGroupRef.current = objectsGroup
     cameraGroupRef.current = cameraGroup
 
+    const pathsGroup = new THREE.Group()
+    pathsGroup.name = 'stage-paths'
+    scene.add(pathsGroup)
+    pathsGroupRef.current = pathsGroup
+
     const raycaster = new THREE.Raycaster()
     const pointer = new THREE.Vector2()
     let downX = 0
     let downY = 0
 
+    registerStagePathProjector((clientX, clientY, planeY) => {
+      const camera = activeCameraRef.current
+      if (!camera) return null
+      const rect = renderer.domElement.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) return null
+      pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1
+      pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1
+      raycaster.setFromCamera(pointer, camera)
+      if (Math.abs(raycaster.ray.direction.y) < 0.12) return null
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -planeY)
+      const hit = new THREE.Vector3()
+      if (!raycaster.ray.intersectPlane(plane, hit)) return null
+      return [hit.x, hit.y, hit.z]
+    })
+
+    const pathPointAt = (
+      event: PointerEvent
+    ): { object: THREE.Object3D; pathId: string; pointIndex: number } | null => {
+      const controlsGroup = pathControlGroupRef.current
+      if (!controlsGroup || viewModeRef.current !== 'director') return null
+      const rect = renderer.domElement.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) return null
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+      raycaster.setFromCamera(pointer, activeCameraRef.current ?? director)
+      const hits = raycaster.intersectObjects(controlsGroup.children, false)
+      for (const hit of hits) {
+        const pathId = hit.object.userData.stagePathId
+        const pointIndex = hit.object.userData.stagePathPointIndex
+        if (typeof pathId === 'string' && typeof pointIndex === 'number') {
+          return { object: hit.object, pathId, pointIndex }
+        }
+      }
+      return null
+    }
+
     const onPointerDown = (event: PointerEvent): void => {
       downX = event.clientX
       downY = event.clientY
+      if (event.button !== 0) return
+      const control = pathPointAt(event)
+      if (control) {
+        pathDragRef.current = {
+          pathId: control.pathId,
+          pointIndex: control.pointIndex,
+          planeY: control.object.position.y,
+          object: control.object,
+          last: null
+        }
+        useStageStore.getState().selectPath(control.pathId)
+        controls.enabled = false
+      }
+    }
+
+    const onPointerMove = (event: PointerEvent): void => {
+      const drag = pathDragRef.current
+      if (!drag) return
+      pointer.x =
+        ((event.clientX - renderer.domElement.getBoundingClientRect().left) /
+          renderer.domElement.getBoundingClientRect().width) *
+          2 -
+        1
+      pointer.y =
+        -((event.clientY - renderer.domElement.getBoundingClientRect().top) /
+          renderer.domElement.getBoundingClientRect().height) *
+          2 +
+        1
+      raycaster.setFromCamera(pointer, activeCameraRef.current ?? director)
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -drag.planeY)
+      const hit = new THREE.Vector3()
+      if (!raycaster.ray.intersectPlane(plane, hit)) return
+      drag.object.position.copy(hit)
+      drag.last = hit.clone()
     }
 
     const onPointerUp = (event: PointerEvent): void => {
+      const drag = pathDragRef.current
+      if (drag) {
+        pathDragRef.current = null
+        controls.enabled = true
+        const state = useStageStore.getState()
+        const shot = state.doc?.shots.find(
+          (item) => item.id === state.selectedShotId
+        )
+        const path = shot?.paths?.find((item) => item.id === drag.pathId)
+        if (drag.last && state.selectedShotId && path) {
+          useStageStore.getState().updatePathPoint(
+            state.selectedShotId,
+            drag.pathId,
+            drag.pointIndex,
+            [
+              drag.last.x,
+              drag.last.y - (path.height ?? 0),
+              drag.last.z
+            ]
+          )
+        }
+        return
+      }
       if (Math.abs(event.clientX - downX) > 5) return
       if (Math.abs(event.clientY - downY) > 5) return
       if (viewModeRef.current === 'camera') return
@@ -353,6 +483,7 @@ export function StageViewport() {
     }
 
     renderer.domElement.addEventListener('pointerdown', onPointerDown)
+    renderer.domElement.addEventListener('pointermove', onPointerMove)
     renderer.domElement.addEventListener('pointerup', onPointerUp)
 
     const observer = new ResizeObserver(updateSize)
@@ -380,26 +511,73 @@ export function StageViewport() {
         }
       }
 
-      if (shot) {
+      if (shot && state.doc) {
+        const objectsGroup = objectsGroupRef.current
+        for (const object of state.doc.objects) {
+          const group = objectsGroup?.children.find(
+            (child) => child.userData.stageObjectId === object.id
+          )
+          if (group instanceof THREE.Group) {
+            group.position.fromArray(object.transform.position)
+            group.rotation.fromArray(object.transform.rotation)
+          }
+        }
+
         for (const track of shot.actionTracks ?? []) {
-          const group = objectsGroup.children.find(
+          const group = objectsGroup?.children.find(
             (child) => child.userData.stageObjectId === track.objectId
           )
           if (!(group instanceof THREE.Group)) continue
           const keys = [...track.keys].sort((a, b) => a.timeMs - b.timeMs)
-          let key = keys[0]
-          for (const candidate of keys) {
-            if (candidate.timeMs <= shotTimeMs) key = candidate
+          if (keys.length === 0) continue
+
+          let from = keys[0]
+          let to = keys[0]
+          if (shotTimeMs >= keys[keys.length - 1].timeMs) {
+            from = keys[keys.length - 1]
+            to = from
+          } else if (shotTimeMs > keys[0].timeMs) {
+            for (let index = 0; index < keys.length - 1; index += 1) {
+              if (
+                shotTimeMs >= keys[index].timeMs &&
+                shotTimeMs <= keys[index + 1].timeMs
+              ) {
+                from = keys[index]
+                to = keys[index + 1]
+                break
+              }
+            }
           }
-          if (key?.pose && isStagePoseName(key.pose)) {
+
+          const span = to.timeMs - from.timeMs
+          const progress =
+            span <= 0
+              ? 1
+              : easingProgress(
+                  (shotTimeMs - from.timeMs) / span,
+                  from.easing
+                )
+          if (from.position && to.position) {
+            group.position.fromArray(mixVec(from.position, to.position, progress))
+          } else if (from.position) {
+            group.position.fromArray(from.position)
+          }
+          if (from.rotation && to.rotation) {
+            group.rotation.fromArray(mixVec(from.rotation, to.rotation, progress))
+          } else if (from.rotation) {
+            group.rotation.fromArray(from.rotation)
+          }
+
+          const poseKey = from.pose ? from : to.pose ? to : null
+          if (poseKey?.pose && isStagePoseName(poseKey.pose)) {
             const figure = group.children.find(
               (child) => child.name === 'stageFigure'
             )
             if (figure instanceof THREE.Group) {
               applyStageFigurePose(
                 figure,
-                key.pose,
-                shotTimeMs - (key.timeMs ?? 0)
+                poseKey.pose,
+                shotTimeMs - poseKey.timeMs
               )
             }
           }
@@ -478,7 +656,9 @@ export function StageViewport() {
       observer.disconnect()
       renderer.setAnimationLoop(null)
       renderer.domElement.removeEventListener('pointerdown', onPointerDown)
+      renderer.domElement.removeEventListener('pointermove', onPointerMove)
       renderer.domElement.removeEventListener('pointerup', onPointerUp)
+      registerStagePathProjector(null)
       transform.removeEventListener('dragging-changed', onTransformDragging)
       transform.removeEventListener('objectChange', onTransformChange)
       transform.detach()
@@ -502,6 +682,13 @@ export function StageViewport() {
       objectsGroupRef.current = null
       cameraGroupRef.current = null
       selectionRef.current = null
+      if (pathsGroupRef.current) {
+        disposePathObject(pathsGroupRef.current)
+        scene.remove(pathsGroupRef.current)
+      }
+      pathsGroupRef.current = null
+      pathControlGroupRef.current = null
+      pathMaterialsRef.current = []
     }
   }, [])
 
@@ -779,6 +966,133 @@ export function StageViewport() {
       }
     }
   }, [doc])
+
+  const disposePathObject = (object: THREE.Object3D): void => {
+    object.traverse((child) => {
+      const mesh = child as THREE.Mesh
+      mesh.geometry?.dispose()
+      const material = mesh.material
+      if (Array.isArray(material)) {
+        for (const item of material) item.dispose()
+      } else {
+        material?.dispose()
+      }
+    })
+  }
+
+  const syncPaths = (): void => {
+    const group = pathsGroupRef.current
+    if (!group) return
+    for (const child of [...group.children]) {
+      group.remove(child)
+      disposePathObject(child)
+    }
+    pathMaterialsRef.current = []
+    pathControlGroupRef.current = null
+
+    const state = useStageStore.getState()
+    const shot = state.doc?.shots.find(
+      (item) => item.id === state.selectedShotId
+    )
+    const paths = shot?.paths ?? []
+    const selectedId = state.selectedPathId
+
+    const controlsGroup = new THREE.Group()
+    controlsGroup.name = 'stage-path-controls'
+    group.add(controlsGroup)
+    pathControlGroupRef.current = controlsGroup
+
+    for (const path of paths) {
+      if (path.visible === false) continue
+      const points = smoothPathPoints(path)
+      if (points.length < 2) continue
+
+      const geometry = new LineGeometry()
+      geometry.setPositions(points.flat())
+      const material = new LineMaterial({
+        color: new THREE.Color(path.color ?? pathColor(path.kind)),
+        linewidth: 3,
+        transparent: true,
+        opacity: selectedId === path.id ? 1 : 0.55,
+        depthTest: false,
+        depthWrite: false
+      })
+      material.resolution.set(
+        hostRef.current?.clientWidth ?? 1,
+        hostRef.current?.clientHeight ?? 1
+      )
+      const line = new Line2(geometry, material)
+      line.computeLineDistances()
+      line.frustumCulled = false
+      line.renderOrder = 10
+      line.userData.stagePathId = path.id
+      group.add(line)
+      pathMaterialsRef.current.push(material)
+
+      if (selectedId === path.id) {
+        const height = path.height ?? 0
+        for (const point of simplifyPathPoints(points, 16)) {
+          let nearest = 0
+          let best = Infinity
+          path.points.forEach((candidate, index) => {
+            const distance = Math.hypot(
+              candidate.position[0] - point[0],
+              candidate.position[1] + height - point[1],
+              candidate.position[2] - point[2]
+            )
+            if (distance < best) {
+              best = distance
+              nearest = index
+            }
+          })
+          const sphere = new THREE.Mesh(
+            new THREE.SphereGeometry(0.07, 10, 8),
+            new THREE.MeshBasicMaterial({
+              color: material.color,
+              depthTest: false,
+              depthWrite: false,
+              transparent: true,
+              opacity: 0.95
+            })
+          )
+          sphere.position.fromArray(point)
+          sphere.renderOrder = 11
+          sphere.userData.stagePathId = path.id
+          sphere.userData.stagePathPointIndex = nearest
+          controlsGroup.add(sphere)
+        }
+
+        const timeKeys = path.timeKeys?.length
+          ? path.timeKeys
+          : [
+              { at: 0 },
+              { at: 1 }
+            ]
+        for (const key of timeKeys) {
+          const node = new THREE.Mesh(
+            new THREE.OctahedronGeometry(0.06),
+            new THREE.MeshBasicMaterial({
+              color: '#fbbf24',
+              depthTest: false,
+              depthWrite: false,
+              transparent: true,
+              opacity: 0.95
+            })
+          )
+          node.position.fromArray(positionAtT(points, key.at))
+          node.renderOrder = 12
+          node.userData.stagePathId = path.id
+          controlsGroup.add(node)
+        }
+      }
+    }
+
+    group.visible = !state.playing && state.viewMode === 'director'
+  }
+
+  useEffect(() => {
+    syncPaths()
+  }, [doc, selectedShotId, selectedPathId, viewMode, playing])
 
   return <div ref={hostRef} className="absolute inset-0" />
 }

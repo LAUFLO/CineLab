@@ -1001,11 +1001,21 @@ export async function executeStageTool(
             ? 'three'
             : undefined
 
+      const shot =
+        scope === 'shot'
+          ? doc.shots.find((item) => item.id === shotId)
+          : undefined
+      const shotName = shot
+        ? shot.name?.trim() || `镜头 ${doc.shots.indexOf(shot) + 1}`
+        : undefined
+
       const result = await exportStagePreviewToCanvas({
         stageNodeId: stageNodeEntry.id,
         stageId: doc.stageId,
         scope,
         ...(scope === 'shot' ? { shotId } : {}),
+        ...(shotName ? { shotName } : {}),
+        stageName: doc.name,
         resolution,
         fps,
         ...(items ? { items } : {}),

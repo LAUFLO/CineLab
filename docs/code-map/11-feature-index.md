@@ -84,7 +84,7 @@
 | 场景图 → 白膜 | VLM + 校准（深度未接） | `src/main/scene/analyze.ts` | 部分实现 |
 | 截图回画布 | `stage.capture` | `src/main/ipc/stage.ts` | 已实现 |
 | GLB 导入与渲染 | `scene:pick-model` + `ingestAsset(model)` + GLTFLoader（仅导入不导出） | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts` | 已实现 |
-| 预演结构约束 | 结构 JSON + 提示词模板随导出回画布并写入视频节点 | `src/shared/stage-previs-reference.ts`、`preview-runner.ts` | 已实现 |
+| 预演导出命名 | 单镜用镜头名、整片用「<导演台名> · 成片」；不回画布成组，不生成结构 JSON/提示词节点 | `src/renderer/src/stage/preview-runner.ts`、`src/main/stage/export.ts` | 已实现 |
 | 场景字段消费 | sizeClass/facing/room/scale/pitch → 白模摆位与室内结构 | `src/shared/stage-from-scene-build.ts` | 已实现 |
 | 对话式预演编排 | 动作轨工具 + 批量计划确认 + previs Skill SOP | `src/main/agent/tools/stage.ts`、`stageBridge.ts`、`resources/skills/stage-previs/SKILL.md` | 已实现 |
 

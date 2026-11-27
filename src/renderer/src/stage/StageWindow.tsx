@@ -279,6 +279,14 @@ export function StageWindow() {
       .nodes.find((node) => node.id === state.nodeId)
     if (!stageNode || !isStageNode(stageNode)) return
 
+    const shot =
+      scope === 'shot'
+        ? state.doc.shots.find((item) => item.id === state.selectedShotId)
+        : undefined
+    const shotName = shot
+      ? shot.name?.trim() || `镜头 ${state.doc.shots.indexOf(shot) + 1}`
+      : undefined
+
     setExporting(true)
     setExportProgress(0)
     try {
@@ -289,6 +297,8 @@ export function StageWindow() {
         ...(scope === 'shot'
           ? { shotId: state.selectedShotId ?? undefined }
           : {}),
+        ...(shotName ? { shotName } : {}),
+        stageName: state.doc.name,
         resolution: '720p',
         fps: 24
       })
@@ -739,11 +749,13 @@ export function StageWindow() {
             >
               {generatingScene ? '生成中…' : '从参考图生成'}
             </Button>
-            <div className="flex min-w-0 flex-col">
+            <div className="flex min-w-0 items-baseline gap-1.5">
               <span className="overflow-hidden text-ellipsis text-[13px] font-semibold whitespace-nowrap">
                 {doc?.name ?? '导演台'}
               </span>
-              <small className="text-[10px] text-fg-subtle">{saveLabel}</small>
+              <small className="shrink-0 text-[10px] text-fg-subtle">
+                {saveLabel}
+              </small>
             </div>
           </div>
 

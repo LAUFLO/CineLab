@@ -73,8 +73,8 @@ stageStore.playbackScope = 'shot' | 'program'
 StageWindow → stage.exportPreview({ scope: 'program', items })
   → main/stage/export.ts exportStageProgram
   → 隐藏 BrowserWindow + stage-render.html
-  → 整片视频 + 结构 JSON/提示词（附加产物仅 Agent 显式 items 时生成）
-  → ingestAsset → 画布节点
+  → 整片视频（不再附带结构 JSON/提示词）
+  → ingestAsset → 画布节点（不自动成组）
 
 单镜导出：
 StageWindow → stage.exportPreview({ scope: 'shot', shotId })
@@ -132,7 +132,7 @@ StageWindow → scene.analyze
 | 场景图→白膜 | 部分实现 | VLM 有，已消费 sizeClass/facing/room/scale/pitch；深度校准未接 |
 | `gltf` 对象类型 | 已实现 | `assetUrl` + GLTFLoader 读取 `assetPath`；导出等待加载；仅自包含 `.glb` 保证完整 |
 | GLB 入库与导入 | 已实现 | `scene:pick-model`、`ingestAsset(kind:'model')` → `assets/model/` |
-| 预演结构约束导出 | 已实现 | `stage-previs-reference.ts` 生成结构 JSON + 提示词，随视频节点回画布 |
+| 预演导出命名与成组 | 已实现 | `preview-runner.ts`：单镜视频标题为镜头名，整片为「<导演台名> · 成片」；不自动成组 |
 | 全屏窗口拖动 | 已实现 | `StageWindow` 顶部 40px `WindowDragStrip`，内容区 no-drag |
 | 手绘路径与运镜 | 已实现（核心） | `StageWindow.tsx` 自由曲线、`StageViewport.tsx` Line2 路径/控制点、`stage-paths.ts` 关键帧生成、`StagePathInspector.tsx` 时间节点/速度曲线；多路径叠加、Shift 垂直平面、路径预设未做 |
 | 路径逐点高度 | 已实现 | `StageViewport.tsx` 控制点平面拖动，按住 Alt 拖动改 Y；路径属性显示提示 |
@@ -162,15 +162,15 @@ StageWindow → scene.analyze
 | 文件 | 行数 |
 |---|---|
 | `src/main/scene/analyze.ts` | 190 |
-| `src/main/stage/export.ts` | 834 |
+| `src/main/stage/export.ts` | 818 |
 | `src/main/stage/storage.ts` | 150 |
 | `src/renderer/src/stage/ShotInspector.tsx` | 292 |
 | `src/renderer/src/stage/StageInspector.tsx` | 462 |
 | `src/renderer/src/stage/StagePathInspector.tsx` | 546 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 815 |
 | `src/renderer/src/stage/StageViewport.tsx` | 1126 |
-| `src/renderer/src/stage/StageWindow.tsx` | 1227 |
-| `src/renderer/src/stage/preview-runner.ts` | 206 |
+| `src/renderer/src/stage/StageWindow.tsx` | 1239 |
+| `src/renderer/src/stage/preview-runner.ts` | 198 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |
 | `src/renderer/src/stage/stage-from-scene.ts` | 58 |

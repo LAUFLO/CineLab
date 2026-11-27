@@ -176,6 +176,7 @@
 ## 测试清单
 
 - `src/main/__tests__/capability-audit.test.ts`
+- `src/main/__tests__/official-styles.test.ts`
 - `src/main/__tests__/protocol.test.ts`
 - `src/main/agent/__tests__/capabilities.test.ts`
 - `src/main/agent/__tests__/model.test.ts`
@@ -262,7 +263,6 @@
 - `src/shared/__tests__/model-inputs.test.ts`
 - `src/shared/__tests__/model-modes.test.ts`
 - `src/shared/__tests__/node-operation-specs.test.ts`
-- `src/shared/__tests__/official-styles.test.ts`
 - `src/shared/__tests__/outpaint.test.ts`
 - `src/shared/__tests__/preferences.test.ts`
 - `src/shared/__tests__/project-schema.test.ts`

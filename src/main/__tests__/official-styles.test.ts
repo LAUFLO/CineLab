@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { extname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { STYLE_CATEGORIES, styleNameKey } from '../style-schema'
+import { STYLE_CATEGORIES, styleNameKey } from '@shared/style-schema'
 
 interface OfficialStyle {
   id: string

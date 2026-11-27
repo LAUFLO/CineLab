@@ -169,7 +169,7 @@ export function AgentPanel() {
   }
 
   const suggestion = stageMode
-    ? '把这个场景搭成雨夜街道，加两个人物'
+    ? '把这个场景搭成雨夜街道，加两个人物，排一段 10 秒推拉镜头并导出预演'
     : clipMode
       ? '把选中片段整体前移 1 秒'
       : attachments.length > 0 || references.length > 0

@@ -57,6 +57,7 @@
 | [close-background-plan.md](close-background-plan.md) | 关闭确认（后台运行/退出）与系统托盘自绘菜单，已实施 |
 | [stage-previs-redesign-plan.md](stage-previs-redesign-plan.md) | 导演台 3D 白模预演改进：全景背景、摆位打组、运镜时间轴、GLB、生成闭环与对话式智能预演，方案已确认 |
 | [stage-freehand-paths-plan.md](stage-freehand-paths-plan.md) | 导演台手绘路径与运镜：自由曲线、相机/对象路径、镜头跟随、时间关键帧与窗口按钮修复，已实施 |
+| [director-stage-beginner-plan.md](director-stage-beginner-plan.md) | 导演台小白友好化：机位可视化拖拽、三步向导与出片闭环，方案已认可待实施 |
 
 ## 3. 代码地图
 

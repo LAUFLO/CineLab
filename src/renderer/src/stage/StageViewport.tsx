@@ -190,6 +190,16 @@ export function StageViewport() {
     object: THREE.Object3D
     last: THREE.Vector3 | null
   } | null>(null)
+  const cameraTargetDragRef = useRef<{
+    cameraId: string
+    planeY: number
+    mode: 'plane' | 'height'
+    startY: number
+    startClientY: number
+    worldPerPixel: number
+    object: THREE.Object3D
+    last: THREE.Vector3 | null
+  } | null>(null)
   const aspectRef = useRef(FALLBACK_ASPECT)
   const viewModeRef = useRef(viewMode)
   const selectedCameraRef = useRef<string | null>(selectedCameraId)
@@ -275,8 +285,16 @@ export function StageViewport() {
       if (dragging) return
 
       const object = transform.object
-      const objectId = object?.userData.stageObjectId
-      if (!object || typeof objectId !== 'string') return
+      if (!object) return
+      const cameraId = object.userData.stageCameraId
+      if (typeof cameraId === 'string') {
+        useStageStore.getState().updateCamera(cameraId, {
+          position: [object.position.x, object.position.y, object.position.z]
+        })
+        return
+      }
+      const objectId = object.userData.stageObjectId
+      if (typeof objectId !== 'string') return
       useStageStore.getState().applyCommands([
         {
           type: 'transformObject',
@@ -390,6 +408,29 @@ export function StageViewport() {
       return null
     }
 
+    const cameraTargetAt = (
+      event: PointerEvent
+    ): { object: THREE.Object3D; cameraId: string } | null => {
+      const controlsGroup = pathControlGroupRef.current
+      if (!controlsGroup || viewModeRef.current !== 'director') return null
+      const rect = renderer.domElement.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) return null
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+      raycaster.setFromCamera(pointer, activeCameraRef.current ?? director)
+      const hits = raycaster.intersectObjects(controlsGroup.children, false)
+      for (const hit of hits) {
+        const cameraId = hit.object.userData.stageCameraId
+        if (
+          typeof cameraId === 'string' &&
+          hit.object.userData.stageCameraTarget === true
+        ) {
+          return { object: hit.object, cameraId }
+        }
+      }
+      return null
+    }
+
     const onPointerDown = (event: PointerEvent): void => {
       downX = event.clientX
       downY = event.clientY
@@ -417,9 +458,72 @@ export function StageViewport() {
         useStageStore.getState().selectPath(control.pathId)
         controls.enabled = false
       }
+      const targetHandle = cameraTargetAt(event)
+      if (targetHandle) {
+        const state = useStageStore.getState()
+        const camera = state.doc?.cameras.find(
+          (item) => item.id === targetHandle.cameraId
+        )
+        if (!camera) return
+        const viewCamera = activeCameraRef.current ?? director
+        const distance = new THREE.Vector3(...camera.position).distanceTo(
+          targetHandle.object.position
+        )
+        const worldPerPixel =
+          (2 *
+            distance *
+            Math.tan(THREE.MathUtils.degToRad(viewCamera.fov) / 2)) /
+          Math.max(1, renderer.domElement.clientHeight)
+        cameraTargetDragRef.current = {
+          cameraId: targetHandle.cameraId,
+          planeY: targetHandle.object.position.y,
+          mode: event.altKey ? 'height' : 'plane',
+          startY: targetHandle.object.position.y,
+          startClientY: event.clientY,
+          worldPerPixel,
+          object: targetHandle.object,
+          last: null
+        }
+        controls.enabled = false
+      }
     }
 
     const onPointerMove = (event: PointerEvent): void => {
+      const targetDrag = cameraTargetDragRef.current
+      if (targetDrag) {
+        if (targetDrag.mode === 'height') {
+          const y =
+            targetDrag.startY -
+            (event.clientY - targetDrag.startClientY) * targetDrag.worldPerPixel
+          targetDrag.object.position.y = y
+          targetDrag.last = new THREE.Vector3(
+            targetDrag.object.position.x,
+            y,
+            targetDrag.object.position.z
+          )
+          return
+        }
+        pointer.x =
+          ((event.clientX - renderer.domElement.getBoundingClientRect().left) /
+            renderer.domElement.getBoundingClientRect().width) *
+            2 -
+          1
+        pointer.y =
+          -((event.clientY - renderer.domElement.getBoundingClientRect().top) /
+            renderer.domElement.getBoundingClientRect().height) *
+            2 +
+          1
+        raycaster.setFromCamera(pointer, activeCameraRef.current ?? director)
+        const targetPlane = new THREE.Plane(
+          new THREE.Vector3(0, 1, 0),
+          -targetDrag.planeY
+        )
+        const targetHit = new THREE.Vector3()
+        if (!raycaster.ray.intersectPlane(targetPlane, targetHit)) return
+        targetDrag.object.position.copy(targetHit)
+        targetDrag.last = targetHit.clone()
+        return
+      }
       const drag = pathDragRef.current
       if (!drag) return
       if (drag.mode === 'height') {
@@ -473,6 +577,22 @@ export function StageViewport() {
               drag.last.z
             ]
           )
+        }
+        return
+      }
+      const targetDrag = cameraTargetDragRef.current
+      if (targetDrag) {
+        cameraTargetDragRef.current = null
+        controls.enabled = true
+        if (
+          targetDrag.last &&
+          useStageStore
+            .getState()
+            .doc?.cameras.some((item) => item.id === targetDrag.cameraId)
+        ) {
+          useStageStore.getState().updateCamera(targetDrag.cameraId, {
+            target: [targetDrag.last.x, targetDrag.last.y, targetDrag.last.z]
+          })
         }
         return
       }
@@ -816,18 +936,27 @@ export function StageViewport() {
     const transform = transformRef.current
     const helper = transformHelperRef.current
     const objectsGroup = objectsGroupRef.current
+    const cameraGroup = cameraGroupRef.current
     if (!transform || !helper || !objectsGroup) return
 
     const state = useStageStore.getState()
-    if (state.viewMode !== 'director' || !state.selectedObjectId) {
+    if (state.viewMode !== 'director') {
       transform.detach()
       helper.visible = false
       return
     }
 
-    const target = objectsGroup.children.find(
-      (child) => child.userData.stageObjectId === state.selectedObjectId
-    )
+    const objectTarget = state.selectedObjectId
+      ? objectsGroup.children.find(
+          (child) => child.userData.stageObjectId === state.selectedObjectId
+        )
+      : undefined
+    const cameraTarget = state.selectedCameraId
+      ? cameraGroup?.children.find(
+          (child) => child.userData.stageCameraId === state.selectedCameraId
+        )
+      : undefined
+    const target = objectTarget ?? cameraTarget
     if (!target) {
       transform.detach()
       helper.visible = false
@@ -835,7 +964,7 @@ export function StageViewport() {
     }
 
     transform.attach(target)
-    transform.setMode(state.transformMode)
+    transform.setMode(objectTarget ? state.transformMode : 'translate')
     helper.visible = true
   }
 
@@ -862,7 +991,7 @@ export function StageViewport() {
   useEffect(() => {
     updateSelectionHelper()
     syncTransformControls()
-  }, [selectedObjectId])
+  }, [selectedObjectId, selectedCameraId])
 
   // 变换模式
   useEffect(() => {
@@ -1114,12 +1243,33 @@ export function StageViewport() {
       }
     }
 
+    const selectedCamera = state.doc?.cameras.find(
+      (item) => item.id === state.selectedCameraId
+    )
+    if (selectedCamera && state.viewMode === 'director') {
+      const handle = new THREE.Mesh(
+        new THREE.SphereGeometry(0.09, 12, 10),
+        new THREE.MeshBasicMaterial({
+          color: SELECTED_COLOR,
+          depthTest: false,
+          depthWrite: false,
+          transparent: true,
+          opacity: 0.95
+        })
+      )
+      handle.position.fromArray(selectedCamera.target)
+      handle.renderOrder = 13
+      handle.userData.stageCameraId = selectedCamera.id
+      handle.userData.stageCameraTarget = true
+      controlsGroup.add(handle)
+    }
+
     group.visible = !state.playing && state.viewMode === 'director'
   }
 
   useEffect(() => {
     syncPaths()
-  }, [doc, selectedShotId, selectedPathId, viewMode, playing])
+  }, [doc, selectedShotId, selectedPathId, selectedCameraId, viewMode, playing])
 
   return <div ref={hostRef} className="absolute inset-0" />
 }

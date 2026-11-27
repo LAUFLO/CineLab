@@ -44,6 +44,7 @@
 | 参考输入 | 图/视频/音频、角色/遮罩 | `src/shared/reference-inputs.ts` | 已实现 |
 | 扩图 | 生图模型图生图；精确优先，无精确选项时自动选最接近尺寸 | `src/shared/outpaint.ts`、`src/renderer/src/canvas/nodes/AiOperationDialog.tsx`、`node-operation-runner.ts` | 已实现 |
 | 宫格/拼接/抽帧/裁剪/转码 | 媒体处理 | `src/main/media/` | 已实现 |
+| 生图数量批量 | 供应商忽略 `n` 时客户端补发单张请求凑足所选张数；一次返回足够的模型零额外请求 | `src/main/engine/start-generation.ts`、`start-generation.test.ts` | 已实现 |
 | 结果节点隐藏 PromptBar | 操作/AI/拉片/导演台/剪辑室结果只保留工具栏 | `PromptBar.tsx`、`node-operation-specs.ts`、`stores/canvas/slices/assets.ts` | 已实现 |
 | 人声/背景音分离 | Demucs htdemucs、无声视频 + 音频、FIFO 任务 | `src/main/media/stems.ts`、`resources/stem-worker/worker.py` | 已实现 |
 | 素材入库 | `ingestAsset` | `src/main/assets/ingest.ts` | 已实现 |
@@ -87,6 +88,9 @@
 | 预演导出命名 | 单镜用镜头名、整片用「<导演台名> · 成片」；不回画布成组，不生成结构 JSON/提示词节点 | `src/renderer/src/stage/preview-runner.ts`、`src/main/stage/export.ts` | 已实现 |
 | 场景字段消费 | sizeClass/facing/room/scale/pitch → 白模摆位与室内结构 | `src/shared/stage-from-scene-build.ts` | 已实现 |
 | 对话式预演编排 | 动作轨工具 + 批量计划确认 + previs Skill SOP | `src/main/agent/tools/stage.ts`、`stageBridge.ts`、`resources/skills/stage-previs/SKILL.md` | 已实现 |
+| 机位可视化摆位 | 导演视角 gizmo 拖机身改 position、注视点手柄拖 target；选中机位保留导演视角，列表双击预览画面 | `src/renderer/src/stage/StageViewport.tsx`、`stageStore.ts`、`StageWindow.tsx` | 已实现 |
+| 新手三步向导 | 空场景浮层：选起点→加人物→一键分镜；节奏三档与单人/双人/群戏预设复用 `autoCoverage`；语义术语折叠为高级设置 | `src/renderer/src/stage/StageBeginnerGuide.tsx`、`StageWindow.tsx`、`ShotInspector.tsx` | 已实现 |
+| 出片闭环增强 | 导出 toast 查看节点、长导出确认与单导出锁、CineBot 建议提示词升级 | `StageWindow.tsx`、`stores/ui.ts`、`components/Toast.tsx`、`AgentPanel.tsx` | 已实现 |
 
 ## 逐帧拉片
 

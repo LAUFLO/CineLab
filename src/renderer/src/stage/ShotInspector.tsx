@@ -107,6 +107,7 @@ export function ShotInspector() {
   const [subjectIds, setSubjectIds] = useState<string[]>([])
   const [towardId, setTowardId] = useState('')
   const [notes, setNotes] = useState<string[]>([])
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   useEffect(() => {
     if (!shot) return
@@ -180,7 +181,19 @@ export function ShotInspector() {
         </strong>
       </header>
 
-      <Field label="构图">
+      <Button
+        type="button"
+        variant="ghost"
+        size="none"
+        className="h-7 w-full !rounded-md text-[10px] text-fg-muted hover:bg-surface-hover"
+        onClick={() => setAdvancedOpen((open) => !open)}
+      >
+        {advancedOpen ? '收起高级设置' : '高级：镜头语义设置'}
+      </Button>
+
+      {advancedOpen ? (
+        <>
+          <Field label="构图">
         <Select value={framing} options={FRAMINGS} onChange={setFraming} />
       </Field>
       <Field label="机位关系">
@@ -278,6 +291,12 @@ export function ShotInspector() {
       >
         转手工（保留轨迹）
       </Button>
+        </>
+      ) : (
+        <p className="rounded-md border border-border bg-surface-hover p-2 text-[10px] leading-relaxed text-fg-muted">
+          用时间线的「自动分镜」或新手向导一键生成镜头；需要微调时展开高级设置。
+        </p>
+      )}
 
       {notes.length > 0 ? (
         <div className="mt-1 flex flex-col gap-1 rounded-md border border-border bg-white/[0.03] p-1.5 text-[10px] leading-relaxed text-fg-muted">

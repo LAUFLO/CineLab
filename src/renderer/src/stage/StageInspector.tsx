@@ -447,7 +447,7 @@ export function StageInspector() {
         </p>
       ) : null}
       <p className="mt-2.5 text-[10px] leading-relaxed text-fg-subtle">
-        选中对象或机位后可编辑属性；也可以在视口里拖拽变换。
+        选中对象可拖拽变换；选中机位后拖机身改位置、拖注视点手柄改朝向。
       </p>
     </section>
   )

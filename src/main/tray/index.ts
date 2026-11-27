@@ -1,4 +1,4 @@
-import { BrowserWindow, Tray, nativeImage, screen } from 'electron'
+import { BrowserWindow, Tray, nativeImage, screen, ipcMain, app } from 'electron'
 import { join } from 'node:path'
 import { brandIconPath, createMainWindow } from '../window'
 
@@ -17,6 +17,19 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /** 从托盘或通知恢复主窗口；后台态使用 hide，不重建窗口 */
+export function requestQuitFromTray(): void {
+  const win = mainWindow()
+  hideMenuWindow()
+  if (!win) {
+    app.quit()
+    return
+  }
+  win.setSkipTaskbar(false)
+  win.show()
+  win.focus()
+  win.webContents.send('app:quit-requested')
+}
+
 export function restoreMainWindow(): void {
   let win = mainWindow()
   if (!win) {
@@ -62,6 +75,7 @@ function showMenuWindow(): void {
       }
     })
     menuWindow.on('blur', hideMenuWindow)
+    menuWindow.setHasShadow(false)
     menuWindow.setAlwaysOnTop(true, 'pop-up-menu')
     menuWindow.webContents.on('did-finish-load', () => {
       menuReady = true
@@ -127,6 +141,9 @@ export function installTray(window: BrowserWindow): void {
   tray.on('click', restoreMainWindow)
   tray.on('double-click', restoreMainWindow)
   tray.on('right-click', showMenuWindow)
+
+  ipcMain.on('app:tray-restore', restoreMainWindow)
+  ipcMain.on('app:tray-quit', requestQuitFromTray)
 }
 
 export function destroyTray(): void {

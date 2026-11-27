@@ -730,7 +730,9 @@ export interface CineApi {
     close(): void
     hideToTray(): void
     restoreWindow(): void
+    restoreMainWindow(): void
     quit(): void
+    quitFromTray(): void
     requestQuit(): void
     onQuitRequested(callback: () => void): () => void
   }

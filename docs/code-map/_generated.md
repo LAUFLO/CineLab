@@ -176,6 +176,7 @@
 ## 测试清单
 
 - `src/main/__tests__/capability-audit.test.ts`
+- `src/main/__tests__/official-styles.test.ts`
 - `src/main/__tests__/protocol.test.ts`
 - `src/main/agent/__tests__/capabilities.test.ts`
 - `src/main/agent/__tests__/model.test.ts`

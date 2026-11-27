@@ -49,7 +49,7 @@
 | 素材入库 | `ingestAsset` | `src/main/assets/ingest.ts` | 已实现 |
 | 3D 模型入库 | `kind:'model'` → `assets/model/`，`.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` | 已实现 |
 | 错误文案 | 配额/鉴权/超时 | `src/main/engine/generation-error.ts` | 已实现 |
-| 风格库、风格胶囊 | 官方只读 + 自定义、按输入框居中浮窗（一行 8 列小封面）、分类浏览、单击即应用、单选胶囊内联输入框首行（× 角标）；资产库“风格”同源展示 | `src/main/library/styles.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`src/shared/style-prompt.ts` | 已实现 |
+| 风格库、风格胶囊 | 官方只读（42 个）+ 自定义、按输入框居中浮窗（一行 8 列小封面）、分类浏览、单击即应用、单选胶囊内联输入框首行（× 角标）；资产库“风格”同源展示 | `src/main/library/styles.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`src/shared/style-prompt.ts` | 已实现 |
 | 预设提示词 | 资产库“提示词”同源、按输入框居中浮窗、CRUD、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、胶囊不重叠（绿色无图标）、发送原位展开、风格置顶 | `src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx` | 已实现 |
 | 资产库提示词卡片 | 按钮行统一尺寸、卡片等高、新建提示词在面包屑右侧 | `TemplateGrid.tsx`、`LibraryWindow.tsx` | 已实现 |
 

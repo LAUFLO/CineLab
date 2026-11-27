@@ -40,8 +40,8 @@ function showMenuWindow(): void {
   if (!menuWindow || menuWindow.isDestroyed()) {
     menuReady = false
     menuWindow = new BrowserWindow({
-      width: 176,
-      height: 80,
+      width: 120,
+      height: 84,
       show: false,
       frame: false,
       resizable: false,
@@ -50,9 +50,11 @@ function showMenuWindow(): void {
       maximizable: false,
       skipTaskbar: true,
       transparent: true,
+      backgroundColor: '#00000000',
+      hasShadow: false,
       focusable: true,
       webPreferences: {
-        preload: join(__dirname, '../../preload/index.js'),
+        preload: join(__dirname, '../preload/index.js'),
         sandbox: true,
         contextIsolation: true,
         nodeIntegration: false,
@@ -84,7 +86,7 @@ function showMenuWindow(): void {
       : { x: cursor.x, y: cursor.y, width: 0, height: 0 }
   const x = Math.round(
     clamp(
-      anchor.x + anchor.width / 2 - size.width / 2,
+      anchor.x - 6,
       display.workArea.x + 8,
       display.workArea.x + display.workArea.width - size.width - 8
     )

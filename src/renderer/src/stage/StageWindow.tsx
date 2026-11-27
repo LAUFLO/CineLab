@@ -247,6 +247,33 @@ export function StageWindow() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [open, closeStage, redo, undo])
 
+  const drawPlaneY = useMemo(() => {
+    const object = doc?.objects.find((item) => item.id === selectedObjectId)
+    if (object) return object.transform.position[1]
+    const cameraId =
+      selectedCameraId ?? doc?.activeCameraId ?? doc?.cameras[0]?.id
+    const camera = doc?.cameras.find((item) => item.id === cameraId)
+    if (!camera) return 0
+    const targetY = camera.target[1]
+    return Math.abs(camera.position[1] - targetY) < 0.2 ? 0 : targetY
+  }, [doc, selectedObjectId, selectedCameraId])
+
+  useEffect(() => {
+    if (drawMode === 'off') return
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      if (drawingRef.current) {
+        drawingRef.current = false
+        setDrawPoints([])
+        return
+      }
+      setDrawMode('off')
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [drawMode, setDrawMode])
+
   if (!open) return null
 
   const activeCameraId = selectedCameraId ?? doc?.activeCameraId ?? null
@@ -393,17 +420,6 @@ export function StageWindow() {
     )
   }
 
-  const drawPlaneY = useMemo(() => {
-    const object = doc?.objects.find((item) => item.id === selectedObjectId)
-    if (object) return object.transform.position[1]
-    const cameraId =
-      selectedCameraId ?? doc?.activeCameraId ?? doc?.cameras[0]?.id
-    const camera = doc?.cameras.find((item) => item.id === cameraId)
-    if (!camera) return 0
-    const targetY = camera.target[1]
-    return Math.abs(camera.position[1] - targetY) < 0.2 ? 0 : targetY
-  }, [doc, selectedObjectId, selectedCameraId])
-
   const drawHint =
     drawMode === 'camera'
       ? '手绘相机路径 · 按住左键拖动 · 松开生成 · Esc 退出'
@@ -447,21 +463,6 @@ export function StageWindow() {
       points: projected
     })
   }
-
-  useEffect(() => {
-    if (drawMode === 'off') return
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape') return
-      event.preventDefault()
-      if (drawingRef.current) {
-        cancelDraw()
-        return
-      }
-      setDrawMode('off')
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [drawMode, setDrawMode])
 
   const handleLightingPreset = (presetId: string): void => {
     const state = useStageStore.getState()

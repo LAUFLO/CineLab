@@ -169,7 +169,7 @@ StageWindow → scene.analyze
 | `src/renderer/src/stage/StagePathInspector.tsx` | 546 |
 | `src/renderer/src/stage/StageTimeline.tsx` | 815 |
 | `src/renderer/src/stage/StageViewport.tsx` | 1126 |
-| `src/renderer/src/stage/StageWindow.tsx` | 1239 |
+| `src/renderer/src/stage/StageWindow.tsx` | 1240 |
 | `src/renderer/src/stage/preview-runner.ts` | 198 |
 | `src/renderer/src/stage/stage-active.ts` | 10 |
 | `src/renderer/src/stage/stage-figure.ts` | 143 |

@@ -17,6 +17,7 @@ __pycache__/
 *.pyc
 *.cinelab/
 models.json
+artifacts/
 .opencode/
 docs/assets/
 coverage/

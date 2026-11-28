@@ -16,7 +16,7 @@ import { listAllAssets } from '../library/store'
 import { listProviders } from '../settings/store'
 import { AGENT_CAPABILITIES } from './capabilities/registry'
 import { listSkills, readSkill } from './skills'
-import { createSkill, setSkillOverride } from './skills-admin'
+import { createSkill, setSkillOverride } from './skills-admin'
 import {
   installSkillImport,
   previewSkillImport
@@ -451,6 +451,9 @@ export async function executeMainTool(
     const id = String(call.args.id ?? '').trim()
     const existing = (await listTemplates()).find((item) => item.id === id)
     if (!existing) return { ok: false, error: '找不到这个提示词模板' }
+    if (existing.source === 'official') {
+      return { ok: false, error: '官方预设提示词不能修改' }
+    }
     const template = await saveTemplate({
       id,
       name:
@@ -470,8 +473,14 @@ export async function executeMainTool(
   }
 
   if (call.name === 'preset_delete') {
-    await deleteTemplate(String(call.args.id ?? ''))
-    return { ok: true, result: { id: call.args.id } }
+    const id = String(call.args.id ?? '').trim()
+    const existing = (await listTemplates()).find((item) => item.id === id)
+    if (!existing) return { ok: false, error: '找不到这个提示词模板' }
+    if (existing.source === 'official') {
+      return { ok: false, error: '官方预设提示词不能删除' }
+    }
+    await deleteTemplate(id)
+    return { ok: true, result: { id } }
   }
 
   if (call.name === 'style_create') {

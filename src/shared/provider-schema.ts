@@ -333,7 +333,7 @@ export function modelModeCompatibility(
         ? { ok: true }
         : { ok: false, reason: '该模型不支持纯文生图' }
     }
-    return modes.includes('i2i') || modes.includes('layer')
+    return modes.includes('i2i')
       ? { ok: true }
       : { ok: false, reason: '该模型不支持图片输入' }
   }
@@ -379,7 +379,7 @@ export function inferActiveMode(
       return modes.includes('t2i') ? 't2i' : undefined
     }
     if (modes.includes('i2i')) return 'i2i'
-    return modes.includes('layer') ? 'layer' : undefined
+    return undefined
   }
 
   if (context.videoCount > 0) {
@@ -725,6 +725,7 @@ const RAW_MODEL_PRESETS: ModelDef[] = [
         label: '图层拆分',
         type: 'boolean',
         group: '图层',
+        appliesTo: ['layer'],
         defaultValue: false
       }
     ]
@@ -791,6 +792,7 @@ const RAW_MODEL_PRESETS: ModelDef[] = [
         label: '图层拆分',
         type: 'boolean',
         group: '图层',
+        appliesTo: ['layer'],
         defaultValue: false
       },
       {
@@ -798,6 +800,7 @@ const RAW_MODEL_PRESETS: ModelDef[] = [
         label: '最多图层数',
         type: 'number',
         group: '图层',
+        appliesTo: ['layer'],
         defaultValue: 30,
         min: 2,
         max: 100
@@ -807,6 +810,7 @@ const RAW_MODEL_PRESETS: ModelDef[] = [
         label: '识别文字',
         type: 'boolean',
         group: '图层',
+        appliesTo: ['layer'],
         defaultValue: true
       }
     ]

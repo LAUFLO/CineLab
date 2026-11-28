@@ -56,6 +56,33 @@ export interface ToastState {
 
 export type CanvasTool = 'select' | 'hand'
 
+export type InlineEditorMode =
+  | 'box'
+  | 'mask'
+  | 'sphere'
+  | 'outpaint'
+  | 'timeline'
+  | 'grid'
+  | 'panel'
+
+export interface InlineEditorRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export interface InlineEditorState {
+  nodeId: string
+  operationId: string
+  itemId?: string
+  mode: InlineEditorMode
+  /** 预设比例，如 16:9；空为自由框。 */
+  ratio?: string
+  prompt?: string
+  rect?: InlineEditorRect
+}
+
 interface UIStore {
   menu: MenuState | null
   contextMenu: ContextMenuState | null
@@ -79,6 +106,12 @@ interface UIStore {
   historyOpen: boolean
   searchOpen: boolean
   textEditorNodeId: string | null
+  attachTargetNodeId: string | null
+  layerSplitActive: boolean
+  inlineEditor: InlineEditorState | null
+  setLayerSplitActive: (active: boolean) => void
+  openInlineEditor: (state: InlineEditorState) => void
+  closeInlineEditor: () => void
   setTool: (tool: CanvasTool) => void
   requestAddMenu: (anchor?: XYPosition) => void
   openShortcuts: () => void
@@ -103,6 +136,7 @@ interface UIStore {
   consumeNodeCommand: () => void
   openTextEditor: (nodeId: string) => void
   closeTextEditor: () => void
+  setAttachTarget: (nodeId: string | null) => void
   applyPrompt: (prompt: string) => void
   clearPendingPrompt: () => void
   insertPrompt: (prompt: string) => void
@@ -149,6 +183,9 @@ export const useUIStore = create<UIStore>((set) => ({
   historyOpen: false,
   searchOpen: false,
   textEditorNodeId: null,
+  attachTargetNodeId: null,
+  layerSplitActive: false,
+  inlineEditor: null,
   setTool: (tool) => set({ tool }),
   requestAddMenu: (anchor) =>
     set((state) => ({
@@ -183,6 +220,17 @@ export const useUIStore = create<UIStore>((set) => ({
   consumeNodeCommand: () => set({ nodeCommand: null }),
   openTextEditor: (nodeId) => set({ textEditorNodeId: nodeId }),
   closeTextEditor: () => set({ textEditorNodeId: null }),
+  setAttachTarget: (nodeId) => set({ attachTargetNodeId: nodeId }),
+  setLayerSplitActive: (active) => set({ layerSplitActive: active }),
+  openInlineEditor: (inlineEditor) =>
+    set({
+      inlineEditor,
+      menu: null,
+      contextMenu: null,
+      nodeContextMenu: null,
+      edgeContextMenu: null
+    }),
+  closeInlineEditor: () => set({ inlineEditor: null }),
   applyPrompt: (prompt) => set({ pendingPrompt: prompt }),
   clearPendingPrompt: () => set({ pendingPrompt: null }),
   insertPrompt: (text) =>

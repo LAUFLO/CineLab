@@ -124,7 +124,7 @@ const SLOT_REMOVE_CLASS =
   'absolute right-0.5 top-0.5 z-[3] !flex h-3 w-3 items-center justify-center !rounded-full border border-border bg-surface p-0 !font-normal text-fg-muted hover:!border-danger hover:!bg-danger hover:!text-media-text'
 
 const MIRROR_CLASS =
-  'pointer-events-none absolute inset-0 h-full w-full overflow-hidden whitespace-pre-wrap break-words bg-transparent px-1.5 py-2 text-sm leading-5 text-fg [word-break:break-word] [text-indent:var(--style-indent,0px)]'
+  'pointer-events-none absolute inset-0 h-full w-full overflow-hidden whitespace-pre-wrap break-words bg-transparent px-1.5 py-2 text-sm leading-5 text-fg [word-break:break-word]'
 const INPUT_CLASS =
   'absolute inset-0 h-full w-full !min-h-0 !resize-none !rounded-none !border-0 !bg-transparent !px-1.5 py-2 !text-transparent caret-fg text-sm leading-5 outline-none overflow-y-auto placeholder:text-fg-subtle [text-indent:var(--style-indent,0px)]'
 
@@ -170,6 +170,8 @@ export function PromptBar() {
   const clearPendingInsertPrompt = useUIStore(
     (state) => state.clearPendingInsertPrompt
   )
+  const layerSplitActive = useUIStore((state) => state.layerSplitActive)
+  const inlineEditor = useUIStore((state) => state.inlineEditor)
   const templates = useLibraryStore((state) => state.templates)
 
   const runGeneration = useGenerationStore((state) => state.run)
@@ -235,11 +237,16 @@ export function PromptBar() {
   const showToast = useUIStore((state) => state.showToast)
 
   useLayoutEffect(() => {
-    if (!selectedStyle) {
+    const element = styleChipRef.current
+    if (!selectedStyle || !element) {
       setStyleChipWidth(0)
       return
     }
-    setStyleChipWidth(styleChipRef.current?.offsetWidth ?? 0)
+    const update = (): void => setStyleChipWidth(element.offsetWidth)
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(element)
+    return () => observer.disconnect()
   }, [selectedStyle])
 
   const selectedNodes = nodes.filter((item) => item.selected)
@@ -619,8 +626,11 @@ export function PromptBar() {
     }
   })()
 
+  const effectiveInputMode: ModelModeId | null =
+    inputMode === 'layer' ? 'i2i' : inputMode
+
   const activeMode =
-    inputMode ??
+    effectiveInputMode ??
     (active && node
       ? inferActiveMode(active.model, quickModeContext)
       : undefined)
@@ -891,6 +901,7 @@ export function PromptBar() {
     })
   }, [pendingInsertPrompt, clearPendingInsertPrompt])
 
+  if (layerSplitActive || inlineEditor) return null
   if (!node || !layout) return null
 
   const handleLocalUpload = async (): Promise<void> => {
@@ -1178,7 +1189,7 @@ export function PromptBar() {
   }
 
   const slotMode: ModelModeId | undefined =
-    inputMode ??
+    effectiveInputMode ??
     (active ? inferActiveMode(active.model, inferModeContext) : undefined)
 
   const orderedRefs = (() => {
@@ -1369,7 +1380,7 @@ export function PromptBar() {
     const supported = capabilities.modes
     const candidates: ModelModeId[] =
       kind === 'image'
-        ? ['t2i', 'i2i', 'layer']
+        ? ['t2i', 'i2i']
         : kind === 'video'
           ? ['t2v', 'first-frame', 'first-last', 'reference']
           : []
@@ -1405,9 +1416,6 @@ export function PromptBar() {
         if (kind === 'image') {
           if (id === 't2i' && rawImageCount > 0) {
             return { id, disabled: true, hint: '已连接图片，文生图不可用' }
-          }
-          if (id === 'layer' && rawImageCount !== 1) {
-            return { id, disabled: true, hint: '需要 1 张源图' }
           }
         }
         return { id, disabled: false }
@@ -1931,6 +1939,7 @@ export function PromptBar() {
       <div
         ref={barRef}
         data-slot="promptbar"
+        data-node-chrome
         className={`flex flex-col rounded-panel border border-border bg-surface shadow-float ${
           expanded
             ? 'fixed left-1/2 top-1/2 z-[240] h-auto min-h-[320px] max-h-[calc(100vh-120px)] w-[min(920px,calc(100vw-96px))] -translate-x-1/2 -translate-y-1/2 px-3 pb-3 pt-2'
@@ -2259,6 +2268,23 @@ export function PromptBar() {
           }
         >
           <div className={MIRROR_CLASS} ref={mirrorRef} aria-hidden>
+            {selectedStyle ? (
+              <span
+                ref={styleChipRef}
+                className="pointer-events-auto relative z-[2] mr-1.5 inline-flex h-5 max-w-[180px] items-center gap-1 rounded-full border border-accent/50 bg-accent/10 pl-2 pr-2.5 align-middle text-[11px] text-fg"
+              >
+                <Icon name="sparkles" size={10} />
+                <span className="truncate">{selectedStyle.name}</span>
+                <IconButton
+                  label="移除风格"
+                  unstyled
+                  className="absolute -right-1 -top-1 z-[1] flex h-3 w-3 items-center justify-center rounded-full border border-border bg-surface text-fg-muted hover:border-danger hover:text-danger"
+                  onClick={() => applyStyle(null)}
+                >
+                  <Icon name="close" size={7} />
+                </IconButton>
+              </span>
+            ) : null}
             {renderPromptText(
               promptText,
               mentionNames,
@@ -2362,24 +2388,6 @@ export function PromptBar() {
               }
             }}
           />
-
-          {selectedStyle ? (
-            <span
-              ref={styleChipRef}
-              className="absolute left-1.5 top-2 z-[2] inline-flex h-[22px] max-w-[180px] items-center gap-1 rounded-full border border-accent/50 bg-accent/10 pl-2 pr-2.5 text-[11px] text-fg"
-            >
-              <Icon name="sparkles" size={10} />
-              <span className="truncate">{selectedStyle.name}</span>
-              <IconButton
-                label="移除风格"
-                unstyled
-                className="absolute -right-1 -top-1 z-[1] flex h-3 w-3 items-center justify-center rounded-full border border-border bg-surface text-fg-muted hover:border-danger hover:text-danger"
-                onClick={() => applyStyle(null)}
-              >
-                <Icon name="close" size={7} />
-              </IconButton>
-            </span>
-          ) : null}
 
           <MentionMenu
             open={mentionOpen}

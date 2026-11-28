@@ -1,4 +1,5 @@
 import type { NodeKind } from '@shared/canvas-schema'
+import type { ModelModeId } from '@shared/model-modes'
 import {
   nodeOperationOutputTarget,
   type NodeOperationOutputTarget
@@ -52,6 +53,8 @@ export interface NodeOperation {
   requires?: OperationRequires
   /** 需要先进入蒙版编辑器 */
   mask?: boolean
+  /** 操作依赖的模型模式；用于过滤可用模型 */
+  modelMode?: ModelModeId
   menu?: OperationMenuItem[]
   section?: OperationSection
   /** 按节点类型覆盖显示标签/菜单/分区；用于同一个操作在视频和音频节点上的不同语义。 */
@@ -191,11 +194,6 @@ const FRAME_MENU: OperationMenuItem[] = [
 const CUTOUT_MENU: OperationMenuItem[] = [
   { id: 'auto', label: '自动抠图', hint: '识别主体' },
   { id: 'box', label: '框选抠图', hint: '指定物体' }
-]
-
-const LAYER_SPLIT_MENU: OperationMenuItem[] = [
-  { id: 'auto', label: '自动分层', hint: '识别前景' },
-  { id: 'box', label: '框选分层', hint: '指定物体' }
 ]
 
 
@@ -490,12 +488,7 @@ export const NODE_OPERATIONS: NodeOperation[] = [
     kinds: ['image'],
     implemented: true,
     section: 'edit',
-    menu: LAYER_SPLIT_MENU,
-    requires: {
-      type: 'vision-component',
-      label: '需要安装视觉组件（批次 2）',
-      panel: 'components'
-    }
+    modelMode: 'layer'
   },
   {
     id: 'reverse-prompt',

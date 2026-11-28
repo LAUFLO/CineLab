@@ -65,7 +65,8 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
     kind: 'depth-model',
     label: 'VDA Small 模型',
     directory: 'depth-model-vda-small',
-    // 模型直接使用官方权重，不再依赖自建 manifest
+    // 远端 manifest 用于在线更新；缺失时回退到官方权重 URL。
+    manifestUrl: `${runtimeBaseUrl}/depth-model-${platform}-manifest.json`,
     fallback: fallback('depth-model', MODEL_URLS, {
       size: MODEL_SIZE,
       expandedSize: MODEL_SIZE,
@@ -77,6 +78,7 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
     kind: 'whisper-runtime',
     label: '本地字幕运行时',
     directory: 'whisper-runtime',
+    manifestUrl: `${runtimeBaseUrl}/whisper-runtime-${platform}-manifest.json`,
     // 官方 whisper.cpp v1.7.6 Windows x64 包
     fallback: fallback(
       'whisper-runtime',
@@ -100,6 +102,7 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
     kind: 'whisper-model',
     label: 'Whisper Base 模型',
     directory: 'whisper-model-base',
+    manifestUrl: `${runtimeBaseUrl}/whisper-model-${platform}-manifest.json`,
     fallback: fallback(
       'whisper-model',
       [
@@ -135,6 +138,7 @@ export const COMPONENTS: Record<ComponentKind, ComponentDefinition> = {
     kind: 'stem-model',
     label: 'HTDemucs 人声分离模型',
     directory: 'stem-model',
+    manifestUrl: `${runtimeBaseUrl}/stem-model-${platform}-manifest.json`,
     // 模型不随应用重新分发；worker 代码随应用发布，这里只下载权重。
     fallback: fallback(
       'stem-model',

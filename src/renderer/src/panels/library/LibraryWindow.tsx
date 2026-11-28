@@ -464,6 +464,10 @@ export function LibraryWindow() {
   }
 
   const handleDeleteTemplate = (template: PromptTemplate): void => {
+    if (template.source === 'official') {
+      showToast('官方预设提示词不能删除', 'error')
+      return
+    }
     requestConfirm({
       title: '删除模板',
       message: `确定删除模板「${template.name}」吗？`,
@@ -641,7 +645,13 @@ export function LibraryWindow() {
                 templates={templates}
                 query={query}
                 onUse={handleUseTemplate}
-                onEdit={(template) => setTemplateDialog(template)}
+                onEdit={(template) => {
+                  if (template.source === 'official') {
+                    showToast('官方预设提示词不能修改', 'error')
+                    return
+                  }
+                  setTemplateDialog(template)
+                }}
                 onDelete={handleDeleteTemplate}
               />
             ) : null}

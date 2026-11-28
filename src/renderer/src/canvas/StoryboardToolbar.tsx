@@ -182,6 +182,7 @@ export function StoryboardToolbar() {
 
   return (
     <div
+      data-node-chrome
       className="nodrag nopan fixed z-[92] flex h-[42px] items-center gap-0.5 rounded-card border border-border bg-surface px-1.5 whitespace-nowrap shadow-float [animation:menu-in_120ms_ease-out] [translate:-50%_0]"
       style={{ left: position.left, top: position.top }}
       onPointerDown={(event) => event.stopPropagation()}

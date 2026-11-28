@@ -2,7 +2,7 @@
 name: cinelab-model-config
 description: 帮用户在 CineLab 中配置模型供应商和模型能力。当用户说「配置 CineLab 模型」「接入 Seedream / Seedance / 可灵 / Vidu / MiniMax / Veo / 万相」「models.json 怎么写」「这个模型支持什么」「补充模型能力」时使用。根据官方文档或模型名称，生成 CineLab 的 models.pending.json，标注来源与置信度；CineLab 会自动校验并应用。
 version: 2.1.0
-model-config-fingerprint: sha256:3f8d6f311b21c90f2255c3885140019a2bc905d3479c6056fb7d3a145006630a
+model-config-fingerprint: sha256:057439410fd95b64a5122bbea86892a6aff68269384652137013d3802e4ac3ed
 ---
 
 # CineLab 模型配置
@@ -233,7 +233,7 @@ model-config-fingerprint: sha256:3f8d6f311b21c90f2255c3885140019a2bc905d3479c605
 | `reference` | 全能参考（参考生视频） | 提示词、参考图/视频/音频 0..N |
 | `video-edit` | 视频编辑 | 提示词、源视频 1、替换素材 0..1 |
 | `video-extend` | 视频延长 | 提示词、源视频 1 |
-| `layer` | 图层拆分 | 源图 1 |
+| `layer` | 图层拆分（工具栏「图层分离」使用，不在 Prompt Bar 显示） | 源图 1 |
 
 规则：
 
@@ -244,6 +244,7 @@ model-config-fingerprint: sha256:3f8d6f311b21c90f2255c3885140019a2bc905d3479c605
 - 主体参考并入 `reference`，不单独开模式。
 - 首帧/首尾帧与参考生视频通常互斥；不要把两组槽位混在一个模式里。
 - 只声明文档明确支持的模式。宁可不写，也不要猜。
+- `layer` 模式只服务工具栏「图层分离」，Prompt Bar 不再显示该模式；`layer_decomposition` / `layer_max_images` / `text_recognition` 参数应加 `appliesTo: ["layer"]`。
 
 ## 视频操作
 

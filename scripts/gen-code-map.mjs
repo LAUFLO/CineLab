@@ -180,6 +180,7 @@ const MODULES = [
       'src/renderer/src/stores/preferences.ts',
       'src/renderer/src/stores/library.ts',
       'src/renderer/src/stores/depth-tasks.ts',
+      'src/renderer/src/stores/components.ts',
       'src/shared/ipc-contract.ts',
       'src/shared/project-schema.ts',
       'src/shared/project-templates.ts',
@@ -211,7 +212,8 @@ const MODULES = [
       'src/renderer/src/main.tsx',
       'src/renderer/src/env.d.ts',
       'src/renderer/src/stores/ui.ts',
-      'src/shared/shortcuts.ts'
+      'src/shared/shortcuts.ts',
+      'src/shared/community.ts'
     ]
   }
 ]

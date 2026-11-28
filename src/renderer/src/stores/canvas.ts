@@ -30,6 +30,7 @@ import {
   type GroupRatio,
   type NodeKind,
   type OutputRef,
+  type LayerTransform,
   type StageNodeData,
   type StudioNodeData,
   type VideoOpNodeData
@@ -140,6 +141,27 @@ export interface CanvasStore {
     options?: CreateGroupOptions
   ) => string | null
   applyOutput: (nodeId: string, asset: GeneratedAsset, op?: string) => void
+  mergeLayerGroup: (nodeId: string, groupId: string) => Promise<string | null>
+  updateOutputLayer: (
+    nodeId: string,
+    outputId: string,
+    patch: Partial<
+      Pick<
+        OutputRef,
+        'layerTransform' | 'layerVisible' | 'layerLocked' | 'layerAttached'
+      >
+    >,
+    options?: { history?: boolean }
+  ) => void
+  detachLayer: (
+    nodeId: string,
+    outputId: string,
+    position: XYPosition,
+    size: { width: number; height: number },
+    restoreTransform?: LayerTransform
+  ) => string | null
+  attachLayer: (sourceNodeId: string, detachedNodeId: string) => void
+  restoreDetachedLayer: (sourceNodeId: string, outputId: string) => void
   patchNodeData: (nodeId: string, patch: Partial<CineNodeData>) => void
   applyCommands: (
     commands: CanvasCommand[],

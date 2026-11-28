@@ -7,14 +7,14 @@
 
 | 编号 | 模块 | 文件 | 行数 |
 |---|---|---|---|
-| 01 | [画布](./01-canvas.md) | 77 | 26660 |
-| 02 | [生成与模型](./02-generation.md) | 68 | 15195 |
-| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9455 |
+| 01 | [画布](./01-canvas.md) | 93 | 32257 |
+| 02 | [生成与模型](./02-generation.md) | 68 | 15234 |
+| 03 | [剪辑室](./03-clip-studio.md) | 44 | 9466 |
 | 04 | [导演台与白模预演](./04-director-stage.md) | 39 | 13627 |
 | 05 | [逐帧拉片](./05-film-study.md) | 13 | 5837 |
-| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 20855 |
-| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 77 | 14328 |
-| 10 | [UI 组件与面板](./10-ui.md) | 57 | 11936 |
+| 06 | [CineBot 与 Agent](./06-agent.md) | 68 | 21093 |
+| 07 | [存储、IPC 与安全](./07-storage-ipc.md) | 78 | 14627 |
+| 10 | [UI 组件与面板](./10-ui.md) | 58 | 12243 |
 
 > 只统计互斥归属的目录/文件；renderer 的节点组件统一归 01，其他模块在正文中引用。
 
@@ -29,8 +29,8 @@
 | `LibraryApi` | `root`、`chooseRoot`、`pickRoot`、`setRoot`、`migrateRoot`、`migrateDefault`、`cancelMigrate`、`onMigrateProgress`、`resetRoot`、`revealRoot`、`tree`、`listAssets`、`listAllAssets`、`createFolder`、`renameFolder`、`deleteFolder`、`importAssets`、`addAsset`、`renameAsset`、`moveAsset`、`deleteAsset`、`setAssetTags`、`reveal`、`listCharacters`、`listStyles`、`saveStyle`、`deleteStyle`、`pickStyleCover`、`saveAssets`、`listTemplates`、`saveTemplate`、`deleteTemplate`、`thumbCacheInfo`、`clearThumbCache` |
 | `ClipboardApi` | `read` |
 | `ExportApi` | `project`、`canvasPng`、`asset`、`deleteFile`、`assets`、`concatVideos`、`pickFile` |
-| `MediaApi` | `splitGrid`、`stitch`、`extractFrame`、`splitAv`、`startStemTask`、`cancelStemTask`、`onStemTaskEvent`、`cropVideo`、`probe`、`exists`、`existsMany`、`thumbnail`、`proxy`、`audioPeaks`、`listSounds`、`importSound`、`cropImage`、`cropImageRect`、`trimVideo`、`trimAudio`、`audioSpeed`、`removeSubtitles`、`detectSubtitleRect`、`captureDepth`、`startDepthCapture`、`cancelDepthCapture`、`onDepthCaptureEvent`、`startVisionTask`、`cancelVisionTask`、`onVisionTaskEvent` |
-| `ComponentsApi` | `status`、`install`、`pause`、`remove`、`onEvent` |
+| `MediaApi` | `splitGrid`、`stitch`、`extractFrame`、`splitAv`、`startStemTask`、`cancelStemTask`、`onStemTaskEvent`、`cropVideo`、`probe`、`exists`、`existsMany`、`thumbnail`、`proxy`、`audioPeaks`、`listSounds`、`importSound`、`cropImage`、`cropImageRect`、`trimVideo`、`trimAudio`、`audioSpeed`、`removeSubtitles`、`detectSubtitleRect`、`captureDepth`、`startDepthCapture`、`cancelDepthCapture`、`onDepthCaptureEvent`、`startVisionTask`、`cancelVisionTask`、`onVisionTaskEvent`、`saveComposite` |
+| `ComponentsApi` | `status`、`checkUpdates`、`install`、`pause`、`remove`、`onEvent` |
 | `TimelineApi` | `load`、`save`、`duplicate`、`exportVtt`、`export`、`cancelExport`、`onExportProgress`、`onTimelineChanged`、`transcribe`、`cancelTranscribe`、`onTranscribeProgress`、`analyze`、`importSubtitles` |
 | `FilmStudyApi` | `extract`、`auto`、`cancel`、`load`、`save`、`exportMarkdown`、`exportAnalysisPackage`、`exportBundle`、`importAnalysis`、`extractSubtitles`、`importSubtitles`、`analyze`、`rerunShot`、`splitScenes`、`contactSheet`、`onProgress` |
 | `AgentApi` | `chat`、`cancel`、`toolResult`、`confirm`、`sessionLoad`、`sessionList`、`sessionCreate`、`sessionRename`、`sessionDelete`、`sessionCompact`、`modelInfo`、`textModels`、`models`、`proposalCreate`、`proposalActive`、`proposalSubmit`、`proposalCancel`、`onEvent`、`onToolCall` |
@@ -56,6 +56,9 @@
 | `canvas_ungroup` | `canvas.ungroup` |  |  |
 | `canvas_node_operations` | `canvas.nodeOperations` |  | 是 |
 | `canvas_node_operation` | `canvas.nodeOperation` |  |  |
+| `layer_merge` | `canvas.layerMerge` |  |  |
+| `layer_detach` | `canvas.layerDetach` | 是 |  |
+| `layer_attach` | `canvas.layerAttach` | 是 |  |
 | `capability_catalog` | `capability.catalog` |  | 是 |
 | `capability_search` | `capability.search` |  | 是 |
 | `film_study_get` | `film.studyGet` |  | 是 |
@@ -154,8 +157,21 @@
 | `FilmStudyInsights.tsx` |
 | `FilmStudySheet.tsx` |
 | `GroupNodeView.tsx` |
+| `InlineGridEditor.tsx` |
+| `InlineMaskEditor.tsx` |
+| `InlineModelField.tsx` |
+| `InlineMotionEditor.tsx` |
+| `InlineOutpaintEditor.tsx` |
+| `InlinePanelEditor.tsx` |
+| `InlineSphereEditor.tsx` |
+| `InlineTimelineEditor.tsx` |
+| `LayerEditorOverlay.tsx` |
+| `LayerEditorPanel.tsx` |
+| `LayerSplitOverlay.tsx` |
+| `LayerStackPreview.tsx` |
 | `MaskEditorDialog.tsx` |
 | `ModelConfigDialog.tsx` |
+| `NodeInlineEditorHost.tsx` |
 | `NodeToolbar.tsx` |
 | `PanoramaViewer.tsx` |
 | `RemakeMappingDialog.tsx` |
@@ -193,6 +209,7 @@
 - `src/main/agent/pi/__tests__/tools.test.ts`
 - `src/main/assets/__tests__/ingest.test.ts`
 - `src/main/components/__tests__/manifest.test.ts`
+- `src/main/components/__tests__/service.test.ts`
 - `src/main/components/__tests__/zip-extract.test.ts`
 - `src/main/engine/__tests__/generation-error.test.ts`
 - `src/main/engine/__tests__/queue.test.ts`
@@ -208,6 +225,7 @@
 - `src/main/film-study/__tests__/shot-detect.test.ts`
 - `src/main/film-study/__tests__/shots.test.ts`
 - `src/main/film-study/__tests__/style.test.ts`
+- `src/main/ipc/__tests__/components.test.ts`
 - `src/main/ipc/__tests__/index.test.ts`
 - `src/main/library/__tests__/migrate-root.test.ts`
 - `src/main/library/__tests__/store.test.ts`
@@ -243,6 +261,8 @@
 - `src/renderer/src/agent/__tests__/timelineBridge.test.ts`
 - `src/renderer/src/canvas/__tests__/media-size.test.ts`
 - `src/renderer/src/canvas/__tests__/promptbar-model.test.ts`
+- `src/renderer/src/canvas/nodes/__tests__/layer-compose.test.ts`
+- `src/renderer/src/canvas/nodes/__tests__/layer-split-prompt.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/node-operations.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/study-sheet.test.ts`
 - `src/renderer/src/canvas/nodes/__tests__/text-markdown.test.ts`

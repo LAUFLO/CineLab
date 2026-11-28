@@ -111,6 +111,15 @@ body[data-exporting] .react-flow__minimap {
   display: none !important;
 }
 
+/* 拖动节点时只保留节点内容：统一隐藏工具栏、提示词栏和覆盖浮层。
+   属于「画布状态选择器」，由 Canvas 在拖拽开始/结束时设置 body 属性。 */
+body[data-node-dragging] [data-node-chrome] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 80ms ease;
+}
+
 .react-flow__attribution {
   display: none;
 }

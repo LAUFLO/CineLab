@@ -323,12 +323,23 @@ export async function transcribeTimeline(
   }
 }
 
-export function transcribe(
+let activeTranscriptions = 0
+
+export function hasActiveTranscriptions(): boolean {
+  return activeTranscriptions > 0
+}
+
+export async function transcribe(
   request: TimelineTranscribeRequest,
   onProgress: (progress: TimelineTranscribeProgress) => void,
   signal?: AbortSignal
 ): Promise<TimelineTranscribeResult> {
-  return request.mode === 'timeline'
-    ? transcribeTimeline(request.doc, onProgress, signal)
-    : transcribeClip(request, onProgress, signal)
+  activeTranscriptions += 1
+  try {
+    return request.mode === 'timeline'
+      ? await transcribeTimeline(request.doc, onProgress, signal)
+      : await transcribeClip(request, onProgress, signal)
+  } finally {
+    activeTranscriptions -= 1
+  }
 }

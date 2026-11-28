@@ -20,8 +20,29 @@ export async function installComponentFiles(
   const modelFile = MODEL_FILES[kind]
   if (modelFile) {
     const destination = join(targetDir, modelFile)
-    await fs.rm(destination, { force: true })
-    await fs.rename(downloadPath, destination)
+    const backup = `${destination}.old`
+    await fs.rm(backup, { force: true })
+
+    let hasBackup = false
+    try {
+      await fs.rename(destination, backup)
+      hasBackup = true
+    } catch {
+      hasBackup = false
+    }
+
+    try {
+      await fs.rename(downloadPath, destination)
+    } catch (error) {
+      if (hasBackup) {
+        await fs.rename(backup, destination).catch(() => undefined)
+      }
+      throw error
+    }
+
+    if (hasBackup) {
+      await fs.rm(backup, { force: true }).catch(() => undefined)
+    }
     await writeManifest(targetDir, manifest)
     return
   }

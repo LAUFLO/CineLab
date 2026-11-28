@@ -12,12 +12,13 @@ import {
 } from '@shared/canvas-schema'
 import type { FilmStudy } from '@shared/film-study'
 import { buildShotMarkdown, groupShotsByScene } from '../../../canvas/nodes/study-sheet'
-import { isGroupNode, isStudioNode, isFilmNode, selectedNodeOutput, nextId, findFreeOrigin, absolutePosition, type CineNode, type GroupNode, type CineEdge } from '../../canvas-model'
+import { isGroupNode, isStudioNode, isFilmNode, selectedNodeOutput, nextId, findFreeOrigin, absolutePosition, nodeSize, type CineNode, type GroupNode, type CineEdge } from '../../canvas-model'
+import { resolveLayerGroup, attachTransform } from '../../../canvas/nodes/layer-compose'
 
 import type { StateCreator } from 'zustand'
 import type { CanvasStore } from '../../canvas'
 
-type AssetsSlice = Pick<CanvasStore, 'setStudioFilmStatus' | 'applyStudioOutput' | 'detachStudioOutput' | 'addAssetNodes' | 'addShotNodes' | 'addPendingNodes' | 'convertFilmToMedia'>
+type AssetsSlice = Pick<CanvasStore, 'setStudioFilmStatus' | 'applyStudioOutput' | 'detachStudioOutput' | 'addAssetNodes' | 'addShotNodes' | 'addPendingNodes' | 'convertFilmToMedia' | 'detachLayer' | 'attachLayer' | 'restoreDetachedLayer'>
 
 export const createAssetsSlice: StateCreator<
   CanvasStore,
@@ -582,5 +583,265 @@ convertFilmToMedia: (filmId, detach = false) => {
     })
 
     return true
+  },
+  detachLayer: (nodeId, outputId, position, size, restoreTransform) => {
+    const node = get().nodes.find((entry) => entry.id === nodeId)
+    if (!node || node.type !== 'cine') return null
+    const outputs = node.data.outputs ?? []
+    const output = outputs.find((entry) => entry.id === outputId)
+    if (!output || !output.layer || !output.layerGroupId) return null
+    if (output.layerAttached === false) return null
+    if (output.layer.zIndex <= 0) return null
+
+    get().pushHistory()
+    const detachedId = nextId('image')
+    const detachedOutput: OutputRef = {
+      ...output,
+      id: `${detachedId}-layer`,
+      createdAt: new Date().toISOString(),
+      op: 'layer-detach',
+      parentOutputId: output.id,
+      detachedFrom: {
+        nodeId,
+        outputId,
+        groupId: output.layerGroupId
+      },
+      layerGroupId: undefined,
+      layerAttached: true,
+      layerVisible: true,
+      layerLocked: false
+    }
+    const title = output.layer.name?.trim() || `图层 ${output.layer.zIndex}`
+    const detachedNode: CineNode = {
+      id: detachedId,
+      type: 'cine',
+      position,
+      selected: true,
+      data: {
+        kind: 'image',
+        title,
+        status: 'done',
+        outputs: [detachedOutput],
+        selectedOutputId: detachedOutput.id,
+        templates: NODE_META.image.templates,
+        assetOnly: true
+      },
+      style: { width: size.width, height: size.height + TITLE_HEIGHT }
+    }
+
+    set({
+      nodes: [
+        ...get().nodes.map((entry) => {
+          if (entry.id !== nodeId || entry.type !== 'cine') {
+            return entry.selected ? { ...entry, selected: false } : entry
+          }
+          return {
+            ...entry,
+            selected: false,
+            data: {
+              ...entry.data,
+              outputs: (entry.data.outputs ?? []).map((candidate) =>
+                candidate.id === outputId
+                  ? {
+                      ...candidate,
+                      layerAttached: false,
+                      ...(restoreTransform
+                        ? { layerTransform: restoreTransform }
+                        : {})
+                    }
+                  : candidate
+              )
+            }
+          }
+        }),
+        detachedNode
+      ]
+    })
+    return detachedId
+  },
+  attachLayer: (sourceNodeId, detachedNodeId) => {
+    const sourceNode = get().nodes.find((entry) => entry.id === sourceNodeId)
+    const detachedNode = get().nodes.find((entry) => entry.id === detachedNodeId)
+    if (!sourceNode || sourceNode.type !== 'cine') return
+    if (!detachedNode || detachedNode.type !== 'cine') return
+
+    const detachedOutput =
+      (detachedNode.data.outputs ?? []).find((entry) => entry.detachedFrom) ??
+      selectedNodeOutput(detachedNode)
+    if (!detachedOutput?.detachedFrom) return
+    if (detachedOutput.detachedFrom.nodeId !== sourceNodeId) return
+
+    if (get().edges.some((edge) => edge.source === detachedNodeId)) {
+      throw new Error('该图层已连接下游，请先断开连线')
+    }
+
+    const sourceOutputs = sourceNode.data.outputs ?? []
+    const sourceOutput = sourceOutputs.find(
+      (entry) => entry.id === detachedOutput.detachedFrom?.outputId
+    )
+    if (!sourceOutput) throw new Error('源图层已不存在')
+    if (sourceOutput.path !== detachedOutput.path) {
+      throw new Error('该图片已被编辑，不能作为原图层放回')
+    }
+
+    const group = resolveLayerGroup(sourceOutputs, sourceOutput.id)
+    if (!group) throw new Error('源图层组已不存在')
+
+    const sourceSize = nodeSize(sourceNode)
+    const selectedSourceOutput = sourceOutputs.find(
+      (entry) => entry.id === sourceNode.data.selectedOutputId
+    )
+    const imageWidth = Math.max(1, sourceSize.width)
+    const imageHeight = Math.max(
+      1,
+      sourceSize.height - TITLE_HEIGHT
+    )
+    const detachedSize = nodeSize(detachedNode)
+    const detachedImageWidth = Math.max(1, detachedSize.width)
+    const detachedImageHeight = Math.max(
+      1,
+      detachedSize.height - TITLE_HEIGHT
+    )
+    const transform = attachTransform({
+      sourceRect: {
+        x: sourceNode.position.x,
+        y: sourceNode.position.y + TITLE_HEIGHT,
+        width: imageWidth,
+        height: imageHeight
+      },
+      detachedRect: {
+        x: detachedNode.position.x,
+        y: detachedNode.position.y + TITLE_HEIGHT,
+        width: detachedImageWidth,
+        height: detachedImageHeight
+      },
+      groupWidth: group.width,
+      groupHeight: group.height
+    })
+
+    get().pushHistory()
+    set({
+      nodes: get()
+        .nodes.filter((entry) => entry.id !== detachedNodeId)
+        .map((entry) => {
+          if (entry.id !== sourceNodeId || entry.type !== 'cine') {
+            return { ...entry, selected: false }
+          }
+          return {
+            ...entry,
+            selected: true,
+            data: {
+              ...entry.data,
+              selectedOutputId: sourceOutput.id,
+              outputs: (entry.data.outputs ?? []).map((candidate) =>
+                candidate.id === sourceOutput.id
+                  ? {
+                      ...candidate,
+                      layerAttached: true,
+                      layerTransform: {
+                        ...transform,
+                        ...(sourceOutput.layerTransform?.rotation !== undefined
+                          ? {
+                              rotation:
+                                sourceOutput.layerTransform.rotation
+                            }
+                          : {}),
+                        ...(sourceOutput.layerTransform?.flipX !== undefined
+                          ? { flipX: sourceOutput.layerTransform.flipX }
+                          : {}),
+                        ...(sourceOutput.layerTransform?.flipY !== undefined
+                          ? { flipY: sourceOutput.layerTransform.flipY }
+                          : {})
+                      }
+                    }
+                  : candidate
+              )
+            }
+          }
+        }),
+      edges: get().edges.filter(
+        (edge) => edge.source !== detachedNodeId && edge.target !== detachedNodeId
+      )
+    })
+  },
+  restoreDetachedLayer: (sourceNodeId, outputId) => {
+    const sourceNode = get().nodes.find((entry) => entry.id === sourceNodeId)
+    if (!sourceNode || sourceNode.type !== 'cine') return
+    const sourceOutput = (sourceNode.data.outputs ?? []).find(
+      (entry) => entry.id === outputId
+    )
+    if (!sourceOutput || sourceOutput.layerAttached !== false) return
+
+    const detachedNode = get().nodes.find(
+      (entry) =>
+        entry.type === 'cine' &&
+        (entry.data.outputs ?? []).some(
+          (output) =>
+            output.detachedFrom?.nodeId === sourceNodeId &&
+            output.detachedFrom?.outputId === outputId
+        )
+    )
+
+    if (detachedNode) {
+      if (detachedNode.type !== 'cine') return
+      if (get().edges.some((edge) => edge.source === detachedNode.id)) {
+        throw new Error('该图层已连接下游，请先断开连线')
+      }
+      const detachedOutput = (detachedNode.data.outputs ?? []).find(
+        (output) => output.detachedFrom?.outputId === outputId
+      )
+      if (detachedOutput && detachedOutput.path !== sourceOutput.path) {
+        throw new Error('该图片已被编辑，不能作为原图层放回')
+      }
+
+      get().pushHistory()
+      set({
+        nodes: get()
+          .nodes.filter((entry) => entry.id !== detachedNode.id)
+          .map((entry) => {
+            if (entry.id !== sourceNodeId || entry.type !== 'cine') {
+              return entry
+            }
+            return {
+              ...entry,
+              selected: true,
+              data: {
+                ...entry.data,
+                selectedOutputId: outputId,
+                outputs: (entry.data.outputs ?? []).map((candidate) =>
+                  candidate.id === outputId
+                    ? { ...candidate, layerAttached: true }
+                    : candidate
+                )
+              }
+            }
+          }),
+        edges: get().edges.filter(
+          (edge) =>
+            edge.source !== detachedNode.id && edge.target !== detachedNode.id
+        )
+      })
+      return
+    }
+
+    get().pushHistory()
+    set({
+      nodes: get().nodes.map((entry) => {
+        if (entry.id !== sourceNodeId || entry.type !== 'cine') return entry
+        return {
+          ...entry,
+          selected: true,
+          data: {
+            ...entry.data,
+            selectedOutputId: outputId,
+            outputs: (entry.data.outputs ?? []).map((candidate) =>
+              candidate.id === outputId
+                ? { ...candidate, layerAttached: true }
+                : candidate
+            )
+          }
+        }
+      })
+    })
   },
 })

@@ -142,8 +142,14 @@ function runWorker(
 }
 
 function baseArgs(task: string, models: string): string[] {
-  const worker = join(componentDirectory('vision-models'), 'worker.py')
+  const worker = join(visionWorkerDirectory(), 'worker.py')
   return [worker, '--task', task, '--models', models]
+}
+
+function visionWorkerDirectory(): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'vision-worker')
+    : join(app.getAppPath(), 'resources', 'vision-worker')
 }
 
 function rectArgs(rect: VisionRect): string[] {
@@ -196,47 +202,6 @@ export async function runVisionTask(
         model: 'InSPyReNet 抠图'
       })
       return { kind: request.kind, asset, width: asset.width, height: asset.height }
-    }
-
-    if (request.kind === 'layer-split') {
-      const foreground = join(tempDir, 'foreground.png')
-      const background = join(tempDir, 'background.png')
-      await runWorker(
-        [
-          ...baseArgs('layer-split', models),
-          ...(request.rect ? rectArgs(request.rect) : []),
-          '--input',
-          input,
-          '--output',
-          foreground,
-          '--background',
-          background
-        ],
-        options
-      )
-      const [frontAsset, backAsset] = await Promise.all([
-        ingestAsset({
-          projectPath: projectRoot,
-          data: await fs.readFile(foreground),
-          kind: 'image',
-          mime: 'image/png',
-          model: 'InSPyReNet 前景图层'
-        }),
-        ingestAsset({
-          projectPath: projectRoot,
-          data: await fs.readFile(background),
-          kind: 'image',
-          mime: 'image/png',
-          model: 'LaMa 背景图层'
-        })
-      ])
-      return {
-        kind: request.kind,
-        asset: frontAsset,
-        background: backAsset,
-        width: frontAsset.width,
-        height: frontAsset.height
-      }
     }
 
     if (request.kind === 'inpaint-image') {

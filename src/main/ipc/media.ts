@@ -11,12 +11,14 @@ import type {
   ExtractFrameRequest,
   GridSplitRequest,
   RemoveSubtitlesRequest,
+  SaveCompositeRequest,
   SplitAvRequest,
   StemTaskRequest,
   StitchRequest,
   TrimVideoRequest,
   VisionTaskRequest
 } from '@shared/media'
+import { ingestAsset } from '../assets/ingest'
 import { probeMedia } from '../media/ffmpeg'
 import { computeAudioPeaks } from '../media/audio-peaks'
 import { changeAudioSpeed, trimAudio } from '../media/audio'
@@ -77,6 +79,18 @@ async function mediaExists(
 }
 
 export function registerMediaIpc(): void {
+  ipcMain.handle(
+    'media:save-composite',
+    async (_event, input: SaveCompositeRequest) =>
+      ingestAsset({
+        projectPath: requireProjectRoot(),
+        data: Buffer.from(input.data),
+        kind: 'image',
+        mime: 'image/png',
+        model: input.model ?? '图层合成'
+      })
+  )
+
   ipcMain.handle('media:capture-depth', async (_event, input: DepthCaptureRequest) => {
     return captureDepth(requireProjectRoot(), input)
   })

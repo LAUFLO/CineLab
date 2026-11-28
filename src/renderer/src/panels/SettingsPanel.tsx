@@ -25,10 +25,12 @@ import {
 } from '@shared/provider-presets'
 import type { UpdateStatus } from '@shared/update'
 import type { LocalAdapterStatus } from '@shared/local-adapter'
+import { COMMUNITY } from '@shared/community'
 import { BrandIcon, BrandWordmark } from '../components/Brand'
 import { Icon, type IconName } from '../components/Icon'
 
 import { useSettingsStore } from '../stores/settings'
+import { useComponentsStore } from '../stores/components'
 import { useLibraryStore } from '../stores/library'
 import { useUIStore } from '../stores/ui'
 import { useUpdateStore } from '../stores/update'
@@ -475,7 +477,7 @@ function ModelsSection() {
   }
 
   const skillPrompt = skillPath
-    ? `读取这份 SKILL.md：${skillPath}\n按里面的规则帮我在 CineLab 中配置模型。官方文档：<粘贴链接>\n配置写完后告诉我改了哪些模型、来源和需要确认的项。`
+    ? `读取这份 SKILL.md：${skillPath}\n按里面的规则帮我在 CineLab 中配置模型。官方文档：https://github.com/LAUFLO/CineLab/blob/main/docs/models.md\n如果无法直接写文件，请输出完整的 models.json 内容，并告诉我改了哪些模型、来源和需要确认的项。`
     : ''
 
   const copySkillPrompt = async (): Promise<void> => {
@@ -1052,13 +1054,42 @@ function ModelsSection() {
         ))}
 
         {editableProviders.length === 0 ? (
-          <div className="px-2 py-6 text-center text-xs leading-[1.8] text-fg-subtle">
-            <div>第一次配置模型？按三步来：</div>
-            <ol className="mt-2 list-decimal pl-[18px] text-left text-[11px] leading-[1.8] text-fg-subtle">
-              <li>选一个热门供应商</li>
-              <li>填 API Key（预设会显示获取地址）</li>
-              <li>点「获取模型列表」，勾选要用的模型</li>
+          <div className="rounded-card border border-border bg-surface-raised p-3.5">
+            <div className="text-[13px] text-fg">
+              推荐：用外部 Agent 配置模型
+            </div>
+            <div className="mt-1 text-[11px] leading-[1.7] text-fg-subtle">
+              下载「模型配置 Skill」，交给 WorkBuddy、ChatGPT、豆包、Claude
+              等能读取本地文件或粘贴文档的工具，按 Skill 规则生成配置。
+            </div>
+            <ol className="mt-2 list-decimal pl-[18px] text-[11px] leading-[1.8] text-fg-subtle">
+              <li>下载配置 Skill</li>
+              <li>把 SKILL.md 发给外部 Agent</li>
+              <li>按 Agent 的说明保存 models.json</li>
+              <li>回到这里点「重新加载」或应用新配置</li>
             </ol>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => void handleDownloadSkill()}
+              >
+                下载配置 Skill
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => void copySkillPrompt()}
+                disabled={!skillPath}
+              >
+                复制配置指令
+              </Button>
+            </div>
+            <div className="mt-2 text-[10.5px] leading-[1.6] text-fg-subtle">
+              也可以继续在下方手动添加供应商和模型。
+            </div>
           </div>
         ) : null}
 
@@ -1522,6 +1553,7 @@ function AboutSection() {
   const download = useUpdateStore((state) => state.download)
   const install = useUpdateStore((state) => state.install)
   const openFallback = useUpdateStore((state) => state.openFallback)
+  const showToast = useUIStore((state) => state.showToast)
 
   useEffect(() => {
     void window.api.app.getInfo().then((info) => setVersion(info.version))
@@ -1554,6 +1586,77 @@ function AboutSection() {
             >
               打开日志目录
             </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-card border border-border bg-surface-raised p-3.5">
+        <div className="text-[13px] text-fg">官方社群</div>
+        <div className="mt-1 text-[11px] leading-[1.6] text-fg-subtle">
+          配置模型、使用问题或创作交流，欢迎加入官方群。
+        </div>
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="flex flex-col gap-2 rounded-card border border-border bg-surface px-3 py-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-fg">QQ 群</span>
+              <span className="text-[10px] tabular-nums text-fg-subtle">
+                {COMMUNITY.qqGroup.number}
+              </span>
+            </div>
+            <div className="flex gap-1.5">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  void window.api.settings
+                    .copyText(COMMUNITY.qqGroup.number)
+                    .then(() => showToast('QQ 群号已复制'))
+                }}
+              >
+                复制群号
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  void window.api.app.openExternal(COMMUNITY.qqGroup.url)
+                }}
+              >
+                打开群链接
+              </Button>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 rounded-card border border-border bg-surface px-3 py-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-fg">飞书交流群</span>
+              <span className="text-[10px] text-fg-subtle">邀请链接</span>
+            </div>
+            <div className="flex gap-1.5">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  void window.api.app.openExternal(COMMUNITY.feishuGroup.url)
+                }}
+              >
+                打开飞书群
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  void window.api.settings
+                    .copyText(COMMUNITY.feishuGroup.url)
+                    .then(() => showToast('飞书群链接已复制'))
+                }}
+              >
+                复制链接
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -1650,6 +1753,7 @@ export function SettingsPanel() {
   const close = useSettingsStore((state) => state.closePanel)
   const [active, setActive] = useState<SectionId>('general')
   const panelSection = useSettingsStore((state) => state.panelSection)
+  const updateCount = useComponentsStore((state) => state.updateCount)
 
   useEffect(() => {
     if (panelSection) setActive(resolveSectionId(panelSection))
@@ -1707,6 +1811,9 @@ export function SettingsPanel() {
                   <Icon name={section.icon} size={15} />
                 )}
                 <span>{section.label}</span>
+                {section.id === 'models' && updateCount > 0 ? (
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
+                ) : null}
               </Button>
             ))}
           </nav>

@@ -63,6 +63,11 @@ export function TemplateGrid({
             >
               {template.name}
             </span>
+            {template.source === 'official' ? (
+              <span className="shrink-0 rounded-md border border-border bg-surface px-1 py-px text-[9px] text-fg-subtle">
+                官方
+              </span>
+            ) : null}
           </div>
 
           <p className="m-0 line-clamp-3 min-h-[60px] whitespace-pre-wrap text-xs leading-[1.65] text-fg-muted">
@@ -79,26 +84,30 @@ export function TemplateGrid({
             >
               使用
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="none"
-              title="编辑"
-              className={ACTION_BUTTON_CLASS}
-              onClick={() => onEdit(template)}
-            >
-              <Icon name="edit" size={13} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="none"
-              title="删除"
-              className={ACTION_BUTTON_CLASS}
-              onClick={() => onDelete(template)}
-            >
-              <Icon name="trash" size={13} />
-            </Button>
+            {template.source !== 'official' ? (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  title="编辑"
+                  className={ACTION_BUTTON_CLASS}
+                  onClick={() => onEdit(template)}
+                >
+                  <Icon name="edit" size={13} />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="none"
+                  title="删除"
+                  className={ACTION_BUTTON_CLASS}
+                  onClick={() => onDelete(template)}
+                >
+                  <Icon name="trash" size={13} />
+                </Button>
+              </>
+            ) : null}
           </div>
         </div>
       ))}

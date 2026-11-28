@@ -7,6 +7,7 @@ import {
 } from '@shared/canvas-schema'
 import type { GenerateRequest } from '@shared/generation'
 import { useCanvasStore } from './canvas'
+import { trimLayerOutputs } from '../canvas/nodes/layer-compose'
 import { useGenerationHistoryStore } from './generation-history'
 import { usePreferencesStore } from './preferences'
 import { useUIStore } from './ui'
@@ -68,7 +69,53 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             .nodes.find((item) => item.id === event.nodeId)
           const node = found && found.type === 'cine' ? found : undefined
 
-          const incoming: OutputRef[] = event.assets.map((asset) => ({
+          const hasLayers = event.assets.some((asset) => asset.layer)
+          const sortedAssets = hasLayers
+            ? [...event.assets].sort(
+                (a, b) => (a.layer?.zIndex ?? 0) - (b.layer?.zIndex ?? 0)
+              )
+            : event.assets
+          const baseAsset = hasLayers
+            ? (sortedAssets.find((asset) => asset.layer?.zIndex === 0) ??
+              sortedAssets[0])
+            : undefined
+          const baseWidth = baseAsset?.width ?? 0
+          const baseHeight = baseAsset?.height ?? 0
+          const groupId = hasLayers ? event.runId : undefined
+
+          const layerTransform = (asset: (typeof event.assets)[number]) => {
+            if (!asset.layer) return undefined
+            const absolute = asset.layer.boundingBox?.absolute
+            if (absolute) {
+              return {
+                x: absolute[0],
+                y: absolute[1],
+                width: Math.max(1, absolute[2] - absolute[0]),
+                height: Math.max(1, absolute[3] - absolute[1])
+              }
+            }
+            const normalized = asset.layer.boundingBox?.normalized
+            if (normalized && baseWidth > 0 && baseHeight > 0) {
+              return {
+                x: (normalized[0] / 1000) * baseWidth,
+                y: (normalized[1] / 1000) * baseHeight,
+                width: Math.max(
+                  1,
+                  ((normalized[2] - normalized[0]) / 1000) * baseWidth
+                ),
+                height: Math.max(
+                  1,
+                  ((normalized[3] - normalized[1]) / 1000) * baseHeight
+                )
+              }
+            }
+            if (asset.layer.zIndex === 0 && baseWidth > 0 && baseHeight > 0) {
+              return { x: 0, y: 0, width: baseWidth, height: baseHeight }
+            }
+            return undefined
+          }
+
+          const incoming: OutputRef[] = sortedAssets.map((asset) => ({
             id: asset.id,
             path: asset.path,
             kind: asset.kind,
@@ -77,14 +124,35 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             width: asset.width,
             height: asset.height,
             op: asset.op,
-            ...(asset.layer ? { layer: asset.layer } : {}),
+            ...(asset.layer
+              ? {
+                  layer: asset.layer,
+                  ...(groupId ? { layerGroupId: groupId } : {}),
+                  ...(layerTransform(asset)
+                    ? { layerTransform: layerTransform(asset) }
+                    : {}),
+                  layerAttached: true,
+                  layerVisible: true,
+                  layerLocked: asset.layer.zIndex === 0
+                }
+              : {}),
             ...(asset.textRecognition
               ? { textRecognition: asset.textRecognition }
               : {})
           }))
 
           // 图层拆分最多返回 1 张底图 + 99 个图层，不能按普通版本数量截断
-          const outputs = [...incoming, ...(node?.data.outputs ?? [])].slice(0, 100)
+          const activeGroupId = incoming.find(
+            (output) => output.layerGroupId
+          )?.layerGroupId
+          const outputs = trimLayerOutputs(
+            incoming,
+            node?.data.outputs ?? [],
+            activeGroupId
+          )
+          const baseOutput = incoming.find(
+            (output) => output.layer?.zIndex === 0
+          )
 
           const text = event.assets.find(
             (asset) => asset.kind === 'text' && asset.text
@@ -95,11 +163,11 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             progress: 100,
             error: undefined,
             outputs,
-            selectedOutputId: outputs[0]?.id,
+            selectedOutputId: baseOutput?.id ?? outputs[0]?.id,
             ...(text ? { text } : {})
           })
 
-          const sized = event.assets.find(
+          const sized = sortedAssets.find(
             (asset) => asset.width && asset.height && asset.width > 0
           )
           if (

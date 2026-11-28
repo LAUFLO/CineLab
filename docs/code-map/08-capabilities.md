@@ -25,7 +25,7 @@
 | 02 | 本地可信适配器 registry、esbuild 构建、utilityProcess 热重载、设置页管理 | `src/main/local-adapters/`、`src/shared/local-adapter.ts`、`SettingsPanel` |
 | 02 | L4 sidecar（OpenAI / http-template）健康检查、版本与日志 | `src/main/local-adapters/registry.ts`、`docs/local-adapters.md` |
 | 02 | http-template 条件字段、$map、状态/错误映射、多结果、HMAC 签名、显式 multipart、同步结果 | `src/main/providers/http-template.ts`、`http-template-dsl.test.ts` |
-| 02 | 本地视觉增强：抠像、图层分离、视频抠像、智能去字幕、主体消除；抠图/图层分离支持自动与框选 | `src/main/media/vision.ts`、`resources/vision-worker/worker.py` |
+| 02 | 本地视觉增强：抠像、视频抠像、智能去字幕、主体消除；抠图支持自动与框选 | `src/main/media/vision.ts`、`resources/vision-worker/worker.py` |
 | 02 | 扩图走配置图片模型的图生图：精确优先，无精确选项时自动选最接近尺寸；完全无法控制比例的模型置灰 | `src/shared/outpaint.ts`、`src/renderer/src/canvas/nodes/AiOperationDialog.tsx`、`NodeToolbar.tsx` |
 | 02 | 本地人声/背景音分离：Demucs htdemucs、视频/音频源、无声视频 + 音频输出、FIFO 任务与取消；真实素材听感待验收 | `src/main/media/stems.ts`、`src/main/media/stem-tasks.ts`、`resources/stem-worker/worker.py` |
 | 03 | 时间线、剪辑、转场、关键帧、字幕、音频 | `src/main/timeline/`、`src/shared/timeline-*` |
@@ -68,9 +68,11 @@
 | 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
 | 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能全部显示、导入与卡片启用开关 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
-| 02 | 官方/自定义风格库（官方 42 个）：按输入框居中的 620×480 浮窗、一行 8 列小封面、分类浏览、单击即应用并关闭、单选胶囊（内联提示词首行、× 角标）；资产库“风格”与风格库同源展示 | `src/main/library/styles.ts`、`src/shared/style-schema.ts`、`style-prompt.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`style-prompt.test.ts` |
-| 02 | 预设提示词：按输入框居中的 620×480 浮窗、CRUD、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、发送原位展开、风格置顶；胶囊宽度对齐占位、绿色无图标、连续插入不重叠；资产库“使用”插入正文 | `src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx`、`prompt-preset.test.ts` |
-| 02 | 资产库提示词卡片：按钮行统一 28px、卡片等高、新建入口位于面包屑右侧 | `TemplateGrid.tsx`、`LibraryWindow.tsx` |
+| 02 | 官方/自定义风格库（官方 43 个）：按输入框居中的 620×480 浮窗、一行 8 列小封面、分类浏览、单击即应用并关闭、单选胶囊（内联提示词首行、× 角标）；资产库“风格”与风格库同源展示；新增韦斯·安德森官方风格 | `src/main/library/styles.ts`、`docs/style-library/styles.json`、`src/shared/style-schema.ts`、`style-prompt.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`style-prompt.test.ts` |
+| 02 | 预设提示词：按输入框居中的 620×480 浮窗、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、发送原位展开、风格置顶；胶囊宽度对齐占位、绿色无图标、连续插入不重叠；资产库“使用”插入正文；官方预设「画面去脏」只读，不可修改删除 | `docs/prompt-library/presets.json`、`src/main/library/templates.ts`、`src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx`、`prompt-preset.test.ts` |
+| 02 | 资产库提示词卡片：按钮行统一 28px、卡片等高、新建入口位于面包屑右侧；官方项隐藏编辑/删除并显示「官方」徽标 | `TemplateGrid.tsx`、`LibraryWindow.tsx` |
+| 10 | 官方社群：关于与更新页展示 QQ 群（群号可复制）与飞书交流群（可打开/复制链接） | `SettingsPanel.tsx`、`src/shared/community.ts`、`src/main/ipc/index.ts` |
+| 02 | 模型配置引导：无模型时优先引导下载 model-config Skill，交给外部 Agent 生成 models.json；手动配置保留 | `SettingsPanel.tsx`、`src/main/settings/model-skill.ts`、`resources/model-config-skill/SKILL.md` |
 | 02 | 工作流模板：保存画布子图为资产库 `工作流/` 目录包；本地上传/生成节点转 `workflowSlot` 占位；导演台文档打包，拉片/剪辑室占位；支持重命名、删除、更新、导入导出 zip；`modelKey`/`params` 按节点持久化 | `src/main/workflows/`、`src/main/library/workflows.ts`、`src/shared/workflow-schema.ts`、`WorkflowSaveDialog.tsx`、`WorkflowGrid.tsx`、`PromptBar.tsx` |
 | 07 | 关闭确认（后台运行/退出）、系统托盘品牌 logo 与自绘右键菜单；保存失败拦截、「不再提示」仅记忆后台运行 | `src/main/tray/`、`src/renderer/src/App.tsx`、`CloseConfirmDialog.tsx`、`TrayMenuWindow.tsx`、`preferences.ts` |
 | 04 | GLB 导入与真实模型渲染（视口 + 导出等待加载），失败回退 wireframe | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts`、`stage-render.ts` |
@@ -90,6 +92,9 @@
 
 | 模块 | 能力 | 现状 | 证据 |
 |---|---|---|---|
+| 02 | 图层分离：模型 `layer` 分层 + 本地图层合成 | P0–P6 已实施：节点内框选（工具栏/PromptBar 就地切换，提交后恢复）、四种输入、多选区（最多 4）、图层叠加、拖动/缩放、拖出/拖回、已分离放回、合并写回、三个 Agent 工具；P5 组件在线更新代码完成，详见下一行 | `src/renderer/src/canvas/nodes/LayerSplitOverlay.tsx`、`LayerEditorOverlay.tsx`、`layer-compose.ts`、`src/main/agent/tools/canvas.ts` |
+| 02 | 节点内联操作编辑器 | 15 个源内容操作已改为节点内 UI：裁剪、框选抠图、框选去字幕、画面裁切、扩图、重绘、擦除、元素编辑、打光、多角度、色彩校正、人像质感、片段截取、宫格切分、深度动作捕捉；空模型显示去配置提示，面板内容滚动/按钮固定，提示词框完整边框；拖动隐藏浮层、媒体尺寸自愈完成；真实模型生成待有 Key 环境复测 | `NodeInlineEditorHost.tsx`、`InlineMaskEditor.tsx`、`InlineSphereEditor.tsx`、`InlineOutpaintEditor.tsx`、`InlineModelField.tsx`、`infrastructure.css`、`media-size.ts` |
+| 02 | 组件在线更新 | 代码完成：六组件 checkUpdates、24h 持久化缓存、启动后台检查、更新按钮/红点、任务占用阻断；四个新 manifest 待随 release 上传 | `src/main/components/service.ts`、`src/main/ipc/components.ts`、`src/renderer/src/panels/ComponentsSection.tsx`、`src/renderer/src/stores/components.ts` |
 | 04 | 场景图 → 白膜 | VLM 解析已消费 sizeClass/facing/room/scale/pitch；深度校准未接，`depth` 默认为空 | `src/main/scene/analyze.ts`、`src/shared/stage-from-scene-build.ts` |
 | 04 | 舞台对象资产 | 只有 human/box/sphere/plane/gltf/crowd；无家具/建筑/自然资产库 | `src/shared/scene-object-presets.ts` |
 

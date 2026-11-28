@@ -50,9 +50,11 @@
 | 素材入库 | `ingestAsset` | `src/main/assets/ingest.ts` | 已实现 |
 | 3D 模型入库 | `kind:'model'` → `assets/model/`，`.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` | 已实现 |
 | 错误文案 | 配额/鉴权/超时 | `src/main/engine/generation-error.ts` | 已实现 |
-| 风格库、风格胶囊 | 官方只读（42 个）+ 自定义、按输入框居中浮窗（一行 8 列小封面）、分类浏览、单击即应用、单选胶囊内联输入框首行（× 角标）；资产库“风格”同源展示 | `src/main/library/styles.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`src/shared/style-prompt.ts` | 已实现 |
-| 预设提示词 | 资产库“提示词”同源、按输入框居中浮窗、CRUD、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、胶囊不重叠（绿色无图标）、发送原位展开、风格置顶 | `src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx` | 已实现 |
-| 资产库提示词卡片 | 按钮行统一尺寸、卡片等高、新建提示词在面包屑右侧 | `TemplateGrid.tsx`、`LibraryWindow.tsx` | 已实现 |
+| 风格库、风格胶囊 | 官方只读（43 个）+ 自定义、按输入框居中浮窗（一行 8 列小封面）、分类浏览、单击即应用、单选胶囊内联输入框首行（× 角标）；资产库“风格”同源展示；官方新增韦斯·安德森 | `src/main/library/styles.ts`、`docs/style-library/styles.json`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`src/shared/style-prompt.ts` | 已实现 |
+| 预设提示词 | 资产库“提示词”同源、按输入框居中浮窗、CRUD、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、胶囊不重叠（绿色无图标）、发送原位展开、风格置顶；官方「画面去脏」只读 | `docs/prompt-library/presets.json`、`src/main/library/templates.ts`、`src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx` | 已实现 |
+| 资产库提示词卡片 | 按钮行统一尺寸、卡片等高、新建提示词在面包屑右侧；官方项隐藏编辑/删除并显示「官方」徽标 | `TemplateGrid.tsx`、`LibraryWindow.tsx` | 已实现 |
+| 官方社群 | 关于与更新页展示 QQ 群号（复制）与飞书邀请链接（打开/复制） | `SettingsPanel.tsx`、`src/shared/community.ts`、`src/main/ipc/index.ts` | 已实现 |
+| 模型配置 Skill 引导 | 无模型时优先引导下载 SKILL.md，交给 WorkBuddy / ChatGPT / 豆包等外部 Agent 生成 models.json；手动配置保留 | `SettingsPanel.tsx`、`resources/model-config-skill/SKILL.md` | 已实现 |
 
 ## 剪辑室
 
@@ -110,6 +112,19 @@
 | 选角/选景、复刻建图 | mapping + 普通视频节点 | `RemakeMappingDialog.tsx`、`stores/film-study.ts` | 已实现 |
 | 分析包导入导出 | SRT/ZIP/README | `src/main/film-study/analysis.ts` | 已实现 |
 | 字幕 OCR、音频分轨、裁脸 | 未接 | — | 待做 |
+
+## 图层分离与合成
+
+| 关键词 | 已有实现 | 入口 | 状态 |
+|---|---|---|---|
+| 图层分离 | 模型 `layer` 分层；自动/提示词/框选/框选+提示词；pending 节点 + 连线 | `src/renderer/src/canvas/nodes/LayerSplitOverlay.tsx`、`layer-split-prompt.ts`、`src/renderer/src/stores/generation.ts` | 已实现（P6） |
+| 图层叠加、背景锁定 | `layerGroupId` + `layerTransform` + Canvas 预览 | `LayerStackPreview.tsx`、`layer-compose.ts`、`src/shared/canvas-schema.ts` | 部分实现（P2） |
+| 图层合并 | 本地 Canvas 合成，写回同一节点新版本；不调模型 | `layer-compose.ts`、`src/renderer/src/stores/canvas/slices/graph.ts`、`src/main/ipc/media.ts` | 部分实现（P2） |
+| 图层拖出/拖回、已分离区、多组选择 | 独立节点 + 重新附着；面板显隐/锁定；100 版本保护 | `LayerEditorOverlay.tsx`、`src/renderer/src/stores/canvas/slices/assets.ts`、`src/renderer/src/canvas/Canvas.tsx` | 已实现（P3） |
+| 图层分离内联编辑 | 节点上方工具栏与底部面板就地替换；多选区（最多 4）；提交后恢复 | `LayerSplitOverlay.tsx`、`NodeToolbar.tsx`、`PromptBar.tsx`、`src/renderer/src/stores/ui.ts` | 已实现（P6） |
+| 节点内联操作编辑器 | 15 个源内容操作改为节点内 UI：框选/蒙版/方向球/扩图/时间条/宫格线/参数面板；拖动时隐藏浮层；媒体尺寸自愈 | `NodeInlineEditorHost.tsx`、`Inline*Editor.tsx`、`inline-generation.ts`、`src/renderer/src/styles/infrastructure.css`、`src/renderer/src/canvas/media-size.ts` | 部分实现（真实生成待验证） |
+| 图层 Agent 工具 | `layer_merge` / `layer_detach` / `layer_attach` | `src/main/agent/tools/canvas.ts`、`src/renderer/src/agent/canvasBridge.ts` | 已实现（P4） |
+| 组件在线更新 | 六组件 checkUpdates、24h 持久化缓存、更新按钮/红点、任务占用阻断 | `src/main/components/service.ts`、`src/main/ipc/components.ts`、`src/renderer/src/panels/ComponentsSection.tsx` | 代码完成，manifest 待上传（P5） |
 
 ## Agent 与存储
 

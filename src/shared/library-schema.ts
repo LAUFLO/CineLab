@@ -67,11 +67,12 @@ export interface CharacterCard {
 }
 
 export interface PromptTemplate {
-  /** 相对库根的路径，例如 提示词/雪夜电影感.prompt.json */
+  /** 相对库根的路径，例如 提示词/雪夜电影感.prompt.json；官方为 official:<slug> */
   id: string
   name: string
   kind: NodeKind
   prompt: string
+  source: 'official' | 'user'
   createdAt: string
   updatedAt: string
 }

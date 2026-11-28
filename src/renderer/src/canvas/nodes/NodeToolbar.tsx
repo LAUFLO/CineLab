@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { NODE_META, type NodeKind, type OutputRef } from '@shared/canvas-schema'
 import type { ModelDef } from '@shared/provider-schema'
@@ -27,8 +27,11 @@ import { SubtitleDialog } from './SubtitleDialog'
 import { TrimDialog } from './TrimDialog'
 import { VideoCropDialog } from './VideoCropDialog'
 import { DepthCaptureDialog } from './DepthCaptureDialog'
+import { LayerSplitOverlay } from './LayerSplitOverlay'
+import { NodeInlineEditorHost } from './NodeInlineEditorHost'
 import {
   OPERATION_SECTIONS,
+  buildOperationPrompt,
   defaultPrimaryForKind,
   operationsForKind,
   type NodeOperation,
@@ -46,6 +49,7 @@ interface NodeToolbarProps {
   kind: NodeKind
   current: OutputRef
   align?: 'left' | 'center' | 'right'
+  cardRef: RefObject<HTMLDivElement | null>
   onDownload: () => void
   onExpand: () => void
   onEdit?: () => void
@@ -80,6 +84,7 @@ export function NodeToolbar({
   kind,
   current,
   align = 'center',
+  cardRef,
   onDownload,
   onExpand,
   onEdit,
@@ -92,6 +97,8 @@ export function NodeToolbar({
   const showToast = useUIStore((state) => state.showToast)
   const nodeCommand = useUIStore((state) => state.nodeCommand)
   const consumeNodeCommand = useUIStore((state) => state.consumeNodeCommand)
+  const inlineEditor = useUIStore((state) => state.inlineEditor)
+  const inlineActive = inlineEditor?.nodeId === nodeId
   const nodeModelKey = useCanvasStore((state) => {
     const found = state.nodes.find((entry) => entry.id === nodeId)
     return found && found.type === 'cine' ? found.data.modelKey : undefined
@@ -125,8 +132,14 @@ export function NodeToolbar({
     item?: OperationMenuItem
     prompt: string
   } | null>(null)
+  const [layerDialog, setLayerDialog] = useState<{
+    op: NodeOperation
+    src: string
+    width: number
+    height: number
+  } | null>(null)
   const [cropDialog, setCropDialog] = useState<{
-    purpose: 'crop' | 'cutout' | 'layer-split'
+    purpose: 'crop' | 'cutout'
     src: string
     width: number
     height: number
@@ -410,20 +423,20 @@ export function NodeToolbar({
   }
 
   const executeBoxOperation = async (
-    purpose: 'cutout' | 'layer-split',
+    purpose: 'cutout',
     rect: { x: number; y: number; width: number; height: number }
   ): Promise<void> => {
     setCropDialog(null)
     const source = sourceNode()
     if (!source || !(await ensureVision())) return
 
-    const label = purpose === 'cutout' ? '框选抠图' : '框选分层'
+    const label = '框选抠图'
     const pendingIds = useCanvasStore
       .getState()
       .addPendingNodes(
         'image',
         source.origin,
-        purpose === 'cutout' ? 1 : 2,
+        1,
         `${source.title} · ${label}`,
         nodeId
       )
@@ -431,7 +444,7 @@ export function NodeToolbar({
     showToast(`已开始${label}，完成后自动写入节点`)
     await startVisionTask(
       {
-        kind: purpose === 'cutout' ? 'matte-image' : 'layer-split',
+        kind: 'matte-image',
         path: current.path,
         rect
       },
@@ -439,7 +452,7 @@ export function NodeToolbar({
         mode: 'pending',
         nodeId,
         pendingIds,
-        op: purpose === 'cutout' ? 'cutout' : 'layer-split',
+        op: 'cutout',
         title: label
       }
     )
@@ -521,6 +534,67 @@ export function NodeToolbar({
     } finally {
       setRunning(false)
     }
+  }
+
+  const handleLayerConfirm = (input: {
+    rects: Array<{ x: number; y: number; width: number; height: number }>
+    prompt: string
+    modelKey: string
+    model: ModelDef
+    mode: string
+    maxImages: number
+  }): void => {
+    const dialog = layerDialog
+    if (!dialog) return
+    const pendingId = createOutputNode(dialog.op, '图层分离')
+    if (!pendingId) return
+
+    const params: Record<string, unknown> = {
+      ...defaultParams(input.model),
+      watermark: false,
+      layer_decomposition: true,
+      layer_max_images: input.maxImages
+    }
+    if (input.model.params.some((param) => param.key === 'output_format')) {
+      params.output_format = 'png'
+    }
+    if (input.model.params.some((param) => param.key === 'text_recognition')) {
+      params.text_recognition = false
+    }
+    const sizeParam = input.model.params.find((param) => param.key === 'size')
+    if (sizeParam?.options?.some((option) => option.value === '2K')) {
+      params.size = '2K'
+    }
+
+    setLayerDialog(null)
+    showToast('已提交「图层分离」生成')
+    const state = useCanvasStore.getState()
+    state.clearSelection()
+    state.onNodesChange([{ type: 'select', id: pendingId, selected: true }])
+    void useGenerationStore
+      .getState()
+      .run({
+        nodeId: pendingId,
+        modelKey: input.modelKey,
+        prompt: input.prompt,
+        params,
+        refs: [
+          {
+            path: current.path,
+            role: 'reference',
+            media: 'image',
+            ...(current.scope ? { scope: current.scope } : {})
+          }
+        ],
+        op: 'layer-split'
+      })
+      .catch((error: unknown) => {
+        markFailed(pendingId, error)
+        showToast(
+          error instanceof Error ? error.message : String(error),
+          'error'
+        )
+      })
   }
 
   const handleAiConfirm = (
@@ -690,41 +764,73 @@ export function NodeToolbar({
 
   const applyUiEffect = (effect: NodeOperationUiEffect): void => {
     if (effect.type === 'crop-dialog') {
-      setCropDialog({
-        purpose: 'crop',
-        src: `cinelab-asset://local/${effect.path}`,
-        width: effect.width ?? 1,
-        height: effect.height ?? 1
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'crop',
+        itemId: 'free',
+        mode: 'box'
       })
       return
     }
     if (effect.type === 'box-dialog') {
-      setCropDialog({
-        purpose: effect.purpose,
-        src: assetUrl(effect.path, effect.scope),
-        width: effect.width ?? 1,
-        height: effect.height ?? 1
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: effect.purpose,
+        itemId: 'box',
+        mode: 'box'
       })
       return
     }
     if (effect.type === 'trim-dialog') {
-      setTrimDuration(effect.duration)
-      setTrimOpen(true)
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'clip-trim',
+        mode: 'timeline'
+      })
       return
     }
     if (effect.type === 'video-crop-dialog') {
-      setVideoCropDialog({ defaultRatio: effect.defaultRatio })
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'video-crop',
+        itemId: 'custom',
+        mode: 'box',
+        ratio: effect.defaultRatio
+      })
       return
     }
     if (effect.type === 'mask-dialog') {
-      setMaskDialog({
-        op: effect.op,
-        ...(effect.item ? { item: effect.item } : {}),
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: effect.op.id,
+        ...(effect.item ? { itemId: effect.item.id } : {}),
+        mode: 'mask',
         prompt: effect.prompt
       })
       return
     }
     if (effect.type === 'ai-dialog') {
+      if (effect.op.id === 'outpaint') {
+        useUIStore.getState().openInlineEditor({
+          nodeId,
+          operationId: 'outpaint',
+          ...(effect.item ? { itemId: effect.item.id } : {}),
+          mode: 'outpaint',
+          ratio: effect.item?.id,
+          prompt: effect.prompt
+        })
+        return
+      }
+      if (effect.op.id === 'color-grade' || effect.op.id === 'portrait') {
+        useUIStore.getState().openInlineEditor({
+          nodeId,
+          operationId: effect.op.id,
+          ...(effect.item ? { itemId: effect.item.id } : {}),
+          mode: 'panel',
+          prompt: effect.prompt
+        })
+        return
+      }
       setAiDialog({
         op: effect.op,
         ...(effect.item ? { item: effect.item } : {}),
@@ -743,11 +849,19 @@ export function NodeToolbar({
       return
     }
     if (effect.type === 'depth-dialog') {
-      setDepthDialog({ duration: effect.duration })
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'motion-capture',
+        mode: 'panel'
+      })
       return
     }
     if (effect.type === 'sphere-dialog') {
-      setSphereDialog(effect.kind)
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: effect.kind === 'light' ? 'relight' : 'multi-angle',
+        mode: 'sphere'
+      })
       return
     }
     showToast(effect.message, 'error')
@@ -785,6 +899,135 @@ export function NodeToolbar({
     if (item?.disabled) return
 
     closeMenus()
+
+    if (op.id === 'crop') {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'crop',
+        itemId: item?.id ?? 'free',
+        mode: 'box',
+        ratio: item?.id && item.id !== 'free' ? item.id : undefined
+      })
+      return
+    }
+
+    if (
+      op.id === 'inpaint' ||
+      op.id === 'erase' ||
+      op.id === 'element-edit'
+    ) {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: op.id,
+        ...(item ? { itemId: item.id } : {}),
+        mode: 'mask',
+        prompt: buildOperationPrompt(op, item)
+      })
+      return
+    }
+
+    if (op.id === 'outpaint') {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'outpaint',
+        itemId: item?.id,
+        mode: 'outpaint',
+        ratio: item?.id,
+        prompt: buildOperationPrompt(op, item)
+      })
+      return
+    }
+
+    if (op.id === 'relight' || op.id === 'multi-angle') {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: op.id,
+        itemId: item?.id,
+        mode: 'sphere',
+        prompt: buildOperationPrompt(op, item)
+      })
+      return
+    }
+
+    if (op.id === 'color-grade' || op.id === 'portrait') {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: op.id,
+        itemId: item?.id,
+        mode: 'panel',
+        prompt: buildOperationPrompt(op, item)
+      })
+      return
+    }
+
+    if (op.id === 'clip-trim') {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'clip-trim',
+        mode: 'timeline'
+      })
+      return
+    }
+
+    if (op.id === 'grid-split') {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'grid-split',
+        itemId: item?.id,
+        mode: 'grid'
+      })
+      return
+    }
+
+    if (op.id === 'motion-capture') {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'motion-capture',
+        mode: 'panel'
+      })
+      return
+    }
+
+    if (op.id === 'cutout' && item?.id === 'box') {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'cutout',
+        itemId: 'box',
+        mode: 'box'
+      })
+      return
+    }
+
+    if (op.id === 'subtitle' && item?.id === 'box') {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'subtitle',
+        itemId: 'box',
+        mode: 'box'
+      })
+      return
+    }
+
+    if (op.id === 'video-crop') {
+      useUIStore.getState().openInlineEditor({
+        nodeId,
+        operationId: 'video-crop',
+        itemId: item?.id ?? 'custom',
+        mode: 'box',
+        ratio: item?.id && item.id !== 'custom' ? item.id : '16:9'
+      })
+      return
+    }
+
+    if (op.id === 'layer-split') {
+      setLayerDialog({
+        op,
+        src: assetUrl(current.path, current.scope),
+        width: current.width ?? 1024,
+        height: current.height ?? 1024
+      })
+      return
+    }
 
     if (!op.implemented) {
       const label = item?.label ?? op.label
@@ -862,10 +1105,18 @@ export function NodeToolbar({
   }, [nodeCommand, nodeId])
 
   const cropPurpose = cropDialog?.purpose ?? 'crop'
+  const preferredLayerModelKey = (() => {
+    const found = useCanvasStore
+      .getState()
+      .nodes.find((entry) => entry.id === nodeId)
+    return found && found.type === 'cine' ? found.data.modelKey : undefined
+  })()
 
   return (
     <>
       <div
+        data-node-chrome
+        style={layerDialog || inlineActive ? { display: 'none' } : undefined}
         className={`nodrag nopan absolute bottom-[calc(100%+var(--node-toolbar-offset,10px))] z-10 flex h-9 items-center gap-px rounded-card border border-border bg-surface px-[5px] text-fg whitespace-nowrap shadow-float ${
           align === 'left'
             ? 'left-0'
@@ -1290,27 +1541,13 @@ export function NodeToolbar({
         imageWidth={cropDialog?.width ?? 1}
         imageHeight={cropDialog?.height ?? 1}
         busy={running}
-        title={
-          cropPurpose === 'cutout'
-            ? '框选抠图'
-            : cropPurpose === 'layer-split'
-              ? '框选分层'
-              : undefined
-        }
+        title={cropPurpose === 'cutout' ? '框选抠图' : undefined}
         subtitle={
           cropPurpose === 'cutout'
             ? '拖拽选框，框住要保留的物体'
-            : cropPurpose === 'layer-split'
-              ? '拖拽选框，框住要分离的物体'
-              : undefined
+            : undefined
         }
-        confirmLabel={
-          cropPurpose === 'cutout'
-            ? '开始抠图'
-            : cropPurpose === 'layer-split'
-              ? '开始分层'
-              : undefined
-        }
+        confirmLabel={cropPurpose === 'cutout' ? '开始抠图' : undefined}
         busyLabel={cropPurpose === 'crop' ? undefined : '处理中…'}
         sizeLabel={cropPurpose === 'crop' ? undefined : '选区尺寸'}
         onClose={() => setCropDialog(null)}
@@ -1340,6 +1577,24 @@ export function NodeToolbar({
         busy={running}
         onClose={() => setSphereDialog(null)}
         onConfirm={handleSphereConfirm}
+      />
+
+      <LayerSplitOverlay
+        open={Boolean(layerDialog)}
+        nodeId={nodeId}
+        src={layerDialog?.src ?? ''}
+        imageWidth={layerDialog?.width ?? 1}
+        imageHeight={layerDialog?.height ?? 1}
+        cardRef={cardRef}
+        preferredModelKey={preferredLayerModelKey}
+        onClose={() => setLayerDialog(null)}
+        onConfirm={handleLayerConfirm}
+      />
+
+      <NodeInlineEditorHost
+        nodeId={nodeId}
+        current={current}
+        cardRef={cardRef}
       />
     </>
   )

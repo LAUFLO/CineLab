@@ -32,6 +32,7 @@ import {
   operationsForKind,
   type NodeOperation
 } from '../canvas/nodes/node-operations'
+import { resolveLayerGroup } from '../canvas/nodes/layer-compose'
 import {
   listNodeOperations,
   executeNodeOperation
@@ -587,6 +588,89 @@ export async function executeCanvasTool(call: AgentToolCallRequest): Promise<{
           : {}),
         turnId: call.turnId
       })
+    },
+
+    layer_merge: async (call) => {
+      const nodeId = String(call.args.nodeId ?? '')
+      const node = useCanvasStore
+        .getState()
+        .nodes.find((entry) => entry.id === nodeId)
+      if (!node || node.type !== 'cine') {
+        return { ok: false, error: '找不到这个画布节点' }
+      }
+      const outputs = node.data.outputs ?? []
+      const requested =
+        typeof call.args.groupId === 'string' ? call.args.groupId : undefined
+      const groupOutput = requested
+        ? outputs.find((output) => output.layerGroupId === requested)
+        : outputs.find((output) => output.layerGroupId)
+      const group = resolveLayerGroup(outputs, groupOutput?.id)
+      if (!group) return { ok: false, error: '没有可合并的图层组' }
+      const outputId = await useCanvasStore
+        .getState()
+        .mergeLayerGroup(nodeId, group.groupId)
+      return outputId
+        ? { ok: true, result: { outputId } }
+        : { ok: false, error: '合并失败' }
+    },
+
+    layer_detach: async (call) => {
+      const nodeId = String(call.args.nodeId ?? '')
+      const outputId = String(call.args.outputId ?? '')
+      const node = useCanvasStore
+        .getState()
+        .nodes.find((entry) => entry.id === nodeId)
+      if (!node || node.type !== 'cine') {
+        return { ok: false, error: '找不到这个画布节点' }
+      }
+      const output = (node.data.outputs ?? []).find(
+        (entry) => entry.id === outputId
+      )
+      if (!output?.layer || !output.layerTransform) {
+        return { ok: false, error: '该 output 不是可分离的图层' }
+      }
+      const group = resolveLayerGroup(node.data.outputs ?? [], output.id)
+      if (!group) return { ok: false, error: '图层组已不存在' }
+
+      const scale = nodeSize(node).width / group.width
+      const width =
+        typeof call.args.width === 'number'
+          ? call.args.width
+          : output.layerTransform.width * scale
+      const height =
+        typeof call.args.height === 'number'
+          ? call.args.height
+          : output.layerTransform.height * scale
+      const x =
+        typeof call.args.x === 'number'
+          ? call.args.x
+          : node.position.x + nodeSize(node).width + 48
+      const y =
+        typeof call.args.y === 'number' ? call.args.y : node.position.y + 48
+
+      const detached = useCanvasStore
+        .getState()
+        .detachLayer(nodeId, outputId, { x, y }, { width, height }, output.layerTransform)
+      return detached
+        ? { ok: true, result: { nodeId: detached } }
+        : { ok: false, error: '无法分离该图层' }
+    },
+
+    layer_attach: async (call) => {
+      const sourceNodeId = String(call.args.sourceNodeId ?? '')
+      const detachedNodeId = String(call.args.detachedNodeId ?? '')
+      try {
+        useCanvasStore.getState().attachLayer(sourceNodeId, detachedNodeId)
+        return {
+          ok: true,
+          result: { sourceNodeId, detachedNodeId }
+        }
+      } catch (error) {
+        return {
+          ok: false,
+          error: error instanceof Error ? error.message : String(error)
+        }
+      }
     },
 
     capability_catalog: async (call) => {

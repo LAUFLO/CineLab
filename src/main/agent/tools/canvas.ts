@@ -326,7 +326,7 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     id: 'canvas.nodeOperation',
     name: 'canvas_node_operation',
     description:
-      '在一个选中节点上执行工具栏操作，例如宫格切分、裁剪、抽帧、片段截取、分离音视频（含人声提取/背景音提取）、去字幕、图层分离、抠图、主体消除、白模预演等。operationId 和 itemId 必须来自 canvas_node_operations；需要模型的操作请改用 generation_propose。',
+      '在一个选中节点上执行工具栏操作，例如宫格切分、裁剪、抽帧、片段截取、分离音视频（含人声提取/背景音提取）、去字幕、抠图、主体消除、白模预演等。operationId 和 itemId 必须来自 canvas_node_operations；需要模型的操作请改用 generation_propose，图层合并/分离/放回请用 layer_merge / layer_detach / layer_attach。',
     profiles: ['canvas'],
     readOnly: false,
     scope: 'canvas',
@@ -355,6 +355,87 @@ export const CANVAS_TOOLS: AgentToolDefinition[] = [
     replay: 'unsafe',
     mcp: {
       title: '执行节点操作',
+      category: '画布',
+    },
+  },
+  {
+    id: 'canvas.layerMerge',
+    name: 'layer_merge',
+    description:
+      '把当前底图节点上的图层组合并成一张新图片，写回同一节点的新版本。本地 Canvas 合成，不调用模型。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: { type: 'string', description: '底图节点 ID' },
+        groupId: {
+          type: 'string',
+          description: '图层组 ID；省略时取当前选中节点的最新图层组'
+        }
+      },
+      required: ['nodeId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    mcp: {
+      title: '合并图层',
+      category: '画布',
+    },
+  },
+  {
+    id: 'canvas.layerDetach',
+    name: 'layer_detach',
+    description:
+      '把底图节点上的一个图层分离成独立图片节点。默认放在源节点右侧；也可指定 x / y / width / height（画布坐标）。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    requiresConfirm: true,
+    parameters: {
+      type: 'object',
+      properties: {
+        nodeId: { type: 'string', description: '底图节点 ID' },
+        outputId: { type: 'string', description: '要分离的图层 output ID' },
+        x: { type: 'number', description: '可选，新节点左上角 X 坐标' },
+        y: { type: 'number', description: '可选，新节点左上角 Y 坐标' },
+        width: { type: 'number', description: '可选，新节点宽度' },
+        height: { type: 'number', description: '可选，新节点高度' }
+      },
+      required: ['nodeId', 'outputId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    mcp: {
+      title: '分离图层',
+      category: '画布',
+    },
+  },
+  {
+    id: 'canvas.layerAttach',
+    name: 'layer_attach',
+    description:
+      '把一个独立图层节点拖回它的源底图节点。若独立节点有下游连线或已被编辑，会拒绝并返回原因。',
+    profiles: ['canvas'],
+    readOnly: false,
+    scope: 'canvas',
+    modes: ['current', 'full-access'],
+    requiresConfirm: true,
+    parameters: {
+      type: 'object',
+      properties: {
+        sourceNodeId: { type: 'string', description: '源底图节点 ID' },
+        detachedNodeId: { type: 'string', description: '独立图层节点 ID' }
+      },
+      required: ['sourceNodeId', 'detachedNodeId'],
+      additionalProperties: false
+    },
+    replay: 'unsafe',
+    mcp: {
+      title: '放回图层',
       category: '画布',
     },
   }
@@ -457,6 +538,61 @@ export function validateCanvasToolArgs(
     if (paramError) {
       throw new AgentToolError('invalid_params', paramError)
     }
+  }
+
+  if (call.name === 'layer_merge') {
+    const nodeId = call.args.nodeId
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    if (
+      call.args.groupId !== undefined &&
+      (typeof call.args.groupId !== 'string' || !call.args.groupId.trim())
+    ) {
+      throw new AgentToolError('invalid_params', 'groupId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'layer_detach') {
+    const nodeId = call.args.nodeId
+    const outputId = call.args.outputId
+    if (typeof nodeId !== 'string' || !nodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'nodeId 必须是非空字符串')
+    }
+    if (typeof outputId !== 'string' || !outputId.trim()) {
+      throw new AgentToolError('invalid_params', 'outputId 必须是非空字符串')
+    }
+    for (const key of ['x', 'y', 'width', 'height'] as const) {
+      const value = call.args[key]
+      if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value))) {
+        throw new AgentToolError('invalid_params', `${key} 必须是有限数字`)
+      }
+    }
+    if (
+      (call.args.x === undefined) !== (call.args.y === undefined)
+    ) {
+      throw new AgentToolError('invalid_params', 'x 和 y 必须一起提供')
+    }
+    if (call.args.width !== undefined && Number(call.args.width) <= 0) {
+      throw new AgentToolError('invalid_params', 'width 必须大于 0')
+    }
+    if (call.args.height !== undefined && Number(call.args.height) <= 0) {
+      throw new AgentToolError('invalid_params', 'height 必须大于 0')
+    }
+    assertSelectedNode(scope, nodeId)
+  }
+
+  if (call.name === 'layer_attach') {
+    const sourceNodeId = call.args.sourceNodeId
+    const detachedNodeId = call.args.detachedNodeId
+    if (typeof sourceNodeId !== 'string' || !sourceNodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'sourceNodeId 必须是非空字符串')
+    }
+    if (typeof detachedNodeId !== 'string' || !detachedNodeId.trim()) {
+      throw new AgentToolError('invalid_params', 'detachedNodeId 必须是非空字符串')
+    }
+    assertSelectedNode(scope, sourceNodeId)
   }
   if (call.name === 'canvas_move_node') {
     const nodeId = call.args.nodeId

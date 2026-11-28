@@ -67,7 +67,7 @@ export type NodeOperationUiEffect =
     }
   | {
       type: 'box-dialog'
-      purpose: 'cutout' | 'layer-split'
+      purpose: 'cutout'
       path: string
       scope?: 'project' | 'global'
       width?: number
@@ -1177,70 +1177,6 @@ async function executeSubtitle(
   }
 }
 
-async function executeLayerSplit(
-  request: NodeOperationRequest,
-  node: CanvasNode,
-  item: OperationMenuItem | undefined,
-  operationParams: Record<string, unknown>,
-  host?: NodeOperationUiHost
-): Promise<NodeOperationResult> {
-  const output = selectedNodeOutput(node)
-  if (!output) return { ok: false, error: '节点还没有可用输出' }
-  if (!(await visionReady())) return needsVision(host)
-
-  const boxRect =
-    item?.id === 'box' ? rectParam(operationParams) : null
-  if (item?.id === 'box' && !boxRect) {
-    if (!host) {
-      return {
-        ok: false,
-        needsUi: true,
-        error: '框选分层需要 params.rect 或框选界面'
-      }
-    }
-    host.effect({
-      type: 'box-dialog',
-      purpose: 'layer-split',
-      path: output.path,
-      ...(output.scope ? { scope: output.scope } : {}),
-      ...(output.width ? { width: output.width } : {}),
-      ...(output.height ? { height: output.height } : {})
-    })
-    return { ok: true, result: { dialog: 'layer-split-box' } }
-  }
-
-  const pendingIds = useCanvasStore.getState().addPendingNodes(
-    'image',
-    originFor(node),
-    2,
-    `${node.data.title} · ${item?.id === 'box' ? '框选分层' : '图层分离'}`,
-    node.id
-  )
-  const label = item?.id === 'box' ? '框选分层' : '图层分离'
-  try {
-    const { taskId } = await window.api.media.startVisionTask({
-      kind: 'layer-split',
-      path: output.path,
-      ...(output.scope ? { scope: output.scope } : {}),
-      ...(boxRect ? { rect: boxRect } : {})
-    })
-    trackVisionTask(taskId, {
-      mode: 'pending',
-      nodeId: node.id,
-      pendingIds,
-      op: 'layer-split',
-      title: label
-    })
-    consumeToast(host, `已开始${label}，完成后自动写入节点`)
-    return { ok: true, result: { taskId, createdNodeIds: pendingIds } }
-  } catch (error) {
-    pendingIds.forEach((id) => markFailed(id, error))
-    const message = errorMessage(error, '图层分离失败')
-    host?.toast(message, 'error')
-    return { ok: false, error: message }
-  }
-}
-
 async function executeMatting(
   request: NodeOperationRequest,
   node: CanvasNode,
@@ -1494,7 +1430,11 @@ export async function executeNodeOperation(
     } else if (op.id === 'subtitle') {
       result = await executeSubtitle(request, node, item, params, host)
     } else if (op.id === 'layer-split') {
-      result = await executeLayerSplit(request, node, item, params, host)
+      result = {
+        ok: false,
+        needsGeneration: true,
+        error: '图层分离需要支持 layer 模式的模型，请在工具栏入口选择模型'
+      }
     } else if (op.id === 'matting') {
       result = await executeMatting(request, node, host)
     } else if (op.id === 'object-remove') {

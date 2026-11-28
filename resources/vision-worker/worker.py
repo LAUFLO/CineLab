@@ -2,7 +2,6 @@
 
 Tasks:
   matte-image     RVM single image -> transparent PNG
-  layer-split     RVM foreground + LaMa background -> two PNGs
   inpaint-image   LaMa masked image repair
   matte-video     RVM video -> transparent WebM
   repair-video    LaMa per-frame region repair -> MP4
@@ -231,38 +230,10 @@ def task_matte_image(vision: Vision, args: argparse.Namespace) -> dict:
         vision, image, rect_region(args, w, h)
     )
 
-    foreground = image.astype(np.float32) * alpha_full[:, :, None]
-    rgba = np.dstack([foreground, alpha_full * 255]).astype(np.uint8)
+    rgba = np.dstack([image, alpha_full * 255]).astype(np.uint8)
     write_image(args.output, rgba)
     progress(100, "抠图完成")
     return {"output": args.output, "width": w, "height": h}
-
-
-def task_layer_split(vision: Vision, args: argparse.Namespace) -> dict:
-    image = read_image(args.input)
-    h, w = image.shape[:2]
-    alpha_full = saliency_alpha_in_rect(
-        vision, image, rect_region(args, w, h)
-    )
-
-    foreground = image.astype(np.float32) * alpha_full[:, :, None]
-    rgba = np.dstack([foreground, alpha_full * 255]).astype(np.uint8)
-    write_image(args.output, rgba)
-
-    progress(45, "生成背景图层")
-    mask = (alpha_full > 0.35).astype(np.uint8) * 255
-    mask = cv2.dilate(mask, np.ones((9, 9), np.uint8), iterations=1)
-    background = lama_inpaint(vision, image, mask)
-    if not args.background:
-        raise RuntimeError("缺少背景输出路径")
-    write_image(args.background, background)
-    progress(100, "图层分离完成")
-    return {
-        "output": args.output,
-        "background": args.background,
-        "width": w,
-        "height": h,
-    }
 
 
 def task_inpaint_image(vision: Vision, args: argparse.Namespace) -> dict:
@@ -366,9 +337,7 @@ def task_matte_video(vision: Vision, args: argparse.Namespace) -> dict:
             if previous_alpha is not None:
                 alpha = alpha * 0.65 + previous_alpha * 0.35
             previous_alpha = alpha
-            rgba = np.dstack(
-                [frame.astype(np.float32) * alpha[:, :, None], alpha * 255]
-            ).astype(np.uint8)
+            rgba = np.dstack([frame, alpha * 255]).astype(np.uint8)
             encoder.stdin.write(rgba.tobytes())
             processed += 1
             progress(processed / frames * 100, f"抠像 {processed}/{frames} 帧")
@@ -495,7 +464,6 @@ def task_repair_video(vision: Vision, args: argparse.Namespace) -> dict:
 
 TASKS = {
     "matte-image": task_matte_image,
-    "layer-split": task_layer_split,
     "inpaint-image": task_inpaint_image,
     "matte-video": task_matte_video,
     "repair-video": task_repair_video,
@@ -507,7 +475,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--task", required=True, choices=sorted(TASKS))
     parser.add_argument("--input", required=True)
     parser.add_argument("--output", required=True)
-    parser.add_argument("--background")
     parser.add_argument("--mask")
     parser.add_argument("--models", required=True)
     parser.add_argument("--ffmpeg")

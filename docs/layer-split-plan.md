@@ -16,7 +16,7 @@
 | P2 | ✅ 已完成 | `layerGroupId` / `layerTransform`、图层叠加预览、背景锁定、合并条、本地 Canvas 合并、写回同一节点新版本 | `layer-compose.ts`、`LayerStackPreview.tsx`、`graph.ts`、`src/main/ipc/media.ts`、`artifacts/p2-result2.png`、`artifacts/p2-merged2.png` |
 | P3 | ✅ 已完成 | 图层拖动/等比缩放、拖出独立节点、拖回附着、已分离区「放回」、图层面板显隐/锁定、组选择、100 版本裁剪保护 | `LayerEditorOverlay.tsx`、`assets.ts`、`Canvas.tsx`、`artifacts/p3-detached.png`、`artifacts/p3-attached.png`、`artifacts/p3-restored2.png`、`artifacts/p3-resized.png` |
 | P4 | ✅ 已完成 | `layer_merge` / `layer_detach` / `layer_attach` 三个 Agent 工具、确认规则、MCP 元数据、覆盖率 | `src/main/agent/tools/canvas.ts`、`src/renderer/src/agent/canvasBridge.ts`、`corepack pnpm check:agent-coverage`（95 工具） |
-| P5 | ✅ 代码完成，发布资产待上传 | `checkUpdates`、24h 持久化缓存、启动后台检查、更新按钮/红点、版本+大小确认、任务占用阻断、四组件 manifest URL | `src/main/components/service.ts`、`src/main/ipc/components.ts`、`src/renderer/src/panels/ComponentsSection.tsx`、`src/renderer/src/stores/components.ts`、`artifacts/p5-update.png` |
+| P5 | ✅ 已完成（v0.5.6） | `checkUpdates`、24h 持久化缓存、启动后台检查、更新按钮/红点、版本+大小确认、任务占用阻断、四组件 manifest URL；v0.5.6 修复 `portable` 平台校验，四个组件 manifest 与 `vision-models` v2 已上传并真实跑通更新 | `src/main/components/service.ts`、`src/main/ipc/components.ts`、`src/renderer/src/panels/ComponentsSection.tsx`、`src/renderer/src/stores/components.ts`、`artifacts/p5-update.png` |
 | P6 | ✅ 已验证 | 节点内联分离态（工具栏/PromptBar 就地替换，提交后恢复）、多选区（最多 4）、白线方角手柄、chips、编辑态工具条、合并条外移、移除积分/费用文案 | `src/renderer/src/canvas/nodes/LayerSplitOverlay.tsx`、`LayerEditorOverlay.tsx`、`NodeToolbar.tsx`、`PromptBar.tsx`、`CineNodeView.tsx`、`artifacts/p6-final-multi2.png`、`artifacts/p6-restored.png` |
 
 实施备注：
@@ -25,7 +25,7 @@
 - 合并使用 `fetch` + Blob URL 加载素材，避免 Canvas 被 `cinelab-asset://` 图片污染；合并不调用模型。
 - 旧的分层结果（P2 之前生成）没有 `layerGroupId`，不会显示叠加和合并条；新生成的结果正常。未做旧数据迁移（当前无用户）。
 - P3 已补齐拖动/缩放、拖出独立节点、拖回附着、已分离「放回」；验证截图见 `artifacts/p3-*.png`。
-- P5 的四个新 manifest 与 `vision-models` v2 需要随应用发版一起上传到 `depth-components-v1` / `vision-components-v1`；未上传时 `fetchManifest` 回退内置版本，不会显示更新。发版等用户通知。
+- P5 的四个组件 manifest 与 `vision-models` v2 已于 2026-11-28 上传到 `depth-components-v1` / `vision-components-v1`；v0.5.6 修复 `platform: portable` 被平台校验拒绝的问题，隔离实例已从 v1 真实更新到 v2（527MB，SHA256 通过）。
 - P6 已把拆分态改为节点内联并加入多选区；多 bbox 是否能被 Seedream 按框拆分仍需真实请求验证。验证截图见 `artifacts/p6-final-multi2.png`、`artifacts/p6-restored.png`。
 
 ## 1. 背景
@@ -582,11 +582,11 @@ updateAvailable?: boolean
 
 ### 7.6 发布与测试
 
-- `vision-models` v2 与下一次应用发版一起上传（2026-11-27 用户决定）；v2 为 models-only，worker/inspyrenet 已在应用侧。
+- `vision-models` v2 已于 2026-11-28 上传到 `vision-components-v1`（models-only，527MB）；worker/inspyrenet 已在应用侧。
 - 用本地 mock manifest server + 伪造已安装 v1 验证：红点、「已安装 · v1 · 148 MB · 有更新 v2」、「更新」+「卸载」同屏，见 `artifacts/p5-update.png`；缓存与占用门禁由 `service.test.ts`、`components.test.ts` 覆盖。
-- 发布清单：四个新组件 manifest + `vision-models` v2 manifest 随应用发版上传到对应 release；更新 release 资产后测试 `fetchManifest` 与在线更新。
+- 发布清单：四个组件 manifest + `vision-models` v2 manifest 已上传到对应 release；隔离实例真实跑通 `fetchManifest`、v1 → v2 在线更新、SHA256 校验与安装后版本检查。
 - `depth-runtime` 3.1GB 更新必须走确认框。
-- 发版动作等用户通知后执行。
+- 发版动作：v0.5.6（2026-11-28）随组件资产发布。
 
 ## 8. UI 交互优化与多选区（P6）
 

@@ -134,7 +134,7 @@ StudioWindow → TimelineApi.export
 | `src/main/timeline/fast-path.ts` | 34 |
 | `src/main/timeline/storage.ts` | 98 |
 | `src/main/timeline/stream-copy.ts` | 136 |
-| `src/main/timeline/transcribe.ts` | 335 |
+| `src/main/timeline/transcribe.ts` | 346 |
 | `src/main/timeline/vtt.ts` | 61 |
 | `src/renderer/src/stores/studio.ts` | 63 |
 | `src/renderer/src/stores/timeline.ts` | 132 |
@@ -183,7 +183,7 @@ StudioWindow → TimelineApi.export
 | `src/main/timeline/fast-path.ts` | `fastPathClips` |
 | `src/main/timeline/storage.ts` | `assertTimelineId`、`ensureTimelineDir`、`loadTimelineFile`、`saveTimelineFile`、`duplicateTimelineFile`、`deleteTimelineFile` |
 | `src/main/timeline/stream-copy.ts` | `tryExportStreamCopy` |
-| `src/main/timeline/transcribe.ts` | `transcribeClip`、`transcribeTimeline`、`transcribe` |
+| `src/main/timeline/transcribe.ts` | `transcribeClip`、`transcribeTimeline`、`hasActiveTranscriptions`、`transcribe` |
 | `src/main/timeline/vtt.ts` | `exportVtt` |
 | `src/renderer/src/stores/studio.ts` | `StudioTab`、`useStudioStore` |
 | `src/renderer/src/stores/timeline.ts` | `TimelineTool`、`ClipReferenceIssue`、`useTimelineStore` |

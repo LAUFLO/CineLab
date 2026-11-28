@@ -27,6 +27,22 @@ const assetLayerSchema = z.object({
   boundingBox: layerBoxSchema.optional()
 })
 
+const layerTransformSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+  rotation: z.number().optional(),
+  flipX: z.boolean().optional(),
+  flipY: z.boolean().optional()
+})
+
+const detachedFromSchema = z.object({
+  nodeId: z.string(),
+  outputId: z.string(),
+  groupId: z.string()
+})
+
 const textRecognitionStyleSchema = z.object({
   similarFontFamily: z.string().optional(),
   foregroundColor: z.string().optional(),
@@ -68,6 +84,12 @@ export const outputRefSchema = z.object({
   op: z.string().optional(),
   parentOutputId: z.string().optional(),
   layer: assetLayerSchema.optional(),
+  layerGroupId: z.string().optional(),
+  layerTransform: layerTransformSchema.optional(),
+  layerAttached: z.boolean().optional(),
+  layerVisible: z.boolean().optional(),
+  layerLocked: z.boolean().optional(),
+  detachedFrom: detachedFromSchema.optional(),
   textRecognition: textRecognitionSchema.optional()
 })
 export const nodeStatusSchema = z.enum(['idle', 'queued', 'running', 'done', 'error'])

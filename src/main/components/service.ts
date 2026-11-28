@@ -5,7 +5,8 @@ import type {
   ComponentEvent,
   ComponentKind,
   ComponentManifest,
-  ComponentStatus
+  ComponentStatus,
+  ComponentUpdateInfo
 } from '@shared/components'
 import { COMPONENTS, COMPONENT_KINDS, fetchManifest } from './manifest'
 import { downloadFile } from './downloader'
@@ -20,7 +21,14 @@ interface RuntimeState {
   controller?: AbortController
 }
 
+interface UpdateCache {
+  at: number
+  items: ComponentUpdateInfo[]
+}
+
 const states = new Map<ComponentKind, RuntimeState>()
+const UPDATE_TTL_MS = 24 * 60 * 60 * 1000
+let updateCache: UpdateCache | null = null
 
 export function componentsRoot(): string {
   return join(app.getPath('userData'), 'components')
@@ -52,17 +60,58 @@ async function readInstalled(kind: ComponentKind): Promise<ComponentManifest | n
           : pythonBinary
     await fs.stat(required)
     if (kind === 'vision-models') {
-      await fs.stat(join(dir, 'worker.py'))
+      // worker.py / inspyrenet 已移到应用侧；组件只需模型权重。
+      // 兼容 v1（仍带 worker.py/inspyrenet）和未来的 models-only v2。
       await fs.stat(join(dir, 'models', 'ckpt_fast.pth'))
       await fs.stat(join(dir, 'models', 'big-lama.pt'))
-      await fs.stat(
-        join(dir, 'inspyrenet', 'transparent_background', '__init__.py')
-      )
     }
     return raw
   } catch {
     return null
   }
+}
+
+function updateCachePath(): string {
+  return join(componentsRoot(), 'updates.json')
+}
+
+async function readUpdateCache(): Promise<UpdateCache | null> {
+  try {
+    const raw = JSON.parse(
+      await fs.readFile(updateCachePath(), 'utf8')
+    ) as { at?: unknown; items?: unknown }
+    if (typeof raw.at !== 'number' || !Array.isArray(raw.items)) return null
+    const items = raw.items.filter((item): item is ComponentUpdateInfo => {
+      if (!item || typeof item !== 'object') return false
+      const entry = item as Partial<ComponentUpdateInfo>
+      return (
+        typeof entry.updateAvailable === 'boolean' &&
+        typeof entry.kind === 'string' &&
+        Object.hasOwn(COMPONENTS, entry.kind)
+      )
+    })
+    return items.length === raw.items.length ? { at: raw.at, items } : null
+  } catch {
+    return null
+  }
+}
+
+async function writeUpdateCache(cache: UpdateCache): Promise<void> {
+  try {
+    await fs.mkdir(componentsRoot(), { recursive: true })
+    await fs.writeFile(
+      updateCachePath(),
+      JSON.stringify(cache, null, 2),
+      'utf8'
+    )
+  } catch {
+    // 缓存写入失败不影响本次检查结果。
+  }
+}
+
+async function clearUpdateCache(): Promise<void> {
+  updateCache = null
+  await fs.rm(updateCachePath(), { force: true }).catch(() => undefined)
 }
 
 export async function listComponentStatus(): Promise<ComponentStatus[]> {
@@ -91,6 +140,37 @@ export async function listComponentStatus(): Promise<ComponentStatus[]> {
     })
   }
   return result
+}
+
+export async function checkComponentUpdates(
+  force = false
+): Promise<ComponentUpdateInfo[]> {
+  if (!force) {
+    updateCache ??= await readUpdateCache()
+    if (updateCache && Date.now() - updateCache.at < UPDATE_TTL_MS) {
+      return updateCache.items
+    }
+  }
+
+  const items = await Promise.all(
+    COMPONENT_KINDS.map(async (kind) => {
+      const installed = await readInstalled(kind)
+      if (!installed) {
+        return { kind, updateAvailable: false }
+      }
+      const latest = await fetchManifest(COMPONENTS[kind])
+      return {
+        kind,
+        latestVersion: latest.version,
+        latestSize: latest.size,
+        updateAvailable: latest.version > installed.version
+      }
+    })
+  )
+
+  updateCache = { at: Date.now(), items }
+  await writeUpdateCache(updateCache)
+  return items
 }
 
 function emit(kind: ComponentKind, event: ComponentEvent): void {
@@ -174,6 +254,7 @@ export async function installComponent(kind: ComponentKind): Promise<void> {
     state.state = 'installed'
     state.totalBytes = undefined
     state.error = undefined
+    await clearUpdateCache()
     emit(kind, { kind, state: 'installed', percent: 100 })
   } catch (error) {
     if (controller.signal.aborted) {
@@ -199,6 +280,7 @@ export async function removeComponent(kind: ComponentKind): Promise<void> {
   states.delete(kind)
 
   await fs.rm(componentDirectory(kind), { recursive: true, force: true })
+  await clearUpdateCache()
 
   const downloadDir = join(componentsRoot(), '.downloads')
   const files = await fs.readdir(downloadDir).catch(() => [] as string[])

@@ -52,6 +52,7 @@ import { useGenerationStore } from './stores/generation'
 import { useGenerationHistoryStore } from './stores/generation-history'
 import { useFilmStudyStore } from './stores/film-study'
 import { usePreferencesStore } from './stores/preferences'
+import { useComponentsStore } from './stores/components'
 import { useProjectStore } from './stores/project'
 import { useSettingsStore } from './stores/settings'
 import { useUIStore } from './stores/ui'
@@ -204,6 +205,10 @@ export default function App() {
   }, [])
 
   useEffect(() => initMcpCommandBridge(), [])
+
+  useEffect(() => {
+    void useComponentsStore.getState().check()
+  }, [])
 
   useEffect(() => {
     if (!hydrated || phase !== 'ready') return

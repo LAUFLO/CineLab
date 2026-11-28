@@ -29,6 +29,7 @@ import { registerMcpCommandIpc } from '../mcp/write-runner'
 import { registerMcpIpc } from './mcp'
 import { log, logDirectory } from '../logger'
 import { allowWindowClose, brandIconPath } from '../window'
+import { isAllowedExternalUrl } from '../security/external-url'
 
 function windowFromEvent(sender: Electron.WebContents): BrowserWindow | null {
   return BrowserWindow.fromWebContents(sender)
@@ -107,6 +108,12 @@ export function registerIpc(): void {
 
   ipcMain.handle('app:open-logs', async () => {
     await shell.openPath(logDirectory())
+  })
+
+  ipcMain.handle('app:open-external', async (_event, url: string) => {
+    if (!isAllowedExternalUrl(url)) return false
+    await shell.openExternal(url)
+    return true
   })
 
   ipcMain.handle(

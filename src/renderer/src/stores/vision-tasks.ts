@@ -87,8 +87,5 @@ function handleEvent(event: VisionTaskEvent): void {
   if (event.result.asset && meta.pendingIds[0]) {
     state.applyOutput(meta.pendingIds[0], event.result.asset, meta.op)
   }
-  if (event.result.background && meta.pendingIds[1]) {
-    state.applyOutput(meta.pendingIds[1], event.result.background, meta.op)
-  }
   showToast(`${meta.title}完成`)
 }

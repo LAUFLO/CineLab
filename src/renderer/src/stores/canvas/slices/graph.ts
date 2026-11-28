@@ -17,12 +17,17 @@ import { VIDEO_OPERATIONS } from '@shared/operation-schema'
 import { applyCanvasBatch } from '@shared/canvas-commands'
 import { isResultOutputOp } from '@shared/node-operation-specs'
 import { clearEdgeReferences } from '../../edge-references'
+import {
+  composeLayerGroup,
+  resolveLayerGroup,
+  trimLayerOutputs
+} from '../../../canvas/nodes/layer-compose'
 import { externalWrite, commandTurns, isGroupNode, isStudioNode, isStageNode, isFilmNode, isVideoOpNode, nodeSize, nextId, absolutePosition, type CineNode, type StudioNode, type StageNode, type FilmNode, type VideoOpNode, type CanvasNode, type CineEdge } from '../../canvas-model'
 
 import type { StateCreator } from 'zustand'
 import type { CanvasStore } from '../../canvas'
 
-type GraphSlice = Pick<CanvasStore, 'loadCanvas' | 'onNodesChange' | 'onEdgesChange' | 'removeEdges' | 'onConnect' | 'addNode' | 'addStudioNode' | 'addStageNode' | 'addVideoOpNode' | 'patchStudioNode' | 'patchStageNode' | 'patchVideoOpNode' | 'applyOutput' | 'patchNodeData' | 'applyCommands' | 'endCommandTurn' | 'beginToolTurn' | 'endToolTurn' | 'resizeNode' | 'removeNode' | 'clearSelection'>
+type GraphSlice = Pick<CanvasStore, 'loadCanvas' | 'onNodesChange' | 'onEdgesChange' | 'removeEdges' | 'onConnect' | 'addNode' | 'addStudioNode' | 'addStageNode' | 'addVideoOpNode' | 'patchStudioNode' | 'patchStageNode' | 'patchVideoOpNode' | 'applyOutput' | 'mergeLayerGroup' | 'updateOutputLayer' | 'patchNodeData' | 'applyCommands' | 'endCommandTurn' | 'beginToolTurn' | 'endToolTurn' | 'resizeNode' | 'removeNode' | 'clearSelection'>
 
 const isNodeChangeset = (
   input: NodeChangeset<CanvasNode> | NodeChange<CanvasNode>[]
@@ -608,6 +613,78 @@ applyOutput: (nodeId, asset, op) => {
     })
 
     if (node.parentId) get().syncGroupBounds(node.parentId)
+  },
+  mergeLayerGroup: async (nodeId, groupId) => {
+    const node = get().nodes.find((entry) => entry.id === nodeId)
+    if (!node || node.type !== 'cine') return null
+
+    const outputs = node.data.outputs ?? []
+    const groupOutput = outputs.find((output) => output.layerGroupId === groupId)
+    const group = resolveLayerGroup(outputs, groupOutput?.id)
+    if (!group) throw new Error('没有可合并的图层组')
+
+    const blob = await composeLayerGroup(group)
+    const data = await blob.arrayBuffer()
+    const asset = await window.api.media.saveComposite({
+      data,
+      width: group.width,
+      height: group.height,
+      model: '图层合成'
+    })
+
+    const merged: OutputRef = {
+      id: asset.id,
+      path: asset.path,
+      kind: asset.kind,
+      createdAt: asset.createdAt,
+      model: asset.model,
+      width: asset.width,
+      height: asset.height,
+      op: 'layer-merge',
+      parentOutputId: group.base.id,
+      layerGroupId: group.groupId
+    }
+
+    get().pushHistory()
+    set({
+      nodes: get().nodes.map((entry) => {
+        if (entry.id !== nodeId || entry.type !== 'cine') return entry
+        return {
+          ...entry,
+          data: {
+            ...entry.data,
+            status: 'done',
+            error: undefined,
+            outputs: trimLayerOutputs(
+              [merged],
+              entry.data.outputs ?? [],
+              group.groupId
+            ),
+            selectedOutputId: merged.id
+          }
+        }
+      })
+    })
+    return merged.id
+  },
+  updateOutputLayer: (nodeId, outputId, patch, options) => {
+    const node = get().nodes.find((entry) => entry.id === nodeId)
+    if (!node || node.type !== 'cine') return
+    if (options?.history !== false) get().pushHistory()
+    set({
+      nodes: get().nodes.map((entry) => {
+        if (entry.id !== nodeId || entry.type !== 'cine') return entry
+        return {
+          ...entry,
+          data: {
+            ...entry.data,
+            outputs: (entry.data.outputs ?? []).map((output) =>
+              output.id === outputId ? { ...output, ...patch } : output
+            )
+          }
+        }
+      })
+    })
   },
 patchNodeData: (nodeId, patch) => {
     set({

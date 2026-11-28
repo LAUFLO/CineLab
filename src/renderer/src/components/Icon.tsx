@@ -10,7 +10,12 @@ export type IconName =
   | 'help'
   | 'settings'
   | 'download'
+  | 'rotate'
+  | 'flip-horizontal'
+  | 'flip-vertical'
   | 'refresh'
+  | 'undo'
+  | 'redo'
   | 'copy'
   | 'folder'
   | 'grid'
@@ -22,6 +27,8 @@ export type IconName =
   | 'expand'
   | 'close'
   | 'eye'
+  | 'lock'
+  | 'unlock'
   | 'image'
   | 'video'
   | 'audio'
@@ -98,10 +105,42 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   download: <path d="M12 3.5v11M7.5 10 12 14.5 16.5 10M4 20h16" />,
+  rotate: (
+    <>
+      <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+      <path d="M20 4v5h-5" />
+    </>
+  ),
+  'flip-horizontal': (
+    <>
+      <path d="M12 3v18" />
+      <path d="M8.5 7 3.5 12l5 5" />
+      <path d="M15.5 7l5 5-5 5" />
+    </>
+  ),
+  'flip-vertical': (
+    <>
+      <path d="M3 12h18" />
+      <path d="M7 8.5 12 3.5l5 5" />
+      <path d="M7 15.5l5 5 5-5" />
+    </>
+  ),
   refresh: (
     <>
       <path d="M20 11a8 8 0 1 0-2.3 6.3" />
       <path d="M20 4.5V11h-6.5" />
+    </>
+  ),
+  undo: (
+    <>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h9a6 6 0 0 1 0 12h-1" />
+    </>
+  ),
+  redo: (
+    <>
+      <path d="m15 14 5-5-5-5" />
+      <path d="M20 9h-9a6 6 0 0 0 0 12h1" />
     </>
   ),
   copy: (
@@ -135,6 +174,18 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z" />
       <circle cx="12" cy="12" r="2.4" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="10" width="14" height="10" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  unlock: (
+    <>
+      <rect x="5" y="10" width="14" height="10" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 7.4-2" />
     </>
   ),
   image: (

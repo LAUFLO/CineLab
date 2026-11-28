@@ -193,6 +193,7 @@ export function MultiSelectBar() {
 
   return (
     <div
+      data-node-chrome
       className="fixed z-[90] flex h-[42px] -translate-x-1/2 items-center gap-0.5 whitespace-nowrap rounded-card border border-border bg-surface px-1.5 shadow-float animate-[menu-in_120ms_ease-out] nodrag nopan"
       style={{ left: position.left, top: position.top }}
       onPointerDown={(event) => event.stopPropagation()}

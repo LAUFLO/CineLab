@@ -26,7 +26,12 @@ import type {
   GeneratedAsset,
   GenerationEvent
 } from './generation'
-import type { ComponentEvent, ComponentKind, ComponentStatus } from './components'
+import type {
+  ComponentEvent,
+  ComponentKind,
+  ComponentStatus,
+  ComponentUpdateInfo
+} from './components'
 import type { Preferences } from './preferences'
 import type { LocalAdapterStatus } from './local-adapter'
 import type { McpWriteCommand, McpWriteResult } from './mcp-command'
@@ -121,7 +126,8 @@ import type {
   TrimVideoResult,
   VisionTaskEvent,
   VisionTaskRequest,
-  VisionTaskStartResult
+  VisionTaskStartResult,
+  SaveCompositeRequest
 } from './media'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -333,10 +339,12 @@ export interface MediaApi {
   startVisionTask(input: VisionTaskRequest): Promise<VisionTaskStartResult>
   cancelVisionTask(taskId: string): Promise<void>
   onVisionTaskEvent(callback: (event: VisionTaskEvent) => void): () => void
+  saveComposite(input: SaveCompositeRequest): Promise<GeneratedAsset>
 }
 
 export interface ComponentsApi {
   status(): Promise<ComponentStatus[]>
+  checkUpdates(force?: boolean): Promise<ComponentUpdateInfo[]>
   install(kind: ComponentKind): Promise<{ started: boolean }>
   pause(kind: ComponentKind): Promise<void>
   remove(kind: ComponentKind): Promise<void>
@@ -723,6 +731,7 @@ export interface CineApi {
     onCloseRequested(callback: () => void): () => void
     confirmClose(): void
     openLogs(): Promise<void>
+    openExternal(url: string): Promise<boolean>
     log(level: 'info' | 'warn' | 'error', message: string): Promise<void>
     notify(title: string, body: string): void
     minimize(): void

@@ -42,6 +42,13 @@ export interface ComponentStatus {
   path?: string
 }
 
+export interface ComponentUpdateInfo {
+  kind: ComponentKind
+  latestVersion?: number
+  latestSize?: number
+  updateAvailable: boolean
+}
+
 export interface ComponentEvent {
   kind: ComponentKind
   state: ComponentState

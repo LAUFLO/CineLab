@@ -27,7 +27,7 @@ import {
   type NodeKind
 } from '@shared/canvas-schema'
 import { Icon } from '../components/Icon'
-import { isGroupNode, useCanvasStore, type CanvasNode } from '../stores/canvas'
+import { isGroupNode, nodeSize, useCanvasStore, type CanvasNode } from '../stores/canvas'
 import { activeStageNodeId } from '../stage/stage-active'
 import { useUIStore } from '../stores/ui'
 import { usePreferencesStore } from '../stores/preferences'
@@ -457,8 +457,32 @@ function CanvasInner({ theme }: { theme: Theme }) {
   )
 
   const handleNodeDragStart = useCallback(() => {
+    document.body.dataset.nodeDragging = 'true'
     useCanvasStore.getState().pushHistory()
+    useUIStore.getState().setAttachTarget(null)
     setGuides([])
+  }, [])
+
+  const findAttachTarget = useCallback((node: CanvasNode): CanvasNode | null => {
+    if (node.type !== 'cine') return null
+    const output = (node.data.outputs ?? []).find((entry) => entry.detachedFrom)
+    if (!output?.detachedFrom) return null
+    const source = useCanvasStore
+      .getState()
+      .nodes.find((entry) => entry.id === output.detachedFrom?.nodeId)
+    if (!source || source.type !== 'cine') return null
+    const sourceSize = nodeSize(source)
+    const draggedSize = nodeSize(node)
+    const center = {
+      x: node.position.x + draggedSize.width / 2,
+      y: node.position.y + draggedSize.height / 2
+    }
+    const inside =
+      center.x >= source.position.x &&
+      center.x <= source.position.x + sourceSize.width &&
+      center.y >= source.position.y &&
+      center.y <= source.position.y + sourceSize.height
+    return inside ? source : null
   }, [])
 
   const alignmentContext = useCallback(
@@ -479,6 +503,9 @@ function CanvasInner({ theme }: { theme: Theme }) {
       _node: CanvasNode,
       draggedNodes: CanvasNode[]
     ): void => {
+      const attachTarget = findAttachTarget(_node)
+      useUIStore.getState().setAttachTarget(attachTarget?.id ?? null)
+
       const altKey = 'altKey' in event ? event.altKey : false
       if (
         altKey ||
@@ -519,7 +546,7 @@ function CanvasInner({ theme }: { theme: Theme }) {
 
       setGuides(nextGuides)
     },
-    [alignmentContext, flowToScreenPosition, getZoom, snapToGrid]
+    [alignmentContext, findAttachTarget, flowToScreenPosition, getZoom, snapToGrid]
   )
 
   const handleNodeDragStop = useCallback(
@@ -528,7 +555,24 @@ function CanvasInner({ theme }: { theme: Theme }) {
       _node: CanvasNode,
       draggedNodes: CanvasNode[]
     ): void => {
+      delete document.body.dataset.nodeDragging
       setGuides([])
+      const attachTarget = findAttachTarget(_node)
+      useUIStore.getState().setAttachTarget(null)
+      if (attachTarget) {
+        try {
+          useCanvasStore.getState().attachLayer(attachTarget.id, _node.id)
+          useUIStore.getState().showToast('图层已放回底图')
+        } catch (error) {
+          useUIStore
+            .getState()
+            .showToast(
+              error instanceof Error ? error.message : String(error),
+              'error'
+            )
+        }
+        return
+      }
 
       const draggedIds = new Set(draggedNodes.map((node) => node.id))
       for (const node of draggedNodes) {
@@ -573,8 +617,14 @@ function CanvasInner({ theme }: { theme: Theme }) {
         })
       )
     },
-    [alignmentContext, getNodes, setNodes, getZoom, snapToGrid]
+    [alignmentContext, findAttachTarget, getNodes, setNodes, getZoom, snapToGrid]
   )
+
+  useEffect(() => {
+    return () => {
+      delete document.body.dataset.nodeDragging
+    }
+  }, [])
 
   const handleNodeDoubleClick = useCallback(
     (_event: React.MouseEvent, targetNode: CanvasNode) => {

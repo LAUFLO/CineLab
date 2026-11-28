@@ -22,6 +22,23 @@ export type FilmStatus =
 
 export type NodeStatus = 'idle' | 'queued' | 'running' | 'done' | 'error'
 
+export interface LayerTransform {
+  x: number
+  y: number
+  width: number
+  height: number
+  /** 顺时针旋转角度，仅支持 0 / 90 / 180 / 270。 */
+  rotation?: number
+  flipX?: boolean
+  flipY?: boolean
+}
+
+export interface DetachedLayerRef {
+  nodeId: string
+  outputId: string
+  groupId: string
+}
+
 export interface OutputRef {
   id: string
   path: string
@@ -37,6 +54,12 @@ export interface OutputRef {
   op?: string
   parentOutputId?: string
   layer?: AssetLayer
+  layerGroupId?: string
+  layerTransform?: LayerTransform
+  layerAttached?: boolean
+  layerVisible?: boolean
+  layerLocked?: boolean
+  detachedFrom?: DetachedLayerRef
   textRecognition?: TextRecognition
 }
 

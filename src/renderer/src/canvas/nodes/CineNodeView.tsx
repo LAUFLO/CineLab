@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Handle,
@@ -24,6 +24,7 @@ import {
 } from '../../stores/canvas'
 import { useGenerationStore } from '../../stores/generation'
 import { useGenerationHistoryStore } from '../../stores/generation-history'
+import { syncNodeSizeToMedia } from '../media-size'
 import { useStageStore } from '../../stage/stageStore'
 import {
   cancelStemTaskFromNode,
@@ -44,6 +45,9 @@ import { PanoramaViewer } from './PanoramaViewer'
 import { VideoPlayer } from './VideoPlayer'
 import { VideoPreview } from './VideoPreview'
 import { StudyNodeCard } from './StudyNodeCard'
+import { LayerEditorOverlay } from './LayerEditorOverlay'
+import { LayerEditorPanel } from './LayerEditorPanel'
+import { resolveLayerGroup } from './layer-compose'
 import { Button, Dialog, Input } from '../../components/ui'
 
 const NODE_ICON: Record<NodeKind, IconName> = {
@@ -62,6 +66,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const { screenToFlowPosition, fitView } = useReactFlow()
   const openMenu = useUIStore((state) => state.openMenu)
   const showToast = useUIStore((state) => state.showToast)
+  const attachTargetNodeId = useUIStore((state) => state.attachTargetNodeId)
+  const layerSplitActive = useUIStore((state) => state.layerSplitActive)
+  const inlineEditor = useUIStore((state) => state.inlineEditor)
+  const inlineActive = inlineEditor?.nodeId === id
   const patchNodeData = useCanvasStore((state) => state.patchNodeData)
   const applyOutput = useCanvasStore((state) => state.applyOutput)
   const resizeNode = useCanvasStore((state) => state.resizeNode)
@@ -111,6 +119,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const [audioSelection, setAudioSelection] = useState({ start: 0, end: 0 })
   const [audioRate, setAudioRate] = useState(1)
   const [audioBusy, setAudioBusy] = useState(false)
+  const [layerMerging, setLayerMerging] = useState(false)
+  const [layerPanelOpen, setLayerPanelOpen] = useState(false)
+  const [layerActiveId, setLayerActiveId] = useState<string | null>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
 
   const submitTitle = (): void => {
     const next = titleDraft.trim()
@@ -212,6 +224,42 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const assetSrc = current
     ? assetUrl(current.path, current.scope)
     : data.outputUrl
+  const layerGroup = current?.layerGroupId
+    ? resolveLayerGroup(outputs, current.id)
+    : null
+  const showLayerComposite = Boolean(layerGroup && current?.op !== 'layer-merge')
+  const hasAttachedLayer = Boolean(
+    layerGroup?.layers.some(
+      (layer) =>
+        layer.layerAttached !== false && layer.layerVisible !== false
+    )
+  )
+  const layerGroups = (() => {
+    const map = new Map<string, OutputRef>()
+    for (const output of outputs) {
+      if (!output.layerGroupId || !output.layer) continue
+      if (output.layer.zIndex === 0) map.set(output.layerGroupId, output)
+    }
+    return [...map.entries()].map(([groupId, base], index) => ({
+      id: groupId,
+      label: base.layer?.name?.trim() || `图层组 ${index + 1}`
+    }))
+  })()
+  const activeLayer =
+    layerGroup?.layers.find((layer) => layer.id === layerActiveId) ?? null
+  const visibleLayerCount =
+    layerGroup?.layers.filter(
+      (layer) =>
+        layer.layerAttached !== false && layer.layerVisible !== false
+    ).length ?? 0
+  const detachedLayers = layerGroup
+    ? outputs.filter(
+        (output) =>
+          output.layerGroupId === layerGroup.groupId &&
+          output.layer &&
+          output.layerAttached === false
+      )
+    : []
   const isBusy = data.status === 'queued' || data.status === 'running'
   const stemMode =
     data.stemMode === 'vocal' || data.stemMode === 'background'
@@ -232,6 +280,21 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
   const cancelBusy = (): void => {
     if (cancelStemTaskFromNode(id)) return
     void cancelGeneration(id)
+  }
+  const mergeLayers = async (): Promise<void> => {
+    if (!layerGroup || layerMerging) return
+    setLayerMerging(true)
+    try {
+      await useCanvasStore.getState().mergeLayerGroup(id, layerGroup.groupId)
+      showToast('图层已合并')
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        'error'
+      )
+    } finally {
+      setLayerMerging(false)
+    }
   }
   const canPanorama = Boolean(
     current &&
@@ -417,6 +480,7 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             kind={data.kind}
             current={current}
             align={toolbarAlign}
+            cardRef={cardRef}
             onDownload={() => void exportCurrent()}
             onExpand={() => {
               if (data.kind === 'text') openTextEditor()
@@ -448,7 +512,10 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         ) : null}
 
         {selected && !multiSelected && !current && !isBusy ? (
-          <div className="nodrag nopan absolute bottom-[calc(100%+var(--node-toolbar-offset,10px))] left-1/2 z-10 flex h-9 items-center gap-px rounded-card border border-border bg-surface px-1.5 text-fg whitespace-nowrap shadow-float [translate:-50%_0] [transform:scale(var(--canvas-zoom-inverse,1))] [transform-origin:bottom_center]">
+          <div
+            data-node-chrome
+            className="nodrag nopan absolute bottom-[calc(100%+var(--node-toolbar-offset,10px))] left-1/2 z-10 flex h-9 items-center gap-px rounded-card border border-border bg-surface px-1.5 text-fg whitespace-nowrap shadow-float [translate:-50%_0] [transform:scale(var(--canvas-zoom-inverse,1))] [transform-origin:bottom_center]"
+          >
             {data.kind === 'text' ? (
               <Button
                 type="button"
@@ -556,15 +623,20 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
         </div>
 
         <div
+          ref={cardRef}
           data-node-card
-          className={`relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card bg-surface-raised shadow-node transition-colors duration-[120ms] ${
-            selected
-              ? 'border-2 border-border-selected'
+          className={`relative flex min-h-0 flex-1 flex-col rounded-card bg-surface-raised shadow-node transition-colors duration-[120ms] ${
+            showLayerComposite ? 'overflow-visible' : 'overflow-hidden'
+          } ${
+            selected && !layerSplitActive
+              ? 'border border-border ring-2 ring-inset ring-border-selected'
               : 'border border-border group-hover:border-border-strong'
-          }`}
+          } ${attachTargetNodeId === id ? 'ring-2 ring-accent ring-offset-2 ring-offset-canvas' : ''}`}
         >
           <div
-            className={`relative flex min-h-0 flex-1 overflow-hidden ${
+            className={`relative flex min-h-0 flex-1 ${
+              showLayerComposite ? 'overflow-visible' : 'overflow-hidden'
+            } ${
               data.kind === 'study' || data.kind === 'audio'
                 ? 'items-stretch justify-start'
                 : 'items-center justify-center'
@@ -601,14 +673,34 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                     path={current?.path}
                     fps={current?.fps}
                     nodeWidth={nodeWidth}
+                    onMediaSize={(width, height) =>
+                      syncNodeSizeToMedia(id, width, height)
+                    }
                   />
                 ) : assetSrc ? (
-                  <img
-                    src={assetSrc}
-                    alt=""
-                    className="h-full w-full object-contain"
-                    loading="lazy"
-                  />
+                  showLayerComposite && layerGroup && !layerSplitActive ? (
+                    <LayerEditorOverlay
+                      nodeId={id}
+                      group={layerGroup}
+                      activeLayerId={layerActiveId}
+                      onActiveLayerChange={setLayerActiveId}
+                      cardRef={cardRef}
+                    />
+                  ) : (
+                    <img
+                      src={assetSrc}
+                      alt=""
+                      className="h-full w-full object-contain"
+                      loading="lazy"
+                      onLoad={(event) =>
+                        syncNodeSizeToMedia(
+                          id,
+                          event.currentTarget.naturalWidth,
+                          event.currentTarget.naturalHeight
+                        )
+                      }
+                    />
+                  )
                 ) : data.workflowSlot === 'upload' ? (
                   <Button
                     type="button"
@@ -645,8 +737,15 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                   />
                 ) : null}
 
-                {current?.layer ? (
-                  <span className="nodrag nopan pointer-events-none absolute top-2 left-2 z-[4] max-w-[calc(100%-16px)] truncate rounded-pill bg-black/[0.46] px-2 py-0.5 text-[10px] leading-4 whitespace-nowrap text-white backdrop-blur-[4px]">
+                {!layerSplitActive && !inlineActive && showLayerComposite ? (
+                  <span data-node-chrome className="nodrag nopan pointer-events-none absolute left-2 top-2 z-[4] max-w-[calc(100%-16px)] truncate rounded-pill bg-black/[0.46] px-2 py-0.5 text-[10px] leading-4 whitespace-nowrap text-white backdrop-blur-[4px]">
+                    背景已锁定
+                  </span>
+                ) : !layerSplitActive &&
+                  !inlineActive &&
+                  current?.layer &&
+                  !current.detachedFrom ? (
+                  <span data-node-chrome className="nodrag nopan pointer-events-none absolute top-2 left-2 z-[4] max-w-[calc(100%-16px)] truncate rounded-pill bg-black/[0.46] px-2 py-0.5 text-[10px] leading-4 whitespace-nowrap text-white backdrop-blur-[4px]">
                     {current.layer.zIndex === 0
                       ? '底图'
                       : current.layer.name?.trim() ||
@@ -654,9 +753,9 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
                   </span>
                 ) : null}
 
-                {current?.textRecognition?.text ? (
-                  <Button
+                {!inlineActive && current?.textRecognition?.text ? (                  <Button
                     type="button"
+                    data-node-chrome
                     variant="ghost"
                     size="none"
                     className="nodrag nopan !absolute top-2 right-2 z-[5] !h-[22px] !rounded-pill !bg-black/[0.46] !px-2 !text-[10px] !font-normal !tracking-[0.04em] !text-white backdrop-blur-[4px] hover:!bg-black/[0.62] hover:!text-white"
@@ -745,12 +844,109 @@ export function CineNodeView({ id, data, selected }: NodeProps<CineNode>) {
             )}
           </div>
 
+          {attachTargetNodeId === id ? (
+            <div className="pointer-events-none absolute inset-x-0 top-3 z-[13] flex justify-center">
+              <div className="rounded-pill bg-accent px-3 py-1 text-[11px] text-accent-text shadow-float">
+                松手放回图层
+              </div>
+            </div>
+          ) : null}
+
           {storyboardIndex > 0 ? (
             <span className="pointer-events-none absolute bottom-2.5 left-2.5 z-[2] text-xl leading-none font-semibold text-white/[0.92] [text-shadow:0_1px_4px_rgba(0,0,0,0.55)]">
               {String(storyboardIndex).padStart(2, '0')}
             </span>
           ) : null}
         </div>
+
+        {!layerSplitActive && !inlineActive && showLayerComposite && hasAttachedLayer ? (
+          <div
+            data-node-chrome
+            className="nodrag nopan absolute left-1/2 top-[calc(100%+6px)] z-[12] w-max max-w-[calc(100vw-32px)] [translate:-50%_0] [transform:scale(var(--canvas-zoom-inverse,1))] [transform-origin:top_center]"
+          >
+            {layerPanelOpen && layerGroup ? (
+              <div className="absolute bottom-full left-0 mb-2 w-[260px] max-w-[calc(100vw-24px)]">
+                <LayerEditorPanel
+                  group={layerGroup}
+                  groups={layerGroups}
+                  detachedLayers={detachedLayers}
+                  activeLayerId={layerActiveId}
+                  onSelectGroup={(groupId) => {
+                    const base = outputs.find(
+                      (output) =>
+                        output.layerGroupId === groupId &&
+                        output.layer?.zIndex === 0
+                    )
+                    if (base) selectOutput(base)
+                  }}
+                  onActiveLayerChange={setLayerActiveId}
+                  onUpdateLayer={(layerId, patch) =>
+                    useCanvasStore
+                      .getState()
+                      .updateOutputLayer(id, layerId, patch)
+                  }
+                  onRestore={(output) => {
+                    try {
+                      useCanvasStore
+                        .getState()
+                        .restoreDetachedLayer(id, output.id)
+                      showToast('图层已放回底图')
+                    } catch (error) {
+                      showToast(
+                        error instanceof Error ? error.message : String(error),
+                        'error'
+                      )
+                    }
+                  }}
+                />
+              </div>
+            ) : null}
+
+            <div className="flex items-center gap-1.5 rounded-card border border-border bg-surface-raised px-2 py-1 shadow-float">
+              <Button
+                type="button"
+                variant="secondary"
+                size="none"
+                className="!h-7 shrink-0 !rounded-md !px-2 !text-[10.5px]"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setLayerPanelOpen((value) => !value)
+                }}
+              >
+                <Icon name="layers" size={12} />
+                <span className="ml-1">图层 {visibleLayerCount}</span>
+              </Button>
+              {activeLayer ? (
+                <span className="max-w-[180px] min-w-0 truncate text-[10px] text-fg-subtle">
+                  {activeLayer.layer?.name?.trim() ||
+                    `图层 ${activeLayer.layer?.zIndex ?? ''}`}
+                </span>
+              ) : (
+                <span className="max-w-[180px] min-w-0 truncate text-[10px] text-fg-subtle">
+                  调整图层位置或尺寸，合并生成新图片
+                </span>
+              )}
+              {detachedLayers.length > 0 ? (
+                <span className="shrink-0 rounded-pill bg-surface-hover px-1.5 py-0.5 text-[9.5px] text-fg-muted">
+                  {detachedLayers.length} 已分离
+                </span>
+              ) : null}
+              <Button
+                type="button"
+                variant="primary"
+                size="none"
+                className="!h-7 shrink-0 !rounded-md !px-3 !text-[11px]"
+                disabled={layerMerging}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  void mergeLayers()
+                }}
+              >
+                {layerMerging ? '合并中…' : '合并'}
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         {data.kind === 'audio' && audioMode && selected ? (
           <AudioActionBar

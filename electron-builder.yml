@@ -44,5 +44,9 @@ extraResources:
     to: model-config-skill
   - from: resources/stem-worker
     to: stem-worker
+  - from: resources/vision-worker
+    to: vision-worker
   - from: docs/style-library
     to: styles
+  - from: docs/prompt-library
+    to: prompts

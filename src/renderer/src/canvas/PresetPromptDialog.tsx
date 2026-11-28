@@ -79,6 +79,10 @@ export function PresetPromptDialog({
   }
 
   const handleDelete = (template: PromptTemplate): void => {
+    if (template.source === 'official') {
+      showToast('官方预设提示词不能删除', 'error')
+      return
+    }
     requestConfirm({
       title: '删除预设提示词',
       message: `确定删除「${template.name}」吗？`,
@@ -176,6 +180,11 @@ export function PresetPromptDialog({
                       >
                         {template.name}
                       </div>
+                      {template.source === 'official' ? (
+                        <span className="shrink-0 rounded-md border border-border bg-surface px-1 py-px text-[9px] text-fg-subtle">
+                          官方
+                        </span>
+                      ) : null}
                       <div className="flex shrink-0 gap-0.5 opacity-60 transition-opacity group-hover:opacity-100">
                         <IconButton
                           label="预览预设"
@@ -188,33 +197,37 @@ export function PresetPromptDialog({
                         >
                           <Icon name="eye" size={13} />
                         </IconButton>
-                        <IconButton
-                          label="编辑预设"
-                          unstyled
-                          className="flex h-6 w-6 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-hover hover:text-fg"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            setEditing({
-                              id: template.id,
-                              name: template.name,
-                              kind: template.kind,
-                              prompt: template.prompt
-                            })
-                          }}
-                        >
-                          <Icon name="edit" size={13} />
-                        </IconButton>
-                        <IconButton
-                          label="删除预设"
-                          unstyled
-                          className="flex h-6 w-6 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-hover hover:text-fg"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            handleDelete(template)
-                          }}
-                        >
-                          <Icon name="trash" size={13} />
-                        </IconButton>
+                        {template.source !== 'official' ? (
+                          <>
+                            <IconButton
+                              label="编辑预设"
+                              unstyled
+                              className="flex h-6 w-6 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-hover hover:text-fg"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                setEditing({
+                                  id: template.id,
+                                  name: template.name,
+                                  kind: template.kind,
+                                  prompt: template.prompt
+                                })
+                              }}
+                            >
+                              <Icon name="edit" size={13} />
+                            </IconButton>
+                            <IconButton
+                              label="删除预设"
+                              unstyled
+                              className="flex h-6 w-6 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-hover hover:text-fg"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleDelete(template)
+                              }}
+                            >
+                              <Icon name="trash" size={13} />
+                            </IconButton>
+                          </>
+                        ) : null}
                       </div>
                     </div>
                     <div className="line-clamp-3 min-h-[50px] text-[11px] leading-[1.5] text-fg-muted">

@@ -42,6 +42,7 @@ import type {
   ExtractFrameRequest,
   GridSplitRequest,
   RemoveSubtitlesRequest,
+  SaveCompositeRequest,
   SplitAvRequest,
   StemTaskEvent,
   StemTaskRequest,
@@ -62,6 +63,7 @@ const api: CineApi = {
     },
     confirmClose: () => ipcRenderer.send('app:confirm-close'),
     openLogs: () => ipcRenderer.invoke('app:open-logs'),
+    openExternal: (url: string) => ipcRenderer.invoke('app:open-external', url),
     log: (level: 'info' | 'warn' | 'error', message: string) =>
       ipcRenderer.invoke('app:log', level, message),
     notify: (title: string, body: string) =>
@@ -282,6 +284,8 @@ const api: CineApi = {
   },
   components: {
     status: () => ipcRenderer.invoke('components:status'),
+    checkUpdates: (force?: boolean) =>
+      ipcRenderer.invoke('components:check-updates', force),
     install: (kind: ComponentKind) =>
       ipcRenderer.invoke('components:install', kind),
     pause: (kind: ComponentKind) =>
@@ -399,7 +403,9 @@ const api: CineApi = {
       return () => {
         ipcRenderer.removeListener('vision-task:event', listener)
       }
-    }
+    },
+    saveComposite: (input: SaveCompositeRequest) =>
+      ipcRenderer.invoke('media:save-composite', input)
   },
   timeline: {
     load: (timelineId: string) => ipcRenderer.invoke('timeline:load', timelineId),

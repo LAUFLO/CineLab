@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ComponentKind, ComponentStatus } from '@shared/components'
 import { useSettingsStore } from '../stores/settings'
+import { useComponentsStore } from '../stores/components'
 import { useUIStore } from '../stores/ui'
 import { Button } from '../components/ui'
 
@@ -48,9 +49,9 @@ const COMPONENT_META: Record<
   'vision-models': {
     name: '视觉模型（InSPyReNet + LaMa）',
     description:
-      'InSPyReNet 抠像与 LaMa 修复模型，约 570MB。复用「本地 AI 运行时」的 Python/PyTorch 环境，请先安装运行时。安装后可解锁抠图、图层分离、视频抠像、智能去字幕和主体消除。',
+      'InSPyReNet 抠像与 LaMa 修复模型，约 570MB。复用「本地 AI 运行时」的 Python/PyTorch 环境，请先安装运行时。安装后可解锁抠图、视频抠像、智能去字幕和主体消除；图层分离使用声明 layer 模式的模型，不依赖本组件。',
     uninstallHint:
-      '卸载后，抠图、图层分离、视频抠像、智能修复和主体消除将无法使用。已生成的素材节点不受影响，可随时重新下载。'
+      '卸载后，抠图、视频抠像、智能修复和主体消除将无法使用。已生成的素材节点不受影响，可随时重新下载。'
   },
   'stem-model': {
     name: 'HTDemucs 人声分离模型',
@@ -102,6 +103,9 @@ export function ComponentsSection() {
   )
   const [items, setItems] = useState<ComponentStatus[]>([])
   const [pending, setPending] = useState<ComponentKind | null>(null)
+  const updates = useComponentsStore((state) => state.updates)
+  const checking = useComponentsStore((state) => state.checking)
+  const check = useComponentsStore((state) => state.check)
 
   const refresh = async (): Promise<void> => {
     try {
@@ -129,6 +133,7 @@ export function ComponentsSection() {
 
   useEffect(() => {
     void refresh()
+    void check()
 
     const unsubscribe = window.api.components.onEvent((event) => {
       setItems((current) =>
@@ -144,17 +149,16 @@ export function ComponentsSection() {
         )
       )
 
-      if (
-        event.state === 'installed' ||
-        event.state === 'error' ||
-        event.state === 'paused'
-      ) {
+      if (event.state === 'installed') {
+        void refresh()
+        void check(true)
+      } else if (event.state === 'error' || event.state === 'paused') {
         void refresh()
       }
     })
 
     return unsubscribe
-  }, [])
+  }, [check])
 
   const install = async (kind: ComponentKind): Promise<void> => {
     setPending(kind)
@@ -191,9 +195,50 @@ export function ComponentsSection() {
     })
   }
 
+  const update = (
+    item: ComponentStatus,
+    info: NonNullable<(typeof updates)[ComponentKind]>
+  ): void => {
+    const current = item.version ? `v${item.version}` : '当前版本'
+    const latest = `v${info.latestVersion ?? '?'}`
+    requestConfirm({
+      title: `更新「${COMPONENT_META[item.kind].name}」到 ${latest}？`,
+      message: `${current} → ${latest}${
+        info.latestSize ? ` · ${formatBytes(info.latestSize)}` : ''
+      }。更新失败会保留旧版本。`,
+      confirmLabel: '更新',
+      onConfirm: async () => {
+        try {
+          await install(item.kind)
+          await refresh()
+          await check(true)
+        } catch (error) {
+          useUIStore
+            .getState()
+            .showToast(
+              error instanceof Error ? error.message : String(error),
+              'error'
+            )
+        }
+      }
+    })
+  }
+
   return (
     <div className="flex flex-col">
-      <div className="mb-3 text-[13px] font-semibold text-fg">组件</div>
+      <div className="mb-3 flex items-center justify-between">
+        <div className="text-[13px] font-semibold text-fg">组件</div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="none"
+          className="!h-6 !rounded-md !px-2 !text-[11px]"
+          disabled={checking}
+          onClick={() => void check(true)}
+        >
+          {checking ? '检查中…' : '检查更新'}
+        </Button>
+      </div>
       <p className="mb-3 mt-2 text-xs leading-[1.7] text-fg-subtle">
         组件按需下载，不使用对应功能时不会占用磁盘。后续其他本地能力也会以组件形式接入。
       </p>
@@ -207,6 +252,8 @@ export function ComponentsSection() {
 
       {items.map((item) => {
         const meta = COMPONENT_META[item.kind]
+        const updateInfo = updates[item.kind]
+        const hasUpdate = updateInfo?.updateAvailable === true
         const highlighted =
           focusStem &&
           (item.kind === 'depth-runtime' || item.kind === 'stem-model')
@@ -220,14 +267,18 @@ export function ComponentsSection() {
             }`}
           >
             <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-semibold text-fg">
+              <div className="flex items-center gap-1.5 text-[13px] font-semibold text-fg">
                 {meta.name}
+                {hasUpdate ? (
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                ) : null}
               </div>
               <p className="mb-0 mt-1.5 text-xs leading-[1.5] text-fg-subtle">
                 {meta.description}
               </p>
               <div className="mt-1 text-xs text-fg-subtle">
                 {stateLabel(item)}
+                {hasUpdate ? ` · 有更新 v${updateInfo.latestVersion}` : ''}
               </div>
               {item.state === 'downloading' ? (
                 <div className="mt-2 h-1 overflow-hidden rounded-full bg-border">
@@ -276,13 +327,25 @@ export function ComponentsSection() {
               ) : null}
 
               {item.state === 'installed' ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => uninstall(item)}
-                >
-                  卸载
-                </Button>
+                <>
+                  {hasUpdate && updateInfo ? (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      disabled={pending === item.kind}
+                      onClick={() => update(item, updateInfo)}
+                    >
+                      更新
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => uninstall(item)}
+                  >
+                    卸载
+                  </Button>
+                </>
               ) : null}
             </div>
           </div>

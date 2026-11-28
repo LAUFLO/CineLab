@@ -34,6 +34,8 @@
   --watermark: rgba(255, 255, 255, 0.035);
   --edge-default: rgba(255, 255, 255, 0.18);
   --overlay: rgba(0, 0, 0, 0.58);
+  --selection-line: #ffffff;
+  --selection-mask: rgba(0, 0, 0, 0.12);
 
   --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.5);
   --shadow-menu: 0 12px 32px rgba(0, 0, 0, 0.6);
@@ -88,6 +90,8 @@
   --watermark: rgba(0, 0, 0, 0.028);
   --edge-default: rgba(0, 0, 0, 0.15);
   --overlay: rgba(0, 0, 0, 0.32);
+  --selection-line: #ffffff;
+  --selection-mask: rgba(0, 0, 0, 0.12);
 
   --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.1);
   --shadow-menu: 0 12px 32px rgba(0, 0, 0, 0.12);

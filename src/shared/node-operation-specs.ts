@@ -1,4 +1,5 @@
 import type { NodeKind } from './canvas-schema'
+import type { ModelModeId } from './model-modes'
 import { parseAspectRatio } from './media'
 import { OUTPAINT_RATIOS } from './outpaint'
 
@@ -15,6 +16,8 @@ export interface NodeOperationAgentSpec {
   reason?: string
   /** 是否可以通过 generation_propose 携带 operationId 登记生成提案 */
   generationProposable?: boolean
+  /** generation_propose 选中模型必须支持的归一化模式 */
+  requiredMode?: ModelModeId
   /** 必须从菜单里选择一个 item */
   itemRequired?: boolean
   /** 允许的 itemId；省略时不限制 */
@@ -68,6 +71,7 @@ const NEW_NODE_OPERATION_IDS = new Set([
   'panorama',
   'outpaint',
   'cutout',
+  'layer-split',
   'clip-trim',
   'video-crop',
   'subtitle',
@@ -279,9 +283,11 @@ export const NODE_OPERATION_AGENT_SPECS: Record<string, NodeOperationAgentSpec> 
     ]
   },
   'layer-split': {
-    executable: true,
-    requiresConfirm: true,
-    itemOptions: ['auto', 'box'],
+    executable: false,
+    generationProposable: true,
+    requiredMode: 'layer',
+    reason:
+      '图层分离需要支持 layer 模式的模型，请用 generation_propose 并传入 modelKey、prompt 或 rect',
     params: [RECT_PARAM]
   },
   'shot-retake': { executable: true },

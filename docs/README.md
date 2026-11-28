@@ -1,9 +1,9 @@
 # CineLab 文档索引
 
-日期：2026-11-26
+日期：2026-11-28
 状态：现行
 适用版本：v0.5.3
-最后核对：2026-11-26
+最后核对：2026-11-28
 
 > 远程仓库只保留稳定契约、参考文档和一份精简的归档。过程记录、截图和批次 evidence 放本地 `.opencode/`，不入库。
 
@@ -52,6 +52,8 @@
 | [promptbar-popover-plan.md](promptbar-popover-plan.md) | PromptBar 浮窗与胶囊改造：确认框层级、居中浮窗、卡片网格与预览、绿色预设胶囊、节点自动就位，已实施 |
 | [workflow-plan.md](workflow-plan.md) | 工作流模板：保存用户画布流程、占位节点、导演台打包、拉片/剪辑占位、导入导出与 Agent 工具，方案确定 |
 | [outpaint-model-plan.md](outpaint-model-plan.md) | 扩图改为生图模型图生图：删除本地 LaMa、比例只来自菜单、精确优先近似兜底 |
+| [layer-split-plan.md](layer-split-plan.md) | 图层分离改为模型分层 + 本地图层合成（含组件在线更新 P5）：删除本地、四种输入、拖出/拖回、合并写回，方案已确认 |
+| [inline-node-editor-plan.md](inline-node-editor-plan.md) | 节点内联操作编辑器：拖动隐藏浮层、15 个源内容操作全部改为节点内 UI、媒体尺寸自愈，实施中 |
 | [video-crop-custom-plan.md](video-crop-custom-plan.md) | 画面裁切：删除原比例、增加 4:3 / 3:4 / 21:9 与自定义宽高比 |
 | [text-wysiwyg-plan.md](text-wysiwyg-plan.md) | 文本节点 Markdown 所见即所得：Milkdown、删除预览切换与格式工具栏 |
 | [close-background-plan.md](close-background-plan.md) | 关闭确认（后台运行/退出）与系统托盘自绘菜单，已实施 |

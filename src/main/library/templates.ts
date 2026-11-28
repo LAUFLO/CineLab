@@ -1,5 +1,6 @@
 import { promises as fs, type Dirent } from 'node:fs'
 import { basename, extname, join, sep } from 'node:path'
+import { app } from 'electron'
 import type {
   PromptTemplate,
   TemplateInput
@@ -54,7 +55,44 @@ function stripExt(fileName: string): string {
     : basename(fileName, extname(fileName))
 }
 
-export async function listTemplates(): Promise<PromptTemplate[]> {
+const OFFICIAL_PREFIX = 'official:'
+
+function officialPromptPresetsRoot(): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'prompts')
+    : join(app.getAppPath(), 'docs/prompt-library')
+}
+
+async function listOfficialTemplates(): Promise<PromptTemplate[]> {
+  const root = officialPromptPresetsRoot()
+  const file = join(root, 'presets.json')
+  try {
+    const raw = JSON.parse(await fs.readFile(file, 'utf8')) as unknown
+    if (!Array.isArray(raw)) return []
+    const info = await fs.stat(file)
+    return raw
+      .filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === 'object'
+      )
+      .map((item) => ({
+        id: `${OFFICIAL_PREFIX}${String(item.id ?? '')}`,
+        name: String(item.name ?? '').trim(),
+        kind: NODE_KINDS.has(item.kind as PromptTemplate['kind'])
+          ? (item.kind as PromptTemplate['kind'])
+          : 'image',
+        prompt: typeof item.prompt === 'string' ? item.prompt : '',
+        source: 'official' as const,
+        createdAt: info.birthtime.toISOString(),
+        updatedAt: info.mtime.toISOString()
+      }))
+      .filter((item) => item.id !== OFFICIAL_PREFIX && item.name && item.prompt)
+  } catch {
+    return []
+  }
+}
+
+async function listUserTemplates(): Promise<PromptTemplate[]> {
   const root = await getLibraryRoot()
   const dir = templateDir(root)
 
@@ -83,6 +121,7 @@ export async function listTemplates(): Promise<PromptTemplate[]> {
         name: stripExt(entry.name),
         kind,
         prompt: typeof raw.prompt === 'string' ? raw.prompt : '',
+        source: 'user',
         createdAt: info.birthtime.toISOString(),
         updatedAt: info.mtime.toISOString()
       })
@@ -94,12 +133,29 @@ export async function listTemplates(): Promise<PromptTemplate[]> {
   return templates.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
 }
 
+export async function listTemplates(): Promise<PromptTemplate[]> {
+  const [official, user] = await Promise.all([
+    listOfficialTemplates(),
+    listUserTemplates()
+  ])
+  return [...official, ...user]
+}
+
 export async function saveTemplate(input: TemplateInput): Promise<PromptTemplate> {
+  if (input.id?.startsWith(OFFICIAL_PREFIX)) {
+    throw new Error('官方预设提示词不能修改')
+  }
+
   const root = await getLibraryRoot()
   const dir = templateDir(root)
   await fs.mkdir(dir, { recursive: true })
 
   const name = sanitizeName(input.name.trim() || '未命名模板')
+  const official = await listOfficialTemplates()
+  if (official.some((item) => item.name === name)) {
+    throw new Error(`与官方预设提示词「${name}」重名，请换一个名称`)
+  }
+
   const target = join(dir, `${name}${TEMPLATE_EXT}`)
   const previous = input.id ? safeTemplatePath(root, input.id) : null
 
@@ -122,12 +178,16 @@ export async function saveTemplate(input: TemplateInput): Promise<PromptTemplate
     name,
     kind: input.kind,
     prompt: payload.prompt,
+    source: 'user',
     createdAt: info.birthtime.toISOString(),
     updatedAt: info.mtime.toISOString()
   }
 }
 
 export async function deleteTemplate(id: string): Promise<void> {
+  if (id.startsWith(OFFICIAL_PREFIX)) {
+    throw new Error('官方预设提示词不能删除')
+  }
   const root = await getLibraryRoot()
   if (!id.endsWith(TEMPLATE_EXT)) throw new Error('模板路径无效')
 

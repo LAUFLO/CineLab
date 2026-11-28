@@ -283,7 +283,6 @@ export interface DepthTaskStartResult {
 
 export type VisionTaskKind =
   | 'matte-image'
-  | 'layer-split'
   | 'inpaint-image'
   | 'matte-video'
   | 'repair-video'
@@ -301,7 +300,7 @@ export interface VisionTaskRequest {
   scope?: 'project' | 'global'
   /** inpaint-image 使用，PNG data URL，透明区域表示需要修复 */
   mask?: string
-  /** repair-video / matte-image / layer-split 使用，坐标基于原图像素 */
+  /** repair-video / matte-image 使用，坐标基于原图像素 */
   rect?: VisionRect
 }
 
@@ -315,7 +314,6 @@ export type VisionTaskStatus =
 export interface VisionTaskResult {
   kind: VisionTaskKind
   asset?: GeneratedAsset
-  background?: GeneratedAsset
   width?: number
   height?: number
   frames?: number
@@ -332,4 +330,11 @@ export interface VisionTaskEvent {
 
 export interface VisionTaskStartResult {
   taskId: string
+}
+
+export interface SaveCompositeRequest {
+  data: ArrayBuffer
+  width: number
+  height: number
+  model?: string
 }

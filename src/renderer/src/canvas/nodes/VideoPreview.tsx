@@ -18,6 +18,8 @@ interface VideoPreviewProps {
   poster?: string | null
   onTimeChange?: (time: number) => void
   onDurationChange?: (duration: number) => void
+  /** 封面加载后上报真实画幅，用于校准节点尺寸。 */
+  onMediaSize?: (width: number, height: number) => void
 }
 
 const PLAY_BUTTON_CLASS =
@@ -35,7 +37,8 @@ export function VideoPreview({
   nodeWidth = 480,
   poster,
   onTimeChange,
-  onDurationChange
+  onDurationChange,
+  onMediaSize
 }: VideoPreviewProps) {
   const viewport = useViewport()
   const id = useId()
@@ -142,6 +145,12 @@ export function VideoPreview({
           src={thumb}
           alt=""
           className="h-full w-full object-contain"
+          onLoad={(event) =>
+            onMediaSize?.(
+              event.currentTarget.naturalWidth,
+              event.currentTarget.naturalHeight
+            )
+          }
           onError={() => setThumbFailed(true)}
         />
       ) : (

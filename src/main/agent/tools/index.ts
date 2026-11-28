@@ -110,6 +110,15 @@ export function toolConfirmationReason(
     }
     return null
   }
+  if (call.name === 'layer_merge') {
+    return '将把当前图层合并成一张新图片，写回同一节点新版本；本地合成，不调用模型。'
+  }
+  if (call.name === 'layer_detach') {
+    return '将把图层从底图分离成独立图片节点。'
+  }
+  if (call.name === 'layer_attach') {
+    return '将把独立图层放回源底图；若有下游连线或被编辑会拒绝。'
+  }
   if (call.name === 'stage_remove_object') {
     return '将删除导演台对象及其动作轨。'
   }

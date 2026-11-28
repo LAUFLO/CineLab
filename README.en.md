@@ -45,6 +45,7 @@ The model layer is fully open: providers, models, Base URL, API key, headers and
 - Multiple projects and canvases, autosave, crash recovery, project covers
 - Groups, storyboard groups, 2K stitching, version stacks
 - Node toolbar: grid split, multi-angle, relight, portrait, cutout, free crop, 3D lighting
+- Inline node operation editors for crop, cutout, subtitle removal, video crop, outpaint, inpaint, erase, element edit, relight, multi-angle, color grade, portrait, clip trim, grid split and depth capture; floating chrome hides while dragging
 - Text nodes support Markdown WYSIWYG: type `#`, `-`, `>`, `**` and more to format in place
 - Reference slots for images, videos, audio and text, plus `@` text mentions
 - Result nodes keep the toolbar but hide the Prompt Bar
@@ -69,8 +70,8 @@ The model layer is fully open: providers, models, Base URL, API key, headers and
 
 ### Asset library and prompts
 
-- Prompt presets: create, edit, delete, full-text preview, name capsules insertable anywhere in the prompt, expanded in place on send
-- Style library: official read-only styles plus custom styles, category browsing, 8-column thumbnails, one-click apply
+- Prompt presets: create, edit, delete, full-text preview, name capsules insertable anywhere in the prompt, expanded in place on send; the official "画面去脏" preset is read-only
+- Style library: official read-only styles plus custom styles, category browsing, 8-column thumbnails, one-click apply; adds the official Wes Anderson style
 - Asset library: global / project assets, prompt templates, character cards and styles shown from the same source
 - Workflow templates: save a canvas flow to the asset library and pick it when creating a project; upload, generation, film-study and studio nodes become placeholders until you replace the material
 - Presets, styles and prompt templates are also available to CineBot and MCP for search, reading and management
@@ -132,12 +133,12 @@ The model layer is fully open: providers, models, Base URL, API key, headers and
 
 Download the latest build from [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest):
 
-Current version: **v0.5.3**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
+Current version: **v0.5.4**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
 
 | Platform | Recommended file | Requirements |
 |---|---|---|
-| Windows | `CineLab-0.5.3-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.5.3-arm64.dmg` | macOS 12+, Apple Silicon |
+| Windows | `CineLab-0.5.4-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.5.4-arm64.dmg` | macOS 12+, Apple Silicon |
 
 ### Windows
 

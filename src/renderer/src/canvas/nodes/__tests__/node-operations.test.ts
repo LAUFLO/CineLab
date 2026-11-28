@@ -22,15 +22,16 @@ describe('split-av operation menus', () => {
 })
 
 describe('image region operations', () => {
-  it('offers auto and box modes for cutout and layer split', () => {
+  it('offers auto and box modes for cutout; layer split is model-driven', () => {
     const imageOps = operationsForKind('image')
     expect(
       imageOps.find((item) => item.id === 'cutout')?.menu?.map((item) => item.id)
     ).toEqual(['auto', 'box'])
-    expect(
-      imageOps
-        .find((item) => item.id === 'layer-split')
-        ?.menu?.map((item) => item.id)
-    ).toEqual(['auto', 'box'])
+    expect(imageOps.find((item) => item.id === 'layer-split')?.menu).toBe(
+      undefined
+    )
+    expect(imageOps.find((item) => item.id === 'layer-split')?.modelMode).toBe(
+      'layer'
+    )
   })
 })

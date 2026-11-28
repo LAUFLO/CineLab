@@ -92,9 +92,9 @@
 
 | 模块 | 能力 | 现状 | 证据 |
 |---|---|---|---|
-| 02 | 图层分离：模型 `layer` 分层 + 本地图层合成 | P0–P6 已实施：节点内框选（工具栏/PromptBar 就地切换，提交后恢复）、四种输入、多选区（最多 4）、图层叠加、拖动/缩放、拖出/拖回、已分离放回、合并写回、三个 Agent 工具；P5 组件在线更新代码完成，详见下一行 | `src/renderer/src/canvas/nodes/LayerSplitOverlay.tsx`、`LayerEditorOverlay.tsx`、`layer-compose.ts`、`src/main/agent/tools/canvas.ts` |
+| 02 | 图层分离：模型 `layer` 分层 + 本地图层合成 | P0–P6 已实施：节点内框选（工具栏/PromptBar 就地切换，提交后恢复）、四种输入、多选区（最多 4）、图层叠加、拖动/缩放、拖出/拖回、已分离放回、合并写回、三个 Agent 工具；P5 组件在线更新已发布（v0.5.6），详见下一行 | `src/renderer/src/canvas/nodes/LayerSplitOverlay.tsx`、`LayerEditorOverlay.tsx`、`layer-compose.ts`、`src/main/agent/tools/canvas.ts` |
 | 02 | 节点内联操作编辑器 | 15 个源内容操作已改为节点内 UI：裁剪、框选抠图、框选去字幕、画面裁切、扩图、重绘、擦除、元素编辑、打光、多角度、色彩校正、人像质感、片段截取、宫格切分、深度动作捕捉；空模型显示去配置提示，面板内容滚动/按钮固定，提示词框完整边框；拖动隐藏浮层、媒体尺寸自愈完成；真实模型生成待有 Key 环境复测 | `NodeInlineEditorHost.tsx`、`InlineMaskEditor.tsx`、`InlineSphereEditor.tsx`、`InlineOutpaintEditor.tsx`、`InlineModelField.tsx`、`infrastructure.css`、`media-size.ts` |
-| 02 | 组件在线更新 | 代码完成：六组件 checkUpdates、24h 持久化缓存、启动后台检查、更新按钮/红点、任务占用阻断；四个新 manifest 待随 release 上传 | `src/main/components/service.ts`、`src/main/ipc/components.ts`、`src/renderer/src/panels/ComponentsSection.tsx`、`src/renderer/src/stores/components.ts` |
+| 02 | 组件在线更新 | 已完成（v0.5.6）：六组件 checkUpdates、24h 持久化缓存、启动后台检查、更新按钮/红点、任务占用阻断；四个组件 manifest 与 `vision-models` v2 已上传，隔离实例 v1→v2 更新跑通；修复 `portable` 平台校验 | `src/main/components/service.ts`、`src/main/components/manifest.ts`、`src/main/ipc/components.ts`、`src/renderer/src/panels/ComponentsSection.tsx`、`src/renderer/src/stores/components.ts` |
 | 04 | 场景图 → 白膜 | VLM 解析已消费 sizeClass/facing/room/scale/pitch；深度校准未接，`depth` 默认为空 | `src/main/scene/analyze.ts`、`src/shared/stage-from-scene-build.ts` |
 | 04 | 舞台对象资产 | 只有 human/box/sphere/plane/gltf/crowd；无家具/建筑/自然资产库 | `src/shared/scene-object-presets.ts` |
 

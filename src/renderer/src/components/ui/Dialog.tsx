@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '../Icon'
 import { IconButton } from './IconButton'
+import { WindowDragStrip } from './WindowDragStrip'
 import { cn } from './cn'
 
 export interface DialogProps {
@@ -157,6 +158,7 @@ export function Dialog({
         data-shortcut-block
         onPointerDown={handleOverlayPointerDown}
       >
+        <WindowDragStrip />
         <div
           ref={panelRef}
           role="dialog"
@@ -178,6 +180,7 @@ export function Dialog({
       data-shortcut-block
       onPointerDown={handleOverlayPointerDown}
     >
+      <WindowDragStrip />
       <div
         ref={panelRef}
         role="dialog"

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { StageObjectType } from '@shared/stage-schema'
+import type { StageObjectType, StageVec3 } from '@shared/stage-schema'
 import { Icon } from '../components/Icon'
 import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
 import { useSettingsStore } from '../stores/settings'
@@ -10,10 +10,12 @@ import { assetUrl } from '../lib/asset-url'
 import { useUIStore } from '../stores/ui'
 import { shortcutMatches } from '../shortcuts/useShortcut'
 import { StageInspector } from './StageInspector'
+import { StageBeginnerGuide } from './StageBeginnerGuide'
 import { StageTimeline } from './StageTimeline'
 import { StageViewport } from './StageViewport'
 import { buildProgramTimeline } from '@shared/stage-program'
-import { useStageStore } from './stageStore'
+import { useStageStore, type StageDrawMode } from './stageStore'
+import { projectStagePathPoint } from './stage-path-bridge'
 import { exportStagePreviewToCanvas } from './preview-runner'
 import {
   Button,
@@ -21,9 +23,9 @@ import {
   Menu,
   MenuItem,
   NativeSelect,
-  Select
+  Select,
+  WindowDragStrip
 } from '../components/ui'
-import type { GeneratedAsset } from '@shared/generation'
 import type { AssetScope } from '@shared/asset-schema'
 import {
   applyLightingPreset,
@@ -94,17 +96,20 @@ export function StageWindow() {
   const setTransformMode = useStageStore((state) => state.setTransformMode)
 
   const [capturing, setCapturing] = useState(false)
-  const [exporting, setExporting] = useState(false)
+  const exporting = useStageStore((state) => state.exporting)
   const [exportProgress, setExportProgress] = useState(0)
+  const [exportConfirmOpen, setExportConfirmOpen] = useState(false)
   const [addObjectOpen, setAddObjectOpen] = useState(false)
   const [lightingPreset, setLightingPreset] = useState('')
   const [generatingScene, setGeneratingScene] = useState(false)
   const [importing, setImporting] = useState(false)
-  const [pendingAsset, setPendingAsset] = useState<GeneratedAsset | null>(null)
   const [privacyOpen, setPrivacyOpen] = useState(false)
   const [panoramaMenuOpen, setPanoramaMenuOpen] = useState(false)
   const [panoramaMenuPosition, setPanoramaMenuPosition] = useState({ x: 0, y: 0 })
   const [sceneModelKey, setSceneModelKey] = useState('')
+  const [guideDismissed, setGuideDismissed] = useState(
+    () => window.localStorage.getItem('cinelab.stage.guide.v1') === '1'
+  )
   const providers = useSettingsStore((state) => state.providers)
   const sceneModelOptions = useMemo(() => {
     const options: Array<{ value: string; label: string }> = []
@@ -122,9 +127,12 @@ export function StageWindow() {
     return options
   }, [providers])
   const [selectedForGroup, setSelectedForGroup] = useState<string[]>([])
-  const [drawMoveOpen, setDrawMoveOpen] = useState(false)
-  const drawStartRef = useRef<{ x: number; y: number } | null>(null)
-  const [drawLine, setDrawLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
+  const drawMode = useStageStore((state) => state.drawMode)
+  const setDrawMode = useStageStore((state) => state.setDrawMode)
+  const addPath = useStageStore((state) => state.addPath)
+  const [drawPoints, setDrawPoints] = useState<Array<{ x: number; y: number }>>([])
+  const drawingRef = useRef(false)
+  const drawRectRef = useRef<DOMRect | null>(null)
 
   useEffect(() => {
     if (!playing) return
@@ -244,6 +252,33 @@ export function StageWindow() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [open, closeStage, redo, undo])
 
+  const drawPlaneY = useMemo(() => {
+    const object = doc?.objects.find((item) => item.id === selectedObjectId)
+    if (object) return object.transform.position[1]
+    const cameraId =
+      selectedCameraId ?? doc?.activeCameraId ?? doc?.cameras[0]?.id
+    const camera = doc?.cameras.find((item) => item.id === cameraId)
+    if (!camera) return 0
+    const targetY = camera.target[1]
+    return Math.abs(camera.position[1] - targetY) < 0.2 ? 0 : targetY
+  }, [doc, selectedObjectId, selectedCameraId])
+
+  useEffect(() => {
+    if (drawMode === 'off') return
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      if (drawingRef.current) {
+        drawingRef.current = false
+        setDrawPoints([])
+        return
+      }
+      setDrawMode('off')
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [drawMode, setDrawMode])
+
   if (!open) return null
 
   const activeCameraId = selectedCameraId ?? doc?.activeCameraId ?? null
@@ -251,7 +286,33 @@ export function StageWindow() {
     (camera) => camera.id === activeCameraId
   )
 
-  const handleExportPreview = async (): Promise<void> => {
+  const handleExportPreview = (): void => {
+    if (exporting) return
+    const state = useStageStore.getState()
+    if (!state.doc) {
+      useStageStore.setState({ error: '请先打开场景' })
+      return
+    }
+    const durationMs =
+      state.playbackScope === 'program'
+        ? buildProgramTimeline(state.doc).durationMs
+        : (state.doc.shots.find((item) => item.id === state.selectedShotId)
+            ?.durationMs ?? 0)
+    const seconds = durationMs / 1000
+    if (seconds > 1800) {
+      useStageStore.setState({
+        error: '预演预计超过 30 分钟，请先减少镜头或缩短时长'
+      })
+      return
+    }
+    if (seconds > 300) {
+      setExportConfirmOpen(true)
+      return
+    }
+    void doExport()
+  }
+
+  const doExport = async (): Promise<void> => {
     if (exporting) return
     const state = useStageStore.getState()
     if (!state.doc || !state.nodeId) {
@@ -276,8 +337,19 @@ export function StageWindow() {
       .nodes.find((node) => node.id === state.nodeId)
     if (!stageNode || !isStageNode(stageNode)) return
 
-    setExporting(true)
+    const shot =
+      scope === 'shot'
+        ? state.doc.shots.find((item) => item.id === state.selectedShotId)
+        : undefined
+    const shotName = shot
+      ? shot.name?.trim() || `镜头 ${state.doc.shots.indexOf(shot) + 1}`
+      : undefined
+
+    useStageStore.getState().setExporting(true)
     setExportProgress(0)
+    useUIStore
+      .getState()
+      .showToast('正在逐帧渲染 720p / 24fps，请耐心等待')
     try {
       const result = await exportStagePreviewToCanvas({
         stageNodeId: stageNode.id,
@@ -286,19 +358,36 @@ export function StageWindow() {
         ...(scope === 'shot'
           ? { shotId: state.selectedShotId ?? undefined }
           : {}),
+        ...(shotName ? { shotName } : {}),
+        stageName: state.doc.name,
         resolution: '720p',
         fps: 24
       })
 
-      useUIStore
-        .getState()
-        .showToast(
-          result.nodeIds.length > 0
-            ? scope === 'program'
-              ? '整片预演已导出并添加到画布'
-              : '白模预演已导出并添加到画布'
-            : '白模预演已导出'
-        )
+      const firstNodeId = result.nodeIds[0]
+      const message =
+        result.nodeIds.length > 0
+          ? scope === 'program'
+            ? '整片预演已导出并添加到画布'
+            : '白模预演已导出并添加到画布'
+          : '白模预演已导出'
+      useUIStore.getState().showToast(
+        message,
+        'info',
+        firstNodeId
+          ? {
+              label: '查看节点',
+              onClick: () => {
+                const canvas = useCanvasStore.getState()
+                canvas.clearSelection()
+                canvas.onNodesChange([
+                  { id: firstNodeId, type: 'select', selected: true }
+                ])
+                useUIStore.getState().requestFitView()
+              }
+            }
+          : undefined
+      )
     } catch (exportError) {
       const message =
         exportError instanceof Error
@@ -310,7 +399,7 @@ export function StageWindow() {
         useStageStore.setState({ error: message })
       }
     } finally {
-      setExporting(false)
+      useStageStore.getState().setExporting(false)
     }
   }
 
@@ -380,44 +469,48 @@ export function StageWindow() {
     )
   }
 
-  const handleDrawMoveEnd = (event: React.PointerEvent<HTMLDivElement>): void => {
-    const start = drawStartRef.current
-    drawStartRef.current = null
-    setDrawLine(null)
-    if (!start) return
-    const dx = event.clientX - start.x
-    const dy = event.clientY - start.y
-    if (Math.hypot(dx, dy) < 12) return
-    const state = useStageStore.getState()
-    const doc = state.doc
-    const shotId = state.selectedShotId
-    if (!doc || !shotId) return
-    const shot = doc.shots.find((item) => item.id === shotId)
-    const camera = shot
-      ? doc.cameras.find((item) => item.id === shot.cameraId)
-      : undefined
-    if (!shot || !camera) return
-    const scale = 0.02
-    const target = camera.target
-    const at = (t: number): [number, number, number] => [
-      target[0] + dx * scale * t,
-      target[1] - dy * scale * t,
-      target[2]
-    ]
-    state.applyCommands([
-      {
-        type: 'setCameraTrack',
-        shotId,
-        track: [0, 0.5, 1].map((t) => ({
-          timeMs: Math.round(shot.durationMs * t),
-          position: [...camera.position] as [number, number, number],
-          target: at(t),
-          fov: camera.fov,
-          easing: 'easeInOut' as const
-        }))
-      }
-    ])
-    setDrawMoveOpen(false)
+  const drawHint =
+    drawMode === 'camera'
+      ? '手绘相机路径 · 按住左键拖动 · 松开生成 · Esc 退出'
+      : drawMode === 'object'
+        ? `手绘「${doc?.objects.find((item) => item.id === selectedObjectId)?.name ?? '对象'}」路径 · 松开生成 · Esc 退出`
+        : drawMode === 'follow'
+          ? '手绘跟随目标路径 · 松开生成 · Esc 退出'
+          : ''
+
+  const cancelDraw = (): void => {
+    drawingRef.current = false
+    setDrawPoints([])
+  }
+
+  const finishDraw = (): void => {
+    const rect = drawRectRef.current
+    const points = drawPoints
+    drawingRef.current = false
+    drawRectRef.current = null
+    setDrawPoints([])
+    if (drawMode === 'off' || !rect || points.length < 2) return
+    const projected = points
+      .map((point) =>
+        projectStagePathPoint(
+          rect.left + point.x,
+          rect.top + point.y,
+          drawPlaneY
+        )
+      )
+      .filter((point): point is StageVec3 => Boolean(point))
+    if (projected.length < 2) return
+    const cameraId =
+      selectedCameraId ?? doc?.activeCameraId ?? doc?.cameras[0]?.id
+    const camera = doc?.cameras.find((item) => item.id === cameraId)
+    addPath({
+      kind: drawMode,
+      ...(selectedObjectId ? { objectId: selectedObjectId } : {}),
+      ...(drawMode === 'camera' && camera
+        ? { height: camera.position[1] - drawPlaneY }
+        : {}),
+      points: projected
+    })
   }
 
   const handleLightingPreset = (presetId: string): void => {
@@ -452,6 +545,19 @@ export function StageWindow() {
     }
   }
 
+  const guideVisible = Boolean(
+    !loading &&
+      doc &&
+      !guideDismissed &&
+      doc.objects.length === 0 &&
+      doc.cameras.length === 0 &&
+      doc.shots.length === 0
+  )
+  const dismissGuide = (): void => {
+    setGuideDismissed(true)
+    window.localStorage.setItem('cinelab.stage.guide.v1', '1')
+  }
+
   const handleGenerateFromScene = (): void => {
     if (
       window.localStorage.getItem('cinelab.scenePrivacyAcknowledged') !== '1'
@@ -462,20 +568,56 @@ export function StageWindow() {
     void runGenerateFromScene()
   }
 
-  const handleImportImage = async (): Promise<void> => {
+  const handleImportReference = async (): Promise<void> => {
     if (!doc || importing || generatingScene) return
+    const state = useStageStore.getState()
+    if (!state.nodeId) return
+    const canvas = useCanvasStore.getState()
+    const stageNode = canvas.nodes.find((node) => node.id === state.nodeId)
+    if (!stageNode || !isStageNode(stageNode)) {
+      useStageStore.setState({ error: '找不到导演台节点' })
+      return
+    }
+
     setImporting(true)
     try {
       const asset = await window.api.scene.pickImage()
       if (!asset) return
-      if (
-        window.localStorage.getItem('cinelab.scenePrivacyAcknowledged') !== '1'
-      ) {
-        setPendingAsset(asset)
-        setPrivacyOpen(true)
-        return
+
+      const size = nodeSize(stageNode)
+      const ids = canvas.addAssetNodes(
+        'image',
+        {
+          x: stageNode.position.x - Math.max(320, size.width + 80),
+          y: stageNode.position.y
+        },
+        [asset],
+        '参考图',
+        undefined,
+        undefined,
+        true
+      )
+      const imageId = ids[0]
+      if (!imageId) throw new Error('参考图节点创建失败')
+
+      useCanvasStore.getState().onConnect({
+        source: imageId,
+        target: stageNode.id
+      })
+
+      const latest = useCanvasStore.getState()
+      const oldImageEdges = latest.edges.filter((edge) => {
+        if (edge.target !== stageNode.id || edge.source === imageId) return false
+        const source = latest.nodes.find((node) => node.id === edge.source)
+        return source ? selectedNodeOutput(source)?.kind === 'image' : false
+      })
+      if (oldImageEdges.length > 0) {
+        latest.removeEdges(oldImageEdges.map((edge) => edge.id))
       }
-      await runGenerateFromScene(asset)
+
+      useUIStore
+        .getState()
+        .showToast('参考图已添加到画布并连接到导演台')
     } catch (error) {
       useStageStore.setState({
         error: error instanceof Error ? error.message : String(error)
@@ -561,6 +703,7 @@ export function StageWindow() {
       aria-label="导演台"
       data-scope="stage"
     >
+      <WindowDragStrip />
       <div data-window="stage" className="grid min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden rounded-panel border border-border bg-canvas p-1.5 text-fg shadow-float [grid-template-areas:'top_top_top'_'left_viewport_right'_'timeline_timeline_timeline'] [grid-template-columns:240px_minmax(0,1fr)_280px] [grid-template-rows:48px_minmax(0,1fr)_168px] max-[900px]:[grid-template-columns:190px_minmax(0,1fr)_220px] max-[900px]:[grid-template-rows:48px_minmax(0,1fr)_150px] max-[720px]:[grid-template-areas:'top'_'viewport'_'timeline'] max-[720px]:[grid-template-columns:minmax(0,1fr)] max-[720px]:[grid-template-rows:48px_minmax(0,1fr)_150px]">
         <header className="flex min-w-0 items-center justify-between gap-3 rounded-card border border-border bg-surface px-2.5 [grid-area:top]">
           <div className="flex min-w-0 items-center gap-2">
@@ -623,11 +766,11 @@ export function StageWindow() {
               variant="secondary"
               size="none"
               className={TEXT_BUTTON_CLASS}
-              onClick={() => void handleImportImage()}
+              onClick={() => void handleImportReference()}
               disabled={!doc || importing || generatingScene}
-              title="选择本地图片生成白膜场景"
+              title="选择本地图片，上传到画布并连接到导演台"
             >
-              {importing ? '导入中…' : '导入图片'}
+              {importing ? '导入中…' : '导入参考图'}
             </Button>
             <Button
               type="button"
@@ -667,13 +810,19 @@ export function StageWindow() {
                   : '需要先连接一张图片节点到导演台'
               }
             >
-              {generatingScene ? '生成中…' : '从参考图生成'}
+              {generatingScene
+                ? '生成中…'
+                : stageReferenceImage()
+                  ? '从参考图生成'
+                  : '生成（需先连图）'}
             </Button>
-            <div className="flex min-w-0 flex-col">
+            <div className="flex min-w-0 items-baseline gap-1.5">
               <span className="overflow-hidden text-ellipsis text-[13px] font-semibold whitespace-nowrap">
                 {doc?.name ?? '导演台'}
               </span>
-              <small className="text-[10px] text-fg-subtle">{saveLabel}</small>
+              <small className="shrink-0 text-[10px] text-fg-subtle">
+                {saveLabel}
+              </small>
             </div>
           </div>
 
@@ -755,6 +904,11 @@ export function StageWindow() {
               variant="secondary"
               size="none"
               className={TEXT_BUTTON_CLASS}
+              title={
+                exporting
+                  ? '点击取消本次导出'
+                  : '逐帧渲染 720p / 24fps，长片可能需要几分钟'
+              }
               onClick={() => {
                 if (exporting) {
                   const stageId = doc?.stageId
@@ -790,16 +944,18 @@ export function StageWindow() {
               <Icon name="image" size={14} />
               {capturing ? '截图中…' : '截图到画布'}
             </Button>
-            <Button
-              type="button"
-              variant={drawMoveOpen ? 'primary' : 'secondary'}
-              size="none"
-              className={TEXT_BUTTON_CLASS}
-              onClick={() => setDrawMoveOpen((open) => !open)}
-              title="手绘运镜轨迹"
-            >
-              手绘运镜
-            </Button>
+            <Select
+              value={drawMode}
+              options={[
+                { value: 'off', label: '手绘：关闭' },
+                { value: 'camera', label: '相机路径' },
+                { value: 'object', label: '对象路径' },
+                { value: 'follow', label: '跟随路径' }
+              ]}
+              onChange={(value) => setDrawMode(value as StageDrawMode)}
+              className="!h-7 !min-w-[116px] !rounded-md !px-2 !text-[11px]"
+              title="手绘路径"
+            />
             <Button
               type="button"
               variant="ghost"
@@ -928,7 +1084,12 @@ export function StageWindow() {
                     size="none"
                     className={LIST_ITEM_CLASS}
                     data-active={camera.id === activeCameraId ? '' : undefined}
+                    title="单击选中并编辑；双击预览此机位画面"
                     onClick={() => selectCamera(camera.id)}
+                    onDoubleClick={() => {
+                      selectCamera(camera.id)
+                      setViewMode('camera')
+                    }}
                   >
                     <Icon name="frame" size={13} />
                     <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
@@ -986,70 +1147,103 @@ export function StageWindow() {
 
         <main className="relative min-h-0 min-w-0 overflow-hidden rounded-card border border-border bg-media-bg [grid-area:viewport]">
           <StageViewport />
-          {drawMoveOpen ? (
+          {drawMode !== 'off' ? (
             <div
               className="absolute inset-0 z-[3] cursor-crosshair"
               onPointerDown={(event) => {
+                if (event.button !== 0) return
                 const rect = event.currentTarget.getBoundingClientRect()
-                drawStartRef.current = {
+                drawRectRef.current = rect
+                drawingRef.current = true
+                setDrawPoints([
+                  {
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top
+                  }
+                ])
+                event.currentTarget.setPointerCapture(event.pointerId)
+              }}
+              onPointerMove={(event) => {
+                if (!drawingRef.current) return
+                const rect = event.currentTarget.getBoundingClientRect()
+                const next = {
                   x: event.clientX - rect.left,
                   y: event.clientY - rect.top
                 }
-                setDrawLine({
-                  x1: event.clientX - rect.left,
-                  y1: event.clientY - rect.top,
-                  x2: event.clientX - rect.left,
-                  y2: event.clientY - rect.top
+                setDrawPoints((current) => {
+                  const previous = current[current.length - 1]
+                  if (
+                    previous &&
+                    Math.hypot(next.x - previous.x, next.y - previous.y) < 4
+                  ) {
+                    return current
+                  }
+                  return [...current, next]
                 })
               }}
-              onPointerMove={(event) => {
-                if (!drawStartRef.current) return
-                const rect = event.currentTarget.getBoundingClientRect()
-                setDrawLine({
-                  x1: drawStartRef.current.x,
-                  y1: drawStartRef.current.y,
-                  x2: event.clientX - rect.left,
-                  y2: event.clientY - rect.top
-                })
+              onPointerUp={() => finishDraw()}
+              onPointerCancel={cancelDraw}
+              onContextMenu={(event) => {
+                event.preventDefault()
+                cancelDraw()
               }}
-              onPointerUp={handleDrawMoveEnd}
             >
-              {drawLine ? (
+              {drawPoints.length > 1 ? (
                 <svg className="pointer-events-none absolute inset-0 h-full w-full">
-                  <line
-                    x1={drawLine.x1}
-                    y1={drawLine.y1}
-                    x2={drawLine.x2}
-                    y2={drawLine.y2}
-                    stroke="var(--accent)"
+                  <polyline
+                    points={drawPoints
+                      .map((point) => `${point.x},${point.y}`)
+                      .join(' ')}
+                    fill="none"
+                    stroke={
+                      drawMode === 'camera'
+                        ? '#60a5fa'
+                        : drawMode === 'object'
+                          ? '#4ade80'
+                          : '#f59e0b'
+                    }
                     strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                 </svg>
               ) : null}
               <div className="pointer-events-none absolute top-2 left-1/2 -translate-x-1/2 rounded-md bg-black/55 px-2 py-1 text-[10px] text-white/80">
-                在视口画一条线，松开生成运镜
+                {drawHint}
               </div>
             </div>
           ) : null}
-          {viewMode === 'director' && selectedObjectId ? (
+          {viewMode === 'director' && (selectedObjectId || selectedCameraId) ? (
             <div
               className="absolute top-2.5 left-1/2 flex -translate-x-1/2 overflow-hidden rounded-md border border-border bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] shadow-float"
               role="group"
               aria-label="变换工具"
             >
-              {TRANSFORM_OPTIONS.map((option) => (
-                <Button
-                  key={option.mode}
-                  type="button"
-                  variant="ghost"
-                  size="none"
-                  className={TRANSFORM_TOOL_CLASS}
-                  data-active={transformMode === option.mode ? '' : undefined}
-                  onClick={() => setTransformMode(option.mode)}
-                >
-                  {option.label}
-                </Button>
-              ))}
+              {TRANSFORM_OPTIONS.map((option) => {
+                const cameraLocked =
+                  Boolean(selectedCameraId) &&
+                  !selectedObjectId &&
+                  option.mode !== 'translate'
+                return (
+                  <Button
+                    key={option.mode}
+                    type="button"
+                    variant="ghost"
+                    size="none"
+                    className={TRANSFORM_TOOL_CLASS}
+                    data-active={transformMode === option.mode ? '' : undefined}
+                    disabled={cameraLocked}
+                    title={
+                      cameraLocked
+                        ? '相机朝向请拖视口里的注视点手柄'
+                        : undefined
+                    }
+                    onClick={() => setTransformMode(option.mode)}
+                  >
+                    {option.label}
+                  </Button>
+                )
+              })}
             </div>
           ) : null}
           {loading ? (
@@ -1057,13 +1251,20 @@ export function StageWindow() {
               正在加载场景…
             </div>
           ) : null}
-          {!loading && doc && doc.objects.length === 0 ? (
+          {guideVisible ? (
+            <StageBeginnerGuide
+              canGenerateFromScene={Boolean(stageReferenceImage())}
+              onImportReference={() => void handleImportReference()}
+              onGenerateFromScene={() => handleGenerateFromScene()}
+              onDone={dismissGuide}
+            />
+          ) : !loading && doc && doc.objects.length === 0 ? (
             <div className="pointer-events-none absolute bottom-4 left-1/2 max-w-[320px] -translate-x-1/2 rounded-card border border-border bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3.5 py-2.5 text-center text-xs leading-relaxed text-fg-muted">
               场景还是空的；可以在左侧添加对象和机位，或让 CineBot 帮你搭景。
             </div>
           ) : null}
           <div className="pointer-events-none absolute right-2.5 bottom-2 rounded-md bg-black/35 px-1.5 py-0.5 text-[10px] text-fg-subtle">
-            拖拽旋转 · 滚轮缩放 · 点击对象或机位
+            拖拽旋转 · 滚轮缩放 · 拖机身改位置 · 拖手柄改朝向（Alt 改高度）
           </div>
         </main>
 
@@ -1114,9 +1315,7 @@ export function StageWindow() {
                   '1'
                 )
                 setPrivacyOpen(false)
-                const asset = pendingAsset
-                setPendingAsset(null)
-                void runGenerateFromScene(asset ?? undefined)
+                void runGenerateFromScene()
               }}
             >
               继续
@@ -1125,8 +1324,40 @@ export function StageWindow() {
         }
       >
         <p className="text-xs leading-relaxed text-fg-muted">
-          「从参考图生成」或「导入图片」会把图片发送给你在设置中配置的多模态文本模型，用于解析场景。
+          「从参考图生成」会把图片发送给你在设置中配置的多模态文本模型，用于解析场景。
           图片不会上传到 CineLab 服务器；解析结果只写回当前项目。
+        </p>
+      </Dialog>
+      <Dialog
+        open={exportConfirmOpen}
+        onClose={() => setExportConfirmOpen(false)}
+        title="导出需要较长时间"
+        size="sm"
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setExportConfirmOpen(false)}
+            >
+              取消
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setExportConfirmOpen(false)
+                void doExport()
+              }}
+            >
+              继续导出
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-xs leading-relaxed text-fg-muted">
+          当前预演超过 5 分钟，逐帧渲染可能需要几分钟。
+          导出期间可以点「取消导出」停止；结果会自动添加到画布。
         </p>
       </Dialog>
     </div>,

@@ -4,7 +4,6 @@ import type {
   StageExportInput,
   StageExportResult
 } from '@shared/ipc-contract'
-import { GROUP_COLORS, type GroupColor } from '@shared/canvas-schema'
 import { STAGE_PREVIS_REFERENCE_PROMPT } from '@shared/stage-previs-reference'
 import { isStageNode, nodeSize, useCanvasStore } from '../stores/canvas'
 
@@ -16,10 +15,23 @@ function shotLabel(index: number): string {
   return `第${String(index).padStart(2, '0')}镜`
 }
 
+function videoTitleFor(input: {
+  scope: StageExportInput['scope']
+  shotName?: string
+  stageName?: string
+}): string {
+  if (input.scope !== 'program') {
+    return input.shotName?.trim() || '镜头预演'
+  }
+  const stageName = input.stageName?.trim()
+  return stageName ? `${stageName} · 成片` : '成片预演'
+}
+
 /**
  * 导出白模预演并回画布：
- * - 整场组：整片 + 鸟瞰
- * - 每镜组：片段 + 首/中/尾分镜图
+ * - 单镜：视频标题为镜头名；
+ * - 整片：视频标题为「<导演台名> · 成片」；
+ * - 不自动成组，节点直接落画布。
  * UI 的 StageWindow 和 Agent 的 stage_export_preview 共用。
  */
 export async function exportStagePreviewToCanvas(input: {
@@ -27,6 +39,8 @@ export async function exportStagePreviewToCanvas(input: {
   stageId: string
   scope?: StageExportInput['scope']
   shotId?: string
+  shotName?: string
+  stageName?: string
   resolution: StageExportInput['resolution']
   fps: StageExportInput['fps']
   items?: StageExportInput['items']
@@ -63,41 +77,29 @@ export async function exportStagePreviewToCanvas(input: {
   const withTurn = Boolean(input.turnId)
   if (withTurn) canvas.beginToolTurn(input.turnId!)
 
-  const addGroup = (
-    ids: string[],
-    title: string,
-    color: GroupColor,
-    columns: number
-  ): void => {
-    if (ids.length === 0) return
-    const groupId = canvas.createGroupFromNodes(ids, {
-      title,
-      color,
-      columns,
-      allowSingle: true
-    })
-    if (groupId) nodeIds.push(groupId)
-    nodeIds.push(...ids)
-  }
+  const videoTitle = videoTitleFor({
+    scope,
+    ...(input.shotName ? { shotName: input.shotName } : {}),
+    ...(input.stageName ? { stageName: input.stageName } : {})
+  })
 
   try {
-    const wholeNodes: string[] = []
     const wholeVideo = canvas.addAssetNodes(
       'video',
       { x: baseX, y: baseY },
       [result.asset],
-      '整片预演',
+      videoTitle,
       stageNode.id,
       undefined,
       true
     )
     for (const id of wholeVideo) {
       canvas.patchNodeData(id, {
-        title: '整片预演',
+        title: videoTitle,
         prompt: STAGE_PREVIS_REFERENCE_PROMPT
       })
     }
-    wholeNodes.push(...wholeVideo)
+    nodeIds.push(...wholeVideo)
 
     if (result.overview) {
       const overviewNodes = canvas.addAssetNodes(
@@ -112,7 +114,7 @@ export async function exportStagePreviewToCanvas(input: {
       for (const id of overviewNodes) {
         canvas.patchNodeData(id, { title: '场景鸟瞰' })
       }
-      wholeNodes.push(...overviewNodes)
+      nodeIds.push(...overviewNodes)
     }
 
     const documents = (result.documents ?? []).filter(
@@ -143,10 +145,8 @@ export async function exportStagePreviewToCanvas(input: {
           title: document.label
         })
       }
-      wholeNodes.push(...ids)
+      nodeIds.push(...ids)
     })
-
-    addGroup(wholeNodes, '整场 · 白模预演', 'slate', 2)
 
     const framesByShot = new Map<string, StageExportFrame[]>()
     for (const frame of result.frames ?? []) {
@@ -157,7 +157,6 @@ export async function exportStagePreviewToCanvas(input: {
 
     for (const [index, clip] of (result.clips ?? []).entries()) {
       const y = baseY + (index + 1) * 420
-      const nodes: string[] = []
       const videoNodes = canvas.addAssetNodes(
         'video',
         { x: baseX, y },
@@ -170,7 +169,7 @@ export async function exportStagePreviewToCanvas(input: {
       for (const id of videoNodes) {
         canvas.patchNodeData(id, { title: shotLabel(clip.index) })
       }
-      nodes.push(...videoNodes)
+      nodeIds.push(...videoNodes)
 
       const frames = framesByShot.get(clip.shotId) ?? []
       if (frames.length > 0) {
@@ -187,15 +186,8 @@ export async function exportStagePreviewToCanvas(input: {
           const label = frames[index]?.label
           if (label) canvas.patchNodeData(id, { title: label })
         })
-        nodes.push(...frameNodes)
+        nodeIds.push(...frameNodes)
       }
-
-      addGroup(
-        nodes,
-        shotLabel(clip.index),
-        GROUP_COLORS[(clip.index - 1) % GROUP_COLORS.length]!,
-        Math.max(2, nodes.length)
-      )
     }
 
     return { ...result, nodeIds }

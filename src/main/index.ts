@@ -164,7 +164,7 @@ if (!hasLock) {
       mainWindow.webContents.setZoomFactor(startupPreferences.ui.scale / 100)
     }
     diagLog('createMainWindow done')
-    installTray()
+    installTray(mainWindow)
 
     app.on('activate', () => {
       const win = BrowserWindow.getAllWindows()[0]

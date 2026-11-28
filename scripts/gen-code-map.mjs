@@ -114,6 +114,7 @@ const MODULES = [
       'src/shared/scene-object-presets.ts',
       'src/shared/stage-from-scene-build.ts',
       'src/shared/stage-previs-reference.ts',
+      'src/shared/stage-paths.ts',
       'src/renderer/src/stage/stage-weather.ts'
     ]
   },

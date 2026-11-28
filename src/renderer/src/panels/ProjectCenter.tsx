@@ -9,7 +9,7 @@ import { useProjectStore } from '../stores/project'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import { assetUrl } from '../lib/asset-url'
-import { Button, IconButton, Input } from '../components/ui'
+import { Button, IconButton, Input, WindowDragStrip } from '../components/ui'
 import { WorkflowManageDialog } from './WorkflowManageDialog'
 import { WorkflowGrid } from './library/WorkflowGrid'
 
@@ -97,6 +97,7 @@ export function ProjectCenter() {
       data-testid="project-center"
       className="absolute inset-0 flex items-start justify-center overflow-y-auto bg-canvas bg-[radial-gradient(var(--border)_1px,transparent_1px)] p-8 [background-size:20px_20px]"
     >
+      <WindowDragStrip />
       <div
         className={`my-auto rounded-panel border border-border bg-surface p-[44px_48px] text-center shadow-float animate-[welcome-in_220ms_ease-out] max-[720px]:p-[36px_28px] ${
           recent.length > 0 ? 'w-[min(960px,100%)]' : 'w-[min(560px,100%)]'
@@ -189,6 +190,7 @@ export function ProjectCenter() {
           className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay p-4 backdrop-blur-[2px] [-webkit-app-region:no-drag]"
           onPointerDown={() => setTemplateOpen(false)}
         >
+          <WindowDragStrip />
           <div
             className="w-[840px] max-w-[calc(100vw-48px)] rounded-panel border border-border bg-surface-raised p-5 shadow-float"
             onPointerDown={(event) => event.stopPropagation()}

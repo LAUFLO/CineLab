@@ -954,6 +954,8 @@ export async function executeStageTool(
       const summary = String(call.args.summary ?? '')
       const steps = Array.isArray(call.args.steps) ? call.args.steps : []
       const planText = [
+        '下面是一串自动操作，允许后会依次执行；点「取消」不会改动场景。',
+        '',
         `预演计划：${summary}`,
         '',
         ...steps.map((entry, index) => {
@@ -963,9 +965,9 @@ export async function executeStageTool(
       ].join('\n')
       const approved = await new Promise<boolean>((resolve) => {
         useUIStore.getState().requestConfirm({
-          title: '确认批量预演计划',
+          title: '确认预演操作（可取消）',
           message: planText,
-          confirmLabel: '允许执行',
+          confirmLabel: '允许并依次执行',
           onConfirm: () => resolve(true),
           onCancel: () => resolve(false)
         })
@@ -978,6 +980,9 @@ export async function executeStageTool(
     },
 
     stage_export_preview: async (call) => {
+      if (useStageStore.getState().exporting) {
+        return { ok: false, error: '已有预演正在导出，请等待完成后再试' }
+      }
       const { doc } = await readDoc(nodeId)
       const scope = call.args.scope === 'program' ? 'program' : 'shot'
       const shotId =
@@ -1001,17 +1006,28 @@ export async function executeStageTool(
             ? 'three'
             : undefined
 
+      const shot =
+        scope === 'shot'
+          ? doc.shots.find((item) => item.id === shotId)
+          : undefined
+      const shotName = shot
+        ? shot.name?.trim() || `镜头 ${doc.shots.indexOf(shot) + 1}`
+        : undefined
+
+      useStageStore.getState().setExporting(true)
       const result = await exportStagePreviewToCanvas({
         stageNodeId: stageNodeEntry.id,
         stageId: doc.stageId,
         scope,
         ...(scope === 'shot' ? { shotId } : {}),
+        ...(shotName ? { shotName } : {}),
+        stageName: doc.name,
         resolution,
         fps,
         ...(items ? { items } : {}),
         ...(frameDensity ? { frameDensity } : {}),
         turnId: call.turnId
-      })
+      }).finally(() => useStageStore.getState().setExporting(false))
 
       const change = stageChange()
       change.createdNodeIds.push(...result.nodeIds)

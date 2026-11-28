@@ -86,6 +86,7 @@ export function AgentPanel() {
   const confirmTool = useAgentStore((state) => state.confirmTool)
   const undoLastTurn = useAgentStore((state) => state.undoLastTurn)
   const clearError = useAgentStore((state) => state.clearError)
+  const retryLastTurn = useAgentStore((state) => state.retryLastTurn)
 
   const clipMode = useStudioStore((state) => state.open)
   const stageMode = useStageStore((state) => state.open)
@@ -168,7 +169,7 @@ export function AgentPanel() {
   }
 
   const suggestion = stageMode
-    ? '把这个场景搭成雨夜街道，加两个人物'
+    ? '把这个场景搭成雨夜街道，加两个人物，排一段 10 秒推拉镜头并导出预演'
     : clipMode
       ? '把选中片段整体前移 1 秒'
       : attachments.length > 0 || references.length > 0
@@ -654,19 +655,33 @@ export function AgentPanel() {
 
           {error ? (
             <div
-              className="mx-3 mb-2 flex shrink-0 items-center justify-between gap-2 rounded-card border border-[color-mix(in_srgb,var(--danger)_30%,var(--border))] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] px-2.5 py-[7px] text-[11px] text-danger"
+              className="mx-3 mb-2 flex shrink-0 flex-col gap-2 rounded-card border border-[color-mix(in_srgb,var(--danger)_30%,var(--border))] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] px-2.5 py-2 text-[11px] text-danger"
               role="status"
             >
-              <span>{error}</span>
-              <Button
-                type="button"
-                className="shrink-0 !rounded-md px-1.5 py-0.5 text-[10px] !font-normal !text-inherit hover:!text-inherit"
-                onClick={clearError}
-                variant="secondary"
-                size="none"
-              >
-                知道了
-              </Button>
+              <span className="max-h-32 overflow-y-auto whitespace-pre-wrap break-words">
+                {error}
+              </span>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  className="!rounded-md px-1.5 py-0.5 text-[10px] !font-normal !text-inherit hover:!text-inherit"
+                  onClick={() => void retryLastTurn()}
+                  disabled={running}
+                  variant="secondary"
+                  size="none"
+                >
+                  重试
+                </Button>
+                <Button
+                  type="button"
+                  className="shrink-0 !rounded-md px-1.5 py-0.5 text-[10px] !font-normal !text-inherit hover:!text-inherit"
+                  onClick={clearError}
+                  variant="secondary"
+                  size="none"
+                >
+                  知道了
+                </Button>
+              </div>
             </div>
           ) : null}
 

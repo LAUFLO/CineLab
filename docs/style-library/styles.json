@@ -315,6 +315,69 @@
     "source": "official"
   },
   {
+    "id": "shaw-brothers-wuxia",
+    "name": "邵氏棚拍武侠",
+    "category": "国风与东方",
+    "cover": "covers/shaw-brothers-wuxia.webp",
+    "prompt": "1970年代邵氏棚拍彩色武侠，人工布景层次分明，朱红、墨绿、金黄、靛蓝浓郁东方配色。正面硬光打亮主体，顶部轮廓光勾边，阴影清晰，肤色温暖。略低机位中景或全身，Eastmancolor 高饱和，轻微柔焦与细密颗粒。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "hollywood-teal-orange",
+    "name": "好莱坞青橙调色",
+    "category": "电影感",
+    "cover": "covers/hollywood-teal-orange.webp",
+    "prompt": "现代好莱坞商业片青橙调色，背景、阴影与环境光收进青蓝、深青和冷灰，肤色与主高光保持琥珀橙和暖金，主体边缘冷暖分离清晰。方向明确的暖色主光加冷色环境光，黑位深沉有纹理，高光集中。浅景深、柔和椭圆散景、细微水平光晕，高动态范围数字摄影质感。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "hk-kung-fu-70s",
+    "name": "70 年代香港功夫",
+    "category": "复古媒介",
+    "cover": "covers/hk-kung-fu-70s.webp",
+    "prompt": "1970年代香港实景功夫片，砖红、土黄、棕褐与褪色墨绿，日光直射，亮部偏黄，阴影厚重自然。28–35mm 老式球面镜头，平视全身记录动作，保留手脚、重心与移动方向。轻微手持、老式变焦呼吸感、粗颗粒 35mm 胶片与年代褪色。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "republican-shanghai",
+    "name": "民国上海复古",
+    "category": "复古媒介",
+    "cover": "covers/republican-shanghai.webp",
+    "prompt": "民国上海都市电影，深墨绿、暗金、酒红、胡桃棕与灰蓝交织，钨丝灯把肤色染成柔和暖金，环境阴影沉入带绿的冷灰。玻璃、金属、木材与织物呈细长高光与柔和反射。50mm 镜头，端庄构图，Art Deco 式空间秩序，细腻颗粒、轻微柔焦、暖色光晕与优雅暗部。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "korean-crime-cold",
+    "name": "韩式冷峻犯罪",
+    "category": "电影感",
+    "cover": "covers/korean-crime-cold.webp",
+    "prompt": "韩国现实主义犯罪片，灰绿、铅灰、暗棕与浑浊土黄的低饱和色彩，环境冷光而平，面部由单一方向自然光或现场光塑形。曝光略低，暗部厚重，高光克制，肤色真实偏冷。35mm 或 50mm，人物偏离中心，前景遮挡与大面积空白制造压迫，轻微手持、低反差颗粒与冷静纪实感。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "showa-japan-nostalgia",
+    "name": "昭和日式怀旧",
+    "category": "复古媒介",
+    "cover": "covers/showa-japan-nostalgia.webp",
+    "prompt": "昭和后期日本生活电影，米白、茶褐、褪色绿、深蓝与暖灰的柔和低饱和画面。自然光从窗边或侧后方缓慢铺开，阴影泛青，亮部呈乳白与淡黄，肤色温润。50mm 自然透视，构图安静平衡，机位接近日常视线。细密颗粒、轻微褪色、柔软高光、淡淡光晕与温和反差。",
+    "version": 1,
+    "source": "official"
+  },
+  {
+    "id": "northwest-china-epic",
+    "name": "西北乡土史诗",
+    "category": "电影感",
+    "cover": "covers/northwest-china-epic.webp",
+    "prompt": "中国西北乡土史诗电影，土地色、赭石、暗红、枯草黄、深棕与灰蓝构成厚重色谱。低角度自然光横向扫过人物与环境，粗糙材质与尘土质感突出，阴影浓重。广角全景与中景结合，地平线压低，画面苍凉开阔。粗颗粒胶片、低饱和、暗部层次厚重，纪实而庄严。",
+    "version": 1,
+    "source": "official"
+  },
+  {
     "id": "wes-anderson",
     "name": "韦斯·安德森",
     "category": "电影感",

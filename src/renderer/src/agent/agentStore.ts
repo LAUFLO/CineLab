@@ -147,6 +147,7 @@ interface AgentState {
   applyEvent: (event: AgentEvent) => void
   undoLastTurn: () => Promise<void>
   clearError: () => void
+  retryLastTurn: () => Promise<void>
 }
 
 let messageSeq = 0
@@ -538,6 +539,23 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     }
   },
   clearError: () => set({ error: null }),
+
+  retryLastTurn: async () => {
+    const state = get()
+    if (state.running) return
+    let index = -1
+    for (let i = state.messages.length - 1; i >= 0; i -= 1) {
+      if (state.messages[i].role === 'user') {
+        index = i
+        break
+      }
+    }
+    if (index < 0) return
+    const message = state.messages[index]
+    if (!message || !message.content.trim()) return
+    set({ messages: state.messages.slice(0, index), error: null })
+    await get().send(message.content)
+  },
 
   loadSessions: async () => {
     try {

@@ -68,7 +68,7 @@
 | 07 | 生成完成系统通知（主进程 Notification + 品牌图标，点击聚焦窗口） | `src/main/ipc/index.ts`、`src/renderer/src/stores/generation.ts` |
 | 10 | 通用 UI 组件库、设置/素材库面板、主题 | `src/renderer/src/components/ui/`、`panels/` |
 | 10 | 设置页 8 分区、旧深链接别名、快捷键自定义、技能全部显示、导入与卡片启用开关 | `SettingsPanel.tsx`、`ShortcutsSettingsSection.tsx`、`SkillsSection.tsx`、`SkillImportDialog.tsx` |
-| 02 | 官方/自定义风格库：按输入框居中的 620×480 浮窗、一行 8 列小封面、分类浏览、单击即应用并关闭、单选胶囊（内联提示词首行、× 角标）；资产库“风格”与风格库同源展示；新增韦斯·安德森官方风格 | `src/main/library/styles.ts`、`docs/style-library/styles.json`、`src/shared/style-schema.ts`、`style-prompt.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`style-prompt.test.ts` |
+| 02 | 官方/自定义风格库（官方 43 个）：按输入框居中的 620×480 浮窗、一行 8 列小封面、分类浏览、单击即应用并关闭、单选胶囊（内联提示词首行、× 角标）；资产库“风格”与风格库同源展示；新增韦斯·安德森官方风格 | `src/main/library/styles.ts`、`docs/style-library/styles.json`、`src/shared/style-schema.ts`、`style-prompt.ts`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`style-prompt.test.ts` |
 | 02 | 预设提示词：按输入框居中的 620×480 浮窗、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、发送原位展开、风格置顶；胶囊宽度对齐占位、绿色无图标、连续插入不重叠；资产库“使用”插入正文；官方预设「画面去脏」只读，不可修改删除 | `docs/prompt-library/presets.json`、`src/main/library/templates.ts`、`src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx`、`prompt-preset.test.ts` |
 | 02 | 资产库提示词卡片：按钮行统一 28px、卡片等高、新建入口位于面包屑右侧；官方项隐藏编辑/删除并显示「官方」徽标 | `TemplateGrid.tsx`、`LibraryWindow.tsx` |
 | 10 | 官方社群：关于与更新页展示 QQ 群（群号可复制）与飞书交流群（可打开/复制链接） | `SettingsPanel.tsx`、`src/shared/community.ts`、`src/main/ipc/index.ts` |
@@ -76,10 +76,17 @@
 | 02 | 工作流模板：保存画布子图为资产库 `工作流/` 目录包；本地上传/生成节点转 `workflowSlot` 占位；导演台文档打包，拉片/剪辑室占位；支持重命名、删除、更新、导入导出 zip；`modelKey`/`params` 按节点持久化 | `src/main/workflows/`、`src/main/library/workflows.ts`、`src/shared/workflow-schema.ts`、`WorkflowSaveDialog.tsx`、`WorkflowGrid.tsx`、`PromptBar.tsx` |
 | 07 | 关闭确认（后台运行/退出）、系统托盘品牌 logo 与自绘右键菜单；保存失败拦截、「不再提示」仅记忆后台运行 | `src/main/tray/`、`src/renderer/src/App.tsx`、`CloseConfirmDialog.tsx`、`TrayMenuWindow.tsx`、`preferences.ts` |
 | 04 | GLB 导入与真实模型渲染（视口 + 导出等待加载），失败回退 wireframe | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts`、`stage-render.ts` |
-| 04 | 预演导出附带结构 JSON 与生成参考提示词，回画布后写入视频节点 | `src/shared/stage-previs-reference.ts`、`src/main/stage/export.ts`、`preview-runner.ts` |
+| 04 | 预演导出回画布：单镜标题为镜头名、整片为「<导演台名> · 成片」，不自动成组，不生成结构 JSON/提示词节点 | `src/renderer/src/stage/preview-runner.ts`、`src/main/stage/export.ts` |
 | 02 | model 资产入库到 `assets/model/`，支持 `.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` |
+| 02 | 图片数量批量：供应商一次只返回一张时由客户端补发单张请求凑足所选张数，共用取消信号与按张数映射的进度 | `src/main/engine/start-generation.ts`、`start-generation.test.ts` |
 | 06 | 对话式白模预演编排：动作轨工具、批量计划确认、previs Skill SOP | `resources/skills/stage-previs/SKILL.md`、`src/main/agent/tools/stage.ts`、`stageBridge.ts` |
 | 06 | 导演台上下文一致性：每轮精简快照 + `stage_get` 摘要扩展 + 写前软提示 | `src/shared/stage-snapshot.ts`、`pi/prompt.ts`、`pi/tools.ts`、`stageBridge.ts` |
+| 04 | 手绘路径与运镜：自由曲线、相机/对象/跟随路径、Line2 3D 显示、控制点拖拽/Alt 高度、时间关键帧/速度曲线、手动关键帧保留 | `src/shared/stage-paths.ts`、`src/renderer/src/stage/StageWindow.tsx`、`StageViewport.tsx`、`StagePathInspector.tsx` |
+| 04 | 参考图上传与连线：本地图片写入项目资产、创建 image 节点、图片→导演台连线、替换旧入边 | `src/renderer/src/stage/StageWindow.tsx`、`stores/canvas/slices/assets.ts`、`graph.ts` |
+| 04 | 机位可视化摆位：导演视角拖机身改位置、拖注视点手柄改朝向（Alt 改高度）；选中机位不再强制切机位视角，列表双击预览画面 | `src/renderer/src/stage/StageViewport.tsx`、`stageStore.ts`、`StageWindow.tsx`、`StageInspector.tsx` |
+| 04 | 新手三步向导：空场景浮层引导选起点、加人物、一键分镜；节奏三档与单人/双人/群戏预设复用自动分镜；语义术语面板折叠为高级设置 | `src/renderer/src/stage/StageBeginnerGuide.tsx`、`StageWindow.tsx`、`ShotInspector.tsx`、`StageTimeline.tsx` |
+| 04 | 出片闭环增强：导出 toast 带「查看节点」定位、导出前渲染耗时提示、超 5 分钟确认与超 30 分钟拦截、UI/Agent 共用单导出锁 | `src/renderer/src/stage/StageWindow.tsx`、`stores/ui.ts`、`components/Toast.tsx`、`agent/stageBridge.ts` |
+| 10 | 全屏面板顶部 40px 拖拽区：导演台、剪辑室、设置、项目中心、节点搜索、快捷键、历史与 Dialog | `WindowDragStrip.tsx`、`StageWindow.tsx`、`StudioWindow.tsx` |
 
 ## 部分实现（别当已完成）
 

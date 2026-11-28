@@ -44,12 +44,13 @@
 | 参考输入 | 图/视频/音频、角色/遮罩 | `src/shared/reference-inputs.ts` | 已实现 |
 | 扩图 | 生图模型图生图；精确优先，无精确选项时自动选最接近尺寸 | `src/shared/outpaint.ts`、`src/renderer/src/canvas/nodes/AiOperationDialog.tsx`、`node-operation-runner.ts` | 已实现 |
 | 宫格/拼接/抽帧/裁剪/转码 | 媒体处理 | `src/main/media/` | 已实现 |
+| 生图数量批量 | 供应商忽略 `n` 时客户端补发单张请求凑足所选张数；一次返回足够的模型零额外请求 | `src/main/engine/start-generation.ts`、`start-generation.test.ts` | 已实现 |
 | 结果节点隐藏 PromptBar | 操作/AI/拉片/导演台/剪辑室结果只保留工具栏 | `PromptBar.tsx`、`node-operation-specs.ts`、`stores/canvas/slices/assets.ts` | 已实现 |
 | 人声/背景音分离 | Demucs htdemucs、无声视频 + 音频、FIFO 任务 | `src/main/media/stems.ts`、`resources/stem-worker/worker.py` | 已实现 |
 | 素材入库 | `ingestAsset` | `src/main/assets/ingest.ts` | 已实现 |
 | 3D 模型入库 | `kind:'model'` → `assets/model/`，`.glb` / `.gltf` | `src/main/assets/ingest.ts`、`src/main/ipc/scene.ts` | 已实现 |
 | 错误文案 | 配额/鉴权/超时 | `src/main/engine/generation-error.ts` | 已实现 |
-| 风格库、风格胶囊 | 官方只读 + 自定义、按输入框居中浮窗（一行 8 列小封面）、分类浏览、单击即应用、单选胶囊内联输入框首行（× 角标）；资产库“风格”同源展示；官方新增韦斯·安德森 | `src/main/library/styles.ts`、`docs/style-library/styles.json`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`src/shared/style-prompt.ts` | 已实现 |
+| 风格库、风格胶囊 | 官方只读（43 个）+ 自定义、按输入框居中浮窗（一行 8 列小封面）、分类浏览、单击即应用、单选胶囊内联输入框首行（× 角标）；资产库“风格”同源展示；官方新增韦斯·安德森 | `src/main/library/styles.ts`、`docs/style-library/styles.json`、`StyleLibraryDialog.tsx`、`PromptBar.tsx`、`LibraryWindow.tsx`、`StyleFolderGrid.tsx`、`src/shared/style-prompt.ts` | 已实现 |
 | 预设提示词 | 资产库“提示词”同源、按输入框居中浮窗、CRUD、三列卡片（标题行操作 + 全文预览）、名称胶囊任意位置插入、胶囊不重叠（绿色无图标）、发送原位展开、风格置顶；官方「画面去脏」只读 | `docs/prompt-library/presets.json`、`src/main/library/templates.ts`、`src/shared/prompt-preset.ts`、`PresetPromptDialog.tsx`、`PromptBar.tsx`、`promptbar-model.tsx`、`LibraryWindow.tsx` | 已实现 |
 | 资产库提示词卡片 | 按钮行统一尺寸、卡片等高、新建提示词在面包屑右侧；官方项隐藏编辑/删除并显示「官方」徽标 | `TemplateGrid.tsx`、`LibraryWindow.tsx` | 已实现 |
 | 官方社群 | 关于与更新页展示 QQ 群号（复制）与飞书邀请链接（打开/复制） | `SettingsPanel.tsx`、`src/shared/community.ts`、`src/main/ipc/index.ts` | 已实现 |
@@ -72,6 +73,7 @@
 | 关键词 | 已有实现 | 入口 | 状态 |
 |---|---|---|---|
 | 场景/机位/镜头 | `StageDoc`、`StageShot`、`StageCamera` | `src/shared/stage-schema.ts` | 已实现 |
+| 手绘路径/运镜 | 自由曲线、相机/对象/跟随路径、Line2 3D、控制点、时间关键帧/速度曲线、手动关键帧保留 | `src/shared/stage-paths.ts`、`stage/StageWindow.tsx`、`StageViewport.tsx`、`StagePathInspector.tsx` | 已实现（核心） |
 | 语义镜头 | 关系/距离/高度/构图求解 | `src/shared/stage-shot-intent.ts` | 已实现 |
 | 整片时间线、重叠 | `StageProgramEntry` + `front` | `src/shared/stage-program.ts` | 已实现 |
 | 整片播放 | `playbackScope='program'` | `src/renderer/src/stage/stageStore.ts` | 已实现 |
@@ -85,9 +87,12 @@
 | 场景图 → 白膜 | VLM + 校准（深度未接） | `src/main/scene/analyze.ts` | 部分实现 |
 | 截图回画布 | `stage.capture` | `src/main/ipc/stage.ts` | 已实现 |
 | GLB 导入与渲染 | `scene:pick-model` + `ingestAsset(model)` + GLTFLoader（仅导入不导出） | `src/main/ipc/scene.ts`、`src/renderer/src/stage/stage-scene.ts` | 已实现 |
-| 预演结构约束 | 结构 JSON + 提示词模板随导出回画布并写入视频节点 | `src/shared/stage-previs-reference.ts`、`preview-runner.ts` | 已实现 |
+| 预演导出命名 | 单镜用镜头名、整片用「<导演台名> · 成片」；不回画布成组，不生成结构 JSON/提示词节点 | `src/renderer/src/stage/preview-runner.ts`、`src/main/stage/export.ts` | 已实现 |
 | 场景字段消费 | sizeClass/facing/room/scale/pitch → 白模摆位与室内结构 | `src/shared/stage-from-scene-build.ts` | 已实现 |
 | 对话式预演编排 | 动作轨工具 + 批量计划确认 + previs Skill SOP | `src/main/agent/tools/stage.ts`、`stageBridge.ts`、`resources/skills/stage-previs/SKILL.md` | 已实现 |
+| 机位可视化摆位 | 导演视角 gizmo 拖机身改 position、注视点手柄拖 target；选中机位保留导演视角，列表双击预览画面 | `src/renderer/src/stage/StageViewport.tsx`、`stageStore.ts`、`StageWindow.tsx` | 已实现 |
+| 新手三步向导 | 空场景浮层：选起点→加人物→一键分镜；节奏三档与单人/双人/群戏预设复用 `autoCoverage`；语义术语折叠为高级设置 | `src/renderer/src/stage/StageBeginnerGuide.tsx`、`StageWindow.tsx`、`ShotInspector.tsx` | 已实现 |
+| 出片闭环增强 | 导出 toast 查看节点、长导出确认与单导出锁、CineBot 建议提示词升级 | `StageWindow.tsx`、`stores/ui.ts`、`components/Toast.tsx`、`AgentPanel.tsx` | 已实现 |
 
 ## 逐帧拉片
 

@@ -50,7 +50,8 @@ import {
   IconButton,
   Input,
   Popover,
-  Select
+  Select,
+  WindowDragStrip
 } from '../components/ui'
 
 type SectionId =
@@ -1777,6 +1778,7 @@ export function SettingsPanel() {
       className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay backdrop-blur-[2px] [-webkit-app-region:no-drag]"
       onPointerDown={close}
     >
+      <WindowDragStrip />
       <div
         className="flex h-[660px] max-h-[calc(100vh-80px)] w-[920px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-panel border border-border bg-surface-raised shadow-float [-webkit-app-region:no-drag]"
         onPointerDown={(event) => event.stopPropagation()}

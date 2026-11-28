@@ -133,12 +133,12 @@ The model layer is fully open: providers, models, Base URL, API key, headers and
 
 Download the latest build from [GitHub Releases](https://github.com/LAUFLO/CineLab/releases/latest):
 
-Current version: **v0.5.4**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
+Current version: **v0.5.5**. See [CHANGELOG.md](CHANGELOG.md) for the full change log (Chinese).
 
 | Platform | Recommended file | Requirements |
 |---|---|---|
-| Windows | `CineLab-0.5.4-x64.exe` | Windows 10 / 11 x64 |
-| macOS | `CineLab-0.5.4-arm64.dmg` | macOS 12+, Apple Silicon |
+| Windows | `CineLab-0.5.5-x64.exe` | Windows 10 / 11 x64 |
+| macOS | `CineLab-0.5.5-arm64.dmg` | macOS 12+, Apple Silicon |
 
 ### Windows
 

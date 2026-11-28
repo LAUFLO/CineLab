@@ -213,7 +213,7 @@ export function StageTimeline() {
       state.doc?.objects.filter((object) => object.type === 'human') ?? []
     if (people.length === 0) {
       useStageStore.setState({
-        error: '场景里还没有人物，先添加人物再自动分镜'
+        error: '场景里还没有人物，请先点左侧「+」添加人物，或让 CineBot 帮你搭景'
       })
       return
     }

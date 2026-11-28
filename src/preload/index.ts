@@ -73,7 +73,9 @@ const api: CineApi = {
     close: () => ipcRenderer.send('window:close'),
     hideToTray: () => ipcRenderer.send('app:hide-to-tray'),
     restoreWindow: () => ipcRenderer.send('app:restore-window'),
+    restoreMainWindow: () => ipcRenderer.send('app:tray-restore'),
     quit: () => ipcRenderer.send('app:quit'),
+    quitFromTray: () => ipcRenderer.send('app:tray-quit'),
     requestQuit: () => ipcRenderer.send('app:request-quit'),
     onQuitRequested: (callback: () => void) => {
       const listener = (): void => callback()

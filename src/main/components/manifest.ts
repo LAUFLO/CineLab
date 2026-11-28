@@ -201,7 +201,7 @@ export async function fetchManifest(
     if (!isManifest(payload, definition.kind)) {
       throw new Error('组件清单格式无效')
     }
-    if (payload.platform !== platform) {
+    if (payload.platform !== platform && payload.platform !== 'portable') {
       throw new Error(`组件不支持当前平台：${payload.platform}`)
     }
     return payload
